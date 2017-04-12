@@ -4,132 +4,147 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.input-validate :as validate]
-    [om.next :as om]))
+    [eponai.common.ui.store.account.validate :as v]
+    #?(:cljs
+       [eponai.web.utils :as utils])
+    [om.next :as om]
+    [taoensso.timbre :refer [debug]]))
+
+(defn label-column [opts content]
+  (grid/column
+    (->> opts
+         (grid/column-size {:small 12 :medium 3 :large 2}))
+    content))
+
+(def prefix-key "business-details-")
+
+(defn prefixed-id [k]
+  (str prefix-key (get v/form-inputs k)))
+
+(defn save-legal-entity [component]
+  #?(:cljs
+     (let [street (utils/input-value-by-id (prefixed-id :field.legal-entity.address/line1))
+           postal (utils/input-value-by-id (prefixed-id :field.legal-entity.address/postal))
+           city (utils/input-value-by-id (prefixed-id :field.legal-entity.address/city))
+           state (utils/input-value-by-id (prefixed-id :field.legal-entity.address/state))
+
+           first-name (utils/input-value-by-id (prefixed-id :field.legal-entity/first-name))
+           last-name (utils/input-value-by-id (prefixed-id :field.legal-entity/last-name))
+
+           legal-entity {:field.legal-entity/address    {:field.legal-entity.address/line1  street
+                                                         :field.legal-entity.address/postal postal
+                                                         :field.legal-entity.address/city   city
+                                                         :field.legal-entity.address/state  state}
+                         :field.legal-entity/first-name first-name
+                         :field.legal-entity/last-name  last-name}
+           validation (v/validate :field/legal-entity legal-entity prefix-key)]
+       (debug "Legal entity validation: " validation)
+       (when (nil? validation)
+         (.save-legal-entity component))
+       (om/update-state! component assoc :business/input-validation validation))))
 
 (defn account-details [component]
-  (let [{:keys [form-elements]} (om/get-state component)]
+  (let [{:keys [store]} (om/get-computed component)
+        {:business/keys [input-validation]} (om/get-state component)
+        {:query/keys [stripe-account]} (om/props component)
+        legal-entity (:stripe/legal-entity stripe-account)
+        {:stripe.legal-entity/keys [address type first-name last-name business-name]} legal-entity
+        {:stripe.legal-entity.address/keys [line1 postal city state]} address]
+    (debug "Form inputs: " v/form-inputs)
     (dom/div
       nil
-      (grid/row
-        nil
-        (grid/column
-          (grid/column-size {:small 12 :medium 3 :large 2})
-          (dom/label nil "Business Type"))
-        (grid/column
+      (dom/div
+        (css/callout)
+        (dom/p (css/add-class :header) "Business details")
+        (grid/row
           nil
-          (dom/input {:type "radio" :name "entity-type" :id "entity-type-individual" :value "individual" :defaultChecked true})
-          (dom/label {:htmlFor "entity-type-individual"} "Individual")
-          (dom/input {:type "radio" :name "entity-type" :id "entity-type-company" :value "company"})
-          (dom/label {:htmlFor "entity-type-company"} "Company")
-          ))
-
-      (grid/row
-        nil
-        (grid/column
-          (grid/column-size {:small 12 :medium 3 :large 2})
-          (dom/label nil "Legal Name"))
-        (grid/column
-          nil
-          (dom/input {:type        "text"
-                      :placeholder "Company, LTD"})))
-
-      (grid/row
-        nil
-        (grid/column
-          (grid/column-size {:small 12 :medium 3 :large 2})
-          (dom/label nil "Business Address"))
-        (grid/column
-          nil
+          (label-column
+            nil
+            (dom/label nil "Legal Name"))
+          (grid/column
+            nil
+            (grid/row
+              nil
+              (grid/column
+                nil
+                (validate/input {:type         "text"
+                                 :defaultValue first-name
+                                 :id (prefixed-id :field.legal-entity/first-name)
+                                 :placeholder  "First"}
+                                input-validation))
+              (grid/column
+                nil
+                (validate/input {:type         "text"
+                                 :defaultValue last-name
+                                 :id (prefixed-id :field.legal-entity/last-name)
+                                 :placeholder  "Last"}
+                                input-validation)))))
+        (when (= type :company)
           (grid/row
             nil
+            (label-column
+              nil
+              (dom/label nil "Legal Name"))
             (grid/column
               nil
-              (dom/input {:type        "text"
-                          :id          (:stripe.address/street form-elements)
-                          :placeholder "Street"})))
-          (grid/row
-            nil
-            (grid/column
-              nil
-              (dom/input {:type        "text"
-                          :id          (:stripe.address/postal form-elements)
-                          :placeholder "Postal Code"}))
-            (grid/column
-              nil
-              (dom/input {:type        "text"
-                          :id          (:stripe.address/locality form-elements)
-                          :placeholder "City"}))
-            (grid/column
-              nil
-              (dom/input {:type        "text"
-                          :id          (:stripe.addess/state form-elements)
-                          :placeholder "Province"}))))))))
+              (grid/row
+                nil
+                (grid/column
+                  nil
+                  (validate/input {:type         "text"
+                                   :defaultValue business-name
+                                   :id (prefixed-id :field.legal-entity/business-name)
+                                   :placeholder  "Company, LTD"}
+                                  input-validation))))))
 
-(defn personal-details [component]
-  (let [{:query/keys [stripe-account]} (om/props component)
-        {:keys [validation-error form-elements]} (om/get-state component)]
-    (grid/row-column
-      (css/align :center)
-      (grid/row
-        nil
-        (grid/column
-          (grid/column-size {:small 12 :medium 3 :large 2})
-          (dom/label nil "Legal Name"))
-        (grid/column
+        (grid/row
           nil
-          (grid/row
+          (label-column
             nil
-            (grid/column
-              nil
-              (dom/input {:type         "text"
-                          :id           (:stripe.legal-entity/first-name form-elements)
-                          :placeholder  "First"
-                          :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/first-name])}))
-            (grid/column
-              nil
-              (dom/input {:type         "text"
-                          :id           (:stripe.legal-entity/last-name form-elements)
-                          :placeholder  "Last"
-                          :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/last-name])})))))
-      (grid/row
-        nil
-        (grid/column
-          (grid/column-size {:small 12 :medium 3 :large 2})
-          (dom/label nil "Date of birth"))
-        (grid/column
-          nil
-          (grid/row
+            (dom/label nil "Business Address"))
+          (grid/column
             nil
-            (grid/column
+            (grid/row
               nil
-              (validate/input
-                :stripe.legal-entity.dob/day
-                {:id           (:stripe.legal-entity.dob/day form-elements)
-                 :type         "number"
-                 :placeholder  "Day"
-                 :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/dob :stripe.legal-entity.dob/day])}
-                validation-error)
-              ;(dom/input #js {:type         "text"
-              ;                :id           (:stripe.legal-entity.dob/day form-elements)
-              ;                :placeholder  "Day"
-              ;                :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/dob :stripe.legal-entity.dob/day])})
-              )
-            (grid/column
+              (grid/column
+                nil
+                (validate/input
+                  {:type         "text"
+                   :id           (prefixed-id :field.legal-entity.address/line1)
+                   :defaultValue line1
+                   :placeholder  "Street"}
+                  input-validation)))
+            (grid/row
               nil
-              (validate/input
-                :stripe.legal-entity.dob/month
-                {:type         "number"
-                 :id           (:stripe.legal-entity.dob/month form-elements)
-                 :placeholder  "Month"
-                 :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/dob :stripe.legal-entity.dob/month])}
-                validation-error))
-
-            (grid/column
-              nil
-              (validate/input
-                :stripe.legal-entity.dob/year
-                {:type         "number"
-                 :id           (:stripe.legal-entity.dob/year form-elements)
-                 :placeholder  "Year"
-                 :defaultValue (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/dob :stripe.legal-entity.dob/year])}
-                validation-error))))))))
+              (grid/column
+                nil
+                (validate/input
+                  {:type         "text"
+                   :id           (prefixed-id :field.legal-entity.address/postal)
+                   :defaultValue postal
+                   :placeholder  "Postal Code"}
+                  input-validation))
+              (grid/column
+                nil
+                (validate/input
+                  {:type         "text"
+                   :id           (prefixed-id :field.legal-entity.address/city)
+                   :defaultValue city
+                   :placeholder  "City"}
+                  input-validation))
+              (grid/column
+                nil
+                (validate/input
+                  {:type         "text"
+                   :id           (prefixed-id :field.legal-entity.address/state)
+                   :defaultValue state
+                   :placeholder  "Province"}
+                  input-validation))))))
+      (dom/div
+        (css/callout)
+        (dom/p (css/add-class :header))
+        (dom/div
+          (css/text-align :right)
+          (dom/a
+            (->> {:onClick #(save-legal-entity component)}
+                 (css/button)) (dom/span nil "Save")))))))

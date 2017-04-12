@@ -33,24 +33,27 @@
           (if (not-empty external-accounts)
             (map-indexed
               (fn [i bank-acc]
-                (let [{:stripe.external-account/keys [bank-name currency last4 country]} bank-acc]
+                (let [{:stripe.external-account/keys [bank-name currency last4 country routing-number]} bank-acc]
                   (grid/row
                     nil
                     (grid/column
                       {:classes [:bank-account]}
-                      (dom/div {:classes ["bank-detail bank-name"]}
-                               (dom/span nil bank-name))
-                      (dom/div {:classes ["bank-detail"]}
-                               (dom/span nil "/"))
+                      ;(dom/div {:classes ["bank-detail bank-name"]}
+                      ;         (dom/span nil bank-name))
+                      (dom/div {:classes ["bank-detail currency"]}
+                               (dom/span nil currency))
                       (dom/div {:classes ["bank-detail account"]}
                                (map (fn [i]
                                       (dom/span nil "•"))
                                     (take 4 (range)))
                                (dom/span nil last4))
-                      (dom/div {:classes ["bank-detail currency"]}
-                               (dom/span nil currency))
+                      (dom/div {:classes ["bank-detail"]}
+                               (dom/span nil "/"))
+                      (dom/div {:classes ["bank-detail routing"]}
+                               (dom/span nil routing-number))
+
                       (dom/div {:classes ["bank-detail country"]}
-                               (dom/span nil (str "(" country ")"))))
+                               (dom/span nil country)))
                     (grid/column
                       nil
                       (dom/a

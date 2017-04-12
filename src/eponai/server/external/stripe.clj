@@ -156,11 +156,15 @@
 (s/def :ext.stripe.legal-entity.dob/day number?)
 (s/def :ext.stripe.legal-entity/first_name string?)
 (s/def :ext.stripe.legal-entity/last_name string?)
+(s/def :ext.stripe.legal-entity/type (s/and string? #(contains? #{"individual" "company"} %)))
+
 (s/def :ext.stripe.legal-entity/dob (s/keys :req-un [:ext.stripe.legal-entity.dob/year
                                                      :ext.stripe.legal-entity.dob/month
                                                      :ext.stripe.legal-entity.dob/day]))
+
 (s/def :ext.stripe/legal_entity (s/keys :opt-un [:ext.stripe.legal-entity/first_name
                                                  :ext.stripe.legal-entity/last_name
+                                                 :ext.stripe.legal-entity/type
                                                  :ext.stripe.legal-entity/dob]))
 (s/def :ext.stripe.params/update-account (s/keys :opt-un
                                                  [:ext.stripe/legal_entity]))

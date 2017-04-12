@@ -1,25 +1,4 @@
-#sulo-activate-account-form {
-	input, select {
-		// max-width: 20rem;
-		margin: 0;
-		&[disabled] {
-			background: $white;
-			font-weight: $global-weight-bold;
-		}
-	}
-	.business-type {
-		label {
-			color: $black;
-			font-weight: $global-weight-normal;
-		}
-	}
-	.callout > .row {
-		margin-bottom: 1rem;
-		.row {
-			margin-bottom: 1rem;
-		}
-	}
-}
+
 #sulo-account-settings {
 
 	.payment-methods {
@@ -54,18 +33,22 @@
 	.bank-account {
 		display: flex;
 		padding: 0.5rem 1rem;
+		margin-bottom: 0.5rem;
 		align-items: center;
-		$border: 1px solid $light-gray;
-		border: $border;
-		border-top: none;
+		border: $global-border;
 		border-radius: $global-radius;
-		&:first-child {
-			border-top: $border;
-		}
 		.bank-detail {
 			margin-right: 1rem;
+			font-size: 90%;
 			&.currency {
 				font-weight: $global-weight-bold;
+				text-transform: uppercase;
+			}
+			&.country {
+				text-transform: uppercase;
+			}
+			&.bank-name {
+				text-transform: uppercase;
 			}
 		}
 	}
@@ -84,7 +67,7 @@
 		border-right: none;
 		a {
 			color: $dark-gray;
-			background: $white;
+			background: transparent;
 		}
 		li {
 			margin-right: 0.5rem;
@@ -93,6 +76,7 @@
 			// border-bottom: $global-border;
 			// padding: 0.25rem 0;
 			// border-right: none;
+
 			&:last-child {
 				border: none;
 				border-right: 2px solid transparent;
@@ -108,6 +92,12 @@
 			}
 			&.is-active a {
 				font-weight: $global-weight-bold;
+			}
+			&.activate  {
+				border-bottom: $global-border;
+				a {
+					font-weight: $global-weight-bold;
+				}
 			}
 		}
 	}
@@ -129,5 +119,34 @@
 			}
 			border: none !important;
 		}
+	}
+}
+
+#sulo-activate-account-form {
+	input, select {
+		// max-width: 20rem;
+		margin: 0;
+		&[disabled] {
+			background: $white;
+			font-weight: $global-weight-bold;
+		}
+	}
+	p a {
+		text-decoration: underline; 
+	}
+	.business-type {
+		label {
+			color: $black;
+			font-weight: $global-weight-normal;
+		}
+	}
+	.callout > .row {
+		margin-bottom: 1rem;
+		.row {
+			margin-bottom: 1rem;
+		}
+	}
+	.callout.alert {
+		padding: 1rem;
 	}
 }

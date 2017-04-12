@@ -38,6 +38,9 @@
 
 #sulo-store-dashboard {
 	$dashboard-max-width: 75rem;
+	h3 {
+		font-family: $header-font-family-serif;
+	}
 	#sulo-navbar .navbar-container {
 		box-shadow: none;
 		border-bottom: 1px solid $light-gray;

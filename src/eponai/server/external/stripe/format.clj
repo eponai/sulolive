@@ -2,7 +2,7 @@
   (:require [eponai.common.format :as f]
             [eponai.common :as c])
   (:import
-    (com.stripe.model OrderItem Order ShippingDetails Address Product SKU Account Account$Verification LegalEntity BankAccount LegalEntity$DateOfBirth CountrySpec VerificationFields VerificationFieldsDetails)))
+    (com.stripe.model OrderItem Order ShippingDetails Address Product SKU Account Account$Verification LegalEntity BankAccount LegalEntity$DateOfBirth CountrySpec VerificationFields VerificationFieldsDetails ExternalAccount Card)))
 
 (defn stripe->verification-fields [^VerificationFields v]
   (let [min-fields (fn [^VerificationFieldsDetails field-details]
@@ -29,29 +29,50 @@
                (f/remove-nil-keys
                  {:stripe.legal-entity.dob/year  (.getYear dob)
                   :stripe.legal-entity.dob/month (.getMonth dob)
-                  :stripe.legal-entity.dob/day   (.getDay dob)}))]
+                  :stripe.legal-entity.dob/day   (.getDay dob)}))
+        address* (fn [^Address a]
+                   {:stripe.legal-entity.address/city   (.getCity a)
+                    :stripe.legal-entity.address/postal (.getPostalCode a)
+                    :stripe.legal-entity.address/line1  (.getLine1 a)
+                    :stripe.legal-entity.address/state  (.getState a)})]
     (f/remove-nil-keys
-      {:stripe.legal-entity/first-name (.getFirstName le)
-       :stripe.legal-entity/last-name  (.getLastName le)
-       :stripe.legal-entity/dob        (dob* (.getDob le))})))
+      {:stripe.legal-entity/first-name    (.getFirstName le)
+       :stripe.legal-entity/last-name     (.getLastName le)
+       :stripe.legal-entity/dob           (dob* (.getDob le))
+       :stripe.legal-entity/address       (address* (.getAddress le))
+       :stripe.legal-entity/business-name (.getBusinessName le)
+       :stripe.legal-entity/type          (keyword (.getType le))})))
 
 (defn stripe->bank-account [^BankAccount ba]
-  {:stripe.external-account/bank-name (.getBankName ba)
-   :stripe.external-account/status    (.getStatus ba)
-   :stripe.external-account/last4     (.getLast4 ba)})
+  {:stripe.external-account/id             (.getId ba)
+   :stripe.external-account/bank-name      (.getBankName ba)
+   :stripe.external-account/routing-number (.getRoutingNumber ba)
+   :stripe.external-account/status         (.getStatus ba)
+   :stripe.external-account/last4          (.getLast4 ba)
+   :stripe.external-account/currency       (.getCurrency ba)
+   :stripe.external-account/country        (.getCountry ba)})
+
+(defn stripe->card [^Card c]
+  {:stripe.external-account/id    (.getId c)
+   :stripe.external-account/last4 (.getLast4 c)
+   :stripe.external-account/brand (.getBrand c)})
 
 (defn stripe->account [^Account a]
-  (f/remove-nil-keys
-    {:stripe/id                (.getId a)
-     :stripe/country           (.getCountry a)
-     :stripe/verification      (stripe->verification (.getVerification a))
-     :stripe/legal-entity      (stripe->legal-entity (.getLegalEntity a))
-     :stripe/external-accounts [{:stripe.external-account/currency  "CAD"
-                                 :stripe.external-account/bank-name "Wells Fargo"
-                                 :stripe.external-account/last4     "1234"
-                                 :stripe.external-account/country   "CA"}] ;(map stripe->bank-account (.getExternalAccounts a))
-     :stripe/business-name     (.getBusinessName a)
-     :stripe/business-url      (.getBusinessURL a)}))
+  (let [ext-account* (fn [^ExternalAccount ea]
+                       (let [object (.getObject ea)
+                             account (cond (= "bank_account")
+                                           (stripe->bank-account ea)
+                                           (= "card")
+                                           (stripe->card ea))]
+                         (assoc account :stripe.external-account/object object)))]
+    (f/remove-nil-keys
+      {:stripe/id                (.getId a)
+       :stripe/country           (.getCountry a)
+       :stripe/verification      (stripe->verification (.getVerification a))
+       :stripe/legal-entity      (stripe->legal-entity (.getLegalEntity a))
+       :stripe/external-accounts (map ext-account* (.getData (.getExternalAccounts a)))
+       :stripe/business-name     (.getBusinessName a)
+       :stripe/business-url      (.getBusinessURL a)})))
 
 (defn stripe->price [p]
   (with-precision 10 (/ (bigdec p) 100)))
@@ -75,15 +96,23 @@
 ; :field/external-account             "external_account"}
 
 (defn input->account-params [account-params]
-  (let [{:field/keys [legal-entity external-account]} account-params
-        {:field.legal-entity/keys [address business-name business-tax-id first-name last-name dob]} legal-entity
+  (let [{:field/keys [legal-entity external-account tos-acceptance]} account-params
+        {:field.legal-entity/keys [type address business-name business-tax-id first-name last-name dob]} legal-entity
         {:field.legal-entity.address/keys [line1 postal city state]} address
         {:field.legal-entity.dob/keys [day month year]} dob]
-    {:legal_entity {:first_name first-name
-                    :last_name  last-name
-                    :dob        {:day   day
-                                 :month month
-                                 :year  year}}}))
+    {:legal_entity     {:first_name first-name
+                        :last_name  last-name
+                        :dob        {:day   day
+                                     :month month
+                                     :year  year}
+                        :address    {:city        city
+                                     :line1       line1
+                                     :postal_code postal
+                                     :state       state}
+                        :type       (name type)}
+     :external_account external-account
+     :tos_acceptance   {:date (:field.tos-acceptance/date tos-acceptance)
+                        :ip   (:field.tos-acceptance/ip tos-acceptance)}}))
 
 (defn input->price [p]
   (when p

@@ -153,7 +153,9 @@
 (defmutation stripe/update-account
   [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [store-id account-params]}]
   {:success "Your account was created"
-   :error   "Could not create Stripe account"}
+   :error   (if (some? exception)
+              (.getMessage exception)
+              "Someting went wrong!")}
   {:action (fn []
              (let [{:stripe/keys [id]} (stripe/pull-stripe (db/db state) store-id)]
                (stripe/update-account (:system/stripe system) id account-params)))})
