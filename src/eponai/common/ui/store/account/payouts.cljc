@@ -2,6 +2,8 @@
   (:require
     [eponai.common.ui.common :as common]
     [eponai.common.ui.dom :as dom]
+    [eponai.common.ui.store.account.validate :as v]
+    [eponai.common.ui.elements.input-validate :as validate]
     #?(:cljs
        [eponai.web.utils :as utils])
     [eponai.common.ui.elements.css :as css]
@@ -9,6 +11,13 @@
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
     [eponai.client.parser.message :as msg]))
+
+(def prefix-key "payouts-details-")
+
+(def stripe-key "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")
+
+(defn prefixed-id [k]
+  (str prefix-key (get v/form-inputs k)))
 
 (defn payout-schedule [component]
   (let [{:keys [modal]} (om/get-state component)]
@@ -121,7 +130,7 @@
 
               (dom/select
                 (->> {:defaultValue default-currency
-                      :id "sulo-default-currency-select"}
+                      :id           "sulo-default-currency-select"}
                      (css/add-class :currency))
                 (map (fn [c]
                        (let [code (key c)]
@@ -147,7 +156,6 @@
     [:query/messages
      :query/stripe-country-spec])
   Object
-
   (update-default-currency [this]
     #?(:cljs
        (let [{:keys [store]} (om/get-computed this)]
@@ -155,8 +163,47 @@
            (msg/om-transact! this `[(stripe/update-account ~{:account-params {:field/default-currency currency}
                                                              :store-id       (:db/id store)})
                                     :query/stripe-account])))))
+
+  (update-bank-account [this on-close]
+    #?(:cljs
+       (let [{:keys [store]} (om/get-computed this)
+             currency (utils/input-value-by-id (prefixed-id :field.external-account/currency))
+             country (utils/input-value-by-id (prefixed-id :field.external-account/country))
+             transit (utils/input-value-by-id (prefixed-id :field.external-account/transit-number))
+             institution (utils/input-value-by-id (prefixed-id :field.external-account/institution-number))
+             account (utils/input-value-by-id (prefixed-id :field.external-account/account-number))
+
+             input-map {:field/external-account {:field.external-account/account-number     account
+                                                 :field.external-account/currency           currency
+                                                 :field.external-account/country            country
+                                                 :field.external-account/institution-number institution
+                                                 :field.external-account/transit-number     transit}}
+             validation (v/validate :account/activate input-map prefix-key)]
+         (debug "Account: " input-map)
+         (debug "Validation: " validation)
+         (when (nil? validation)
+           (.setPublishableKey js/Stripe stripe-key)
+           (debug "Stripe token params; " {:country        country
+                                           :currency       currency
+                                           :routing_number (str transit institution)
+                                           :account_number account})
+           (.createToken js/Stripe.bankAccount
+                         #js {:country        country
+                              :currency       currency
+                              :routing_number (str transit institution)
+                              :account_number account}
+                         (fn [status response]
+                           (debug "Stripe token: " response)
+                           (when (= status 200)
+                             (let [token (.-id response)]
+                               (msg/om-transact! this `[(stripe/update-account
+                                                          ~{:account-params {:field/external-account token}
+                                                            :store-id       (:db/id store)})
+                                                        :query/stripe-account]))
+                             (on-close)))))
+         (om/update-state! this assoc :input-validation validation))))
   (render [this]
-    (let [{:keys [modal]} (om/get-state this)
+    (let [{:keys [modal modal-object input-validation]} (om/get-state this)
           {:keys [stripe-account]} (om/get-computed this)
           {:stripe/keys [external-accounts default-currency]} stripe-account
           message (msg/last-message this 'stripe/update-account)]
@@ -228,7 +275,7 @@
                                      (css/add-class :small)
                                      (css/add-class ::css/color-alert)) (dom/span nil "Delete")))
                             (dom/a
-                              (->> {:onClick #(om/update-state! this assoc :modal :bank-account)}
+                              (->> {:onClick #(om/update-state! this assoc :modal :bank-account :modal-object bank-acc)}
                                    (css/button-hollow)
                                    (css/add-class :small)) (dom/span nil "Edit"))
                             )))))
@@ -237,79 +284,93 @@
                   (css/button-hollow)
                   (dom/span nil "Add bank account..."))))
             (when (= modal :bank-account)
-              (common/modal
-                {:on-close #(om/update-state! this dissoc :modal)}
-                (dom/div
-                  nil
-                  (dom/h4 (css/add-class :header) "Your bank account")
-                  (dom/div (css/callout)
-                           (dom/p nil (dom/small nil "Your bank account must be a checking account."))
-                           (dom/p (css/add-class :header))
-                           (grid/row-column
-                             nil
-                             (grid/row
-                               nil
-                               (grid/column
-                                 (grid/column-size {:small 12 :large 3})
-                                 (dom/label nil "Currency"))
-                               (grid/column
-                                 nil
-                                 (dom/select {:defaultValue "usd"}
-                                             (dom/option {:value "usd"} "USD")
-                                             (dom/option {:value "cad"} "CAD")
-                                             (dom/option {:value "sek"} "SEK"))))
-
-                             (grid/row
-                               nil
-                               (grid/column
-                                 (grid/column-size {:small 12 :large 3})
-                                 (dom/label nil "Bank country"))
-                               (grid/column
-                                 nil
-                                 (dom/select {:defaultValue "us"}
-                                             (dom/option {:value "us"} "United States")
-                                             (dom/option {:value "ca"} "Canada")
-                                             (dom/option {:value "se"} "Sweden")))))
-
-                           (grid/row-column
-                             nil
-                             (grid/row
-                               nil
-                               (grid/column
-                                 (grid/column-size {:small 12 :large 3})
-                                 (dom/label nil "Transit number"))
-                               (grid/column
-                                 nil
-                                 (dom/input {:placeholder "12345"
-                                             :type        "text"})))
-                             (grid/row
-                               nil
-                               (grid/column
-                                 (grid/column-size {:small 12 :large 3})
-                                 (dom/label nil "Institution number"))
-                               (grid/column
-                                 nil
-                                 (dom/input {:placeholder "000"
-                                             :type        "text"})))
-                             (grid/row
-                               nil
-                               (grid/column
-                                 (grid/column-size {:small 12 :large 3})
-                                 (dom/label nil "Account number"))
-                               (grid/column
-                                 nil
-                                 (dom/input {:type "text"})))))
-
-
-
+              (let [on-close #(om/update-state! this dissoc :modal :modal-object)
+                    {:stripe.external-account/keys [bank-name currency last4 country default-for-currency?]} modal-object]
+                (common/modal
+                  {:on-close on-close}
                   (dom/div
-                    (css/callout (css/text-align :right))
-                    (dom/p (css/add-class :header))
-                    (dom/a (->> {:onClick #(om/update-state! this dissoc :modal)}
-                                (css/button-hollow)) (dom/span nil "Cancel"))
-                    (dom/a
-                      (->> {:onClick #(om/update-state! this dissoc :modal)}
-                           (css/button)) (dom/span nil "Save"))))))))
+                    nil
+                    (dom/h4 (css/add-class :header) "Your bank account")
+                    (dom/div (css/callout)
+                             (dom/p nil (dom/small nil "Your bank account must be a checking account."))
+                             (dom/p (css/add-class :header))
+                             (grid/row-column
+                               nil
+                               (grid/row
+                                 nil
+                                 (grid/column
+                                   (grid/column-size {:small 12 :large 3})
+                                   (dom/label nil "Currency"))
+                                 (grid/column
+                                   nil
+                                   (dom/select
+                                     (->> {:value    currency
+                                           :disabled true
+                                           :id       (prefixed-id :field.external-account/currency)}
+                                          (css/add-class :currency))
+                                     (dom/option {:value currency} currency))))
+
+                               (grid/row
+                                 nil
+                                 (grid/column
+                                   (grid/column-size {:small 12 :large 3})
+                                   (dom/label nil "Bank country"))
+                                 (grid/column
+                                   nil
+                                   (dom/select {:value    country
+                                                :disabled true
+                                                :id       (prefixed-id :field.external-account/country)}
+                                               (dom/option {:value country} country)))))
+
+                             (grid/row-column
+                               nil
+                               (grid/row
+                                 nil
+                                 (grid/column
+                                   (grid/column-size {:small 12 :large 3})
+                                   (dom/label nil "Transit number"))
+                                 (grid/column
+                                   nil
+                                   (validate/input
+                                     {:placeholder "12345"
+                                      :type        "text"
+                                      :id          (prefixed-id :field.external-account/transit-number)}
+                                     input-validation)))
+                               (grid/row
+                                 nil
+                                 (grid/column
+                                   (grid/column-size {:small 12 :large 3})
+                                   (dom/label nil "Institution number"))
+                                 (grid/column
+                                   nil
+                                   (validate/input
+                                     {:placeholder "000"
+                                      :type        "text"
+                                      :id          (prefixed-id :field.external-account/institution-number)}
+                                     input-validation)))
+                               (grid/row
+                                 nil
+                                 (grid/column
+                                   (grid/column-size {:small 12 :large 3})
+                                   (dom/label nil "Account number"))
+                                 (grid/column
+                                   nil
+                                   (validate/input
+                                     {:type "text"
+                                      :id   (prefixed-id :field.external-account/account-number)}
+                                     input-validation)))))
+
+
+
+                    (dom/div
+                      (css/callout (css/text-align :right))
+                      (dom/p (css/add-class :header))
+                      (dom/a (->> {:onClick on-close}
+                                  (css/button-hollow)) (dom/span nil "Cancel"))
+                      (dom/a
+                        (->> {:onClick #(do
+                                         (.update-bank-account this on-close))}
+                             (css/button)) (dom/span nil "Save")))))))))
 
         (dom/div
           (css/callout)

@@ -1,5 +1,10 @@
 
 #sulo-account-settings {
+	input, select {
+		&[disabled] {
+			background-color: darken($white, 5%);
+		}	
+	}
 	.currency {
 		text-transform: uppercase;
 		font-weight: $global-weight-bold;
@@ -90,9 +95,6 @@
 		select {
 			max-width: 100%;
 			margin-bottom: 0;
-		}
-		input {
-			background: $white;
 		}
 		// display: flex;
 		// align-items: center;

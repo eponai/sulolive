@@ -33,6 +33,7 @@
   (-> stripe-verifications
       (dissoc :field/external-account)
       (merge {:field.external-account/currency           "external_account.currency"
+              :field.external-account/country            "external_account.country"
               :field.external-account/transit-number     "external_account.transit_number"
               :field.external-account/institution-number "external_account.institution_number"
               :field.external-account/account-number     "external_account.account_number"})))
