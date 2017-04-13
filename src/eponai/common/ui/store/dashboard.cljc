@@ -116,6 +116,7 @@
                     {:store/photo [:photo/path]}
                     :store/stripe
                     :store/description
+                    :store/tagline
                     {:store/items [:store.item/uuid
                                    :store.item/name
                                    :store.item/description

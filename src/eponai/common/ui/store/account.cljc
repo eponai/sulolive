@@ -50,7 +50,8 @@
                              :stripe/default-currency
                              :stripe/payout-schedule]}
      {:proxy/activate-account (om/get-query activate/Activate)}
-     {:proxy/payouts (om/get-query payouts/Payouts)}])
+     {:proxy/payouts (om/get-query payouts/Payouts)}
+     {:proxy/general (om/get-query general/General)}])
 
   Object
 
@@ -61,7 +62,7 @@
     {:active-tab    :payouts})
   (render [this]
     (let [{:query/keys [stripe-account]
-           :proxy/keys [activate-account payouts]} (om/props this)
+           :proxy/keys [activate-account payouts general]} (om/props this)
           {:keys [store]} (om/get-computed this)
           {:keys [active-tab]} (om/get-state this)
           accepted-tos? (not (some #(clojure.string/starts-with? % "tos_acceptance") (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed])))]
@@ -111,7 +112,8 @@
                                                              :stripe-account stripe-account})))
 
               (tabs-panel (= active-tab :profile)
-                          (general/public-profile this))
+                          (general/->General (om/computed general
+                                                          {:store store})))
 
               (tabs-panel (= active-tab :shipping)
                           (shipping/shipping-options this))

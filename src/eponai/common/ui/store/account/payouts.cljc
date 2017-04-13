@@ -311,7 +311,7 @@
           (dom/p (css/add-class :header) "Payouts")
           (payout-schedule this))
 
-        (when (> 1 (count external-accounts))
+        (when (< 1 (count external-accounts))
           (dom/div
             (css/callout)
             (default-currency-section this)))

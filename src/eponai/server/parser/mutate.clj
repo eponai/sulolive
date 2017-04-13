@@ -88,6 +88,28 @@
                      :mutation k
                      :auth     auth}))))
 
+(defmutation store.photo/upload
+  [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ {:keys [photo store-id]}]
+  {:success "Photo uploaded"
+   :error   "Could not upload photo :("}
+  {:action (fn []
+             (debug "Upload photo for auth: " auth)
+             ;; TODO: Cache the user-id query for each call to parser and auth, since more mutations
+             ;; and reads will use the user-eid
+             (let [user-eid (query-user-id env)
+                   store-eid (db/one-with (db/db state) {:where   '[[?o :store.owner/user ?u]
+                                                                    [?e :store/owners ?o]]
+                                                         :symbols {'?u user-eid
+                                                                   '?e store-id}})
+                   old-photo (db/pull (db/db state) [:store/photo] store-eid)
+                   s3-photo (f/photo (s3/upload-photo (:system/aws-s3 system) photo))
+                   new-photo (cond-> s3-photo
+                                     (some? (:db/id old-photo))
+                                     (assoc s3-photo :db/id (:db/id old-photo)))]
+               (when (some? store-eid)
+                 (db/transact state [new-photo
+                                     [:db/add store-eid :store/photo (:db/id new-photo)]]))))})
+
 (defmutation stream-token/generate
   [{:keys [state db parser ::parser/return ::parser/exception auth system] :as env} k {:keys [store-id] :as p}]
   {:success return
@@ -121,11 +143,9 @@
   {:success "Your store info was updated"
    :error   "Could not update store info"}
   {:action (fn []
-             (let [{:keys       [db/id]
-                    :store/keys [description]} store
-                   s {:db/id             (:db/id store)
-                      :store/name        (:store/name store)
-                      :store/description (f/str->bytes (quill/sanitize-html (:store/description store)))}]
+             (let [s (-> (select-keys store [:db/id :store/name :store/description :store/tagline])
+                         (update :store/description #(f/str->bytes (quill/sanitize-html %)))
+                         f/remove-nil-keys)]
                (debug "store/update-info with params: " s)
                (db/transact-one state s)))})
 

@@ -59,6 +59,12 @@
   (if target
     {:remote true}))
 
+(defmethod client-mutate 'store.photo/upload
+  [{:keys [target]} _ p]
+  (debug "store.photo/upload with params: " p)
+  (if target
+    {:remote (some? (:photo p))}))
+
 ;; ########### STORE #################
 
 (defmethod client-mutate 'store/update-info

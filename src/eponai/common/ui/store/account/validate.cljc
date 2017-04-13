@@ -36,7 +36,10 @@
               :field.external-account/country            "external_account.country"
               :field.external-account/transit-number     "external_account.transit_number"
               :field.external-account/institution-number "external_account.institution_number"
-              :field.external-account/account-number     "external_account.account_number"})))
+              :field.external-account/account-number     "external_account.account_number"
+
+              :field.general/store-name                  "general.store-name"
+              :field.general/store-tagline               "general.store-tagline"})))
 
 (defn validate
   [spec m & [prefix]]
