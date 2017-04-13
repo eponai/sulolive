@@ -319,13 +319,21 @@
             :stream/store (:db/id s)})
          stores)))
 
+(defn user-no-store []
+  {:db/id       (db/tempid :db.part/user)
+   :user/email  "dev+nostore@sulo.live"
+   :user/photo  (photo "/assets/img/categories/women-clothing.jpg")
+   :user/name   "Storeless"
+   :user/stripe {:stripe/id "cus_AT7bKjMaCIWpei"}})
 
 (defn add-data [conn]
   (let [categories (mock-categories)
         stores (mock-stores)
         chats (mock-chats stores)
-        streams (mock-streams (take 4 stores))]
+        streams (mock-streams (take 4 stores))
+        storeless-user (user-no-store)]
     (db/transact conn categories)
+    (db/transact-one conn storeless-user)
     (debug "Categories added")
     (db/transact conn (concat stores streams chats))
     (debug "Stores with items, chats and streams added")))
