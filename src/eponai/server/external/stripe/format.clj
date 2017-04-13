@@ -44,13 +44,14 @@
        :stripe.legal-entity/type          (keyword (.getType le))})))
 
 (defn stripe->bank-account [^BankAccount ba]
-  {:stripe.external-account/id             (.getId ba)
-   :stripe.external-account/bank-name      (.getBankName ba)
-   :stripe.external-account/routing-number (.getRoutingNumber ba)
-   :stripe.external-account/status         (.getStatus ba)
-   :stripe.external-account/last4          (.getLast4 ba)
-   :stripe.external-account/currency       (.getCurrency ba)
-   :stripe.external-account/country        (.getCountry ba)})
+  {:stripe.external-account/id                   (.getId ba)
+   :stripe.external-account/bank-name            (.getBankName ba)
+   :stripe.external-account/routing-number       (.getRoutingNumber ba)
+   :stripe.external-account/default-for-currency? (.getDefaultForCurrency ba)
+   :stripe.external-account/status               (.getStatus ba)
+   :stripe.external-account/last4                (.getLast4 ba)
+   :stripe.external-account/currency             (.getCurrency ba)
+   :stripe.external-account/country              (.getCountry ba)})
 
 (defn stripe->card [^Card c]
   {:stripe.external-account/id    (.getId c)
@@ -72,7 +73,8 @@
        :stripe/legal-entity      (stripe->legal-entity (.getLegalEntity a))
        :stripe/external-accounts (map ext-account* (.getData (.getExternalAccounts a)))
        :stripe/business-name     (.getBusinessName a)
-       :stripe/business-url      (.getBusinessURL a)})))
+       :stripe/business-url      (.getBusinessURL a)
+       :stripe/default-currency (.getDefaultCurrency a)})))
 
 (defn stripe->price [p]
   (with-precision 10 (/ (bigdec p) 100)))

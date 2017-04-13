@@ -67,7 +67,8 @@
                              :stripe/country
                              :stripe/verification
                              :stripe/legal-entity
-                             :stripe/external-accounts]}
+                             :stripe/external-accounts
+                             :stripe/default-currency]}
      {:proxy/activate-account (om/get-query activate/Activate)}])
 
   Object
@@ -76,7 +77,7 @@
     (debug "Save Legal entity: " le))
 
   (initLocalState [_]
-    {:active-tab    :profile})
+    {:active-tab    :payments})
   (render [this]
     (let [{:query/keys [stripe-account]
            :proxy/keys [activate-account]} (om/props this)
@@ -109,6 +110,9 @@
               (tabs-title this :payments
                           nil
                           (dom/small nil "Payments"))
+              (tabs-title this :payouts
+                          nil
+                          (dom/small nil "Payouts"))
               (tabs-title this :business
                           nil
                           (dom/small nil "Business"))))
@@ -132,14 +136,18 @@
                           (shipping/shipping-options this))
 
               (tabs-panel (= active-tab :payments)
-                          (dom/div
-                            (css/callout)
-                            (dom/p (css/add-class :header) "Payment methods")
-                            (payments/payment-methods this))
-                          (dom/div
-                            (css/callout)
-                            (dom/p (css/add-class :header) "Payouts")
-                            (payments/payouts this)))
+                          ;(dom/div
+                          ;  (css/callout)
+                          ;  (dom/p (css/add-class :header) "Payment methods")
+                          ;  (payments/payment-methods this))
+                          (payments/payouts this))
+
+              (tabs-panel (= active-tab :payouts)
+                          ;(dom/div
+                          ;  (css/callout)
+                          ;  (dom/p (css/add-class :header) "Payment methods")
+                          ;  (payments/payment-methods this))
+                          (payments/payouts this))
 
 
               (tabs-panel (= active-tab :business)

@@ -1,6 +1,13 @@
 
 #sulo-account-settings {
 
+	.currency {
+		text-transform: uppercase;
+		font-weight: $global-weight-bold;
+		.label {
+			border-radius: 4px;
+		}
+	}
 	.payment-methods {
 		display: flex;
 		flex-direction: row;
@@ -29,20 +36,36 @@
 		}
 		// max-width: 2rem;
 	}
+	.external-account-list {
+		// margin-bottom: 1rem;
+	}
 
+.bank-account-container {
+	border: $global-border;
+	border-radius: $global-radius;
+	margin-bottom: 0.5rem;
+}
 	.bank-account {
 		display: flex;
-		padding: 0.5rem 1rem;
-		margin-bottom: 0.5rem;
+		// padding: 0.5rem 1rem;
 		align-items: center;
-		border: $global-border;
-		border-radius: $global-radius;
 		.bank-detail {
 			margin-right: 1rem;
 			font-size: 90%;
+			.label {
+				// background: $white;
+				// color: $dark-gray;
+				// border: $global-border;
+			}
+			i {
+				color: $dark-gray;
+			}
 			&.currency {
 				font-weight: $global-weight-bold;
 				text-transform: uppercase;
+			}
+			&.account {
+				color: $dark-gray;
 			}
 			&.country {
 				text-transform: uppercase;
@@ -52,10 +75,26 @@
 			}
 		}
 	}
+	.payout-schedule-container {
+		// margin: 1rem 0;
+		border: $global-border;
+
+	}
+	.payout-schedule, .bank-account, .default-currency {
+		padding: 0.5rem 1rem;
+	}
 	.payout-schedule {
 		// border: $global-border;
+		// padding: 0;
 		border-radius: $global-radius;
-		display: flex;
+		select {
+			max-width: 100%;
+			margin-bottom: 0;
+		}
+		input {
+			background: $white;
+		}
+		// display: flex;
 		// align-items: center;
 	}
 

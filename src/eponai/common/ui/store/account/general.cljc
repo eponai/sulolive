@@ -10,7 +10,7 @@
 
 (defn label-column [opts & content]
   (grid/column
-    (grid/column-size {:small 12 :large 3})
+    (grid/column-size {:small 12 :large 2})
     content))
 
 (defn public-profile [component]
