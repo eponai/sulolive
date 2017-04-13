@@ -44,14 +44,14 @@
        :stripe.legal-entity/type          (keyword (.getType le))})))
 
 (defn stripe->bank-account [^BankAccount ba]
-  {:stripe.external-account/id                   (.getId ba)
-   :stripe.external-account/bank-name            (.getBankName ba)
-   :stripe.external-account/routing-number       (.getRoutingNumber ba)
+  {:stripe.external-account/id                    (.getId ba)
+   :stripe.external-account/bank-name             (.getBankName ba)
+   :stripe.external-account/routing-number        (.getRoutingNumber ba)
    :stripe.external-account/default-for-currency? (.getDefaultForCurrency ba)
-   :stripe.external-account/status               (.getStatus ba)
-   :stripe.external-account/last4                (.getLast4 ba)
-   :stripe.external-account/currency             (.getCurrency ba)
-   :stripe.external-account/country              (.getCountry ba)})
+   :stripe.external-account/status                (.getStatus ba)
+   :stripe.external-account/last4                 (.getLast4 ba)
+   :stripe.external-account/currency              (.getCurrency ba)
+   :stripe.external-account/country               (.getCountry ba)})
 
 (defn stripe->card [^Card c]
   {:stripe.external-account/id    (.getId c)
@@ -74,7 +74,7 @@
        :stripe/external-accounts (map ext-account* (.getData (.getExternalAccounts a)))
        :stripe/business-name     (.getBusinessName a)
        :stripe/business-url      (.getBusinessURL a)
-       :stripe/default-currency (.getDefaultCurrency a)})))
+       :stripe/default-currency  (.getDefaultCurrency a)})))
 
 (defn stripe->price [p]
   (with-precision 10 (/ (bigdec p) 100)))
@@ -97,24 +97,34 @@
 ;
 ; :field/external-account             "external_account"}
 
-(defn input->account-params [account-params]
-  (let [{:field/keys [legal-entity external-account tos-acceptance]} account-params
-        {:field.legal-entity/keys [type address business-name business-tax-id first-name last-name dob]} legal-entity
+(defn input->legal-entity [legal-entity]
+  (let [{:field.legal-entity/keys [type address business-name business-tax-id first-name last-name dob]} legal-entity
         {:field.legal-entity.address/keys [line1 postal city state]} address
-        {:field.legal-entity.dob/keys [day month year]} dob]
-    {:legal_entity     {:first_name first-name
-                        :last_name  last-name
-                        :dob        {:day   day
-                                     :month month
-                                     :year  year}
-                        :address    {:city        city
-                                     :line1       line1
-                                     :postal_code postal
-                                     :state       state}
-                        :type       (name type)}
-     :external_account external-account
-     :tos_acceptance   {:date (:field.tos-acceptance/date tos-acceptance)
-                        :ip   (:field.tos-acceptance/ip tos-acceptance)}}))
+        {:field.legal-entity.dob/keys [day month year]} dob
+        ]
+    (f/remove-nil-keys
+      {:first_name first-name
+       :last_name  last-name
+       :dob        (f/remove-nil-keys
+                     {:day   day
+                      :month month
+                      :year  year})
+       :address    (f/remove-nil-keys
+                     {:city        city
+                      :line1       line1
+                      :postal_code postal
+                      :state       state})
+       :type       (when (some? type) (name type))})))
+
+(defn input->account-params [account-params]
+  (let [{:field/keys [legal-entity external-account tos-acceptance default-currency]} account-params]
+    (f/remove-nil-keys
+      {:legal_entity     (input->legal-entity legal-entity)
+       :external_account external-account
+       :tos_acceptance   (f/remove-nil-keys
+                           {:date (:field.tos-acceptance/date tos-acceptance)
+                            :ip   (:field.tos-acceptance/ip tos-acceptance)})
+       :default_currency default-currency})))
 
 (defn input->price [p]
   (when p

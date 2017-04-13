@@ -12,6 +12,7 @@
     [eponai.common.ui.store.account.business :as business]
     [eponai.common.ui.store.account.general :as general]
     [eponai.common.ui.store.account.payments :as payments]
+    [eponai.common.ui.store.account.payouts :as payouts]
     [eponai.common.ui.store.account.shipping :as shipping]
     #?(:cljs
        [eponai.web.utils :as utils])
@@ -69,7 +70,8 @@
                              :stripe/legal-entity
                              :stripe/external-accounts
                              :stripe/default-currency]}
-     {:proxy/activate-account (om/get-query activate/Activate)}])
+     {:proxy/activate-account (om/get-query activate/Activate)}
+     {:proxy/payouts (om/get-query payouts/Payouts)}])
 
   Object
 
@@ -77,10 +79,10 @@
     (debug "Save Legal entity: " le))
 
   (initLocalState [_]
-    {:active-tab    :payments})
+    {:active-tab    :payouts})
   (render [this]
     (let [{:query/keys [stripe-account]
-           :proxy/keys [activate-account]} (om/props this)
+           :proxy/keys [activate-account payouts]} (om/props this)
           {:keys [store]} (om/get-computed this)
           {:keys [active-tab]} (om/get-state this)
           accepted-tos? (not (some #(clojure.string/starts-with? % "tos_acceptance") (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed])))]
@@ -95,7 +97,7 @@
             (grid/column-size {:small 12 :medium 3 :large 2})
             (menu/vertical
               (css/add-class :tabs)
-              (when-not accepted-tos?
+              (when-not false                               ;accepted-tos?
                 (tabs-title this :activate
                             (css/add-class :activate)
                             (dom/i {:classes ["fa fa-check fa-fw"]})
@@ -140,14 +142,16 @@
                           ;  (css/callout)
                           ;  (dom/p (css/add-class :header) "Payment methods")
                           ;  (payments/payment-methods this))
-                          (payments/payouts this))
+                          (payments/payment-methods this))
 
               (tabs-panel (= active-tab :payouts)
                           ;(dom/div
                           ;  (css/callout)
                           ;  (dom/p (css/add-class :header) "Payment methods")
                           ;  (payments/payment-methods this))
-                          (payments/payouts this))
+                          (payouts/->Payouts (om/computed payouts
+                                                          {:store store
+                                                           :stripe-account stripe-account})))
 
 
               (tabs-panel (= active-tab :business)

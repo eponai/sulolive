@@ -1,11 +1,11 @@
 
 #sulo-account-settings {
-
 	.currency {
 		text-transform: uppercase;
 		font-weight: $global-weight-bold;
 		.label {
 			border-radius: 4px;
+
 		}
 	}
 	.payment-methods {
@@ -157,6 +157,14 @@
 				margin-bottom: 0;
 			}
 			border: none !important;
+		}
+		.callout.notification {
+			background: $white;
+			margin: 0;
+			&.success {
+				color: map-get($foundation-palette, success);
+			} 
+			padding: 0.5rem 0;
 		}
 	}
 }
