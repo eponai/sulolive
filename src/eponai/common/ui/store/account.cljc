@@ -23,28 +23,6 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.store.account.validate :as v]))
 
-;(defn legal-entity []
-;  #?(:cljs
-;     (let [{:stripe.legal-entity/keys     [first-name last-name]
-;            :stripe.legal-entity.dob/keys [year month day]} form-elements
-;           y (c/parse-long-safe (utils/input-value-by-id year))
-;           m (c/parse-long-safe (utils/input-value-by-id month))
-;           d (c/parse-long-safe (utils/input-value-by-id day))
-;           fn (utils/input-value-by-id first-name)
-;           ln (utils/input-value-by-id last-name)
-;
-;           dob (when (or y m d)
-;                 {:stripe.legal-entity.dob/year  y
-;                  :stripe.legal-entity.dob/month m
-;                  :stripe.legal-entity.dob/day   d})]
-;       (not-empty
-;         (f/remove-nil-keys
-;           {:stripe.legal-entity/first_name fn
-;            :stripe.legal-entity/last_name  ln
-;            :stripe.legal-entity/dob        dob})))))
-
-
-
 (defn tabs-panel [is-active? & content]
   (dom/div
     (cond->> (css/add-class :tabs-panel)
@@ -69,7 +47,8 @@
                              :stripe/verification
                              :stripe/legal-entity
                              :stripe/external-accounts
-                             :stripe/default-currency]}
+                             :stripe/default-currency
+                             :stripe/payout-schedule]}
      {:proxy/activate-account (om/get-query activate/Activate)}
      {:proxy/payouts (om/get-query payouts/Payouts)}])
 

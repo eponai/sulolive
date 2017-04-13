@@ -1,5 +1,6 @@
 (ns eponai.common.ui.store.account.payouts
   (:require
+    [clojure.string :as string]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.store.account.validate :as v]
@@ -19,8 +20,31 @@
 (defn prefixed-id [k]
   (str prefix-key (get v/form-inputs k)))
 
+(defn label-column [& content]
+  (grid/column
+    (grid/column-size {:small 12 :large 3})
+    content))
+
+(defn payout-schedule-info [interval week-anchor month-anchor delay-days]
+  (let [capitalized (when week-anchor (string/capitalize week-anchor))]
+    (cond (= interval "daily")
+          (str "Every day, we'll bundle your transactions for the day and deposit them in your bank account " delay-days " days later.")
+
+          (= interval "weekly")
+          (str "Every week, all available payments will be deposited in your account on " capitalized ". (Your available balance will include payments made in the week prior to the previous " capitalized ".) ")
+
+          (= interval "monthly")
+          (str "Every month, all available payments will be deposited in your account on the " month-anchor " day of the month. (Your available balance will include payments made " delay-days " days before your scheduled transfer day.)"))))
+
 (defn payout-schedule [component]
-  (let [{:keys [modal]} (om/get-state component)]
+  (let [{:keys                 [modal]
+         :payout-schedule/keys [interval month-anchor week-anchor]} (om/get-state component)
+        {:keys [stripe-account]} (om/get-computed component)
+        {:stripe/keys [payout-schedule]} stripe-account
+        {:stripe.payout-schedule/keys [delay-days]} payout-schedule
+        interval (or interval (:stripe.payout-schedule/interval payout-schedule) "daily")
+        week-anchor (or week-anchor (:stripe.payout-schedule/week-anchor payout-schedule) "monday")
+        month-anchor (or month-anchor (:stripe.payout-schedule/month-anchor payout-schedule) "1")]
     (dom/div
       nil
       (grid/row
@@ -39,18 +63,15 @@
                 nil
                 (dom/div
                   (css/add-class :payout-schedule)
-                  (dom/span nil "Daily - 7 day rolling basis")))
-              ;(dom/input
-              ;  {:disabled true
-              ;   :type "text"
-              ;   :value "Daily - 7 day rolling basis"})
-              ;(dom/select {:defaultValue "daily"}
-              ;            (dom/option {:value "daily"}
-              ;                        (dom/span nil "Daily"))
-              ;            (dom/option {:value "weekly"}
-              ;                        (dom/strong nil "Weekly"))
-              ;            (dom/option {:value "monthly"}
-              ;                        (dom/strong nil "Monthly")))
+                  (let [{:stripe.payout-schedule/keys [interval month-anchor week-anchor]} payout-schedule
+                        anchor (cond (= interval "monthly")
+                                     month-anchor
+                                     (= interval "weekly")
+                                     (string/capitalize week-anchor))]
+                    (dom/span nil (str (string/capitalize (or interval ""))
+                                       (when anchor
+                                         (str " (" anchor ")"))
+                                       " - " delay-days " day rolling basis")))))
 
               (grid/column
                 (css/add-class :shrink)
@@ -67,18 +88,71 @@
             (dom/div
               nil
               (dom/h4 (css/add-class :header) "Change payout schedule")
-              (dom/p nil (dom/small nil "Every day, we'll bundle your transactions for the day and deposit them in your bank account 7 days later. The very first payout Stripe makes to your bank can take up to 10 days to post outside of the US or Canada."))
-              (dom/select {:defaultValue "daily"}
-                          (dom/option {:value "daily"} "Daily")
-                          (dom/option {:value "weekly"} "Weekly")
-                          (dom/option {:value "monthly"} "Monthly"))
+              (dom/p nil (dom/small nil (payout-schedule-info interval week-anchor month-anchor delay-days)))
+              (dom/div
+                (css/callout)
+                (dom/p (css/add-class :header)))
+              (grid/row
+                nil
+                (label-column
+                  nil
+                  (dom/label nil "Payout interval"))
+                (grid/column
+                  nil
+                  (dom/select {:defaultValue interval
+                               :onChange     #(om/update-state! component (fn [s]
+                                                                            (let [{:payout-schedule/keys [month-anchor week-anchor]} s
+                                                                                  interval (.. % -target -value)]
+                                                                              (cond-> (assoc s :payout-schedule/interval interval)
+                                                                                      (and (= interval "weekly")
+                                                                                           (nil? week-anchor))
+                                                                                      (assoc :payout-schedule/week-anchor "monday")
+                                                                                      (and (= interval "monthly")
+                                                                                           (nil? month-anchor))
+                                                                                      (assoc :payout-schedule/month-anchor "1")))))}
+                              (dom/option {:value "daily"} "Daily")
+                              (dom/option {:value "weekly"} "Weekly")
+                              (dom/option {:value "monthly"} "Monthly"))))
+              (cond (= interval "weekly")
+                    (grid/row
+                      nil
+                      (label-column
+                        nil
+                        (dom/label nil "Payout day"))
+                      (grid/column
+                        nil
+                        (dom/select {:defaultValue week-anchor
+                                     :onChange     #(om/update-state! component assoc :payout-schedule/week-anchor (.. % -target -value))}
+                                    (dom/option {:value "monday"} "Monday")
+                                    (dom/option {:value "tuesday"} "Tuesday")
+                                    (dom/option {:value "wednesday"} "Wednesday")
+                                    (dom/option {:value "thursday"} "Thursday")
+                                    (dom/option {:value "friday"} "Friday")
+                                    (dom/option {:value "saturday"} "Saturday")
+                                    (dom/option {:value "sunday"} "Sunday"))))
+                    (= interval "monthly")
+                    (grid/row
+                      nil
+                      (label-column
+                        nil
+                        (dom/label nil "Payout day"))
+                      (grid/column
+                        nil
+                        (dom/select {:defaultValue month-anchor
+                                     :onChange     #(om/update-state! component assoc :payout-schedule/month-anchor (.. % -target -value))}
+                                    (map (fn [i]
+                                           (let [day (str (inc i))]
+                                             (dom/option {:value day} day)))
+                                         (range 31))))))
               (dom/div
                 (css/callout (css/text-align :right))
                 (dom/p (css/add-class :header))
                 (dom/a (->> {:onClick #(om/update-state! component dissoc :modal)}
                             (css/button-hollow)) (dom/span nil "Cancel"))
                 (dom/a
-                  (->> {:onClick #(om/update-state! component dissoc :modal)}
+                  (->> {:onClick #(do
+                                   (.update-payout-schedule component interval week-anchor month-anchor)
+                                   (om/update-state! component dissoc :modal))}
                        (css/button)) (dom/span nil "Save"))))))))))
 
 (defn default-currency-section [component]
@@ -202,6 +276,19 @@
                                                         :query/stripe-account]))
                              (on-close)))))
          (om/update-state! this assoc :input-validation validation))))
+
+  (update-payout-schedule [this interval week-anchor month-anchor]
+    #?(:cljs
+       (let [{:keys [store]} (om/get-computed this)
+             schedule (cond-> {:field.payout-schedule/interval     interval}
+                              (= interval "weekly")
+                              (assoc :field.payout-schedule/week-anchor  week-anchor)
+                              (= interval "monthly")
+                              (assoc :field.payout-schedule/month-anchor month-anchor))]
+         (msg/om-transact! this `[(stripe/update-account
+                                    ~{:account-params {:field/payout-schedule schedule}
+                                      :store-id (:db/id store)})
+                                  :query/stripe-account]))))
   (render [this]
     (let [{:keys [modal modal-object input-validation]} (om/get-state this)
           {:keys [stripe-account]} (om/get-computed this)

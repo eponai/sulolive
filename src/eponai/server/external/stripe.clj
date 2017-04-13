@@ -173,4 +173,5 @@
 
 (s/def :ext.stripe.params/update-account (s/keys :opt-un
                                                  [:ext.stripe/legal_entity
-                                                  :ext.stripe/default_currency]))
+                                                  :ext.stripe/default_currency
+                                                  :ext.stripe/payout_schedule]))

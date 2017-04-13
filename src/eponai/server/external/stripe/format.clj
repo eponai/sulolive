@@ -2,7 +2,7 @@
   (:require [eponai.common.format :as f]
             [eponai.common :as c])
   (:import
-    (com.stripe.model OrderItem Order ShippingDetails Address Product SKU Account Account$Verification LegalEntity BankAccount LegalEntity$DateOfBirth CountrySpec VerificationFields VerificationFieldsDetails ExternalAccount Card)))
+    (com.stripe.model OrderItem Order ShippingDetails Address Product SKU Account Account$Verification LegalEntity BankAccount LegalEntity$DateOfBirth CountrySpec VerificationFields VerificationFieldsDetails ExternalAccount Card AccountTransferSchedule)))
 
 (defn stripe->verification-fields [^VerificationFields v]
   (let [min-fields (fn [^VerificationFieldsDetails field-details]
@@ -65,7 +65,12 @@
                                            (stripe->bank-account ea)
                                            (= "card")
                                            (stripe->card ea))]
-                         (assoc account :stripe.external-account/object object)))]
+                         (assoc account :stripe.external-account/object object)))
+        payout-schedule* (fn [^AccountTransferSchedule ats]
+                           {:stripe.payout-schedule/interval     (.getInterval ats)
+                            :stripe.payout-schedule/month-anchor (.getMonthlyAnchor ats)
+                            :stripe.payout-schedule/week-anchor  (.getWeeklyAnchor ats)
+                            :stripe.payout-schedule/delay-days (.getDelayDays ats)})]
     (f/remove-nil-keys
       {:stripe/id                (.getId a)
        :stripe/country           (.getCountry a)
@@ -74,7 +79,9 @@
        :stripe/external-accounts (map ext-account* (.getData (.getExternalAccounts a)))
        :stripe/business-name     (.getBusinessName a)
        :stripe/business-url      (.getBusinessURL a)
-       :stripe/default-currency  (.getDefaultCurrency a)})))
+       :stripe/default-currency  (.getDefaultCurrency a)
+       :stripe/payouts-enabled?  (.getTransfersEnabled a)
+       :stripe/payout-schedule   (payout-schedule* (.getTransferSchedule a))})))
 
 (defn stripe->price [p]
   (with-precision 10 (/ (bigdec p) 100)))
@@ -116,15 +123,23 @@
                       :state       state})
        :type       (when (some? type) (name type))})))
 
+(defn input->payout-schedule [ps]
+  (let [{:field.payout-schedule/keys [interval month-anchor week-anchor]} ps]
+    (f/remove-nil-keys
+      {:interval interval
+       :monthly_anchor month-anchor
+       :weekly_anchor week-anchor})))
+
 (defn input->account-params [account-params]
-  (let [{:field/keys [legal-entity external-account tos-acceptance default-currency]} account-params]
+  (let [{:field/keys [legal-entity external-account tos-acceptance default-currency payout-schedule]} account-params]
     (f/remove-nil-keys
       {:legal_entity     (input->legal-entity legal-entity)
        :external_account external-account
        :tos_acceptance   (f/remove-nil-keys
                            {:date (:field.tos-acceptance/date tos-acceptance)
                             :ip   (:field.tos-acceptance/ip tos-acceptance)})
-       :default_currency default-currency})))
+       :default_currency default-currency
+       :payout_schedule  (input->payout-schedule payout-schedule)})))
 
 (defn input->price [p]
   (when p
