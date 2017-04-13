@@ -1,29 +1,213 @@
+
 #sulo-account-settings {
-	.row .row .row {
-		margin-bottom: 1rem;
-		.row {
-			margin-bottom: 0;
+	input, select {
+		&[disabled] {
+			background-color: darken($white, 5%);
+		}	
+	}
+	.currency {
+		text-transform: uppercase;
+		font-weight: $global-weight-bold;
+		.label {
+			border-radius: 4px;
+
 		}
 	}
+	.payment-methods {
+		display: flex;
+		flex-direction: row;
+	}
+	// .row .row {
+	// 	margin-bottom: 1rem;
+	// }
 
+	label {
+		@include breakpoint(large) {
+			text-align: right;
+		}
+	}
+	input.tagline-input {
+		font-style: italic;
+		// &::placeholder {
+			// font-style: italic;
+		// }
+	}
+	.icon {
+		$size: 32px;
+		margin-right: 0.5rem;
+		svg {
+			width: $size;
+			height: $size;
+		}
+		// max-width: 2rem;
+	}
+	.external-account-list {
+		// margin-bottom: 1rem;
+	}
+
+.bank-account-container {
+	border: $global-border;
+	border-radius: $global-radius;
+	margin-bottom: 0.5rem;
+}
 	.bank-account {
 		display: flex;
-		padding: 0.5rem 1rem;
-		$border: 1px solid $light-gray;
-		border: $border;
-		border-top: none;
-		&:first-child {
-			border-top: $border;
-		}
+		// padding: 0.5rem 1rem;
+		align-items: center;
 		.bank-detail {
 			margin-right: 1rem;
+			font-size: 90%;
+			.label {
+				background: $white;
+				color: $primary-color;
+				// border: $global-border;
+				border: 1px solid $primary-color;
+			}
+			i {
+				color: $primary-color;
+			}
 			&.currency {
 				font-weight: $global-weight-bold;
+				text-transform: uppercase;
+			}
+			&.account {
+				color: $dark-gray;
+			}
+			&.country {
+				text-transform: uppercase;
+			}
+			&.bank-name {
+				text-transform: uppercase;
 			}
 		}
+	}
+	.payout-schedule-container {
+		// margin: 1rem 0;
+		border: $global-border;
+		font-size: 95%;
+		// font-weight: $global-weight-bold;
+
+	}
+	.payout-schedule, .bank-account, .default-currency {
+		padding: 0.5rem 1rem;
+	}
+	.payout-schedule {
+		// border: $global-border;
+		// padding: 0;
+		border-radius: $global-radius;
+		select {
+			max-width: 100%;
+			margin-bottom: 0;
+		}
+		// display: flex;
+		// align-items: center;
 	}
 
 	.profile-photo-edit {
 		background: $light-gray;
+	}
+
+	.tabs {
+		border-right: none;
+		a {
+			color: $dark-gray;
+			background: transparent;
+		}
+		li {
+			margin-right: 0.5rem;
+			border-right: 2px solid transparent;
+			transition: border .25s ease-in-out;
+			// border-bottom: $global-border;
+			// padding: 0.25rem 0;
+			// border-right: none;
+
+			&:last-child {
+				border: none;
+				border-right: 2px solid transparent;
+			}
+			a {
+				transition: all .25s ease-in-out;
+			}
+			&.is-active, &:hover {
+				border-right: 2px solid $primary-color;
+				a {
+					color: $black;
+				}
+			}
+			&.is-active a {
+				font-weight: $global-weight-bold;
+			}
+			&.activate  {
+				border-bottom: $global-border;
+				a {
+					font-weight: $global-weight-bold;
+				}
+			}
+		}
+	}
+	.tabs-content {
+		margin-top: 1rem;
+		padding: 0.5rem;
+		@include breakpoint(medium) {
+			margin-top: 0;
+		}
+		border: $global-border;
+		.callout {
+			padding: 0;
+			margin-bottom: 2.5rem;
+			&:last-child {
+				margin-bottom: 0;
+			}
+			.button {
+				margin-bottom: 0;
+			}
+			border: none !important;
+		}
+		.callout.notification {
+			background: $white;
+			margin: 0;
+			&.success {
+				color: map-get($foundation-palette, success);
+			} 
+			padding: 0.5rem 0;
+		}
+	}
+	.reveal .callout {
+		margin-bottom: 1rem;
+		.error-message {
+			color: map-get($foundation-palette, alert);
+		}
+		.header {
+			margin-bottom: 1rem;
+		}
+	}
+}
+
+#sulo-activate-account-form {
+	input, select {
+		// max-width: 20rem;
+		margin: 0;
+		&[disabled] {
+			background: $white;
+			font-weight: $global-weight-bold;
+		}
+	}
+	p a {
+		text-decoration: underline; 
+	}
+	.business-type {
+		label {
+			color: $black;
+			font-weight: $global-weight-normal;
+		}
+	}
+	.callout > .row {
+		margin-bottom: 1rem;
+		.row {
+			margin-bottom: 1rem;
+		}
+	}
+	.callout.alert {
+		padding: 1rem;
 	}
 }

@@ -46,8 +46,8 @@
   #?(:cljs
      (let [{:keys [uploaded-photo quill-editor]} (om/get-state component)
            {:keys [input-price input-name input-sku-price input-sku-value input-sku-quantity]} form-elements]
-       {:name        (utils/input-value-by-id input-name)
-        :price       (utils/input-value-by-id input-price)
+       {:name        (utils/input-value-or-nil-by-id input-name)
+        :price       (utils/input-value-or-nil-by-id input-price)
         :currency    "CAD"
         :photo       uploaded-photo
         :description (quill/get-contents quill-editor)})))

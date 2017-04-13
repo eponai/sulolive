@@ -193,8 +193,8 @@
   (create-order [this]
     #?(:cljs
        (let [{:keys [order-id store-id action]} (get-route-params this)
-             order {:currency (utils/input-value-by-id (:input-currency form-elements))
-                    :amount   (utils/input-value-by-id (:input-price form-elements))}]
+             order {:currency (utils/input-value-or-nil-by-id (:input-currency form-elements))
+                    :amount   (utils/input-value-or-nil-by-id (:input-price form-elements))}]
          (msg/om-transact! this `[(store/create-order
                                     ~{:order    order
                                       :store-id store-id})

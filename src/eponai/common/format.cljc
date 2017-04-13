@@ -36,7 +36,7 @@
        :clj  (apply str (map char bytes)))))
 
 (defn remove-nil-keys [m]
-  (into {} (remove (fn [[k v]] (nil? v)) m)))
+  (not-empty (into {} (remove (fn [[k v]] (nil? v)) m))))
 
 ;; -------------------------- Database entities -----------------------------
 

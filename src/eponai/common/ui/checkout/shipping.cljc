@@ -115,13 +115,13 @@
        [this]
        (let [{:address/keys [street1 street2 postal locality region country full-name]} shipping-opts
              {:keys [on-change]} (om/get-computed this)
-             shipping {:address/full-name (web-utils/input-value-by-id (:id full-name))
-                       :address/street1   (web-utils/input-value-by-id (:id street1))
-                       :address/street2   (web-utils/input-value-by-id (:id street2))
-                       :address/locality  (web-utils/input-value-by-id (:id locality))
-                       :address/country   (web-utils/input-value-by-id (:id country))
-                       :address/region    (web-utils/input-value-by-id (:id region))
-                       :address/postal    (web-utils/input-value-by-id (:id postal))}
+             shipping {:address/full-name (web-utils/input-value-or-nil-by-id (:id full-name))
+                       :address/street1   (web-utils/input-value-or-nil-by-id (:id street1))
+                       :address/street2   (web-utils/input-value-or-nil-by-id (:id street2))
+                       :address/locality  (web-utils/input-value-or-nil-by-id (:id locality))
+                       :address/country   (web-utils/input-value-or-nil-by-id (:id country))
+                       :address/region    (web-utils/input-value-or-nil-by-id (:id region))
+                       :address/postal    (web-utils/input-value-or-nil-by-id (:id postal))}
              validation-err (s/explain-data :shipping/address shipping)]
          (when (nil? validation-err)
            (when on-change

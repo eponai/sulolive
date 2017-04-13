@@ -51,18 +51,15 @@
   "Menu item representing a tab in some sort of stateful situation.
 
   Opts
-  :active? - Whether this tab is in an active state.
-  :on-click - Function called when item is clicked, this can be used to update any state.
+  :is-active? - Whether this tab is in an active state.
 
   See item for general opts."
-  [{:keys [classes active? on-click href]} & content]
+  [{:keys [is-active?] :as opts} & content]
   (item*
-    {:classes (cond-> (conj classes ::css/tabs-title)
-                      active?
-                      (conj ::css/is-active))}
-    (apply dom/a {:onClick       on-click
-                  :href href
-                  :aria-selected (boolean active?)} content)))
+    (cond->> (css/add-class ::css/tabs-title (dissoc opts :is-active?))
+             is-active?
+             (css/add-class ::css/is-active))
+    content))
 
 (defn item-link
   "Menu item containing an anchor link.

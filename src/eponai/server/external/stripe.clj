@@ -27,7 +27,19 @@
     (create-account [_ params]
       (debug "DEV - Fake Stripe: create-account with params: " params))
     (get-account [_ params]
-      (debug "DEV - Fake Stripe: get-acconunt with params: " params))
+      {:stripe/id                "acct_19k3ozC0YaFL9qxh"
+       :stripe/country           "CA"
+       :stripe/legal-entity      {:stripe.legal-entity/first-name "First"
+                                  :stripe.legal-entity/last-name  "Last"
+                                  :stripe.legal-entity/dob        {:stripe.legal-entity.dob/year  1970
+                                                                   :stripe.legal-entity.dob/month 1
+                                                                   :stripe.legal-entity.dob/day   1}}
+       :stripe/external-accounts [{:stripe.external-account/currency  "CAD"
+                                   :stripe.external-account/bank-name "Wells Fargo"
+                                   :stripe.external-account/last4     "1234"
+                                   :stripe.external-account/country   "CA"}] ;(map stripe->bank-account (.getExternalAccounts a))
+       :stripe/business-name     "My business Name"
+       :stripe/business-url      "My business URL"})
     (create-customer [_ _ params]
       (debug "DEV - Fake Stripe: create-customer with params: " params))
     p/IStripeAccount
@@ -49,6 +61,9 @@
     (pay-order [this account-secret order-id source])
     (update-order [this account-secret order-id params])))
 
+(defn get-country-spec [stripe code]
+  (p/get-country-spec stripe code))
+
 (defn get-account [stripe account-id]
   (p/get-account stripe account-id))
 
@@ -56,8 +71,11 @@
   (p/create-account stripe params))
 
 (defn update-account [stripe account-id params]
-  (s/assert :ext.stripe.params/update-account params)
-  (p/update-account stripe account-id params))
+  (let [account (f/input->account-params params)]
+    (debug "Update account params: " params)
+    (debug "Update account: " account)
+    (s/assert :ext.stripe.params/update-account account)
+    (p/update-account stripe account-id account)))
 
 (defn create-product [stripe account-secret params]
   (s/assert :ext.stripe.params/create-product params)
@@ -140,11 +158,20 @@
 (s/def :ext.stripe.legal-entity.dob/day number?)
 (s/def :ext.stripe.legal-entity/first_name string?)
 (s/def :ext.stripe.legal-entity/last_name string?)
+(s/def :ext.stripe.legal-entity/type (s/and string? #(contains? #{"individual" "company"} %)))
+
+(s/def :ext.stripe/default_currency (s/and string? #(= 3 (count %))))
+
 (s/def :ext.stripe.legal-entity/dob (s/keys :req-un [:ext.stripe.legal-entity.dob/year
                                                      :ext.stripe.legal-entity.dob/month
                                                      :ext.stripe.legal-entity.dob/day]))
+
 (s/def :ext.stripe/legal_entity (s/keys :opt-un [:ext.stripe.legal-entity/first_name
                                                  :ext.stripe.legal-entity/last_name
+                                                 :ext.stripe.legal-entity/type
                                                  :ext.stripe.legal-entity/dob]))
+
 (s/def :ext.stripe.params/update-account (s/keys :opt-un
-                                                 [:ext.stripe/legal_entity]))
+                                                 [:ext.stripe/legal_entity
+                                                  :ext.stripe/default_currency
+                                                  :ext.stripe/payout_schedule]))

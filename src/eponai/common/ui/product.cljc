@@ -48,7 +48,7 @@
      :active-photo-index 0})
 
   (add-to-bag [this]
-    #?(:cljs (let [selected-sku (web-utils/input-value-by-id (:selected-sku form-elements))]
+    #?(:cljs (let [selected-sku (web-utils/input-value-or-nil-by-id (:selected-sku form-elements))]
                (debug "Selected sku value: " selected-sku)
                (when (some? selected-sku)
                  (om/transact! this `[(shopping-bag/add-item ~{:sku selected-sku})

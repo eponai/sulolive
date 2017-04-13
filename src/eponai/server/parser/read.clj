@@ -90,6 +90,10 @@
   [env _ {:keys [store-id]}]
   {:value (store/account env store-id)})
 
+(defmethod server-read :query/stripe-country-spec
+  [{:keys [system ast target db query]} _ _]
+  {:value (stripe/get-country-spec (:system/stripe system) "CA")})
+
 ;(defmethod server-read :query/stripe
 ;  [{:keys [db db-history query system auth]} _ _]
 ;  (debug "SYSTEM: " system)

@@ -307,8 +307,6 @@
           {:query/keys [cart auth current-route top-categories]} (om/props this)
           {:keys [route route-params]} current-route]
 
-      (debug "Navbar categories: " top-categories)
-      (debug "Route: " route)
       (dom/header #js {:id "sulo-navbar"}
                   (dom/div #js {:className "navbar-container"}
                     (dom/div #js {:className "top-bar navbar"}

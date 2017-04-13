@@ -50,10 +50,23 @@
   ([el classname]
    (not-empty (first (input-values-by-class el classname)))))
 
+(defn selected-value-by-id [id]
+  (let [el (element-by-id id)]
+    (when el
+      (not-empty (.-value el)))))
+
 (defn input-value-by-id [id]
   (let [el (element-by-id id)]
     (when el
       (not-empty (.-value el)))))
+
+(defn input-value-or-nil-by-id [id]
+  (not-empty (input-value-by-id id)))
+
+(defn input-checked-by-id? [id]
+  (let [el (element-by-id id)]
+    (when el
+      (.-checked el))))
 
 (defn fullscreen-element []
   ;(let [document js/document])

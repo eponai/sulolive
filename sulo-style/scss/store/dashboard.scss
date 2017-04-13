@@ -37,15 +37,20 @@
 }
 
 #sulo-store-dashboard {
+	$dashboard-max-width: 75rem;
+	h3 {
+		font-family: $header-font-family-serif;
+	}
 	#sulo-navbar .navbar-container {
 		box-shadow: none;
 		border-bottom: 1px solid $light-gray;
 	}
-	.row {
-		max-width: 80rem;
-	}
+
 	#sulo-navbar {
 		position: absolute;
+	}
+	.row {
+		max-width: $dashboard-max-width;
 	}
 
 	#store-navbar {
@@ -69,7 +74,7 @@
 		width: 100%;
 		height: 2.5rem;
 		.navbar {
-			max-width: 80rem;
+			max-width: $dashboard-max-width;
 			margin: 0 auto;
 			height: 100%;
 		}
@@ -91,6 +96,11 @@
 					color: $black;
 				}
 			}
+			&.is-active {
+				a {
+					font-weight: $global-weight-bold;
+				}
+			}
 		}
 	}
 
@@ -104,7 +114,7 @@
 			// margin: 2rem 0;
 		// }
 		.callout {
-			border: 1px solid $light-gray;
+			border: $global-border;
 			// box-shadow: 0 1px 2px 0 rgba($primary-color, 0.1);
 			padding: 0.5rem;
 			@include breakpoint(medium) {
@@ -115,9 +125,9 @@
 			}
 			.header {
 				font-weight: $global-weight-bold;
-				border-bottom: 1px solid $light-gray;
-				padding-bottom: 0.5rem;
-				margin-bottom: 2rem;
+				border-bottom: $global-border;
+				// padding-bottom: 0.5rem;
+				margin-bottom: 1.5rem;
 			}
 		}
 		.photo-section {
@@ -170,7 +180,7 @@
 		// background: rgba($color, 0.03);
 	}
 	.navbar, footer, .footer .row {
-		max-width: 80rem;
+		max-width: $dashboard-max-width;
 	}
 
 	.profile-photo-container {

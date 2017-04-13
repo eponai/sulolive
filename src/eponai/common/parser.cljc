@@ -428,6 +428,7 @@
                            (map? ret)
                            (merge ret)))
                  (catch ExceptionInfo ex
+                   (.printStackTrace ex)
                    (throw (ex-info (medley/ex-message ex)
                                    (assoc (ex-data ex)
                                      ::mutation-message (x->message ex)))))
