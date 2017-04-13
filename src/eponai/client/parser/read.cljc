@@ -255,9 +255,14 @@
 
 (defmethod client-read :routing/store-dashboard
   [{:keys [db] :as env} k p]
-  (let [current-route (client.routes/current-route db)]
-    (debug "Reading routing/store-dashboard: " [k :route current-route])
-    (parser.util/read-union env k p (:route current-route))))
+  (let [current-route (client.routes/current-route db)
+        parse-route (fn [route]
+                      (let [ns (namespace route)
+                            subroute (name route)
+                            path (clojure.string/split subroute #"#")]
+                        (keyword ns (first path))))]
+    (debug "Reading routing/store-dashboard: " [k :route current-route (parse-route (:route current-route))])
+    (parser.util/read-union env k p (parse-route (:route current-route)))))
 
 (defmethod client-read :query/business-model
   [e k p]

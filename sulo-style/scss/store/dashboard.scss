@@ -96,6 +96,11 @@
 					color: $black;
 				}
 			}
+			&.is-active {
+				a {
+					font-weight: $global-weight-bold;
+				}
+			}
 		}
 	}
 

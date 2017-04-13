@@ -56,7 +56,7 @@
           (common/loading-spinner))
         (dom/div
           (css/callout)
-          ;(dom/p (css/add-class :header) "Profile photo")
+          (dom/p (css/add-class :header) "Store information")
           (grid/row
             (css/align :center)
             (grid/column
@@ -65,9 +65,7 @@
               (if (some? (:location uploaded-photo))
                 (photo/circle {:src (:location uploaded-photo)})
                 (photo/store-photo store))
-              ;(dom/a (->> {:onClick #(om/update-state! this :modal :photo-upload)}
-              ;            (css/button-hollow)) "Upload Photo")
-              ;(when (= modal :photo-upload))
+
               #?(:cljs
                  (pu/->PhotoUploader
                    (om/computed
@@ -76,14 +74,6 @@
                                          (om/update-state! this assoc :uploaded-photo photo))}))))))
         (dom/div
           (css/callout)
-          ;(dom/p (css/add-class :header) "Public information")
-
-          ;(css/align :center)
-          ;(grid/column
-          ;  (->> (css/text-align :center)
-          ;       (grid/column-size {:small 6 :medium 4 :large 3}))
-          ;  (photo/store-photo store)
-          ;  (dom/a (css/button-hollow) "Upload Photo"))
 
           (grid/row
             nil

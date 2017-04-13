@@ -33,6 +33,12 @@
 (defn get-route-params [component]
   (get-in (om/props component) [:query/current-route :route-params]))
 
+(defn parse-route [route]
+  (let [ns (namespace route)
+        subroute (name route)
+        path (clojure.string/split subroute #"#")]
+    (keyword ns (first path))))
+
 (defn sub-navbar [component]
   (let [{:query/keys [current-route store]} (om/props component)
         {:keys [route]} current-route
@@ -73,7 +79,7 @@
                      (my-dom/i
                        (css/hide-for nav-breakpoint {:classes [:fa :fa-file-text-o :fa-fw]}))))
                  (menu/item
-                   (when (= route :store-dashboard/settings)
+                   (when (= (parse-route route) :store-dashboard/settings)
                      (css/add-class ::css/is-active))
                    (my-dom/a
                      (css/add-class :category {:href (routes/url :store-dashboard/settings {:store-id store-id})})
@@ -145,15 +151,14 @@
           store-id (:db/id store)
           ;; Implement a :query/stream-by-store-id ?
           stream-state (-> store :stream/_store first :stream/state)]
-      (debug "Stream-state: " stream-state)
-      (debug "Store: " store)
+
       (common/page-container
         {:navbar navbar
          :id     "sulo-store-dashboard"}
         (sub-navbar this)
         (if-not (= route :store-dashboard)
           ;; Dispatch on the routed component:
-          (let [{:keys [component computed-fn factory]} (get route-map route)
+          (let [{:keys [component computed-fn factory]} (get route-map (parse-route route))
                 factory (or factory (om/factory component))
                 routed-props (:routing/store-dashboard props)]
             (factory (om/computed routed-props (computed-fn (assoc props :store store :route-params route-params)))))
