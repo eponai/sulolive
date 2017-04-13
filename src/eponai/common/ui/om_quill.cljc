@@ -35,8 +35,9 @@
 
 (defn toolbar-opts []
   #?(:cljs
-     (clj->js [[{"size" ["small" false "large"]}],
-               ["bold", "italic", "underline", "strike"],
+     (clj->js [
+               ;[{"size" ["small" false "large"]}],
+               ["bold", "italic", "underline"],
                [{"list" "ordered"}, {"list" "bullet"}],
                [{"align" []}]
                ;["link"],
@@ -47,9 +48,9 @@
   Object
   (componentDidMount [this]
     (let [{:keys [on-editor-created]} (om/get-computed this)
-          {:keys [content placeholder theme]} (om/props this)]
+          {:keys [content placeholder theme id]} (om/props this)]
       #?(:cljs
-         (let [element (.getElementById js/document "quill-editor")
+         (let [element (.getElementById js/document (str id "-quill-editor"))
                editor (js/Quill. element (clj->js
                                            {:theme       (or theme "snow")
                                             :modules     {:toolbar (toolbar-opts)}
@@ -63,8 +64,9 @@
            (when on-editor-created
              (on-editor-created editor))))))
   (render [this]
-    (dom/div #js {:id "quill-editor-container" :className "rich-text-input"}
-      (dom/div #js {:id "quill-editor" :className "sl-quill-editor"}))))
+    (let [{:keys [id]} (om/props this)]
+      (dom/div #js {:id (str id "-quill-editor-container") :className "sl-quill-editor-container rich-text-input"}
+        (dom/div #js {:id (str id "-quill-editor") :className "sl-quill-editor"})))))
 
 (def ->QuillEditor (om/factory QuillEditor))
 

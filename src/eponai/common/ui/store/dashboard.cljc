@@ -116,6 +116,7 @@
                     {:store/photo [:photo/path]}
                     :store/stripe
                     :store/description
+                    :store/return-policy
                     :store/tagline
                     {:store/items [:store.item/uuid
                                    :store.item/name

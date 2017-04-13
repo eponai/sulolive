@@ -28,23 +28,26 @@
      :query/messages])
   Object
   (save-store [this]
-    #?(:cljs (let [{:keys [uploaded-photo quill-editor]} (om/get-state this)
+    #?(:cljs (let [{:keys [uploaded-photo]
+                    :quill/keys [about return-policy]} (om/get-state this)
                    {:keys [store]} (om/get-computed this)
 
                    store-name (utils/input-value-by-id (:field.general/store-name v/form-inputs))
                    store-tagline (utils/input-value-by-id (:field.general/store-tagline v/form-inputs))
-                   store-description (quill/get-HTML quill-editor)]
+                   store-description (quill/get-HTML about)
+                   store-return-policy (quill/get-HTML return-policy)]
                (msg/om-transact! this [(list 'store/update-info {:db/id             (:db/id store)
                                                                  :store/name        store-name
                                                                  :store/tagline     store-tagline
-                                                                 :store/description store-description})
+                                                                 :store/description store-description
+                                                                 :store/return-policy store-return-policy})
                                        (list 'store.photo/upload {:photo uploaded-photo :store-id (:db/id store)})
                                        :query/store]))))
   (render [this]
     (let [{:keys [modal uploaded-photo]} (om/get-state this)
           {:proxy/keys [photo-upload]} (om/props this)
           {:keys [store]} (om/get-computed this)
-          {:store/keys [description]} store
+          {:store/keys [description return-policy]} store
           update-msg (msg/last-message this 'store/update-info)
           photo-msg (msg/last-message this 'store.photo/upload)]
       (dom/div
@@ -74,49 +77,63 @@
         (dom/div
           (css/callout)
           ;(dom/p (css/add-class :header) "Public information")
+
+          ;(css/align :center)
+          ;(grid/column
+          ;  (->> (css/text-align :center)
+          ;       (grid/column-size {:small 6 :medium 4 :large 3}))
+          ;  (photo/store-photo store)
+          ;  (dom/a (css/button-hollow) "Upload Photo"))
+
           (grid/row
             nil
-            ;(css/align :center)
-            ;(grid/column
-            ;  (->> (css/text-align :center)
-            ;       (grid/column-size {:small 6 :medium 4 :large 3}))
-            ;  (photo/store-photo store)
-            ;  (dom/a (css/button-hollow) "Upload Photo"))
+            (label-column
+              nil
+              (dom/label nil "Store name"))
             (grid/column
-              (grid/column-size {:small 12})
-              (grid/row
-                nil
-                (label-column
-                  nil
-                  (dom/label nil "Store name"))
-                (grid/column
-                  nil
-                  (dom/input {:type         "text"
-                              :id           (:field.general/store-name v/form-inputs)
-                              :defaultValue (:store/name store)})))
-              (grid/row
-                nil
-                (label-column
-                  nil
-                  (dom/label nil "Short description"))
-                (dom/div
-                  (css/grid-column)
-                  (dom/input
-                    (->> {:type         "text"
-                          :placeholder  "Keep calm and wear pretty jewelry"
-                          :id           (:field.general/store-tagline v/form-inputs)
-                          :defaultValue (:store/tagline store)}
-                         (css/add-class :tagline-input)))))
-              (grid/row
-                nil
-                (label-column
-                  nil
-                  (dom/label nil "About"))
-                (grid/column
-                  nil
-                  (quill/->QuillEditor (om/computed {:content     (f/bytes->str description)
-                                                     :placeholder "What's your story?"}
-                                                    {:on-editor-created #(om/update-state! this assoc :quill-editor %)})))))))
+              nil
+              (dom/input {:type         "text"
+                          :id           (:field.general/store-name v/form-inputs)
+                          :defaultValue (:store/name store)})))
+          (grid/row
+            nil
+            (label-column
+              nil
+              (dom/label nil "Short description"))
+            (dom/div
+              (css/grid-column)
+              (dom/input
+                (->> {:type         "text"
+                      :placeholder  "Keep calm and wear pretty jewelry"
+                      :id           (:field.general/store-tagline v/form-inputs)
+                      :defaultValue (:store/tagline store)}
+                     (css/add-class :tagline-input)))))
+          (grid/row
+            nil
+            (label-column
+              nil
+              (dom/label nil "About"))
+            (grid/column
+              nil
+              (quill/->QuillEditor (om/computed {:content     (f/bytes->str description)
+                                                 :placeholder "What's your story?"
+                                                 :id          "about"}
+                                                {:on-editor-created #(om/update-state! this assoc :quill/about %)})))))
+        (dom/div
+          (css/callout)
+          (dom/p (css/add-class :header) "Return policy")
+
+          (grid/row
+            nil
+            (label-column
+              nil
+              (dom/label nil "Policy"))
+            (grid/column
+              nil
+              (quill/->QuillEditor (om/computed {:content     (f/bytes->str return-policy)
+                                                 :placeholder ""
+                                                 :id          "return-policy"}
+                                                {:on-editor-created #(om/update-state! this assoc :quill/return-policy %)})))))
         (dom/div
           (css/callout)
           (dom/p (css/add-class :header))

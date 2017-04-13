@@ -77,7 +77,7 @@
             (grid/column-size {:small 12 :medium 3 :large 2})
             (menu/vertical
               (css/add-class :tabs)
-              (when-not false                               ;accepted-tos?
+              (when-not accepted-tos?
                 (tabs-title this :activate
                             (css/add-class :activate)
                             (dom/i {:classes ["fa fa-check fa-fw"]})

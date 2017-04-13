@@ -77,22 +77,15 @@
                         :field/external-account {:field.external-account/institution-number institution
                                                  :field.external-account/transit-number     transit
                                                  :field.external-account/account-number     account}}
-             validation (v/validate :account/activate input-map)
-             ]
-         (debug "Validation: " validation)
+             validation (v/validate :account/activate input-map)]
          (when (nil? validation)
            (.setPublishableKey js/Stripe stripe-key)
-           (debug "Stripe token params; " {:country        (:stripe/country stripe-account)
-                                           :currency       currency
-                                           :routing_number (str transit institution)
-                                           :account_number account})
            (.createToken js/Stripe.bankAccount
                          #js {:country        (:stripe/country stripe-account)
                               :currency       currency
                               :routing_number (str transit institution)
                               :account_number account}
                          (fn [status response]
-                           (debug "Stripe token: " response)
                            (when (= status 200)
                              (let [token (.-id response)
                                    ip (.-client_ip response)
@@ -121,8 +114,8 @@
           {:keys [stripe-account]} (om/get-computed this)
           fields-needed (minimum-fields stripe-country-spec entity-type)
           message (msg/last-message this 'stripe/update-account)]
-      (debug "Country spec: " stripe-country-spec)
-      (debug "Last message: " message)
+
+
       (dom/div
         {:id "sulo-activate-account-form"}
         (cond (msg/final? message)

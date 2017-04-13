@@ -38,9 +38,8 @@
                          :field.legal-entity/first-name first-name
                          :field.legal-entity/last-name  last-name}
            validation (v/validate :field/legal-entity legal-entity prefix-key)]
-       (debug "Legal entity validation: " validation)
        (when (nil? validation)
-         (.save-legal-entity component))
+         (.save-legal-entity component legal-entity))
        (om/update-state! component assoc :business/input-validation validation))))
 
 (defn account-details [component]
@@ -50,7 +49,7 @@
         legal-entity (:stripe/legal-entity stripe-account)
         {:stripe.legal-entity/keys [address type first-name last-name business-name]} legal-entity
         {:stripe.legal-entity.address/keys [line1 postal city state]} address]
-    (debug "Form inputs: " v/form-inputs)
+
     (dom/div
       nil
       (dom/div

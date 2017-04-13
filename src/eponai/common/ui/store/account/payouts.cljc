@@ -253,28 +253,23 @@
                                                  :field.external-account/institution-number institution
                                                  :field.external-account/transit-number     transit}}
              validation (v/validate :account/activate input-map prefix-key)]
-         (debug "Account: " input-map)
-         (debug "Validation: " validation)
+
          (when (nil? validation)
            (.setPublishableKey js/Stripe stripe-key)
-           (debug "Stripe token params; " {:country        country
-                                           :currency       currency
-                                           :routing_number (str transit institution)
-                                           :account_number account})
            (.createToken js/Stripe.bankAccount
                          #js {:country        country
                               :currency       currency
                               :routing_number (str transit institution)
                               :account_number account}
                          (fn [status response]
-                           (debug "Stripe token: " response)
                            (when (= status 200)
                              (let [token (.-id response)]
                                (msg/om-transact! this `[(stripe/update-account
                                                           ~{:account-params {:field/external-account token}
                                                             :store-id       (:db/id store)})
-                                                        :query/stripe-account]))
-                             (on-close)))))
+                                                        :query/stripe-account])
+                               (on-close)))
+                           (om/update-state! this assoc :stripe-validation (.-error response)))))
          (om/update-state! this assoc :input-validation validation))))
 
   (update-payout-schedule [this interval week-anchor month-anchor]
@@ -290,7 +285,7 @@
                                       :store-id (:db/id store)})
                                   :query/stripe-account]))))
   (render [this]
-    (let [{:keys [modal modal-object input-validation]} (om/get-state this)
+    (let [{:keys [modal modal-object input-validation stripe-validation]} (om/get-state this)
           {:keys [stripe-account]} (om/get-computed this)
           {:stripe/keys [external-accounts default-currency]} stripe-account
           message (msg/last-message this 'stripe/update-account)]
@@ -371,7 +366,7 @@
                   (css/button-hollow)
                   (dom/span nil "Add bank account..."))))
             (when (= modal :bank-account)
-              (let [on-close #(om/update-state! this dissoc :modal :modal-object)
+              (let [on-close #(om/update-state! this dissoc :modal :modal-object :stripe-validation)
                     {:stripe.external-account/keys [bank-name currency last4 country default-for-currency?]} modal-object]
                 (common/modal
                   {:on-close on-close}
@@ -450,22 +445,27 @@
 
 
                     (dom/div
-                      (css/callout (css/text-align :right))
+                      (css/callout)
                       (dom/p (css/add-class :header))
-                      (dom/a (->> {:onClick on-close}
-                                  (css/button-hollow)) (dom/span nil "Cancel"))
-                      (dom/a
-                        (->> {:onClick #(do
-                                         (.update-bank-account this on-close))}
-                             (css/button)) (dom/span nil "Save")))))))))
+                      (dom/div
+                        (css/add-class :error-message)
+                        (dom/p nil (dom/small nil (when stripe-validation (.-message stripe-validation)))))
+                      (dom/div
+                        (css/text-align :right)
+                        (dom/a (->> {:onClick on-close}
+                                    (css/button-hollow)) (dom/span nil "Cancel"))
+                        (dom/a
+                          (->> {:onClick #(do
+                                           (.update-bank-account this on-close))}
+                               (css/button)) (dom/span nil "Save"))))))))))
 
-        (dom/div
-          (css/callout)
-          (dom/p (css/add-class :header))
-          ;(dom/div
-          ;  (css/text-align :right)
-          ;  (dom/a (css/button) (dom/span nil "Save")))
-          )
+        ;(dom/div
+        ;  (css/callout)
+        ;  (dom/p (css/add-class :header))
+        ;  ;(dom/div
+        ;  ;  (css/text-align :right)
+        ;  ;  (dom/a (css/button) (dom/span nil "Save")))
+        ;  )
         ))))
 
 (def ->Payouts (om/factory Payouts))

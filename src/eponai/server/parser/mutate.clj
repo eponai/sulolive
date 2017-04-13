@@ -143,8 +143,9 @@
   {:success "Your store info was updated"
    :error   "Could not update store info"}
   {:action (fn []
-             (let [s (-> (select-keys store [:db/id :store/name :store/description :store/tagline])
+             (let [s (-> (select-keys store [:db/id :store/name :store/description :store/tagline :store/return-policy])
                          (update :store/description #(f/str->bytes (quill/sanitize-html %)))
+                         (update :store/return-policy #(f/str->bytes (quill/sanitize-html %)))
                          f/remove-nil-keys)]
                (debug "store/update-info with params: " s)
                (db/transact-one state s)))})

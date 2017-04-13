@@ -21,10 +21,16 @@
 
 (defn about-section [component]
   (let [{:query/keys [store]} (om/props component)
-        {:store/keys [description]} store]
+        {:store/keys [description return-policy]} store]
     (grid/row-column
       nil
-      (quill/->QuillRenderer {:html (f/bytes->str description)}))))
+      (dom/div
+        (css/callout)
+        (quill/->QuillRenderer {:html (f/bytes->str description)}))
+      (dom/div
+        (css/callout)
+        (dom/p (css/add-class :header) "Return policy")
+        (quill/->QuillRenderer {:html (f/bytes->str return-policy)})))))
 
 (defui Store
   static om/IQuery
@@ -39,6 +45,7 @@
                     ;{:store/items (om/get-query item/Product)}
                     {:stream/_store [:stream/state :stream/title]}
                     :store/description
+                    :store/return-policy
                     :store/tagline
                     :store/name]}
      {:query/store-items (om/get-query item/Product)}

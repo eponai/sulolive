@@ -1,5 +1,5 @@
 $editor-font-family: $header-font-family-sans-serif;//$header-font-family-serif;
-.ql-editor, #quill-editor-container .ql-editor {
+.ql-editor, .sl-quill-editor-container .ql-editor {
 	font-family: $editor-font-family;
 	strong {
 		// font-weight: bold;
@@ -9,12 +9,12 @@ $editor-font-family: $header-font-family-sans-serif;//$header-font-family-serif;
 	}
 }
 #sulo-store-dashboard {
-	#quill-editor-container {
+	.sl-quill-editor-container {
 		border: $global-border;
 	}
 }
 
-#quill-editor-container {
+.sl-quill-editor-container {
 	min-height: 23rem;
 	display: flex;
 	flex-direction: column;
