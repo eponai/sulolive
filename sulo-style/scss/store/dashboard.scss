@@ -37,7 +37,7 @@
 }
 
 #sulo-store-dashboard {
-	label {
+	.callout label {
 		@include breakpoint(large) {
 			text-align: right;
 		}

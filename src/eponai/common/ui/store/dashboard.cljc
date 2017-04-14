@@ -63,7 +63,9 @@
                               (my-dom/i
                                 (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]}))))
                  (menu/item
-                   (when (= route :store-dashboard/product-list)
+                   (when (or (= route :store-dashboard/product-list)
+                             (= route :store-dashboard/product)
+                             (= route :store-dashboard/create-product))
                      (css/add-class ::css/is-active))
                    (my-dom/a
                      (css/add-class :category {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
@@ -71,7 +73,8 @@
                      (my-dom/i
                        (css/hide-for nav-breakpoint {:classes [:fa :fa-gift :fa-fw]}))))
                  (menu/item
-                   (when (= route :store-dashboard/order-list)
+                   (when (or (= route :store-dashboard/order-list)
+                             (= route :store-dashboard/order))
                      (css/add-class ::css/is-active))
                    (my-dom/a
                      (css/add-class :category {:href (routes/url :store-dashboard/order-list {:store-id store-id})})

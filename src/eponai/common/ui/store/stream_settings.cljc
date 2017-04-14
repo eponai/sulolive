@@ -161,7 +161,7 @@
                                                             :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))}))
                                 (my-dom/div (->> (css/grid-column)
                                                  (css/add-class :shrink))
-                                            (dom/a #js {:className "button hollow primary large"
+                                            (dom/a #js {:className "button hollow primary"
                                                         :onClick   #(chat/send-message this)}
                                                    (dom/i #js {:className "fa fa-send-o fa-fw"})))))
                             ;(dom/input #js {:type "text"

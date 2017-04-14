@@ -79,6 +79,29 @@
     (grid/column-size {:small 12 :large 2} opts)
     content))
 
+(defn photo-uploader [component id]
+  (let [{:keys [did-mount?]} (om/get-state component)
+        {:proxy/keys [photo-upload]} (om/props component)]
+    (debug "photo uploader setting id: " photo-upload)
+    (when did-mount?
+      #?(:cljs
+         (pu/->PhotoUploader (om/computed
+                               photo-upload
+                               {:on-photo-queue  (fn [img-result]
+                                                   ;(debug "Got photo: " photo)
+                                                   (om/update-state! component assoc :queue-photo img-result :uploaded-photo nil))
+                                :on-photo-upload (fn [photo]
+                                                   (om/update-state! component assoc :uploaded-photo photo :queue-photo nil))
+                                :id id
+                                :hide-label? true}))))))
+
+(defn empty-photo-button []
+  (dom/div
+    (css/add-class :empty-photo)
+    (dom/div
+      nil
+      (dom/i {:classes ["fa fa-plus fa-4x"]}))))
+
 (defui ProductEditForm
   static om/IQuery
   (query [_]
@@ -136,6 +159,7 @@
           delete-resp (msg/last-message this 'store/delete-product)
           is-loading? (or (message-pending-fn update-resp) (message-pending-fn create-resp) (message-pending-fn delete-resp))
           ]
+      (debug "UPLOADED PHOTO: " uploaded-photo)
       (dom/div
         {:id "sulo-edit-product"}
         (when (or (not did-mount?) is-loading?)
@@ -157,7 +181,7 @@
               (dom/h3 nil "New product")
               (dom/div
                 nil
-                (dom/h3 nil (dom/span nil "Edit product - ") (dom/small nil (str item-name " asdskdfbds kfjs kfjskf bdbf jshdb jfhb sdjfhb sdjbfjsh "))))))
+                (dom/h3 nil (dom/span nil "Edit product - ") (dom/small nil item-name)))))
           (grid/column
             (css/text-align :right)
             (when-not (is-new-product? this)
@@ -180,7 +204,7 @@
                 nil
                 (dom/input {:id           (get form-elements :input-name)
                             :type         "text"
-                            :defaultValue (or item-name "")})))
+                            :defaultValue item-name})))
 
             (grid/row
               nil
@@ -197,13 +221,14 @@
             (callout/header nil "Pricing")
             (grid/row
               nil
+              (label-column
+                nil
+                (dom/label nil "Price"))
               (grid/column
                 nil
                 (grid/row
                   nil
-                  (label-column
-                    nil
-                    (dom/label nil "Price"))
+
                   (grid/column
                     nil
                     (dom/input {:id           (get form-elements :input-price)
@@ -211,14 +236,8 @@
                                 :step         "0.01"
                                 :min          0
                                 :max          "99999999.99"
-                                :defaultValue (or price "")}))))
-              (grid/column
-                nil
-                (grid/row
-                  nil
-                  (label-column
-                    nil
-                    (dom/label nil "Price"))
+                                :defaultValue (or price "")}))
+
                   (grid/column
                     nil
                     (dom/select {:defaultValue "usd"}
@@ -226,68 +245,92 @@
 
           (callout/callout
             nil
-            (callout/header nil "Images")
+            (callout/header nil "Photos")
 
             (grid/row
               (->> (css/add-class :photo-section)
                    (grid/columns-in-row {:small 3 :medium 4 :large 5}))
-              (grid/column
-                nil
-                (if-let [photo-url (or (:location uploaded-photo) (:photo/path (first photos)))]
-                  (photo/square {:src photo-url})
-                  (if-let [queue-url queue-photo]
-                    (photo/with-overlay
+              (map-indexed
+                (fn [i p]
+                  (let [file-id (str "file-" i)]
+                    (grid/column
                       nil
-                      (photo/square {:src queue-url})
-                      (dom/i {:classes ["fa fa-spinner fa-spin fa-2x"]}))
-                    (dom/label
-                      {:htmlFor "file" :classes ["button secondary hollow expanded upload-button"]}
-                      ;(if loading?
-                      ;  (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"}))
-                      (dom/div nil
-                               (dom/i {:classes ["fa fa-plus fa-3x"]})))))
-                (when did-mount?
-                  #?(:cljs
-                     (pu/->PhotoUploader (om/computed
-                                           photo-upload
-                                           {:on-photo-queue  (fn [img-result]
-                                                               ;(debug "Got photo: " photo)
-                                                               (om/update-state! this assoc :queue-photo img-result :uploaded-photo nil))
-                                            :on-photo-upload (fn [photo]
-                                                               (om/update-state! this assoc :uploaded-photo photo :queue-photo nil))})))))))
+                      (dom/label
+                        {:htmlFor file-id}
+                        (if-let [photo-url (or (:location uploaded-photo) (:photo/path p))]
+                          (if queue-photo
+                            (photo/with-overlay
+                              nil
+                              (photo/square {:src photo-url})
+                              (dom/i {:classes ["fa fa-spinner fa-spin"]}))
+                            (photo/square {:src photo-url}))))
+                      (photo-uploader this (str i)))))
+                (if uploaded-photo
+                  [uploaded-photo]
+                  (take 1 photos)))
+              (when (> 1 (count (conj photos uploaded-photo)))
+                (grid/column
+                  nil
+                  ;(photo/product-photo nil)
+                  (dom/label
+                    {:htmlFor (str "file-" (count photos))}
+                    (empty-photo-button)
+                    (photo-uploader this (count photos)))))))
 
 
           (callout/callout
             nil
             (callout/header nil "Inventory")
-            (grid/row
-              nil
-              (grid/column
+            (if (< 2 (count skus))
+              (dom/div
                 nil
-                (dom/label nil "Variation"))
-              (grid/column
+                (grid/row
+                  nil
+                  (grid/column
+                    nil
+                    (dom/label nil "Variation"))
+                  (grid/column
+                    nil
+                    (dom/label nil "Availability")))
+                (map
+                  (fn [sku]
+                    (let [{:store.item.sku/keys [inventory variation]} sku
+                          {:store.item.sku.inventory/keys [type value]} inventory]
+                      (grid/row
+                        (->> {:id (str (:store.item.sku/uuid sku))}
+                             (css/add-class :input-sku-group))
+                        (grid/column
+                          nil
+                          (dom/input
+                            (->> {:type         "text"
+                                  :defaultValue (or variation "")}
+                                 (css/add-class :input-sku-value))))
+                        (grid/column
+                          nil
+                          (dom/input
+                            (->> {:type         "number"
+                                  :defaultValue (or value "")
+                                  :placeholder  "Unlimited"}
+                                 (css/add-class :input-sku-quantity)))))))
+                  skus))
+              (dom/div
                 nil
-                (dom/label nil "Quantity")))
-            (map-indexed
-              (fn [i sku]
-                (let [{:store.item.sku/keys [price value quantity]} sku]
-                  (grid/row
-                    (->> {:id (str (:store.item.sku/uuid sku))}
-                         (css/add-class :input-sku-group))
-                    (grid/column
-                      nil
-                      (dom/input
-                        (->> {:type         "text"
-                              :defaultValue (or value "")}
-                             (css/add-class :input-sku-value))))
-                    (grid/column
-                      nil
-                      (dom/input
-                        (->> {:type         "number"
-                              :defaultValue (or quantity "")
-                              :placeholder  "Unlimited"}
-                             (css/add-class :input-sku-quantity)))))))
-              skus)))
+                (grid/row
+                  nil
+                  (label-column nil
+                                (dom/label nil "Availability"))
+                  (grid/column
+                    nil
+                    (dom/select {:defaultValue "in-stock"}
+                                (dom/option {:value "in-stock"} "In stock")
+                                (dom/option {:value "out-of-stock"} "Out of stock")
+                                (dom/option {:value "limited"} "Limited"))))
+                (grid/row
+                  nil
+                  (label-column nil)
+                  (grid/column
+                    nil
+                    (dom/a (css/button-hollow) (dom/span nil "Add variation..."))))))))
         (grid/row-column
           (css/text-align :right)
           (dom/a

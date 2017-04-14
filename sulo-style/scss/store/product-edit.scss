@@ -7,7 +7,7 @@
 		}
 	}
 
-	input[type="number"] {
+	input[type="number"], select {
 		max-width: 20rem;
 	}
 	.breadcrumbs {
@@ -22,6 +22,40 @@
 			&::-webkit-input-placeholder {
 				color: $body-font-color;
 			}
+		}
+	}
+	.photo {
+		&:hover {
+			cursor: pointer;
+		}
+	}
+	.empty-photo {
+		position: relative;
+		border: $global-border;
+		width: 100%;
+		padding-top: 100%;
+		color: $medium-gray;
+		transition: all .25s ease-in-out;
+		&:hover {
+			cursor: pointer;
+			color: $dark-gray;
+			border-color: $dark-gray;
+		}
+		> div {
+			position: absolute;
+			top: 0;
+			left: 0;
+			height: 100%;
+			width: 100%;
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			justify-content: center;
+		}
+	}
+	.photo-uploader {
+		label {
+			display: none !important;
 		}
 	}
 }

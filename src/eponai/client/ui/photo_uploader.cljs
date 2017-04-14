@@ -125,8 +125,8 @@
 
   (render [this]
     (let [{:query/keys [auth]} (om/props this)
-          {:keys [loading? validation] :as state} (om/get-state this)]
-      (debug "Authenticated user: " auth)
+          {:keys [loading? validation] :as state} (om/get-state this)
+          {:keys [id hide-label?]} (om/get-computed this)]
       (dom/div
         #js {:className "photo-uploader text-center"}
 
@@ -134,10 +134,11 @@
         ;  (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"}))
         (dom/p nil (dom/label #js {:className (if (nil? validation) "hide" "is-invalid-label")}
                               "Sorry, your photo is too large. Please select a photo of max 5MB."))
-        (dom/label #js {:htmlFor "file" :className "button hollow expanded"}
-                   (if loading?
-                     (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"})
-                     "Upload Photo"))
+        (when-not hide-label?
+          (dom/label #js {:htmlFor (str "file-" id) :className "button hollow expanded"}
+                     (if loading?
+                       (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"})
+                       "Upload Photo")))
         ;(apply dom/ul nil (map (fn [{:keys [file response] :as upload}]
         ;                         (debug "Upload: " upload)
         ;                         (dom/li nil
@@ -145,7 +146,7 @@
         (dom/input #js {:type      "file"
                         :value     ""
                         :name      "file"
-                        :id        "file"
+                        :id        (str "file-" id)
                         :accept    "image/jpeg"
                         :onChange  #(when-not loading? (queue-file % this state))
                         :className "show-for-sr"})))))
