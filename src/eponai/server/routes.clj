@@ -19,7 +19,9 @@
     [om.next :as om]
     [eponai.server.external.stripe :as stripe]
     [eponai.server.websocket :as websocket]
-    [eponai.server.ui.root :as root]))
+    [eponai.server.ui.root :as root]
+    [eponai.common.routes :as routes]
+    [eponai.common.database :as db]))
 
 (defn html [& path]
   (-> (clj.string/join "/" path)
@@ -82,8 +84,12 @@
 (defn bidi-route-handler [route]
   ;; Currently all routes render the same way.
   ;; Enter route specific stuff here.
-  (fn [request]
-    (server.ui/render-site (request->props (assoc request :handler route)))))
+  (let [auth-roles (routes/auth-roles route)
+        redirect-route (routes/redirect-route route)]
+    (fn [request]
+      (if (auth/has-auth? (db/db (::m/conn request)) auth-roles (:identity request) (:route-params request))
+        (server.ui/render-site (request->props (assoc request :handler route)))
+        (r/redirect (routes/path redirect-route))))))
 
 (defroutes
   member-routes

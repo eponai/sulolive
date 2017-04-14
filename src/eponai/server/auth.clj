@@ -9,7 +9,9 @@
     [ring.util.response :as r]
     [eponai.server.datomic.format :as f]
     [eponai.server.external.auth0 :as auth0]
-    [eponai.common.database :as db]))
+    [eponai.common.database :as db]
+    [eponai.common.routes :as routes]
+    [eponai.common :as c]))
 
 (def restrict buddy/restrict)
 
@@ -82,3 +84,40 @@
 (defn logout [request]
   (-> (r/redirect "/coming-soon")
       (assoc-in [:cookies auth-token-cookie-name] {:value "kill" :max-age 1})))
+
+;; TODO: Might want to structure this differently.
+;;       Because how do we query "which role does this user have for which parameters?"
+;;       We'd want, User has ::exact-user role for :user-id [123]
+;;                  User has ::store-owner role for :store-id [234 345]?
+;;      This might not be useful.
+(defn auth-query [roles {:keys [email]} params]
+  (let [roles (cond-> roles
+                      (keyword? roles) (hash-set)
+                      (sequential? roles) (set))
+        user-id (when (::routes/user roles)
+                  (c/parse-long-safe
+                    (or (:user-id params)
+                        (get-in params [:user :db/id]))))
+        store-id (when (::routes/store-owner roles)
+                   (c/parse-long-safe
+                     (or (:store-id params)
+                         (get-in params [:store :db/id]))))]
+
+    (when (and (seq roles) (string? email))
+      (cond-> {:find    '[?user .]
+               :where   '[[?user :user/email ?email]]
+               :symbols {'?email email}}
+              (some? user-id)
+              (db/merge-query {:symbols {'?user user-id}})
+              (some? store-id)
+              (db/merge-query {:where   '[[?store :store/owners ?owner]
+                                          [?owner :store.owner/user ?user]]
+                               :symbols {'?store store-id}})))))
+
+(defn has-auth? [db roles auth params]
+  (let [role (cond-> roles (not (keyword? roles)) (first))]
+    (if (= ::routes/public role)
+      true
+      (when-let [query (auth-query roles auth params)]
+        (debug "query: " query " role: " roles)
+        (some? (db/find-with db query))))))

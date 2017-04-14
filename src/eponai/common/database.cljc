@@ -198,13 +198,15 @@
 
 (defn merge-query
   "Preforms a merge of two query maps with :where and :symbols."
-  [base {:keys [find] :as addition}]
+  [base {:keys [find where symbols] :as addition}]
   {:pre [(map? base) (map? addition)]}
-  (-> base
-      (update :where concat (:where addition))
-      (update :symbols merge (:symbols addition))
-      (cond-> (some? find)
-              (assoc :find find))))
+  (cond-> base
+          (seq where)
+          (update :where into where)
+          (seq symbols)
+          (update :symbols merge symbols)
+          (some? find)
+          (assoc :find find)))
 
 ;; Common usages:
 

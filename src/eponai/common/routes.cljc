@@ -54,6 +54,23 @@
         "settings"                    :settings
         "auth"                        :auth}])
 
+(defn auth-roles [handler]
+  (cond
+    (= handler :store-dashboard)
+    ::store-owner
+    (= (namespace handler) "store-dashboard")
+    ::store-owner
+    (#{:user/profile :user/order :user/order-list} handler)
+    ::user
+    (= handler :checkout)
+    ::user
+    :else
+    ::public))
+
+(defn redirect-route [handler]
+  ;; Everything goes back to index for now.
+  :index)
+
 (defn path
   "Takes a route and its route-params and returns a path"
   ([route] (path route nil))
