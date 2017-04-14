@@ -1,4 +1,18 @@
 #sulo-edit-product {
+	h3 {
+		@include wrap-text;
+		small {
+			text-transform: none;
+			// @include wrap-text;
+		}
+	}
+
+	input[type="number"] {
+		max-width: 20rem;
+	}
+	.breadcrumbs {
+		margin-top: -1rem;
+	}
 	.input-sku-group {
 		padding: 1rem 0;
 		margin-bottom: 0.5rem;

@@ -82,25 +82,21 @@
   {:db/id      (d/tempid :db.part/user)
    :photo/path url})
 
-(defn product [params]
-  (cond-> {:db/id            (d/tempid :db.part/user)
-           :store.item/name  (:name params)
-           :store.item/uuid  (:id params)}
-          (some? (:description params))
-          (assoc :store.item/description (.getBytes (:description params)))
-          (some? (:price params))
-          (assoc :store.item/price (bigdec (:price params)))))
-
-(defn sku [{:keys [id value type quantity price]}]
-  (cond-> {:db/id                (d/tempid :db.part/user)
-           :store.item.sku/uuid  id
-           :store.item.sku/value value}
-          (some? quantity)
-          (assoc :store.item.sku/quantity (bigdec quantity))))
+(defn sku [s]
+  (-> (select-keys s [:db/id :store.item.sku/uuid :store.item.sku/variation])
+      common.format/add-tempid))
 
 (defn input->price [price]
   (when price
-    (* 100 (bigdec price))))
+    (bigdec price)))
+
+(defn product [params]
+  (-> (select-keys params [:db/id :store.item/name :store.item/description :store.item/price :store.item/uuid])
+      ;(update :store.item/skus #(map sku %))
+      (update :store.item/description #(when (some? %) (.getBytes %)))
+      (update :store.item/price input->price)
+      common.format/add-tempid
+      common.format/remove-nil-keys))
 
 (defn auth0->user [auth0]
   {:db/id         (d/tempid :db.part/user)

@@ -35,7 +35,7 @@
      :store.item/name
      :store.item/price
      {:store.item/photos [:photo/path]}
-     {:store.item/skus [:store.item.sku/value]}
+     {:store.item/skus [:store.item.sku/variation]}
      :store.item/navigation
      :store.item/details
      {:store.item/categories [:category/label
@@ -142,7 +142,7 @@
                               (map-indexed
                                 (fn [i sku]
                                   (dom/option #js {:key   (str i)
-                                                   :value (:db/id sku)} (:store.item.sku/value sku)))
+                                                   :value (:db/id sku)} (:store.item.sku/variation sku)))
                                 skus))))
               (dom/div #js {:className "product-action-container"}
                 ;(my-dom/div (->> (css/grid-row))

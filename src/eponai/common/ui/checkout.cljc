@@ -26,7 +26,7 @@
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:query/cart [{:cart/items [:db/id
                                  :store.item.sku/uuid
-                                 :store.item.sku/value
+                                 :store.item.sku/variation
                                  {:store.item/_skus [:store.item/price
                                                      {:store.item/photos [:photo/path]}
                                                      :store.item/name

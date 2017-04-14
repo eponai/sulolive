@@ -62,10 +62,13 @@
 
 (defmethod read-basis-params :query/inventory [_ _ {:keys [store-id]}]
   [[:store-id store-id]])
+
+
 (defmethod server-read :query/inventory
-  [env _ {:keys [store-id]}]
-  {:value (let [items (store/list-products env store-id)]
-            ;(debug "Found items: " (into [] items))
+  [{:keys [query db]} _ {:keys [store-id]}]
+  {:value (let [items (db/pull-all-with db query {:where   '[[?s :store/items ?e]]
+                                                  :symbols {'s store-id}})]
+            (debug "Found items: " (into [] items))
             items)})
 
 (defmethod read-basis-params :query/order [_ _ {:keys [order-id store-id user-id]}]

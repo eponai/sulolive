@@ -85,10 +85,11 @@
                                                  [:category/path "women-jewelry"]]
                          :store.item/navigation (db/tempid :db.part/user -1002)
                          :store.item/uuid       #uuid "58a4b30e-3c8b-49c4-ab08-796c05b4275b"
-                         :store.item/skus       [{:store.item.sku/uuid     #uuid "58a4b30e-e33e-442f-b018-a18284604e13"
-                                                  :store.item.sku/value    "S"
-                                                  :store.item.sku/type     :store.item.sku.type/finite
-                                                  :store.item.sku/quantity 321M
+                         :store.item/skus       [{:store.item.sku/uuid      #uuid "58a4b30e-e33e-442f-b018-a18284604e13"
+                                                  :store.item.sku/variation "S"
+                                                  :store.item.sku/inventory      {:db/id (db/tempid :db.part/user)
+                                                                                  :store.item.sku.inventory/type :store.item.inventory.type/bucket
+                                                                                  :store.item.sku.inventory/value :store.item.inventory.value/in-stock}
                                                   }]}
                         {:store.item/name       "Emerald silver choker"
                          :store.item/price      219.00M
@@ -96,10 +97,11 @@
                          :store.item/categories [[:category/path "women"]
                                                  [:category/path "women-jewelry"]]
                          :store.item/uuid       #uuid "58a4b2b8-4489-4661-9580-c0fe2d132966"
-                         :store.item/skus       [{:store.item.sku/uuid     #uuid "58a4b2b8-9c8d-49e1-ab53-8d5c98374f79"
-                                                  :store.item.sku/value    "L"
-                                                  :store.item.sku/type     :store.item.sku.type/finite
-                                                  :store.item.sku/quantity 321M}]
+                         :store.item/skus       [{:store.item.sku/uuid      #uuid "58a4b2b8-9c8d-49e1-ab53-8d5c98374f79"
+                                                  :store.item.sku/variation "L"
+                                                  :store.item.sku/inventory      {:db/id (db/tempid :db.part/user)
+                                                                                  :store.item.sku.inventory/type :store.item.inventory.type/bucket
+                                                                                  :store.item.sku.inventory/value :store.item.inventory.value/in-stock}}]
                          :store.item/navigation (db/tempid :db.part/user -1001)}
                         {:store.item/name       "Ear Floral Cuff in Sterling Silver"
                          :store.item/navigation (db/tempid :db.part/user -1000)
@@ -108,11 +110,12 @@
                          :store.item/categories [[:category/path "women"]
                                                  [:category/path "women-jewelry"]]
                          :store.item/uuid       #uuid "58a4b270-fd5d-4cd9-a5ec-ee6c683c679b"
-                         :store.item/skus       [{:db/id                   (db/tempid :db.part/user -100)
-                                                  :store.item.sku/uuid     #uuid "58a4b270-b918-4007-a9f4-93508411e496"
-                                                  :store.item.sku/value    "M"
-                                                  :store.item.sku/type     :store.item.sku.type/finite
-                                                  :store.item.sku/quantity 32M}]}
+                         :store.item/skus       [{:db/id                    (db/tempid :db.part/user -100)
+                                                  :store.item.sku/uuid      #uuid "58a4b270-b918-4007-a9f4-93508411e496"
+                                                  :store.item.sku/variation "M"
+                                                  :store.item.sku/inventory {:db/id (db/tempid :db.part/user)
+                                                                             :store.item.sku.inventory/type :store.item.inventory.type/bucket
+                                                                             :store.item.sku.inventory/value :store.item.inventory.value/in-stock}}]}
                         {:store.item/name       "Sun Stone geometrical Sterling Silver Ring"
                          :store.item/navigation (db/tempid :db.part/user -1002)
                          :store.item/price      211.00M
@@ -122,7 +125,7 @@
     :store/owners      {:store.owner/user {:db/id       (db/tempid :db.part/user)
                                            :user/email  "dev@sulo.live"
                                            :user/photo  (photo "https://s3.amazonaws.com/sulo-images/photos/real/5f/ef/5fef55ce7dcc3057db6e4c8f1739fe0d0574a8882611e40c37950fa82f816d40/men.jpg")
-                                           :user/name "Diana"
+                                           :user/name   "Diana"
                                            :user/stripe {:stripe/id "cus_A9paOisnJJQ0wS"}
                                            :user/cart   {:db/id      (db/tempid :db.part/user)
                                                          :cart/items [(db/tempid :db.part/user -100)]}}

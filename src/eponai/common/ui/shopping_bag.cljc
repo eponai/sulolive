@@ -58,7 +58,7 @@
                    (css/add-class :name))
                      (dom/span nil item-name)))
           (dom/div nil
-                   (dom/span nil (:store.item.sku/value sku))))
+                   (dom/span nil (:store.item.sku/variation sku))))
 
         (grid/column
           (->> (grid/column-size {:small 3 :medium 2 :large 1})
@@ -113,7 +113,7 @@
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:query/cart [{:cart/items [:db/id
                                  :store.item.sku/uuid
-                                 :store.item.sku/value
+                                 :store.item.sku/variation
                                  {:store.item/_skus [:store.item/price
                                                      {:store.item/photos [:photo/path]}
                                                      :store.item/name

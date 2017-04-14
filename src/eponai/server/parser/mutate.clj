@@ -200,7 +200,7 @@
    :error   "Could not create Stripe account"}
   {:action (fn []
              (debug "store/update-product with params: " p)
-             (store/update-product env (c/parse-long store-id) (c/parse-long product-id) product))})
+             (store/update-product env (c/parse-long product-id) product))})
 
 (defmutation store/delete-product
   [env _ {:keys [product]}]

@@ -131,7 +131,7 @@
                                    {:store.item/photos [:photo/path]}
                                    {:store.item/skus [:store.item.sku/uuid
                                                       :store.item.sku/quantity
-                                                      :store.item.sku/value]}]}
+                                                      :store.item.sku/variation]}]}
                     :store/collections
                     {:stream/_store [:stream/state]}]}
      :query/current-route

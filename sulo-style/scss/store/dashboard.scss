@@ -37,6 +37,15 @@
 }
 
 #sulo-store-dashboard {
+	label {
+		@include breakpoint(large) {
+			text-align: right;
+		}
+	}
+	.page-content .callout .callout {
+		border: none;
+		padding: 0;
+	}
 	$dashboard-max-width: 75rem;
 	h3 {
 		font-family: $header-font-family-serif;

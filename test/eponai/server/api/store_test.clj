@@ -52,12 +52,10 @@
           db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid new-store)])
 
           ;; Prepare data for creating new products
-          params {:name "product" :id (db/squuid) :price "10"}
-          stripe-chan (async/chan 1)
+          params {:store.item/name "product" :store.item/uuid (db/squuid) :store.item/price "10"}
           s3-chan (async/chan 1)]
       (store/create-product {:state  conn
-                             :system {:system/aws-s3 (s3-test s3-chan)
-                                      :system/stripe (stripe-test stripe-chan)}}
+                             :system {:system/aws-s3 (s3-test s3-chan)}}
                             (:db/id db-store)
                             params)
       (let [result-db (db/db conn)
@@ -68,9 +66,9 @@
 
         ;; Verify
         (is (= 1 (count (:store/items new-db-store))))      ;;Verify that our store has one product
-        (is (= (:store.item/uuid db-product) (:id params))) ;;Verify that the store's item is the same as the newly created product
+        (is (= (:store.item/uuid db-product) (:store.item/uuid params))) ;;Verify that the store's item is the same as the newly created product
         (is db-product)                                     ;;Verify that the product was created in the DB
-        (is (= (async/poll! stripe-chan) params))           ;; Verify that Stripe was called with the params
+        ;(is (= (async/poll! stripe-chan) params))           ;; Verify that Stripe was called with the params
         (is (nil? (async/poll! s3-chan)))                   ;;Verify that S3 was called with the photo we wanted to upload
         (is (empty? (get db-product :store.item/photos)))))))  ;; Verify that no photo entities were created for the product
 
@@ -85,12 +83,10 @@
           db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid store)])
 
           ;; Prepare data for creating new products
-          params {:name "product" :id (db/squuid) :photo {:location "someurl.com"} :price "10"}
-          stripe-chan (async/chan 1)
+          params {:store.item/name "product" :store.item/uuid (db/squuid) :store.item/photos [{:location "someurl.com"}] :store.item/price "10"}
           s3-chan (async/chan 1)]
       (store/create-product {:state  conn
-                             :system {:system/aws-s3 (s3-test s3-chan)
-                                      :system/stripe (stripe-test stripe-chan)}}
+                             :system {:system/aws-s3 (s3-test s3-chan)}}
                             (:db/id db-store)
                             params)
       (let [result-db (db/db conn)
@@ -102,8 +98,7 @@
 
         ;; Verify
         (is (= 1 (count (:store/items new-db-store))))      ;;Verify that our store has one product
-        (is (= (:store.item/uuid db-product) (:id params))) ;;Verify that the store's item is the same as the newly created product
-        (is (= (async/poll! stripe-chan) params))           ;;Verify that we called Stripe with params
+        (is (= (:store.item/uuid db-product) (:store.item/uuid params))) ;;Verify that the store's item is the same as the newly created product
         (is db-photo)                                       ;; Verify photo entity exists
         (is (= (:photo/path (async/poll! s3-chan)) (:photo/path db-photo))) ;;Verify that S3 was called with the photo we wanted to upload
         (is (= 1 (count (get db-product :store.item/photos))))) ;; Verify that we now have a photo entity for the product in the DB
@@ -116,39 +111,37 @@
     (let [
           ;; Prepare existing data to be updated
           old-photo (f/photo "old-photo")
-          old-product (assoc (f/product {:name "product" :id (db/squuid)}) :store.item/photos [old-photo])
+          old-product (assoc (f/product {:store.item/name "product" :store.item/uuid (db/squuid)}) :store.item/photos [old-photo])
           store (assoc (store-test) :store/items [old-product])
 
           ;; Fetch existing data from our test DB
           conn (new-db [store])
-          db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid store)])
+          ;db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid store)])
           db-product (db/pull (db/db conn) [:db/id {:store.item/photos [:db/id :photo/path]}] [:store.item/uuid (:store.item/uuid old-product)])
           db-photo (first (get db-product :store.item/photos))
 
           ;; Prepare our update parameters
-          new-params {:name "product-updated" :photo {:location "someurl.com"}}
-          stripe-chan (async/chan 1)
+          new-params {:store.item/name "product-updated" :store.item/photos [{:location "someurl.com"}]}
           s3-chan (async/chan 1)]
       (store/update-product {:state  conn
-                             :system {:system/aws-s3 (s3-test s3-chan)
-                                      :system/stripe (stripe-test stripe-chan)}}
-                            (:db/id db-store)
+                             :system {:system/aws-s3 (s3-test s3-chan)}}
                             (:db/id db-product)
                             new-params)
       (let [result-db (db/db conn)
             ;; Pull new data after update
             new-db-product (db/pull result-db [:db/id :store.item/name {:store.item/photos [:db/id :photo/path]}] (:db/id db-product))
-            new-db-photo (first (get new-db-product :store.item/photos))]
+            new-db-photo (first (get new-db-product :store.item/photos))
+            all-photos (db/all-with result-db {:where '[[?e :photo/path]]})]
 
         ;; Verify
-        (is (= (async/poll! stripe-chan) new-params))       ;; Verify that we called Stripe with the new params
         (is new-db-photo)                                   ;;Verify photo entity exists
         (is (= (:photo/path (async/poll! s3-chan)) (:photo/path new-db-photo))) ;; Verify that S3 was called with updated photo
-        (is (= (:store.item/name new-db-product) (:name new-params))) ;; Verify that the name of the updated entity matches our parameters
+        (is (= (:store.item/name new-db-product) (:store.item/name new-params))) ;; Verify that the name of the updated entity matches our parameters
         (is (= (:db/id db-photo) (:db/id new-db-photo)))    ;; Verify that we updated an existing photo and not created a new one
         (is (= 1
                (count (get new-db-product :store.item/photos))
-               (count (get db-product :store.item/photos))))) ;; Verify that no new photo entities were created for product
+               (count (get db-product :store.item/photos)))) ;; Verify that no new photo entities were created for product
+        (is (= 1 (count all-photos))))
       )))
 
 (deftest update-product-with-image-no-new-image
@@ -156,7 +149,7 @@
     (let [
           ;; Prepare existing data to be updated
           old-photo (f/photo "old-photo")
-          old-product (assoc (f/product {:name "product" :id (db/squuid)}) :store.item/photos [old-photo])
+          old-product (assoc (f/product {:store.item/name "product" :store.item/uuid (db/squuid)}) :store.item/photos [old-photo])
           store (assoc (store-test) :store/items [old-product])
 
           ;; Fetch existing data from our test DB
@@ -166,13 +159,10 @@
           db-photo (first (get db-product :store.item/photos))
 
           ;; Prepare our update parameters
-          new-params {:name "product-updated"}
-          stripe-chan (async/chan 1)
+          new-params {:store.item/name "product-updated"}
           s3-chan (async/chan 1)]
       (store/update-product {:state  conn
-                             :system {:system/aws-s3 (s3-test s3-chan)
-                                      :system/stripe (stripe-test stripe-chan)}}
-                            (:db/id db-store)
+                             :system {:system/aws-s3 (s3-test s3-chan)}}
                             (:db/id db-product)
                             new-params)
       (let [result-db (db/db conn)
@@ -181,9 +171,8 @@
             new-db-photo (first (get new-db-product :store.item/photos))]
 
         ;; Verify
-        (is (= (async/poll! stripe-chan) new-params))       ;; Verify that we called Stripe with the new params
         (is (nil? (async/poll! s3-chan)))                   ;; Verify that S3 was not called since we didn't have a photo
-        (is (= (:store.item/name new-db-product) (:name new-params))) ;; Verify that the name of the updated entity matches our parameters
+        (is (= (:store.item/name new-db-product) (:store.item/name new-params))) ;; Verify that the name of the updated entity matches our parameters
         (is new-db-photo)                                   ;;Verify photo entity exists
         (is (= (:db/id db-photo) (:db/id new-db-photo)))    ;; Verify that we updated an existing photo and not created a new one
         (is (= (:photo/path db-photo) (:photo/path new-db-photo))) ;; Verify that the path is still the same in photo entity
@@ -196,7 +185,7 @@
   (testing "Update a product that doesn't have a photo with a new photo, photo entity should be created and other attributes should be updated."
     (let [
           ;; Prepare existing data to be updated
-          old-product (f/product {:name "product" :id (db/squuid)})
+          old-product (f/product {:store.item/name "product" :store.item/uuid (db/squuid)})
           store (assoc (store-test) :store/items [old-product])
 
           ;; Fetch existing data from our test DB
@@ -205,13 +194,10 @@
           db-product (db/pull (db/db conn) [:db/id {:store.item/photos [:db/id :photo/path]}] [:store.item/uuid (:store.item/uuid old-product)])
 
           ;; Prepare our update parameters
-          new-params {:name "product-updated" :photo {:location "someurl.com"}}
-          stripe-chan (async/chan 1)
+          new-params {:store.item/name "product-updated" :store.item/photos [{:location "someurl.com"}]}
           s3-chan (async/chan 1)
           result (store/update-product {:state  conn
-                                        :system {:system/aws-s3 (s3-test s3-chan)
-                                                 :system/stripe (stripe-test stripe-chan)}}
-                                       (:db/id db-store)
+                                        :system {:system/aws-s3 (s3-test s3-chan)}}
                                        (:db/id db-product)
                                        new-params)
 
@@ -221,11 +207,10 @@
 
       ;; Verify
       (is (empty? (get db-product :store.item/photos)))     ;;Verify first that our product had no photos
-      (is (= (async/poll! stripe-chan) new-params))         ;; Verify that we called Stripe with the new params
       (is new-db-photo)                                     ;;verify new photo entoty exists
       (is (= (:photo/path (async/poll! s3-chan)) (:photo/path new-db-photo))) ;; Verify that S3 was called with created photo
-      (is (= (:store.item/name new-db-product) (:name new-params))) ;; Verify that the name of the updated entity matches our parameters
-      (is (= (get-in new-params [:photo :location]) (:photo/path new-db-photo)))  ;; Verify that the path is set to the photo we uploaded
+      (is (= (:store.item/name new-db-product) (:store.item/name new-params))) ;; Verify that the name of the updated entity matches our parameters
+      (is (= (:location (first (:store.item/photos new-params))) (:photo/path new-db-photo)))  ;; Verify that the path is set to the photo we uploaded
       (is (= 1 (count (get new-db-product :store.item/photos)))) ;; Verify that a new photo entity was created for product
       )))
 
@@ -233,7 +218,7 @@
   (testing "Update a product that doesn't have an image, no photo should be added and other attributes should be updated."
     (let [
           ;; Prepare existing data to be updated
-          old-product (f/product {:name "product" :id (db/squuid)})
+          old-product (f/product {:store.item/name "product" :store.item/uuid (db/squuid)})
           store (assoc (store-test) :store/items [old-product])
 
           ;; Fetch existing data from our test DB
@@ -242,13 +227,10 @@
           db-product (db/pull (db/db conn) [:db/id {:store.item/photos [:db/id :photo/path]}] [:store.item/uuid (:store.item/uuid old-product)])
 
           ;; Prepare our update parameters
-          new-params {:name "product-updated"}
-          stripe-chan (async/chan 1)
+          new-params {:store.item/name "product-updated"}
           s3-chan (async/chan 1)]
       (store/update-product {:state  conn
-                             :system {:system/aws-s3 (s3-test s3-chan)
-                                      :system/stripe (stripe-test stripe-chan)}}
-                            (:db/id db-store)
+                             :system {:system/aws-s3 (s3-test s3-chan)}}
                             (:db/id db-product)
                             new-params)
       (let [result-db (db/db conn)
@@ -257,9 +239,8 @@
 
         ;; Verify
         (is (empty? (get db-product :store.item/photos)))   ;;Verify first that our product had no photos
-        (is (= (async/poll! stripe-chan) new-params))       ;; Verify that we called Stripe with the new params
         (is (nil? (async/poll! s3-chan)))                   ;; Verify that S3 was not called
-        (is (= (:store.item/name new-db-product) (:name new-params))) ;; Verify that the name of the updated entity matches our parameters
+        (is (= (:store.item/name new-db-product) (:store.item/name new-params))) ;; Verify that the name of the updated entity matches our parameters
         (is (empty? (get new-db-product :store.item/photos)))) ;; Verify that no new photo entity was created for product
       )))
 
@@ -269,7 +250,7 @@
   (testing "Delete product, entity should be retracted."
     (let [
           ;; Prepare existing data to be deleted
-          old-product (f/product {:name "product" :id (db/squuid)})
+          old-product (f/product {:store.item/name "product" :store.item/uuid (db/squuid)})
           store (assoc (store-test) :store/items [old-product])
 
           ;; Pull existing data from our test DB
@@ -278,22 +259,18 @@
           db-product (db/pull (db/db conn) [:db/id] [:store.item/uuid (:store.item/uuid old-product)])
 
           ;; Prepare our delete
-          stripe-chan (async/chan 1)
-          result (store/delete-product {:state  conn
-                                        :system {:system/stripe (stripe-test stripe-chan)}}
+          result (store/delete-product {:state  conn}
                                        (:db/id db-product))
 
           ;; Pull new data after delete
           new-db-store (db/pull (:db-after result) [:store/items] (:db/id db-store))
           new-db-product (db/pull (:db-after result) [:db/id] [:store.item/uuid (:store.item/uuid old-product)])]
-      (debug "Old" old-product)
 
       ;; Verify
       (is (= 1 (count (:store/items db-store))))
       (is (:store.item/uuid old-product))
       (is (nil? new-db-product))
       (is (empty? (:store/items new-db-store)))             ;; Verify that our store has no products anymore
-      (is (= (async/poll! stripe-chan) (:store.item/uuid old-product)))  ;; Verify that we called Stripe with the UUID of the product to remove
       )))
 
 (deftest delete-product-with-image
@@ -301,7 +278,7 @@
     (let [
           ;; Prepare existing data to be deleted
           old-photo (f/photo "old-photo")
-          old-product (assoc (f/product {:name "product" :id (db/squuid)}) :store.item/photos [old-photo])
+          old-product (assoc (f/product {:store.item/name "product" :store.item/uuid (db/squuid)}) :store.item/photos [old-photo])
           store (assoc (store-test) :store/items [old-product])
 
           ;; Pull existing data from our test DB
@@ -312,9 +289,7 @@
                                               :symbols {'?p "old-photo"}})
 
           ;; Prepare our delete
-          stripe-chan (async/chan 1)
-          result (store/delete-product {:state  conn
-                                        :system {:system/stripe (stripe-test stripe-chan)}}
+          result (store/delete-product {:state  conn}
                                        (:db/id db-product))
 
           ;; Pull new data after delete
@@ -329,5 +304,4 @@
       (is (nil? new-db-product))                            ;;Verify that product was retracted from DB
       (is (nil? new-db-photo))                              ;;Verify that photo entity was retracted from DB
       (is (empty? (:store/items new-db-store)))             ;; Verify that our store has no products anymore
-      (is (= (async/poll! stripe-chan) (:store.item/uuid old-product)))  ;; Verify that we called Stripe with the UUID of the product to remove
       )))

@@ -14,7 +14,9 @@
 (defui ProductList
   static om/IQuery
   (query [_]
-    [:query/inventory])
+    [{:query/inventory [:store.item/name
+                        :store.item/description
+                        :store.item/uuid]}])
   Object
   (render [this]
     (let [{:keys [query/inventory]} (om/props this)

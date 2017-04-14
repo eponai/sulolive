@@ -169,9 +169,9 @@
     ;;       Do we use the stripe number somehow, or do we use the price we were
     ;;       passed? Gross.
     (f/remove-nil-keys
-      {:store.item.sku/uuid  (f/str->uuid (.getId s))
-       :store.item.sku/price (stripe->price (.getPrice s))
-       :store.item.sku/value (get (.getAttributes s) "variation")})))
+      {:store.item.sku/uuid      (f/str->uuid (.getId s))
+       :store.item.sku/price     (stripe->price (.getPrice s))
+       :store.item.sku/variation (get (.getAttributes s) "variation")})))
 
 (defn stripe->product [^Product p]
   (f/remove-nil-keys

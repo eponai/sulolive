@@ -21,11 +21,6 @@
 	// 	margin-bottom: 1rem;
 	// }
 
-	label {
-		@include breakpoint(large) {
-			text-align: right;
-		}
-	}
 	input.tagline-input {
 		font-style: italic;
 		// &::placeholder {
