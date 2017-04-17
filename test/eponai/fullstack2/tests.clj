@@ -45,22 +45,24 @@
 ;; Start and stop system
 
 (defn- get-port [system]
-  (netty/port (get-in system [:system/aleph :server])))
+  (some-> system
+          (get-in [:system/aleph :server])
+          (netty/port)))
 
 (defn- start-system [system]
   ;; TODO: Use datomic forking library, to setup and fork our datomic connection once.
-  (let [system (core/start-server-for-tests {:conn (::forked-conn system)
-                                             ;; Re-use the server's port
-                                             ;; to be more kind to the test system.
-                                             :port (::server-port system 0)})]
-    (assoc system ::server-port (get-port system)
-                  ::forked-conn (dato-mock/fork-conn (get-in system [:system/datomic :conn])))))
+  (let [system (component/start-system system)]
+    (assoc system ::cached {::server-port (get-port system)
+                            ::forked-conn (dato-mock/fork-conn (get-in system [:system/datomic :conn]))})))
 
 (defn- stop-system [system]
   (component/stop-system system))
 
-(defn setup-system []
-  nil)
+(defn setup-system [{::keys [cached] :as old-system}]
+  (core/system-for-tests {:conn (::forked-conn cached)
+                          ;; Re-use the server's port
+                          ;; to be more kind to the test system.
+                          :port (::server-port cached 0)}))
 
 ;; END System
 
@@ -189,16 +191,15 @@
 ;; END Create client
 
 (defn run-tests [test-fns]
-  (let [system (setup-system)]
-    (reduce (fn [system test-fn]
-              (let [system (start-system system)
-                    merge-chan (a/chan)
-                    client (create-client system merge-chan)]
-                (-> system
-                    (run-test client merge-chan (unwrap test-fn))
-                    (stop-system))))
-            system
-            test-fns)))
+  (reduce (fn [system test-fn]
+            (let [system (-> (setup-system system) (start-system))
+                  merge-chan (a/chan)
+                  client (create-client system merge-chan)]
+              (-> system
+                  (run-test client merge-chan (unwrap test-fn))
+                  (stop-system))))
+          nil
+          test-fns))
 
 (defmethod client-mutate 'fullstack/login
   [{:keys [parser shared] :as env} k {:user/keys [email]}]
