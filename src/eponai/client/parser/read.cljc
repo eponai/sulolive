@@ -125,10 +125,9 @@
 
 (defmethod client-read :query/user
   [{:keys [db query target ast route-params] :as env} _ _]
-  (debug "query/user: " (c/parse-long (:user-id route-params)))
   (let [user-id (c/parse-long (:user-id route-params))
         user (db/pull-one-with db query {:where   '[[?e]]
-                                          :symbols {'?e user-id}})]
+                                         :symbols {'?e user-id}})]
     (if target
       {:remote (assoc-in ast [:params :user-id] user-id)}
       {:value user})))

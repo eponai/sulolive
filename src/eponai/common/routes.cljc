@@ -62,7 +62,7 @@
 
 (defn redirect-route [handler]
   ;; Everything goes back to index for now.
-  :index)
+  :coming-soon)
 
 (defn path
   "Takes a route and its route-params and returns a path"
@@ -75,6 +75,7 @@
             (error "Error when trying to create url from route: " route
                    " route-params: " route-params
                    " error: " e)
+       #?(:clj (.printStackTrace e))
        nil))))
 
 ;; #################################################

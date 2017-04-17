@@ -3,6 +3,8 @@
     [eponai.common.database :as db]
     [taoensso.timbre :refer [debug]]))
 
+(def test-user-email "dev@sulo.live")
+
 (defn photo [url]
   {:db/id      (db/tempid :db.part/user)
    :photo/path url})
@@ -120,7 +122,7 @@
                          :store.item/categories [[:category/path "women"]
                                                  [:category/path "women-jewelry"]]}]
     :store/owners      {:store.owner/user {:db/id       (db/tempid :db.part/user)
-                                           :user/email  "dev@sulo.live"
+                                           :user/email  test-user-email
                                            :user/photo  (photo "https://s3.amazonaws.com/sulo-images/photos/real/5f/ef/5fef55ce7dcc3057db6e4c8f1739fe0d0574a8882611e40c37950fa82f816d40/men.jpg")
                                            :user/name "Diana"
                                            :user/stripe {:stripe/id "cus_A9paOisnJJQ0wS"}
