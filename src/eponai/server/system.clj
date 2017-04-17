@@ -35,8 +35,8 @@
             handler (-> (compojure/routes server-routes/site-routes)
                         (cond-> (not in-production?) (m/wrap-node-modules))
                         m/wrap-post-middlewares
-                        (m/wrap-authenticate conn (:system/auth0 system))
                         m/wrap-format
+                        (m/wrap-authenticate conn (:system/auth0 system))
                         (m/wrap-state {::m/conn                conn
                                        ::m/in-production?      in-production?
                                        ::m/empty-datascript-db (m/init-datascript-db conn)

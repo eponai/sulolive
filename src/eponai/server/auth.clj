@@ -15,61 +15,35 @@
     [eponai.common.routes :as routes]
     [eponai.common :as c]))
 
-(def login-route (routes/path :coming-soon))
 (def auth-token-cookie-name "sulo-auth-token")
 
-(defprotocol IAuthResponse
-  (-reset-cookies-auth [this response])
-  (-logout [this request redirect-route]))
+(def restrict buddy/restrict)
 
-(defrecord HttpLogoutResponse []
-  IAuthResponse
-  (-reset-cookies-auth [this response]
-    (assoc-in response [:cookies auth-token-cookie-name] {:value "kill" :max-age 1}))
-  (-logout [this request redirect-route]
-    (->> (r/redirect (or redirect-route login-route))
-         (-reset-cookies-auth this))))
+(defprotocol IAuthResponder
+  (-redirect [this path])
+  (-prompt-login [this request])
+  (-unauthorize [this request]))
 
-(defn reset-cookies-auth [request response]
-  (-reset-cookies-auth (::logout-responder request) response))
+(defn prompt-login [request]
+  (-prompt-login (::auth-responder request) request))
 
-(defn logout [request]
-  (-logout (::logout-responder request) request (::redirect-route request)))
+(defn unauthorize [request]
+  (-unauthorize (::auth-responder request) request))
 
-(defn- wrap-expired-token [handler]
-  (fn [request]
-    (if (not= ::token-expired (:identity request))
-      (handler request)
-      (fn [request]
-        (deferred/let-flow [response (handler request)]
-                           (reset-cookies-auth request response))))))
+(defn redirect [request path]
+  (-redirect (::auth-responder request) path))
 
-(defn restrict [handler rule]
-  (buddy/restrict (wrap-expired-token handler) rule))
+(defn remove-auth-cookie [response]
+  (assoc-in response [:cookies auth-token-cookie-name] {:value "kill" :max-age 1}))
 
-(defn is-logged-in? [identity]
-  (= (:iss identity) "sulo.auth0.com"))
-
-(defn authenticated? [request]
-  (debug "Authing request id: " (:identity request))
-  (boolean (:identity request)))
-
-(defn member-restrict-opts []
-  {:handler  authenticated?
-   :on-error (fn [a b]
-               (r/redirect login-route)
-               ;{:status  401
-               ; :headers {"Content-Type"     "text/plain"
-               ;           "WWW-Authenticate" (format "Basic realm=\"%s\"" http-realm)}}
-               )})
-
-(defn jwt-restrict-opts []
-  {:handler  (fn [req] (debug "Identity: " (:identity req)) true)
-   :on-error (fn [& _]
-               (debug "Unauthorized api request")
-               {:status  401
-                :headers {}
-                :body    "You fucked up"})})
+(defrecord HttpAuthResponder []
+  IAuthResponder
+  (-redirect [this path]
+    (r/redirect path))
+  (-prompt-login [this request]
+    (-redirect this (routes/path :login)))
+  (-unauthorize [this request]
+    (-redirect this (routes/path :unauthorized))))
 
 (defn authenticate-auth0-user [conn auth0-user]
   (when auth0-user
@@ -78,42 +52,63 @@
         (let [new-user (f/auth0->user auth0-user)]
           (db/transact-one conn new-user))))))
 
-(defn- token-expired? [e]
-  (when-let [data (ex-data e)]
-    (let [{:keys [type cause]} data]
-      (and (= type :validation)
-           (= cause :exp)))))
-
-(defn jwt-cookie-backend [conn auth0 cookie-key]
+(defn jwt-cookie-backend [conn auth0]
   (let [jws-backend (backends/jws {:secret   (auth0/secret auth0)
+                                   ;; Throw it so we can handle it in our wrapper
                                    :on-error (fn [r e]
-                                               (if (token-expired? e)
-                                                 ::token-expired
-                                                 (do (debug "Error authenticating jws token: " e)
-                                                     (throw e))))})]
+                                               (throw e))})]
     ;; Only changes how the token is parsed. Parses from cookie instead of header
     (reify
       auth.protocols/IAuthentication
       (-parse [_ request]
-        (get-in request [:cookies cookie-key :value]))
+        (get-in request [:cookies auth-token-cookie-name :value]))
       (-authenticate [_ request data]
-        (let [auth0-user (auth.protocols/-authenticate jws-backend request data)]
-          (when (some? auth0-user)
-            (authenticate-auth0-user conn auth0-user)
-            auth0-user)))
+        (try
+          (let [auth0-user (auth.protocols/-authenticate jws-backend request data)]
+           (when (some? auth0-user)
+             (authenticate-auth0-user conn auth0-user)
+             auth0-user))
+          (catch Exception e
+            (if-let [token-failure (when-let [data (ex-data e)]
+                                     (let [{:keys [type cause]} data]
+                                       (when (= type :validation)
+                                         (condp = cause
+                                           :exp ::token-expired
+                                           :signature ::token-manipulated))))]
+              token-failure
+              (do
+                ;; TODO: Return nil to support multiple auth backends?
+                (error "Error authenticating jws token: " e)
+                (throw e))))))
       auth.protocols/IAuthorization
       (-handle-unauthorized [_ request metadata]
         (auth.protocols/-handle-unauthorized jws-backend request metadata)))))
 
+(defn- wrap-http-auth-responder [handler]
+  (fn [request]
+    (handler (assoc request ::auth-responder (->HttpAuthResponder)))))
+
+(defn- wrap-expired-token [handler]
+  (let [token-failure #{::token-manipulated ::token-expired}]
+    (fn [request]
+      (if-not (token-failure (:identity request))
+        (handler request)
+        (do
+          (debug "Auth token failure: " (:identity request)
+                 ", executing the request without auth. Will remove token from cookie.")
+          (deferred/let-flow [response (handler (dissoc request :identity))]
+                             (cond-> response
+                                     ;; On token expired, if no-one has set the cookies field, reset it.
+                                     (empty? (get-in response [:cookies auth-token-cookie-name]))
+                                     (remove-auth-cookie))))))))
+
 (defn wrap-auth [handler conn auth0]
-  (let [auth-backend (jwt-cookie-backend conn auth0 auth-token-cookie-name)
-        wrap-logout-response (fn [handler]
-                               (fn [request]
-                                 (handler (assoc request ::logout-responder (->HttpLogoutResponse)))))]
+  (let [auth-backend (jwt-cookie-backend conn auth0)]
     (-> handler
+        (wrap-expired-token)
         (wrap-authentication auth-backend)
         (wrap-authorization auth-backend)
-        (wrap-logout-response))))
+        (wrap-http-auth-responder))))
 
 (defn authenticate [{:keys [params] :as request}]
   (let [auth0 (get-in request [:eponai.server.middleware/system :system/auth0])
@@ -121,7 +116,7 @@
         {:keys [redirect-url token]} (auth0/authenticate auth0 code state)]
     (if token
       (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name token)
-      (r/redirect login-route))))
+      (prompt-login request))))
 
 ;; TODO: Might want to structure this differently.
 ;;       Because how do we query "which role does this user have for which parameters?"
@@ -162,8 +157,7 @@
                  (db/find-with db query)))))
 
 (defn bidi-route-restrictions [route]
-  (let [auth-roles (routes/auth-roles route)
-        redirect-route (routes/redirect-route route)]
+  (let [auth-roles (routes/auth-roles route)]
     {:handler  (fn [{:keys [identity route-params] :as request}]
                  (let [auth-val {:route        route
                                  :route-params route-params
@@ -176,6 +170,7 @@
                      (buddy/success auth-val)
                      (buddy/error auth-val))))
      :on-error (fn [request v]
-                 (logout (assoc request ::redirect-route redirect-route)))}))
-
-;; WHERE AM I?
+                 (debug "Unable to authorize user: " v)
+                 (if (nil? (:auth v))
+                   (prompt-login request)
+                   (unauthorize request)))}))

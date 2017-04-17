@@ -52,7 +52,9 @@
         "business"                    :business
         ["user/" [#"\d+" :user-id]]   user-routes
         "settings"                    :settings
-        "auth"                        :auth}])
+        "auth"                        :auth
+        "login"                       :login
+        "unauthorized"                :unauthorized}])
 
 (defn auth-roles [handler]
   (cond
@@ -66,10 +68,6 @@
     ::user
     :else
     ::public))
-
-(defn redirect-route [handler]
-  ;; Everything goes back to index for now.
-  :coming-soon)
 
 (defn path
   "Takes a route and its route-params and returns a path"

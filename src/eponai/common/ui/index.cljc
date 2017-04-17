@@ -458,3 +458,27 @@
                                                                        "")))))}))))))))
 
 (def ->ComingSoonBiz (om/factory ComingSoonBiz))
+
+(defui Login
+  static om/IQuery
+  (query [this]
+    [{:proxy/index (om/get-query Index)}])
+  Object
+  (componentDidMount [this]
+    (auth/show-lock (:shared/auth-lock (om/shared this))))
+  (render [this]
+    (->Index (:proxy/index (om/props this)))))
+
+(def ->Login (om/factory Login))
+
+(defui Unauthorized
+  static om/IQuery
+  (query [this]
+    [])
+  Object
+  (render [this]
+    (dom/div
+      nil
+      (dom/strong nil "UNAUTHORIZED :("))))
+
+(def ->Unauthorized (om/factory Unauthorized))
