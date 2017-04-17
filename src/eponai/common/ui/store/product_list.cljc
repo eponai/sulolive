@@ -27,7 +27,12 @@
   Object
   (render [this]
     (let [{:keys [query/inventory]} (om/props this)
-          {:keys [route-params]} (om/get-computed this)]
+          {:keys [search-input]} (om/get-state this)
+          {:keys [route-params]} (om/get-computed this)
+          products (if (not-empty search-input)
+                     (filter #(clojure.string/includes? (.toLowerCase (:store.item/name %))
+                                                        (.toLowerCase search-input)) inventory)
+                     inventory)]
       ;(debug "Render product list: " inventory)
       ;#?(:cljs
       ;   (do
@@ -53,7 +58,8 @@
                (css/grid-column))
           ;(my-dom/div
           ;  {:className "callout transparent"})
-          (my-dom/input {:value       ""
+          (my-dom/input {:value       (or search-input "")
+                         :onChange    #(om/update-state! this assoc :search-input (.. % -target -value))
                          :placeholder "Search Products..."
                          :type        "text"}))
 
@@ -73,23 +79,22 @@
               (dom/tbody
                 nil
                 (map-indexed (fn [i p]
-                       (debug "PRODUCT: " p)
-                       (let [product-link (routes/url :store-dashboard/product
-                                                      {:store-id   (:store-id route-params)
-                                                       :product-id (:db/id p)})]
-                         (dom/tr #js {:key (str i)}
-                                 (dom/td nil
-                                         (photo/product-photo (primary-photo p)))
-                                 (dom/td nil
-                                         (dom/a #js {:href product-link}
-                                                (dom/span nil (:store.item/name p))))
-                                 (dom/td nil
-                                         (dom/a #js {:href product-link}
-                                                (dom/span nil (utils/two-decimal-price (:store.item/price p)))))
-                                 (dom/td nil
-                                         (when (:store.item/updated p)
-                                           (dom/a #js {:href product-link}
-                                                  (dom/span nil (date/date->string (* 1000 (:store.item/updated p)) "MMM dd yyyy HH:mm"))))))))
-                     inventory)))))))))
+                               (let [product-link (routes/url :store-dashboard/product
+                                                              {:store-id   (:store-id route-params)
+                                                               :product-id (:db/id p)})]
+                                 (dom/tr #js {:key (str i)}
+                                         (dom/td nil
+                                                 (photo/product-photo (primary-photo p)))
+                                         (dom/td nil
+                                                 (dom/a #js {:href product-link}
+                                                        (dom/span nil (:store.item/name p))))
+                                         (dom/td nil
+                                                 (dom/a #js {:href product-link}
+                                                        (dom/span nil (utils/two-decimal-price (:store.item/price p)))))
+                                         (dom/td nil
+                                                 (when (:store.item/updated p)
+                                                   (dom/a #js {:href product-link}
+                                                          (dom/span nil (date/date->string (* 1000 (:store.item/updated p)) "MMM dd yyyy HH:mm"))))))))
+                             products)))))))))
 
 (def ->ProductList (om/factory ProductList))
