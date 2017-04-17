@@ -87,9 +87,16 @@
    :store.item.photo/photo (photo url)
    :store.item.photo/index index})
 
-(defn sku [s]
-  (-> (select-keys s [:db/id :store.item.sku/uuid :store.item.sku/variation])
+(defn inventory [i]
+  (-> (select-keys i [:db/id :store.item.sku.inventory/value :store.item.sku.inventory/type])
       common.format/add-tempid))
+
+(defn sku [s]
+  (let [sku (-> (select-keys s [:db/id :store.item.sku/uuid :store.item.sku/variation :store.item.sku/inventory])
+                common.format/add-tempid)]
+    (cond-> sku
+            (some? (:store.item.sku/inventory sku))
+            (update :store.item.sku/inventory inventory))))
 
 (defn input->price [price]
   (when price

@@ -52,7 +52,7 @@
           db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid new-store)])
 
           ;; Prepare data for creating new products
-          params {:store.item/name "product" :store.item/uuid (db/squuid) :store.item/price "10"}
+          params {:store.item/name "product" :store.item/uuid (db/squuid) :store.item/price "10" :store.item/skus [(f/sku {:store.item.sku/variation "variation"})]}
           s3-chan (async/chan 1)]
       (store/create-product {:state  conn
                              :system {:system/aws-s3 (s3-test s3-chan)}}
@@ -61,11 +61,12 @@
       (let [result-db (db/db conn)
 
             ;; Pull new data after creation
-            new-db-store (db/pull result-db [:db/id {:store/items [:store.item/uuid :store.item/photos]}] (:db/id db-store))
+            new-db-store (db/pull result-db [:db/id {:store/items [:store.item/uuid :store.item/photos :store.item/skus]}] (:db/id db-store))
             db-product (first (get new-db-store :store/items))]
 
         ;; Verify
         (is (= 1 (count (:store/items new-db-store))))      ;;Verify that our store has one product
+        (is (= 1 (count (:store.item/skus db-product))))
         (is (= (:store.item/uuid db-product) (:store.item/uuid params))) ;;Verify that the store's item is the same as the newly created product
         (is db-product)                                     ;;Verify that the product was created in the DB
         ;(is (= (async/poll! stripe-chan) params))           ;; Verify that Stripe was called with the params
@@ -139,6 +140,66 @@
 
 ;; ######################### UPDATE ############################
 
+(deftest update-product-with-skus-add-skus
+  (testing "Update a a product with an SKU and add more SKUs, an sku should be created and added to the product."
+    (let [
+          ;; Prepare existing data to be updated
+          old-sku (f/sku {:store.item.sku/variation "variation"})
+          old-product (assoc (f/product {:store.item/name "product" :store.item/uuid (db/squuid)}) :store.item/skus [old-sku])
+          store (assoc (store-test) :store/items [old-product])
+
+          ;; Fetch existing data from our test DB
+          conn (new-db [store])
+          db-product (db/pull (db/db conn) [:db/id {:store.item/skus [:db/id ]}] [:store.item/uuid (:store.item/uuid old-product)])
+
+          ;; Prepare our update parameters
+          new-params {:store.item/name "product-updated" :store.item/skus [old-sku
+                                                                           {:store.item.sku/variation "variation-2"}]}]
+      (store/update-product {:state  conn}
+                            (:db/id db-product)
+                            new-params)
+      (let [result-db (db/db conn)
+            ;; Pull new data after update
+            new-db-product (db/pull result-db [:db/id :store.item/name :store.item/skus] (:db/id db-product))
+            all-skus (db/all-with result-db {:where '[[?e :store.item.sku/variation]]})]
+
+        ;; Verify
+        (is (= (:store.item/name new-db-product) (:store.item/name new-params))) ;; Verify that the name of the updated entity matches our parameters
+        (is (= 2 (count (get new-db-product :store.item/skus)))) ;; Verify that no new photo entities were created for product
+        (is (= 2 (count all-skus)))) ;; Verify that we replaced the old photo entities and not created new ones.
+      )))
+
+(deftest update-product-with-skus-add-less-skus
+  (testing "Update a a product with an SKU and remove SKUs, they should be retracted from DB and removed from product."
+    (let [
+          ;; Prepare existing data to be updated
+          old-sku (f/sku {:store.item.sku/variation "variation-1"})
+          old-product (assoc (f/product {:store.item/name "product" :store.item/uuid (db/squuid)})
+                        :store.item/skus [old-sku
+                                          (f/sku {:store.item.sku/variation "variation-2"})])
+          store (assoc (store-test) :store/items [old-product])
+
+          ;; Fetch existing data from our test DB
+          conn (new-db [store])
+          db-product (db/pull (db/db conn) [:db/id {:store.item/skus [:db/id :store.item.sku/variation]}] [:store.item/uuid (:store.item/uuid old-product)])
+          db-sku (first (:store.item/skus db-product))
+
+          ;; Prepare our update parameters
+          new-params {:store.item/name "product-updated" :store.item/skus [db-sku]}]
+      (store/update-product {:state  conn}
+                            (:db/id db-product)
+                            new-params)
+      (let [result-db (db/db conn)
+            ;; Pull new data after update
+            new-db-product (db/pull result-db [:db/id :store.item/name :store.item/skus] (:db/id db-product))
+            all-skus (db/all-with result-db {:where '[[?e :store.item.sku/variation]]})]
+
+        ;; Verify
+        (is (= (:store.item/name new-db-product) (:store.item/name new-params))) ;; Verify that the name of the updated entity matches our parameters
+        (is (= 1 (count (get new-db-product :store.item/skus)))) ;; Verify that no new photo entities were created for product
+        (is (= 1 (count all-skus)))) ;; Verify that we replaced the old photo entities and not created new ones.
+      )))
+
 (deftest update-product-with-image-add-new-image
   (testing "Update a product that has an image with a new image, photo entity and other attributes should be updated."
     (let [
@@ -150,7 +211,7 @@
           ;; Fetch existing data from our test DB
           conn (new-db [store])
           ;db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid store)])
-          db-product (db/pull (db/db conn) [:db/id {:store.item/photos [:db/id :photo/path]}] [:store.item/uuid (:store.item/uuid old-product)])
+          db-product (db/pull (db/db conn) [:db/id :store.item/photos] [:store.item/uuid (:store.item/uuid old-product)])
           db-photo (first (get db-product :store.item/photos))
 
           ;; Prepare our update parameters

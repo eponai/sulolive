@@ -229,9 +229,9 @@
                (assoc test ::pre (::post test))]}))
 
 
-;(test/deftest full-stack-tests
-;  ;; Runs the test multiple times to make sure things are working
-;  ;; after setup and tear down.
-;  (run-tests [test-store-login-2
-;              test-store-login-2
-;              test-store-login-2]))
+(test/deftest full-stack-tests
+  ;; Runs the test multiple times to make sure things are working
+  ;; after setup and tear down.
+  (run-tests [test-store-login-2
+              test-store-login-2
+              test-store-login-2]))

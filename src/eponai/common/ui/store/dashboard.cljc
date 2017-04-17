@@ -134,7 +134,7 @@
                                    {:store.item/photos [{:store.item.photo/photo [:photo/path]}
                                                         :store.item.photo/index]}
                                    {:store.item/skus [:store.item.sku/uuid
-                                                      :store.item.sku/quantity
+                                                      {:store.item.sku/inventory [:store.item.sku.inventory/value]}
                                                       :store.item.sku/variation]}]}
                     :store/collections
                     {:stream/_store [:stream/state]}]}

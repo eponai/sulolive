@@ -13,10 +13,15 @@
                         [:db/add store-id :store/items (:db/id db-product)]])
 
      ;Create SKUs for product
-    (when (first skus)
-      (let [db-sku (f/sku (first skus))]
-        (db/transact state [db-sku
-                            [:db/add [:store.item/uuid (:store.item/uuid db-product)] :store.item/skus (:db/id db-sku)]])))
+    (when-let [product-skus (not-empty skus)]
+      (let [sku-entities (map (fn [s] (f/sku s)) product-skus)
+            db-txs (reduce (fn [l sku]
+                             (conj l
+                                   sku
+                                   [:db/add [:store.item/uuid (:store.item/uuid db-product)] :store.item/skus (:db/id sku)]))
+                           []
+                           sku-entities)]
+        (db/transact state db-txs)))
 
     ;; Upload product photos
     (when-let [new-photos (not-empty photos)]
@@ -34,7 +39,9 @@
         (db/transact state db-txs)))))
 
 (defn update-product [{:keys [state system]} product-id {:store.item/keys [photos skus] :as params}]
-  (let [old-item (db/pull (db/db state) [:db/id {:store.item/photos [:db/id :store.item.photo/index {:store.item.photo/photo [:db/id :photo/path]}]}] product-id)
+  (let [old-item (db/pull (db/db state) [:db/id {:store.item/photos [:db/id :store.item.photo/index {:store.item.photo/photo [:db/id :photo/path]}]}
+                                         :store.item/skus] product-id)
+        old-skus (:store.item/skus old-item)
         old-photos (group-by :store.item.photo/index (:store.item/photos old-item))]
 
     ;; Update product in Stripe
@@ -42,14 +49,20 @@
       (db/transact-one state new-product))
 
     ; Update SKUs in product
-    (when-let [sku (first skus)]
-      (let [db-sku (f/sku sku)
-            old-sku (db/pull (db/db state) [:db/id :store.item.sku/quantity] [:store.item.sku/uuid (:id sku)])]
-        (db/transact state (cond-> [db-sku
-                                    [:db/add product-id :store.item/skus (:db/id db-sku)]]
-                                   (and (some? (:store.item.sku/quantity old-sku))
-                                        (nil? (:store.item.sku/quantity db-sku)))
-                                   (conj [:db/retract (:db/id old-sku) :store.item.sku/quantity (:store.item.sku/quantity old-sku)])))))
+    (let [db-skus (map (fn [s] (f/sku s)) skus)
+          removed-skus (filter #(not (contains? (into #{} (map :db/id db-skus)) (:db/id %))) old-skus)
+
+          db-txs-retracts (reduce (fn [l remove-sku]
+                                    (conj l [:db.fn/retractEntity (:db/id remove-sku)]))
+                                  []
+                                  removed-skus)
+          db-txs (reduce (fn [l sku]
+                           (if (db/tempid? (:db/id sku))
+                             (conj l sku [:db/add product-id :store.item/skus (:db/id sku)])
+                             (conj l sku)))
+                         db-txs-retracts
+                         db-skus)]
+      (db/transact state db-txs))
 
     ;; Upload photos
     (let [

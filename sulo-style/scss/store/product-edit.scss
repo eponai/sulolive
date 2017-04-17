@@ -13,17 +13,6 @@
 	.breadcrumbs {
 		margin-top: -1rem;
 	}
-	.input-sku-group {
-		padding: 1rem 0;
-		margin-bottom: 0.5rem;
-		border: $table-border;
-		input {
-			margin: 0;
-			&::-webkit-input-placeholder {
-				color: $body-font-color;
-			}
-		}
-	}
 	.photo {
 		&:hover {
 			cursor: pointer;

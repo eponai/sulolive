@@ -9,7 +9,7 @@
     [eponai.client.parser.message :as msg]
     [eponai.common.ui.elements.css :as css]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [debug]]
+    [taoensso.timbre :refer [debug warn]]
     #?(:cljs
        [eponai.client.ui.photo-uploader :as pu])
     #?(:cljs
@@ -21,17 +21,17 @@
     [eponai.common.ui.elements.menu :as menu]))
 
 (def form-elements
-  {:input-price        "input-price"
-   :input-on-sale?     "input-on-sale?"
-   :input-sale-price   "input-sale-price"
-   :input-name         "input-name"
-   :input-desc         "input-desc"
+  {:input-price          "input-price"
+   :input-on-sale?       "input-on-sale?"
+   :input-sale-price     "input-sale-price"
+   :input-name           "input-name"
+   :input-desc           "input-desc"
+   :input-main-inventory "input-main-inventory"
 
-   :input-sku-value    "input-sku-value"
-   :input-sku-price    "input-sku-price"
-   :input-sku-quantity "input-sku-quantity"
+   :input-sku-value      "input-sku-value-"
+   :input-sku-inventory  "input-sku-inventory-"
 
-   :input-sku-group    "input-sku-group"})
+   :input-sku-group      "input-sku-group"})
 
 (defn get-route-params [component]
   (get-in (om/props component) [:query/current-route :route-params]))
@@ -58,21 +58,26 @@
         :store.item/photos      uploaded-photos
         :store.item/description (quill/get-HTML quill-editor)})))
 
-(defn input-skus [product]
+(defn input-skus [component product]
   #?(:cljs
-     (let [{:keys [input-price input-name input-sku-price input-sku-value input-sku-quantity]} form-elements]
-       (map (fn [el]
-              (let [element-id (.-id el)
-                    value (utils/first-input-value-by-class el input-sku-value)
-                    quantity (utils/first-input-value-by-class el input-sku-quantity)]
-                (cond-> {:id    (if (some? element-id)
-                                  (f/str->uuid element-id)
-                                  (db/squuid))
-                         :value value
-                         :price (:price product)}
-                        (some? quantity)
-                        (assoc :quantity quantity))))
-            (utils/elements-by-class (:input-sku-group form-elements))))))
+     (let [{:keys [sku-count]} (om/get-state component)
+           {:keys [input-sku-inventory input-sku-value input-main-inventory]} form-elements
+           product-skus (:store.item/skus product)]
+       (if (< 1 sku-count)
+         (remove
+           #(nil? (:store.item.sku/variation %))
+           (map (fn [index]
+                  (let [old-sku (get product-skus index)
+                        variation (utils/input-value-or-nil-by-id (str input-sku-value index))
+                        inventory (utils/selected-value-by-id (str input-sku-inventory index))
+                        sku {:store.item.sku/variation variation
+                             :store.item.sku/inventory {:store.item.sku.inventory/value (keyword inventory)}}]
+                    (if (some? old-sku)
+                      (assoc sku :store.item.sku/uuid (:store.item.sku/uuid old-sku))
+                      sku)))
+                (range sku-count)))
+         (let [inventory (utils/selected-value-by-id input-main-inventory)]
+           [{:store.item.sku/inventory {:store.item.sku.inventory/value (keyword inventory)}}])))))
 
 (defn label-column [opts & content]
   (grid/column
@@ -89,7 +94,7 @@
                                photo-upload
                                {:on-photo-queue  (fn [img-result]
                                                    ;(debug "Got photo: " photo)
-                                                   (om/update-state! component assoc :queue-photo {:location img-result
+                                                   (om/update-state! component assoc :queue-photo {:location  img-result
                                                                                                    :in-queue? true}))
                                 :on-photo-upload (fn [photo]
                                                    (om/update-state! component (fn [st]
@@ -129,10 +134,10 @@
   (update-product [this]
     (let [{:keys [product-id store-id]} (get-route-params this)
           product (input-product this)
-          skus (input-skus product)]
+          skus (input-skus this product)]
       (msg/om-transact! this `[(store/update-product ~{:product    (cond-> product
                                                                            (not-empty skus)
-                                                                           (assoc :skus skus))
+                                                                           (assoc :store.item/skus skus))
                                                        :product-id product-id
                                                        :store-id   store-id})
                                :query/store])
@@ -140,10 +145,9 @@
   (create-product [this]
     (let [{:keys [store-id]} (get-route-params this)
           product (input-product this)
-          skus (input-skus product)]
-      (msg/om-transact! this `[(store/create-product ~{:product  (cond-> (assoc product :store.item/uuid (db/squuid))
-                                                                         (not-empty skus)
-                                                                         (assoc :skus skus))
+          skus (input-skus this product)]
+      (msg/om-transact! this `[(store/create-product ~{:product  (-> (assoc product :store.item/uuid (db/squuid))
+                                                                     (assoc :store.item/skus skus))
                                                        :store-id store-id})
                                :query/store])
       (om/update-state! this dissoc :uploaded-photo)))
@@ -152,13 +156,16 @@
                                                      (into [] (remove nil? (assoc ps index nil))))))
   (componentDidMount [this]
     (let [{:keys [product]} (om/get-computed this)
-          {:store.item/keys [photos]} product]
+          {:store.item/keys [photos skus]} product]
       (om/update-state! this assoc
                         :did-mount? true
-                        :uploaded-photos (into [] (sort-by :store.item.photo/index photos)))))
+                        :uploaded-photos (into [] (sort-by :store.item.photo/index photos))
+                        :sku-count (count skus))))
+  (initLocalState [_]
+    {:sku-count 1})
 
   (render [this]
-    (let [{:keys [uploaded-photos queue-photo variations? did-mount?]} (om/get-state this)
+    (let [{:keys [uploaded-photos queue-photo variations? did-mount? sku-count]} (om/get-state this)
           {:keys [product-id store-id action]} (get-route-params this)
           {:keys [proxy/photo-upload]} (om/props this)
           {:keys [product]} (om/get-computed this)
@@ -170,8 +177,7 @@
           delete-resp (msg/last-message this 'store/delete-product)
           is-loading? (or (message-pending-fn update-resp) (message-pending-fn create-resp) (message-pending-fn delete-resp))
           ]
-      (debug "UPLOADED PHOTO: " uploaded-photos)
-      ;(debug "QUEUE PHOTO: " queue-photo)
+
       (dom/div
         {:id "sulo-edit-product"}
         (when (or (not did-mount?) is-loading?)
@@ -304,38 +310,43 @@
           (callout/callout
             nil
             (callout/header nil "Inventory")
-            (if (< 2 (count skus))
+            (if (< 1 sku-count)
               (dom/div
                 nil
-                (grid/row
-                  nil
-                  (grid/column
-                    nil
-                    (dom/label nil "Variation"))
-                  (grid/column
-                    nil
-                    (dom/label nil "Availability")))
                 (map
-                  (fn [sku]
-                    (let [{:store.item.sku/keys [inventory variation]} sku
-                          {:store.item.sku.inventory/keys [type value]} inventory]
+                  (fn [index]
+                    (let [sku (get skus index)
+                          {:store.item.sku/keys [inventory variation]} sku
+                          {:store.item.sku.inventory/keys [type value]} inventory
+                          inventory-value (when value (name value))]
                       (grid/row
-                        (->> {:id (str (:store.item.sku/uuid sku))}
-                             (css/add-class :input-sku-group))
+                        (css/add-class :input-sku-group)
+                        (label-column
+                          nil
+                          (dom/label nil "Variation"))
                         (grid/column
                           nil
-                          (dom/input
-                            (->> {:type         "text"
-                                  :defaultValue (or variation "")}
-                                 (css/add-class :input-sku-value))))
-                        (grid/column
-                          nil
-                          (dom/input
-                            (->> {:type         "number"
-                                  :defaultValue (or value "")
-                                  :placeholder  "Unlimited"}
-                                 (css/add-class :input-sku-quantity)))))))
-                  skus))
+                          (grid/row
+                            nil
+                            (grid/column
+                              nil
+                              (dom/input
+                                {:type         "text"
+                                 :id           (str (:input-sku-value form-elements) index)
+                                 :defaultValue (or variation "")}))
+                            (grid/column
+                              (css/add-class :shrink)
+                              (dom/select {:defaultValue (or inventory-value "in-stock")
+                                           :id           (str (:input-sku-inventory form-elements) index)}
+                                          (dom/option {:value "in-stock"} "In stock")
+                                          (dom/option {:value "out-of-stock"} "Out of stock")
+                                          (dom/option {:value "limited"} "Limited")))
+                            (grid/column
+                              (css/add-class :shrink)
+                              (dom/a (->> {:onClick #(om/update-state! this update :sku-count dec)}
+                                          (css/button-hollow)
+                                          (css/add-class ::css/color-secondary)) (dom/span nil "X"))))))))
+                  (range sku-count)))
               (dom/div
                 nil
                 (grid/row
@@ -344,16 +355,21 @@
                                 (dom/label nil "Availability"))
                   (grid/column
                     nil
-                    (dom/select {:defaultValue "in-stock"}
-                                (dom/option {:value "in-stock"} "In stock")
-                                (dom/option {:value "out-of-stock"} "Out of stock")
-                                (dom/option {:value "limited"} "Limited"))))
-                (grid/row
-                  nil
-                  (label-column nil)
-                  (grid/column
-                    nil
-                    (dom/a (css/button-hollow) (dom/span nil "Add variation..."))))))))
+                    (let [value (get-in (first skus) [:store.item.sku/inventory :store.item.sku.inventory/value])
+                          inventory-value (if value (name value) "in-stock")]
+                      (dom/select {:defaultValue inventory-value
+                                   :id           (:input-main-inventory form-elements)}
+                                  (dom/option {:value "in-stock"} "In stock")
+                                  (dom/option {:value "out-of-stock"} "Out of stock")
+                                  (dom/option {:value "limited"} "Limited")))))))
+            (grid/row
+              nil
+              (label-column nil)
+              (grid/column
+                nil
+                (dom/a
+                  (->> {:onClick #(om/update-state! this update :sku-count inc)}
+                       (css/button-hollow)) (dom/span nil "Add variation..."))))))
         (grid/row-column
           (css/text-align :right)
           (dom/a

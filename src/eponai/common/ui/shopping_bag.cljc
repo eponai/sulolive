@@ -124,15 +124,12 @@
   Object
   (componentWillReceiveProps [this p]
     (let [{:keys [did-mount?]} (om/get-state this)]
-      (debug "Shopping bag receive props: " p)
       (if-not did-mount?
         (om/update-state! this assoc :did-mount? true))))
   (render [this]
     (let [{:keys [query/cart proxy/navbar]} (om/props this)
-          {:keys [did-mount?]} (om/get-state this)
           {:keys [cart/items]} cart
           skus-by-store (items-by-store items)]
-      (debug "Shopping bag: " cart)
       (common/page-container
         {:navbar navbar :id "sulo-shopping-bag"}
         (grid/row-column
@@ -141,12 +138,6 @@
           (if (not-empty items)
             (dom/div nil
                      (store-items-element this skus-by-store))
-            ;(if-not did-mount?
-            ;  (dom/div
-            ;    (->> (css/text-align :center)
-            ;         (css/add-class :cart-loading))
-            ;    (dom/i
-            ;      {:classes ["fa fa-spinner fa-spin fa-4x"]})))
             (dom/div
               (->> (css/callout)
                    (css/text-align :center)
