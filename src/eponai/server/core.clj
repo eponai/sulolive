@@ -45,10 +45,9 @@
   (s/check-asserts true)
   (make-system (merge {::dev-system true} opts)))
 
-(defn start-server-for-tests [& [{:keys [conn port] :as opts}]]
+(defn system-for-tests [& [{:keys [conn port] :as opts}]]
   {:pre [(or (nil? opts) (map? opts))]}
-  (component/start-system
-    (make-dev-system
-      (merge {:port                  (or port 0)
-              ::system/provided-conn conn}
-             opts))))
+  (make-dev-system
+    (merge {:port                  (or port 0)
+            ::system/provided-conn conn}
+           opts)))
