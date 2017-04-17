@@ -50,12 +50,12 @@
 
 (defn input-product [component]
   #?(:cljs
-     (let [{:keys [uploaded-photo quill-editor]} (om/get-state component)
+     (let [{:keys [uploaded-photos quill-editor]} (om/get-state component)
            {:keys [input-price input-name input-sku-price input-sku-value input-sku-quantity]} form-elements]
        {:store.item/name        (utils/input-value-or-nil-by-id input-name)
         :store.item/price       (utils/input-value-or-nil-by-id input-price)
         :store.item/currency    "CAD"
-        :store.item/photos      [uploaded-photo]
+        :store.item/photos      uploaded-photos
         :store.item/description (quill/get-HTML quill-editor)})))
 
 (defn input-skus [product]
@@ -79,7 +79,7 @@
     (grid/column-size {:small 12 :large 2} opts)
     content))
 
-(defn photo-uploader [component id]
+(defn photo-uploader [component index]
   (let [{:keys [did-mount?]} (om/get-state component)
         {:proxy/keys [photo-upload]} (om/props component)]
     (debug "photo uploader setting id: " photo-upload)
@@ -89,11 +89,15 @@
                                photo-upload
                                {:on-photo-queue  (fn [img-result]
                                                    ;(debug "Got photo: " photo)
-                                                   (om/update-state! component assoc :queue-photo img-result :uploaded-photo nil))
+                                                   (om/update-state! component assoc :queue-photo {:location img-result
+                                                                                                   :in-queue? true}))
                                 :on-photo-upload (fn [photo]
-                                                   (om/update-state! component assoc :uploaded-photo photo :queue-photo nil))
-                                :id id
-                                :hide-label? true}))))))
+                                                   (om/update-state! component (fn [st]
+                                                                                 (-> st
+                                                                                     (dissoc :queue-photo)
+                                                                                     (update :uploaded-photos conj photo)))))
+                                :id              (str index)
+                                :hide-label?     true}))))))
 
 (defn empty-photo-button []
   (dom/div
@@ -137,17 +141,24 @@
     (let [{:keys [store-id]} (get-route-params this)
           product (input-product this)
           skus (input-skus product)]
-      (msg/om-transact! this `[(store/create-product ~{:product  (cond-> product
+      (msg/om-transact! this `[(store/create-product ~{:product  (cond-> (assoc product :store.item/uuid (db/squuid))
                                                                          (not-empty skus)
                                                                          (assoc :skus skus))
                                                        :store-id store-id})
                                :query/store])
       (om/update-state! this dissoc :uploaded-photo)))
+  (remove-uploaded-photo [this index]
+    (om/update-state! this update :uploaded-photos (fn [ps]
+                                                     (into [] (remove nil? (assoc ps index nil))))))
   (componentDidMount [this]
-    (om/update-state! this assoc :did-mount? true))
+    (let [{:keys [product]} (om/get-computed this)
+          {:store.item/keys [photos]} product]
+      (om/update-state! this assoc
+                        :did-mount? true
+                        :uploaded-photos (into [] (sort-by :store.item.photo/index photos)))))
 
   (render [this]
-    (let [{:keys [uploaded-photo queue-photo variations? did-mount?]} (om/get-state this)
+    (let [{:keys [uploaded-photos queue-photo variations? did-mount?]} (om/get-state this)
           {:keys [product-id store-id action]} (get-route-params this)
           {:keys [proxy/photo-upload]} (om/props this)
           {:keys [product]} (om/get-computed this)
@@ -159,7 +170,8 @@
           delete-resp (msg/last-message this 'store/delete-product)
           is-loading? (or (message-pending-fn update-resp) (message-pending-fn create-resp) (message-pending-fn delete-resp))
           ]
-      (debug "UPLOADED PHOTO: " uploaded-photo)
+      (debug "UPLOADED PHOTO: " uploaded-photos)
+      ;(debug "QUEUE PHOTO: " queue-photo)
       (dom/div
         {:id "sulo-edit-product"}
         (when (or (not did-mount?) is-loading?)
@@ -252,23 +264,34 @@
                    (grid/columns-in-row {:small 3 :medium 4 :large 5}))
               (map-indexed
                 (fn [i p]
-                  (let [file-id (str "file-" i)]
+                  (let [file-id (str "file-" i)
+                        {:store.item.photo/keys [photo]} p
+                        {:keys [in-queue?]} p
+                        photo-url (or (:location p) (:photo/path photo) p)]
                     (grid/column
                       nil
-                      (dom/label
-                        {:htmlFor file-id}
-                        (if-let [photo-url (or (:location uploaded-photo) (:photo/path p))]
-                          (if queue-photo
+                      ;(dom/label
+                      ;  {:htmlFor file-id})
+                      (when (some? photo-url)
+                        (dom/div
+                          nil
+                          (if in-queue?
                             (photo/with-overlay
                               nil
                               (photo/square {:src photo-url})
                               (dom/i {:classes ["fa fa-spinner fa-spin"]}))
-                            (photo/square {:src photo-url}))))
-                      (photo-uploader this (str i)))))
-                (if uploaded-photo
-                  [uploaded-photo]
-                  (take 1 photos)))
-              (when (> 1 (count (conj photos uploaded-photo)))
+                            (photo/square {:src photo-url}))
+                          (when-not in-queue?
+                            (dom/a
+                              (->>
+                                {:onClick #(.remove-uploaded-photo this i)}
+                                (css/button-hollow)) (dom/span nil "Remove")))))
+                      ;(photo-uploader this i)
+                      )))
+                (if queue-photo
+                  (conj uploaded-photos queue-photo)
+                  uploaded-photos))
+              (when (> 5 (count uploaded-photos))
                 (grid/column
                   nil
                   ;(photo/product-photo nil)

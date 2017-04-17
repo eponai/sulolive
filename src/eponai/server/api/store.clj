@@ -7,10 +7,8 @@
     [taoensso.timbre :refer [debug info]]))
 
 (defn create-product [{:keys [state system]} store-id {:store.item/keys [uuid photos skus] :as params}]
-  ;{:pre [(uuid? uuid)]}
   (let [db-product (f/product params)]
     ;; Transact new product into Datomic
-    (debug "Transact product: " db-product)
     (db/transact state [db-product
                         [:db/add store-id :store/items (:db/id db-product)]])
 
@@ -21,17 +19,23 @@
                             [:db/add [:store.item/uuid (:store.item/uuid db-product)] :store.item/skus (:db/id db-sku)]])))
 
     ;; Upload product photos
-    (when (first photos)
-      (let [photo-url (s3/upload-photo (:system/aws-s3 system) (first photos))
-            photo-upload (f/photo photo-url)]
-        (db/transact state [photo-upload
-                            [:db/add [:store.item/uuid (:store.item/uuid db-product)] :store.item/photos (:db/id photo-upload)]])))))
+    (when-let [new-photos (not-empty photos)]
+      (let [uploads (map-indexed
+                      (fn [i new-photo]
+                        (let [photo-url (s3/upload-photo (:system/aws-s3 system) new-photo)
+                              photo-upload (f/item-photo photo-url i)]
+                          photo-upload))
+                      new-photos)
+            db-txs (reduce
+                     (fn [l photo-upload]
+                       (conj l photo-upload [:db/add [:store.item/uuid (:store.item/uuid db-product)] :store.item/photos (:db/id photo-upload)]))
+                     []
+                     uploads)]
+        (db/transact state db-txs)))))
 
 (defn update-product [{:keys [state system]} product-id {:store.item/keys [photos skus] :as params}]
-  (let [old-item (db/pull (db/db state) [:store.item/photos] product-id)
-        old-photo (first (:store.item/photos old-item))]
-
-    ;(debug "UPDATE PRODUCT: " params)
+  (let [old-item (db/pull (db/db state) [:db/id {:store.item/photos [:db/id :store.item.photo/index {:store.item.photo/photo [:db/id :photo/path]}]}] product-id)
+        old-photos (group-by :store.item.photo/index (:store.item/photos old-item))]
 
     ;; Update product in Stripe
     (let [new-product (f/product (assoc params :db/id product-id))]
@@ -47,15 +51,54 @@
                                         (nil? (:store.item.sku/quantity db-sku)))
                                    (conj [:db/retract (:db/id old-sku) :store.item.sku/quantity (:store.item.sku/quantity old-sku)])))))
 
-    ;; Upload photo
-    (when (first photos)
-      (let [photo-url (s3/upload-photo (:system/aws-s3 system) (first photos))
-            photo-upload (f/photo photo-url)]
-        ;(debug "UPDATE PHOTO: " photos)
-        (if (some? old-photo)
-          (db/transact-one state (assoc photo-upload :db/id (:db/id old-photo)))
-          (db/transact state [photo-upload
-                              [:db/add product-id :store.item/photos (:db/id photo-upload)]]))))))
+    ;; Upload photos
+    (let [
+          ; Create photo entities, upload new photos to S3 (they have a :location key sent from the client)
+          ; If it's an existing photo, we just update the index in case that's changed
+          uploads (map-indexed
+                    (fn [i new-photo]
+                      (if (some? (:location new-photo))
+                        (let [photo-url (s3/upload-photo (:system/aws-s3 system) new-photo)]
+                          (f/item-photo photo-url i))
+                        (assoc new-photo :store.item.photo/index i)))
+                    photos)
+          ; Create Datomic transactions necessary to update the photos
+          db-txs (reduce (fn [l photo-upload]
+                           (let [index (:store.item.photo/index photo-upload)
+                                 ; Get the old photo on the same index
+                                 old-photo (first (get old-photos index))]
+                             ; If we have an old photo on the same index we want to update that entity
+                             (if (some? old-photo)
+                               ; Check if this our photo upload is a new photo upload (created when uploaded to S3)
+                               (cond (db/tempid? (:db/id photo-upload))
+                                     ;; If it's new, remove the old photo on the same index and replace
+                                     (conj l
+                                           [:db.fn/retractEntity (:db/id old-photo)]
+                                           photo-upload
+                                           [:db/add product-id :store.item/photos (:db/id photo-upload)])
+                                     ; If we have an existing entity for the old index, just update the new photo entity if it's not already the same.
+                                     (not= (get-in old-photo [:store.item.photo/photo :db/id]) (get-in photo-upload [:store.item.photo/photo :db/id]))
+                                     (conj l
+                                           [:db.fn/retractEntity (get-in old-photo [:store.item.photo/photo :db/id])]
+                                           [:db/add (:db/id photo-upload) :store.item.photo/photo (:store.item.photo/photo photo-upload)])
+                                     :else
+                                     l
+                                     )
+                               ;; If we didn't have an old photo item with the same index
+                               (conj l
+                                     photo-upload
+                                     [:db/add product-id :store.item/photos (:db/id photo-upload)]))))
+                         []
+                         uploads)]
+
+      (if (< (count uploads) (count old-photos))
+        (let [db-txs-with-retracts (reduce (fn [l index]
+                                             (let [old-photo (first (get old-photos index))]
+                                               (conj l [:db.fn/retractEntity (:db/id old-photo)])))
+                                           db-txs
+                                           (range (count uploads) (count old-photos)))]
+          (db/transact state db-txs-with-retracts))
+        (db/transact state db-txs)))))
 
 (defn delete-product [{:keys [state]} product-id]
   (db/transact state [[:db.fn/retractEntity product-id]]))

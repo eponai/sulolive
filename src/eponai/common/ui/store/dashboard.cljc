@@ -131,7 +131,8 @@
                                    :store.item/name
                                    :store.item/description
                                    :store.item/price
-                                   {:store.item/photos [:photo/path]}
+                                   {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+                                                        :store.item.photo/index]}
                                    {:store.item/skus [:store.item.sku/uuid
                                                       :store.item.sku/quantity
                                                       :store.item.sku/variation]}]}

@@ -18,7 +18,8 @@
         on-click (when-not open-url? on-click)
         {:store.item/keys [photos price]
          item-name        :store.item/name
-         store            :store/_items} product]
+         store            :store/_items} product
+        {:store.item.photo/keys [photo]} (first (sort-by :store.item.photo/index photos))]
     (dom/div
       (->> (css/add-class :content-item)
            (css/add-class :product-item))
@@ -26,7 +27,7 @@
         (->> {:onClick on-click
               :href    goods-href}
              (css/add-class :primary-photo))
-        (photo/product-photo (first photos)))
+        (photo/product-photo photo))
 
       (dom/div
         (->> (css/add-class :header)

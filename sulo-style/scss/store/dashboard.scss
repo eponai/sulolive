@@ -182,6 +182,15 @@
 			input[type="checkbox"] {
 				margin: 0;
 			}
+			.photo-container {
+				width: 2rem;
+			}
+			td {
+				padding: 0.5rem 0.5rem;
+				@include breakpoint(medium) {
+					padding: 1.25rem 1rem;
+				}
+			}
 		}
 	}
 	.page-container {

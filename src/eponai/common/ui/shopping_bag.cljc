@@ -39,7 +39,8 @@
 (defn sku-menu-item [sku]
   (let [{:store.item/keys [price photos]
          product-id       :db/id
-         item-name        :store.item/name} (get sku :store.item/_skus)]
+         item-name        :store.item/name} (get sku :store.item/_skus)
+        {:store.item.photo/keys [photo]} (first photos)]
     (menu/item
       nil
       (grid/row
@@ -47,7 +48,7 @@
              (css/add-class :item))
         (grid/column
           (grid/column-size {:small 3 :medium 2 :large 1})
-          (photo/product-photo (first photos)))
+          (photo/product-photo photo))
 
         (grid/column
           (grid/column-size {:small 8})

@@ -257,6 +257,21 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store.item.photo/photo
+  :db/valueType          :db.type/ref
+  :db/isComponent        true
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Item photos"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store.item.photo/index
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Item photo index"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
   :db/ident              :store.item/skus
   :db/valueType          :db.type/ref
   :db/isComponent        true

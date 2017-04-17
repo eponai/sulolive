@@ -34,7 +34,8 @@
     [:db/id
      :store.item/name
      :store.item/price
-     {:store.item/photos [:photo/path]}
+     {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+                          :store.item.photo/index]}
      {:store.item/skus [:store.item.sku/variation]}
      :store.item/navigation
      :store.item/details
@@ -100,7 +101,7 @@
                                  (= active-photo-index i)
                                  (css/add-class ::css/is-in))
                         (photo/photo
-                          (->> {:src (:photo/path p)}
+                          (->> {:src (get-in p [:store.item.photo/photo :photo/path])}
                                (css/add-class :orbit-image)
                                (css/add-class :contain)))
                         ;(dom/figcaption #js {:className "orbit-caption"} "Photo")
@@ -112,7 +113,7 @@
                              (dom/button #js {:key (str i)
                                               :onClick #(om/update-state! this assoc :active-photo-index i)}
                                (photo/thumbail
-                                 {:src (:photo/path p)})))
+                                 {:src (get-in p [:store.item.photo/photo :photo/path])})))
                            photos)))
 
               ;(my-dom/div

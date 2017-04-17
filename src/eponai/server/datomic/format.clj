@@ -82,6 +82,11 @@
   {:db/id      (d/tempid :db.part/user)
    :photo/path url})
 
+(defn item-photo [url index]
+  {:db/id                  (d/tempid :db.part/user)
+   :store.item.photo/photo (photo url)
+   :store.item.photo/index index})
+
 (defn sku [s]
   (-> (select-keys s [:db/id :store.item.sku/uuid :store.item.sku/variation])
       common.format/add-tempid))

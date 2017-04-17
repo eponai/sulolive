@@ -67,14 +67,16 @@
      {:query/featured-items [:db/id
                              :store.item/name
                              :store.item/price
-                             {:store.item/photos [:photo/path]}
+                             {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+                                                  :store.item.photo/index]}
                              {:store/_items [:store/name]}]}
      {:query/featured-stores [:db/id
                               :store/name
                               :store/featured
                               :store/featured-img-src
                               {:store/photo [:photo/path]}
-                              {:store/items [:db/id {:store.item/photos [:photo/path]}]}]}
+                              {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+                                                                         :store.item.photo/index]}]}]}
      {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id :store/name {:store/photo [:photo/path]}]}]}])
   Object
   (render [this]
