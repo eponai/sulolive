@@ -29,7 +29,7 @@
 	}
 
 	a.name {
-		margin-bottom: 2%;
+		// margin-bottom: 2%;
 		max-height: 4.5rem;
 		overflow: hidden;
 		display: -webkit-box;
@@ -40,6 +40,10 @@
 		span {
 			line-height: 1.5;
 		}
+	}
+	span.variation {
+		font-size: 85%;
+		color: $dark-gray;
 	}
 
 

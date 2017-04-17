@@ -57,6 +57,9 @@
 (defn label [opts & content]
   (element dom/label opts content))
 
+(defn hr [opts & content]
+  (element dom/hr opts content))
+
 (defn h1 [opts & content]
   (element dom/h1 opts content))
 
@@ -86,3 +89,9 @@
 
 (defn fieldset [opts & content]
   (element dom/fieldset opts content))
+
+(defn nav [opts & content]
+  (element dom/nav opts content))
+
+(defn button [opts & content]
+  (element dom/button opts content))

@@ -187,6 +187,9 @@
 (defn button-hollow [& [opts]]
   (button (add-class ::button-hollow opts)))
 
+(defn expanded [& [opts]]
+  (add-class :expanded opts))
+
 (defn add-color-style [color & [opts]]
   (let [names (clojure.string/split (name color) "-")]
     (when (not= (first names) "color")

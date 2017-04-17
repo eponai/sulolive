@@ -230,14 +230,19 @@
                    (css/button-hollow))
               (dom/span nil "Sign in")))
 
-          (if did-mount?
-            (menu/item-dropdown
-              {:dropdown (cart-dropdown component cart)
-               :href (routes/url :shopping-bag)}
-              (icons/shopping-bag))
-            (menu/item-dropdown
-              {:href (routes/url :shopping-bag)}
-              (icons/shopping-bag))))))))
+          (menu/item
+            nil
+            (my-dom/a {:href (routes/url :shopping-bag)}
+                      (icons/shopping-bag)))
+          ;(if did-mount?
+          ;  (menu/item-dropdown
+          ;    {:dropdown (cart-dropdown component cart)
+          ;     :href (routes/url :shopping-bag)}
+          ;    (icons/shopping-bag))
+          ;  (menu/item-dropdown
+          ;    {:href (routes/url :shopping-bag)}
+          ;    (icons/shopping-bag)))
+          )))))
 
 (defui Navbar
   static om/IQuery

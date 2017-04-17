@@ -62,6 +62,8 @@
                              (conj l sku)))
                          db-txs-retracts
                          db-skus)]
+      (debug "SKUS " (into [] skus))
+      (debug "TRANSACTIONS: " (into [] db-txs))
       (db/transact state db-txs))
 
     ;; Upload photos
