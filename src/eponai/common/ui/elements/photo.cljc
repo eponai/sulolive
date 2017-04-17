@@ -98,4 +98,6 @@
              :classes [:user-photo]})))
 
 (defn product-photo [photo]
-  (square {:src (:photo/path photo)}))
+  (let [default-src "/assets/img/storefront.jpg"
+        photo-src (:photo/path photo default-src)]
+    (square {:src photo-src})))

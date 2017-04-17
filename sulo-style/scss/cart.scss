@@ -1,5 +1,10 @@
 
 #sulo-shopping-bag {
+	.icon {
+		svg {
+			height: 200px;
+		}
+	}
 	.button {
 		margin: 0;
 	}
@@ -39,11 +44,14 @@
 
 
 	.cart-empty, .cart-loading {
-		padding: 1.5rem;
-		h5 {
-			margin-top: 2rem;
+		&.callout {
+			border: none;
 		}
-		padding: 2.5rem;
+		// padding: 1.5rem;
+		h5 {
+			// margin-top: 2rem;
+		}
+		// padding: 2.5rem;
 	}
 	
 	.cart-loading {

@@ -63,7 +63,9 @@
                               (my-dom/i
                                 (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]}))))
                  (menu/item
-                   (when (= route :store-dashboard/product-list)
+                   (when (or (= route :store-dashboard/product-list)
+                             (= route :store-dashboard/product)
+                             (= route :store-dashboard/create-product))
                      (css/add-class ::css/is-active))
                    (my-dom/a
                      (css/add-class :category {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
@@ -71,7 +73,8 @@
                      (my-dom/i
                        (css/hide-for nav-breakpoint {:classes [:fa :fa-gift :fa-fw]}))))
                  (menu/item
-                   (when (= route :store-dashboard/order-list)
+                   (when (or (= route :store-dashboard/order-list)
+                             (= route :store-dashboard/order))
                      (css/add-class ::css/is-active))
                    (my-dom/a
                      (css/add-class :category {:href (routes/url :store-dashboard/order-list {:store-id store-id})})
@@ -128,10 +131,11 @@
                                    :store.item/name
                                    :store.item/description
                                    :store.item/price
-                                   {:store.item/photos [:photo/path]}
+                                   {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+                                                        :store.item.photo/index]}
                                    {:store.item/skus [:store.item.sku/uuid
-                                                      :store.item.sku/quantity
-                                                      :store.item.sku/value]}]}
+                                                      {:store.item.sku/inventory [:store.item.sku.inventory/value]}
+                                                      :store.item.sku/variation]}]}
                     :store/collections
                     {:stream/_store [:stream/state]}]}
      :query/current-route

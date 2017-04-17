@@ -257,6 +257,21 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store.item.photo/photo
+  :db/valueType          :db.type/ref
+  :db/isComponent        true
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Item photos"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store.item.photo/index
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Item photo index"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
   :db/ident              :store.item/skus
   :db/valueType          :db.type/ref
   :db/isComponent        true
@@ -274,32 +289,34 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store.item.sku/value
+  :db/ident              :store.item.sku/variation
   :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one
   :db/doc                "Item SKU variation value"
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store.item.sku/type
+  :db/ident              :store.item.sku/inventory
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Item SKU inventory"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store.item.sku.inventory/type
   :db/valueType          :db.type/keyword
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Item SKU quantity type (:store.item.sku.type/finite, :store.item.sku.type/infinite.)"
+  :db/doc                "Item SKU inventory type in #{:store.item.sku.type/finite :store.item.sku.type/finite :store.item.sku.type/infinite}."
   :db.install/_attribute :db.part/db}
 
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store.item.sku/quantity
-  :db/valueType          :db.type/bigdec
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Item SKU quantity type, only used if type is :store.item.sku.type/finite."
-  :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store.item.sku/price
-  :db/valueType          :db.type/bigdec
+  :db/ident              :store.item.sku.inventory/value
+  :db/valueType          :db.type/keyword
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Item SKU price in lowest currency unit."
+  :db/doc                "Item inventory value when ::inventory/type is ::inventory.type/bucket. Can be one of #{::in-stock ::out-of-stock ::limited}."
   :db.install/_attribute :db.part/db}
+
 
  ;; Photo
  {:db/id                 #db/id[:db.part/db]
@@ -332,7 +349,7 @@
   :db/ident              :stream/state
   :db/valueType          :db.type/keyword
   :db/cardinality        :db.cardinality/one
-  :db/doc                "State of this stream (e.g. :stream.status/offline or :stream.status/online)."
+  :db/doc                "State of this stream (e.g. :stream.state/offline or :stream.state/online)."
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]

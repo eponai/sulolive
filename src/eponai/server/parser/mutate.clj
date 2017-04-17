@@ -36,16 +36,24 @@
   (apply swap! force-read-without-history conj k ks)
   nil)
 
+(defn- query-user-id [{:keys [state auth]}]
+  (db/one-with (db/db state) {:where   '[[?e :user/email ?email]]
+                              :symbols {'?email (:email auth)}}))
 
 (defmutation shopping-bag/add-item
-  [{:keys [state auth]} _ {:keys [sku]}]
+  [{:keys [state auth] :as env} _ {:keys [sku]}]
   {:success "Item added to bag"
    :error "Did not add that item, sorry"}
   {:action (fn []
-             (let [cart (db/one-with (db/db state) {:where   '[[?u :user/email ?email]
-                                                               [?u :user/cart ?e]]
-                                                    :symbols {'?email (:email auth)}})]
-               (db/transact-one state [:db/add cart :cart/items (c/parse-long sku)])))})
+             (when-let [user-eid (query-user-id env)]
+               (let [cart (db/one-with (db/db state) {:where   '[[?u :user/cart ?e]]
+                                                      :symbols {'?u user-eid}})]
+                 (if (some? cart)
+                   (db/transact-one state [:db/add cart :cart/items (c/parse-long sku)])
+                   (let [new-cart {:db/id (db/tempid :db.part/user)
+                                   :cart/items [(c/parse-long sku)]}]
+                     (db/transact state [new-cart
+                                         [:db/add user-eid :user/cart (:db/id new-cart)]]))))))})
 
 (defmutation beta/vendor
   [{:keys [state auth system] ::parser/keys [return exception]} _ {:keys [name site email]}]
@@ -59,9 +67,6 @@
                                                             "SITE" site}})]
                ret))})
 
-(defn- query-user-id [{:keys [state auth]}]
-  (db/one-with (db/db state) {:where   '[[?e :user/email ?email]]
-                              :symbols {'?email (:email auth)}}))
 
 (defmutation photo/upload
   [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ params]
@@ -195,7 +200,7 @@
    :error   "Could not create Stripe account"}
   {:action (fn []
              (debug "store/update-product with params: " p)
-             (store/update-product env (c/parse-long store-id) (c/parse-long product-id) product))})
+             (store/update-product env (c/parse-long product-id) product))})
 
 (defmutation store/delete-product
   [env _ {:keys [product]}]

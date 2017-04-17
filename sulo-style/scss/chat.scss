@@ -27,6 +27,16 @@
 
 	}
 
+	.chat-input, .input-container {
+		.button {
+			padding: 0 0.75rem;
+			// color: $secondary-color;
+		}
+		i {
+			font-size: 1.2rem;
+		}
+	}
+
 	.messages-list {
 		margin-bottom: 0.5rem;
 	}

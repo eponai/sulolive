@@ -127,7 +127,7 @@
                                        :className "name"}
                                   (dom/span nil item-name)))
                          (dom/div #js {:className ""}
-                           (dom/span nil (:store.item.sku/value sku))))
+                           (dom/span nil (:store.item.sku/variation sku))))
 
                        (my-dom/div
                          (->> (css/grid-column)

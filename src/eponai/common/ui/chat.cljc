@@ -119,9 +119,9 @@
                                           :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))}))
               (my-dom/div (->> (css/grid-column)
                                (css/add-class :shrink))
-                          (dom/a #js {:className "button green small"
+                          (dom/a #js {:className "button hollow secondary"
                                       :onClick   #(send-message this)}
-                                 (dom/span nil "Send"))))))
+                                 (dom/i #js {:className "fa fa-send-o fa-fw"}))))))
         ))))
 
 (def ->StreamChat (om/factory StreamChat))

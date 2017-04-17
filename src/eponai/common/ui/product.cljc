@@ -34,8 +34,9 @@
     [:db/id
      :store.item/name
      :store.item/price
-     {:store.item/photos [:photo/path]}
-     {:store.item/skus [:store.item.sku/value]}
+     {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+                          :store.item.photo/index]}
+     {:store.item/skus [:store.item.sku/variation]}
      :store.item/navigation
      :store.item/details
      {:store.item/categories [:category/label
@@ -100,7 +101,7 @@
                                  (= active-photo-index i)
                                  (css/add-class ::css/is-in))
                         (photo/photo
-                          (->> {:src (:photo/path p)}
+                          (->> {:src (get-in p [:store.item.photo/photo :photo/path])}
                                (css/add-class :orbit-image)
                                (css/add-class :contain)))
                         ;(dom/figcaption #js {:className "orbit-caption"} "Photo")
@@ -112,7 +113,7 @@
                              (dom/button #js {:key (str i)
                                               :onClick #(om/update-state! this assoc :active-photo-index i)}
                                (photo/thumbail
-                                 {:src (:photo/path p)})))
+                                 {:src (get-in p [:store.item.photo/photo :photo/path])})))
                            photos)))
 
               ;(my-dom/div
@@ -142,7 +143,7 @@
                               (map-indexed
                                 (fn [i sku]
                                   (dom/option #js {:key   (str i)
-                                                   :value (:db/id sku)} (:store.item.sku/value sku)))
+                                                   :value (:db/id sku)} (:store.item.sku/variation sku)))
                                 skus))))
               (dom/div #js {:className "product-action-container"}
                 ;(my-dom/div (->> (css/grid-row))

@@ -10,7 +10,8 @@
     [eponai.common.ui.navbar :as nav]
     [taoensso.timbre :refer [debug]]
     [eponai.client.routes :as routes]
-    [eponai.common.ui.elements.menu :as menu]))
+    [eponai.common.ui.elements.menu :as menu]
+    [eponai.common.ui.icons :as icons]))
 
 (defn items-by-store [items]
   (group-by #(get-in % [:store.item/_skus :store/_items]) items))
@@ -38,7 +39,8 @@
 (defn sku-menu-item [sku]
   (let [{:store.item/keys [price photos]
          product-id       :db/id
-         item-name        :store.item/name} (get sku :store.item/_skus)]
+         item-name        :store.item/name} (get sku :store.item/_skus)
+        {:store.item.photo/keys [photo]} (first photos)]
     (menu/item
       nil
       (grid/row
@@ -46,7 +48,7 @@
              (css/add-class :item))
         (grid/column
           (grid/column-size {:small 3 :medium 2 :large 1})
-          (photo/product-photo (first photos)))
+          (photo/product-photo photo))
 
         (grid/column
           (grid/column-size {:small 8})
@@ -57,7 +59,7 @@
                    (css/add-class :name))
                      (dom/span nil item-name)))
           (dom/div nil
-                   (dom/span nil (:store.item.sku/value sku))))
+                   (dom/span nil (:store.item.sku/variation sku))))
 
         (grid/column
           (->> (grid/column-size {:small 3 :medium 2 :large 1})
@@ -112,7 +114,7 @@
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:query/cart [{:cart/items [:db/id
                                  :store.item.sku/uuid
-                                 :store.item.sku/value
+                                 :store.item.sku/variation
                                  {:store.item/_skus [:store.item/price
                                                      {:store.item/photos [:photo/path]}
                                                      :store.item/name
@@ -120,32 +122,32 @@
                                                                      {:store/photo [:photo/path]}]}]}]}]}
      {:query/auth [:user/email]}])
   Object
+  (componentWillReceiveProps [this p]
+    (let [{:keys [did-mount?]} (om/get-state this)]
+      (if-not did-mount?
+        (om/update-state! this assoc :did-mount? true))))
   (render [this]
     (let [{:keys [query/cart proxy/navbar]} (om/props this)
-          {:keys [did-mount?]} (om/get-state this)
           {:keys [cart/items]} cart
           skus-by-store (items-by-store items)]
       (common/page-container
         {:navbar navbar :id "sulo-shopping-bag"}
         (grid/row-column
           nil
+          (dom/h1 nil "Shopping bag")
           (if (not-empty items)
             (dom/div nil
-                     (dom/h1 nil "Shopping Bag")
                      (store-items-element this skus-by-store))
-            (if-not did-mount?
-              (dom/div
-                (->> (css/text-align :center)
-                     (css/add-class :cart-loading))
-                (dom/i
-                  {:classes ["fa fa-spinner fa-spin fa-4x"]}))
-              (dom/div
-                (->> (css/callout)
-                     (css/text-align :center)
-                     (css/add-class :cart-empty))
-                (dom/h3 nil "Your shopping bag is empty")
-                (dom/a
-                  {:href (routes/url :index)}
-                  (dom/h5 nil "Go to the market - start shopping"))))))))))
+            (dom/div
+              (->> (css/callout)
+                   (css/text-align :center)
+                   (css/add-class :cart-empty))
+              (dom/p nil (dom/strong nil "Your shopping bag is empty"))
+              (icons/empty-shopping-bag)
+              ;(dom/p (css/add-class :header))
+              (dom/a
+                (->> {:href (routes/url :products/all-categories)}
+                     (css/button-hollow))
+                (dom/span nil "Go to the market - start shopping")))))))))
 
 (def ->ShoppingBag (om/factory ShoppingBag))
