@@ -39,8 +39,8 @@
    :system                         (::m/system request)
    :release?                       (release? request)
    :cljs-build-id                  (::m/cljs-build-id request)
-   :route-params                   (merge (:route-params request)
-                                          (:params request))
+   :route-params                   (merge (:params request)
+                                          (:route-params request))
    :route                          (:handler request)
    :query-params                   (:params request)
    :auth                           (:identity request)})
@@ -84,16 +84,15 @@
 (defn bidi-route-handler [route]
   ;; Currently all routes render the same way.
   ;; Enter route specific stuff here.
-  (let [auth-roles (routes/auth-roles route)
-        redirect-route (routes/redirect-route route)]
+  (auth/restrict
     (fn [request]
-      (if (auth/has-auth? (db/db (::m/conn request)) auth-roles (:identity request) (:route-params request))
-        (server.ui/render-site (request->props (assoc request :handler route)))
-        (r/redirect (routes/path redirect-route))))))
+      (server.ui/render-site (request->props (assoc request :handler route))))
+    (auth/bidi-route-restrictions route)))
 
 (defroutes
   member-routes
   ;; Hooks in bidi routes with compojure.
+  ;; TODO: Cache the handlers for each route.
   (GET "*" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler)))
 
 (defroutes

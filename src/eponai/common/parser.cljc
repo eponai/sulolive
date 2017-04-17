@@ -509,12 +509,12 @@
         (parser-mw state))))
 
 (defn client-parser-state [& [custom-state]]
-  (merge {:read              client-read
-          :mutate            client-mutate
-          :elide-paths       false
-          :txs-by-project    (atom {})
+  (merge {:read                client-read
+          :mutate              client-mutate
+          :elide-paths         false
+          :txs-by-project      (atom {})
           ::conn->route-params (fn [conn]
-                               (:route-params (client.routes/current-route conn)))}
+                                 (:route-params (client.routes/current-route conn)))}
          custom-state))
 
 (defn query-params [env parser-state]

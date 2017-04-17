@@ -8,8 +8,6 @@
     [eponai.client.reconciler :as reconciler]
     [eponai.client.utils :as client.utils]
     [eponai.common.parser :as parser :refer [client-mutate server-mutate]]
-    [eponai.server.datomic-dev :as datomic-dev]
-    [datomic.api :as datomic]
     [datomock.core :as dato-mock]
     [taoensso.timbre :refer [info debug]]
     [eponai.client.backend :as backend]
@@ -17,10 +15,9 @@
     [com.stuartsierra.component :as component]
     [om.next :as om]
     [aleph.netty :as netty]
-    [clojure.data :as data]
     [clj-http.cookies :as cookies]
-    [clj-http.client :as http]
-    [eponai.common.routes :as routes]
+    [eponai.server.test-util :as test-util]
+    [eponai.server.datomic.mocked-data :as mocked-data]
     [aprint.dispatch :as adispatch]
     [taoensso.timbre :as timbre])
   (:import (om.next Reconciler)))
@@ -68,33 +65,29 @@
 
 ;; Create client
 
-(defn- remote-config-with-server-url [conn server-url cookie-store]
-  (reduce (fn [m k]
-            (update m k (fn [remote-fn]
-                          (-> remote-fn
-                              (remotes/update-key :url #(str server-url %))
-                              (remotes/update-key :opts assoc :cookie-store cookie-store)))))
-          (reconciler/remote-config conn)
-          (reconciler/remote-order)))
+(defn- remote-config-with-server-url [conn system cookie-store]
+  (letfn [(same-jvm-remote [remote-fn]
+            (-> remote-fn
+                (remotes/update-key :url #(str (test-util/server-url system) %))
+                (remotes/update-key :opts assoc :cookie-store cookie-store)))]
+    (reduce (fn [m k]
+              (update m k same-jvm-remote))
+            (reconciler/remote-config conn)
+            (reconciler/remote-order))))
 
-(defn- clj-auth-lock [server-url cookie-store]
+(defn- clj-auth-lock [system cookie-store]
   (reify
     auth/IAuthLock
     (show-lock [this]
       (fn [{:keys [email]}]
-        (binding [clj-http.core/*cookie-store* cookie-store]
-          (let [endpoint (str server-url (routes/path :auth))
-                _ (debug "Requesting auth to endpoint: " endpoint)
-                response (http/get endpoint {:follow-redirects false
-                                             :query-params {:code email :state "/"}})]
-            (info "Got auth response: " response)))))))
+        (let [ret (test-util/auth-user! system email cookie-store)]
+          (info "Got auth response: " ret))))))
 
 (defn create-client [system merge-chan]
   (let [reconciler-atom (atom nil)
         conn (client.utils/create-conn)
-        server-url (str "http://localhost:" (get-port system))
         cookie-store (cookies/cookie-store)
-        remote-config (remote-config-with-server-url conn server-url cookie-store)
+        remote-config (remote-config-with-server-url conn system cookie-store)
         reconciler (reconciler/create {:conn             conn
                                        :parser           (parser/client-parser)
                                        :send-fn          (backend/send! reconciler-atom remote-config
@@ -102,7 +95,7 @@
                                                                                          (go (>! merge-chan reconciler)))})
                                        :history          1000
                                        :route            :index
-                                       :shared/auth-lock (clj-auth-lock server-url cookie-store)})]
+                                       :shared/auth-lock (clj-auth-lock system cookie-store)})]
     (reset! reconciler-atom reconciler)
     reconciler))
 
@@ -221,10 +214,10 @@
 ;; WOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOW...?
 ;; We'd also need a generator params of the mutation.
 (defn test-store-login-2 []
-  (let [test {::tx   `[(fullstack/login {:user/email "dev@sulo.live"})
+  (let [test {::tx   `[(fullstack/login {:user/email mocked-data/test-user-email})
                        {:query/auth [:user/email]}]
               ::pre  {[:query/auth :user/email] nil}
-              ::post {[:query/auth :user/email] "dev@sulo.live"}}]
+              ::post {[:query/auth :user/email] mocked-data/test-user-email}}]
     {::label   "Should be able to log in store"
     ::actions [test
                (assoc test ::pre (::post test))]}))
