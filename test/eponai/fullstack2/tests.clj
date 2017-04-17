@@ -201,10 +201,11 @@
              ;; So it returns a function that takes the email and does the authorization.
              (let [parsed-auth (parser env [{:query/auth [:db/id]}])]
                (debug "Parsed auth: " parsed-auth)
-               (when-not (:query/auth parsed-auth)
-                (let [lock (auth/show-lock (:shared/auth-lock shared))]
-                  (assert (fn? lock) (str "show-lock did not return a function. Was: " lock))
-                  (lock {:email email})))))})
+               (when (empty? (:query/auth parsed-auth))
+                 (let [lock (auth/show-lock (:shared/auth-lock shared))]
+                   (assert (fn? lock) (str "show-lock did not return a function. Was: " lock))
+                   (lock {:email email})))
+               nil))})
 
 ;; TODO: Could define a multimethod for each mutation
 ;;       that returns reads it should read
@@ -214,7 +215,7 @@
 ;; WOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOW...?
 ;; We'd also need a generator params of the mutation.
 (defn test-store-login-2 []
-  (let [test {::tx   `[(fullstack/login {:user/email mocked-data/test-user-email})
+  (let [test {::tx   `[(fullstack/login {:user/email ~mocked-data/test-user-email})
                        {:query/auth [:user/email]}]
               ::pre  {[:query/auth :user/email] nil}
               ::post {[:query/auth :user/email] mocked-data/test-user-email}}]
