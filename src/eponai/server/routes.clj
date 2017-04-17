@@ -45,6 +45,10 @@
    :query-params                   (:params request)
    :auth                           (:identity request)})
 
+;---------- Auth handlers
+
+
+
 ;----------API Routes
 
 (defn handle-parser-request
@@ -108,16 +112,14 @@
 
   (GET "/aws" request (api/aws-s3-sign request))
   (POST "/api" request
-    ;(r/response (call-parser request))
-    (auth/restrict
-      #(r/response (call-parser %))
-      (auth/jwt-restrict-opts)))
+    (r/response (call-parser request)))
 
   (route/resources "/")
   ;(POST "/stripe/main" request (r/response (stripe/webhook (::m/conn request) (:params request))))
   (GET "/auth" request (auth/authenticate request))
 
-  (GET "/logout" request (auth/logout request))
+  (GET "/logout" request (-> (auth/redirect request (routes/path :index))
+                             (auth/remove-auth-cookie)))
 
   (GET "/devcards" request
     (when-not (::m/in-production? request)
@@ -137,9 +139,8 @@
                                     request))
 
   (context "/" [:as request]
-    (cond-> member-routes
-            (or (::m/in-production? request))
-            (auth/restrict (auth/member-restrict-opts)))
+    member-routes
+
     ;(if (release? request)
     ;  (auth/restrict member-routes (auth/member-restrict-opts))
     ;  member-routes)

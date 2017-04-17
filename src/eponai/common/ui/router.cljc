@@ -46,7 +46,11 @@
    :user            {:component user/User
                      :factory   user/->User}
    :settings        {:component settings/Settings
-                     :factory   settings/->Settings}})
+                     :factory   settings/->Settings}
+   :login           {:component index/Login
+                     :factory   index/->Login}
+   :unauthorized    {:component index/Unauthorized
+                     :factory index/->Unauthorized}})
 
 (defn normalize-route
   "We need to normalize our routes now that we have namespaced route matches.
