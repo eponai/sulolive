@@ -50,7 +50,8 @@
                              :stripe/legal-entity
                              :stripe/external-accounts
                              :stripe/default-currency
-                             :stripe/payout-schedule]}
+                             :stripe/payout-schedule
+                             :stripe/details-submitted?]}
      {:proxy/activate-account (om/get-query activate/Activate)}
      {:proxy/payouts (om/get-query payouts/Payouts)}
      {:proxy/general (om/get-query general/General)}
@@ -82,11 +83,16 @@
             (grid/column-size {:small 12 :medium 3 :large 2})
             (menu/vertical
               (css/add-class :tabs)
-              (when-not accepted-tos?
-                (tabs-title this :store-dashboard/settings#activate
-                            (css/add-class :activate)
-                            (dom/i {:classes ["fa fa-check fa-fw"]})
-                            (dom/small nil "Activate account")))
+              (cond (not (:stripe/details-submitted? stripe-account))
+                    (tabs-title this :store-dashboard/settings#activate
+                                (css/add-class :activate)
+                                (dom/i {:classes ["fa fa-check fa-fw"]})
+                                (dom/small nil "Activate account"))
+                    (not-empty (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed]))
+                    (tabs-title this :store-dashboard/settings#activate
+                                (css/add-class :activate)
+                                (dom/i {:classes ["fa fa-check fa-fw"]})
+                                (dom/small nil "Verify account")))
 
               (tabs-title this :store-dashboard/settings
                           nil
