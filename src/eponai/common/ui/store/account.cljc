@@ -83,7 +83,7 @@
             (menu/vertical
               (css/add-class :tabs)
               (when-not accepted-tos?
-                (tabs-title this :activate
+                (tabs-title this :store-dashboard/settings#activate
                             (css/add-class :activate)
                             (dom/i {:classes ["fa fa-check fa-fw"]})
                             (dom/small nil "Activate account")))
@@ -111,7 +111,7 @@
             (dom/div
               (->> (css/add-class :tabs-content)
                    (css/add-class ::css/vertical))
-              (tabs-panel (= route :activate)
+              (tabs-panel (= route :store-dashboard/settings#activate)
                           (activate/->Activate (om/computed activate-account
                                                             {:store store
                                                              :stripe-account stripe-account})))
