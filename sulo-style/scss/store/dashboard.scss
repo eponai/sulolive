@@ -36,6 +36,22 @@
 	}
 }
 
+@mixin label-hollow {
+	// $primary-color: map-get($foundation-palette, action);
+	// @include foundation-button;
+	.label.hollow {
+		@each $name, $color in $foundation-palette {
+			&.#{$name} {
+				border: $global-border;
+				border-color: $color;
+				color: $color;
+				background: $white;
+			}
+	    }
+		// margin: 0;
+	}
+}
+
 #sulo-store-dashboard {
 	$dashboard-max-width: 75rem;
 	.navbar, footer, .footer .row, .row {
@@ -173,14 +189,20 @@
 				margin: 0;
 			}
 			.stream-status {
-				.header {
-					margin-bottom: 0.5rem;
+				@include label-hollow;
+				// span.label.#{$name} {
+
+				// 	font-weight: $global-weight-normal;
+				// }
+				a {
 					display: flex;
 					justify-content: space-between;
 					align-items: center;
-				}
-				span.label {
-					text-transform: uppercase;
+					padding: 0;
+					.label {
+						cursor: pointer;
+						text-transform: uppercase;
+					}
 				}
 			}
 			li.getting-started-item {

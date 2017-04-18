@@ -124,6 +124,7 @@
         store-id (:db/id store)
         ;; Implement a :query/stream-by-store-id ?
         stream-state (-> store :stream/_store first :stream/state)]
+
     (dom/div
       nil
       (callout/callout
@@ -146,19 +147,37 @@
               (css/button-hollow {:href (routes/url :store-dashboard/settings {:store-id store-id})}) "Edit"))))
       (callout/callout
         (css/add-class :stream-status)
-        (callout/header nil (dom/span nil "Stream status") (dom/a
-                                              (->> (css/button-hollow {:href (routes/url :store-dashboard/stream {:store-id (:db/id store)})})
-                                                   (css/add-class :primary))
-                                              (dom/i {:classes ["fa fa-gear fa-fw"]})))
-        (dom/span
-          (cond->> (css/add-class :label)
-                   (= stream-state :stream.state/offline)
-                   (css/add-class :primary)
-                   (= stream-state :stream.state/online)
-                   (css/add-class :success)
-                   (= stream-state :stream.state/live)
-                   (css/add-class :highlight))
-          (name stream-state))))))
+        (dom/a
+          (->> (css/button-hollow {:href (routes/url :store-dashboard/stream {:store-id (:db/id store)})})
+               (css/add-class :primary))
+               (dom/span nil "Stream status")
+               (dom/span
+                 (cond->> (css/add-class :label)
+                          (= stream-state :stream.state/offline)
+                          (css/add-class :primary)
+                          (= stream-state :stream.state/online)
+                          (css/add-class :success)
+                          (= stream-state :stream.state/live)
+                          (css/add-class :highlight))
+                 (name stream-state))))
+      (callout/callout
+        (css/add-class :stream-status)
+        (let [verification (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/verification])
+              status (keyword (:stripe.legal-entity.verification/status verification))]
+          (dom/a
+            (->> (css/button-hollow {:href (when (= status :unverified)
+                                             (routes/url :store-dashboard/settings#activate {:store-id (:db/id store)}))})
+                 (css/add-class :primary))
+            (dom/span nil "Account status")
+            (dom/span
+              (cond->> (css/add-class :hollow (css/add-class :label))
+                       (= status :pending)
+                       (css/add-class :secondary)
+                       (= status :verified)
+                       (css/add-class :success)
+                       (= status :unverified)
+                       (css/add-class :warning))
+              (name status))))))))
 
 (defn verification-status-element [component]
   (let [{:query/keys [stripe-account store]} (om/props component)
@@ -245,7 +264,11 @@
      :query/messages
      {:routing/store-dashboard (-> (medley/map-vals (comp om/get-query :component) route-map)
                                    (assoc :store-dashboard []))}
-     {:query/stripe-account '[*]}
+     {:query/stripe-account [:stripe/legal-entity
+                             :stripe/verification
+                             :stripe/details-submitted?
+                             :stripe/charges-enabled?
+                             :stripe/payouts-enabled?]}
      ])
   Object
   (initLocalState [_]
