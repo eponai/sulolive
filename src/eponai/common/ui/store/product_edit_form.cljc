@@ -85,8 +85,9 @@
       (routes/set-url! this :store-dashboard/product-list {:store-id (:store-id (get-route-params this))})
       ))
   (delete-product [this]
-    (let [{:keys [product-id]} (get-route-params this)]
-      (msg/om-transact! this `[(store/delete-product ~{:product {:db/id (c/parse-long product-id)}})])))
+    (let [{:keys [product-id store-id]} (get-route-params this)]
+      (msg/om-transact! this `[(store/delete-product ~{:store-id store-id
+                                                       :product {:db/id (c/parse-long product-id)}})])))
 
   (update-product [this]
     (let [{:keys [product-id store-id]} (get-route-params this)

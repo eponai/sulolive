@@ -12,13 +12,13 @@
 
 ;; TODO: Do this with spec instead
 (defn- get-id [role params k]
-  (if-some [ret (or (get params role)
+  (if-some [ret (or (c/parse-long-safe (get params role))
                     (get-in params [k :db/id])
                     (->> (keyword nil (str (name k) "-id"))
                          (get params)
                          (c/parse-long-safe)))]
     ret
-    (throw (ex-info (str "Unable to get id for key: " k) {:type   ::missing-id
+    (throw (ex-info (str "Unable to get id for key: " k) {:type   :missing-id
                                                           :params params
                                                           :id-key k}))))
 
@@ -36,6 +36,11 @@
   [role _ params]
   {:where   '[[?store :store/owners ?owner]
               [?owner :store.owner/user ?user]]
+   :symbols {'?store (get-id role params :store)}})
+
+(defmethod auth-role-query ::exact-store
+  [role _ params]
+  {:where   '[[?store :store/owners _]]
    :symbols {'?store (get-id role params :store)}})
 
 (defn auth-query [roles {:keys [email] :as auth} params]
@@ -68,7 +73,7 @@
       (db/find-with db query))
     (catch #?@(:clj  [ExceptionInfo e]
                :cljs [:default e])
-           (if (= ::missing-id (:type (ex-data e)))
+           (if (= :missing-id (:type (ex-data e)))
              nil
              (throw e)))))
 

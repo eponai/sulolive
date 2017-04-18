@@ -23,13 +23,13 @@
 (def restrict buddy/restrict)
 
 (defn prompt-login [request]
-  (auth/-prompt-login (::auth/auth-responder request)))
+  (auth/-prompt-login (::auth-responder request)))
 
 (defn unauthorize [request]
-  (auth/-unauthorize (::auth/auth-responder request)))
+  (auth/-unauthorize (::auth-responder request)))
 
 (defn redirect [request path]
-  (auth/-redirect (::auth/auth-responder request) path))
+  (auth/-redirect (::auth-responder request) path))
 
 (defn remove-auth-cookie [response]
   (assoc-in response [:cookies auth-token-cookie-name] {:value "kill" :max-age 1}))
@@ -85,7 +85,7 @@
 
 (defn- wrap-http-auth-responder [handler]
   (fn [request]
-    (handler (assoc request ::auth/auth-responder (->HttpAuthResponder)))))
+    (handler (assoc request ::auth-responder (->HttpAuthResponder)))))
 
 (defn- wrap-expired-token [handler]
   (let [token-failure #{::token-manipulated ::token-expired}]
