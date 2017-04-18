@@ -6,7 +6,6 @@
     [eponai.common.validate]
     [eponai.server.parser.read]
     [eponai.server.parser.mutate]
-    [eponai.server.routes :refer [site-routes]]
     [eponai.server.middleware :as m]
     [aleph.netty]
     [taoensso.timbre :refer [debug error info]]

@@ -1,6 +1,7 @@
 (ns eponai.common.routes
   (:require [bidi.bidi :as bidi]
-            [taoensso.timbre :refer [debug error]]))
+            [taoensso.timbre :refer [debug error]]
+            [eponai.common.auth :as auth]))
 
 (def store-routes
   {""           :store
@@ -59,15 +60,15 @@
 (defn auth-roles [handler]
   (cond
     (= handler :store-dashboard)
-    :auth.role/store-owner
+    ::auth/store-owner
     (= (namespace handler) "store-dashboard")
-    :auth.role/store-owner
+    ::auth/store-owner
     (#{:user/profile :user/order :user/order-list} handler)
-    :auth.role/exact-user
+    ::auth/exact-user
     (= handler :checkout)
-    :auth.role/any-user
+    ::auth/any-user
     :else
-    :auth.role/public))
+    ::auth/public))
 
 (defn path
   "Takes a route and its route-params and returns a path"
