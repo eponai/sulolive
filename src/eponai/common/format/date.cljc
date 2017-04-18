@@ -169,3 +169,9 @@
 (defn current-millis []
   (c/to-long (now)))
 
+(defn current-secs []
+  (let [now (c/to-long (now))]
+    #?(:clj  (with-precision 10
+               (/ now 1000))
+       :cljs (/ now 1000))))
+

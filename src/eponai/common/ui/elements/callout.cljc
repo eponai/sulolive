@@ -8,5 +8,10 @@
     (css/callout opts)
     content))
 
+(defn callout-small [opts & content]
+  (callout
+    (css/add-class :small opts)
+    content))
+
 (defn header [opts & content]
   (dom/p (css/add-class :header opts) content))

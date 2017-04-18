@@ -153,7 +153,8 @@
                  The information requested in this form is required by Stripe for verification to keep payments and transfers enabled on your account. ")
                  (dom/a {:href "https://stripe.com/docs/connect/identity-verification"}
                         (dom/span nil "Learn more")))
-          (dom/p nil "We don't use this information for any other purpose than to pass along to Stripe."))
+          (dom/p nil "Your account details are reviewed by Stripe to ensure they comply with their terms of service. If there's a problem, we'll get in touch right away to resolve it as quickly as possible.")
+          (dom/p nil "We don't use this information for any other purpose than to pass along to Stripe and let you manage your account."))
         (dom/div
           (css/callout)
           (dom/p (css/add-class :header) "Account details")

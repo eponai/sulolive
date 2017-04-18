@@ -14,7 +14,7 @@
    :stripe/secret "sk_test_ISVuDM5UfrfTLUqV2HNvspLf"})
 
 (defn stripe-account []
-  (no-details-account))
+  (missing-personal-id-account))
 
 
 (defn photo [url]

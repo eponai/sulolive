@@ -5,4 +5,22 @@
 		padding-bottom: 0.1rem;
 		margin-bottom: 1.5rem;
 	}
+
+	&.notification {
+		a {
+			text-decoration: underline;
+		}
+		.header {
+			border-bottom: none;
+		}
+		i.fa-warning {
+			color: $warning-color;
+		}
+		&.action i {
+			color: map-get($foundation-palette, action);
+		}
+		&.alert i {
+			color: $alert-color;
+		}
+	}
 }

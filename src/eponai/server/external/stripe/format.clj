@@ -21,7 +21,8 @@
 (defn stripe->verification [^Account$Verification v]
   (f/remove-nil-keys
     {:stripe.verification/fields-needed (.getFieldsNeeded v)
-     :stripe.verification/due-by        (.getDueBy v)}))
+     :stripe.verification/due-by        (.getDueBy v)
+     :stripe.verification/disabled-reason (.getDisabledReason v)}))
 
 
 (defn stripe->legal-entity [^LegalEntity le]

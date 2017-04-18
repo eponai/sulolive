@@ -12,7 +12,7 @@
                               "/business" :store-dashboard/settings#business
                               "/activate" :store-dashboard/settings#activate}
                  "/products" {""                                :store-dashboard/product-list
-                              ["/" [#"create" :action]]         :store-dashboard/create-product
+                              "/create"                         :store-dashboard/create-product
                               ["/" [#"(\d|\w|-)+" :product-id]] :store-dashboard/product}
                  "/orders"   {""                        :store-dashboard/order-list
                               ["/" [#"create" :action]] :store-dashboard/create-order

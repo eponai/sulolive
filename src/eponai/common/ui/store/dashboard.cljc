@@ -12,83 +12,20 @@
     [eponai.common.ui.store.product-edit-form :as pef]
     [eponai.common.ui.store.product-list :as pl]
     [eponai.common.ui.store.stream-settings :as ss]
-    [eponai.common.ui.dom :as my-dom]
-    [om.dom :as dom]
+    [eponai.common.ui.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
     [eponai.common.format :as f]
     [eponai.common.ui.elements.photo :as photo]
-    [medley.core :as medley]))
-
-(defn str->json [s]
-  #?(:cljs (cljs.reader/read-string s)
-     :clj  (clojure.data.json/read-str s :key-fn keyword)))
-
+    [medley.core :as medley]
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.common.ui.elements.grid :as grid]
+    [eponai.common.format.date :as date]))
 
 (defn find-product [store product-id]
   (let [product-id (c/parse-long product-id)]
     (some #(when (= (:db/id %) product-id) %)
           (:store/items store))))
-
-(defn get-route-params [component]
-  (get-in (om/props component) [:query/current-route :route-params]))
-
-(defn parse-route [route]
-  (let [ns (namespace route)
-        subroute (name route)
-        path (clojure.string/split subroute #"#")]
-    (keyword ns (first path))))
-
-(defn sub-navbar [component]
-  (let [{:query/keys [current-route store]} (om/props component)
-        {:keys [route]} current-route
-        store-id (:db/id store)
-        nav-breakpoint :medium]
-    (dom/div #js {:className "navbar-container" :id "store-navbar"}
-      (dom/nav #js {:className "top-bar navbar"}
-               (menu/horizontal
-                 nil
-                 (menu/item (when (= route :store-dashboard)
-                              (css/add-class ::css/is-active))
-                            (my-dom/a
-                              (css/add-class :category {:href (routes/url :store-dashboard {:store-id store-id})})
-                              (my-dom/span (css/show-for nav-breakpoint) "Dashboard")
-                              (my-dom/i
-                                (css/hide-for nav-breakpoint {:classes [:fa :fa-dashboard :fa-fw]}))))
-                 (menu/item (when (= route :store-dashboard/stream)
-                              (css/add-class ::css/is-active))
-                            (my-dom/a
-                              (css/add-class :category {:href (routes/url :store-dashboard/stream {:store-id store-id})})
-                              (my-dom/span (css/show-for nav-breakpoint) "Stream")
-                              (my-dom/i
-                                (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]}))))
-                 (menu/item
-                   (when (or (= route :store-dashboard/product-list)
-                             (= route :store-dashboard/product)
-                             (= route :store-dashboard/create-product))
-                     (css/add-class ::css/is-active))
-                   (my-dom/a
-                     (css/add-class :category {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
-                     (my-dom/span (css/show-for nav-breakpoint) "Products")
-                     (my-dom/i
-                       (css/hide-for nav-breakpoint {:classes [:fa :fa-gift :fa-fw]}))))
-                 (menu/item
-                   (when (or (= route :store-dashboard/order-list)
-                             (= route :store-dashboard/order))
-                     (css/add-class ::css/is-active))
-                   (my-dom/a
-                     (css/add-class :category {:href (routes/url :store-dashboard/order-list {:store-id store-id})})
-                     (my-dom/span (css/show-for nav-breakpoint) "Orders")
-                     (my-dom/i
-                       (css/hide-for nav-breakpoint {:classes [:fa :fa-file-text-o :fa-fw]}))))
-                 (menu/item
-                   (when (= (parse-route route) :store-dashboard/settings)
-                     (css/add-class ::css/is-active))
-                   (my-dom/a
-                     (css/add-class :category {:href (routes/url :store-dashboard/settings {:store-id store-id})})
-                     (my-dom/span (css/show-for nav-breakpoint) "Settings")
-                     (my-dom/i
-                       (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]})))))))))
 
 (def compute-route-params #(select-keys % [:route-params]))
 (def compute-store #(select-keys % [:store]))
@@ -113,6 +50,172 @@
                                                  :computed-fn (fn [{:keys [store route-params]}]
                                                                 {:route-params route-params
                                                                  :product      (find-product store (:product-id route-params))})}})
+
+;(defn str->json [s]
+;  #?(:cljs (cljs.reader/read-string s)
+;     :clj  (clojure.data.json/read-str s :key-fn keyword)))
+
+(defn get-route-params [component]
+  (get-in (om/props component) [:query/current-route :route-params]))
+
+(defn parse-route [route]
+  (let [ns (namespace route)
+        subroute (name route)
+        path (clojure.string/split subroute #"#")]
+    (keyword ns (first path))))
+
+(defn sub-navbar [component]
+  (let [{:query/keys [current-route store]} (om/props component)
+        {:keys [route]} current-route
+        store-id (:db/id store)
+        nav-breakpoint :medium]
+    (dom/div
+      (->> {:id "store-navbar"}
+           (css/add-class :navbar-container))
+      (dom/nav
+        (->> (css/add-class :navbar)
+             (css/add-class :top-bar))
+        (menu/horizontal
+          nil
+          (menu/item (when (= route :store-dashboard)
+                       (css/add-class ::css/is-active))
+                     (dom/a
+                       (css/add-class :category {:href (routes/url :store-dashboard {:store-id store-id})})
+                       (dom/span (css/show-for nav-breakpoint) "Dashboard")
+                       (dom/i
+                         (css/hide-for nav-breakpoint {:classes [:fa :fa-dashboard :fa-fw]}))))
+          (menu/item (when (= route :store-dashboard/stream)
+                       (css/add-class ::css/is-active))
+                     (dom/a
+                       (css/add-class :category {:href (routes/url :store-dashboard/stream {:store-id store-id})})
+                       (dom/span (css/show-for nav-breakpoint) "Stream")
+                       (dom/i
+                         (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]}))))
+          (menu/item
+            (when (or (= route :store-dashboard/product-list)
+                      (= route :store-dashboard/product)
+                      (= route :store-dashboard/create-product))
+              (css/add-class ::css/is-active))
+            (dom/a
+              (css/add-class :category {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
+              (dom/span (css/show-for nav-breakpoint) "Products")
+              (dom/i
+                (css/hide-for nav-breakpoint {:classes [:fa :fa-gift :fa-fw]}))))
+          (menu/item
+            (when (or (= route :store-dashboard/order-list)
+                      (= route :store-dashboard/order))
+              (css/add-class ::css/is-active))
+            (dom/a
+              (css/add-class :category {:href (routes/url :store-dashboard/order-list {:store-id store-id})})
+              (dom/span (css/show-for nav-breakpoint) "Orders")
+              (dom/i
+                (css/hide-for nav-breakpoint {:classes [:fa :fa-file-text-o :fa-fw]}))))
+          (menu/item
+            (when (= (parse-route route) :store-dashboard/settings)
+              (css/add-class ::css/is-active))
+            (dom/a
+              (css/add-class :category {:href (routes/url :store-dashboard/settings {:store-id store-id})})
+              (dom/span (css/show-for nav-breakpoint) "Settings")
+              (dom/i
+                (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]})))))))))
+
+(defn store-info-element [component]
+  (let [{:query/keys [store stripe-account]} (om/props component)
+        store-id (:db/id store)
+        ;; Implement a :query/stream-by-store-id ?
+        stream-state (-> store :stream/_store first :stream/state)]
+    (dom/div
+      nil
+      (callout/callout
+        (css/add-class :profile-photo-container)
+        (callout/header nil (:store/name store))
+        (grid/row
+          (css/align :center)
+          (grid/column
+            (grid/column-size {:small 12 :medium 10 :large 8})
+            (photo/store-photo store)))
+        (grid/row
+          (css/align :center)
+          (grid/column
+            (css/add-class :shrink)
+            (dom/a
+              (css/button-hollow {:href (routes/url :store {:store-id store-id})}) "View"))
+          (grid/column
+            (css/add-class :shrink)
+            (dom/a
+              (css/button-hollow {:href (routes/url :store-dashboard/settings {:store-id store-id})}) "Edit"))))
+      (callout/callout
+        (css/add-class :stream-status)
+        (callout/header nil (dom/span nil "Stream status") (dom/a
+                                              (->> (css/button-hollow {:href (routes/url :store-dashboard/stream {:store-id (:db/id store)})})
+                                                   (css/add-class :primary))
+                                              (dom/i {:classes ["fa fa-gear fa-fw"]})))
+        (dom/span
+          (cond->> (css/add-class :label)
+                   (= stream-state :stream.state/offline)
+                   (css/add-class :primary)
+                   (= stream-state :stream.state/online)
+                   (css/add-class :success)
+                   (= stream-state :stream.state/live)
+                   (css/add-class :highlight))
+          (name stream-state))))))
+
+(defn verification-status-element [component]
+  (let [{:query/keys [stripe-account store]} (om/props component)
+        {:stripe/keys [charges-enabled? payouts-enabled? verification]} stripe-account
+        {:stripe.verification/keys [due-by fields-needed disabled-reason]} verification
+        is-alert? (or (false? charges-enabled?) (false? payouts-enabled?) (when (some? due-by) (< due-by (date/current-secs))))
+        is-warning? (boolean (not-empty fields-needed))
+
+        disabled-labels {:fields_needed (dom/p nil (dom/span nil "More information is needed to verify your account. Please ")
+                                               (dom/a nil (dom/span nil "provide the required information")) (dom/span nil " to re-enable the account."))}]
+    (when (or is-alert? is-warning?)
+      (callout/callout
+        (cond->> (css/add-class :account-status (css/add-class :notification))
+                 (or is-alert? is-warning?)
+                 (css/add-class :warning))
+        (grid/row
+          nil
+          (grid/column
+            (css/add-class :shrink)
+            (dom/i {:classes ["fa fa-warning fa-fw"]}))
+          (grid/column
+            nil
+            (dom/p
+              nil
+              (cond (false? charges-enabled?)
+                    (dom/strong nil "Charges from this account are disabled")
+                    (false? payouts-enabled?)
+                    (dom/strong nil "Payouts to this account are disabled")
+                    (some? due-by)
+                    (dom/strong nil "More information is needed to verify your account")
+                    (not-empty fields-needed)
+                    (dom/strong nil "More information may be needed to verify your account")))
+            (cond (false? charges-enabled?)
+                  (get disabled-labels (keyword disabled-reason))
+                  (false? payouts-enabled?)
+                  (get disabled-labels (keyword disabled-reason))
+                  (some? due-by)
+                  (dom/p nil
+                         (dom/span nil "More information needs to be collected to keep this account enabled. Please ")
+                         (dom/a {:href (routes/url :store-dashboard/settings#activate {:store-id (:db/id store)})} "provide the required information")
+                         (dom/span nil " to prevent disruption in service to this account."))
+                  (some? fields-needed)
+                  (dom/p nil
+                         (dom/span nil "If this account continues to process more volume, more information may need to be collected. To prevent disruption in service to this account you can choose to ")
+                         (dom/a {:href (routes/url :store-dashboard/settings#activate {:store-id (:db/id store)})} "provide the information")
+                         (dom/span nil " proactively.")))
+            ))))))
+
+(defn check-list-item [done? href & [content]]
+  (menu/item
+    (cond->> (css/add-class :getting-started-item)
+             done?
+             (css/add-class :done))
+    (dom/i {:classes ["fa fa-check fa-fw"]})
+    (dom/a
+      (css/button-hollow {:href (when-not done? href)})
+      content)))
 
 (defui Dashboard
   static om/IQuery
@@ -142,7 +245,7 @@
      :query/messages
      {:routing/store-dashboard (-> (medley/map-vals (comp om/get-query :component) route-map)
                                    (assoc :store-dashboard []))}
-     {:query/stripe-account [:stripe/legal-entity :stripe/verification]}
+     {:query/stripe-account '[*]}
      ])
   Object
   (initLocalState [_]
@@ -152,9 +255,7 @@
            :query/keys [store current-route stripe-account]
            :as         props} (om/props this)
           {:keys [route route-params]} current-route
-          store-id (:db/id store)
-          ;; Implement a :query/stream-by-store-id ?
-          stream-state (-> store :stream/_store first :stream/state)]
+          store-id (:db/id store)]
 
       (common/page-container
         {:navbar navbar
@@ -167,78 +268,57 @@
                 routed-props (:routing/store-dashboard props)]
             (factory (om/computed routed-props (computed-fn (assoc props :store store :route-params route-params)))))
           ;; Render the store's dashboard:
-          (my-dom/div
-            (->> (css/grid-row {:id "sulo-main-dashboard"})
-                 (css/align :center))
-            (my-dom/div
-              (->> (css/grid-column)
-                   (css/grid-column-size {:small 10 :medium 4 :large 3}))
-              (my-dom/div
-                (->> (css/add-class ::css/callout)
-                     (css/add-class :profile-photo-container))
-                (photo/store-photo store)
-                (my-dom/div
-                  (css/text-align :center)
-                  (dom/h4 nil (:store/name store)))
-                (my-dom/div
-                  (css/add-class :button-container)
-                  (dom/a #js {:className "button hollow"
-                              :href (routes/url :store {:store-id store-id})} "View Store")
-                  (dom/a #js {:className "button hollow"
-                              :href (routes/url :store-dashboard/settings {:store-id store-id})} "Edit Store"))))
-            (my-dom/div
-              (->> (css/grid-column)
-                   (css/grid-column-size {:small 12 :medium 8 :large 9}))
-              (my-dom/div
-                (css/grid-row)
-                (my-dom/div
-                  (css/grid-column)
-                  (my-dom/div
-                    (->> {:classes [::css/callout :status-callout ::css/notification]})
-                    (my-dom/div
-                      (css/grid-row)
-                      (my-dom/div
-                        (->> (css/grid-column)
-                             (css/grid-column-size {:small 12 :medium 6})
-                             (css/add-class :stream-status-container))
-                        (if (or (nil? stream-state) (= stream-state :stream.state/offline))
-                          (dom/div #js {:className "sulo-stream-status offline"}
-                            (dom/i #js {:className "fa fa-circle fa-2x"})
-                            ;(dom/span nil "You are currently")
-                            (dom/span nil "You are currently OFFLINE"))
-                          (dom/div #js {:className "sulo-stream-status online"}
-                            (dom/i #js {:className "fa fa-circle fa-2x"})
-                            ;(dom/span nil "You are currently")
-                            (dom/span nil (condp = stream-state
-                                            :stream.state/live "You are currently LIVE"
-                                            :stream.state/online "All set to go live")))))
-                      (my-dom/div
-                        (->> (css/grid-column)
-                             (css/text-align :right))
-                        (dom/a #js {:className "button highlight hollow"
-                                    :href (routes/url :store-dashboard/stream {:store-id store-id})}
-                               (dom/span nil "Setup Stream")
-                               (dom/i #js {:className "fa fa-chevron-right fa-fw"})))))
-                  (when (not-empty (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed]))
-                    (my-dom/div
-                      (->> (css/add-class ::css/callout)
-                           (css/add-class ::css/action)
-                           (css/add-class ::css/notification))
-                      (my-dom/div
-                        (->> (css/grid-row)
-                             (css/align :middle))
-                        (my-dom/div
-                          (css/grid-column)
-                          (dom/span nil "Business information needed")
-                          (map (fn [n]
-                                 (dom/div nil (dom/span nil n)))
-                               (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed])))
-                        (my-dom/div
-                          (->> (css/grid-column)
-                               (css/text-align :right))
-                          (dom/a #js {:className "button hollow action"
-                                      :href (routes/url :store-dashboard/settings {:store-id store-id})}
-                                 (dom/span nil "Update Settings")
-                                 (dom/i #js {:className "fa fa-chevron-right fa-fw"})))))))))))))))
+          (grid/row
+            (css/align :center {:id "sulo-main-dashboard"})
+            (grid/column
+              (grid/column-size {:small 10 :medium 4 :large 3})
+              (store-info-element this))
+            (grid/column
+              (grid/column-size {:small 12 :medium 8 :large 9})
+              (callout/callout
+                nil
+                (callout/header nil "Getting started")
+                (menu/vertical
+                  nil
+
+                  (check-list-item
+                    (some? (:store/description store))
+                    (routes/url :store-dashboard/settings {:store-id store-id})
+                    (dom/span nil "Describe your store"))
+
+                  (check-list-item
+                    (boolean (not-empty (:store/items store)))
+                    (routes/url :store-dashboard/create-product {:store-id store-id})
+                    (dom/span nil "Add your first product"))
+
+                  (check-list-item
+                    false
+                    (routes/url :store-dashboard/stream {:store-id store-id})
+                    (dom/span nil "Setup your first stream"))
+
+                  (check-list-item
+                    (:stripe/details-submitted? stripe-account)
+                    (routes/url :store-dashboard/settings#activate {:store-id store-id})
+                    (dom/span nil "Activate your account"))))
+
+              (if (:stripe/details-submitted? stripe-account)
+                (verification-status-element this)
+                (callout/callout
+                  (->> (css/add-class :notification)
+                       (css/add-class :action))
+                  (grid/row
+                    nil
+                    (grid/column
+                      (css/add-class :shrink)
+                      (dom/i {:classes ["fa fa-info fa-fw"]}))
+                    (grid/column
+                      nil
+                      (callout/header nil "Activate your account")))
+                  (dom/p nil
+                         (dom/span nil "Before ")
+                         (dom/a {:href (routes/url :store-dashboard/settings#activate {:store-id store-id})} (dom/span nil "activating your account"))
+                         (dom/span nil ", you can only use SULO Live in test mode. You can manage your store, but it'll not be visible to the public."))
+                  (dom/p nil
+                         "Once you've activated you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our terms of service. If there is a problem, we'll get in touch right away to resolve it as quickly as possible."))))))))))
 
 (def ->Dashboard (om/factory Dashboard))

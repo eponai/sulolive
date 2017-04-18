@@ -48,6 +48,9 @@
 (defn p [opts & content]
   (element dom/p opts content))
 
+(defn s [opts & content]
+  (element dom/s opts content))
+
 (defn span [opts & content]
   (element dom/span opts content))
 
