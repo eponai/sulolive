@@ -413,23 +413,34 @@
   [v basis-t]
   ((fnil vary-meta {}) v assoc ::value-read-basis-t basis-t))
 
-(defn wrap-auth [read-or-mutate]
-   (fn [env k p]
-     (let [roles (auth-role env k p)]
-       (if (auth/is-public-role? roles)
-         (read-or-mutate (dissoc env :auth) k p)
-         (let [auth (:auth env)
-               roles (cond-> roles (keyword? roles) (hash-map true))
-               {::keys [auth-responder]} env]
-           (if-some [user (auth/authed-user-for-params (db/db (:state env)) (keys roles) auth roles)]
-             (read-or-mutate (update env :auth #(-> (dissoc % :email) (assoc :user-id user)))
-                             k p)
-             (let [message (if (empty? auth)
-                             (do (auth/-prompt-login auth-responder)
-                                 "You need to log in to perform this action")
-                             (do (auth/-unauthorize auth-responder)
-                                 "You are unauthorized to perform this action"))]
-               {::mutation-message {::error-message message}})))))))
+(defn- wrap-auth [read-or-mutate on-not-authed]
+  (fn [env k p]
+    (let [roles (auth-role env k p)]
+      (if (auth/is-public-role? roles)
+        (read-or-mutate (dissoc env :auth) k p)
+        (let [auth (:auth env)
+              roles (cond-> roles (keyword? roles) (hash-map true))]
+          (if-some [user (auth/authed-user-for-params (db/db (:state env)) (keys roles) auth roles)]
+            (read-or-mutate (update env :auth #(-> (dissoc % :email) (assoc :user-id user)))
+                            k p)
+            (on-not-authed env k p)))))))
+
+(defn wrap-read-auth [read]
+  (let [read-authed (wrap-auth read (constantly nil))]
+    (fn [env k p]
+      (if (or (is-routing? k)
+              (is-proxy? k))
+        (read env k p)
+        (read-authed env k p)))))
+
+(defn wrap-mutate-auth [mutate]
+  (wrap-auth mutate (fn [{::keys [auth-responder auth]} _ _]
+                      (let [message (if (empty? auth)
+                                      (do (auth/-prompt-login auth-responder)
+                                          "You need to log in to perform this action")
+                                      (do (auth/-unauthorize auth-responder)
+                                          "You are unauthorized to perform this action"))]
+                        {::mutation-message {::error-message message}}))))
 
 #?(:clj
    (defn with-mutation-message [mutate]
@@ -617,6 +628,7 @@
                    (fn [read state]
                      (-> read
                          read-returning-basis-t
+                         wrap-read-auth
                          wrap-datomic-db))
                    (fn [mutate state]
                      (-> mutate
@@ -624,7 +636,7 @@
                          server-mutate-creation-time-env
                          with-mutation-message
                          mutate-without-history-id-param
-                         wrap-auth
+                         wrap-mutate-auth
                          wrap-datomic-db))))))
 
 (defn test-client-parser
