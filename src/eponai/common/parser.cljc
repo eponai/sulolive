@@ -5,6 +5,8 @@
             [om.next.cache :as om.cache]
             [eponai.client.utils :as client.utils]
             [eponai.client.routes :as client.routes]
+            [eponai.common.routes :as routes]
+            [eponai.common.auth :as auth]
             [eponai.common.database :as db]
             [eponai.common.format.date :as date]
             [datascript.core :as datascript]
@@ -25,6 +27,8 @@
 (defmulti server-read om/dispatch)
 (defmulti server-mutate om/dispatch)
 (defmulti server-message om/dispatch)
+
+(defmulti auth-role om/dispatch)
 
 ;; -------- Messaging protocols
 ;; TODO: Move to its own protocol namespace? Like om.next.impl.protocol
@@ -76,6 +80,25 @@
 
 (defn ->pending-message [mutation]
   (->MutationMessage mutation "" ::pending-message))
+
+;; Auth responder
+
+(defn stateful-auth-responder
+  "Returns nil if a method has not been called, otherwise returns true or what is has been called with."
+  []
+  (let [state (atom {})
+        read-then-update-key (fn [k f & args]
+                               (let [ret (get @state k)]
+                                 (apply swap! state update k f args)
+                                 ret))]
+    (reify
+      auth/IAuthResponder
+      (-redirect [this path]
+        (read-then-update-key :redirect (fnil conj []) path))
+      (-prompt-login [this]
+        (read-then-update-key :login (constantly true)))
+      (-unauthorize [this]
+        (read-then-update-key :unauthorized (constantly true))))))
 
 ;; -------- No matching dispatch
 
@@ -385,6 +408,21 @@
   {:value (parser/value-with-basis-t {:foo 1} 1234)}"
   [v basis-t]
   ((fnil vary-meta {}) v assoc ::value-read-basis-t basis-t))
+
+(defn wrap-auth [read-or-mutate]
+   (fn [env k p]
+     (let [roles (auth-role env k p)]
+       (if (auth/is-public-role? roles)
+         (read-or-mutate (dissoc env :auth) k p)
+         (if-some [user (auth/authed-user-for-params (db/db (:state env)) (keys roles) (:auth env) roles)]
+           (read-or-mutate (assoc-in env [:auth :user-id] user) k p)
+           (let [{::auth/keys [auth-responder]} env
+                 message (if (nil? (:auth env))
+                           (do (auth/-prompt-login auth-responder)
+                               "You need to log in to perform this action")
+                           (do (auth/-unauthorize auth-responder)
+                               "You are unauthorized to perform this action"))]
+             {::mutation-message {::error-message message}}))))))
 
 #?(:clj
    (defn with-mutation-message [mutate]

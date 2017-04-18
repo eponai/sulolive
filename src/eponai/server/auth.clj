@@ -13,40 +13,35 @@
     [eponai.server.external.auth0 :as auth0]
     [eponai.common.database :as db]
     [eponai.common.routes :as routes]
+    [eponai.common.auth :as auth]
     [eponai.common :as c]
     [clojure.spec :as s]
-    [medley.core :as medley])
-  (:import (clojure.lang ExceptionInfo)))
+    [medley.core :as medley]))
 
 (def auth-token-cookie-name "sulo-auth-token")
 
 (def restrict buddy/restrict)
 
-(defprotocol IAuthResponder
-  (-redirect [this path])
-  (-prompt-login [this request])
-  (-unauthorize [this request]))
-
 (defn prompt-login [request]
-  (-prompt-login (::auth-responder request) request))
+  (auth/-prompt-login (::auth/auth-responder request)))
 
 (defn unauthorize [request]
-  (-unauthorize (::auth-responder request) request))
+  (auth/-unauthorize (::auth/auth-responder request)))
 
 (defn redirect [request path]
-  (-redirect (::auth-responder request) path))
+  (auth/-redirect (::auth/auth-responder request) path))
 
 (defn remove-auth-cookie [response]
   (assoc-in response [:cookies auth-token-cookie-name] {:value "kill" :max-age 1}))
 
 (defrecord HttpAuthResponder []
-  IAuthResponder
+  auth/IAuthResponder
   (-redirect [this path]
     (r/redirect path))
-  (-prompt-login [this request]
-    (-redirect this (routes/path :login)))
-  (-unauthorize [this request]
-    (-redirect this (routes/path :unauthorized))))
+  (-prompt-login [this]
+    (auth/-redirect this (routes/path :login)))
+  (-unauthorize [this]
+    (auth/-redirect this (routes/path :unauthorized))))
 
 (defn authenticate-auth0-user [conn auth0-user]
   (when auth0-user
@@ -90,7 +85,7 @@
 
 (defn- wrap-http-auth-responder [handler]
   (fn [request]
-    (handler (assoc request ::auth-responder (->HttpAuthResponder)))))
+    (handler (assoc request ::auth/auth-responder (->HttpAuthResponder)))))
 
 (defn- wrap-expired-token [handler]
   (let [token-failure #{::token-manipulated ::token-expired}]
@@ -128,84 +123,6 @@
 ;;                  User has ::store-owner role for :store-id [234 345]?
 ;;      This might not be useful.
 
-;; TODO: Do this with spec instead
-(defn- get-id [params k]
-  (if-some [ret (or (get-in params [k :db/id])
-                    (->> (keyword nil (str (name k) "-id"))
-                         (get params)
-                         (c/parse-long-safe)))]
-    ret
-    (throw (ex-info (str "Unable to get id for key: " k) {:type ::missing-id
-                                                          :params params
-                                                          :id-key k}))))
-
-(defprotocol IAuthRole
-  (finds [this] "Returns a map from symbol in the query to key it should be expected to be bound to.")
-  (auth-role-query [this auth params] "Returning a query finding entities a user can access."))
-
-(deftype UserAuthRole []
-  IAuthRole
-  (finds [_] {'?user :user})
-  (auth-role-query [_ auth _]
-    {:where   '[[?user :user/email ?email]]
-     :symbols {'?email (:email auth)}}))
-
-(deftype ExactUserAuthRole []
-  IAuthRole
-  (finds [_] {'?user :exact-user})
-  (auth-role-query [_ _ params]
-    (let [user-id (get-id params :user)]
-      {:symbols {'?user user-id}})))
-
-(deftype StoreOwnerRole []
-  IAuthRole
-  (finds [_] {'?store :store})
-  (auth-role-query [_ _ params]
-    (let [store-id (get-id params :store)]
-      {:where   '[[?store :store/owners ?owner]
-                  [?owner :store.owner/user ?user]]
-       :symbols {'?store store-id}})))
-
-(def auth-roles {:auth.role/any-user    (UserAuthRole.)
-                 :auth.role/exact-user  (ExactUserAuthRole.)
-                 :auth.role/store-owner (StoreOwnerRole.)})
-
-(defn auth-query [roles {:keys [email] :as auth} params]
-  (let [roles (cond-> roles
-                      (keyword? roles) (hash-set))]
-    (when (and (seq roles) (string? email))
-      (let [query-by-role (into {}
-                                (map (juxt identity #(auth-role-query (get auth-roles %) auth params)))
-                                (seq roles))
-            find-pattern (into [] (comp (map #(get auth-roles %))
-                                        (map finds)
-                                        (mapcat keys)
-                                        (distinct))
-                               (seq roles))
-            query (reduce db/merge-query
-                          (or (get query-by-role :auth.role/any-user)
-                              (auth-role-query (get auth-roles :auth.role/any-user)
-                                               auth params))
-                          (vals (dissoc query-by-role :auth.role/any-user)))]
-        (assoc query :find find-pattern)))))
-
-(defn is-public-role? [roles]
-  (= :auth.role/public
-     (cond-> roles (not (keyword? roles)) (first))))
-
-
-
-(defn authed-for-roles? [db roles auth route-params]
-  (boolean (or (is-public-role? roles)
-               (try
-                 (when-let [query (auth-query roles auth route-params)]
-                   (debug "query: " query " role: " roles)
-                   (first (db/find-with db query)))
-                 (catch ExceptionInfo e
-                   (if (= ::missing-id (:type (ex-data e)))
-                     false
-                     (throw e)))))))
-
 (defn bidi-route-restrictions [route]
   (let [auth-roles (routes/auth-roles route)]
     {:handler  (fn [{:keys [identity route-params] :as request}]
@@ -213,10 +130,11 @@
                                  :route-params route-params
                                  :auth-roles   auth-roles
                                  :auth         identity}]
-                   (if (authed-for-roles? (db/db (:eponai.server.middleware/conn request))
-                                          auth-roles
-                                          identity
-                                          route-params)
+                   (if (auth/authed-for-roles?
+                         (db/db (:eponai.server.middleware/conn request))
+                         auth-roles
+                         identity
+                         route-params)
                      (buddy/success auth-val)
                      (buddy/error auth-val))))
      :on-error (fn [request v]
@@ -224,3 +142,4 @@
                  (if (nil? (:auth v))
                    (prompt-login request)
                    (unauthorize request)))}))
+

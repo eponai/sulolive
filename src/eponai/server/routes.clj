@@ -2,6 +2,7 @@
   (:require
     [eponai.server.api :as api]
     [eponai.server.auth :as auth]
+    [eponai.common.auth :as common.auth]
     [clojure.string :as clj.string]
     [compojure.core :refer :all]
     [compojure.route :as route]
@@ -77,13 +78,19 @@
   (-> (parser.util/post-process-parse trace-parser-response-handlers [])))
 
 (defn call-parser [{:keys [::m/conn] :as request}]
-  (let [ret (handle-parser-request request)
+  (let [auth-responder (parser/stateful-auth-responder)
+        ret (handle-parser-request (assoc request ::common.auth/auth-responder auth-responder))
         basis-t-graph (some-> ret (meta) (::parser/read-basis-t-graph) (deref))
         ret (->> ret
                  (handle-parser-response (assoc request :state conn))
-                 (parser.resp/remove-mutation-tx-reports))]
+                 (parser.resp/remove-mutation-tx-reports))
+        auth-map (->> {:redirects    (common.auth/-redirect auth-responder nil)
+                       :prompt-login (common.auth/-prompt-login auth-responder)
+                       :unauthorized (common.auth/-unauthorize auth-responder)}
+                      (into {} (remove #(nil? (val %)))))]
     {:result ret
-     :meta   {::parser/read-basis-t basis-t-graph}}))
+     :meta   {::parser/read-basis-t basis-t-graph}
+     :auth   auth-map}))
 
 (defn bidi-route-handler [route]
   ;; Currently all routes render the same way.
