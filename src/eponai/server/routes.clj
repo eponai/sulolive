@@ -79,7 +79,7 @@
 
 (defn call-parser [{:keys [::m/conn] :as request}]
   (let [auth-responder (parser/stateful-auth-responder)
-        ret (handle-parser-request (assoc request ::common.auth/auth-responder auth-responder))
+        ret (handle-parser-request (assoc request ::parser/auth-responder auth-responder))
         basis-t-graph (some-> ret (meta) (::parser/read-basis-t-graph) (deref))
         ret (->> ret
                  (handle-parser-response (assoc request :state conn))

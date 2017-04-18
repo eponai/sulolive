@@ -29,6 +29,10 @@
 (defmulti server-message om/dispatch)
 
 (defmulti auth-role om/dispatch)
+(defmethod auth-role :default
+  [_ k p]
+  (throw (ex-info (str "auth-role not implemented by: " k)
+                  {:key k :params p})))
 
 ;; -------- Messaging protocols
 ;; TODO: Move to its own protocol namespace? Like om.next.impl.protocol
@@ -414,15 +418,18 @@
      (let [roles (auth-role env k p)]
        (if (auth/is-public-role? roles)
          (read-or-mutate (dissoc env :auth) k p)
-         (if-some [user (auth/authed-user-for-params (db/db (:state env)) (keys roles) (:auth env) roles)]
-           (read-or-mutate (assoc-in env [:auth :user-id] user) k p)
-           (let [{::auth/keys [auth-responder]} env
-                 message (if (nil? (:auth env))
-                           (do (auth/-prompt-login auth-responder)
-                               "You need to log in to perform this action")
-                           (do (auth/-unauthorize auth-responder)
-                               "You are unauthorized to perform this action"))]
-             {::mutation-message {::error-message message}}))))))
+         (let [auth (:auth env)
+               roles (cond-> roles (keyword? roles) (hash-map true))
+               {::keys [auth-responder]} env]
+           (if-some [user (auth/authed-user-for-params (db/db (:state env)) (keys roles) auth roles)]
+             (read-or-mutate (update env :auth #(-> (dissoc % :email) (assoc :user-id user)))
+                             k p)
+             (let [message (if (empty? auth)
+                             (do (auth/-prompt-login auth-responder)
+                                 "You need to log in to perform this action")
+                             (do (auth/-unauthorize auth-responder)
+                                 "You are unauthorized to perform this action"))]
+               {::mutation-message {::error-message message}})))))))
 
 #?(:clj
    (defn with-mutation-message [mutate]
@@ -617,6 +624,7 @@
                          server-mutate-creation-time-env
                          with-mutation-message
                          mutate-without-history-id-param
+                         wrap-auth
                          wrap-datomic-db))))))
 
 (defn test-client-parser
