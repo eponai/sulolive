@@ -43,6 +43,11 @@
   {:where   '[[?store :store/owners _]]
    :symbols {'?store (get-id role params :store)}})
 
+(defmethod auth-role-query ::any-store-owner
+  [_ _ _]
+  {:where '[[?owner :store.owner/user ?user]
+            [?store :store/owners ?owner]]})
+
 (defn auth-query [roles {:keys [email] :as auth} params]
   (let [roles (cond-> roles
                       (keyword? roles) (hash-set))]
