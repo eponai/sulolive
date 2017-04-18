@@ -136,7 +136,7 @@
             (grid/column
               nil
               (menu/horizontal
-                (css/align :center)
+                (css/add-class :navigation (css/align :center))
 
                 (menu/item (cond->> (css/add-class :about)
                                     (= route :store/about)

@@ -2,7 +2,7 @@
   (:require [eponai.common.format :as f]
             [eponai.common :as c])
   (:import
-    (com.stripe.model OrderItem Order ShippingDetails Address Product SKU Account Account$Verification LegalEntity BankAccount LegalEntity$DateOfBirth CountrySpec VerificationFields VerificationFieldsDetails ExternalAccount Card AccountTransferSchedule)))
+    (com.stripe.model OrderItem Order ShippingDetails Address Product SKU Account Account$Verification LegalEntity BankAccount LegalEntity$DateOfBirth CountrySpec VerificationFields VerificationFieldsDetails ExternalAccount Card AccountTransferSchedule LegalEntity$Verification)))
 
 (defn stripe->verification-fields [^VerificationFields v]
   (let [min-fields (fn [^VerificationFieldsDetails field-details]
@@ -21,7 +21,8 @@
 (defn stripe->verification [^Account$Verification v]
   (f/remove-nil-keys
     {:stripe.verification/fields-needed (.getFieldsNeeded v)
-     :stripe.verification/due-by        (.getDueBy v)}))
+     :stripe.verification/due-by        (.getDueBy v)
+     :stripe.verification/disabled-reason (.getDisabledReason v)}))
 
 
 (defn stripe->legal-entity [^LegalEntity le]
@@ -34,14 +35,18 @@
                    {:stripe.legal-entity.address/city   (.getCity a)
                     :stripe.legal-entity.address/postal (.getPostalCode a)
                     :stripe.legal-entity.address/line1  (.getLine1 a)
-                    :stripe.legal-entity.address/state  (.getState a)})]
+                    :stripe.legal-entity.address/state  (.getState a)})
+        verification* (fn [^LegalEntity$Verification v]
+                        {:stripe.legal-entity.verification/status (.getStatus v)
+                         :stripe.legal-entity.verification/details (.getDetails v)})]
     (f/remove-nil-keys
       {:stripe.legal-entity/first-name    (.getFirstName le)
        :stripe.legal-entity/last-name     (.getLastName le)
        :stripe.legal-entity/dob           (dob* (.getDob le))
        :stripe.legal-entity/address       (address* (.getAddress le))
        :stripe.legal-entity/business-name (.getBusinessName le)
-       :stripe.legal-entity/type          (keyword (.getType le))})))
+       :stripe.legal-entity/type          (keyword (.getType le))
+       :stripe.legal-entity/verification  (verification* (.getVerification le))})))
 
 (defn stripe->bank-account [^BankAccount ba]
   {:stripe.external-account/id                    (.getId ba)
@@ -72,16 +77,18 @@
                             :stripe.payout-schedule/week-anchor  (.getWeeklyAnchor ats)
                             :stripe.payout-schedule/delay-days (.getDelayDays ats)})]
     (f/remove-nil-keys
-      {:stripe/id                (.getId a)
-       :stripe/country           (.getCountry a)
-       :stripe/verification      (stripe->verification (.getVerification a))
-       :stripe/legal-entity      (stripe->legal-entity (.getLegalEntity a))
-       :stripe/external-accounts (map ext-account* (.getData (.getExternalAccounts a)))
-       :stripe/business-name     (.getBusinessName a)
-       :stripe/business-url      (.getBusinessURL a)
-       :stripe/default-currency  (.getDefaultCurrency a)
-       :stripe/payouts-enabled?  (.getTransfersEnabled a)
-       :stripe/payout-schedule   (payout-schedule* (.getTransferSchedule a))})))
+      {:stripe/id                 (.getId a)
+       :stripe/business-name      (.getBusinessName a)
+       :stripe/business-url       (.getBusinessURL a)
+       :stripe/charges-enabled?   (.getChargesEnabled a)
+       :stripe/country            (.getCountry a)
+       :stripe/default-currency   (.getDefaultCurrency a)
+       :stripe/details-submitted? (.getDetailsSubmitted a)
+       :stripe/external-accounts  (map ext-account* (.getData (.getExternalAccounts a)))
+       :stripe/legal-entity       (stripe->legal-entity (.getLegalEntity a))
+       :stripe/payouts-enabled?   (.getTransfersEnabled a)
+       :stripe/payout-schedule    (payout-schedule* (.getTransferSchedule a))
+       :stripe/verification       (stripe->verification (.getVerification a))})))
 
 (defn stripe->price [p]
   (with-precision 10 (/ (bigdec p) 100)))

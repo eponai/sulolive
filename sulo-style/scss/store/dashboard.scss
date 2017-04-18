@@ -36,7 +36,27 @@
 	}
 }
 
+@mixin label-hollow {
+	// $primary-color: map-get($foundation-palette, action);
+	// @include foundation-button;
+	.label.hollow {
+		@each $name, $color in $foundation-palette {
+			&.#{$name} {
+				border: $global-border;
+				border-color: $color;
+				color: $color;
+				background: $white;
+			}
+	    }
+		// margin: 0;
+	}
+}
+
 #sulo-store-dashboard {
+	$dashboard-max-width: 75rem;
+	.navbar, footer, .footer .row, .row {
+		max-width: $dashboard-max-width;
+	}
 	.callout label {
 		@include breakpoint(large) {
 			text-align: right;
@@ -46,35 +66,24 @@
 		border: none;
 		padding: 0;
 	}
-	$dashboard-max-width: 75rem;
 	h3 {
 		font-family: $header-font-family-serif;
 	}
 	#sulo-navbar .navbar-container {
 		box-shadow: none;
-		border-bottom: 1px solid $light-gray;
+		border-bottom: $global-border;
 	}
 
 	#sulo-navbar {
 		position: absolute;
 	}
-	.row {
-		max-width: $dashboard-max-width;
-	}
 
 	#store-navbar {
 		$background: map-get($foundation-palette, secondary);
-		background: $white;//rgba($background, 1);
-		// border-bottom: 1px solid $background;
-		// border-top: 1px solid $background;
+		background: $white;
 		a {
 			transition: color .25s ease-in-out;
 			color: $dark-gray;
-			// font-weight: $global-weight-bold;
-			&:hover {
-				// color: darken($white, 10%);
-			}
-			// text-transform: uppercase;
 			font-size: 0.9rem;
 		}
 		position: absolute;
@@ -115,30 +124,12 @@
 
 	.page-content {
 		@include sulo-action-buttons;
+
 		h3 {
 			margin-top: 0;
 		}
 		padding-top: 5rem;
-		// .menu.store-nav {
-			// margin: 2rem 0;
-		// }
-		.callout {
-			border: $global-border;
-			// box-shadow: 0 1px 2px 0 rgba($primary-color, 0.1);
-			padding: 0.5rem;
-			@include breakpoint(medium) {
-				padding: 2rem;
-			}
-			.button {
-				// margin: 0;
-			}
-			.header {
-				font-weight: $global-weight-bold;
-				border-bottom: $global-border;
-				// padding-bottom: 0.5rem;
-				margin-bottom: 1.5rem;
-			}
-		}
+
 		.photo-section {
 			padding: 1rem 0;
 			.upload-button {
@@ -192,31 +183,53 @@
 				}
 			}
 		}
-	}
-	.page-container {
-		$color: map-get($foundation-palette, primary);
-		// background: rgba($color, 0.03);
-	}
-	.navbar, footer, .footer .row {
-		max-width: $dashboard-max-width;
-	}
 
-	.profile-photo-container {
-		.button-container {
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			margin-top: 1.5rem;
+		#sulo-main-dashboard {
+			.button {
+				margin: 0;
+			}
+			.stream-status {
+				@include label-hollow;
+				// span.label.#{$name} {
+
+				// 	font-weight: $global-weight-normal;
+				// }
+				a {
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					padding: 0;
+					.label {
+						cursor: pointer;
+						text-transform: uppercase;
+					}
+				}
+			}
+			li.getting-started-item {
+				display: flex;
+				align-items: center;
+				margin-bottom: 0.25rem;
+				i {
+					color: $light-gray;
+				}
+				&.done {
+					a {
+						$color: map-get($foundation-palette, action);
+						color: rgba($color, 0.3);
+						cursor: default;
+					}
+					span {
+						text-decoration: line-through;
+					}
+					i {
+						color: $success-color;
+					}
+				}
+			}
+			.photo-container {
+				margin-bottom: 1rem;
+			}
 		}
 	}
 }
 
-#sulo-main-dashboard {
-	.stream-status-container {
-		border: none;
-	}
-
-	.callout.notification {
-		padding: 1.5rem;
-	}
-}

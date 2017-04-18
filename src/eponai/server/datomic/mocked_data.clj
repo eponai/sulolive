@@ -3,6 +3,20 @@
     [eponai.common.database :as db]
     [taoensso.timbre :refer [debug]]))
 
+(defn missing-personal-id-account []
+  {:stripe/id     "acct_19k3ozC0YaFL9qxh"
+   :stripe/publ   "pk_test_zkG9ip9pZ984hIVoNN1dApoi"
+   :stripe/secret "sk_test_NnEAbrZu6mCMn2Z8Bs8Bvw4T"})
+
+(defn no-details-account []
+  {:stripe/id     "acct_1A9udfFhS10xugIf"
+   :stripe/publ   "pk_test_c5VS6ZK5mHacWIylwV9HpNwh"
+   :stripe/secret "sk_test_ISVuDM5UfrfTLUqV2HNvspLf"})
+
+(defn stripe-account []
+  (missing-personal-id-account))
+
+
 (defn photo [url]
   {:db/id      (db/tempid :db.part/user)
    :photo/path url})
@@ -70,9 +84,7 @@
    ;; ikcha
    {:db/id             (db/tempid :db.part/user)
     :store/name        "ikcha"
-    :store/stripe      {:stripe/id     "acct_19k3ozC0YaFL9qxh"
-                        :stripe/publ   "pk_test_zkG9ip9pZ984hIVoNN1dApoi"
-                        :stripe/secret "sk_test_NnEAbrZu6mCMn2Z8Bs8Bvw4T"}
+    :store/stripe      (stripe-account)
     :store/navigations [{:db/id                  (db/tempid :db.part/user -1000)
                          :store.navigation/path  "earrings"
                          :store.navigation/label "Earrings"}

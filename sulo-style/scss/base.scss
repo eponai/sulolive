@@ -41,7 +41,7 @@ html, body {
 }
 
 .product-grid {
-	.column {
+	> .column {
 		padding: 1rem;
 		@include breakpoint(small only) {
 			&:nth-child(2n+1) {

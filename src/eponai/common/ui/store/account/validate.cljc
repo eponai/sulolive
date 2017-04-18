@@ -16,6 +16,7 @@
    :field.legal-entity.address/city       "legal_entity.address.city"
    :field.legal-entity.address/state      "legal_entity.address.state"
 
+   :field.legal-entity/type               "legal_entity.type"
    :field.legal-entity/business-name      "legal_entity.business_name"
    :field.legal-entity/business-tax-id    "legal_entity.business_tax_id"
 
@@ -59,18 +60,18 @@
 (s/def :field.legal-entity.address/city (s/and string? #(not-empty %)))
 (s/def :field.legal-entity.address/state (s/and string? #(not-empty %)))
 
-(s/def :field.legal-entity.dob/day number?)
-(s/def :field.legal-entity.dob/month number?)
-(s/def :field.legal-entity.dob/year number?)
+(s/def :field.legal-entity.dob/day #(number? (c/parse-long-safe %)))
+(s/def :field.legal-entity.dob/month #(number? (c/parse-long-safe %)))
+(s/def :field.legal-entity.dob/year #(number? (c/parse-long-safe %)))
 
 (s/def :field.legal-entity/address (s/keys :opt [:field.legal-entity.address/line1
-                                               :field.legal-entity.address/postal
-                                               :field.legal-entity.address/city
-                                               :field.legal-entity.address/state]))
+                                                 :field.legal-entity.address/postal
+                                                 :field.legal-entity.address/city
+                                                 :field.legal-entity.address/state]))
 
 (s/def :field.legal-entity/dob (s/keys :req [:field.legal-entity.dob/day
-                                           :field.legal-entity.dob/month
-                                           :field.legal-entity.dob/year]))
+                                             :field.legal-entity.dob/month
+                                             :field.legal-entity.dob/year]))
 (s/def :field.legal-entity/first-name (s/and string? #(not-empty %)))
 (s/def :field.legal-entity/last-name (s/and string? #(not-empty %)))
 (s/def :field.legal-entity/personal-id-number (s/and string? #(not-empty %)))
@@ -91,5 +92,5 @@
 (s/def :field.external-account/account-number (s/and string? #(number? (c/parse-long-safe %))))
 
 (s/def :field/external-account (s/keys :opt [:field.external-account/transit-number
-                                           :field.external-account/institution-number
-                                           :field.external-account/account-number]))
+                                             :field.external-account/institution-number
+                                             :field.external-account/account-number]))

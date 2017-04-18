@@ -58,7 +58,7 @@
 (defn input-value-by-id [id]
   (let [el (element-by-id id)]
     (when el
-      (not-empty (.-value el)))))
+      (.-value el))))
 
 (defn input-value-or-nil-by-id [id]
   (not-empty (input-value-by-id id)))

@@ -2,25 +2,13 @@
 	.callout label {
 		text-align: left;
 	}
-	.row {
-		// max-width: 80rem;
-	}
-	.status-callout {
-		@include breakpoint(medium) {
-			padding: 1rem 2rem !important;
-		}
-	}
 	.stream-chat-container {
-		// display: none;
 		position: relative;
 	}
 
 	.chat-container {
-		// border: 1px solid $light-gray;
-		// height: 100%;
 		display: flex;
 		min-height: 25rem;
-		// justify-content: space-between;
 		flex-direction: column;
 		.chat-messages {
 			flex: 1 0 auto;
@@ -32,9 +20,36 @@
 			flex-direction: column;
 			padding: 0.5rem;
 			border: 1px solid $light-gray;
-			// input {
-			// 	// margin: 0;
-			// }
+		}
+	}
+
+	.stream-status {
+		span {
+			font-size: 1rem;
+			@include breakpoint(medium) {
+				font-size: 1.2rem;
+			}
+		}
+		span.status {
+			text-transform: uppercase;
+		}
+		i.status {
+			font-size: 1.1rem;
+			@include breakpoint(medium) {
+				font-size: 1.5rem;
+			}
+			&.offline {
+				color: $medium-gray;
+			}
+			&.online {
+				color: $success-color;
+			}
+			&.live {
+				color: map-get($foundation-palette, highlight);
+			}
+		}
+		.button.hollow {
+			margin: 0;
 		}
 	}
 }
@@ -42,39 +57,5 @@
 .status-callout {
 	.button {
 		margin: 0 !important;
-	}
-}
-
-.stream-status-container {
-	h3 {
-		margin: 0;
-	}
-	border-right: 1px solid $light-gray;
-	display: flex;
-	align-items: center;
-	> * {
-		margin: 0;
-		margin-right: 1rem;
-	}
-	.highlight {
-		color: map-get($foundation-palette, highlight);
-	}
-
-	.sulo-stream-status {
-		display: flex;
-		align-items: center;
-		> * {
-			margin-right: 1rem;
-		}
-		&.online {
-			i {
-				color: $success-color;
-			}
-		}
-		&.offline {
-			i {
-				color: $dark-gray;
-			}
-		}
 	}
 }

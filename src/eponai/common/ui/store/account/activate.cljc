@@ -13,7 +13,8 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common :as c]
     [eponai.common.format.date :as date]
-    [eponai.client.routes :as routes]))
+    [eponai.client.routes :as routes]
+    [eponai.common.format :as format]))
 
 (def stripe-key "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")
 
@@ -23,9 +24,20 @@
         (= type :company)
         (get-in spec [:country-spec/verification-fields :country-spec.verification-fields/company :country-spec.verification-fields.company/minimum])))
 
-(defn field-required? [fields k]
-  (let [id (get v/stripe-verifications k)]
-    (boolean (some #(when (= % id) %) fields))))
+(defn field-required? [component k]
+  (let [{:query/keys [stripe-country-spec]} (om/props component)
+        {:keys [entity-type input-validation]} (om/get-state component)
+        {:keys [stripe-account]} (om/get-computed component)
+        fields-needed-for-country (minimum-fields stripe-country-spec entity-type)
+        fields-needed-for-account (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed])
+        id (get v/stripe-verifications k)
+        is-needed-for-country? (boolean (some #(when (= % id) %) fields-needed-for-country))
+        is-needed-for-account? (boolean (some #(when (= % id) %) fields-needed-for-account))]
+    ;; If user submitted details already, this means we are probably here because someone entered the URL, or more info is needed.
+    ;; Check the account verification for that, to show the appropriate form
+    (if (:stripe/details-submitted? stripe-account)
+      is-needed-for-account?
+      is-needed-for-country?)))
 
 (defn label-column [opts & content]
   (grid/column
@@ -50,34 +62,41 @@
              city (utils/input-value-by-id (:field.legal-entity.address/city v/form-inputs))
              state (utils/input-value-by-id (:field.legal-entity.address/state v/form-inputs))
 
-             year (c/parse-long-safe (utils/input-value-by-id (:field.legal-entity.dob/year v/form-inputs)))
-             month (c/parse-long-safe (utils/input-value-by-id (:field.legal-entity.dob/month v/form-inputs)))
-             day (c/parse-long-safe (utils/input-value-by-id (:field.legal-entity.dob/day v/form-inputs)))
+             year (utils/input-value-by-id (:field.legal-entity.dob/year v/form-inputs))
+             month (utils/input-value-by-id (:field.legal-entity.dob/month v/form-inputs))
+             day (utils/input-value-by-id (:field.legal-entity.dob/day v/form-inputs))
 
              first-name (utils/input-value-by-id (:field.legal-entity/first-name v/form-inputs))
              last-name (utils/input-value-by-id (:field.legal-entity/last-name v/form-inputs))
-             personal-id-number (utils/input-value-by-id (:field.legal-entity/personai-id-number v/form-inputs))
+             personal-id-number (utils/input-value-by-id (:field.legal-entity/personal-id-number v/form-inputs))
 
              currency (utils/selected-value-by-id (:field.external-account/currency v/form-inputs))
              transit (utils/input-value-by-id (:field.external-account/transit-number v/form-inputs))
              institution (utils/input-value-by-id (:field.external-account/institution-number v/form-inputs))
              account (utils/input-value-by-id (:field.external-account/account-number v/form-inputs))
 
-             input-map {:field/legal-entity     {:field.legal-entity/address            {:field.legal-entity.address/line1  street
-                                                                                 :field.legal-entity.address/postal postal
-                                                                                 :field.legal-entity.address/city   city
-                                                                                 :field.legal-entity.address/state  state}
-                                                 :field.legal-entity/dob                {:field.legal-entity.dob/year  year
-                                                                                 :field.legal-entity.dob/month month
-                                                                                 :field.legal-entity.dob/day   day}
-                                                 :field.legal-entity/type               entity-type
-                                                 :field.legal-entity/first-name         first-name
-                                                 :field.legal-entity/last-name          last-name
-                                                 :field.legal-entity/personal-id-number personal-id-number}
-                        :field/external-account {:field.external-account/institution-number institution
-                                                 :field.external-account/transit-number     transit
-                                                 :field.external-account/account-number     account}}
+             input-map (format/remove-nil-keys
+                         {:field/legal-entity     (format/remove-nil-keys
+                                                    {:field.legal-entity/address            (format/remove-nil-keys
+                                                                                              {:field.legal-entity.address/line1  street
+                                                                                               :field.legal-entity.address/postal postal
+                                                                                               :field.legal-entity.address/city   city
+                                                                                               :field.legal-entity.address/state  state})
+                                                     :field.legal-entity/dob                (format/remove-nil-keys
+                                                                                              {:field.legal-entity.dob/year  year
+                                                                                               :field.legal-entity.dob/month month
+                                                                                               :field.legal-entity.dob/day   day})
+                                                     :field.legal-entity/type               entity-type
+                                                     :field.legal-entity/first-name         first-name
+                                                     :field.legal-entity/last-name          last-name
+                                                     :field.legal-entity/personal-id-number personal-id-number})
+                          :field/external-account (format/remove-nil-keys
+                                                    {:field.external-account/institution-number institution
+                                                     :field.external-account/transit-number     transit
+                                                     :field.external-account/account-number     account})})
+             _ (debug "validation INput map: " input-map)
              validation (v/validate :account/activate input-map)]
+         (debug "Validation: " validation)
          (when (nil? validation)
            (.setPublishableKey js/Stripe stripe-key)
            (.createToken js/Stripe.bankAccount
@@ -115,7 +134,7 @@
           fields-needed (minimum-fields stripe-country-spec entity-type)
           message (msg/last-message this 'stripe/update-account)]
 
-
+      (debug "Stripe account: " stripe-account)
       (dom/div
         {:id "sulo-activate-account-form"}
         (cond (msg/final? message)
@@ -134,7 +153,8 @@
                  The information requested in this form is required by Stripe for verification to keep payments and transfers enabled on your account. ")
                  (dom/a {:href "https://stripe.com/docs/connect/identity-verification"}
                         (dom/span nil "Learn more")))
-          (dom/p nil "We don't use this information for any other purpose than to pass along to Stripe."))
+          (dom/p nil "Your account details are reviewed by Stripe to ensure they comply with their terms of service. If there's a problem, we'll get in touch right away to resolve it as quickly as possible.")
+          (dom/p nil "We don't use this information for any other purpose than to pass along to Stripe and let you manage your account."))
         (dom/div
           (css/callout)
           (dom/p (css/add-class :header) "Account details")
@@ -146,29 +166,30 @@
             (grid/column
               nil
               (dom/strong nil (:stripe/country stripe-account))))
-          (grid/row
-            nil
-            (label-column
+          (when (field-required? this :field.legal-entity/type)
+            (grid/row
               nil
-              (dom/label nil "Business type"))
-            (grid/column
-              (css/add-class :business-type)
-              (dom/input {:type     "radio"
-                          :name     "entity-type"
-                          :id       "entity-type-individual"
-                          :value    "individual"
-                          :checked  (= entity-type :individual)
-                          :onChange #(om/update-state! this assoc :entity-type :individual)})
-              (dom/label {:htmlFor "entity-type-individual"} "Individual")
-              (dom/input {:type     "radio"
-                          :name     "entity-type"
-                          :id       "entity-type-company"
-                          :value    "company"
-                          :checked  (= entity-type :company)
-                          :onChange #(om/update-state! this assoc :entity-type :company)})
-              (dom/label {:htmlFor "entity-type-company"} "Company")
-              ))
-          (when (field-required? fields-needed :field.legal-entity/business-name)
+              (label-column
+                nil
+                (dom/label nil "Business type"))
+              (grid/column
+                (css/add-class :business-type)
+                (dom/input {:type     "radio"
+                            :name     "entity-type"
+                            :id       "entity-type-individual"
+                            :value    "individual"
+                            :checked  (= entity-type :individual)
+                            :onChange #(om/update-state! this assoc :entity-type :individual)})
+                (dom/label {:htmlFor "entity-type-individual"} "Individual")
+                (dom/input {:type     "radio"
+                            :name     "entity-type"
+                            :id       "entity-type-company"
+                            :value    "company"
+                            :checked  (= entity-type :company)
+                            :onChange #(om/update-state! this assoc :entity-type :company)})
+                (dom/label {:htmlFor "entity-type-company"} "Company")
+                )))
+          (when (field-required? this :field.legal-entity/business-name)
             (grid/row
               nil
               (label-column
@@ -183,7 +204,7 @@
                      :placeholder "Company, LTD"
                      :id          (:field.legal-entity/business-name v/form-inputs)}
                     input-validation)))))
-          (when (field-required? fields-needed :field.legal-entity/business-tax-id)
+          (when (field-required? this :field.legal-entity/business-tax-id)
             (grid/row
               nil
               (label-column
@@ -198,7 +219,7 @@
                      :placeholder "123123123"
                      :id          (:field.legal-entity/business-tax-id v/form-inputs)})
                   (dom/small nil "We only need your 9-digit Business Number. Don't have one yet? Apply online.")))))
-          (when (field-required? fields-needed :field.legal-entity.address/line1)
+          (when (field-required? this :field.legal-entity.address/line1)
             (grid/row
               nil
               (label-column
@@ -215,7 +236,7 @@
                     input-validation))
                 (grid/row
                   nil
-                  (when (field-required? fields-needed :field.legal-entity.address/postal)
+                  (when (field-required? this :field.legal-entity.address/postal)
                     (grid/column
                       nil
                       (v-input/input
@@ -223,7 +244,7 @@
                          :placeholder "Postal code"
                          :id          (:field.legal-entity.address/postal v/form-inputs)}
                         input-validation)))
-                  (when (field-required? fields-needed :field.legal-entity.address/city)
+                  (when (field-required? this :field.legal-entity.address/city)
                     (grid/column
                       nil
                       (v-input/input
@@ -231,7 +252,7 @@
                          :placeholder "City"
                          :id          (:field.legal-entity.address/city v/form-inputs)}
                         input-validation)))
-                  (when (field-required? fields-needed :field.legal-entity.address/state)
+                  (when (field-required? this :field.legal-entity.address/state)
                     (grid/column
                       nil
                       (v-input/input
@@ -246,7 +267,7 @@
                  (if (= entity-type :individual)
                    "Your personal details"
                    "You, the company representative"))
-          (when (field-required? fields-needed :field.legal-entity/first-name)
+          (when (field-required? this :field.legal-entity/first-name)
             (grid/row
               nil
               (label-column
@@ -267,7 +288,7 @@
                    :id          (:field.legal-entity/last-name v/form-inputs)}
                   input-validation))))
 
-          (when (field-required? fields-needed :field.legal-entity.dob/day)
+          (when (field-required? this :field.legal-entity.dob/day)
             (grid/row
               nil
               (label-column
@@ -294,7 +315,7 @@
                    :placeholder "Year"
                    :id          (:field.legal-entity.dob/year v/form-inputs)}
                   input-validation))))
-          (when (field-required? fields-needed :field.legal-entity/personal-id-number)
+          (when (field-required? this :field.legal-entity/personal-id-number)
             (grid/row
               nil
               (label-column
@@ -308,7 +329,7 @@
                    :id          (:field.legal-entity/personal-id-number v/form-inputs)}
                   input-validation)
                 (dom/small nil "Stripe require identification to confirm you are a representative of this business, and don't use this for any other purpose.")))))
-        (when (field-required? fields-needed :field/external-account)
+        (when (field-required? this :field/external-account)
           (dom/div
             (css/callout)
             (dom/p (css/add-class :header) "Bank details")

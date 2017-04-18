@@ -40,7 +40,7 @@
   (let [{:store.item/keys [price photos]
          product-id       :db/id
          item-name        :store.item/name} (get sku :store.item/_skus)
-        {:store.item.photo/keys [photo]} (first photos)]
+        {:store.item.photo/keys [photo]} (first (sort-by :store.item.photo/index photos))]
     (menu/item
       nil
       (grid/row
@@ -59,7 +59,7 @@
                    (css/add-class :name))
                      (dom/span nil item-name)))
           (dom/div nil
-                   (dom/span nil (:store.item.sku/variation sku))))
+                   (dom/span (css/add-class :variation) (:store.item.sku/variation sku))))
 
         (grid/column
           (->> (grid/column-size {:small 3 :medium 2 :large 1})
@@ -116,7 +116,8 @@
                                  :store.item.sku/uuid
                                  :store.item.sku/variation
                                  {:store.item/_skus [:store.item/price
-                                                     {:store.item/photos [:photo/path]}
+                                                     {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+                                                                          :store.item.photo/index]}
                                                      :store.item/name
                                                      {:store/_items [:store/name
                                                                      {:store/photo [:photo/path]}]}]}]}]}
@@ -130,6 +131,7 @@
     (let [{:keys [query/cart proxy/navbar]} (om/props this)
           {:keys [cart/items]} cart
           skus-by-store (items-by-store items)]
+      (debug "Shopping bag: " cart)
       (common/page-container
         {:navbar navbar :id "sulo-shopping-bag"}
         (grid/row-column

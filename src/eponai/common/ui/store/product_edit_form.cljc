@@ -156,11 +156,12 @@
                                                      (into [] (remove nil? (assoc ps index nil))))))
   (componentDidMount [this]
     (let [{:keys [product]} (om/get-computed this)
-          {:store.item/keys [photos skus]} product]
+          {:store.item/keys [photos skus]} product
+          sku-count (if (< 0 (count skus)) (count skus) 1)]
       (om/update-state! this assoc
                         :did-mount? true
                         :uploaded-photos (into [] (sort-by :store.item.photo/index photos))
-                        :sku-count (count skus))))
+                        :sku-count sku-count)))
   (initLocalState [_]
     {:sku-count 1})
 
@@ -177,6 +178,7 @@
           delete-resp (msg/last-message this 'store/delete-product)
           is-loading? (or (message-pending-fn update-resp) (message-pending-fn create-resp) (message-pending-fn delete-resp))
           ]
+      (warn "PRODUCT: " product)
 
       (dom/div
         {:id "sulo-edit-product"}

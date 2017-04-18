@@ -13,7 +13,9 @@
     [eponai.common.ui.elements :as elements]
     #?(:cljs
        [eponai.web.utils :as utils])
-    [eponai.common.parser :as parser]))
+    [eponai.common.parser :as parser]
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.common.ui.elements.grid :as grid]))
 
 (defn- get-store [component-or-props]
   (get-in (om/get-computed component-or-props) [:store]))
@@ -79,29 +81,36 @@
           (css/grid-row)
           (my-dom/div
             (css/grid-column)
-            (my-dom/div
-              (cond->> {:classes [::css/callout :status-callout]}
-                       (not= ::stream/online stream-state)
-                       (css/add-class ::css/primary))
-              (my-dom/div
-                (->> (css/grid-row)
-                     (css/align :middle))
-                (my-dom/div
-                  (->> (css/grid-column)
-                       (css/add-class :shrink)
-                       (css/add-class :stream-status-container))
+            (callout/callout
+              (css/add-class :stream-status)
+              (grid/row
+                (css/align :middle)
+                (grid/column
+                  (css/add-class :shrink)
+                  (cond (or (nil? stream-state)
+                          (= :stream.state/offline stream-state))
+                        (my-dom/i {:classes ["status offline fa fa-circle fa-fw"]})
+                        (= stream-state :stream.state/online)
+                        (my-dom/i {:classes ["status online fa fa-check-circle fa-fw"]})
+                        (= stream-state :stream.state/live)
+                        (my-dom/i {:classes ["status live fa fa-wifi fa-fw"]})))
+                (grid/column
+                  nil
                   ;(dom/span #js {:className "badge alert"} "off")
                   ;(dom/span #js {:className "badge success"} "on")
+                  (my-dom/span nil "Your stream is ")
                   (if (or (nil? stream-state)
                           (= :stream.state/offline stream-state))
-                    (dom/div #js {:className "sulo-stream-status offline"}
-                      (dom/i #js {:className "fa fa-circle fa-2x"})
-                      (dom/h3 nil "Offline"))
-                    (dom/div #js {:className "sulo-stream-status online"}
-                      (dom/i #js {:className "fa fa-check-circle fa-2x"})
-                      (dom/h3 nil (condp = stream-state
-                                    :stream.state/online "Online"
-                                    :stream.state/live "Live")))
+                    (my-dom/span {:classes ["status" "offline"]} "Offline")
+                    (my-dom/span
+                      (cond->> {:classes ["status"]}
+                               (= stream-state :stream.state/online)
+                               (css/add-class :online)
+                               (= stream-state :stream.state/live)
+                               (css/add-class :live))
+                      (condp = stream-state
+                                   :stream.state/online "Online"
+                                   :stream.state/live "Live"))
                     ;(dom/div nil
                     ;  (dom/h3 nil (dom/strong #js {:className "highlight"} "Go Live!")))
                     ))
@@ -111,16 +120,17 @@
                   (condp = stream-state
                     :stream.state/online
                     (dom/a #js {:onClick   #(om/transact! this [(list 'stream/go-live {:store-id (:db/id store)}) :query/stream])
-                                :className "button highlight large"}
-                          (dom/strong nil "Go Live!"))
+                                :className "button highlight"}
+                           (dom/strong nil "Go Live!"))
                     :stream.state/offline
                     (dom/a #js {:onClick   #(binding [parser/*parser-allow-local-read* false]
-                                              (om/transact! this [{:query/stream [:stream/state]}]))
-                                :className "button large"}
-                           (dom/strong nil "Refresh"))
+                                             (om/transact! this [{:query/stream [:stream/state]}]))
+                                :className "button hollow"}
+                           (my-dom/i {:classes ["fa fa-refresh fa-fw"]})
+                           (my-dom/strong nil "Refresh"))
                     :stream.state/live
-                    (dom/a #js {:className "button large invisible"}
-                           (dom/strong nil "You're live"))))))
+                    (dom/a #js {:className "button hollow"}
+                           (dom/strong nil "Stop streaming"))))))
 
             (my-dom/div
               (css/add-class ::css/callout)
@@ -136,7 +146,8 @@
                   ;(dom/h4 nil "Stream preview")
                   (stream/->Stream (om/computed (:proxy/stream props)
                                                 {:hide-chat? true
-                                                 :store store})))
+                                                 :store store}))
+                  )
                 (my-dom/div
                   (->> (css/grid-column)
                        (css/grid-column-size {:small 12 :medium 8 :large 4})
