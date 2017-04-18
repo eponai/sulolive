@@ -13,7 +13,10 @@
     [eponai.server.external.auth0 :as auth0]
     [eponai.common.database :as db]
     [eponai.common.routes :as routes]
-    [eponai.common :as c]))
+    [eponai.common :as c]
+    [clojure.spec :as s]
+    [medley.core :as medley])
+  (:import (clojure.lang ExceptionInfo)))
 
 (def auth-token-cookie-name "sulo-auth-token")
 
@@ -57,12 +60,13 @@
                                    ;; Throw it so we can handle it in our wrapper
                                    :on-error (fn [r e]
                                                (throw e))})]
-    ;; Only changes how the token is parsed. Parses from cookie instead of header
     (reify
       auth.protocols/IAuthentication
       (-parse [_ request]
+        ;; Changes how the token is parsed. Parses from cookie instead of header
         (get-in request [:cookies auth-token-cookie-name :value]))
       (-authenticate [_ request data]
+        ;; Parses the jws token and returns token validation errors
         (try
           (let [auth0-user (auth.protocols/-authenticate jws-backend request data)]
            (when (some? auth0-user)
@@ -123,38 +127,84 @@
 ;;       We'd want, User has ::exact-user role for :user-id [123]
 ;;                  User has ::store-owner role for :store-id [234 345]?
 ;;      This might not be useful.
-(defn auth-query [roles {:keys [email]} route-params]
+
+;; TODO: Do this with spec instead
+(defn- get-id [params k]
+  (if-some [ret (or (get-in params [k :db/id])
+                    (->> (keyword nil (str (name k) "-id"))
+                         (get params)
+                         (c/parse-long-safe)))]
+    ret
+    (throw (ex-info (str "Unable to get id for key: " k) {:type ::missing-id
+                                                          :params params
+                                                          :id-key k}))))
+
+(defprotocol IAuthRole
+  (finds [this] "Returns a map from symbol in the query to key it should be expected to be bound to.")
+  (auth-role-query [this auth params] "Returning a query finding entities a user can access."))
+
+(deftype UserAuthRole []
+  IAuthRole
+  (finds [_] {'?user :user})
+  (auth-role-query [_ auth _]
+    {:where   '[[?user :user/email ?email]]
+     :symbols {'?email (:email auth)}}))
+
+(deftype ExactUserAuthRole []
+  IAuthRole
+  (finds [_] {'?user :exact-user})
+  (auth-role-query [_ _ params]
+    (let [user-id (get-id params :user)]
+      {:symbols {'?user user-id}})))
+
+(deftype StoreOwnerRole []
+  IAuthRole
+  (finds [_] {'?store :store})
+  (auth-role-query [_ _ params]
+    (let [store-id (get-id params :store)]
+      {:where   '[[?store :store/owners ?owner]
+                  [?owner :store.owner/user ?user]]
+       :symbols {'?store store-id}})))
+
+(def auth-roles {:auth.role/any-user    (UserAuthRole.)
+                 :auth.role/exact-user  (ExactUserAuthRole.)
+                 :auth.role/store-owner (StoreOwnerRole.)})
+
+(defn auth-query [roles {:keys [email] :as auth} params]
   (let [roles (cond-> roles
-                      (keyword? roles) (hash-set)
-                      (sequential? roles) (set))
-        user-id (when (::routes/user roles)
-                  (c/parse-long-safe
-                    (or (:user-id route-params)
-                        (get-in route-params [:user :db/id]))))
-        store-id (when (::routes/store-owner roles)
-                   (c/parse-long-safe
-                     (or (:store-id route-params)
-                         (get-in route-params [:store :db/id]))))]
+                      (keyword? roles) (hash-set))]
     (when (and (seq roles) (string? email))
-      (cond-> {:find    '[?user .]
-               :where   '[[?user :user/email ?email]]
-               :symbols {'?email email}}
-              (some? user-id)
-              (db/merge-query {:symbols {'?user user-id}})
-              (some? store-id)
-              (db/merge-query {:where   '[[?store :store/owners ?owner]
-                                          [?owner :store.owner/user ?user]]
-                               :symbols {'?store store-id}})))))
+      (let [query-by-role (into {}
+                                (map (juxt identity #(auth-role-query (get auth-roles %) auth params)))
+                                (seq roles))
+            find-pattern (into [] (comp (map #(get auth-roles %))
+                                        (map finds)
+                                        (mapcat keys)
+                                        (distinct))
+                               (seq roles))
+            query (reduce db/merge-query
+                          (or (get query-by-role :auth.role/any-user)
+                              (auth-role-query (get auth-roles :auth.role/any-user)
+                                               auth params))
+                          (vals (dissoc query-by-role :auth.role/any-user)))]
+        (assoc query :find find-pattern)))))
 
 (defn is-public-role? [roles]
-  (= ::routes/public
+  (= :auth.role/public
      (cond-> roles (not (keyword? roles)) (first))))
+
+
 
 (defn authed-for-roles? [db roles auth route-params]
   (boolean (or (is-public-role? roles)
-               (when-let [query (auth-query roles auth route-params)]
-                 (debug "query: " query " role: " roles)
-                 (db/find-with db query)))))
+               (try
+                 (when-let [query (auth-query roles auth route-params)]
+                   (debug "query: " query " role: " roles)
+                   (first (db/find-with db query)))
+                 (catch ExceptionInfo e
+                   (if (= ::missing-id (:type (ex-data e)))
+                     false
+                     (throw e)))))))
 
 (defn bidi-route-restrictions [route]
   (let [auth-roles (routes/auth-roles route)]
