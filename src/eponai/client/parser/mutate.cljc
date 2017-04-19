@@ -1,8 +1,8 @@
 (ns eponai.client.parser.mutate
   (:require
-    [eponai.common.parser :as parser :refer [client-mutate]]
+    [eponai.common.parser :as parser :refer [client-mutate client-auth-role]]
     [eponai.common.format :as format]
-    [eponai.client.auth :as auth]
+    [eponai.common.auth :as auth]
     [eponai.client.chat :as chat]
     [eponai.common.database :as db]
     [taoensso.timbre :refer [debug warn]]))
@@ -124,9 +124,11 @@
   (if target
     {:remote true}))
 
+(defmethod client-auth-role 'chat/send-message [_ _ _]
+  ::auth/any-user)
 (defmethod client-mutate 'chat/send-message
-  [{:keys [state target db ast]} k {:keys [store text]}]
-  (let [user-id (auth/current-auth db)]
+  [{:keys [state target db ast auth]} k {:keys [store text]}]
+  (let [user-id (:user-id auth)]
     (if target
       {:remote/chat (assoc-in ast [:params :user :db/id] user-id)}
       {:action (fn []

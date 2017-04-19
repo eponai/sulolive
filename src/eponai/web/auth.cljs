@@ -9,8 +9,7 @@
   auth/IAuthLock
   (show-lock [this]
     (.show this (clj->js {:allowedConnections ["Username-Password-Authentication"]
-                          :auth               {:params {:state js/window.location.origin
-
+                          :auth               {:params {:state (str js/window.location.pathname)
                                                         :scope "openid email"}}}))))
 
 (defn auth0-lock []
@@ -27,7 +26,7 @@
     (show-lock [this]
       (if-let [email (js/prompt "Enter the email you want to log in as" "dev@sulo.live")]
         (let [auth-url (-> (url/url (str js/window.location.origin (routes/url :auth)))
-                           (assoc :query {:code email :state (routes/url :index)})
+                           (assoc :query {:code email :state (str js/window.location.pathname)})
                            (str))]
           (debug "Replacing the current url with auth-url: " auth-url)
           (js/window.location.replace auth-url))
