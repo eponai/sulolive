@@ -18,7 +18,7 @@
 
 (defn authed-email [db]
   (some->> (current-auth db)
-           (db/pull db [:user/email])
+           (db/entity db)
            (:user/email)))
 
 (defn has-active-user? [db]

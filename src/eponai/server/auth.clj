@@ -23,7 +23,7 @@
 (def restrict buddy/restrict)
 
 (defn prompt-login [request]
-  (auth/-prompt-login (::auth-responder request)))
+  (auth/-prompt-login (::auth-responder request) nil))
 
 (defn unauthorize [request]
   (auth/-unauthorize (::auth-responder request)))
@@ -38,7 +38,7 @@
   auth/IAuthResponder
   (-redirect [this path]
     (r/redirect path))
-  (-prompt-login [this]
+  (-prompt-login [this _]
     (auth/-redirect this (routes/path :login)))
   (-unauthorize [this]
     (auth/-redirect this (routes/path :unauthorized))))
