@@ -3,6 +3,7 @@
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn trace]]
             [om.next :as om]
             [om.next.cache :as om.cache]
+            [eponai.client.auth :as client.auth]
             [eponai.client.utils :as client.utils]
             [eponai.client.routes :as client.routes]
             [eponai.common.routes :as routes]
@@ -420,7 +421,7 @@
         (read-or-mutate (dissoc env :auth) k p)
         (let [auth (:auth env)
               roles (cond-> roles (keyword? roles) (hash-map true))]
-          (if-some [user (auth/authed-user-for-params (db/db (:state env)) (keys roles) auth roles)]
+          (if-some [user (auth/authed-user-for-params (:db env) (keys roles) auth roles)]
             (read-or-mutate (update env :auth #(-> (dissoc % :email) (assoc :user-id user)))
                             k p)
             (on-not-authed env k p)))))))
@@ -565,15 +566,16 @@
         (parser-mw state))))
 
 (defn client-parser-state [& [custom-state]]
-  (merge {:read                client-read
-          :mutate              client-mutate
-          :elide-paths         false
-          :txs-by-project      (atom {})
-          ::conn->route-params (fn [conn]
-                                 (:route-params (client.routes/current-route conn)))}
+  (merge {:read              client-read
+          :mutate            client-mutate
+          :elide-paths       false
+          :txs-by-project    (atom {})
+          ::db->route-params (fn [db]
+                               (:route-params (client.routes/current-route db)))
+          ::db-state         (atom {})}
          custom-state))
 
-(defn query-params [env parser-state]
+(defn- client-query-params [env parser-state]
   #?(:cljs
           (->> (:shared/browser-history (:shared env))
                (pushy/get-token)
@@ -583,6 +585,19 @@
      ;;TODO: Implement a shared protocol to get the query params
      :clj (:query-params parser-state)))
 
+(defn- client-auth [db]
+  (client.auth/authed-email db))
+
+(defn- client-db-state [env state]
+  (let [db (db/db (:state env))
+        db-state (deref (::db-state state))]
+    (if (identical? db (:db db-state))
+      db-state
+      (reset! (::db-state state) {:db           db
+                                  :route-params ((::db->route-params state) db)
+                                  :query-params (client-query-params env state)
+                                  :auth         (client-auth db)}))))
+
 (defn client-parser
   ([] (client-parser (client-parser-state)))
   ([state]
@@ -590,9 +605,8 @@
    (make-parser state
                 (fn [parser state]
                   (fn [env query & [target]]
-                    (parser (assoc env ::server? false
-                                       :route-params ((::conn->route-params state) (:state env))
-                                       :query-params (query-params env state))
+                    (parser (into env (-> (client-db-state env state)
+                                          (assoc ::server? false)))
                             query target)))
                 (fn [read {:keys [elide-paths txs-by-project] :as state}]
                   (-> read
