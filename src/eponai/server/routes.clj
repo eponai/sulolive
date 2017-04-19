@@ -88,9 +88,10 @@
                        :prompt-login (common.auth/-prompt-login auth-responder nil)
                        :unauthorized (common.auth/-unauthorize auth-responder)}
                       (into {} (remove #(nil? (val %)))))]
-    {:result ret
-     :meta   {::parser/read-basis-t basis-t-graph}
-     :auth   auth-map}))
+    (cond-> {:result ret
+             :meta   {::parser/read-basis-t basis-t-graph}}
+            (seq auth-map)
+            (assoc :auth auth-map))))
 
 (defn bidi-route-handler [route]
   ;; Currently all routes render the same way.
