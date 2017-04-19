@@ -1,12 +1,14 @@
 (ns eponai.client.parser.merge
   (:require [datascript.core :as d]
             [datascript.db :as db]
+            [eponai.common.routes :as routes]
             [eponai.common.parser :as parser]
             [eponai.common.parser.util :as p.util]
             [eponai.client.parser.message :as message]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug error trace warn]]
             [eponai.client.utils :as utils]
             [eponai.client.auth :as auth]
+            [cemerick.url :as url]
             [om.next :as om]))
 
 (defn transact [db tx]
@@ -133,8 +135,17 @@
             (transact {:ui/singleton                            ::parser/read-basis-t
                        ::parser/read-basis-t-graph merged-graph}))))
 
+(defn- logout-with-redirect! [auth]
+  #?(:cljs (-> (url/url (str js/window.location.origin "/logout"))
+               (assoc :query {:redirect (str js/window.location.pathname)})
+               (str)
+               (js/window.location.replace))
+     :clj  (throw (ex-info "jvm clients cannot handle logout at this time." {:auth-map auth}))))
+
 (defn handle-auth-response! [reconciler auth]
-  (let [{:keys [redirects prompt-login unauthorized]} auth]
+  (let [{:keys [redirects prompt-login unauthorized logout]} auth]
+    (when logout
+      (logout-with-redirect! auth))
     (when unauthorized
       (#?(:cljs js/alert :clj error) "You are unauthorized to execute the action"))
     (when prompt-login

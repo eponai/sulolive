@@ -78,20 +78,31 @@
   (-> (parser.util/post-process-parse trace-parser-response-handlers [])))
 
 (defn call-parser [{:keys [::m/conn] :as request}]
-  (let [auth-responder (parser/stateful-auth-responder)
-        ret (handle-parser-request (assoc request ::parser/auth-responder auth-responder))
-        basis-t-graph (some-> ret (meta) (::parser/read-basis-t-graph) (deref))
-        ret (->> ret
-                 (handle-parser-response (assoc request :state conn))
-                 (parser.resp/remove-mutation-tx-reports))
-        auth-map (->> {:redirects    (common.auth/-redirect auth-responder nil)
-                       :prompt-login (common.auth/-prompt-login auth-responder nil)
-                       :unauthorized (common.auth/-unauthorize auth-responder)}
-                      (into {} (remove #(nil? (val %)))))]
-    (cond-> {:result ret
-             :meta   {::parser/read-basis-t basis-t-graph}}
-            (seq auth-map)
-            (assoc :auth auth-map))))
+  (let [clients-auth (get-in request [:body :auth :email])
+        cookie-auth (get-in request [:identity :email])
+        ;; TODO: Better way of checking first-request?
+        ;; TODO: Do this force-logout in a different way?
+        ;;       We do this because the client's auth and the cookie's auth may
+        ;;       not agree on who's logged in. We may want to prompt a "continue as"
+        ;;       screen, instead of forcing the logout.
+        first-request? (nil? (::parser/read-basis-t (:body request)))]
+    (if (and (not first-request?)
+             (not= clients-auth cookie-auth))
+      {:auth {:logout true}}
+      (let [auth-responder (parser/stateful-auth-responder)
+            ret (handle-parser-request (assoc request ::parser/auth-responder auth-responder))
+            basis-t-graph (some-> ret (meta) (::parser/read-basis-t-graph) (deref))
+            ret (->> ret
+                     (handle-parser-response (assoc request :state conn))
+                     (parser.resp/remove-mutation-tx-reports))
+            auth-map (->> {:redirects    (common.auth/-redirect auth-responder nil)
+                           :prompt-login (common.auth/-prompt-login auth-responder nil)
+                           :unauthorized (common.auth/-unauthorize auth-responder)}
+                          (into {} (remove #(nil? (val %)))))]
+        (cond-> {:result ret
+                 :meta   {::parser/read-basis-t basis-t-graph}}
+                (seq auth-map)
+                (assoc :auth auth-map))))))
 
 (defn bidi-route-handler [route]
   ;; Currently all routes render the same way.
@@ -126,7 +137,8 @@
   ;(POST "/stripe/main" request (r/response (stripe/webhook (::m/conn request) (:params request))))
   (GET "/auth" request (auth/authenticate request))
 
-  (GET "/logout" request (-> (auth/redirect request (routes/path :index))
+  (GET "/logout" request (-> (auth/redirect request (or (get-in request [:params :redirect])
+                                                        (routes/path :index)))
                              (auth/remove-auth-cookie)))
 
   (GET "/devcards" request

@@ -19,11 +19,14 @@
   [conn]
   {:order       (remote-order)
    :remote      (-> (remotes/post-to-url "/api")
-                    (remotes/read-basis-t-remote-middleware conn))
+                    (remotes/read-basis-t-remote-middleware conn)
+                    (remotes/with-auth conn))
    :remote/user (-> (remotes/post-to-url "/api/user")
-                    (remotes/read-basis-t-remote-middleware conn))
+                    (remotes/read-basis-t-remote-middleware conn)
+                    (remotes/with-auth conn))
    :remote/chat (-> (remotes/post-to-url "/api/chat")
-                    (remotes/read-basis-t-remote-middleware conn))})
+                    (remotes/read-basis-t-remote-middleware conn)
+                    (remotes/with-auth conn))})
 
 ;; TODO: Use this from run.cljs and from fullstack tests.
 

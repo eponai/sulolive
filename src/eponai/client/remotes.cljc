@@ -41,6 +41,12 @@
   (fn [query]
     (apply update (remote-fn query) k f args)))
 
+(defn with-auth [remote-fn conn]
+  (fn [query]
+    (-> (remote-fn query)
+        (assoc-in [:opts :transit-params :auth :email]
+                  (auth/authed-email (db/db conn))))))
+
 (defn read-basis-t-remote-middleware
   "Given a remote-fn (that describes what, where and how to send a request to a server),
   add basis-t for each key to the request. basis-t represents at which basis-t we last
