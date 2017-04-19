@@ -5,6 +5,11 @@ $primary-color: map-get($foundation-palette, primary);
 		color: $dark-gray;
 	}
 }
+table td {
+	.photo-container {
+		// min-width: 4rem; 
+	}
+}
 .photo-container {
 	// border: 1px solid $light-gray;
 	// box-shadow: 0 1px 3px 0 rgba($primary-color, 0.1);

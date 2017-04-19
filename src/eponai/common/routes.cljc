@@ -22,14 +22,19 @@
                  ["/" [#"(\d|\w|-)+" :navigation]] :store/navigation}})
 
 (def user-routes
-  {""        :user
-   "/orders" {""                       :user/order-list
-              ["/" [#"\w+" :order-id]] :user/order}
+  {""         :user
+   "/orders"  {""                       :user/order-list
+               ["/" [#"\w+" :order-id]] :user/order}
    "/profile" :user/profile})
 
 (def product-routes
   {""                         :products
    ["/" [#"\d+" :product-id]] :product})
+
+(def help-routes
+  {""         :help
+   "/encoding" :help/encoding})
+
 (def routes
   ["/" {""                            :index
         "coming-soon"                 :coming-soon
@@ -41,6 +46,7 @@
         "products"                    product-routes
         "categories"                  {""              :products/all-categories
                                        ["/" :category] :products/categories}
+        "help"                        help-routes
         ["checkout/" :store-id]       :checkout
         "shopping-bag"                :shopping-bag
         "business"                    :business

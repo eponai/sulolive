@@ -1,0 +1,6 @@
+p > a {
+	color: map-get($foundation-palette, action);
+	&:hover {
+		text-decoration: underline;
+	}
+}

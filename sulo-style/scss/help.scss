@@ -1,0 +1,48 @@
+.app-title {
+	padding: 1rem 0;
+	font-size: 1.25rem;
+	margin-bottom: 1rem;
+}
+
+#sulo-help {
+	#sulo-navbar {
+		position: absolute;
+		input {
+			margin: 0 0.5rem;
+			max-width: 20rem;
+		}
+		.top-bar-left {
+			margin-right: 1rem;
+			ul {
+				li:last-child {
+					flex: 1 0 auto;
+					padding: 0 1rem;
+					input {
+						max-width: 100%;
+						margin: 0;
+					}
+					// border-right: $global-border;
+				}
+			}
+		}
+	}
+	h2 {
+		margin-top: 2rem;
+	}
+
+	.callout a {
+		color: map-get($foundation-palette, action);
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+	.callout label {
+		@include breakpoint(medium) {
+			text-align: right;
+		}
+	}
+	.callout input {
+		cursor: default;
+		background: $white; 
+	}
+}
