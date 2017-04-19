@@ -27,18 +27,15 @@
 ;; TODO: This ISendChatMessage stuff should probably be done without a protocol.
 (defprotocol ISendChatMessage
   (get-chat-message [this])
-  (reset-chat-message! [this])
-  (is-logged-in? [this]))
+  (reset-chat-message! [this]))
 
 (defn send-message [component]
   (let [chat-message (get-chat-message component)]
     (when-not (str/blank? chat-message)
-      (if (is-logged-in? component)
-        (do (om/transact! component `[(chat/send-message
-                                        ~{:store (select-keys (get-store component) [:db/id])
-                                          :text  chat-message})
-                                      :query/chat]))
-        #?(:cljs (js/alert "Log in to send chat messages")))))
+      (om/transact! component `[(chat/send-message
+                                  ~{:store (select-keys (get-store component) [:db/id])
+                                    :text  chat-message})
+                                :query/chat])))
   (reset-chat-message! component))
 
 (defui StreamChat
@@ -50,8 +47,7 @@
                    {:chat/messages [:chat.message/client-side-message?
                                     {:chat.message/user [:user/email {:user/photo [:photo/path]}]}
                                     :chat.message/text
-                                    :chat.message/timestamp]}]}
-     {:query/auth [:db/id]}])
+                                    :chat.message/timestamp]}]}])
   client.chat/IStoreChatListener
   (start-listening! [this store-id]
     (debug "Will start listening to store-id: " store-id)
@@ -63,8 +59,6 @@
     (:chat-message (om/get-state this)))
   (reset-chat-message! [this]
     (om/update-state! this assoc :chat-message ""))
-  (is-logged-in? [this]
-    (some? (get-in (om/props this) [:query/auth :db/id])))
   Object
   (componentWillUnmount [this]
     (client.chat/stop-listening! this (get-store-id this)))

@@ -74,7 +74,6 @@
 (defn authed-user-for-params [db roles auth params]
   (try
     (when-let [query (auth-query roles auth params)]
-      (debug "query: " query " role: " roles)
       (db/find-with db query))
     (catch #?@(:clj  [ExceptionInfo e]
                :cljs [:default e])

@@ -428,7 +428,7 @@
           (if-some [user (auth/authed-user-for-params (:db env) (keys roles) (:auth env) roles)]
             (read-or-mutate (update env :auth #(-> (dissoc % :email) (assoc :user-id user)))
                             k p)
-            (on-not-authed env k p)))))))
+            (on-not-authed (assoc env :auth-roles roles) k p)))))))
 
 (defn wrap-server-read-auth [read]
   (let [read-authed (wrap-auth server-auth-role read (constantly nil))]
@@ -449,10 +449,12 @@
 
 (defn wrap-client-mutate-auth [mutate]
   (wrap-auth client-auth-role mutate
-             (fn [{::keys [auth-responder auth ast]} _ p]
-               (if (empty? auth)
-                 (auth/-prompt-login auth-responder {:ast ast :params p})
-                 (auth/-unauthorize auth-responder)))))
+             (fn [{::keys [auth-responder] :keys [auth ast target auth-roles]} k p]
+               (when (nil? target)
+                 (debug "Not authed to perform " k " with params: " p " requiring auth-roles: " auth-roles)
+                 (if (empty? auth)
+                   (auth/-prompt-login auth-responder {:ast ast :params p})
+                   (auth/-unauthorize auth-responder))))))
 
 #?(:clj
    (defn with-mutation-message [mutate]
@@ -596,18 +598,31 @@
      ;;TODO: Implement a shared protocol to get the query params
      :clj (:query-params parser-state)))
 
-(defn- client-auth [db]
-  (client.auth/authed-email db))
-
 (defn- client-db-state [env state]
   (let [db (db/db (:state env))
         db-state (deref (::db-state state))]
     (if (identical? db (:db db-state))
       db-state
-      (reset! (::db-state state) {:db           db
-                                  :route-params ((::db->route-params state) db)
-                                  :query-params (client-query-params env state)
-                                  :auth         (client-auth db)}))))
+      (reset! (::db-state state) {:db              db
+                                  :route-params    ((::db->route-params state) db)
+                                  :query-params    (client-query-params env state)
+                                  :auth            (when-let [email (client.auth/authed-email db)]
+                                                     {:email email})
+                                  ::auth-responder (reify
+                                                     auth/IAuthResponder
+                                                     (-redirect [this path]
+                                                       ;; This redirect could be done cljs side with pushy and :shared/browser-history
+                                                       ;; but we don't use this yet, so let's not implement it yet.
+                                                       (throw (ex-info "Unsupported function -redirect. Implement if needed"
+                                                                       {:this this :path path :method :IAuthResponder/-redirect})))
+                                                     (-prompt-login [this anything]
+                                                       (client.auth/show-lock (:shared/auth-lock (:shared env))))
+                                                     (-unauthorize [this]
+                                                       ;;TODO: When :shared/jumbotron is implemented (a place where we
+                                                       ;;      can show messages to a user), call the jumbotron with
+                                                       ;;      an unauthorized message
+                                                       #?(:cljs (js/alert "You're unauthorized to do that action"))
+                                                       ))}))))
 
 (defn client-parser
   ([] (client-parser (client-parser-state)))

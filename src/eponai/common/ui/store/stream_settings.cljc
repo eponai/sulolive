@@ -41,8 +41,6 @@
     (:chat-message (om/get-state this)))
   (reset-chat-message! [this]
     (om/update-state! this assoc :chat-message ""))
-  (is-logged-in? [this]
-    (some? (get-in (om/props this) [:query/auth :db/id])))
   ;; This chat store listener is a copy of what's in ui.chat
   client.chat/IStoreChatListener
   (start-listening! [this store-id]
