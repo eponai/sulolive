@@ -26,7 +26,7 @@
 			li:last-child {
 				// border-right
 				// a {
-					border-right: 1px solid $medium-gray;
+					border-right: $global-border;
 				// }
 			}
 		}
@@ -123,7 +123,7 @@
 }
 
 .navbar-live {
-	border-right: 1px solid $medium-gray;
+	border-right: $global-border;
 	text-transform: uppercase;
 }
 #navbar-brand {
@@ -138,5 +138,5 @@
 		font-size: 1.2rem;
 		// padding: 0.7rem 1rem;
 	}
-	border-right: 1px solid $medium-gray;
+	border-right: $global-border;
 }

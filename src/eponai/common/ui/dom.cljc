@@ -27,6 +27,12 @@
       1 (el-fn react-opts (first content))
       (apply el-fn react-opts (add-keys-to-content content)))))
 
+(defn article [opts & content]
+  (element dom/article opts content))
+
+(defn section [opts & content]
+  (element dom/section opts content))
+
 (defn div [opts & content]
   (element dom/div opts content))
 
@@ -39,8 +45,14 @@
 (defn ul [opts & content]
   (element dom/ul opts content))
 
+(defn ol [opts & content]
+  (element dom/ol opts content))
+
 (defn strong [opts & content]
   (element dom/strong opts content))
+
+(defn em [opts & content]
+  (element dom/em opts content))
 
 (defn i [opts & content]
   (element dom/i opts content))
@@ -78,6 +90,9 @@
 (defn h5 [opts & content]
   (element dom/h5 opts content))
 
+(defn h6 [opts & content]
+  (element dom/h6 opts content))
+
 (defn input [opts & content]
   (element dom/input opts content))
 
@@ -98,3 +113,23 @@
 
 (defn button [opts & content]
   (element dom/button opts content))
+
+;; TABLE
+
+(defn table [opts & content]
+  (element dom/table opts content))
+
+(defn thead [opts & content]
+  (element dom/thead opts content))
+
+(defn tbody [opts & content]
+  (element dom/tbody opts content))
+
+(defn tr [opts & content]
+  (element dom/tr opts content))
+
+(defn th [opts & content]
+  (element dom/th opts content))
+
+(defn td [opts & content]
+  (element dom/td opts content))

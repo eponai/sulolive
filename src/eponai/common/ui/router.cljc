@@ -3,6 +3,7 @@
     [om.next :as om :refer [defui]]
     [om.dom :as dom]
     [eponai.common.routes :as routes]
+    [eponai.common.ui.help :as help]
     [eponai.common.ui.checkout :as checkout]
     [eponai.common.ui.shopping-bag :as bag]
     [eponai.common.ui.store :as store]
@@ -35,6 +36,8 @@
                      :factory   checkout/->Checkout}
    :shopping-bag    {:component bag/ShoppingBag
                      :factory   bag/->ShoppingBag}
+   :help            {:component help/Help
+                     :factory   help/->Help}
    :products        {:component goods/Goods
                      :factory   goods/->Goods}
    :product         {:component product/ProductPage

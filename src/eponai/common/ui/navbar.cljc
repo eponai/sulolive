@@ -176,6 +176,32 @@
       (dom/div #js {:className "top-bar-right"}
         right-menu))))
 
+(defn help-navbar [component]
+  (let [{:query/keys [auth]} (om/props component)]
+    (navbar-content
+      (dom/div #js {:className "top-bar-left"}
+        (menu/horizontal
+          nil
+          (navbar-brand)
+          (live-link)
+          (menu/item nil
+                     (my-dom/input {:type        "text"
+                                    :placeholder "Search on SULO Live Help..."}))))
+
+      (dom/div #js {:className "top-bar-right"}
+        (menu/horizontal nil
+                         (if (some? auth)
+                           (menu/item-dropdown
+                             {:dropdown (user-dropdown component auth)
+                              :classes  [:user-photo-item]
+                              :href     "#"
+                              :onClick  #(.open-dropdown component :dropdown/user)}
+                             (photo/user-photo auth))
+                           (my-dom/a
+                             (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
+                                  (css/button-hollow))
+                             (dom/span nil "Sign in"))))))))
+
 (defn standard-navbar [component]
   (let [{:keys [did-mount?]} (om/get-state component)
         {:keys [coming-soon?]} (om/get-computed component)
@@ -327,6 +353,8 @@
                                                   (dom/span nil "Sulo")))))
                             (or (= route :coming-soon) (= route :sell-soon))
                             (coming-soon-navbar this)
+                            (and (some? route) (= (namespace route) "help"))
+                            (help-navbar this)
                             :else
                             (standard-navbar this))))))))
 (def ->Navbar (om/factory Navbar))

@@ -23,6 +23,21 @@
 		}
 	}
 
+	.setup-checklist {
+		li {
+			margin-bottom: 1rem;
+			p {
+				margin-bottom: 0.5rem;
+			}
+			a {
+				color: map-get($foundation-palette, action);
+				&:hover {
+					text-decoration: underline;
+				}
+			}
+		}
+	}
+
 	.stream-status {
 		span {
 			font-size: 1rem;
@@ -51,11 +66,5 @@
 		.button.hollow {
 			margin: 0;
 		}
-	}
-}
-
-.status-callout {
-	.button {
-		margin: 0 !important;
 	}
 }

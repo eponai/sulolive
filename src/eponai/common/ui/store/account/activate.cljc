@@ -97,7 +97,7 @@
              _ (debug "validation INput map: " input-map)
              validation (v/validate :account/activate input-map)]
          (debug "Validation: " validation)
-         (when (nil? validation)
+         (when (and (some? (:field/external-account input-map)) (nil? validation))
            (.setPublishableKey js/Stripe stripe-key)
            (.createToken js/Stripe.bankAccount
                          #js {:country        (:stripe/country stripe-account)
