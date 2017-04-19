@@ -5,7 +5,9 @@
             [eponai.common.parser.util :as p.util]
             [eponai.client.parser.message :as message]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug error trace warn]]
-            [eponai.client.utils :as utils]))
+            [eponai.client.utils :as utils]
+            [eponai.client.auth :as auth]
+            [om.next :as om]))
 
 (defn transact [db tx]
   (if (empty? tx)
@@ -131,18 +133,29 @@
             (transact {:ui/singleton                            ::parser/read-basis-t
                        ::parser/read-basis-t-graph merged-graph}))))
 
+(defn handle-auth-response! [reconciler auth]
+  (let [{:keys [redirects prompt-login unauthorized]} auth]
+    (when unauthorized
+      (#?(:cljs js/alert :clj error) "You are unauthorized to execute the action"))
+    (when prompt-login
+      (auth/show-lock (-> reconciler :config :shared :shared/auth-lock)))
+    (when (seq redirects)
+      (throw (ex-info "Unable to handle redirects at this time." {:redirects redirects})))))
+
 (defn merge!
   "Takes a merge-fn which is passed [db key params] and
   should return db. Hook for specific platforms to do
   arbitrary actions by key.
   Returns merge function for om.next's reconciler's :merge"
   [& [merge-fn]]
-  (fn [reconciler current-db {:keys [db result meta history-id] :as novelty} query]
+  (fn [reconciler current-db {:keys [db result meta history-id auth] :as novelty} query]
     #?(:cljs (debug "Merge! transacting novelty:" (update novelty :db :max-tx)))
     (let [db (cond-> db (some? meta) (merge-meta meta))
           ret (if result
                 (merge-novelty-by-key merge-fn db result history-id)
                 ;; TODO: What keys can we pass to force re-render?
                 {:next db :keys []})]
+      (when (seq auth)
+        (handle-auth-response! reconciler auth))
       #?(:cljs (debug "Merge! returning keys:" (:keys ret) " with db: " (-> ret :next :max-tx)))
       ret)))

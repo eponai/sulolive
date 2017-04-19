@@ -323,7 +323,7 @@
 
 (defn- merge-response! [cb stable-db received history-id]
   (let [{:keys [response error] ::keys [skip?]} received
-        {:keys [result meta]} response]
+        {:keys [result meta auth]} response]
     ;; Reset db and apply response
     (cond
       skip?
@@ -338,6 +338,7 @@
       (cb {:db         stable-db
            :result     result
            :meta       meta
+           :auth       auth
            :history-id history-id}))))
 
 (defn- <stream-chunked-response
