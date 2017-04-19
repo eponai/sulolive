@@ -167,6 +167,7 @@
                                                 "state"       nil}
                                      "name"    "This is my name"}}
                         (clojure.walk/stringify-keys order))
+          _ (debug "Stripe order params: " params)
           new-order (Order/create params)
           ]
       (debug "Create order with params: " params)

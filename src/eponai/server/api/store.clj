@@ -12,7 +12,7 @@
     (db/transact state [db-product
                         [:db/add store-id :store/items (:db/id db-product)]])
 
-     ;Create SKUs for product
+    ;Create SKUs for product
     (when-let [product-skus (not-empty skus)]
       (let [sku-entities (map (fn [s] (f/sku s)) product-skus)
             db-txs (reduce (fn [l sku]
@@ -128,7 +128,7 @@
 (defn list-orders [{:keys [db system]} store-id]
   (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)
         orders (db/pull-all-with db [:db/id :order/id :order/store :order/user] {:where   '[[?e :order/store ?s]]
-                                                        :symbols {'?s store-id}})
+                                                                                 :symbols {'?s store-id}})
         stripe-orders (stripe/list-orders (:system/stripe system) secret {:ids (map :order/id orders)})]
     (map (fn [o]
            (let [db-order (some #(when (= (:order/id %) (:order/id o)) %) orders)]
@@ -138,16 +138,26 @@
 (defn create-order [{:keys [state system auth]} store-id {:keys [items source shipping]}]
   (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)
         {:address/keys [full-name locality region country street1 postal]} shipping
+        _ (debug "order items: " (into [] items))
+        items-by-id (group-by :db/id items)
+        _ (debug "Items by id: " (into {} items-by-id))
         order-params {:currency "CAD"
                       :email    (:email auth)
-                      :items    (map (fn [i] {:type   "sku"
-                                              :parent (str i)}) items)
-                      :shipping {:name        full-name
+                      :items    (into [] (map (fn [[id skus]]
+                                                (let [sku (first skus)
+                                                      item (:store.item/_skus sku)]
+                                                  {:amount      (* 100 (:store.item/price item))
+                                                   :description (str id)
+                                                   :quantity    (count skus)}))
+                                              items-by-id))
+                      :shipping {:name    full-name
                                  :address {:line1       street1
                                            :city        locality
                                            :country     country
                                            :postal_code postal}}}
-        order (stripe/create-order (:system/stripe system) secret order-params)]
+        _ (debug "Order parans: " order-params)
+        order (stripe/create-order (:system/stripe system) secret order-params)
+        ]
     (debug "Created order: " order)
     (db/transact-one state {:db/id       (db/tempid :db.part/user)
                             :order/id    (:order/id order)

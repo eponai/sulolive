@@ -49,7 +49,7 @@
          (let [items (filter #(= (c/parse-long store-id) (get-in % [:store.item/_skus :store/_items :db/id])) (:cart/items cart))]
            (msg/om-transact! this `[(user/checkout ~{:source   source
                                                      :shipping shipping
-                                                     :items    (map :store.item.sku/uuid items)
+                                                     :items    items
                                                      :store-id (c/parse-long store-id)})])))))
 
   (initLocalState [_]
