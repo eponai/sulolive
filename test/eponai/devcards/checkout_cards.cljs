@@ -28,14 +28,14 @@
                                              :last4     "1234"
                                              :exp_month "04"
                                              :exp_year  "32"}}
-                  :checkout/shipping {:address/full-name "Diana"
-                                      :address/street1   "2121 3rd St"
-                                      :address/locality  "San Francisco"
-                                      :address/region    "CA"
-                                      :address/country   "US"}
-                  :checkout/items    [{:store.item/_skus {:store.item/name   "Pants"
-                                                          :store.item/price  1234
-                                                          :store.item/photos [{:photo/path "/assets/img/women-new.jpg"}]}
+                  :checkout/shipping {:shipping/name             "Diana"
+                                      :shipping.address/street   "2121 3rd St"
+                                      :shipping.address/locality "San Francisco"
+                                      :shipping.address/region   "CA"
+                                      :shipping.address/country  "US"}
+                  :checkout/items    [{:store.item/_skus    {:store.item/name   "Pants"
+                                                             :store.item/price  1234
+                                                             :store.item/photos [{:photo/path "/assets/img/women-new.jpg"}]}
                                        :store.item.sku/type :sku}]}]
     (debug "Checkout: " computed)
     (checkout-container

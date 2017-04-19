@@ -63,11 +63,11 @@
                    (assoc-in [:params :store-id] store-id)
                    (assoc-in [:params :user-id] user-id))}
       {:value (cond (some? store-id)
-                    (db/pull-all-with db '[*] {:where   '[[?e :order/store ?s]]
-                                               :symbols {'?s store-id}})
+                    (db/pull-all-with db query {:where   '[[?e :order/store ?s]]
+                                                :symbols {'?s store-id}})
                     (some? user-id)
-                    (db/pull-all-with db '[* {:order/store [:store/name {:store/photo [:photo/path]}]}] {:where   '[[?e :order/user ?u]]
-                                                                                                         :symbols {'?u user-id}}))})))
+                    (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
+                                                :symbols {'?u user-id}}))})))
 
 (defmethod client-read :query/inventory
   [{:keys [db query target ast route-params] :as env} _ _]

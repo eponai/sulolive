@@ -26,6 +26,10 @@
   (charge [this opts]))
 
 (defprotocol IStripeAccount
+
+  ;; Charges
+  (-create-charge [this account-secret params])
+
   ;; Producs
   (create-product [this account-secret product])
   (-update-product [_ account-secret product-id params])
@@ -93,6 +97,13 @@
        :secret (.getSecret keys)
        :publ   (.getPublishable keys)}))
   IStripeAccount
+  (-create-charge [_ account-secret {:keys [amount currency source application-fee] :as params}]
+    (set-api-key account-secret)
+    (let [params (clojure.walk/stringify-keys params)
+          charge (Charge/create params)]
+      (debug "Created charge: " charge)
+      {:charge/status (.getStatus charge)
+       :charge/id     (.getId charge)}))
   (list-products [_ account-secret {:keys [ids]}]
     (set-api-key account-secret)
     (let [params (when (not-empty ids) {"ids" ids})

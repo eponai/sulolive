@@ -43,6 +43,9 @@
     (create-customer [_ _ params]
       (debug "DEV - Fake Stripe: create-customer with params: " params))
     p/IStripeAccount
+
+    ;; Charge
+    (-create-charge [this account-secret params])
     ;; Producs
     (create-product [this account-secret product])
     (-update-product [_ account-secret product-id params])
@@ -76,6 +79,9 @@
     (debug "Update account: " account)
     (s/assert :ext.stripe.params/update-account account)
     (p/update-account stripe account-id account)))
+
+(defn create-charge [stripe account-secret params]
+  (p/-create-charge stripe account-secret params))
 
 (defn create-product [stripe account-secret params]
   (s/assert :ext.stripe.params/create-product params)

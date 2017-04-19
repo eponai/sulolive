@@ -75,6 +75,7 @@
                          :else 3)
           checkout-resp (msg/last-message this 'user/checkout)]
 
+      (debug "CHECKOUT STATE: " (om/get-state this))
       (common/page-container
         {:navbar navbar :id "sulo-checkout"}
         (when (msg/pending? checkout-resp)

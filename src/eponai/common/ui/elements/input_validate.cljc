@@ -16,8 +16,10 @@
       (some true? invalid-paths))
     false))
 
-(defn select [id opts error & children]
-  (let [is-invalid-input? (is-invalid-path? id error)]
+(defn select
+  [opts error & children]
+  (debug "SELECT  OPTS: " opts)
+  (let [is-invalid-input? (some #(= % (:id opts)) (:invalid-paths error))]
     (my-dom/select
       (cond->> opts
                is-invalid-input?
@@ -42,6 +44,7 @@
        (cond->> opts
                 is-invalid-input?
                 (css/add-class :is-invalid-input)))))
+
   ([id-key opts error]
    (let [is-invalid-input? (is-invalid-path? id-key error)]
      (my-dom/input

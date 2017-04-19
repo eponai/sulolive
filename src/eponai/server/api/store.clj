@@ -137,36 +137,25 @@
 
 (defn create-order [{:keys [state system auth]} store-id {:keys [items source shipping]}]
   (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)
-        {:address/keys [full-name locality region country street1 postal]} shipping
-        _ (debug "order items: " (into [] items))
-        items-by-id (group-by :db/id items)
-        _ (debug "Items by id: " (into {} items-by-id))
-        order-params {:currency "CAD"
-                      :email    (:email auth)
-                      :items    (into [] (map (fn [[id skus]]
-                                                (let [sku (first skus)
-                                                      item (:store.item/_skus sku)]
-                                                  {:amount      (* 100 (:store.item/price item))
-                                                   :description (str id)
-                                                   :quantity    (count skus)}))
-                                              items-by-id))
-                      :shipping {:name    full-name
-                                 :address {:line1       street1
-                                           :city        locality
-                                           :country     country
-                                           :postal_code postal}}}
-        _ (debug "Order parans: " order-params)
-        order (stripe/create-order (:system/stripe system) secret order-params)
-        ]
-    (debug "Created order: " order)
-    (db/transact-one state {:db/id       (db/tempid :db.part/user)
-                            :order/id    (:order/id order)
-                            :order/store store-id
-                            :order/user  [:user/email (:email auth)]})
+        order (f/order {:order/items    items
+                        :order/uuid     (db/squuid)
+                        :order/shipping shipping
+                        :order/user     [:user/email (:email auth)]
+                        :order/store    store-id})
+        result-db (:db-after (db/transact-one state order))]
     (when source
-      (stripe/pay-order (:system/stripe system) secret (:order/id order) source))
-    (db/pull (db/db state) [:db/id] [:order/id (:order/id order)])
-    ))
+      (let [charge (stripe/create-charge (:system/stripe system) secret {:amount          "1000"
+                                                                         :application_fee "200"
+                                                                         :currency        "cad"
+                                                                         :source          source
+                                                                         :metadata        {:order_uuid (:order/uuid order)}})
+            charge-entity {:db/id     (db/tempid :db.part/user)
+                           :charge/id (:charge/id charge)}]
+        (db/transact state [charge-entity
+                            [:db/add [:order/uuid (:order/uuid order)] :order/charge (:db/id charge-entity)]])
+        (debug "Order was paid")))
+    ;; Return order entity to redirect in the client
+    (db/pull result-db [:db/id] [:order/uuid (:order/uuid order)])))
 
 (defn update-order [{:keys [state system]} store-id order-id params]
   (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)]

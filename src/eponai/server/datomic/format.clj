@@ -4,7 +4,8 @@
             [datomic.api :only [db a] :as d]
             [eponai.common.format :as cf]
             [eponai.common.format.date :as date]
-            [eponai.common.format :as common.format]))
+            [eponai.common.format :as common.format]
+            [eponai.common.database :as db]))
 
 
 ;; ------------------------ Create new entities -----------------
@@ -114,3 +115,24 @@
   {:db/id         (d/tempid :db.part/user)
    :user/email    (:email auth0)
    :user/verified (:email_verified auth0)})
+
+(defn shipping [s]
+  (let [address* #(-> (select-keys % [:shipping.address/street
+                                      :shipping.address/street2
+                                      :shipping.address/locality
+                                      :shipping.address/postal
+                                      :shipping.address/region
+                                      :shipping.address/country]))]
+    (-> (select-keys s [:shipping/address :shipping/name])
+        (update :shipping/address address*)
+        cf/add-tempid)))
+
+(defn order [o]
+  (let [item* (fn [sku]
+                {:db/id (db/tempid :db.part/user)
+                 :order.item/type :order.item.type/sku
+                 :order.item/parent (:db/id sku)})]
+    (-> (select-keys o [:db/id :order/uuid :order/shipping :order/user :order/store :order/items])
+        (update :order/shipping shipping)
+        (update :order/items #(map item* %))
+        cf/add-tempid)))
