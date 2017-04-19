@@ -32,7 +32,7 @@
                " was: " auth-and-message))
   `(let [mutation# (quote ~sym)]
      (defmethod parser/server-message mutation# ~args ~(:resp auth-and-message))
-     (defmethod parser/auth-role mutation# ~args ~(:auth auth-and-message))
+     (defmethod parser/server-auth-role mutation# ~args ~(:auth auth-and-message))
      (defmethod parser/server-mutate mutation# ~args ~mutate-body)))
 
 ;; TODO: Make this easier to use. Maybe return {::parser/force-read [:key1 :key2]} in the

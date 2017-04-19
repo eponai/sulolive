@@ -29,11 +29,17 @@
 (defmulti server-mutate om/dispatch)
 (defmulti server-message om/dispatch)
 
-(defmulti auth-role om/dispatch)
-(defmethod auth-role :default
+(defmulti server-auth-role om/dispatch)
+(defmulti client-auth-role om/dispatch)
+(defmethod server-auth-role :default
   [_ k p]
   (throw (ex-info (str "auth-role not implemented by: " k)
                   {:key k :params p})))
+
+(defmethod client-auth-role :default
+  [_ k p]
+  ;; Client is more relaxed, as it can't always decide if it has access or not.. maybe?
+  ::auth/public)
 
 ;; -------- Messaging protocols
 ;; TODO: Move to its own protocol namespace? Like om.next.impl.protocol
@@ -89,7 +95,7 @@
 ;; Auth responder
 
 (defn stateful-auth-responder
-  "Returns nil if a method has not been called, otherwise returns true or what is has been called with."
+  "Returns nil if a method has not been called, otherwise returns true or what it has been called with."
   []
   (let [state (atom {})
         read-then-update-key (fn [k f & args]
@@ -100,7 +106,7 @@
       auth/IAuthResponder
       (-redirect [this path]
         (read-then-update-key :redirect (fnil conj []) path))
-      (-prompt-login [this]
+      (-prompt-login [this _]
         (read-then-update-key :login (constantly true)))
       (-unauthorize [this]
         (read-then-update-key :unauthorized (constantly true))))))
@@ -112,6 +118,10 @@
 
 (defn- is-routing? [k]
   (= "routing" (namespace k)))
+
+(defn- is-special-key? [k]
+  (or (is-proxy? k)
+      (is-routing? k)))
 
 (defn default-read [e k p type]
   (cond
@@ -146,9 +156,6 @@
   (fn [env k p]
     (timeit (str "parsed: " k)
             (read-or-mutate env k p))))
-
-(defn user-email [env]
-  (:email (:auth env)))
 
 ;; ############ middlewares
 
@@ -204,14 +211,13 @@
      Filters are updated incrementally via the ::filter-atom (which
      is renewed everytime parser is called (see wrap-parser-filter-atom)."
      [read-or-mutate]
-     (fn [{:keys [state ::filter-atom] :as env} k p]
+     (fn [{:keys [state ::filter-atom auth] :as env} k p]
        (let [db (datomic/db state)
-             user-email (user-email env)
              update-filters (fn [old-filters]
                               (let [filters (or old-filters
-                                                (if user-email
-                                                  (do (debug "Using auth db for user:" user-email)
-                                                      (filter/authenticated-db-filters user-email))
+                                                (if-some [user-id (:user-id auth)]
+                                                  (do (debug "Using auth db for user:" user-id)
+                                                      (filter/authenticated-db-filters user-id))
                                                   (do (debug "Using non auth db")
                                                       (filter/not-authenticated-db-filters))))]
                                 (filter/update-filters db filters)))
@@ -243,7 +249,6 @@
     (let [graph-atom (or (::read-basis-t-graph env)
                          (atom (util/graph-read-at-basis-t)))
           env (assoc env ::filter-atom (atom nil)
-                         ::user-email (user-email env)
                          ::server? true
                          ::force-read-without-history (atom #{})
                          ::read-basis-t-graph graph-atom)
@@ -414,34 +419,40 @@
   [v basis-t]
   ((fnil vary-meta {}) v assoc ::value-read-basis-t basis-t))
 
-(defn- wrap-auth [read-or-mutate on-not-authed]
+(defn- wrap-auth [auth-role-method read-or-mutate on-not-authed]
   (fn [env k p]
-    (let [roles (auth-role env k p)]
+    (let [roles (auth-role-method env k p)]
       (if (auth/is-public-role? roles)
         (read-or-mutate (dissoc env :auth) k p)
-        (let [auth (:auth env)
-              roles (cond-> roles (keyword? roles) (hash-map true))]
-          (if-some [user (auth/authed-user-for-params (:db env) (keys roles) auth roles)]
+        (let [roles (cond-> roles (keyword? roles) (hash-map true))]
+          (if-some [user (auth/authed-user-for-params (:db env) (keys roles) (:auth env) roles)]
             (read-or-mutate (update env :auth #(-> (dissoc % :email) (assoc :user-id user)))
                             k p)
             (on-not-authed env k p)))))))
 
-(defn wrap-read-auth [read]
-  (let [read-authed (wrap-auth read (constantly nil))]
+(defn wrap-server-read-auth [read]
+  (let [read-authed (wrap-auth server-auth-role read (constantly nil))]
     (fn [env k p]
-      (if (or (is-routing? k)
-              (is-proxy? k))
+      (if (is-special-key? k)
         (read env k p)
         (read-authed env k p)))))
 
-(defn wrap-mutate-auth [mutate]
-  (wrap-auth mutate (fn [{::keys [auth-responder auth]} _ _]
-                      (let [message (if (empty? auth)
-                                      (do (auth/-prompt-login auth-responder)
-                                          "You need to log in to perform this action")
-                                      (do (auth/-unauthorize auth-responder)
-                                          "You are unauthorized to perform this action"))]
-                        {::mutation-message {::error-message message}}))))
+(defn wrap-server-mutate-auth [mutate]
+  (wrap-auth server-auth-role mutate
+             (fn [{::keys [auth-responder auth]} _ _]
+               (let [message (if (empty? auth)
+                               (do (auth/-prompt-login auth-responder nil)
+                                   "You need to log in to perform this action")
+                               (do (auth/-unauthorize auth-responder)
+                                   "You are unauthorized to perform this action"))]
+                 {::mutation-message {::error-message message}}))))
+
+(defn wrap-client-mutate-auth [mutate]
+  (wrap-auth client-auth-role mutate
+             (fn [{::keys [auth-responder auth ast]} _ p]
+               (if (empty? auth)
+                 (auth/-prompt-login auth-responder {:ast ast :params p})
+                 (auth/-unauthorize auth-responder)))))
 
 #?(:clj
    (defn with-mutation-message [mutate]
@@ -508,12 +519,12 @@
 (defn mutate-with-tx-meta [mutate]
   (fn [env k p]
     {:pre [(::created-at env)]}
-    (let [email (user-email env)
+    (let [user-id (:user-id (:auth env))
           tx-meta (cond-> {}
                           (number? (::created-at env))
                           (assoc :tx/mutation-created-at (::created-at env))
-                          (some? email)
-                          (assoc :tx/mutation-created-by [:user/email email]))]
+                          (some? user-id)
+                          (assoc :tx/mutation-created-by user-id))]
       (update-action (mutate env k p)
                      (fn [action]
                        (fn []
@@ -619,6 +630,7 @@
                       with-pending-message
                       client-mutate-creation-time
                       mutate-with-db-before-mutation
+                      wrap-client-mutate-auth
                       wrap-datascript-db
                       (cond-> (not elide-paths)
                               (with-elided-paths (delay (client-parser (assoc state :elide-paths true))))))))))
@@ -642,7 +654,7 @@
                    (fn [read state]
                      (-> read
                          read-returning-basis-t
-                         wrap-read-auth
+                         wrap-server-read-auth
                          wrap-datomic-db))
                    (fn [mutate state]
                      (-> mutate
@@ -650,7 +662,7 @@
                          server-mutate-creation-time-env
                          with-mutation-message
                          mutate-without-history-id-param
-                         wrap-mutate-auth
+                         wrap-server-mutate-auth
                          wrap-datomic-db))))))
 
 (defn test-client-parser
@@ -662,21 +674,6 @@
               query
               target))))
 
-;; Case by case middleware. Used when appropriate
-
 (defn mutation? [x]
   (and (sequential? x)
        (symbol? (first x))))
-
-(defn parse-without-mutations
-  "Returns a parser that removes remote mutations before parsing."
-  [parser]
-  (fn [env query & [target]]
-    (let [query (into [] (remove mutation?) query)]
-      (parser env query target))))
-
-(defn parser-require-auth [parser]
-  (fn [env query & [target]]
-    (assert (some? (user-email env))
-            (str "No auth in parser's env: " env))
-    (parser env query target)))

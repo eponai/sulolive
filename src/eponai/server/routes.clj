@@ -85,7 +85,7 @@
                  (handle-parser-response (assoc request :state conn))
                  (parser.resp/remove-mutation-tx-reports))
         auth-map (->> {:redirects    (common.auth/-redirect auth-responder nil)
-                       :prompt-login (common.auth/-prompt-login auth-responder)
+                       :prompt-login (common.auth/-prompt-login auth-responder nil)
                        :unauthorized (common.auth/-unauthorize auth-responder)}
                       (into {} (remove #(nil? (val %)))))]
     {:result ret

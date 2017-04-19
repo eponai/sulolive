@@ -26,7 +26,7 @@
                              `(defmethod parser/read-basis-params ~read-key# ~args ~bp#))]
     `(do
        ~basis-params-body#
-       (defmethod parser/auth-role ~read-key# ~args ~(:auth auth-and-basis-params))
+       (defmethod parser/server-auth-role ~read-key# ~args ~(:auth auth-and-basis-params))
        (defmethod parser/server-read ~read-key# ~args ~mutate-body))))
 
 (defread datascript/schema

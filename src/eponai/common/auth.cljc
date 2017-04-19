@@ -7,7 +7,7 @@
 
 (defprotocol IAuthResponder
   (-redirect [this path])
-  (-prompt-login [this])
+  (-prompt-login [this anything] "Propt user a login. The anything parameter can be used depending on use case.")
   (-unauthorize [this]))
 
 ;; TODO: Do this with spec instead
