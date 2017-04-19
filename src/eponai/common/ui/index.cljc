@@ -472,7 +472,7 @@
 (defui Unauthorized
   static om/IQuery
   (query [this]
-    [])
+    [:query/messages])
   Object
   (render [this]
     (dom/div
