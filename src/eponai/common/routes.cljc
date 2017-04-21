@@ -67,6 +67,8 @@
     ::auth/exact-user
     (= handler :checkout)
     ::auth/any-user
+    (= handler :settings)
+    ::auth/any-user
     :else
     ::auth/public))
 
