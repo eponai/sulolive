@@ -1,7 +1,6 @@
+[![Circle CI](https://circleci.com/gh/jourmoney/sulo.svg?style=shield&circle-token=d51f6b92f4dfb834f78b6550371a0588aa39d572)](https://circleci.com/gh/jourmoney/sulo)
 # Sulo
 Vancouver's local marketplace online
-
-[![Circle CI](https://circleci.com/gh/jourmoney/sulo.svg?style=shield&circle-token=d51f6b92f4dfb834f78b6550371a0588aa39d572)](https://circleci.com/gh/jourmoney/sulo)
 
 ## Installation
 
