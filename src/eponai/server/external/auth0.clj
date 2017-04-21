@@ -22,12 +22,16 @@
   (json/read-json json true))
 
 (defn token-expiring-within?
-  "Returns true if the token expires in less than provided date."
-  [{:keys [exp]} date]
-  (when exp
-    (let [expiry-time (time.coerce/from-long (* 1000 exp))
-          date-from-now (time/plus (time/now) date)]
-      (= date-from-now (time/latest expiry-time date-from-now)))))
+  "Returns true if the token expires in less than provided date.
+
+  Takes an extra 'now' parameter for testing."
+  ([token date]
+   (token-expiring-within? token date (time/now)))
+  ([{:keys [exp]} date now]
+   (when exp
+     (time/within? now
+                   (time/plus now date)
+                   (time.coerce/from-long (* 1000 exp))))))
 
 (defrecord Auth0 [client-id client-secret server-address]
   IAuth0
