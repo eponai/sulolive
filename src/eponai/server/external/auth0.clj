@@ -7,11 +7,13 @@
     [eponai.common.database :as db]
     [eponai.server.external.host :as server-address]
     [eponai.common.routes :as routes]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [buddy.sign.jws :as jws]))
 
 (defprotocol IAuth0
   (secret [this] "Returns the jwt secret for unsigning tokens")
-  (authenticate [this code state] "Returns an authentcation map"))
+  (authenticate [this code state] "Returns an authentcation map")
+  (refresh [this token] "Takes a token and returns a new one with a later :exp value"))
 
 (defn- read-json [json]
   (json/read-json json true))
@@ -36,13 +38,25 @@
 
       (if (some? code)
         (let [{:keys [id_token access_token token_type] :as to} (code->token code)
-              profile (token->profile access_token)]
+              profile nil]
+          ;; TODO: Do we ever need the profile of the token?
+          ;; We're not using it right now, so let's avoid that http request.
+          ;; profile (token->profile access_token)
           (debug "Got Token auth0: " to)
           {:token        id_token
            :profile      profile
            :redirect-url state
            :token-type   token_type})
-        {:redirect-url state}))))
+        {:redirect-url state})))
+  (refresh [this token]
+    (let [{:keys [id_token]}
+          (read-json (:body (http/post "https://sulo.auth0.com/delegation"
+                                       {:form-params {:client_id     client-id
+                                                      :client_secret client-secret
+                                                      :grant_type    "urn:ietf:params:oauth:grant-type:jwt-bearer"
+                                                      :id_token      token}})))]
+
+      id_token)))
 
 (defrecord FakeAuth0 [datomic]
   IAuth0
@@ -62,4 +76,7 @@
         {:token        (jwt/sign auth-data jwt-secret)
          :token-type   "Bearer"
          :redirect-url state})
-      {:redirect-url state})))
+      {:redirect-url state}))
+  (refresh [this token]
+    (let [{:keys [email]} (jws/unsign token (secret this))]
+      (:token (authenticate this email "")))))
