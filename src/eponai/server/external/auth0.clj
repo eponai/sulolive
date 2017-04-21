@@ -7,7 +7,7 @@
     [eponai.common.database :as db]
     [eponai.server.external.host :as server-address]
     [eponai.common.routes :as routes]
-    [taoensso.timbre :refer [debug]]
+    [taoensso.timbre :refer [debug error]]
     [buddy.sign.jws :as jws]))
 
 (defprotocol IAuth0
@@ -49,14 +49,21 @@
            :token-type   token_type})
         {:redirect-url state})))
   (refresh [this token]
-    (let [{:keys [id_token]}
-          (read-json (:body (http/post "https://sulo.auth0.com/delegation"
-                                       {:form-params {:client_id     client-id
-                                                      :client_secret client-secret
-                                                      :grant_type    "urn:ietf:params:oauth:grant-type:jwt-bearer"
-                                                      :id_token      token}})))]
-
-      id_token)))
+    (letfn [(token->refreshed-token [token]
+              (-> (http/post "https://sulo.auth0.com/delegation"
+                             {:form-params {:client_id     client-id
+                                            :client_secret client-secret
+                                            :grant_type    "urn:ietf:params:oauth:grant-type:jwt-bearer"
+                                            :id_token      token}})
+                  (:body)
+                  (read-json)
+                  (:id_token))
+              (read-json (:body)))]
+      (try
+        (token->refreshed-token token)
+        (catch Exception e
+          (error "Error refreshing token: " e ", returning old one.")
+          token)))))
 
 (defrecord FakeAuth0 [datomic]
   IAuth0
