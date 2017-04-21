@@ -132,7 +132,6 @@
   (POST "/api" request
     (r/response (call-parser request)))
 
-  (route/resources "/")
   ;(POST "/stripe/main" request (r/response (stripe/webhook (::m/conn request) (:params request))))
   (GET "/auth" request (auth/authenticate request))
 
