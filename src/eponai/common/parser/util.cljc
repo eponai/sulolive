@@ -86,6 +86,7 @@
 (defprotocol IReadAtBasisT
   (set-basis-t [this key basis-t params] "Sets basis-t for key and its params as [[k v]...]")
   (get-basis-t [this key params] "Gets basis-t for key and its params as [[k v]...]")
+  (has-basis-t? [this key])
   ;; TODO: Write a set-all function based on key-param-set.
   ;; (key-param-set [this])
   )
@@ -151,7 +152,9 @@
                         (update-in [:values v] update-in-graph (rest params))))))]
       (update-in this [:graph key] #(update-in-graph % params))))
   (get-basis-t [this key params]
-    (:value (find-basis-t (get graph key) (into {} params)))))
+    (:value (find-basis-t (get graph key) (into {} params))))
+  (has-basis-t? [this key]
+    (some? (get graph key))))
 
 (defn graph-read-at-basis-t
   ([] (graph-read-at-basis-t {} false))

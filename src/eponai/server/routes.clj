@@ -53,19 +53,16 @@
 ;----------API Routes
 
 (defn handle-parser-request
-  [{:keys [body] ::m/keys [conn parser system] :as request}]
+  [{:keys [body] ::m/keys [conn parser system] :as request} read-basis-t-graph]
   (debug "Handling parser request with query:" (:query body))
-  (let [read-basis-t-graph (some-> (::parser/read-basis-t body)
-                                   (parser.util/graph-read-at-basis-t true)
-                                   (atom))]
-    (parser
-      {::parser/read-basis-t-graph read-basis-t-graph
-       ::parser/chat-update-basis-t (::parser/chat-update-basis-t body)
-       :state                      conn
-       :auth                       (:identity request)
-       :params                     (:params request)
-       :system                     system}
-      (:query body))))
+  (parser
+    {::parser/read-basis-t-graph  (some-> read-basis-t-graph (atom))
+     ::parser/chat-update-basis-t (::parser/chat-update-basis-t body)
+     :state                       conn
+     :auth                        (:identity request)
+     :params                      (:params request)
+     :system                      system}
+    (:query body)))
 
 (defn trace-parser-response-handlers
   "Wrapper with logging for parser.response/response-handler."
@@ -80,17 +77,19 @@
 (defn call-parser [{:keys [::m/conn] :as request}]
   (let [clients-auth (get-in request [:body :auth :email])
         cookie-auth (get-in request [:identity :email])
-        ;; TODO: Better way of checking first-request?
-        ;; TODO: Do this force-logout in a different way?
-        ;;       We do this because the client's auth and the cookie's auth may
-        ;;       not agree on who's logged in. We may want to prompt a "continue as"
-        ;;       screen, instead of forcing the logout.
-        first-request? (nil? (::parser/read-basis-t (:body request)))]
-    (if (and (not first-request?)
-             (not= clients-auth cookie-auth))
+        read-basis-t-graph (some-> (::parser/read-basis-t (:body request))
+                                   (parser.util/graph-read-at-basis-t true))
+        has-queried-auth? (some-> read-basis-t-graph (parser.util/has-basis-t? :query/auth))]
+    (if (and has-queried-auth? (not= clients-auth cookie-auth))
+      ;; If we've queried auth and the client and cookie doesn't agree who's authed, logout.
+      ;; TODO: Do this force-logout in a different way?
+      ;;       We do this because the client's auth and the cookie's auth may
+      ;;       not agree on who's logged in. We may want to prompt a "continue as"
+      ;;       screen, instead of forcing the logout.
       {:auth {:logout true}}
       (let [auth-responder (parser/stateful-auth-responder)
-            ret (handle-parser-request (assoc request ::parser/auth-responder auth-responder))
+            ret (handle-parser-request (assoc request ::parser/auth-responder auth-responder)
+                                       read-basis-t-graph)
             basis-t-graph (some-> ret (meta) (::parser/read-basis-t-graph) (deref))
             ret (->> ret
                      (handle-parser-response (assoc request :state conn))
