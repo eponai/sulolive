@@ -188,16 +188,6 @@
      {:query/order [:order/items
                     {:order/store [:store/name {:store/photo [:photo/path]}]}]}])
   Object
-  (create-order [this]
-    #?(:cljs
-       (let [{:keys [order-id store-id action]} (get-route-params this)
-             order {:currency (utils/input-value-or-nil-by-id (:input-currency form-elements))
-                    :amount   (utils/input-value-or-nil-by-id (:input-price form-elements))}]
-         (msg/om-transact! this [(list 'store/create-order
-                                       {:order    order
-                                        :store-id store-id})
-                                  :query/orders]))))
-
   (update-order [this params]
     (let [{:keys [order-id store-id]} (get-route-params this)]
       (msg/om-transact! this `[(store/update-order ~{:params   params
@@ -298,21 +288,22 @@
                         (dom/td nil (:order/amount order))
                         (dom/td nil ))))))
 
-        (when-not order
-          (my-dom/div
-            (->> (css/grid-row)
-                 (css/grid-column))
-            (my-dom/div nil
-                        (my-dom/a
-                          (->> (css/button)
-                               css/button-hollow)
-                          (my-dom/span nil "Cancel"))
-                        (my-dom/a
-                          (->> {:onClick #(when-not is-loading? (.create-order this))}
-                               (css/button))
-                          (if is-loading?
-                            (my-dom/i {:className "fa fa-spinner fa-spin"})
-                            (my-dom/span nil "Save"))))))))))
+        ;(when-not order
+        ;  (my-dom/div
+        ;    (->> (css/grid-row)
+        ;         (css/grid-column))
+        ;    (my-dom/div nil
+        ;                (my-dom/a
+        ;                  (->> (css/button)
+        ;                       css/button-hollow)
+        ;                  (my-dom/span nil "Cancel"))
+        ;                (my-dom/a
+        ;                  (->> {:onClick #(when-not is-loading? (.create-order this))}
+        ;                       (css/button))
+        ;                  (if is-loading?
+        ;                    (my-dom/i {:className "fa fa-spinner fa-spin"})
+        ;                    (my-dom/span nil "Save"))))))
+        ))))
 
 (def ->OrderEditForm (om/factory OrderEditForm))
 
