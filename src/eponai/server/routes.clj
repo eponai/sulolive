@@ -119,17 +119,10 @@
 
 (defroutes
   site-routes
-  (POST "/api/user" request
-    (r/response (call-parser request))
-    ;(auth/restrict
-    ;  #(r/response (call-parser %))
-    ;  (auth/jwt-restrict-opts))
-    )
-  (POST "/api/chat" request
-    (r/response (call-parser request)))
-
   (GET "/aws" request (api/aws-s3-sign request))
   (POST "/api" request
+    (r/response (call-parser request)))
+  (POST "/api/chat" request
     (r/response (call-parser request)))
 
   ;(POST "/stripe/main" request (r/response (stripe/webhook (::m/conn request) (:params request))))

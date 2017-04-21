@@ -20,7 +20,7 @@
 (defmethod client-mutate 'shopping-bag/add-item
   [{:keys [target state]} _ {:keys [item]}]
   (if target
-    {:remote/user true}                                          ;(auth/is-logged-in?)
+    {:remote true}                                          ;(auth/is-logged-in?)
     {:action (fn []
                ;(let [cart (db/one-with (db/db state) {:where '[[?e :cart/items]]})]
                ;  (db/transact-one state [:db/add cart :cart/items (:db/id item)]))
