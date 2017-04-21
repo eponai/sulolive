@@ -13,7 +13,8 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.format.date :as date]
-    [eponai.common.ui.elements.grid :as grid]))
+    [eponai.common.ui.elements.grid :as grid]
+    [eponai.common.ui.utils :refer [two-decimal-price]]))
 
 (def form-elements
   {:input-currency "oef-input-currency"
@@ -45,8 +46,8 @@
 
                           (dom/a
                             (css/button {:onClick #(do
-                                                          (on-close)
-                                                          (.update-order component {:order/status order-status}))})
+                                                    (on-close)
+                                                    (.update-order component {:order/status order-status}))})
                             (dom/span nil "Yes, Shoot!"))
                           (dom/a
                             (css/button-hollow {:onClick on-close})
@@ -54,7 +55,7 @@
 
 (defn label-column [opts & content]
   (grid/column
-    (->> (grid/column-size {:small 4 :medium 3 :large 2})
+    (->> (grid/column-size {:small 3})
          (css/text-align :right))
     content))
 
@@ -62,7 +63,7 @@
   (let [{:keys [query/order]} (om/props component)
         {:order/keys [id amount currency items]} order
 
-        skus (filter #(= :sku (:order.item/type %)) items)
+        skus (filter #(= :order.item.type/sku (:order.item/type %)) items)
         tax (some #(when (= :tax (:order.item/type %)) %) items)
         shipping (some #(when (= :shipping (:order.item/type %)) %) items)
         order-created (when-some [created (:order/created order)]
@@ -89,39 +90,11 @@
             (dom/a
               (->> (css/button-hollow {:onClick #(om/update-state! component assoc :modal :modal/mark-as-canceled?)})
                    (css/add-class :alert)) "Cancel Order"))))
+
       (grid/row-column
         nil
         (callout/callout
           nil
-          (callout/header nil "Details")
-
-          (callout/callout
-            nil
-            (grid/row
-              nil
-              (label-column nil (dom/label nil "ID: "))
-              (grid/column
-                nil
-                (dom/p nil (:db/id order))))
-            (grid/row
-              nil
-              (label-column nil (dom/label nil "Created: "))
-              (grid/column
-                nil
-                (dom/p nil order-created)))
-            (grid/row
-              nil
-              (label-column nil (dom/label nil "Email: "))
-              (grid/column
-                nil
-                (dom/p nil (dom/a {:href (str "mailto:" order-email "?subject=" (:store/name (:order/store order)) " Order #" (:db/id order) "")} order-email))))
-            (grid/row
-              nil
-              (label-column nil (dom/label nil "Status: "))
-              (grid/column
-                nil
-                (dom/p nil (common/order-status-element order)))
-              ))
           (callout/callout
             nil
             (grid/row
@@ -132,7 +105,9 @@
                   (css/add-class :order-action)
                   (dom/div
                     nil
-                    (dom/i {:classes ["fa fa-credit-card fa-fw fa-2x"]})
+                    (if (= order-status :order.status/returned)
+                      (dom/i {:classes ["fa fa-rotate-left fa-fw fa-2x"]})
+                      (dom/i {:classes ["fa fa-credit-card fa-fw fa-2x"]}))
                     (cond (or (= order-status :order.status/paid)
                               (= order-status :order.status/fulfilled))
                           (dom/span nil "Payment Accepted")
@@ -165,15 +140,103 @@
                                     (css/add-class :disabled))
                            (dom/span nil "Fulfill Items")))))))
 
+          (callout/header nil "Details")
+
+          (callout/callout
+            nil
+            (grid/row
+              nil
+              (grid/column
+                nil
+                (grid/row
+                  nil
+                  (label-column nil (dom/label nil "ID: "))
+                  (grid/column
+                    nil
+                    (dom/p nil (:db/id order))))
+                (grid/row
+                  nil
+                  (label-column nil (dom/label nil "Created: "))
+                  (grid/column
+                    nil
+                    (dom/p nil order-created)))
+                (grid/row
+                  nil
+                  (label-column nil (dom/label nil "Email: "))
+                  (grid/column
+                    nil
+                    (dom/p nil (dom/a {:href (str "mailto:" order-email "?subject=" (:store/name (:order/store order)) " Order #" (:db/id order) "")} order-email))))
+                (grid/row
+                  nil
+                  (label-column nil (dom/label nil "Status: "))
+                  (grid/column
+                    nil
+                    (dom/p nil (common/order-status-element order)))
+                  ))
+              (grid/column
+                (grid/column-size {:small 12 :medium 6})
+                (grid/row
+                  nil
+                  ;(label-column nil (dom/label nil "Ship to: "))
+                  (let [shipping (:order/shipping order)
+                        address (:shipping/address shipping)]
+                    (grid/column
+                      nil
+                      (dom/div
+                        (css/add-class :shipping-address)
+                        (dom/p nil (dom/label nil "Ship to: "))
+                        (dom/p nil (:shipping/name shipping))
+                        (dom/div nil (dom/span nil (:shipping.address/street address)))
+                        (dom/div nil (dom/span nil (:shipping.address/street2 address)))
+                        (dom/div nil
+                                 (dom/span nil
+                                           (clojure.string/join
+                                             " "
+                                             [(:shipping.address/postal address)
+                                              (:shipping.address/locality address)
+                                              (:shipping.address/region address)
+                                              (:shipping.address/country address)]
+                                             )))))))))
+            ;(callout/callout
+            ;  nil)
+
+            )
+
           (callout/header nil "Items")
           (callout/callout
             nil
-            (menu/vertical
-              nil
-              (map (fn [i]
-                     (menu/item
-                       (css/add-class :order-item)
-                       (dom/span nil (str i))))))))))))
+            (dom/table
+              (css/add-class :stack (css/add-class :hover))
+              (dom/thead
+                nil
+                (dom/tr
+                  nil
+                  (dom/th nil "ID")
+                  (dom/th nil "Description")
+                  (dom/th nil "Variation")
+                  (dom/th nil "Price")))
+              (dom/tbody
+                nil
+                (map (fn [oi]
+                       (let [sku (:order.item/parent oi)
+                             product (:store.item/_skus sku)]
+                         (dom/tr
+                           (css/add-class :order-item)
+                           (dom/td
+                             nil
+                             (dom/p nil
+                                    (dom/a {:href (routes/url :product {:product-id (:db/id product)})}
+                                           (dom/span nil (:db/id product)))))
+                           (dom/td
+                             nil
+                             (dom/p nil (:store.item/name product)))
+                           (dom/td
+                             nil
+                             (dom/p nil (:store.item.sku/variation sku)))
+                           (dom/td
+                             nil
+                             (dom/p nil (two-decimal-price (:store.item/price product)))))))
+                     skus)))))))))
 
 (defn create-order [component]
   (let [{:keys [products]} (om/get-computed component)]
@@ -232,9 +295,16 @@
     [:query/messages
      {:query/order [:db/id
                     {:order/items [:order.item/type
-                                   {:order.item/parent [:store.item.sku/variation]}]}
+                                   {:order.item/parent [:store.item.sku/variation {:store.item/_skus [:db/id :store.item/name :store.item/price]}]}]}
                     :order/status
                     {:order/user [:user/email]}
+                    {:order/shipping [:shipping/name
+                                      {:shipping/address [:shipping.address/country
+                                                          :shipping.address/street
+                                                          :shipping.address/street2
+                                                          :shipping.address/postal
+                                                          :shipping.address/locality
+                                                          :shipping.address/region]}]}
                     {:order/store [:store/name {:store/photo [:photo/path]}]}]}
      :query/current-route])
   Object

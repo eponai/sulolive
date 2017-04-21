@@ -28,6 +28,7 @@
       (my-dom/span
         (->> (css/add-class :label)
              (css/add-class :hollow)
+             (css/add-class :order-status)
              (css/add-class status-class)) (name status)))))
 
 (defn modal [opts & content]

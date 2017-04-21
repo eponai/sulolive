@@ -1,6 +1,8 @@
 p > a {
-	color: map-get($foundation-palette, action);
+	$color: map-get($foundation-palette, action);
+	color: $color;
 	&:hover {
 		text-decoration: underline;
+		color: darken($color, 10%);
 	}
 }

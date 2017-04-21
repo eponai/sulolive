@@ -1,18 +1,33 @@
+.label.order-status {
+	text-transform: uppercase;
+}
+
 #sulo-edit-order {
-	@include label-hollow;
 	.label {
 		text-transform: uppercase;
 		font-weight: $global-weight-bold;
 	}
+	.callout {
+		margin-bottom: 2rem;
+	}
+	.shipping-address {
+		border: $global-border;
+		padding: 0.5rem;
+		label {
+			text-align: left;
+		}
+	}
 	$primary-color: map-get($foundation-palette, action);
 	table {
 		margin: 0 auto;
-		th {
-			color: $dark-gray;
-			padding-top: 0.5rem;
-			padding-bottom: 0.5rem;
-			font-size: 90%;
+		tbody, thead {
+			border-right: none;
+			border-left: none;
 		}
+		td > p {
+			margin-bottom: 0;
+		}
+
 		a {
 			font-weight: 500;
 		}
@@ -21,11 +36,6 @@
 		}
 		.tax, .shipping, tfoot {
 			border: none;
-			td {
-				padding-top: 0.75rem;
-				padding-bottom: 0.75rem;
-				font-size: 90%;
-			}
 		}
 	}
 	.order-action {

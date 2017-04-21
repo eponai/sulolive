@@ -10,10 +10,6 @@
           @include button-hollow-style($color);
           border: none;
         }
-
-        // &.#{$name}.dropdown::after {
-        //   border-top-color: $color;
-        // }
       }
     }
 }
@@ -32,7 +28,6 @@
 			@include button-hollow-style($color);
 			border: none;
 		}
-		// margin: 0;
 	}
 }
 
@@ -160,12 +155,6 @@
 			.photo-container {
 				width: 2rem;
 			}
-			td {
-				padding: 0.5rem 0.5rem;
-				@include breakpoint(medium) {
-					padding: 1.25rem 1rem;
-				}
-			}
 		}
 
 		#sulo-main-dashboard {
@@ -174,10 +163,6 @@
 			}
 			.stream-status {
 				@include label-hollow;
-				// span.label.#{$name} {
-
-				// 	font-weight: $global-weight-normal;
-				// }
 				a {
 					display: flex;
 					justify-content: space-between;

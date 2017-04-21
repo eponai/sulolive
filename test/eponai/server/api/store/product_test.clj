@@ -1,34 +1,12 @@
-(ns eponai.server.api.store-test
+(ns eponai.server.api.store.product-test
   (:require
     [clojure.test :refer :all]
-    [clojure.core.async :as async]
     [eponai.common.database :as db]
-    [eponai.server.api.store :as store]
-    [eponai.server.external.stripe :as stripe]
-    [eponai.server.external.stripe.protocols :as p]
+    [clojure.core.async :as async]
+    [eponai.server.api.store.test-util :refer [store-test s3-test]]
     [eponai.server.test-util :refer [new-db]]
-    [eponai.server.external.aws-s3 :as s3]
-    [taoensso.timbre :refer [debug]]
+    [eponai.server.api.store :as store]
     [eponai.server.datomic.format :as f]))
-
-(defn s3-test [chan]
-  (reify s3/IAWSS3Photo
-    (convert-to-real-key [this old-key])
-    (move-photo [this bucket old-key new-key])
-    (upload-photo [this params]
-      (let [{:keys [location]} params]
-        (async/put! chan location)
-        location))))
-
-(defn store-test []
-  {:db/id        (db/tempid :db.part/user)
-   :store/stripe {:db/id         (db/tempid :db.part/user)
-                  :stripe/secret "stripe-secret"}
-   :store/uuid   (db/squuid)})
-
-(defn store-item [& [name]]
-  {:store.item/name (or name "product") :store.item/uuid (db/squuid) :store.item/price "10" :store.item/skus [{:store.item.sku/variation "variation"}]})
-
 
 ;; ######################## CREATE #########################
 (deftest create-product-no-image-test
@@ -93,7 +71,7 @@
           db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid store)])
 
           ;; Prepare data for creating new products
-          params {:store.item/name "product" :store.item/uuid (db/squuid) :store.item/photos [{:location "first-photo"}
+          params {:store.item/name                                                                                                          "product" :store.item/uuid (db/squuid) :store.item/photos [{:location "first-photo"}
                                                                                               {:location "second-photo"}] :store.item/price "10"}
           s3-chan (async/chan 1)]
       (store/create-product {:state conn :system {:system/aws-s3 (s3-test s3-chan)}} (:db/id db-store) params)
@@ -182,7 +160,7 @@
           ;; Prepare our update parameters
           new-params {:store.item/name "product-updated" :store.item/photos [{:location "someurl.com"}]}
           s3-chan (async/chan 1)]
-      (store/update-product {:state  conn :system {:system/aws-s3 (s3-test s3-chan)}} (:db/id db-product) new-params)
+      (store/update-product {:state conn :system {:system/aws-s3 (s3-test s3-chan)}} (:db/id db-product) new-params)
       (let [result-db (db/db conn)
             ;; Pull new data after update
             new-db-product (db/pull result-db [:db/id :store.item/name {:store.item/photos [:db/id {:store.item.photo/photo [:db/id :photo/path]}]}] (:db/id db-product))
@@ -214,7 +192,7 @@
           new-params {:store.item/name "product-updated" :store.item/photos [{:location "newfirst"} ; Should replace the old photo
                                                                              {:location "newsecond"}]}
           s3-chan (async/chan 2)]
-      (store/update-product {:state  conn :system {:system/aws-s3 (s3-test s3-chan)}} (:db/id db-product) new-params)
+      (store/update-product {:state conn :system {:system/aws-s3 (s3-test s3-chan)}} (:db/id db-product) new-params)
       (let [result-db (db/db conn)
             ;; Pull new data after update
             new-db-product (db/pull result-db [:db/id :store.item/name {:store.item/photos [:db/id {:store.item.photo/photo [:db/id :photo/path]} :store.item.photo/index]}] (:db/id db-product))
@@ -250,7 +228,7 @@
           new-params {:store.item/name "product-updated" :store.item/photos [db-photo ;Pass in the old photo again, should not be uploaded to S3
                                                                              {:location "newsecond"}]}
           s3-chan (async/chan 2)]
-      (store/update-product {:state  conn :system {:system/aws-s3 (s3-test s3-chan)}} (:db/id db-product) new-params)
+      (store/update-product {:state conn :system {:system/aws-s3 (s3-test s3-chan)}} (:db/id db-product) new-params)
       (let [result-db (db/db conn)
             ;; Pull new data after update
             new-db-product (db/pull result-db [:db/id :store.item/name {:store.item/photos [:db/id {:store.item.photo/photo [:db/id :photo/path]} :store.item.photo/index]}] (:db/id db-product))
@@ -282,7 +260,7 @@
           ;; Prepare our update parameters
           new-params {:store.item/name "product-updated" :store.item/photos [{:location "new-one"}]}
           s3-chan (async/chan 2)]
-      (store/update-product {:state  conn :system {:system/aws-s3 (s3-test s3-chan)}} (:db/id db-product) new-params)
+      (store/update-product {:state conn :system {:system/aws-s3 (s3-test s3-chan)}} (:db/id db-product) new-params)
       (let [result-db (db/db conn)
             ;; Pull new data after update
             new-db-product (db/pull result-db [:db/id :store.item/name {:store.item/photos [:db/id {:store.item.photo/photo [:db/id :photo/path]} :store.item.photo/index]}] (:db/id db-product))
@@ -313,7 +291,7 @@
                                                                         :db/id]}] [:store.item/uuid (:store.item/uuid old-product)])
           ;; Prepare our update parameters
           new-params {:store.item/name "product-updated" :store.item/photos []}]
-      (store/update-product {:state  conn} (:db/id db-product) new-params)
+      (store/update-product {:state conn} (:db/id db-product) new-params)
       (let [result-db (db/db conn)
             ;; Pull new data after update
             new-db-product (db/pull result-db [:db/id :store.item/name {:store.item/photos [:db/id {:store.item.photo/photo [:db/id :photo/path]} :store.item.photo/index]}] (:db/id db-product))
@@ -343,7 +321,7 @@
           ;; Prepare our update parameters
           new-params {:store.item/name "product-updated" :store.item/photos [db-photo]}
           s3-chan (async/chan 1)]
-      (store/update-product {:state  conn :system {:system/aws-s3 (s3-test s3-chan)}} (:db/id db-product) new-params)
+      (store/update-product {:state conn :system {:system/aws-s3 (s3-test s3-chan)}} (:db/id db-product) new-params)
       (let [result-db (db/db conn)
             ;; Pull new data after update
             new-db-product (db/pull result-db [:db/id :store.item/name {:store.item/photos [:db/id :photo/path]}] (:db/id db-product))
