@@ -424,13 +424,28 @@
   :db/doc                "Ref to the user who wrote the chat message"
   :db.install/_attribute :db.part/db}
 
- ;; Orders
+ ;; Charge
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :order/id
+  :db/ident              :charge/id
   :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one
   :db/unique             :db.unique/identity
-  :db/doc                "Order ID received from Stripe."
+  :db/doc                "Charge ID received from Stripe."
+  :db.install/_attribute :db.part/db}
+
+ ;; Orders
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :order/charge
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Charge made on this order."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :order/status
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Status of this order, can be one of #{:order.status/created order.status/paid :order.status/canceled :order.status/fulfilled :order.status/returned}."
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
@@ -438,13 +453,102 @@
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
   :db/doc                "Ref to the store this order is for."
-
   :db.install/_attribute :db.part/db}
+
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :order/user
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
   :db/doc                "Ref to the user who created the order."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :order/uuid
+  :db/valueType          :db.type/uuid
+  :db/unique             :db.unique/identity
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Unique identifier of an order."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :order/shipping
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/isComponent        true
+  :db/doc                "Ref to the user who created the order."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :order/items
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/many
+  :db/isComponent        true
+  :db/doc                "Ref to the user who created the order."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :order.item/parent
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Ref to the SKU representing this order item."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :order.item/type
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Type of this order item (e.g. :tax :shipping)"
+  :db.install/_attribute :db.part/db}
+
+ ;; Shipping
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping/name
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Shipping recipient name."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping/address
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/isComponent        true
+  :db/doc                "Shipping address."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping.address/street
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Shipping street address (e.g. 2121 3rd Street)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping.address/postal
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Shipping postal code (e.g. 94107)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping.address/locality
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Shipping locality (e.g. San Francisco)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping.address/region
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Shipping region (e.g. California)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping.address/country
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Shipping country (e.g. United States)."
   :db.install/_attribute :db.part/db}
 
  ;; Collections

@@ -52,13 +52,13 @@
 (defmethod read-basis-params :query/orders [_ _ {:keys [store-id user-id]}]
   [[:user-id user-id] [:store-id store-id]])
 (defmethod server-read :query/orders
-  [env _ {:keys [store-id user-id]}]
+  [{:keys [db query]} _ {:keys [store-id user-id]}]
   {:value (cond (some? store-id)
-                (store/list-orders env store-id)
+                (db/pull-all-with db query {:where   '[[?e :order/store ?s]]
+                                                       :symbols {'?s store-id}})
                 (some? user-id)
-                (let [os (user/list-orders env user-id)]
-                  (debug "Got user orders: " os)
-                  os))})
+                (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
+                                                       :symbols {'?u user-id}}))})
 
 (defmethod read-basis-params :query/inventory [_ _ {:keys [store-id]}]
   [[:store-id store-id]])
@@ -73,11 +73,15 @@
 (defmethod read-basis-params :query/order [_ _ {:keys [order-id store-id user-id]}]
   [[:user-id user-id] [:store-id store-id] [:order-id order-id]])
 (defmethod server-read :query/order
-  [env _ {:keys [order-id store-id user-id]}]
+  [{:keys [state query db] :as env} _ {:keys [order-id store-id user-id]}]
   {:value (cond (some? store-id)
-                (store/get-order env store-id order-id)
+                (db/pull-one-with db query {:where '[[?e :order/store ?s]]
+                                            :symbols {'?e order-id
+                                                      '?s store-id}})
                 (some? user-id)
-                (user/get-order env user-id order-id))})
+                (db/pull-one-with db query {:where '[[?e :order/user ?u]]
+                                            :symbols {'?e order-id
+                                                      '?u user-id}}))})
 
 (defmethod server-read :query/my-store
   [{:keys [db db-history query auth]} _ _]
@@ -209,7 +213,7 @@
 (defmethod read-basis-params :query/chat [_ _ params]
   [[:store-id (get-in params [:store :db/id])]])
 (defmethod server-read :query/chat
-  [{:keys [db-history query system]
+  [{:keys         [db-history query system]
     ::parser/keys [read-basis-t-for-this-key chat-update-basis-t]} k {:keys [store] :as params}]
   (let [chat (:system/chat system)]
     (when chat-update-basis-t

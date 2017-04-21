@@ -17,9 +17,11 @@
 
 (defn order-element [component order]
   (let [{:query/keys [current-route]} (om/props component)]
+    (debug "Order: " order)
     (let [skus (filter #(= (:order.item/type %) :sku) (:order/items order))
           not-skus (remove #(= (:order.item/type %) :sku) (:order/items order))]
       (dom/div #js {:className "callout"}
+        (dom/span nil (str "Order " (:db/id order)))
         (my-dom/div
           (->> (css/grid-row)
                (css/align :bottom))
@@ -73,17 +75,23 @@
   static om/IQuery
   (query [_]
     [:query/current-route
-     :query/orders])
+     {:query/orders [:db/id
+                     :order/uuid
+                     :order/items
+                     :order/shipping
+                     :order/user
+                     {:order/store [{:store/photo [:photo/path]}]}]}])
   Object
   (render [this]
     (let [{:query/keys [orders current-route]} (om/props this)]
+      (debug "Got orders: " orders)
       (dom/div #js {:id "sulo-user-order-list"}
         (my-dom/div
           (->> (css/grid-row)
                css/grid-column)
           (dom/h3 nil "My Orders")
-          (map-indexed
-            (fn [i o]
+          (map
+            (fn [o]
               (dom/div nil
                 (order-element this o)
                 ))

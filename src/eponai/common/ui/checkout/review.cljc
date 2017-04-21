@@ -46,7 +46,9 @@
             (dom/h3 nil "Review & Confirm")))
         (dom/div #js {:className "callout"}
 
-          (let [{:address/keys [street1 postal region locality country full-name]} shipping]
+          (let [{full-name :shipping/name
+                 :shipping/keys [address]} shipping
+                {:shipping.address/keys [street1 postal region locality country]} address]
             (my-dom/div
               (->> (css/grid-row)
                    (css/align :bottom))

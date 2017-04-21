@@ -1,5 +1,7 @@
 (ns eponai.common.ui.components.select
   (:require
+    #?(:cljs
+       [cljsjs.react-select])
     [om.dom :as dom]
     [om.next :as om :refer [defui]]))
 

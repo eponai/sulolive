@@ -210,11 +210,11 @@
              (store/delete-product env (:db/id product)))})
 
 (defmutation store/create-order
-  [env _ {:keys [order store-id] :as p}]
-  {:success "Order created"
+  [{::parser/keys [return] :as env} _ {:keys [order store-id]}]
+  {:success return
    :error   "Could not create order"}
   {:action (fn []
-             (store/create-order env (c/parse-long store-id) order))})
+             (store/create-order env store-id order))})
 
 (defmutation chat/send-message
   [{::parser/keys [exception] :keys [state system] :as env} k {:keys [store text user]}]
@@ -236,14 +236,14 @@
   {:success "Order created"
    :error   "Could not create order"}
   {:action (fn []
-             (store/update-order env (c/parse-long store-id) order-id params))})
+             (store/update-order env store-id order-id params))})
 
-(defmutation user/checkout
-  [{::parser/keys [return] :as env} _ {:keys [items store-id] :as p}]
-  {:success return
-   :error   "Could not create order"}
-  {:action (fn []
-             (debug "Checkout items: " (into [] items))
-             (let [order (store/create-order env store-id p)]
-               (debug "New order: " order)
-               order))})
+;(defmutation user/checkout
+;  [{::parser/keys [return] :as env} _ {:keys [items store-id] :as p}]
+;  {:success return
+;   :error   "Could not create order"}
+;  {:action (fn []
+;             (debug "Checkout items: " (into [] items))
+;             (let [order (store/create-order env store-id p)]
+;               (debug "New order: " order)
+;               order))})

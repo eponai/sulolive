@@ -123,7 +123,7 @@
   (let [{:query/keys [store stripe-account]} (om/props component)
         store-id (:db/id store)
         ;; Implement a :query/stream-by-store-id ?
-        stream-state (-> store :stream/_store first :stream/state)]
+        stream-state (or (-> store :stream/_store first :stream/state) :stream.state/offline)]
 
     (dom/div
       nil
@@ -169,15 +169,17 @@
                                              (routes/url :store-dashboard/settings#activate {:store-id (:db/id store)}))})
                  (css/add-class :primary))
             (dom/span nil "Account status")
-            (dom/span
-              (cond->> (css/add-class :hollow (css/add-class :label))
-                       (= status :pending)
-                       (css/add-class :secondary)
-                       (= status :verified)
-                       (css/add-class :success)
-                       (= status :unverified)
-                       (css/add-class :warning))
-              (name status))))))))
+            (if (some? status)
+              (dom/span
+                (cond->> (css/add-class :hollow (css/add-class :label))
+                         (= status :pending)
+                         (css/add-class :secondary)
+                         (= status :verified)
+                         (css/add-class :success)
+                         (= status :unverified)
+                         (css/add-class :warning))
+                (name status))
+              (dom/i {:classes ["fa fa-spinner fa-spin"]}))))))))
 
 (defn verification-status-element [component]
   (let [{:query/keys [stripe-account store]} (om/props component)
