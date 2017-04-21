@@ -1,17 +1,21 @@
-# budget
+# Sulo
+Vancouver's local marketplace online
 
-[![Circle CI](https://circleci.com/gh/eponai/budget.svg?style=svg&circle-token=2a5932170afcb7e4664b0bae51176e11937b9e35)](https://circleci.com/gh/eponai/budget)
-FIXME: description
+[![Circle CI](https://circleci.com/gh/jourmoney/sulo.svg?style=shield&circle-token=d51f6b92f4dfb834f78b6550371a0588aa39d572)](https://circleci.com/gh/jourmoney/sulo)
 
 ## Installation
 
 Download from http://example.com/FIXME.
 
 ## Usage
+### Server
+* Start server repl: ```lein repl```
+* Initialize local server: ```eponai.repl=> (start-server)```
 
-FIXME: explanation
-
-    $ java -jar budget-0.1.0-standalone.jar [args]
+### Client
+#### Web
+* Start web client repl: ```rlwrap lein figwheel-web```
+* Open Browser and navigate to: ```localhost:3000```
 
 ## Options
 
