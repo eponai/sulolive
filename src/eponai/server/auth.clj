@@ -19,6 +19,7 @@
     [medley.core :as medley]))
 
 (def auth-token-cookie-name "sulo-auth-token")
+(def auth-token-remove-value "kill")
 
 (def restrict buddy/restrict)
 
@@ -32,7 +33,7 @@
   (auth/-redirect (::auth-responder request) path))
 
 (defn remove-auth-cookie [response]
-  (assoc-in response [:cookies auth-token-cookie-name] {:value "kill" :max-age 1}))
+  (assoc-in response [:cookies auth-token-cookie-name] {:value {:token auth-token-remove-value} :max-age 1}))
 
 (defrecord HttpAuthResponder []
   auth/IAuthResponder
@@ -50,6 +51,14 @@
         (let [new-user (f/auth0->user auth0-user)]
           (db/transact-one conn new-user))))))
 
+(defn- token-map-from-cookie [request]
+  (when-let [token-cookie (get-in request [:cookies auth-token-cookie-name :value])]
+    (into {}
+          (for [^String cookie-val (.split token-cookie "&")]
+            (let [[k v] (map (fn [^String x] (.trim x))
+                             (.split cookie-val "=" 2))]
+              [(keyword k) v])))))
+
 (defn jwt-cookie-backend [conn auth0]
   (let [jws-backend (backends/jws {:secret   (auth0/secret auth0)
                                    ;; Throw it so we can handle it in our wrapper
@@ -58,8 +67,8 @@
     (reify
       auth.protocols/IAuthentication
       (-parse [_ request]
-        ;; Changes how the token is parsed. Parses from cookie instead of header
-        (get-in request [:cookies auth-token-cookie-name :value]))
+        (let [{:keys [token]} (token-map-from-cookie request)]
+          token))
       (-authenticate [_ request data]
         ;; Parses the jws token and returns token validation errors
         (try
@@ -96,15 +105,41 @@
           (debug "Auth token failure: " (:identity request)
                  ", executing the request without auth. Will remove token from cookie.")
           (deferred/let-flow [response (handler (dissoc request :identity))]
+                             ;; Force removal of the token, because it is failing.
+                             (remove-auth-cookie response)))))))
+
+(defn wrap-refresh-token [handler]
+  (fn [request]
+    (let [auth0 (get-in request [:eponai.server.middleware/system :system/auth0])]
+      (if-not (auth0/should-refresh-token? auth0 (:identity request))
+        (handler request)
+        (let [{:keys [token tried-refresh-at]} (token-map-from-cookie request)
+              refreshed-token (when (nil? tried-refresh-at)
+                                (auth0/refresh auth0 token))]
+          (debug "refresh token: " refreshed-token)
+          (deferred/let-flow [response (handler request)]
                              (cond-> response
-                                     ;; On token expired, if no-one has set the cookies field, reset it.
+                                     ;; On token refresh, if no-one has set the cookies field, reset it.
                                      (empty? (get-in response [:cookies auth-token-cookie-name]))
-                                     (remove-auth-cookie))))))))
+                                     (r/set-cookie auth-token-cookie-name
+                                                   (if (some? refreshed-token)
+                                                     {:token refreshed-token}
+                                                     {:token            token
+                                                      :tried-refresh-at (or tried-refresh-at
+                                                                            (System/currentTimeMillis))})))))))))
+
+(defn wrap-on-auth [handler middleware]
+  (let [wrapped (middleware handler)]
+    (fn [request]
+     (if (:identity request)
+       (wrapped request)
+       (handler request)))))
 
 (defn wrap-auth [handler conn auth0]
   (let [auth-backend (jwt-cookie-backend conn auth0)]
     (-> handler
-        (wrap-expired-token)
+        (wrap-on-auth wrap-expired-token)
+        (wrap-on-auth wrap-refresh-token)
         (wrap-authentication auth-backend)
         (wrap-authorization auth-backend)
         (wrap-http-auth-responder))))
@@ -114,16 +149,16 @@
         {:keys [code state]} params
         {:keys [redirect-url token]} (auth0/authenticate auth0 code state)]
     (if token
-      (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name token)
+      (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token})
       (prompt-login request))))
 
-;; TODO: Might want to structure this differently.
-;;       Because how do we query "which role does this user have for which parameters?"
-;;       We'd want, User has ::exact-user role for :user-id [123]
-;;                  User has ::store-owner role for :store-id [234 345]?
-;;      This might not be useful.
+(defn bidi-route-restrictions
+  "For each bidi route, we get the roles required for the route
+  and check if the auth in the request is allowed to access this route.
 
-(defn bidi-route-restrictions [route]
+  When the request fails to authenticate, we either prompt the requestee
+  to login or respond with unauthorized."
+  [route]
   (let [auth-roles (routes/auth-roles route)]
     {:handler  (fn [{:keys [identity route-params] :as request}]
                  (let [auth-val {:route        route

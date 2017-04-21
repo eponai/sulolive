@@ -1,6 +1,8 @@
 (ns eponai.server.external.auth0
   (:require
     [clj-http.client :as http]
+    [clj-time.core :as time]
+    [clj-time.coerce :as time.coerce]
     [clojure.data.json :as json]
     [buddy.core.codecs.base64 :as b64]
     [buddy.sign.jwt :as jwt]
@@ -13,10 +15,19 @@
 (defprotocol IAuth0
   (secret [this] "Returns the jwt secret for unsigning tokens")
   (authenticate [this code state] "Returns an authentcation map")
-  (refresh [this token] "Takes a token and returns a new one with a later :exp value"))
+  (refresh [this token] "Takes a token and returns a new one with a later :exp value. Return nil if it was not possible.")
+  (should-refresh-token? [this parsed-token] "Return true if it's time to refresh a token"))
 
 (defn- read-json [json]
   (json/read-json json true))
+
+(defn token-expiring-within?
+  "Returns true if the token expires in less than provided date."
+  [{:keys [exp]} date]
+  (when exp
+    (let [expiry-time (time.coerce/from-long (* 1000 exp))
+          date-from-now (time/plus (time/now) date)]
+      (= date-from-now (time/latest expiry-time date-from-now)))))
 
 (defrecord Auth0 [client-id client-secret server-address]
   IAuth0
@@ -62,8 +73,10 @@
       (try
         (token->refreshed-token token)
         (catch Exception e
-          (error "Error refreshing token: " e ", returning old one.")
-          token)))))
+          (error "Error refreshing token: " e)
+          nil))))
+  (should-refresh-token? [this parsed-token]
+    (token-expiring-within? parsed-token (time/weeks 1))))
 
 (defrecord FakeAuth0 [datomic]
   IAuth0
@@ -71,7 +84,7 @@
     (.getBytes "sulo-dev-secret"))
   (authenticate [this code state]
     (if-let [email (:user/email (db/lookup-entity (db/db (:conn (:datomic this))) [:user/email code]))]
-      (let [now (long (/ (System/currentTimeMillis) 1000))
+      (let [now (quot (System/currentTimeMillis) 1000)
             tomorrow (+ now (* 24 3600))
             auth-data {:email          email
                        :email_verified true
@@ -85,5 +98,13 @@
          :redirect-url state})
       {:redirect-url state}))
   (refresh [this token]
-    (let [{:keys [email]} (jws/unsign token (secret this))]
-      (:token (authenticate this email "")))))
+    (letfn [(token->refreshed-token [token]
+              (let [{:keys [email]} (jwt/unsign token (secret this))]
+                (:token (authenticate this email ""))))]
+      (try
+        (token->refreshed-token token)
+        (catch Exception e
+          (debug "Unable to parse token: " token " error: " e)
+          nil))))
+  (should-refresh-token? [this parsed-token]
+    (token-expiring-within? parsed-token (time/minutes 59))))
