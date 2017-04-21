@@ -75,7 +75,9 @@
 (defmethod server-read :query/order
   [{:keys [state query db] :as env} _ {:keys [order-id store-id user-id]}]
   {:value (cond (some? store-id)
-                (store/get-order env store-id order-id)
+                (db/pull-one-with db query {:where '[[?e :order/store ?s]]
+                                            :symbols {'?e order-id
+                                                      '?s store-id}})
                 (some? user-id)
                 (db/pull-one-with db query {:where '[[?e :order/user ?u]]
                                             :symbols {'?e order-id

@@ -12,8 +12,9 @@
     [eponai.client.routes :as routes]
     [eponai.common.ui.elements.grid :as grid]))
 
-(defn order-status-element [status]
-  (let [status-class (cond (= status :order.status/created)
+(defn order-status-element [order]
+  (let [status (:order/status order "")
+        status-class (cond (= status :order.status/created)
                            "secondary"
                            (= status :order.status/paid)
                            "success"

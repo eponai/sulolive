@@ -120,21 +120,6 @@
   (let [store (db/lookup-entity (db/db state) store-id)]
     (assoc o :order/store store :order/user user-id)))
 
-(defn get-order [{:keys [db system]} store-id order-id]
-  (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)
-        {:keys [order/id]} (db/pull db [:order/id] order-id)]
-    (stripe/get-order (:system/stripe system) secret id)))
-
-(defn list-orders [{:keys [db system]} store-id]
-  (let [{:keys [stripe/secret]} (stripe/pull-stripe db store-id)
-        orders (db/pull-all-with db [:db/id :order/id :order/store :order/user] {:where   '[[?e :order/store ?s]]
-                                                                                 :symbols {'?s store-id}})
-        stripe-orders (stripe/list-orders (:system/stripe system) secret {:ids (map :order/id orders)})]
-    (map (fn [o]
-           (let [db-order (some #(when (= (:order/id %) (:order/id o)) %) orders)]
-             (merge o db-order)))
-         stripe-orders)))
-
 (defn create-order [{:keys [state system auth]} store-id {:keys [items source shipping]}]
   (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)
         order (f/order {:order/items    items
@@ -152,14 +137,13 @@
             charge-entity {:db/id     (db/tempid :db.part/user)
                            :charge/id (:charge/id charge)}]
         (db/transact state [charge-entity
-                            [:db/add [:order/uuid (:order/uuid order)] :order/charge (:db/id charge-entity)]])
-        (debug "Order was paid")))
+                            [:db/add [:order/uuid (:order/uuid order)] :order/charge (:db/id charge-entity)]])))
     ;; Return order entity to redirect in the client
     (db/pull result-db [:db/id] [:order/uuid (:order/uuid order)])))
 
 (defn update-order [{:keys [state system]} store-id order-id params]
   (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)]
-    (stripe/update-order (:system/stripe system) secret order-id params)))
+    ))
 
 (defn account [{:keys [state system]} store-id]
   (let [{:keys [stripe/id] :as s} (stripe/pull-stripe (db/db state) store-id)]

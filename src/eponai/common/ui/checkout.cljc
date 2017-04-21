@@ -47,10 +47,10 @@
              {:keys [route-params]} current-route
              {:keys [store-id]} route-params]
          (let [items (filter #(= (c/parse-long store-id) (get-in % [:store.item/_skus :store/_items :db/id])) (:cart/items cart))]
-           (msg/om-transact! this `[(user/checkout ~{:source   source
-                                                     :shipping shipping
-                                                     :items    items
-                                                     :store-id (c/parse-long store-id)})])))))
+           (msg/om-transact! this `[(store/create-order ~{:order    {:source   source
+                                                                     :shipping shipping
+                                                                     :items    items}
+                                                          :store-id (c/parse-long store-id)})])))))
 
   (initLocalState [_]
     {:checkout/shipping nil
@@ -63,7 +63,7 @@
         (let [message (msg/message response)
               {:query/keys [auth]} (om/props this)]
           (debug "message: " message)
-          (msg/clear-messages! this 'user/checkout)
+          (msg/clear-messages! this 'store/create-order)
           (routes/set-url! this :user/order {:order-id (:db/id message) :user-id (:db/id auth)})))))
 
   (render [this]
@@ -73,7 +73,7 @@
           progress (cond (nil? shipping) 1
                          (nil? payment) 2
                          :else 3)
-          checkout-resp (msg/last-message this 'user/checkout)]
+          checkout-resp (msg/last-message this 'store/create-order)]
 
       (debug "CHECKOUT STATE: " (om/get-state this))
       (common/page-container

@@ -12,7 +12,7 @@
 (defui OrderList
   static om/IQuery
   (query [_]
-    [:query/orders])
+    [{:query/orders [:order/store :order/uuid]}])
   Object
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
@@ -62,7 +62,7 @@
                       (dom/tr #js {:key (str i)}
                               (dom/td nil
                                       (dom/a #js {:href product-link}
-                                             (common/order-status-element (:order/status o))))
+                                             (common/order-status-element o)))
                               (dom/td nil
                                       (dom/a #js {:href product-link}
                                              (dom/span nil (:db/id o))))
@@ -71,7 +71,7 @@
                                              (dom/span nil (:order/amount o))))
                               (dom/td nil
                                       (dom/a #js {:href product-link}
-                                             (dom/span nil (date/date->string (* 1000 (:order/updated o)))))))))
+                                             (dom/span nil (date/date->string (* 1000 (:order/updated o 0)))))))))
                   orders)))))))))
 
 (def ->OrderList (om/factory OrderList))

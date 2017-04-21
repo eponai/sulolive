@@ -61,7 +61,7 @@
              (css/align :bottom))
         (my-dom/div
           (css/grid-column)
-          (dom/h2 nil "Edit Order - " (dom/small nil (:order/id order)) " " (common/order-status-element (:order/status order))))
+          (dom/h2 nil "Edit Order - " (dom/small nil (:order/id order)) " " (common/order-status-element order)))
         (my-dom/div
           (->> (css/grid-column)
                (css/add-class :shrink)
@@ -186,8 +186,6 @@
   (query [_]
     [:query/messages
      {:query/order [:order/items
-                    :order/status
-                    :order/email
                     {:order/store [:store/name {:store/photo [:photo/path]}]}]}])
   Object
   (create-order [this]
@@ -195,9 +193,9 @@
        (let [{:keys [order-id store-id action]} (get-route-params this)
              order {:currency (utils/input-value-or-nil-by-id (:input-currency form-elements))
                     :amount   (utils/input-value-or-nil-by-id (:input-price form-elements))}]
-         (msg/om-transact! this `[(store/create-order
-                                    ~{:order    order
-                                      :store-id store-id})
+         (msg/om-transact! this [(list 'store/create-order
+                                       {:order    order
+                                        :store-id store-id})
                                   :query/orders]))))
 
   (update-order [this params]
