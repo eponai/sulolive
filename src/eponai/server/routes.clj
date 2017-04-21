@@ -2,6 +2,7 @@
   (:require
     [eponai.server.api :as api]
     [eponai.server.auth :as auth]
+    [eponai.common.auth :as common.auth]
     [clojure.string :as clj.string]
     [compojure.core :refer :all]
     [compojure.route :as route]
@@ -19,7 +20,9 @@
     [om.next :as om]
     [eponai.server.external.stripe :as stripe]
     [eponai.server.websocket :as websocket]
-    [eponai.server.ui.root :as root]))
+    [eponai.server.ui.root :as root]
+    [eponai.common.routes :as routes]
+    [eponai.common.database :as db]))
 
 (defn html [& path]
   (-> (clj.string/join "/" path)
@@ -37,28 +40,29 @@
    :system                         (::m/system request)
    :release?                       (release? request)
    :cljs-build-id                  (::m/cljs-build-id request)
-   :route-params                   (merge (:route-params request)
-                                          (:params request))
+   :route-params                   (merge (:params request)
+                                          (:route-params request))
    :route                          (:handler request)
    :query-params                   (:params request)
    :auth                           (:identity request)})
 
+;---------- Auth handlers
+
+
+
 ;----------API Routes
 
 (defn handle-parser-request
-  [{:keys [body] ::m/keys [conn parser system] :as request}]
+  [{:keys [body] ::m/keys [conn parser system] :as request} read-basis-t-graph]
   (debug "Handling parser request with query:" (:query body))
-  (let [read-basis-t-graph (some-> (::parser/read-basis-t body)
-                                   (parser.util/graph-read-at-basis-t true)
-                                   (atom))]
-    (parser
-      {::parser/read-basis-t-graph read-basis-t-graph
-       ::parser/chat-update-basis-t (::parser/chat-update-basis-t body)
-       :state                      conn
-       :auth                       (:identity request)
-       :params                     (:params request)
-       :system                     system}
-      (:query body))))
+  (parser
+    {::parser/read-basis-t-graph  (some-> read-basis-t-graph (atom))
+     ::parser/chat-update-basis-t (::parser/chat-update-basis-t body)
+     :state                       conn
+     :auth                        (:identity request)
+     :params                      (:params request)
+     :system                      system}
+    (:query body)))
 
 (defn trace-parser-response-handlers
   "Wrapper with logging for parser.response/response-handler."
@@ -71,48 +75,62 @@
   (-> (parser.util/post-process-parse trace-parser-response-handlers [])))
 
 (defn call-parser [{:keys [::m/conn] :as request}]
-  (let [ret (handle-parser-request request)
-        basis-t-graph (some-> ret (meta) (::parser/read-basis-t-graph) (deref))
-        ret (->> ret
-                 (handle-parser-response (assoc request :state conn))
-                 (parser.resp/remove-mutation-tx-reports))]
-    {:result ret
-     :meta   {::parser/read-basis-t basis-t-graph}}))
+  (let [clients-auth (get-in request [:body :auth :email])
+        cookie-auth (get-in request [:identity :email])
+        read-basis-t-graph (some-> (::parser/read-basis-t (:body request))
+                                   (parser.util/graph-read-at-basis-t true))
+        has-queried-auth? (some-> read-basis-t-graph (parser.util/has-basis-t? :query/auth))]
+    (if (and has-queried-auth? (not= clients-auth cookie-auth))
+      ;; If we've queried auth and the client and cookie doesn't agree who's authed, logout.
+      ;; TODO: Do this force-logout in a different way?
+      ;;       We do this because the client's auth and the cookie's auth may
+      ;;       not agree on who's logged in. We may want to prompt a "continue as"
+      ;;       screen, instead of forcing the logout.
+      {:auth {:logout true}}
+      (let [auth-responder (parser/stateful-auth-responder)
+            ret (handle-parser-request (assoc request ::parser/auth-responder auth-responder)
+                                       read-basis-t-graph)
+            basis-t-graph (some-> ret (meta) (::parser/read-basis-t-graph) (deref))
+            ret (->> ret
+                     (handle-parser-response (assoc request :state conn))
+                     (parser.resp/remove-mutation-tx-reports))
+            auth-map (->> {:redirects    (common.auth/-redirect auth-responder nil)
+                           :prompt-login (common.auth/-prompt-login auth-responder nil)
+                           :unauthorized (common.auth/-unauthorize auth-responder)}
+                          (into {} (remove #(nil? (val %)))))]
+        (cond-> {:result ret
+                 :meta   {::parser/read-basis-t basis-t-graph}}
+                (seq auth-map)
+                (assoc :auth auth-map))))))
 
 (defn bidi-route-handler [route]
   ;; Currently all routes render the same way.
   ;; Enter route specific stuff here.
-  (fn [request]
-    (server.ui/render-site (request->props (assoc request :handler route)))))
+  (auth/restrict
+    (fn [request]
+      (server.ui/render-site (request->props (assoc request :handler route))))
+    (auth/bidi-route-restrictions route)))
 
 (defroutes
   member-routes
   ;; Hooks in bidi routes with compojure.
+  ;; TODO: Cache the handlers for each route.
   (GET "*" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler)))
 
 (defroutes
   site-routes
-  (POST "/api/user" request
-    (r/response (call-parser request))
-    ;(auth/restrict
-    ;  #(r/response (call-parser %))
-    ;  (auth/jwt-restrict-opts))
-    )
+  (GET "/aws" request (api/aws-s3-sign request))
+  (POST "/api" request
+    (r/response (call-parser request)))
   (POST "/api/chat" request
     (r/response (call-parser request)))
 
-  (GET "/aws" request (api/aws-s3-sign request))
-  (POST "/api" request
-    ;(r/response (call-parser request))
-    (auth/restrict
-      #(r/response (call-parser %))
-      (auth/jwt-restrict-opts)))
-
-  (route/resources "/")
   ;(POST "/stripe/main" request (r/response (stripe/webhook (::m/conn request) (:params request))))
   (GET "/auth" request (auth/authenticate request))
 
-  (GET "/logout" request (auth/logout request))
+  (GET "/logout" request (-> (auth/redirect request (or (get-in request [:params :redirect])
+                                                        (routes/path :index)))
+                             (auth/remove-auth-cookie)))
 
   (GET "/devcards" request
     (when-not (::m/in-production? request)
@@ -132,9 +150,8 @@
                                     request))
 
   (context "/" [:as request]
-    (cond-> member-routes
-            (or (::m/in-production? request))
-            (auth/restrict (auth/member-restrict-opts)))
+    member-routes
+
     ;(if (release? request)
     ;  (auth/restrict member-routes (auth/member-restrict-opts))
     ;  member-routes)

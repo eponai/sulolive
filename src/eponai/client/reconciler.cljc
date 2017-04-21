@@ -10,7 +10,7 @@
             [eponai.client.local-storage :as local-storage]))
 
 (defn remote-order []
-  [:remote :remote/user :remote/chat])
+  [:remote :remote/chat])
 
 (defn remote-config
   "Returns a map with remotes (keywords) mapped to remote functions.
@@ -19,11 +19,11 @@
   [conn]
   {:order       (remote-order)
    :remote      (-> (remotes/post-to-url "/api")
-                    (remotes/read-basis-t-remote-middleware conn))
-   :remote/user (-> (remotes/post-to-url "/api/user")
-                    (remotes/read-basis-t-remote-middleware conn))
+                    (remotes/read-basis-t-remote-middleware conn)
+                    (remotes/with-auth conn))
    :remote/chat (-> (remotes/post-to-url "/api/chat")
-                    (remotes/read-basis-t-remote-middleware conn))})
+                    (remotes/read-basis-t-remote-middleware conn)
+                    (remotes/with-auth conn))})
 
 ;; TODO: Use this from run.cljs and from fullstack tests.
 

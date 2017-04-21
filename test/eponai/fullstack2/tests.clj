@@ -8,8 +8,6 @@
     [eponai.client.reconciler :as reconciler]
     [eponai.client.utils :as client.utils]
     [eponai.common.parser :as parser :refer [client-mutate server-mutate]]
-    [eponai.server.datomic-dev :as datomic-dev]
-    [datomic.api :as datomic]
     [datomock.core :as dato-mock]
     [taoensso.timbre :refer [info debug]]
     [eponai.client.backend :as backend]
@@ -17,10 +15,9 @@
     [com.stuartsierra.component :as component]
     [om.next :as om]
     [aleph.netty :as netty]
-    [clojure.data :as data]
     [clj-http.cookies :as cookies]
-    [clj-http.client :as http]
-    [eponai.common.routes :as routes]
+    [eponai.server.test-util :as test-util]
+    [eponai.server.datomic.mocked-data :as mocked-data]
     [aprint.dispatch :as adispatch]
     [taoensso.timbre :as timbre])
   (:import (om.next Reconciler)))
@@ -45,54 +42,52 @@
 ;; Start and stop system
 
 (defn- get-port [system]
-  (netty/port (get-in system [:system/aleph :server])))
+  (some-> system
+          (get-in [:system/aleph :server])
+          (netty/port)))
 
 (defn- start-system [system]
   ;; TODO: Use datomic forking library, to setup and fork our datomic connection once.
-  (let [system (core/start-server-for-tests {:conn (::forked-conn system)
-                                             ;; Re-use the server's port
-                                             ;; to be more kind to the test system.
-                                             :port (::server-port system 0)})]
-    (assoc system ::server-port (get-port system)
-                  ::forked-conn (dato-mock/fork-conn (get-in system [:system/datomic :conn])))))
+  (let [system (component/start-system system)]
+    (assoc system ::cached {::server-port (get-port system)
+                            ::forked-conn (dato-mock/fork-conn (get-in system [:system/datomic :conn]))})))
 
 (defn- stop-system [system]
   (component/stop-system system))
 
-(defn setup-system []
-  nil)
+(defn setup-system [{::keys [cached] :as old-system}]
+  (core/system-for-tests {:conn (::forked-conn cached)
+                          ;; Re-use the server's port
+                          ;; to be more kind to the test system.
+                          :port (::server-port cached 0)}))
 
 ;; END System
 
 ;; Create client
 
-(defn- remote-config-with-server-url [conn server-url cookie-store]
-  (reduce (fn [m k]
-            (update m k (fn [remote-fn]
-                          (-> remote-fn
-                              (remotes/update-key :url #(str server-url %))
-                              (remotes/update-key :opts assoc :cookie-store cookie-store)))))
-          (reconciler/remote-config conn)
-          (reconciler/remote-order)))
+(defn- remote-config-with-server-url [conn system cookie-store]
+  (letfn [(same-jvm-remote [remote-fn]
+            (-> remote-fn
+                (remotes/update-key :url #(str (test-util/server-url system) %))
+                (remotes/update-key :opts assoc :cookie-store cookie-store)))]
+    (reduce (fn [m k]
+              (update m k same-jvm-remote))
+            (reconciler/remote-config conn)
+            (reconciler/remote-order))))
 
-(defn- clj-auth-lock [server-url cookie-store]
+(defn- clj-auth-lock [system cookie-store]
   (reify
     auth/IAuthLock
     (show-lock [this]
       (fn [{:keys [email]}]
-        (binding [clj-http.core/*cookie-store* cookie-store]
-          (let [endpoint (str server-url (routes/path :auth))
-                _ (debug "Requesting auth to endpoint: " endpoint)
-                response (http/get endpoint {:follow-redirects false
-                                             :query-params {:code email :state "/"}})]
-            (info "Got auth response: " response)))))))
+        (let [ret (test-util/auth-user! system email cookie-store)]
+          (info "Got auth response: " ret))))))
 
 (defn create-client [system merge-chan]
   (let [reconciler-atom (atom nil)
         conn (client.utils/create-conn)
-        server-url (str "http://localhost:" (get-port system))
         cookie-store (cookies/cookie-store)
-        remote-config (remote-config-with-server-url conn server-url cookie-store)
+        remote-config (remote-config-with-server-url conn system cookie-store)
         reconciler (reconciler/create {:conn             conn
                                        :parser           (parser/client-parser)
                                        :send-fn          (backend/send! reconciler-atom remote-config
@@ -100,7 +95,7 @@
                                                                                          (go (>! merge-chan reconciler)))})
                                        :history          1000
                                        :route            :index
-                                       :shared/auth-lock (clj-auth-lock server-url cookie-store)})]
+                                       :shared/auth-lock (clj-auth-lock system cookie-store)})]
     (reset! reconciler-atom reconciler)
     reconciler))
 
@@ -189,16 +184,15 @@
 ;; END Create client
 
 (defn run-tests [test-fns]
-  (let [system (setup-system)]
-    (reduce (fn [system test-fn]
-              (let [system (start-system system)
-                    merge-chan (a/chan)
-                    client (create-client system merge-chan)]
-                (-> system
-                    (run-test client merge-chan (unwrap test-fn))
-                    (stop-system))))
-            system
-            test-fns)))
+  (reduce (fn [system test-fn]
+            (let [system (-> (setup-system system) (start-system))
+                  merge-chan (a/chan)
+                  client (create-client system merge-chan)]
+              (-> system
+                  (run-test client merge-chan (unwrap test-fn))
+                  (stop-system))))
+          nil
+          test-fns))
 
 (defmethod client-mutate 'fullstack/login
   [{:keys [parser shared] :as env} k {:user/keys [email]}]
@@ -207,10 +201,11 @@
              ;; So it returns a function that takes the email and does the authorization.
              (let [parsed-auth (parser env [{:query/auth [:db/id]}])]
                (debug "Parsed auth: " parsed-auth)
-               (when-not (:query/auth parsed-auth)
-                (let [lock (auth/show-lock (:shared/auth-lock shared))]
-                  (assert (fn? lock) (str "show-lock did not return a function. Was: " lock))
-                  (lock {:email email})))))})
+               (when (empty? (:query/auth parsed-auth))
+                 (let [lock (auth/show-lock (:shared/auth-lock shared))]
+                   (assert (fn? lock) (str "show-lock did not return a function. Was: " lock))
+                   (lock {:email email})))
+               nil))})
 
 ;; TODO: Could define a multimethod for each mutation
 ;;       that returns reads it should read
@@ -220,10 +215,10 @@
 ;; WOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOW...?
 ;; We'd also need a generator params of the mutation.
 (defn test-store-login-2 []
-  (let [test {::tx   `[(fullstack/login {:user/email "dev@sulo.live"})
+  (let [test {::tx   `[(fullstack/login {:user/email ~mocked-data/test-user-email})
                        {:query/auth [:user/email]}]
               ::pre  {[:query/auth :user/email] nil}
-              ::post {[:query/auth :user/email] "dev@sulo.live"}}]
+              ::post {[:query/auth :user/email] mocked-data/test-user-email}}]
     {::label   "Should be able to log in store"
     ::actions [test
                (assoc test ::pre (::post test))]}))

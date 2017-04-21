@@ -90,17 +90,6 @@
       {:value (when order-id
                 (db/pull db query (c/parse-long order-id)))})))
 
-(defmethod client-read :query/my-store
-  [{:keys [db query target ast route-params] :as env} _ _]
-  (let [user-eid (auth/current-auth db)
-        store (when user-eid
-                (db/pull-one-with db query {:where   '[[?e :store/owners ?owner]
-                                                       [?owner :store.owner/user ?user]]
-                                            :symbols {'?user user-eid}}))]
-    (if target
-      {:remote true}
-      {:value (common.read/multiply-store-items store)})))
-
 (defmethod client-read :query/stripe-account
   [{:keys [route-params ast target db query]} _ _]
   (let [{:keys [store-id]} route-params
@@ -125,10 +114,9 @@
 
 (defmethod client-read :query/user
   [{:keys [db query target ast route-params] :as env} _ _]
-  (debug "query/user: " (c/parse-long (:user-id route-params)))
   (let [user-id (c/parse-long (:user-id route-params))
         user (db/pull-one-with db query {:where   '[[?e]]
-                                          :symbols {'?e user-id}})]
+                                         :symbols {'?e user-id}})]
     (if target
       {:remote (assoc-in ast [:params :user-id] user-id)}
       {:value user})))

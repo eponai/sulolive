@@ -138,14 +138,11 @@
   (auth/wrap-auth handler conn auth0))
 
 (defn config [in-prod? disable-anti-forgery]
-  {:pre [(contains? env :session-cookie-store-key)
-         (contains? env :session-cookie-name)]}
   (let [conf (-> r/site-defaults
                  (assoc-in [:security :anti-forgery] (and false
                                                           (if in-prod?
                                                             true
-                                                            (not disable-anti-forgery))))
-                 (assoc-in [:static :resources] false))]
+                                                            (not disable-anti-forgery)))))]
     (cond-> conf
             in-prod?
             (assoc-in [:session :cookie-attrs :secure] true))))

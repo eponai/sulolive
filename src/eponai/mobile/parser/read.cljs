@@ -7,12 +7,6 @@
             [eponai.client.auth :as auth]
             [taoensso.timbre :as timbre :refer-macros [debug]]))
 
-(defmethod client-read :routing/app-root
-  [{:keys [db] :as env} k p]
-  (p.util/read-union env k p (if (auth/has-active-user? db)
-                               :logged-in
-                               :not-logged-in)))
-
 (defmethod client-read :query/app
   [{:keys [db query]} _ _]
   {:value (db/pull db query [:ui/component :ui.component/app])})

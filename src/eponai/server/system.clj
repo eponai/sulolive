@@ -35,8 +35,8 @@
             handler (-> (compojure/routes server-routes/site-routes)
                         (cond-> (not in-production?) (m/wrap-node-modules))
                         m/wrap-post-middlewares
-                        (m/wrap-authenticate conn (:system/auth0 system))
                         m/wrap-format
+                        (m/wrap-authenticate conn (:system/auth0 system))
                         (m/wrap-state {::m/conn                conn
                                        ::m/in-production?      in-production?
                                        ::m/empty-datascript-db (m/init-datascript-db conn)
@@ -154,7 +154,7 @@
               ;:system/aws-s3 (s3/aws-s3-stub)
               :system/mailchimp (mailchimp/mail-chimp-stub))
             ;; Conditionals for common ones to try real implementation of:
-            ;(nil? (env :use-real-stripe))
-            ;(assoc :system/stripe (stripe/stripe-stub))
+            (nil? (env :use-real-stripe))
+            (assoc :system/stripe (stripe/stripe-stub))
             (nil? (env :use-real-wowza))
             (assoc :system/wowza (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})))))

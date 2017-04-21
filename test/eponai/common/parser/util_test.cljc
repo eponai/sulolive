@@ -14,6 +14,10 @@
                            graph
                            setter-params))]
     (is (= nil (u/get-basis-t graph :foo [])))
+    (is (= false (u/has-basis-t? graph :foo)))
+    (is (= true (u/has-basis-t? (u/set-basis-t graph :foo 1 [])
+                                :foo)))
+
     (test/testing "single set, can get basis t with same or fewer params"
       (are [set-params get-params] (= 47 (-> graph
                                              (u/set-basis-t :foo 47 set-params)

@@ -2,21 +2,16 @@
   (:require
     [clojure.spec :as s]
     [datomic.api :as d]
-    [eponai.common.parser :as parser]
     [eponai.server.datomic-dev :as dev]
-    [eponai.common.database :as db]))
+    [eponai.common.database :as db]
+    [aleph.netty :as netty]
+    [eponai.common.routes :as routes]
+    [clj-http.client :as http]
+    [taoensso.timbre :refer [debug]]))
 
 (def schema (dev/read-schema-files))
 
 (s/check-asserts true)
-
-(defn user-email->user-uuid [db user-email]
-  (d/q '{:find  [?uuid .]
-         :in    [$ ?email]
-         :where [[?u :user/email ?email]
-                 [?u :user/uuid ?uuid]]}
-       db
-       user-email))
 
 (defn new-db
   "Creates an empty database and returns the connection."
@@ -32,16 +27,30 @@
          (db/transact conn txs))
        conn))))
 
-(defn setup-db-with-user!
-  "Given a users [{:user ... :project-uuid ...} ...], adds:
-  * currencies
-  * conversion-rates
-  * verified user accounts
-  * transactions"
-  [& args]
-  (throw (ex-info "This method needs to be re-implemented" {:cause "not sulo enough"})))
+(defn system-db [system]
+  (db/db (get-in system [:system/datomic :conn])))
+
+(defn server-url [system]
+  (str "http://localhost:" (netty/port (get-in system [:system/aleph :server]))))
+
+(defn endpoint-url [system route & [route-params]]
+  (str (server-url system)
+       (routes/path route route-params)))
+
+(defn- server-auth-call [system email]
+  (http/get (endpoint-url system :auth)
+            {:follow-redirects false
+             :query-params     {:code  email
+                                :state (routes/path :index)}}))
+
+(defmacro with-auth [system email & body]
+  `(binding [clj-http.core/*cookie-store* (clj-http.cookies/cookie-store)]
+     (#'server-auth-call ~system ~email)
+     (do
+       ~@body)))
+
+(defn auth-user! [system email cookie-store]
+  (binding [clj-http.core/*cookie-store* cookie-store]
+    (server-auth-call system email)))
 
 
-(def user-email "user@email.com")
-
-(def test-parser (parser/server-parser))

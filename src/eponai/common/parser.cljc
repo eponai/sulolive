@@ -3,8 +3,11 @@
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn trace]]
             [om.next :as om]
             [om.next.cache :as om.cache]
+            [eponai.client.auth :as client.auth]
             [eponai.client.utils :as client.utils]
             [eponai.client.routes :as client.routes]
+            [eponai.common.routes :as routes]
+            [eponai.common.auth :as auth]
             [eponai.common.database :as db]
             [eponai.common.format.date :as date]
             [datascript.core :as datascript]
@@ -25,6 +28,18 @@
 (defmulti server-read om/dispatch)
 (defmulti server-mutate om/dispatch)
 (defmulti server-message om/dispatch)
+
+(defmulti server-auth-role om/dispatch)
+(defmulti client-auth-role om/dispatch)
+(defmethod server-auth-role :default
+  [_ k p]
+  (throw (ex-info (str "auth-role not implemented by: " k)
+                  {:key k :params p})))
+
+(defmethod client-auth-role :default
+  [_ k p]
+  ;; Client is more relaxed, as it can't always decide if it has access or not.. maybe?
+  ::auth/public)
 
 ;; -------- Messaging protocols
 ;; TODO: Move to its own protocol namespace? Like om.next.impl.protocol
@@ -77,6 +92,25 @@
 (defn ->pending-message [mutation]
   (->MutationMessage mutation "" ::pending-message))
 
+;; Auth responder
+
+(defn stateful-auth-responder
+  "Returns nil if a method has not been called, otherwise returns true or what it has been called with."
+  []
+  (let [state (atom {})
+        read-then-update-key (fn [k f & args]
+                               (let [ret (get @state k)]
+                                 (apply swap! state update k f args)
+                                 ret))]
+    (reify
+      auth/IAuthResponder
+      (-redirect [this path]
+        (read-then-update-key :redirect (fnil conj []) path))
+      (-prompt-login [this _]
+        (read-then-update-key :login (constantly true)))
+      (-unauthorize [this]
+        (read-then-update-key :unauthorized (constantly true))))))
+
 ;; -------- No matching dispatch
 
 (defn- is-proxy? [k]
@@ -84,6 +118,10 @@
 
 (defn- is-routing? [k]
   (= "routing" (namespace k)))
+
+(defn- is-special-key? [k]
+  (or (is-proxy? k)
+      (is-routing? k)))
 
 (defn default-read [e k p type]
   (cond
@@ -118,9 +156,6 @@
   (fn [env k p]
     (timeit (str "parsed: " k)
             (read-or-mutate env k p))))
-
-(defn user-email [env]
-  (:email (:auth env)))
 
 ;; ############ middlewares
 
@@ -176,14 +211,13 @@
      Filters are updated incrementally via the ::filter-atom (which
      is renewed everytime parser is called (see wrap-parser-filter-atom)."
      [read-or-mutate]
-     (fn [{:keys [state ::filter-atom] :as env} k p]
+     (fn [{:keys [state ::filter-atom auth] :as env} k p]
        (let [db (datomic/db state)
-             user-email (user-email env)
              update-filters (fn [old-filters]
                               (let [filters (or old-filters
-                                                (if user-email
-                                                  (do (debug "Using auth db for user:" user-email)
-                                                      (filter/authenticated-db-filters user-email))
+                                                (if-some [user-id (:user-id auth)]
+                                                  (do (debug "Using auth db for user:" user-id)
+                                                      (filter/authenticated-db-filters user-id))
                                                   (do (debug "Using non auth db")
                                                       (filter/not-authenticated-db-filters))))]
                                 (filter/update-filters db filters)))
@@ -215,7 +249,6 @@
     (let [graph-atom (or (::read-basis-t-graph env)
                          (atom (util/graph-read-at-basis-t)))
           env (assoc env ::filter-atom (atom nil)
-                         ::user-email (user-email env)
                          ::server? true
                          ::force-read-without-history (atom #{})
                          ::read-basis-t-graph graph-atom)
@@ -386,6 +419,43 @@
   [v basis-t]
   ((fnil vary-meta {}) v assoc ::value-read-basis-t basis-t))
 
+(defn- wrap-auth [auth-role-method read-or-mutate on-not-authed]
+  (fn [env k p]
+    (let [roles (auth-role-method env k p)]
+      (if (auth/is-public-role? roles)
+        (read-or-mutate (dissoc env :auth) k p)
+        (let [roles (cond-> roles (keyword? roles) (hash-map true))]
+          (if-some [user (auth/authed-user-for-params (:db env) (keys roles) (:auth env) roles)]
+            (read-or-mutate (update env :auth #(-> (dissoc % :email) (assoc :user-id user)))
+                            k p)
+            (on-not-authed (assoc env :auth-roles roles) k p)))))))
+
+(defn wrap-server-read-auth [read]
+  (let [read-authed (wrap-auth server-auth-role read (constantly nil))]
+    (fn [env k p]
+      (if (is-special-key? k)
+        (read env k p)
+        (read-authed env k p)))))
+
+(defn wrap-server-mutate-auth [mutate]
+  (wrap-auth server-auth-role mutate
+             (fn [{::keys [auth-responder auth]} _ _]
+               (let [message (if (empty? auth)
+                               (do (auth/-prompt-login auth-responder nil)
+                                   "You need to log in to perform this action")
+                               (do (auth/-unauthorize auth-responder)
+                                   "You are unauthorized to perform this action"))]
+                 {::mutation-message {::error-message message}}))))
+
+(defn wrap-client-mutate-auth [mutate]
+  (wrap-auth client-auth-role mutate
+             (fn [{::keys [auth-responder] :keys [auth ast target auth-roles]} k p]
+               (when (nil? target)
+                 (debug "Not authed to perform " k " with params: " p " requiring auth-roles: " auth-roles)
+                 (if (empty? auth)
+                   (auth/-prompt-login auth-responder {:ast ast :params p})
+                   (auth/-unauthorize auth-responder))))))
+
 #?(:clj
    (defn with-mutation-message [mutate]
      (fn [env k p]
@@ -451,12 +521,12 @@
 (defn mutate-with-tx-meta [mutate]
   (fn [env k p]
     {:pre [(::created-at env)]}
-    (let [email (user-email env)
+    (let [user-id (:user-id (:auth env))
           tx-meta (cond-> {}
                           (number? (::created-at env))
                           (assoc :tx/mutation-created-at (::created-at env))
-                          (some? email)
-                          (assoc :tx/mutation-created-by [:user/email email]))]
+                          (some? user-id)
+                          (assoc :tx/mutation-created-by user-id))]
       (update-action (mutate env k p)
                      (fn [action]
                        (fn []
@@ -513,11 +583,12 @@
           :mutate            client-mutate
           :elide-paths       false
           :txs-by-project    (atom {})
-          ::conn->route-params (fn [conn]
-                               (:route-params (client.routes/current-route conn)))}
+          ::db->route-params (fn [db]
+                               (:route-params (client.routes/current-route db)))
+          ::db-state         (atom {})}
          custom-state))
 
-(defn query-params [env parser-state]
+(defn- client-query-params [env parser-state]
   #?(:cljs
           (->> (:shared/browser-history (:shared env))
                (pushy/get-token)
@@ -527,6 +598,32 @@
      ;;TODO: Implement a shared protocol to get the query params
      :clj (:query-params parser-state)))
 
+(defn- client-db-state [env state]
+  (let [db (db/db (:state env))
+        db-state (deref (::db-state state))]
+    (if (identical? db (:db db-state))
+      db-state
+      (reset! (::db-state state) {:db              db
+                                  :route-params    ((::db->route-params state) db)
+                                  :query-params    (client-query-params env state)
+                                  :auth            (when-let [email (client.auth/authed-email db)]
+                                                     {:email email})
+                                  ::auth-responder (reify
+                                                     auth/IAuthResponder
+                                                     (-redirect [this path]
+                                                       ;; This redirect could be done cljs side with pushy and :shared/browser-history
+                                                       ;; but we don't use this yet, so let's not implement it yet.
+                                                       (throw (ex-info "Unsupported function -redirect. Implement if needed"
+                                                                       {:this this :path path :method :IAuthResponder/-redirect})))
+                                                     (-prompt-login [this anything]
+                                                       (client.auth/show-lock (:shared/auth-lock (:shared env))))
+                                                     (-unauthorize [this]
+                                                       ;;TODO: When :shared/jumbotron is implemented (a place where we
+                                                       ;;      can show messages to a user), call the jumbotron with
+                                                       ;;      an unauthorized message
+                                                       #?(:cljs (js/alert "You're unauthorized to do that action"))
+                                                       ))}))))
+
 (defn client-parser
   ([] (client-parser (client-parser-state)))
   ([state]
@@ -534,9 +631,8 @@
    (make-parser state
                 (fn [parser state]
                   (fn [env query & [target]]
-                    (parser (assoc env ::server? false
-                                       :route-params ((::conn->route-params state) (:state env))
-                                       :query-params (query-params env state))
+                    (parser (into env (-> (client-db-state env state)
+                                          (assoc ::server? false)))
                             query target)))
                 (fn [read {:keys [elide-paths txs-by-project] :as state}]
                   (-> read
@@ -549,6 +645,7 @@
                       with-pending-message
                       client-mutate-creation-time
                       mutate-with-db-before-mutation
+                      wrap-client-mutate-auth
                       wrap-datascript-db
                       (cond-> (not elide-paths)
                               (with-elided-paths (delay (client-parser (assoc state :elide-paths true))))))))))
@@ -572,6 +669,7 @@
                    (fn [read state]
                      (-> read
                          read-returning-basis-t
+                         wrap-server-read-auth
                          wrap-datomic-db))
                    (fn [mutate state]
                      (-> mutate
@@ -579,6 +677,7 @@
                          server-mutate-creation-time-env
                          with-mutation-message
                          mutate-without-history-id-param
+                         wrap-server-mutate-auth
                          wrap-datomic-db))))))
 
 (defn test-client-parser
@@ -590,21 +689,6 @@
               query
               target))))
 
-;; Case by case middleware. Used when appropriate
-
 (defn mutation? [x]
   (and (sequential? x)
        (symbol? (first x))))
-
-(defn parse-without-mutations
-  "Returns a parser that removes remote mutations before parsing."
-  [parser]
-  (fn [env query & [target]]
-    (let [query (into [] (remove mutation?) query)]
-      (parser env query target))))
-
-(defn parser-require-auth [parser]
-  (fn [env query & [target]]
-    (assert (some? (user-email env))
-            (str "No auth in parser's env: " env))
-    (parser env query target)))

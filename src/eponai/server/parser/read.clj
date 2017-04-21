@@ -2,12 +2,12 @@
   (:require
     [eponai.common.database :as db]
     [eponai.common.datascript :as eponai.datascript]
-    [eponai.common.parser :as parser :refer [server-read read-basis-params]]
+    [eponai.common.parser :as parser]
     [eponai.server.datomic.query :as query]
     [environ.core :as env]
     [datomic.api :as d]
     [taoensso.timbre :refer [error debug trace warn]]
-    [eponai.server.auth :as auth]
+    [eponai.common.auth :as auth]
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.wowza :as wowza]
     [eponai.server.external.chat :as chat]
@@ -15,27 +15,43 @@
     [eponai.common.api.products :as products]
     [eponai.server.api.user :as user]))
 
-(defmethod server-read :datascript/schema
+(defmacro defread
+  ""
+  [read-sym args auth-and-basis-params mutate-body]
+  (assert (and (map? auth-and-basis-params) (contains? auth-and-basis-params :auth))
+          (str "defreads's auth and basis-params requires an :auth key"
+               " was: " auth-and-basis-params))
+  (let [read-key# (keyword (namespace read-sym) (name read-sym))
+        basis-params-body# (when-let [bp# (:uniq-by auth-and-basis-params)]
+                             `(defmethod parser/read-basis-params ~read-key# ~args ~bp#))]
+    `(do
+       ~basis-params-body#
+       (defmethod parser/server-auth-role ~read-key# ~args ~(:auth auth-and-basis-params))
+       (defmethod parser/server-read ~read-key# ~args ~mutate-body))))
+
+(defread datascript/schema
   [{:keys [db db-history]} _ _]
+  {:auth ::auth/public}
   {:value (-> (query/schema db db-history)
               (eponai.datascript/schema-datomic->datascript))})
 
-(defmethod server-read :query/cart
+(defread query/cart
   [{:keys [db db-history query auth]} _ {:keys [items]}]
-  {:value (when (:email auth)
-            (query/one db db-history query {:where   '[[?u :user/email ?email]
-                                                       [?u :user/cart ?e]]
-                                            :symbols {'?email (:email auth)}}))})
+  {:auth ::auth/any-user}
+  {:value (query/one db db-history query {:where   '[[?u :user/cart ?e]]
+                                          :symbols {'?u (:user-id auth)}})})
 
-(defmethod read-basis-params :query/store [_ _ {:keys [store-id]}]
-  [[:store-id store-id]])
-(defmethod server-read :query/store
+(defread query/store
   [{:keys [db db-history query]} _ {:keys [store-id]}]
+  {:auth    ::auth/public
+   :uniq-by [[:store-id store-id]]}
   {:value (query/one db db-history query {:where   '[[?e :store/name]]
                                           :symbols {'?e store-id}})})
 
-(defmethod server-read :query/store-items
+(defread query/store-items
   [{:keys [db db-history query]} _ {:keys [store-id navigation]}]
+  {:auth    ::auth/public
+   :uniq-by [[:store-id store-id] [:nav-path (hash navigation)]]}
   {:value (let [params (if (not-empty navigation)
                          {:where   '[[?s :store/items ?e]
                                      [?e :store.item/navigation ?n]
@@ -49,10 +65,10 @@
                          )]
             (query/all db db-history query params))})
 
-(defmethod read-basis-params :query/orders [_ _ {:keys [store-id user-id]}]
-  [[:user-id user-id] [:store-id store-id]])
-(defmethod server-read :query/orders
+(defread query/orders
   [{:keys [db query]} _ {:keys [store-id user-id]}]
+  {:auth    {::auth/store-owner store-id}
+   :uniq-by [[:user-id user-id] [:store-id store-id]]}
   {:value (cond (some? store-id)
                 (db/pull-all-with db query {:where   '[[?e :order/store ?s]]
                                                        :symbols {'?s store-id}})
@@ -60,20 +76,19 @@
                 (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
                                                        :symbols {'?u user-id}}))})
 
-(defmethod read-basis-params :query/inventory [_ _ {:keys [store-id]}]
-  [[:store-id store-id]])
-
-
-(defmethod server-read :query/inventory
+(defread query/inventory
   [{:keys [query db]} _ {:keys [store-id]}]
+  {:auth    {::auth/store-owner store-id}
+   :uniq-by [[:store-id store-id]]}
   {:value (let [items (db/pull-all-with db query {:where   '[[?s :store/items ?e]]
                                                   :symbols {'s store-id}})]
+            ;(debug "Found items: " (into [] items))
             items)})
 
-(defmethod read-basis-params :query/order [_ _ {:keys [order-id store-id user-id]}]
-  [[:user-id user-id] [:store-id store-id] [:order-id order-id]])
-(defmethod server-read :query/order
+(defread query/order
   [{:keys [state query db] :as env} _ {:keys [order-id store-id user-id]}]
+  {:auth {::auth/store-owner store-id}
+   :uniq-by [[:user-id user-id] [:store-id store-id] [:order-id order-id]]}
   {:value (cond (some? store-id)
                 (db/pull-one-with db query {:where '[[?e :order/store ?s]]
                                             :symbols {'?e order-id
@@ -83,21 +98,15 @@
                                             :symbols {'?e order-id
                                                       '?u user-id}}))})
 
-(defmethod server-read :query/my-store
-  [{:keys [db db-history query auth]} _ _]
-  {:value (when-let [email (:email auth)]
-            (debug "AUTH: " auth)
-            (query/one db db-history query {:where   '[[?u :user/email ?email]
-                                                       [?owner :store.owner/user ?u]
-                                                       [?e :store/owners ?owner]]
-                                            :symbols {'?email email}}))})
-
-(defmethod server-read :query/stripe-account
+(defread query/stripe-account
   [env _ {:keys [store-id]}]
+  {:auth    {::auth/store-owner store-id}
+   :uniq-by [[:store-id store-id]]}
   {:value (store/account env store-id)})
 
-(defmethod server-read :query/stripe-country-spec
+(defread query/stripe-country-spec
   [{:keys [system ast target db query]} _ _]
+  {:auth ::auth/any-store-owner}
   {:value (stripe/get-country-spec (:system/stripe system) "CA")})
 
 ;(defmethod server-read :query/stripe
@@ -117,17 +126,17 @@
 ;             :stripe/account  stripe-account
 ;             :stripe/products products})})
 
-(defmethod read-basis-params :query/user [_ _ {:keys [user-id]}]
-  [[:user-id user-id]])
-(defmethod server-read :query/user
+(defread query/user
   [{:keys [db db-history query]} _ {:keys [user-id]}]
+  {:auth    ::auth/public
+   :uniq-by [[:user-id user-id]]}
   {:value (query/one db db-history query {:where   '[[?e]]
                                           :symbols {'?e user-id}})})
 
-(defmethod read-basis-params :query/items [{:keys [route-params]} _ {:keys [category]}]
-  [[:category (or category (:category route-params))]])
-(defmethod server-read :query/items
+(defread query/items
   [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
+  {:auth ::auth/public
+   :uniq-by [[:category (or category (:category route-params))]]}
   {:value (let [c (or category (:category route-params))]
             (cond (some? category)
                   (db/pull-all-with db query (products/find-by-category c))
@@ -135,43 +144,43 @@
                   :else
                   (query/all db db-history query (products/find-all))))})
 
-(defmethod server-read :query/top-categories
+(defread query/top-categories
   [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
+  {:auth    ::auth/public
+   :uniq-by [[:category (or category (:category route-params))]]}
   {:value (db/pull-all-with db query {:where '[[?e :category/level 0]]})})
 
-(defmethod read-basis-params :query/category [{:keys [route-params]} _ {:keys [category]}]
-  [[:category (or category (:category route-params))]])
-(defmethod server-read :query/category
+(defread query/category
   [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
-  {:value (let [c (or category (:category route-params))]
-            (db/pull-one-with db query {:where   '[[?e :category/path ?p]]
-                                        :symbols {'?p c}}))})
+  {:auth    ::auth/public
+   :uniq-by [[:category (or category (:category route-params))]]}
+  {:value (db/pull-one-with db query {:where   '[[?e :category/path ?p]]
+                                      :symbols {'?p (or category (:category route-params))}})})
 
-(defmethod read-basis-params :query/item [_ _ {:keys [product-id]}]
-  [[:product-id product-id]])
-(defmethod server-read :query/item
+(defread query/item
   [{:keys [db db-history query]} _ {:keys [product-id]}]
+  {:auth ::auth/public
+   :uniq-by [[:product-id product-id]]}
   {:value (query/one db db-history query
                      {:where   '[[?e :store.item/name]]
                       :symbols {'?e product-id}})})
 
-(defmethod server-read :query/auth
+(defread query/auth
   [{:keys [auth query db]} _ _]
-  (debug "READING AUTH: " query)
-  {:value (when (some? (:iss auth))
-            (let [query (or query [:db/id])]
-              (db/pull-one-with db query {:where   '[[?e :user/email ?email]]
-                                          :symbols {'?email (:email auth)}})))})
+  {:auth ::auth/any-user}
+  {:value (let [query (or query [:db/id])]
+            (db/pull db query (:user-id auth)))})
 
-(defmethod read-basis-params :query/stream [_ _ {:keys [store-id]}]
-  [[:store-id store-id]])
-(defmethod server-read :query/stream
+(defread query/stream
   [{:keys [db db-history query]} _ {:keys [store-id]}]
+  {:auth    ::auth/public
+   :uniq-by [[:store-id store-id]]}
   {:value (query/one db db-history query {:where   '[[?e :stream/store ?store-id]]
                                           :symbols {'?store-id store-id}})})
 
-(defmethod server-read :query/streams
+(defread query/streams
   [{:keys [db db-history query]} _ _]
+  {:auth ::auth/public}
   {:value (query/all db db-history query {:where '[[?e :stream/state :stream.state/live]]})})
 
 ; #### FEATURED ### ;
@@ -181,26 +190,30 @@
            (nil? db-history)
            (into [] (map #(assoc % (keyword (name namespace) "featured") true)))))
 
-(defmethod server-read :query/featured-streams
+(defread query/featured-streams
   [{:keys [db db-history query]} _ _]
+  {:auth ::auth/public}
   {:value (->> (query/all db db-history query {:where '[[?e :stream/store]]})
                (feature-all db-history :stream))})
 
-(defmethod server-read :query/featured-items
+(defread query/featured-items
   [{:keys [db db-history query]} _ _]
+  {:auth ::auth/public}
   {:value (->> (query/all db db-history query {:where '[[?e :store.item/name]]})
                (take 5)
                (feature-all db-history :store.item))})
 
-(defmethod server-read :query/featured-stores
+(defread query/featured-stores
   [{:keys [db db-history query]} _ _]
+  {:auth ::auth/public}
   ;; TODO: Come up with a way to feature stores.
   {:value (->> (query/all db db-history query {:where '[[?e :store/name]]})
                (take 4)
                (feature-all db-history :store))})
 
-(defmethod server-read :query/stream-config
+(defread query/stream-config
   [{:keys [db db-history query system]} k _]
+  {:auth ::auth/public}
   ;; Only query once. User will have to refresh the page to get another stream config
   ;; (For now).
   (when (nil? db-history)
@@ -209,12 +222,11 @@
                :ui.singleton.stream-config/subscriber-url (wowza/subscriber-url wowza)
                :ui.singleton.stream-config/publisher-url  (wowza/publisher-url wowza)}})))
 
-
-(defmethod read-basis-params :query/chat [_ _ params]
-  [[:store-id (get-in params [:store :db/id])]])
-(defmethod server-read :query/chat
-  [{:keys         [db-history query system]
+(defread query/chat
+  [{:keys [db-history query system]
     ::parser/keys [read-basis-t-for-this-key chat-update-basis-t]} k {:keys [store] :as params}]
+  {:auth    ::auth/public
+   :uniq-by [[:store-id (:db/id store)]]}
   (let [chat (:system/chat system)]
     (when chat-update-basis-t
       (chat/sync-up-to! chat chat-update-basis-t))

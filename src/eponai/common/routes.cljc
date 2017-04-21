@@ -1,6 +1,7 @@
 (ns eponai.common.routes
   (:require [bidi.bidi :as bidi]
-            [taoensso.timbre :refer [debug error]]))
+            [taoensso.timbre :refer [debug error]]
+            [eponai.common.auth :as auth]))
 
 (def store-routes
   {""           :store
@@ -52,7 +53,24 @@
         "business"                    :business
         ["user/" [#"\d+" :user-id]]   user-routes
         "settings"                    :settings
-        "auth"                        :auth}])
+        "auth"                        :auth
+        "login"                       :login
+        "unauthorized"                :unauthorized}])
+
+(defn auth-roles [handler]
+  (cond
+    (= handler :store-dashboard)
+    ::auth/store-owner
+    (= (namespace handler) "store-dashboard")
+    ::auth/store-owner
+    (#{:user/profile :user/order :user/order-list} handler)
+    ::auth/exact-user
+    (= handler :checkout)
+    ::auth/any-user
+    (= handler :settings)
+    ::auth/any-user
+    :else
+    ::auth/public))
 
 (defn path
   "Takes a route and its route-params and returns a path"
@@ -65,6 +83,7 @@
             (error "Error when trying to create url from route: " route
                    " route-params: " route-params
                    " error: " e)
+       #?(:clj (.printStackTrace e))
        nil))))
 
 ;; #################################################

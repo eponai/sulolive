@@ -5,12 +5,17 @@
     [cemerick.url :as url]
     [taoensso.timbre :refer [debug]]))
 
+(defn- redirect-to-after-login []
+  (let [current-url (str js/window.location.pathname)]
+    (if (= current-url (routes/url :login))
+      (routes/url :index)
+      current-url)))
+
 (extend-type js/Auth0Lock
   auth/IAuthLock
   (show-lock [this]
     (.show this (clj->js {:allowedConnections ["Username-Password-Authentication"]
-                          :auth               {:params {:state js/window.location.origin
-
+                          :auth               {:params {:state (redirect-to-after-login)
                                                         :scope "openid email"}}}))))
 
 (defn auth0-lock []
@@ -27,7 +32,7 @@
     (show-lock [this]
       (if-let [email (js/prompt "Enter the email you want to log in as" "dev@sulo.live")]
         (let [auth-url (-> (url/url (str js/window.location.origin (routes/url :auth)))
-                           (assoc :query {:code email :state (routes/url :index)})
+                           (assoc :query {:code email :state (redirect-to-after-login)})
                            (str))]
           (debug "Replacing the current url with auth-url: " auth-url)
           (js/window.location.replace auth-url))
