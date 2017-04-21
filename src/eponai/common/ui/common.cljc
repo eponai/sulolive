@@ -13,7 +13,7 @@
     [eponai.common.ui.elements.grid :as grid]))
 
 (defn order-status-element [order]
-  (let [status (:order/status order "")
+  (let [status (:order/status order)
         status-class (cond (= status :order.status/created)
                            "secondary"
                            (= status :order.status/paid)
@@ -24,7 +24,11 @@
                            "green"
                            (= status :order.status/canceled)
                            "alert")]
-    (dom/span #js {:className (str "label " status-class)} (name status))))
+    (when status
+      (my-dom/span
+        (->> (css/add-class :label)
+             (css/add-class :hollow)
+             (css/add-class status-class)) (name status)))))
 
 (defn modal [opts & content]
   (let [{:keys [on-close size]} opts]

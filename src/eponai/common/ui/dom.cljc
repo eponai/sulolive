@@ -125,6 +125,9 @@
 (defn tbody [opts & content]
   (element dom/tbody opts content))
 
+(defn tfoot [opts & content]
+  (element dom/tfoot opts content))
+
 (defn tr [opts & content]
   (element dom/tr opts content))
 

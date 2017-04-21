@@ -12,11 +12,17 @@
 (defui OrderList
   static om/IQuery
   (query [_]
-    [{:query/orders [:order/store :order/uuid]}])
+    [{:query/orders [:order/store :order/uuid :order/status]}])
   Object
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
-          {:keys [query/orders]} (om/props this)]
+          {:keys [query/orders]} (om/props this)
+          {:keys [search-input]} (om/get-state this)
+
+          orders (if (not-empty search-input)
+                   (filter #(clojure.string/starts-with? (str (:db/id %))
+                                                      search-input) orders)
+                   orders)]
       (dom/div nil
 
         (my-dom/div
@@ -35,9 +41,10 @@
                (css/grid-column))
           ;(my-dom/div
           ;  {:className "callout transparent"})
-          (my-dom/input {:value       ""
+          (my-dom/input {:value       (or search-input "")
                          :placeholder "Search Orders..."
-                         :type        "text"}))
+                         :type        "text"
+                         :onChange #(om/update-state! this assoc :search-input (.. % -target -value))}))
 
         (my-dom/div
           (->> (css/grid-row))

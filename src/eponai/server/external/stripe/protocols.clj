@@ -77,4 +77,5 @@
           charge (Charge/create params)]
       (debug "Created charge: " charge)
       {:charge/status (.getStatus charge)
-       :charge/id     (.getId charge)})))
+       :charge/id     (.getId charge)
+       :charge/paid?   (.getPaid charge)})))

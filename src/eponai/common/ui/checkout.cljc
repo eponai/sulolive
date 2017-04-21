@@ -57,7 +57,7 @@
      :checkout/payment  nil})
 
   (componentDidUpdate [this _ _]
-    (when-let [response (msg/last-message this 'user/checkout)]
+    (when-let [response (msg/last-message this 'store/create-order)]
       (debug "Response: " response)
       (if (msg/final? response)
         (let [message (msg/message response)

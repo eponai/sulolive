@@ -210,8 +210,8 @@
              (store/delete-product env (:db/id product)))})
 
 (defmutation store/create-order
-  [env _ {:keys [order store-id]}]
-  {:success "Order created"
+  [{::parser/keys [return] :as env} _ {:keys [order store-id]}]
+  {:success return
    :error   "Could not create order"}
   {:action (fn []
              (store/create-order env store-id order))})

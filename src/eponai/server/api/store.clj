@@ -90,9 +90,12 @@
                                                                          :source          source
                                                                          :metadata        {:order_uuid (:order/uuid order)}})
             charge-entity {:db/id     (db/tempid :db.part/user)
-                           :charge/id (:charge/id charge)}]
+                           :charge/id (:charge/id charge)}
+            is-paid? (:charge/paid? charge)
+            order-status (if is-paid? :order.status/paid :order.status/created)]
         (db/transact state [charge-entity
-                            [:db/add [:order/uuid (:order/uuid order)] :order/charge (:db/id charge-entity)]])))
+                            [:db/add [:order/uuid (:order/uuid order)] :order/charge (:db/id charge-entity)]
+                            [:db/add [:order/uuid (:order/uuid order)] :order/status order-status]])))
     ;; Return order entity to redirect in the client
     (db/pull result-db [:db/id] [:order/uuid (:order/uuid order)])))
 

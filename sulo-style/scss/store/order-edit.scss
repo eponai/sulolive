@@ -1,4 +1,9 @@
 #sulo-edit-order {
+	@include label-hollow;
+	.label {
+		text-transform: uppercase;
+		font-weight: $global-weight-bold;
+	}
 	$primary-color: map-get($foundation-palette, action);
 	table {
 		margin: 0 auto;

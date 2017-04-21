@@ -442,6 +442,13 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
+  :db/ident              :order/status
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Status of this order, can be one of #{:order.status/created order.status/paid :order.status/canceled :order.status/fulfilled :order.status/returned}."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
   :db/ident              :order/store
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one

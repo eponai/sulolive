@@ -23,4 +23,10 @@
 			color: $alert-color;
 		}
 	}
+
+	&.not-found {
+		i {
+			color: $alert-color;
+		}
+	}
 }
