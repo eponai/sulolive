@@ -24,7 +24,7 @@
 ;    canvas))
 
 (s/def ::photo-size #(>= 5000000 %))
-(defn filelist-files [filelist]
+(defn filelist-files [^js/DataTransfer filelist]
   (let [filelist (.-files filelist)]
     (vec (for [k (js-keys filelist)
                :let [value (aget filelist k)]
@@ -34,7 +34,7 @@
 (defn event-files
   "Takes a goog event and returns the files
   TODO: also get jquery events working"
-  [event]
+  [^js/Event event]
   (filelist-files (-> event .getBrowserEvent .-dataTransfer)))
 
 (defn listen-file-drop
@@ -52,15 +52,15 @@
    out))
 
 (defn hashed [eid]
-  (let [digest (fn [hasher bytes]
+  (let [digest (fn [^js/goog.crypt.Sha256 hasher bytes]
                  (.update hasher bytes)
                  (.digest hasher))
         str->bytes (fn [s]
                      (goog.crypt/stringToUtf8ByteArray s))]
     (goog.crypt/byteArrayToHex (digest (goog.crypt.Sha256.) (str->bytes (str eid))))))
 
-(defn queue-file [e owner {:keys [upload-queue]}]
-  (let [file (first (array-seq (.. e -target -files)))
+(defn queue-file [^js/Event e owner {:keys [upload-queue]}]
+  (let [^js/File file (first (array-seq (.. e -target -files)))
         {:keys [on-photo-queue]} (om/get-computed owner)
         validation (s/explain-data ::photo-size (.-size file))]
     (debug {:original file})
@@ -72,7 +72,7 @@
       ;                               img.src = reader.result;
       ;                               }
       ;reader.readAsDataURL(file);
-      (let [reader (js/FileReader. )]
+      (let [reader (js/FileReader.)]
         (set! (.-onloadend reader) (fn []
                                      (on-photo-queue (.-result reader))))
         (.readAsDataURL reader file)))

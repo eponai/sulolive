@@ -261,7 +261,7 @@
                               :currency       currency
                               :routing_number (str transit institution)
                               :account_number account}
-                         (fn [status response]
+                         (fn [status ^js/Stripe.createToken.Response response]
                            (when (= status 200)
                              (let [token (.-id response)]
                                (msg/om-transact! this `[(stripe/update-account
