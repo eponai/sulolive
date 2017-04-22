@@ -1,4 +1,6 @@
-(ns eponai.common.ui.business
+(ns eponai.devcards.business-graphs
+  (:require-macros
+    [devcards.core :refer [defcard dom-node]])
   (:require
     [om.next :as om :refer [defui]]
     [om.dom :as dom]
@@ -7,9 +9,8 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.common.business.budget :as b]
     [taoensso.timbre :refer [debug]]
-    #?(:cljs [cljsjs.nvd3])
-    #?(:clj [clojure.edn :as reader]
-       :cljs [cljs.reader :as reader])
+    [cljsjs.nvd3]
+    [cljs.reader :as reader]
     [clojure.set :as set]
     [medley.core :as medley]))
 
@@ -71,39 +72,37 @@
 
 (defn create-chart [chart-ref business-model {:keys        [biz-range vis-range]
                                               :x-axis/keys [tick-format-fn label]}]
-  #?(:cljs
-     (let [chart (-> (js/nv.models.lineChart)
-                     (.options #js {:duration                300
-                                    :useInteractiveGuideline true}))]
-       (set! (.-xAxis chart)
-             (-> (.-xAxis chart)
-                 (.tickFormat tick-format-fn)
-                 (.axisLabel label)))
-       ;; (.yScale chart (.log (.-scale js/d3)))
-       (set! (.-yAxis chart)
-             (-> (.-yAxis chart)
-                 (.showMaxMin false)
-                 (.axisLabel "USD ($)")))
-       (-> (.select js/d3 (str "#" chart-ref))
-           (.append "svg")
-           (.datum (clj->js (graph-data business-model biz-range vis-range)))
-           (.call chart))
-       chart)))
+  (let [chart (-> (js/nv.models.lineChart)
+                  (.options #js {:duration                300
+                                 :useInteractiveGuideline true}))]
+    (set! (.-xAxis chart)
+          (-> (.-xAxis chart)
+              (.tickFormat tick-format-fn)
+              (.axisLabel label)))
+    ;; (.yScale chart (.log (.-scale js/d3)))
+    (set! (.-yAxis chart)
+          (-> (.-yAxis chart)
+              (.showMaxMin false)
+              (.axisLabel "USD ($)")))
+    (-> (.select js/d3 (str "#" chart-ref))
+        (.append "svg")
+        (.datum (clj->js (graph-data business-model biz-range vis-range)))
+        (.call chart))
+    chart))
 
 (defn update-chart [chart-ref business-model {:keys        [biz-range vis-range]
                                               :x-axis/keys [tick-format-fn label]} chart]
   {:pre [(some? chart)]}
-  #?(:cljs
-     (let [select-str (str "#" chart-ref " svg")]
-       (set! (.-xAxis chart)
-             (-> (.-xAxis chart)
-                 (.tickFormat tick-format-fn)
-                 (.axisLabel label)))
-       (-> (.select js/d3 select-str)
-           (.datum (clj->js (graph-data business-model biz-range vis-range)))
-           (.transition)
-           (.duration 500)
-           (.call chart)))))
+  (let [select-str (str "#" chart-ref " svg")]
+    (set! (.-xAxis chart)
+          (-> (.-xAxis chart)
+              (.tickFormat tick-format-fn)
+              (.axisLabel label)))
+    (-> (.select js/d3 select-str)
+        (.datum (clj->js (graph-data business-model biz-range vis-range)))
+        (.transition)
+        (.duration 500)
+        (.call chart))))
 
 (defn render-input-controls [this]
   (let [create-input (fn [i [k label unit]]
@@ -156,7 +155,7 @@
                         (into [] (map-indexed create-input) controls))])
                    (map controls [:pricing :variables :graphs :tech])))))
 
-(defui Business
+(defui BusinessGraphs
   static om/IQuery
   (query [this]
     [:query/business-model])
@@ -169,16 +168,15 @@
     (let [charts-by-graph-key
           (into {} (map-indexed
                      (fn [id graph-key]
-                       #?(:cljs
-                          (let [create-graph-fn (memoize
-                                                  #(create-chart (str "line-chart-" id)
-                                                                 (adjusted-business-model this)
-                                                                 (get (graphs this) graph-key)))]
-                            (.addGraph js/nv create-graph-fn)
-                            ;; returns the graph-key associated with the chart object returned
-                            ;; in create-graph-fn. It's memoized, so it'll just return when we call
-                            ;; it here.
-                            [graph-key (create-graph-fn)]))))
+                       (let [create-graph-fn (memoize
+                                               #(create-chart (str "line-chart-" id)
+                                                              (adjusted-business-model this)
+                                                              (get (graphs this) graph-key)))]
+                         (.addGraph js/nv create-graph-fn)
+                         ;; returns the graph-key associated with the chart object returned
+                         ;; in create-graph-fn. It's memoized, so it'll just return when we call
+                         ;; it here.
+                         [graph-key (create-graph-fn)])))
                 graph-order)]
       (om/update-state! this assoc :charts charts-by-graph-key)))
   (componentDidUpdate [this _ prev-state]
@@ -207,4 +205,9 @@
                       (dom/p nil "Controls normalized to USD per Day where applicable")
                       (render-input-controls this)))))
 
-(def ->Business (om/factory Business))
+(def ->BusinessGraphs (om/factory BusinessGraphs))
+
+(defcard
+  "Business graphs"
+  (dom/div #js {:height "100%"}
+    (->BusinessGraphs {:query/business-model b/world})))

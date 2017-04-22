@@ -70,10 +70,10 @@
       (map #(icon % "icon" "/assets/img/favicon/android-icon-")
            [36 48 72 96 144 192]))))
 
-(defn head [release? & [exclude-icons?]]
+(defn head [{:keys [release? exclude-icons? cljs-build-id]}]
   [(dom/meta {:name    "google-site-verification"
               :content "eWC2ZsxC6JcZzOWYczeVin6E0cvP4u6PE3insn9p76U"})
-   
+
    (dom/meta {:charset "utf-8"})
    (dom/meta {:http-equiv "X-UA-Compatible"
               :content    "IE=edge"})
@@ -85,20 +85,19 @@
    (comment (dom/meta {:http-equiv "Content-Type"
                        :content    "text/html; charset=utf-8"}))
    (dom/title nil "Vancouver's local marketplace online - SULO Live")
-   (dom/link {:href (if release?
-                      "https://cdn.rawgit.com/novus/nvd3/v1.8.1/build/nv.d3.css"
-                      "/bower_components/nvd3/build/nv.d3.css")
-              :rel  "stylesheet"})
+   (when (= cljs-build-id "devcards")
+     (dom/link {:href "/bower_components/nvd3/build/nv.d3.css"
+                :rel  "stylesheet"}))
    (dom/link {:href "/lib/videojs/video-js.min.css"
-              :rel "stylesheet"})
+              :rel  "stylesheet"})
 
 
    (dom/link {:href "//cdn.quilljs.com/1.2.0/quill.core.css"
-              :rel "stylesheet"})
+              :rel  "stylesheet"})
 
    ;;TODO: https://cdn.quilljs.com/1.0.0/quill.snow.css if want to save to local in dev mode
    (dom/link {:href "//cdn.quilljs.com/1.2.0/quill.snow.css"
-              :rel "stylesheet"})
+              :rel  "stylesheet"})
 
    (dom/link {:href "/assets/css/app.css"
               :rel  "stylesheet"})
@@ -109,7 +108,7 @@
               :rel  "stylesheet"
               :type "text/css"})
    (dom/link {:href "https://fonts.googleapis.com/css?family=Roboto:300,400,500"
-              :rel "stylesheet"
+              :rel  "stylesheet"
               :type "text/css"})
 
 

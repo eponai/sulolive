@@ -14,7 +14,8 @@
       (debug "ROUTE: " route)
       (dom/html
         {:lang "en"}
-        (apply dom/head nil (common/head release?))
+        (apply dom/head nil (common/head {:release? release?
+                                          :cljs-build-id cljs-build-id}))
         (dom/body
           nil
           (dom/div #js {:height "100%" :id router/dom-app-id}
@@ -54,4 +55,5 @@
           (dom/script {:src  (common/budget-js-path cljs-build-id)
                        :type common/text-javascript})
 
-          (common/inline-javascript ["env.web.main.runsulo()"]))))))
+          (when-not (= cljs-build-id "devcards")
+            (common/inline-javascript ["env.web.main.runsulo()"])))))))
