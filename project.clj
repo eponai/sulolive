@@ -144,7 +144,8 @@
             "run-tests-web"          ^{:doc "Compile and run web tests"}
                                      ["do"
                                       ["with-profile" "+web" "cljsbuild" "once" "doo-test"]
-                                      ["with-profile" "+web" "doo" "phantom" "doo-test" "once"]]
+                                      ;;["with-profile" "+web" "doo" "phantom" "doo-test" "once"]
+                                      ]
             "figwheel-ios"           ^{:doc "Start figwheel for ios"}
                                      ["do"
                                       ;; Exporting an environment variable for figwheel port
