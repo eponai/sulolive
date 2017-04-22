@@ -1,6 +1,6 @@
 (ns eponai.client.figwheel.test-main
   (:require [eponai.client.tests :as tests]
-            [eponai.client.utils :as utils]
+            [eponai.client.devtools :as devtools]
             [cljs.test]
             [goog.dom :as gdom]
             [taoensso.timbre :as timbre :refer-macros [debug]]))
@@ -27,7 +27,7 @@
 (defonce inited? (atom false))
 
 (defn ^:export run []
-  (utils/install-app)
+  (devtools/install-app)
   (timbre/set-level! :error)
   (reset! inited? true)
   (run-tests))

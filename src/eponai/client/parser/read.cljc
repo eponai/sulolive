@@ -4,12 +4,10 @@
     [eponai.common.parser :as parser :refer [client-read]]
     [eponai.common.parser.util :as parser.util]
     [eponai.common.database :as db]
-    [eponai.common.business.budget :as business.budget]
     [eponai.common.parser.read :as common.read]
     [om.next.impl.parser :as om.parser]
     [eponai.client.routes :as client.routes]
     [eponai.common.ui.router :as router]
-    [eponai.client.parser.message :as msg]
     [eponai.common :as c]
     [taoensso.timbre :refer [debug]]
     [eponai.client.auth :as auth]
@@ -251,10 +249,6 @@
                         (keyword ns (first path))))]
     (debug "Reading routing/store-dashboard: " [k :route current-route (parse-route (:route current-route))])
     (parser.util/read-union env k p (parse-route (:route current-route)))))
-
-(defmethod client-read :query/business-model
-  [e k p]
-  {:value business.budget/world})
 
 (defmethod client-read :query/messages
   [{:keys [db]} _ _]

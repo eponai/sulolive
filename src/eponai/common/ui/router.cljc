@@ -2,7 +2,6 @@
   (:require
     [om.next :as om :refer [defui]]
     [om.dom :as dom]
-    [eponai.common.routes :as routes]
     [eponai.common.ui.help :as help]
     [eponai.common.ui.checkout :as checkout]
     [eponai.common.ui.shopping-bag :as bag]
@@ -13,7 +12,6 @@
     [eponai.common.ui.index :as index]
     [eponai.common.ui.product :as product]
     [eponai.common.ui.streams :as streams]
-    [eponai.common.ui.business :as business]
     [eponai.common.ui.user :as user]
     [eponai.common.ui.settings :as settings]))
 
@@ -44,8 +42,6 @@
                      :factory   product/->ProductPage}
    :live            {:component streams/Streams
                      :factory   streams/->Streams}
-   :business        {:component business/Business
-                     :factory   business/->Business}
    :user            {:component user/User
                      :factory   user/->User}
    :settings        {:component settings/Settings

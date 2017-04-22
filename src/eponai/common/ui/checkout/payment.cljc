@@ -16,7 +16,7 @@
      (let [stripe (js/Stripe "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")]
        (.. stripe
            (createToken card)
-           (then (fn [res]
+           (then (fn [^js/Stripe.card.createToken.Response res]
                    (if (.-error res)
                      (on-error (.-error res))
                      (on-success (.-token res)))))))))
@@ -24,7 +24,8 @@
 (defn token->payment [token]
   #?(:cljs
      (when token
-       (let [card (js->clj (.-card token) :keywordize-keys true)
+       (let [^js/Stripe.card.Token token token
+             card (js->clj (.-card token) :keywordize-keys true)
              source (.-id token)
              ret {:source source
                   :card   card}]
@@ -41,11 +42,12 @@
              on-success (fn [token]
                           (when on-change
                             (on-change (token->payment token))))
-             on-error (fn [error]
-                        (om/update-state! this assoc :payment-error (.-message error)))]
+             on-error (fn [^js/Stripe.card.createToken.Reponse.Error error]
+                        (om/update-state! this assoc :payment-error (.-message error)))
+             ^js/Stripe stripe stripe]
          (.. stripe
              (createToken card)
-             (then (fn [res]
+             (then (fn [^js/Stripe.card.createToken.Response res]
                      (if (.-error res)
                        (on-error (.-error res))
                        (on-success (.-token res)))))))))
@@ -56,12 +58,13 @@
        (when (utils/element-by-id stripe-card-element)
          (let [stripe (js/Stripe stripe-key)
                elements (.elements stripe)
-               card (.create elements "card" (clj->js {:style {:base {:color          "#32325d"
-                                                                      :fontSmoothing  "antialiased"
-                                                                      :lineHeight     "24px"
-                                                                      :fontSize       "16px"
-                                                                      "::placeholder" {:color "#aab7c4"}}}}))]
-           (.mount card (str "#" stripe-card-element))
+               card (.create ^js/Stripe.elements elements "card"
+                             (clj->js {:style {:base {:color          "#32325d"
+                                                      :fontSmoothing  "antialiased"
+                                                      :lineHeight     "24px"
+                                                      :fontSize       "16px"
+                                                      "::placeholder" {:color "#aab7c4"}}}}))]
+           (.mount ^js/Stripe.card card (str "#" stripe-card-element))
            (om/update-state! this assoc :card card :stripe stripe)))))
 
   (render [this]
@@ -85,4 +88,3 @@
                            "Next"))))))
 
 (def ->CheckoutPayment (om/factory CheckoutPayment))
-

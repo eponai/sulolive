@@ -14,7 +14,6 @@
     [medley.core :as medley]
     [goog.dom :as gdom]
     [om.next :as om :refer [defui]]
-    [plomber.core :as plomber]
     [taoensso.timbre :refer [error debug warn]]
     ;; Routing
     [cemerick.url :as url]
@@ -110,10 +109,9 @@
 (defn run-prod []
   (run {}))
 
-(defn run-dev []
-  (run {:auth-lock (auth/fake-lock)
-        ;;::plomber   (plomber/instrument)
-        }))
+(defn run-dev [& [deps]]
+  (run (merge {:auth-lock (auth/fake-lock)}
+              deps)))
 
 (defn on-reload! []
   (when-let [chat-listener (some-> reconciler-atom (deref) :config :shared :shared/store-chat-listener)]

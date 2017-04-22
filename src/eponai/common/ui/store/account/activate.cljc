@@ -104,7 +104,7 @@
                               :currency       currency
                               :routing_number (str transit institution)
                               :account_number account}
-                         (fn [status response]
+                         (fn [status ^js/Stripe.bankAccountResponse response]
                            (when (= status 200)
                              (let [token (.-id response)
                                    ip (.-client_ip response)
@@ -345,7 +345,7 @@
                   {:defaultValue (:country-spec/default-currency stripe-country-spec)
                    :id (:field.external-account/currency v/form-inputs)}
                   (map (fn [cur]
-                         (let [code (key cur)]
+                         (let [^String code (key cur)]
                            (dom/option {:value code} (.toUpperCase code))))
                        (:country-spec/supported-bank-account-currencies stripe-country-spec)))))
             (grid/row
