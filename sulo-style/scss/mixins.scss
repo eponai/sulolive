@@ -58,10 +58,10 @@
     font-weight: $global-weight-bold;
     @each $name, $color in $foundation-palette {
       &.#{$name} {
-        border-color: $color;
-        color: $color;
-        background: $white;
-      }
+          border-color: $color;
+          color: $color;
+          background: $white;
+        }
       }
     // margin: 0;
   }

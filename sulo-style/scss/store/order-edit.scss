@@ -1,12 +1,50 @@
-.label.order-status {
-	text-transform: uppercase;
+.sl-orderstatus {
+	font-weight: $global-weight-bold;
+	font-size: 80%;
+	border: $global-border;
+	$color: map-get($foundation-palette, action);
+	color: $color;
+	border-color: $color;
+	padding: $label-padding;
+	border-radius: $global-radius;
+	&.sl-orderstatus--canceled, 
+	&.sl-orderstatus--returned {
+		border-color: $dark-gray;
+		color: $dark-gray;
+	}
+}
+
+.sl-orderlist {
+	$action-color: map-get($foundation-palette, action);
+	.sl-orderlist-row {
+		.sl-orderlist-cell--price, 
+		.sl-orderlist-cell--icon {
+			color: $action-color;
+			font-weight: $global-weight-bold;
+		}
+		&.sl-orderlist-row--returned, 
+		&.sl-orderlist-row--canceled {
+			color: $dark-gray;
+			.sl-orderlist-cell--price,
+			.sl-orderlist-cell--icon {
+				color: inherit;
+			}
+		}
+		&:hover {
+			color: darken($primary-color, 10%);
+			.sl-orderlist-cell--price,
+			.sl-orderlist-cell--icon {
+				color: inherit;
+			}
+			.sl-orderstatus {
+				color: inherit;
+				border-color: darken($primary-color, 10%);;
+			}
+		}
+	}
 }
 
 #sulo-edit-order {
-	.label {
-		text-transform: uppercase;
-		font-weight: $global-weight-bold;
-	}
 	.callout {
 		margin-bottom: 2rem;
 	}
@@ -15,27 +53,6 @@
 		padding: 0.5rem;
 		label {
 			text-align: left;
-		}
-	}
-	$primary-color: map-get($foundation-palette, action);
-	table {
-		margin: 0 auto;
-		tbody, thead {
-			border-right: none;
-			border-left: none;
-		}
-		td > p {
-			margin-bottom: 0;
-		}
-
-		a {
-			font-weight: 500;
-		}
-		.sku {
-			border-bottom: $table-border;
-		}
-		.tax, .shipping, tfoot {
-			border: none;
 		}
 	}
 	.order-action {
@@ -58,6 +75,22 @@
 		i {
 			margin-right: 1rem;
 			color: $dark-gray;
+		}
+	}
+
+	.sl-OrderItemlist-row {
+		p {
+			margin-bottom: 0;
+		}
+		.sl-OrderItemlist-cell--price {
+			font-weight: $global-weight-bold;
+		}
+		&.sl-OrderItemlist-row--shipping, 
+		&.sl-OrderItemlist-row--tax {
+			font-size: 85%;
+		}
+		&.sl-OrderItemlist-row--shipping {
+			border-top: $global-border-secondary;
 		}
 	}
 }

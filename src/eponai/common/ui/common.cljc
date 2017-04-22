@@ -10,26 +10,16 @@
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.client.routes :as routes]
-    [eponai.common.ui.elements.grid :as grid]))
+    [eponai.common.ui.elements.grid :as grid]
+    [taoensso.timbre :refer [debug]]))
 
 (defn order-status-element [order]
-  (let [status (:order/status order)
-        status-class (cond (= status :order.status/created)
-                           "secondary"
-                           (= status :order.status/paid)
-                           "success"
-                           (= status :order.status/fulfilled)
-                           "green"
-                           (= status :order.status/returned)
-                           "green"
-                           (= status :order.status/canceled)
-                           "alert")]
-    (when status
+  (let [status (:order/status order)]
+    (when (some? status)
       (my-dom/span
-        (->> (css/add-class :label)
-             (css/add-class :hollow)
-             (css/add-class :order-status)
-             (css/add-class status-class)) (name status)))))
+        (->> (css/add-class :sl-orderstatus)
+             (css/add-class (str "sl-orderstatus--" (name status))))
+        (name status)))))
 
 (defn modal [opts & content]
   (let [{:keys [on-close size]} opts]
@@ -59,7 +49,7 @@
 
 (defn online-channel-element [channel]
   (let [{:stream/keys [store]
-         stream-name :stream/title} channel
+         stream-name  :stream/title} channel
         {:store/keys [photo]} store
         store-link (link-to-store store)]
     (grid/column
@@ -77,7 +67,7 @@
         (->> (css/add-class :text)
              (css/add-class :header))
         (my-dom/a {:href store-link}
-               (my-dom/span nil stream-name)))
+                  (my-dom/span nil stream-name)))
 
       (my-dom/div
         (css/add-class :text)
@@ -97,7 +87,7 @@
       (->> (css/grid-row) (css/add-class :section-header) (css/add-class :small-unstack))
       (my-dom/div (->> (css/grid-column) (css/add-class :middle-border)))
       (my-dom/div (->> (css/grid-column) (css/add-class :shrink))
-           (dom/h3 #js {:className "header"} header))
+                  (dom/h3 #js {:className "header"} header))
       (my-dom/div (->> (css/grid-column) (css/add-class :middle-border)))
       )
 

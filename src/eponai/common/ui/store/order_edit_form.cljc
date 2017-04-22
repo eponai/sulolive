@@ -11,10 +11,10 @@
        [eponai.web.utils :as utils])
     [eponai.client.parser.message :as msg]
     [taoensso.timbre :refer [debug]]
-    [eponai.common.ui.elements.menu :as menu]
     [eponai.common.format.date :as date]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.utils :refer [two-decimal-price]]))
+    [eponai.common.ui.utils :refer [two-decimal-price]]
+    [eponai.common.ui.elements.table :as table]))
 
 (def form-elements
   {:input-currency "oef-input-currency"
@@ -28,10 +28,23 @@
    :modal/mark-as-returned?  :order.status/returned
    :modal/mark-as-canceled?  :order.status/canceled})
 
+(def modal-title
+  {:modal/mark-as-fulfilled? "Fulfill items"
+   :modal/mark-as-returned?  "Return order"
+   :modal/mark-as-canceled?  "Cancel order"})
+
 (def modal-message
   {:modal/mark-as-fulfilled? "Do you want to fulfill items for this order?"
-   :modal/mark-as-returned?  "Do you want to mark items as returned to customer?"
-   :modal/mark-as-canceled?  "Do you want to cancel this order?"})
+   :modal/mark-as-returned?  "Do you want to mark items as returned to customer? The payment will be returned in full to the customer."
+   :modal/mark-as-canceled?  "Do you want to cancel this order? The payment will be returned in full to the customer."})
+
+(def confirm-message
+  {:modal/mark-as-fulfilled? "Yes, fullfill items!"
+   :modal/mark-as-returned?  "Yes, return order!"
+   :modal/mark-as-canceled?  "Yes, cancel order!"})
+
+(defn item-cell [opts & content]
+  (table/td (css/add-class :sl-OrderItemlist-cell opts) content))
 
 (defn order-status-modal [component]
   (let [{:keys [modal]} (om/get-state component)
@@ -41,17 +54,20 @@
       (common/modal
         {:on-close on-close}
         (dom/div nil
-                 (dom/h4 nil (get modal-message modal))
-                 (dom/div nil
-
+                 (dom/h4 (css/add-class :header) (get modal-title modal))
+                 (callout/callout
+                   nil
+                   (dom/p nil (get modal-message modal))
+                   (callout/header nil))
+                 (dom/div (css/text-align :right)
+                          (dom/a
+                            (css/button-hollow {:onClick on-close})
+                            (dom/span nil "Oops, no thanks"))
                           (dom/a
                             (css/button {:onClick #(do
                                                     (on-close)
                                                     (.update-order component {:order/status order-status}))})
-                            (dom/span nil "Yes, Shoot!"))
-                          (dom/a
-                            (css/button-hollow {:onClick on-close})
-                            (dom/span nil "Oops, no thanks."))))))))
+                            (dom/span nil (get confirm-message modal)))))))))
 
 (defn label-column [opts & content]
   (grid/column
@@ -105,7 +121,8 @@
                   (css/add-class :order-action)
                   (dom/div
                     nil
-                    (if (= order-status :order.status/returned)
+                    (if (or (= order-status :order.status/returned)
+                            (= order-status :order.status/canceled))
                       (dom/i {:classes ["fa fa-rotate-left fa-fw fa-2x"]})
                       (dom/i {:classes ["fa fa-credit-card fa-fw fa-2x"]}))
                     (cond (or (= order-status :order.status/paid)
@@ -115,7 +132,8 @@
                           (= order-status :order.status/created)
                           (dom/span nil "Payment Pending")
 
-                          (= order-status :order.status/returned)
+                          (or (= order-status :order.status/returned)
+                              (= order-status :order.status/canceled))
                           (dom/span nil "Payment Returned")))))
               (grid/column
                 (grid/column-size {:small 12 :large 6})
@@ -190,13 +208,14 @@
                         (dom/div nil (dom/span nil (:shipping.address/street2 address)))
                         (dom/div nil
                                  (dom/span nil
-                                           (clojure.string/join
+                                           (str
+                                             (:shipping.address/locality address)
+                                             ", "
+                                             (:shipping.address/postal address)
                                              " "
-                                             [(:shipping.address/postal address)
-                                              (:shipping.address/locality address)
-                                              (:shipping.address/region address)
-                                              (:shipping.address/country address)]
-                                             )))))))))
+                                             (:shipping.address/region address)
+                                             )))
+                        (dom/div nil (dom/span nil (:shipping.address/country address)))))))))
             ;(callout/callout
             ;  nil)
 
@@ -205,38 +224,63 @@
           (callout/header nil "Items")
           (callout/callout
             nil
-            (dom/table
-              (css/add-class :stack (css/add-class :hover))
-              (dom/thead
+            (table/table
+              (css/add-class :unstriped)
+              (table/thead
                 nil
-                (dom/tr
+                (table/thead-row
                   nil
-                  (dom/th nil "ID")
-                  (dom/th nil "Description")
-                  (dom/th nil "Variation")
-                  (dom/th nil "Price")))
-              (dom/tbody
+                  (table/th nil "ID")
+                  (table/th nil "Description")
+                  (table/th nil "Variation")
+                  (table/th nil "Price")))
+              (table/tbody
                 nil
-                (map (fn [oi]
-                       (let [sku (:order.item/parent oi)
-                             product (:store.item/_skus sku)]
-                         (dom/tr
-                           (css/add-class :order-item)
-                           (dom/td
-                             nil
-                             (dom/p nil
-                                    (dom/a {:href (routes/url :product {:product-id (:db/id product)})}
-                                           (dom/span nil (:db/id product)))))
-                           (dom/td
-                             nil
-                             (dom/p nil (:store.item/name product)))
-                           (dom/td
-                             nil
-                             (dom/p nil (:store.item.sku/variation sku)))
-                           (dom/td
-                             nil
-                             (dom/p nil (two-decimal-price (:store.item/price product)))))))
-                     skus)))))))))
+                (map
+                  (fn [oi]
+                    (let [sku (:order.item/parent oi)
+                          product (:store.item/_skus sku)]
+                      (table/thead-row
+                        (->> (css/add-class :sl-OrderItemlist-row)
+                             (css/add-class :sl-OrderItemlist-row--sku))
+                        (item-cell
+                          (css/add-class :sl-OrderItemlist-cell--id)
+                          (dom/p nil
+                                 (dom/a {:href (routes/url :product {:product-id (:db/id product)})}
+                                        (dom/span nil (:db/id product)))))
+                        (item-cell
+                          (css/add-class :sl-OrderItemlist-cell--description)
+                          (dom/span nil (:store.item/name product)))
+                        (item-cell
+                          (css/add-class :sl-OrderItemlist-cell--variation)
+                          (dom/span nil (:store.item.sku/variation sku)))
+                        (item-cell
+                          (css/add-class :sl-OrderItemlist-cell--price)
+                          (dom/span nil (two-decimal-price (:store.item/price product)))))))
+                  skus)
+                (table/thead-row
+                  (->> (css/add-class :sl-OrderItemlist-row)
+                       (css/add-class :sl-OrderItemlist-row--shipping))
+                  (item-cell (css/add-class :sl-OrderItemlist-cell--id) (dom/span nil "Shipping"))
+                  (item-cell (css/add-class :sl-OrderItemlist-cell--description) (dom/span nil "Free shipping"))
+                  (item-cell nil)
+                  (item-cell (css/add-class :sl-OrderItemlist-cell--price) (dom/span nil (two-decimal-price 0))))
+                (table/thead-row
+                  (->> (css/add-class :sl-OrderItemlist-row)
+                       (css/add-class :sl-OrderItemlist-row--tax))
+                  (item-cell (css/add-class :sl-OrderItemlist-cell--id) (dom/span nil "Tax"))
+                  (item-cell (css/add-class :sl-OrderItemlist-cell--description) (dom/span nil "Taxes (included)"))
+                  (item-cell nil)
+                  (item-cell (css/add-class :sl-OrderItemlist-cell--price) (dom/span nil (two-decimal-price 0)))))
+              (table/tfoot
+                nil
+                (table/thead-row
+                  (->> (css/add-class :sl-OrderItemlist-row)
+                       (css/add-class :sl-OrderItemlist-row--footer))
+                  (item-cell (css/add-class :sl-OrderItemlist-cell--id) (dom/span nil "Total"))
+                  (item-cell nil)
+                  (item-cell nil)
+                  (item-cell (css/add-class :sl-OrderItemlist-cell--price) (dom/span nil (two-decimal-price 0))))))))))))
 
 (defn create-order [component]
   (let [{:keys [products]} (om/get-computed component)]
@@ -313,7 +357,7 @@
       (msg/om-transact! this `[(store/update-order ~{:params   params
                                                      :order-id order-id
                                                      :store-id store-id})
-                               :query/orders])))
+                               :query/order])))
   (initLocalState [_]
     {:items #{}})
   (componentDidMount [this]

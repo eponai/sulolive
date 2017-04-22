@@ -235,4 +235,4 @@
    :resp {:success "Order created"
           :error   "Could not create order"}}
   {:action (fn []
-             (store/update-order env (c/parse-long store-id) order-id params))})
+             (store/update-order env (c/parse-long store-id) (c/parse-long order-id) params))})

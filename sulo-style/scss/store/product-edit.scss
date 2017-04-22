@@ -1,3 +1,7 @@
+.td .photo-container {
+	min-width: 2rem;
+}
+
 #sulo-edit-product {
 	h3 {
 		@include wrap-text;
@@ -47,4 +51,5 @@
 			display: none !important;
 		}
 	}
+
 }

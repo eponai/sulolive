@@ -99,21 +99,21 @@
     ;; Return order entity to redirect in the client
     (db/pull result-db [:db/id] [:order/uuid (:order/uuid order)])))
 
-(defn update-order [{:keys [state system]} store-id order-id {:keys [order-status]}]
+(defn update-order [{:keys [state system]} store-id order-id {:keys [order/status]}]
   (let [old-order (db/pull (db/db state) [:db/id :order/status {:order/charge [:charge/id]}] order-id)
         allowed-transitions {:order.status/created   #{:order.status/paid :order.status/canceled}
                              :order.status/paid      #{:order.status/fulfilled :order.status/canceled}
                              :order.status/fulfilled #{:order.status/returned}}
         old-status (:order/status old-order)
-        is-status-transition-allowed? (contains? (get allowed-transitions old-status) order-status)]
+        is-status-transition-allowed? (contains? (get allowed-transitions old-status) status)]
     (if is-status-transition-allowed?
-      (let [should-refund? (contains? #{:order.status/canceled :order.status/returned} order-status)]
+      (let [should-refund? (contains? #{:order.status/canceled :order.status/returned} status)]
         (when should-refund?
           (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)]
             (stripe/create-refund (:system/stripe system) secret {:charge (get-in old-order [:order/charge :charge/id])})))
-        (db/transact state [[:db/add order-id :order/status order-status]]))
-      (throw (ex-info (str "Order status transition not allowed, " order-status " can only transition to " (get allowed-transitions order-status))
-                      {:order-status        order-status
+        (db/transact state [[:db/add order-id :order/status status]]))
+      (throw (ex-info (str "Order status transition not allowed, " status " can only transition to " (get allowed-transitions status))
+                      {:order-status        status
                        :message             "Your order status could not be updated."
                        :allowed-transitions allowed-transitions})))))
 
