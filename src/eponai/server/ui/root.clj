@@ -33,7 +33,6 @@
                          ;; Using data-lazy right now because we have etsy images on our site
                          ;; which doesn't have CORS set up (for good reason).
                          :data-lazy "true"}))
-          ;(dom/script {:src "https://cdn.auth0.com/js/lock/10.6/lock.min.js"})
 
           (when  (= route :coming-soon)
             [(dom/script {:src "https://code.jquery.com/jquery-1.11.0.min.js"})

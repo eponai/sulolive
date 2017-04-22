@@ -2,7 +2,7 @@
   (:require
     [taoensso.timbre :refer [debug]]))
 
-(defn enter-pressed? [e]
+(defn enter-pressed? [^js/Event e]
   (= 13 (.-keyCode e)))
 
 (def breakpoints
@@ -26,13 +26,13 @@
 (defn elements-by-class
   ([classname]
     (elements-by-class js/document classname))
-  ([el classname]
+  ([^js/document el classname]
    (array-seq (.getElementsByClassName el classname))))
 
-(defn element-by-id [id]
+(defn ^js/HTMLElement element-by-id [id]
   (.getElementById js/document id))
 
-(defn elements-by-name [n]
+(defn elements-by-name [^js/document n]
   (array-seq (.getElementsByName n)))
 
 (defn elements-by-tagname [n]
@@ -42,7 +42,7 @@
   ([classname]
     (input-values-by-class js/document classname))
   ([el classname]
-   (map #(.-value %) (elements-by-class el classname))))
+   (map (fn [^js/HTMLInputElement e] (.-value e)) (elements-by-class el classname))))
 
 (defn first-input-value-by-class
   ([classname]
@@ -91,7 +91,7 @@
     (.-webkitExitFullscreen js/document)
     (.webkitExitFullscreen js/document)))
 
-(defn request-fullscreen [el]
+(defn request-fullscreen [^js/Element el]
   (cond
     ;; Standard fullscreen handler
     (.-requestFullscreen el)

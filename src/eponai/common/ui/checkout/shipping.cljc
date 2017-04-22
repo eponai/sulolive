@@ -45,12 +45,13 @@
        (when autocomplete
          (if-let [geolocation (.-geolocation js/navigator)]
            (.getCurrentPosition geolocation
-                                (fn [p]
+                                (fn [^js/Geoposition p]
                                   (debug "Position: " p)
                                   (let [geolocation #js {:lat (.. p -coords -latitude)
                                                          :lng (.. p -coords -longitude)}
                                         circle (js/google.maps.Circle. #js {:center geolocation
-                                                                            :radius (.. p -coords -accuracy)})]
+                                                                            :radius (.. p -coords -accuracy)})
+                                        ^js/google.maps.places.Autocomplete autocomplete autocomplete]
                                     (.setBounds autocomplete (.getBounds circle))))))))))
 
 (defn validate
