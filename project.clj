@@ -1,4 +1,5 @@
 (def npm-deps {:dompurify "0.8.6"})
+(def closure-warns {:non-standard-jsdoc :off})
 
 (defproject budget "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
@@ -291,6 +292,7 @@
                                                                 :parallel-build true
                                                                 :source-map     true
                                                                 :npm-deps       ~npm-deps
+                                                                :closure-warnings ~closure-warns
                                                                 }}
                                                 {:id           "devcards"
                                                  :source-paths ["src/" "src-hacks/web/" "test/"]
@@ -301,6 +303,7 @@
                                                                 :output-to            "resources/public/devcards/js/out/budget.js"
                                                                 :output-dir           "resources/public/devcards/js/out"
                                                                 :source-map-timestamp true
+                                                                :closure-warnings ~closure-warns
                                                                 :npm-deps             ~npm-deps}}
                                                 {:id           "test"
                                                  :source-paths ["src/" "src-hacks/web/" "test/"]
@@ -312,6 +315,7 @@
                                                                 :parallel-build true
                                                                 :optimizations  :none
                                                                 :source-map     true
+                                                                :closure-warnings ~closure-warns
                                                                 :npm-deps       ~npm-deps
                                                                 }}
                                                 {:id           "doo-test"
@@ -322,6 +326,7 @@
                                                                 :parallel-build true
                                                                 :optimizations  :none
                                                                 :source-map     true
+                                                                :closure-warnings ~closure-warns
                                                                 :npm-deps       ~npm-deps
                                                                 }}]}}}
 
