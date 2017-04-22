@@ -11,7 +11,8 @@
                  ;[clj-time "0.11.0"]
                  [compojure "1.5.1"]
                  [aprint "0.1.3"]
-                 [alxlit/autoclave "0.2.0"]
+                 [alxlit/autoclave "0.2.0"
+                  :exclusions [com.google.guava/guava]]
                  [buddy/buddy-auth "1.3.0"]
                  [com.cemerick/url "0.1.1"]
                  [com.datomic/datomic-pro "0.9.5544"
@@ -53,11 +54,11 @@
                  [cljsjs/react "15.4.2-2"]
                  [cljsjs/react-dom "15.4.2-2"]
                  [com.cognitect/transit-cljs "0.8.239"]
-                 [org.clojure/clojurescript "1.9.293"
+                 [org.clojure/clojurescript "1.9.521"   
                   ;;  :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]
-                 [com.google.guava/guava "19.0"]
+                 [com.google.guava/guava "21.0"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]
                  [cljs-http "0.1.39"]
                  [org.clojure/tools.reader "1.0.0-alpha2"]
@@ -69,7 +70,7 @@
                  [cljsjs/react-select "1.0.0-rc.1"]
                  [bidi "2.0.10"]
                  [kibu/pushy "0.3.6"]
-                 [binaryage/devtools "0.8.1"]
+                 [binaryage/devtools "0.9.4"]
                  [org.clojure/tools.nrepl "0.2.11"
                   :exclusions [org.clojure/clojure]]
 

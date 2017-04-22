@@ -8,8 +8,6 @@
     #?@(:cljs
         [[goog.log :as glog]
          [cljs-time.coerce :as cljs-time]
-         [eponai.client.logger :as logger]
-         [devtools.core :as devtools]
          [goog.date]
          [goog.object]
          [goog.format.EmailAddress]]))
@@ -434,9 +432,3 @@
 
 (def set-trace #(set-level :trace))
 (def set-debug #(set-level :debug))
-
-#?(:cljs
-   (defn install-app []
-     (enable-console-print!)
-     (devtools/install!)
-     (logger/install-logger!)))
