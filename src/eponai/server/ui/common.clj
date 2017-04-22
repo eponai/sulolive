@@ -88,12 +88,6 @@
    (when (= cljs-build-id "devcards")
      (dom/link {:href "/bower_components/nvd3/build/nv.d3.css"
                 :rel  "stylesheet"}))
-   (dom/link {:href "/lib/videojs/video-js.min.css"
-              :rel  "stylesheet"})
-
-
-   (dom/link {:href "//cdn.quilljs.com/1.2.0/quill.core.css"
-              :rel  "stylesheet"})
 
    ;;TODO: https://cdn.quilljs.com/1.0.0/quill.snow.css if want to save to local in dev mode
    (dom/link {:href "//cdn.quilljs.com/1.2.0/quill.snow.css"
@@ -138,15 +132,6 @@
              :else "dev")
        "/js/out/budget.js"))
 
-(defn red5pro-script-tags [release?]
-  (comment
-    "We don't need these yet."
-    [(dom/script {:src (if release? "https://webrtc.github.io/adapter/adapter-latest.js"
-                                    "/bower_components/webrtc-adapter/release/adapter.js")})
-     (dom/script {:src "/lib/videojs/video.min.js"})
-     (dom/script {:src "/lib/videojs/videojs-media-sources.min.js"})
-     (dom/script {:src "/lib/videojs/videojs.hls.min.js"})
-     (dom/script {:src "/lib/red5pro/red5pro-sdk.min.js"})]))
 
 (defn auth0-lock-passwordless [release?]
   (dom/script {:src (if release? "https://cdn.auth0.com/js/lock-passwordless-2.2.min.js"
