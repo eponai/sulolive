@@ -2,10 +2,6 @@
   "name": "SuloLiveApp",
   "version": "0.0.1",
   "private": true,
-  "engines": {
-    "node": "6.9.5",
-    "npm": "3.10.10"
-  },
   "scripts": {
     "start": "node_modules/react-native/packager/packager.sh --nonPersistent"
   },
@@ -17,5 +13,4 @@
     "source-map-support": "0.3.2",
     "phantomjs": "1.9.19"
   }
-
 }
