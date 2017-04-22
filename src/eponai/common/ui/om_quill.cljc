@@ -4,6 +4,7 @@
        [cljsjs.quill])
     #?(:clj
        [autoclave.core :as a])
+       #?(:cljs [dompurify])
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]))
@@ -17,9 +18,8 @@
     (let [allowed-classes ["ql-align-right" "ql-align-center" "ql-size-small" "ql-size-large"]
           allowed-tags ["p" "span" "strong" "ul" "ol" "li" "u" "s" "i" "em" "br"]]
 
-      #?(:cljs (let [policy (clj->js {:allowedTags    allowed-tags
-                                      :allowedClasses {"*" allowed-classes}})]
-                 (js/sanitizeHtml dirty-html policy))
+      #?(:cljs (let [policy (clj->js {:ALLOWED_TAGS allowed-tags})]
+                 (js/DOMPurify.sanitize dirty-html policy))
          :clj  (let [policy (a/html-policy :allow-common-inline-formatting-elements
                                            :allow-common-block-elements
                                            :allow-attributes ["class"
@@ -29,9 +29,9 @@
                                                                                  allowed-classes))]])]
                  (a/html-sanitize policy dirty-html))))))
 
-(defn get-HTML [editor]
-  #?(:cljs
-     (sanitize-html (.. editor -root -innerHTML))))
+(defn get-HTML #?@(:cljs [[^js/Quill editor]
+                          (sanitize-html (.. editor -root -innerHTML))]
+                   :clj[[editor] nil]))
 
 (defn toolbar-opts []
   #?(:cljs

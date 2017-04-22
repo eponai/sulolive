@@ -1,3 +1,5 @@
+(def npm-deps {:dompurify "0.8.6"})
+
 (defproject budget "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
@@ -175,7 +177,8 @@
   ;;;;;;;;;;;;;
   :uberjar-name "budget-0.1.0-SNAPSHOT-standalone.jar"
 
-  :figwheel {:css-dirs    ["resources/public/assets/css/"]
+  :figwheel {:validate-config :ignore-unknown-keys
+             :css-dirs    ["resources/public/assets/css/"]
              :server-port ~(read-string (or (System/getenv "FIGWHEEL_PORT") "3449"))
       ;;       :reload-clj-files {:clj true :cljc true}
  }
@@ -267,11 +270,13 @@
                                                              :externs         ["src-hacks/js/externs/stripe-checkout.js"
                                                                                "src-hacks/js/externs/red5pro.js"
                                                                                "src-hacks/js/externs/hls.js"]
+                                                             :infer-externs true
                                                              ;; :language-in     :ecmascript5
-                                                             :parallel-build  true
+                                                             ;; :parallel-build  true
                                                              ;;   :pseudo-names true
                                                              ;;   :pretty-print true
-                                                             :verbose         true
+                                                             ;;   :verbose         true
+                                                             :npm-deps        ~npm-deps
                                                              }}]}}
              :web      {:exclusions   [org.clojure/clojure org.clojure/clojurescript]
                         :dependencies [[figwheel-sidecar "0.5.7"]]
@@ -284,7 +289,9 @@
                                                                 :output-dir     "resources/public/dev/js/out/"
                                                                 :optimizations  :none
                                                                 :parallel-build true
-                                                                :source-map     true}}
+                                                                :source-map     true
+                                                                :npm-deps       ~npm-deps
+                                                                }}
                                                 {:id           "devcards"
                                                  :source-paths ["src/" "src-hacks/web/" "test/"]
                                                  :figwheel     {:devcards true ;; <- note this
@@ -293,7 +300,8 @@
                                                                 :asset-path           "/devcards/js/out"
                                                                 :output-to            "resources/public/devcards/js/out/budget.js"
                                                                 :output-dir           "resources/public/devcards/js/out"
-                                                                :source-map-timestamp true}}
+                                                                :source-map-timestamp true
+                                                                :npm-deps             ~npm-deps}}
                                                 {:id           "test"
                                                  :source-paths ["src/" "src-hacks/web/" "test/"]
                                                  :figwheel     {:on-jsload "eponai.client.figwheel.test-main/reload-figwheel!"}
@@ -304,6 +312,7 @@
                                                                 :parallel-build true
                                                                 :optimizations  :none
                                                                 :source-map     true
+                                                                :npm-deps       ~npm-deps
                                                                 }}
                                                 {:id           "doo-test"
                                                  :source-paths ["src/" "src-hacks/web/" "test/"]
@@ -313,6 +322,7 @@
                                                                 :parallel-build true
                                                                 :optimizations  :none
                                                                 :source-map     true
+                                                                :npm-deps       ~npm-deps
                                                                 }}]}}}
 
    ;;;;;;;;;;;;;
