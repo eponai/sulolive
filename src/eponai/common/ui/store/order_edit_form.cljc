@@ -127,14 +127,14 @@
                       (dom/i {:classes ["fa fa-credit-card fa-fw fa-2x"]}))
                     (cond (or (= order-status :order.status/paid)
                               (= order-status :order.status/fulfilled))
-                          (dom/span nil "Payment Accepted")
+                          (dom/span nil "Payment accepted")
 
                           (= order-status :order.status/created)
-                          (dom/span nil "Payment Pending")
+                          (dom/span nil "Payment pending")
 
                           (or (= order-status :order.status/returned)
                               (= order-status :order.status/canceled))
-                          (dom/span nil "Payment Returned")))))
+                          (dom/span nil "Payment refunded")))))
               (grid/column
                 (grid/column-size {:small 12 :large 6})
                 (dom/div
@@ -142,9 +142,9 @@
                   (dom/div nil
                            (dom/i {:classes ["fa fa-truck fa-fw fa-2x"]})
                            (cond (= order-status :order.status/fulfilled)
-                                 (dom/span nil "Items Fulfilled")
+                                 (dom/span nil "Items fulfilled")
                                  :else
-                                 (dom/span nil "Fulfill Items")))
+                                 (dom/span nil "Fulfill items")))
                   (cond
                     (= order-status :order.status/fulfilled)
                     (dom/a
@@ -341,6 +341,7 @@
                     {:order/items [:order.item/type
                                    {:order.item/parent [:store.item.sku/variation {:store.item/_skus [:db/id :store.item/name :store.item/price]}]}]}
                     :order/status
+                    {:order/charge [:charge/id]}
                     {:order/user [:user/email]}
                     {:order/shipping [:shipping/name
                                       {:shipping/address [:shipping.address/country

@@ -23,11 +23,11 @@
       (->> {:id        "reveal-overlay"
             :onClick   #(when (= "reveal-overlay" (.-id (.-target %)))
                          (on-close))}
-           (css/add-class :sl-reveal-overlay))
+           (css/add-class :reveal-overlay))
       (dom/div
         (css/add-class (str "reveal " (when (some? size) (name size))))
              (dom/a
-               (css/add-class :close-button) {:onClick   on-close}
+               (css/add-class :close-button {:onClick on-close})
                (dom/span nil "x"))
              content))))
 

@@ -70,8 +70,6 @@
 (defn create-refund [stripe account-secret params]
   (-create-refund stripe account-secret params))
 
-(defn create-refund [stripe account-secret params])
-
 
 ;; ########### Stripe objects ################
 

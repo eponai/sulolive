@@ -112,7 +112,7 @@
                  db-order-created :order.status/returned
 
                  db-order-paid :order.status/created
-                 db-order-paid :order.status/returned
+                 db-order-paid :order.status/canceled
 
                  db-order-fulfilled :order.status/created
                  db-order-fulfilled :order.status/paid
@@ -127,3 +127,35 @@
                  db-order-canceled :order.status/paid
                  db-order-canceled :order.status/fulfilled
                  db-order-canceled :order.status/returned))))
+
+(defn order-charged-with-status [store status]
+  (-> (order-with-status store status)
+      (assoc :order/charge {:charge/id "charge"})))
+
+(deftest update-order-return-cancel-did-create-refund
+  (testing "Updating the order with a transition to returned or canceled, should create a reefund in Stripe."
+    (let [;; Prepare DB with products to order
+          store (store-test)
+          order-paid (order-charged-with-status store :order.status/paid)
+          order-fulfilled (order-charged-with-status store :order.status/fulfilled)
+
+          conn (new-db [order-paid order-fulfilled])
+          stripe-chan-paid (async/chan 1)
+          stripe-chan-fulfilled (async/chan 1)
+          db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid store)])
+          db-order-paid (db/lookup-entity (db/db conn) [:order/uuid (:order/uuid order-paid)])
+          db-order-fulfilled (db/lookup-entity (db/db conn) [:order/uuid (:order/uuid order-fulfilled)])]
+      (api/update-order {:state  conn
+                         :system {:system/stripe (stripe-test-payment-succeeded stripe-chan-paid)}}
+                        (:db/id db-store)
+                        (:db/id db-order-paid)
+                        {:order/status :order.status/canceled})
+      (api/update-order {:state  conn
+                         :system {:system/stripe (stripe-test-payment-succeeded stripe-chan-fulfilled)}}
+                        (:db/id db-store)
+                        (:db/id db-order-fulfilled)
+                        {:order/status :order.status/returned})
+
+      ;; Verify transitions not allowed throw an exception.
+      (is (= (:charge (async/poll! stripe-chan-paid)) "charge"))
+      (is (= (:charge (async/poll! stripe-chan-fulfilled)) "charge")))))

@@ -179,7 +179,7 @@
    :resp {:success "Your account was updated"
           :error   (if (some? exception)
                      (or (.getMessage exception) "Something went wrong")
-                     "Someting went wrong!")}}
+                     "Something went wrong!")}}
   {:action (fn []
              (let [{:stripe/keys [id]} (stripe/pull-stripe (db/db state) store-id)]
                (stripe/update-account (:system/stripe system) id account-params)))})
