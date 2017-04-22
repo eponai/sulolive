@@ -20,6 +20,7 @@
           conn (new-db [store user])
           db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid store)])
           db-sku (db/pull-one-with (db/db conn) [:db/id] {:where '[[_ :store.item/skus ?e]]})
+          db-user (db/pull (db/db conn) [:db/id] [:user/email (:user/email user)])
 
           ;; Prepare parameters for order creation
           stripe-chan (async/chan 1)
@@ -29,7 +30,7 @@
           ;; Create new order
           new-order (api/create-order {:state  conn
                                        :system {:system/stripe (stripe-test-payment-succeeded stripe-chan)}
-                                       :auth   {:email (:user/email user)}}
+                                       :auth   {:user-id (:db/id db-user)}}
                                       (:db/id db-store)
                                       order-params)]
 
@@ -55,6 +56,7 @@
           conn (new-db [store user])
           db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid store)])
           db-sku (db/pull-one-with (db/db conn) [:db/id] {:where '[[_ :store.item/skus ?e]]})
+          db-user (db/pull (db/db conn) [:db/id] [:user/email (:user/email user)])
 
           ;; Prepare parameters for order creation
           stripe-chan (async/chan 1)
@@ -64,7 +66,7 @@
           ;; Create new order
           new-order (api/create-order {:state  conn
                                        :system {:system/stripe (stripe-test-payment-failed stripe-chan)}
-                                       :auth   {:email (:user/email user)}}
+                                       :auth   {:user-id (:db/id db-user)}}
                                       (:db/id db-store)
                                       order-params)]
 

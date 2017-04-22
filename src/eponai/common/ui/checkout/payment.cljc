@@ -75,6 +75,7 @@
         (my-dom/div
           (css/add-class ::css/callout)
           (dom/h3 nil "Payment")
+          (dom/hr nil)
           (my-dom/div
             (when collapse?
               (css/add-class :hide))

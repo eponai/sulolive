@@ -82,7 +82,7 @@
         order (f/order {:order/items    items
                         :order/uuid     (db/squuid)
                         :order/shipping shipping
-                        :order/user     [:user/email (:email auth)]
+                        :order/user     (:user-id auth)
                         :order/store    store-id})]
     (when source
       (let [charge (try

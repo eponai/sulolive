@@ -21,14 +21,6 @@
 (defn get-route-params [component]
   (get-in (om/props component) [:query/current-route :route-params]))
 
-
-(defn subway-stop-dot [is-checked?]
-  (dom/div
-    (css/add-class :sl-subway-stop-dot)
-    (if is-checked?
-      (dom/i {:classes ["fa fa-check-circle fa-fw"]})
-      (dom/i {:classes ["fa fa-circle-o fa-fw"]}))))
-
 (defui Checkout
   static om/IQuery
   (query [_]
@@ -91,36 +83,6 @@
         {:navbar navbar :id "sulo-checkout"}
         (when (msg/pending? checkout-resp)
           (common/loading-spinner nil))
-        ;(grid/row-column
-        ;  nil
-        ;  (dom/ul
-        ;    (css/add-class :sl-subway)
-        ;    (dom/li
-        ;      (cond->> (css/add-class :sl-subway-stop)
-        ;               (some? shipping)
-        ;               (css/add-class ::css/is-active))
-        ;      (dom/a
-        ;        nil
-        ;        (subway-stop-dot (some? shipping))
-        ;        (dom/div nil
-        ;                 (dom/span nil "Ship to"))))
-        ;    (dom/li
-        ;      (cond->> (css/add-class :sl-subway-stop)
-        ;              (some? payment)
-        ;              (css/add-class ::css/is-active))
-        ;      (dom/a
-        ;        nil
-        ;        (subway-stop-dot (some? payment))
-        ;        (dom/div nil (dom/span nil "Payment"))))
-        ;    (dom/li
-        ;      (cond->> (css/add-class :sl-subway-stop)
-        ;              (= route :checkout/review)
-        ;              (css/add-class ::css/is-active))
-        ;      (dom/a
-        ;        nil
-        ;        (subway-stop-dot false)
-        ;        (dom/div nil (dom/span nil "Review & confirm"))))))
-
         (grid/row
           (css/align :center)
           (grid/column
@@ -145,14 +107,6 @@
                                                    :error error-message}
                                                   {:on-change #(do
                                                                 (om/update-state! this assoc :checkout/payment %)
-                                                                (.place-order this))})))
-            ;(dom/div
-            ;  (css/grid-row)
-            ;  (dom/div
-            ;    (->> (css/grid-column)
-            ;         (css/text-align :right))
-            ;    (dom/div
-            ;      (css/button {:onClick   #(.place-order this)}) "Place Order")))
-            ))))))
+                                                                (.place-order this))})))))))))
 
 (def ->Checkout (om/factory Checkout))
