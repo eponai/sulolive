@@ -162,7 +162,7 @@
           (if (= route :store/about)
             (about-section this)
 
-            (grid/products (concat store-items store-items store-items)
+            (grid/products store-items
                            (fn [p]
                              (pi/->ProductItem {:product p})))))))))
 

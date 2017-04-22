@@ -111,6 +111,9 @@
 (defn nav [opts & content]
   (element dom/nav opts content))
 
+(defn footer [opts & content]
+  (element dom/footer opts content))
+
 (defn button [opts & content]
   (element dom/button opts content))
 

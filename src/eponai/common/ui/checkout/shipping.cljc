@@ -110,7 +110,7 @@
     (let [{:keys [input-validation]} (om/get-state this)
           validation-problems (::s/problems input-validation)]
       (dom/div nil
-        (dom/h3 nil "Shipping")
+        (dom/h3 nil "Ship to")
         (my-dom/div
           (->> (css/add-class ::css/callout))
           (my-dom/div

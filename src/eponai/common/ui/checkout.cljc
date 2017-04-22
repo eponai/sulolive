@@ -5,9 +5,8 @@
     [eponai.common.ui.checkout.shipping :as ship]
     [eponai.common.ui.checkout.payment :as pay]
     [eponai.common.ui.checkout.review :as review]
-    [eponai.common.ui.dom :as my-dom]
+    [eponai.common.ui.dom :as dom]
     [eponai.client.routes :as routes]
-    [om.dom :as dom]
     [om.next :as om :refer [defui]]
     #?(:cljs [eponai.web.utils :as web-utils])
     [eponai.common.ui.navbar :as nav]
@@ -15,10 +14,20 @@
     [eponai.common.ui.elements.css :as css]
     [taoensso.timbre :refer [debug]]
     [eponai.client.parser.message :as msg]
-    [eponai.common :as c]))
+    [eponai.common :as c]
+    [eponai.common.ui.elements.grid :as grid]
+    [eponai.common.ui.elements.menu :as menu]))
 
 (defn get-route-params [component]
   (get-in (om/props component) [:query/current-route :route-params]))
+
+
+(defn subway-stop-dot [is-checked?]
+  (dom/div
+    (css/add-class :sl-subway-stop-dot)
+    (if is-checked?
+      (dom/i {:classes ["fa fa-check-circle fa-fw"]})
+      (dom/i {:classes ["fa fa-circle-o fa-fw"]}))))
 
 (defui Checkout
   static om/IQuery
@@ -70,33 +79,63 @@
     (let [{:proxy/keys [navbar]
            :query/keys [cart current-route]} (om/props this)
           {:checkout/keys [shipping payment]} (om/get-state this)
+          {:keys [route] } current-route
           progress (cond (nil? shipping) 1
                          (nil? payment) 2
                          :else 3)
           checkout-resp (msg/last-message this 'store/create-order)]
 
-      (debug "CHECKOUT STATE: " (om/get-state this))
       (common/page-container
         {:navbar navbar :id "sulo-checkout"}
         (when (msg/pending? checkout-resp)
           (common/loading-spinner nil))
-        (my-dom/div
-          (->> (css/grid-row)
-               (css/align :center)
-               (css/add-class :collapse))
-          (my-dom/div
-            (->> (css/grid-column)
-                 (css/grid-column-size {:small 12 :medium 8 :large 8}))
-            (dom/div #js {:className "progress"}
-              (dom/div #js {:className "progress-meter"
-                            :style     #js {:width (str (int (* 100 (/ progress 3))) "%")}}))
-            (dom/div #js {:className (when-not (= 1 progress) "hide")}
+        (grid/row-column
+          nil
+          (dom/ul
+            (css/add-class :sl-subway)
+            (dom/li
+              (cond->> (css/add-class :sl-subway-stop)
+                       (some? shipping)
+                       (css/add-class ::css/is-active))
+              (dom/a
+                nil
+                (subway-stop-dot (some? shipping))
+                (dom/div nil
+                         (dom/span nil "Ship to"))))
+            (dom/li
+              (cond->> (css/add-class :sl-subway-stop)
+                      (some? payment)
+                      (css/add-class ::css/is-active))
+              (dom/a
+                nil
+                (subway-stop-dot (some? payment))
+                (dom/div nil (dom/span nil "Payment"))))
+            (dom/li
+              (cond->> (css/add-class :sl-subway-stop)
+                      (= route :checkout/review)
+                      (css/add-class ::css/is-active))
+              (dom/a
+                nil
+                (subway-stop-dot false)
+                (dom/div nil (dom/span nil "Review & confirm"))))))
+
+        (grid/row
+          (css/align :center)
+          (grid/column
+            (grid/column-size {:small 12 :medium 8 :large 8})
+            (dom/div
+              (when-not (= 1 progress)
+                (css/add-class :hide))
               (ship/->CheckoutShipping (om/computed {}
                                                     {:on-change #(om/update-state! this assoc :checkout/shipping %)})))
-            (dom/div #js {:className (when-not (= 2 progress) "hide")}
+            (dom/div
+              (when-not (= 2 progress)
+                (css/add-class :hide))
               (pay/->CheckoutPayment (om/computed {}
                                                   {:on-change #(om/update-state! this assoc :checkout/payment %)})))
-            (dom/div #js {:className (when-not (= 3 progress) "hide")}
+            (dom/div
+              (when-not (= 3 progress)
+                (css/add-class :hide))
               (review/->CheckoutReview (om/computed {}
                                                     {:on-confirm        #(.place-order this)
                                                      :checkout/payment  payment

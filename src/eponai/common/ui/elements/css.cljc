@@ -179,6 +179,10 @@
     (reduce (fn [m class] (add-class class m)) opts (map class-fn offsets))))
 
 
+;; ------------------------------- CLearfix
+
+(defn clearfix [& opts]
+  (add-class ::clearfix opts))
 ;; ---------------------------------- Button ------------------------------
 
 (defn button [& [opts]]
