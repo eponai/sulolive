@@ -4,7 +4,7 @@
        [cljsjs.quill])
     #?(:clj
        [autoclave.core :as a])
-       #?(:cljs [dompurify])
+       #?(:cljs dompurify)
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]))
