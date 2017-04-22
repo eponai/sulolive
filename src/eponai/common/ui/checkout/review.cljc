@@ -39,59 +39,11 @@
           item-count (count items)]
       (debug "CheckoutReview " (om/props this))
       (dom/div nil
-        (my-dom/div
-          (css/grid-row)
-          (my-dom/div
-            (css/grid-column)
-            (dom/h3 nil "Review & Confirm")))
-        (dom/div #js {:className "callout"}
-
-          (let [{full-name :shipping/name
-                 :shipping/keys [address]} shipping
-                {:shipping.address/keys [street1 postal region locality country]} address]
-            (my-dom/div
-              (->> (css/grid-row)
-                   (css/align :bottom))
-              (my-dom/div
-                (->> (css/grid-column)
-                     (css/grid-column-size {:small 3 :medium 2}))
-                (dom/h4 nil "Ship to")
-                (dom/i #js {:className "fa fa-truck fa-2x"}))
-              (my-dom/div
-                (css/grid-column)
-                (dom/div nil
-                  (dom/div nil (dom/strong nil full-name))
-                  ;(dom/div nil (dom/span nil street1))
-                  (dom/div nil (dom/span nil (clojure.string/join ", " (filter some? [street1 postal locality region country]))))))
-              (my-dom/div
-                (->> (css/grid-column)
-                     (css/add-class :shrink))
-                (dom/a #js {:className "button hollow"}
-                       (dom/i #js {:className "fa fa-pencil fa-fw"}))))))
-        (dom/div #js {:className "callout"}
-          (let [{:keys [last4 exp_year exp_month brand]} card]
-            (my-dom/div
-              (->> (css/grid-row)
-                   (css/align :bottom))
-              (my-dom/div
-                (->> (css/grid-column)
-                     (css/grid-column-size {:small 3 :medium 2}))
-                (dom/h4 nil "Payment")
-                (dom/i #js {:className "fa fa-credit-card fa-2x"}))
-              (my-dom/div
-                (css/grid-column)
-                (dom/div nil
-                  (dom/div nil (dom/span nil brand))
-                  (dom/div nil
-                    (dom/span nil "**** **** **** "
-                              (dom/strong nil last4)
-                              " "
-                              (dom/small nil (str exp_month "/" exp_year))))))
-              (my-dom/div
-                (->> (css/grid-column)
-                     (css/add-class :shrink))
-                (dom/a #js {:className "button hollow"}
-                       (dom/i #js {:className "fa fa-pencil fa-fw"}))))))
+        ;(my-dom/div
+        ;  (css/grid-row)
+        ;  (my-dom/div
+        ;    (css/grid-column)
+        ;    (dom/h3 nil "Review & Confirm")))
         (dom/div #js {:className "callout"}
           (let [store (:store/_items (:store.item/_skus (first items)))]
             (debug "store: " store)
@@ -102,7 +54,8 @@
                    (debug "SKU: " sku)
                    (let [{:store.item/keys [price photos]
                           product-id       :db/id
-                          item-name        :store.item/name} (get sku :store.item/_skus)]
+                          item-name        :store.item/name} (get sku :store.item/_skus)
+                         sorted-photos (sort-by :store.item.photo/index photos)]
                      (my-dom/div
                        (->> (css/grid-row {:key i})
                             ;(css/add-class :collapse)
@@ -115,7 +68,7 @@
                          (->> (css/grid-column)
                               (css/grid-column-size {:small 4 :medium 2}))
                          (photo/square
-                           {:src (:photo/path (first photos))}))
+                           {:src (get-in (first sorted-photos) [:store.item.photo/photo :photo/path])}))
 
                        ;(my-dom/div
                        ;  (->> (css/grid-column))
@@ -199,14 +152,6 @@
                   (->> (css/grid-column)
                        (css/text-align :right))
                   (dom/strong nil (utils/two-decimal-price (+ 5 (compute-item-price items)))))))))
-        (my-dom/div
-          (css/grid-row)
-          (my-dom/div
-            (->> (css/grid-column)
-                 (css/text-align :right))
-            (dom/div #js {:className "button"
-                          :onClick   #(when on-confirm
-                                       (on-confirm))} "Place Order")))
         ))))
 
 (def ->CheckoutReview (om/factory CheckoutReview))

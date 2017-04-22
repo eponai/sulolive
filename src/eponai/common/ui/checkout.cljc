@@ -37,7 +37,8 @@
                                  :store.item.sku/uuid
                                  :store.item.sku/variation
                                  {:store.item/_skus [:store.item/price
-                                                     {:store.item/photos [:photo/path]}
+                                                     {:store.item/photos [:store.item.photo/index
+                                                                          {:store.item.photo/photo [:photo/path]}]}
                                                      :store.item/name
                                                      {:store/_items [:db/id
                                                                      :store/name
@@ -63,83 +64,95 @@
 
   (initLocalState [_]
     {:checkout/shipping nil
-     :checkout/payment  nil})
+     :checkout/payment  nil
+     :open-section :shipping})
 
   (componentDidUpdate [this _ _]
     (when-let [response (msg/last-message this 'store/create-order)]
       (debug "Response: " response)
-      (if (msg/final? response)
-        (let [message (msg/message response)
-              {:query/keys [auth]} (om/props this)]
-          (debug "message: " message)
+      (when (msg/final? response)
+        (let [message (msg/message response)]
+          (debug "Message: " message)
           (msg/clear-messages! this 'store/create-order)
-          (routes/set-url! this :user/order {:order-id (:db/id message) :user-id (:db/id auth)})))))
+          (if (msg/success? response)
+            (let [{:query/keys [auth]} (om/props this)]
+              (routes/set-url! this :user/order {:order-id (:db/id message) :user-id (:db/id auth)}))
+            (om/update-state! this assoc :error-message message))))))
 
   (render [this]
     (let [{:proxy/keys [navbar]
            :query/keys [cart current-route]} (om/props this)
-          {:checkout/keys [shipping payment]} (om/get-state this)
+          {:checkout/keys [shipping payment]
+           :keys [open-section error-message]} (om/get-state this)
           {:keys [route] } current-route
-          progress (cond (nil? shipping) 1
-                         (nil? payment) 2
-                         :else 3)
           checkout-resp (msg/last-message this 'store/create-order)]
 
       (common/page-container
         {:navbar navbar :id "sulo-checkout"}
         (when (msg/pending? checkout-resp)
           (common/loading-spinner nil))
-        (grid/row-column
-          nil
-          (dom/ul
-            (css/add-class :sl-subway)
-            (dom/li
-              (cond->> (css/add-class :sl-subway-stop)
-                       (some? shipping)
-                       (css/add-class ::css/is-active))
-              (dom/a
-                nil
-                (subway-stop-dot (some? shipping))
-                (dom/div nil
-                         (dom/span nil "Ship to"))))
-            (dom/li
-              (cond->> (css/add-class :sl-subway-stop)
-                      (some? payment)
-                      (css/add-class ::css/is-active))
-              (dom/a
-                nil
-                (subway-stop-dot (some? payment))
-                (dom/div nil (dom/span nil "Payment"))))
-            (dom/li
-              (cond->> (css/add-class :sl-subway-stop)
-                      (= route :checkout/review)
-                      (css/add-class ::css/is-active))
-              (dom/a
-                nil
-                (subway-stop-dot false)
-                (dom/div nil (dom/span nil "Review & confirm"))))))
+        ;(grid/row-column
+        ;  nil
+        ;  (dom/ul
+        ;    (css/add-class :sl-subway)
+        ;    (dom/li
+        ;      (cond->> (css/add-class :sl-subway-stop)
+        ;               (some? shipping)
+        ;               (css/add-class ::css/is-active))
+        ;      (dom/a
+        ;        nil
+        ;        (subway-stop-dot (some? shipping))
+        ;        (dom/div nil
+        ;                 (dom/span nil "Ship to"))))
+        ;    (dom/li
+        ;      (cond->> (css/add-class :sl-subway-stop)
+        ;              (some? payment)
+        ;              (css/add-class ::css/is-active))
+        ;      (dom/a
+        ;        nil
+        ;        (subway-stop-dot (some? payment))
+        ;        (dom/div nil (dom/span nil "Payment"))))
+        ;    (dom/li
+        ;      (cond->> (css/add-class :sl-subway-stop)
+        ;              (= route :checkout/review)
+        ;              (css/add-class ::css/is-active))
+        ;      (dom/a
+        ;        nil
+        ;        (subway-stop-dot false)
+        ;        (dom/div nil (dom/span nil "Review & confirm"))))))
 
         (grid/row
           (css/align :center)
           (grid/column
             (grid/column-size {:small 12 :medium 8 :large 8})
             (dom/div
-              (when-not (= 1 progress)
-                (css/add-class :hide))
-              (ship/->CheckoutShipping (om/computed {}
-                                                    {:on-change #(om/update-state! this assoc :checkout/shipping %)})))
-            (dom/div
-              (when-not (= 2 progress)
-                (css/add-class :hide))
-              (pay/->CheckoutPayment (om/computed {}
-                                                  {:on-change #(om/update-state! this assoc :checkout/payment %)})))
-            (dom/div
-              (when-not (= 3 progress)
-                (css/add-class :hide))
+              nil
               (review/->CheckoutReview (om/computed {}
                                                     {:on-confirm        #(.place-order this)
                                                      :checkout/payment  payment
                                                      :checkout/shipping shipping
-                                                     :checkout/items    (:cart/items cart)})))))))))
+                                                     :checkout/items    (:cart/items cart)})))
+
+            (dom/div
+              nil
+              (ship/->CheckoutShipping (om/computed {:collapse? (not= open-section :shipping)
+                                                     :shipping shipping}
+                                                    {:on-change #(om/update-state! this assoc :checkout/shipping % :open-section :payment)
+                                                     :on-open #(om/update-state! this assoc :open-section :shipping)})))
+            (dom/div
+              nil
+              (pay/->CheckoutPayment (om/computed {:collapse? (not= open-section :payment)
+                                                   :error error-message}
+                                                  {:on-change #(do
+                                                                (om/update-state! this assoc :checkout/payment %)
+                                                                (.place-order this))})))
+            ;(dom/div
+            ;  (css/grid-row)
+            ;  (dom/div
+            ;    (->> (css/grid-column)
+            ;         (css/text-align :right))
+            ;    (dom/div
+            ;      (css/button {:onClick   #(.place-order this)}) "Place Order")))
+            ))))))
 
 (def ->Checkout (om/factory Checkout))

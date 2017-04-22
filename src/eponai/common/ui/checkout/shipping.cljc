@@ -108,104 +108,133 @@
          (om/update-state! this assoc :autocomplete autocomplete))))
   (render [this]
     (let [{:keys [input-validation]} (om/get-state this)
-          validation-problems (::s/problems input-validation)]
+          {:keys [collapse? shipping]} (om/props this)
+          {:keys [on-open]} (om/get-computed this)]
       (dom/div nil
-        (dom/h3 nil "Ship to")
         (my-dom/div
           (->> (css/add-class ::css/callout))
+          (dom/h3 nil "Ship to")
+
           (my-dom/div
-            (css/grid-row)
+            (when-not collapse?
+              (css/add-class :hide))
+            (let [{:shipping/keys [address]} shipping]
+              (my-dom/div
+                (css/add-class :shipping-address)
+                (my-dom/p nil (:shipping/name shipping))
+                (my-dom/div nil (my-dom/span nil (:shipping.address/street address)))
+                (my-dom/div nil (my-dom/span nil (:shipping.address/street2 address)))
+                (my-dom/div nil
+                            (my-dom/span nil
+                                         (str
+                                           (:shipping.address/locality address)
+                                           ", "
+                                           (:shipping.address/postal address)
+                                           " "
+                                           (:shipping.address/region address)
+                                           )))
+                (my-dom/div nil (my-dom/span nil (:shipping.address/country address)))))
             (my-dom/div
-              (->> (css/grid-column))
-              (my-dom/label nil "Full name")
-              (validate/input
-                {:id           (:shipping/name form-inputs)
-                 :type         "text"
-                 :name         "name"
-                 :autocomplete "name"}
-                input-validation)))
+              (css/text-align :right)
+              (my-dom/a
+                (->> {:onClick #(when on-open (on-open))}
+                     (css/button-hollow)) "Edit")))
           (my-dom/div
-            (css/grid-row)
-            (my-dom/div
-              (->> (css/grid-column))
-              (my-dom/label nil "Search address")
-              (dom/input #js {:id      "auto-complete"
-                              :type    "text"
-                              :onFocus #(geo-locate this)})))
-          (dom/hr nil)
-          (dom/div nil
+            (when collapse?
+              (css/add-class :hide))
             (my-dom/div
               (css/grid-row)
               (my-dom/div
                 (->> (css/grid-column))
-                (my-dom/label nil "Country")
-                (my-dom/select
-                  {:id           (:shipping.address/country form-inputs)
-                   :name         "ship-country"
-                   :autocomplete "shipping country"}
-                  ;input-validation
-                  (dom/option #js {:value "CA"} "Canada")
-                  (dom/option #js {:value "SE"} "Sweden")
-                  (dom/option #js {:value "US"} "United States"))))
-
-
-            (my-dom/div
-              (css/grid-row)
-              (my-dom/div
-                (->> (css/grid-column)
-                     (css/grid-column-size {:small 12 :medium 8}))
-                (my-dom/label nil "Address")
+                (my-dom/label nil "Full name")
                 (validate/input
-                  {:id           (:shipping.address/street form-inputs)
+                  {:id           (:shipping/name form-inputs)
                    :type         "text"
-                   :name         "ship-address"
-                   :autocomplete "shipping address-line1"}
-                  input-validation))
-              (my-dom/div
-                (->> (css/grid-column)
-                     (css/grid-column-size {:small 12 :medium 4}))
-                (my-dom/label nil "Apt/Suite/Other")
-                (validate/input
-                  {:type         "text"
-                   :id           (:shipping.address/street2 form-inputs)
-                   :name         "ship-address"
-                   :autocomplete "shipping address-line2"}
+                   :name         "name"
+                   :autocomplete "name"}
                   input-validation)))
             (my-dom/div
               (css/grid-row)
               (my-dom/div
-                (->> (css/grid-column)
-                     (css/grid-column-size {:small 12 :large 4}))
-                (my-dom/label nil "City")
-                (validate/input
-                  {:type         "text"
-                   :id           (:shipping.address/locality form-inputs)
-                   :name         "ship-city"
-                   :autocomplete "shipping locality"}
-                  input-validation))
-              (my-dom/div
                 (->> (css/grid-column))
-                (my-dom/label nil "Province")
-                (my-dom/select
-                  {:id           (:shipping.address/region form-inputs)
-                   :name         "ship-state"
-                   :autocomplete "shipping region"}
-                  ;input-validation
-                  (dom/option #js {} "Select Province")
-                  (dom/option #js {:value "bc"} "British Columbia")))
+                (my-dom/label nil "Search address")
+                (dom/input #js {:id      "auto-complete"
+                                :type    "text"
+                                :onFocus #(geo-locate this)})))
+            (dom/hr nil)
+            (dom/div nil
               (my-dom/div
-                (css/grid-column)
-                (my-dom/label nil "Postal code")
-                (validate/input
-                  {:id           (:shipping.address/postal form-inputs)
-                   :type         "text"
-                   :name         "ship-zip"
-                   :autocomplete "shipping postal-code"}
-                  input-validation)))))
+                (css/grid-row)
+                (my-dom/div
+                  (->> (css/grid-column))
+                  (my-dom/label nil "Country")
+                  (my-dom/select
+                    {:id           (:shipping.address/country form-inputs)
+                     :name         "ship-country"
+                     :autocomplete "shipping country"}
+                    ;input-validation
+                    (dom/option #js {:value "CA"} "Canada")
+                    (dom/option #js {:value "SE"} "Sweden")
+                    (dom/option #js {:value "US"} "United States"))))
 
-        (my-dom/div (css/text-align :right)
-                    (dom/a #js {:className "button"
-                                :onClick   #(.save-shipping this)}
-                           "Next"))))))
+
+              (my-dom/div
+                (css/grid-row)
+                (my-dom/div
+                  (->> (css/grid-column)
+                       (css/grid-column-size {:small 12 :medium 8}))
+                  (my-dom/label nil "Address")
+                  (validate/input
+                    {:id           (:shipping.address/street form-inputs)
+                     :type         "text"
+                     :name         "ship-address"
+                     :autocomplete "shipping address-line1"}
+                    input-validation))
+                (my-dom/div
+                  (->> (css/grid-column)
+                       (css/grid-column-size {:small 12 :medium 4}))
+                  (my-dom/label nil "Apt/Suite/Other")
+                  (validate/input
+                    {:type         "text"
+                     :id           (:shipping.address/street2 form-inputs)
+                     :name         "ship-address"
+                     :autocomplete "shipping address-line2"}
+                    input-validation)))
+              (my-dom/div
+                (css/grid-row)
+                (my-dom/div
+                  (->> (css/grid-column)
+                       (css/grid-column-size {:small 12 :large 4}))
+                  (my-dom/label nil "City")
+                  (validate/input
+                    {:type         "text"
+                     :id           (:shipping.address/locality form-inputs)
+                     :name         "ship-city"
+                     :autocomplete "shipping locality"}
+                    input-validation))
+                (my-dom/div
+                  (->> (css/grid-column))
+                  (my-dom/label nil "Province")
+                  (my-dom/select
+                    {:id           (:shipping.address/region form-inputs)
+                     :name         "ship-state"
+                     :autocomplete "shipping region"}
+                    ;input-validation
+                    (dom/option #js {} "Select Province")
+                    (dom/option #js {:value "bc"} "British Columbia")))
+                (my-dom/div
+                  (css/grid-column)
+                  (my-dom/label nil "Postal code")
+                  (validate/input
+                    {:id           (:shipping.address/postal form-inputs)
+                     :type         "text"
+                     :name         "ship-zip"
+                     :autocomplete "shipping postal-code"}
+                    input-validation))))
+
+            (my-dom/div (css/text-align :right)
+                        (dom/a #js {:className "button"
+                                    :onClick   #(.save-shipping this)}
+                               "Next"))))))))
 
 (def ->CheckoutShipping (om/factory CheckoutShipping))

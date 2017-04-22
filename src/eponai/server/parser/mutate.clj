@@ -211,10 +211,12 @@
              (store/delete-product env (:db/id product)))})
 
 (defmutation store/create-order
-  [{::parser/keys [return] :as env} _ {:keys [order store-id] :as p}]
+  [{::parser/keys [return exception] :as env} _ {:keys [order store-id] :as p}]
   {:auth {::auth/store-owner store-id}
    :resp {:success return
-          :error   "Could not create order"}}
+          :error   (if (some? exception)
+                     (.getMessage exception)
+                     "Could not create order")}}
   {:action (fn []
              (store/create-order env store-id order))})
 

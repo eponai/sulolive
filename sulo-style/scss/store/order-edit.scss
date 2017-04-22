@@ -22,6 +22,9 @@
 			color: $action-color;
 			font-weight: $global-weight-bold;
 		}
+		.sl-orderlist-cell--icon {
+			width: 3rem;
+		}
 		&.sl-orderlist-row--returned, 
 		&.sl-orderlist-row--canceled {
 			color: $dark-gray;

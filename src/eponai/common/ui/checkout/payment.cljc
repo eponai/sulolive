@@ -6,7 +6,8 @@
     [om.next :as om :refer [defui]]
     #?(:cljs
        [eponai.web.utils :as utils])
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.common.ui.elements.grid :as grid]))
 
 (def stripe-key "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")
 (def stripe-card-element "sulo-card-element")
@@ -68,23 +69,27 @@
            (om/update-state! this assoc :card card :stripe stripe)))))
 
   (render [this]
-    (let [{:keys [payment-error card]} (om/get-state this)]
+    (let [{:keys [payment-error card]} (om/get-state this)
+          {:keys [collapse? error]} (om/props this)]
       (dom/div nil
-        (dom/h3 nil "Payment")
         (my-dom/div
           (css/add-class ::css/callout)
+          (dom/h3 nil "Payment")
           (my-dom/div
-            (css/grid-row)
-            (my-dom/div
-              (->> (css/grid-column))
-              (dom/label #js {:htmlFor   "sulo-card-element"} "Card")
-              (dom/div #js {:id "sulo-card-element"})
-              (dom/div #js {:id        "card-errors"
-                            :className "text-center"}
-                (dom/small nil payment-error)))))
-        (my-dom/div (css/text-align :right)
-                    (dom/a #js {:className "button"
-                                :onClick   #(.save-payment this)}
-                           "Next"))))))
+            (when collapse?
+              (css/add-class :hide))
+            (grid/row
+              nil
+              (my-dom/div
+                (->> (css/grid-column))
+                (dom/label #js {:htmlFor "sulo-card-element"} "Card")
+                (dom/div #js {:id "sulo-card-element"})
+                (dom/div #js {:id        "card-errors"
+                              :className "text-center"}
+                  (dom/small nil (or error payment-error)))))
+            (my-dom/div (css/text-align :right)
+                        (dom/a #js {:className "button"
+                                    :onClick   #(.save-payment this)}
+                               "Complete purchase"))))))))
 
 (def ->CheckoutPayment (om/factory CheckoutPayment))

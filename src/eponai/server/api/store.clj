@@ -5,7 +5,8 @@
     [eponai.server.external.aws-s3 :as s3]
     [eponai.server.external.stripe :as stripe]
     [taoensso.timbre :refer [debug info]]
-    [eponai.common.format :as cf]))
+    [eponai.common.format :as cf])
+  (:import (com.stripe.exception CardException)))
 
 (defn retracts [old-entities new-entities]
   (let [removed (filter #(not (contains? (into #{} (map :db/id new-entities)) (:db/id %))) old-entities)]
@@ -77,27 +78,38 @@
 
 (defn create-order [{:keys [state system auth]} store-id {:keys [items source shipping]}]
   (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)
+        {:keys [shipping/address]} shipping
         order (f/order {:order/items    items
                         :order/uuid     (db/squuid)
                         :order/shipping shipping
                         :order/user     [:user/email (:email auth)]
-                        :order/store    store-id})
-        result-db (:db-after (db/transact-one state order))]
+                        :order/store    store-id})]
     (when source
-      (let [charge (stripe/create-charge (:system/stripe system) secret {:amount          "1000"
-                                                                         :application_fee "200"
-                                                                         :currency        "cad"
-                                                                         :source          source
-                                                                         :metadata        {:order_uuid (:order/uuid order)}})
+      (let [charge (try
+                     (stripe/create-charge (:system/stripe system) secret {:amount          "1000"
+                                                                           :application_fee "200"
+                                                                           :currency        "cad"
+                                                                           :source          source
+                                                                           :metadata        {:order_uuid (:order/uuid order)}
+                                                                           :shipping        {:name    (:shipping/name shipping)
+                                                                                             :address {:line1       (:shipping.address/street address)
+                                                                                                       :line2       (:shipping.address/street2 address)
+                                                                                                       :postal_code (:shipping.address/postal address)
+                                                                                                       :city        (:shipping.address/locality address)
+                                                                                                       :state       (:shippind.address/region address)
+                                                                                                       :country     (:shipping.address/country address)}}})
+                     (catch CardException e
+                       (throw (ex-info (.getMessage e)
+                                       {:message (.getMessage e)}))))
             charge-entity {:db/id     (db/tempid :db.part/user)
                            :charge/id (:charge/id charge)}
             is-paid? (:charge/paid? charge)
-            order-status (if is-paid? :order.status/paid :order.status/created)]
-        (db/transact state [charge-entity
-                            [:db/add [:order/uuid (:order/uuid order)] :order/charge (:db/id charge-entity)]
-                            [:db/add [:order/uuid (:order/uuid order)] :order/status order-status]])))
-    ;; Return order entity to redirect in the client
-    (db/pull result-db [:db/id] [:order/uuid (:order/uuid order)])))
+            order-status (if is-paid? :order.status/paid :order.status/created)
+            charged-order (assoc order :order/status order-status :order/charge (:db/id charge-entity))
+            result-db (:db-after (db/transact state [charge-entity
+                                                     charged-order]))]
+        ;; Return order entity to redirect in the client
+        (db/pull result-db [:db/id] [:order/uuid (:order/uuid order)])))))
 
 (defn update-order [{:keys [state system]} store-id order-id {:keys [order/status]}]
   (let [old-order (db/pull (db/db state) [:db/id :order/status {:order/charge [:charge/id]}] order-id)
