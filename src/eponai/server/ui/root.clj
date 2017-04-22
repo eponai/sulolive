@@ -21,7 +21,6 @@
           (dom/div #js {:height "100%" :id router/dom-app-id}
             app-html)
 
-          (common/red5pro-script-tags release?)
           ;; (common/auth0-lock-passwordless release?)
           (common/auth0-lock release?)
 
