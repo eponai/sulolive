@@ -3,17 +3,17 @@
     [eponai.web.utils :as web-utils]
     [taoensso.timbre :refer [debug]]))
 
-(defn place->address [place]
+(defn place->address [^js/google.maps.places.PlaceResult place]
   (when place
     (let [address-comps (.-address_components place)
           address-name (.-name place)
-          ret (reduce (fn [m c]
-                    (let [k (keyword (first (.-types c)))
-                          v {:short (.-short_name c)
-                             :long (.-long_name c)}]
-                      (assoc m k v)))
+          ret (reduce (fn [m ^js/google.maps.GeocoderAddressComponent c]
+                        (let [k (keyword (first (.-types c)))
+                              v {:short (.-short_name c)
+                                 :long  (.-long_name c)}]
+                          (assoc m k v)))
                       {:address {:short address-name :long address-name}}
-                  address-comps)]
+                      address-comps)]
       (debug "Ret : " ret)
       ret)))
 
