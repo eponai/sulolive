@@ -12,8 +12,7 @@
     [eponai.common.ui.index :as index]
     [eponai.common.ui.product :as product]
     [eponai.common.ui.streams :as streams]
-    [eponai.common.ui.user :as user]
-    [eponai.common.ui.settings :as settings]))
+    [eponai.common.ui.user :as user]))
 
 (def dom-app-id "the-sulo-app")
 
@@ -44,8 +43,6 @@
                      :factory   streams/->Streams}
    :user            {:component user/User
                      :factory   user/->User}
-   :settings        {:component settings/Settings
-                     :factory   settings/->Settings}
    :login           {:component index/Login
                      :factory   index/->Login}
    :unauthorized    {:component index/Unauthorized
