@@ -85,15 +85,37 @@
 		p {
 			margin-bottom: 0;
 		}
+		border: none;
 		.sl-OrderItemlist-cell--price {
 			font-weight: $global-weight-bold;
 		}
 		&.sl-OrderItemlist-row--shipping, 
 		&.sl-OrderItemlist-row--tax {
 			font-size: 85%;
+			border: none;
 		}
 		&.sl-OrderItemlist-row--shipping {
-			border-top: $global-border-secondary;
+			// border-top: $global-border-secondary;
+		}
+	}
+	.tfoot {
+		.sl-OrderItemlist-row {
+			border-bottom: $global-border;
+		}
+		.sl-OrderItemlist-row--fee {
+			font-weight: $global-weight-normal;
+			background: $white;
+			.td {
+				font-weight: inherit;
+			}
+
+			.dropdown-pane {
+				p {
+					display: flex;
+					justify-content: space-between;
+					margin-bottom: 0.2rem;
+				}
+			}
 		}
 	}
 }

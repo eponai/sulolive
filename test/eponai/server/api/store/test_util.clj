@@ -15,7 +15,7 @@
         location))))
 
 (defn stripe-test-payment-succeeded [chan]
-  (reify stripe/IStripeAccount
+  (reify stripe/IStripeConnect
     (-create-charge [_ _ params]
       (async/put! chan params)
       {:charge/id    (:source params)
@@ -25,7 +25,7 @@
       {:refund/charge charge})))
 
 (defn stripe-test-payment-failed [chan]
-  (reify stripe/IStripeAccount
+  (reify stripe/IStripeConnect
     (-create-charge [_ _ params]
       (async/put! chan params)
       {:charge/id    (:source params)

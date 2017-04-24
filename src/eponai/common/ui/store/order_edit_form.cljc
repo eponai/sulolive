@@ -43,6 +43,9 @@
    :modal/mark-as-returned?  "Yes, return order!"
    :modal/mark-as-canceled?  "Yes, cancel order!"})
 
+(def dropdowns
+  {:dropdown/sulo-fee "dropdown-sulo-fee"})
+
 (defn item-cell [opts & content]
   (table/td (css/add-class :sl-OrderItemlist-cell opts) content))
 
@@ -77,6 +80,7 @@
 
 (defn edit-order [component]
   (let [{:keys [query/order]} (om/props component)
+        {:keys [dropdown]} (om/get-state component)
         {:order/keys [id amount currency items]} order
 
         skus (filter #(= :order.item.type/sku (:order.item/type %)) items)
@@ -84,9 +88,12 @@
         shipping (some #(when (= :shipping (:order.item/type %)) %) items)
         order-created (when-some [created (:order/created order)]
                         (date/date->string (* 1000 created) "MMM dd yyyy HH:mm"))
+        grouped-orders (group-by :order.item/type items)
+        subtotal (reduce + 0 (map :order.item/price (:order.item.type/sku grouped-orders)))
 
         ;order (assoc order :order/status :order.status/returned)
         order-email (get-in order [:order/user :user/email])
+        total-amount (reduce + 0 (map :order.item/price items))
         order-status (:order/status order)]
     (dom/div
       nil
@@ -257,14 +264,15 @@
                         (item-cell
                           (css/add-class :sl-OrderItemlist-cell--price)
                           (dom/span nil (two-decimal-price (:store.item/price product)))))))
-                  skus)
-                (table/thead-row
-                  (->> (css/add-class :sl-OrderItemlist-row)
-                       (css/add-class :sl-OrderItemlist-row--shipping))
-                  (item-cell (css/add-class :sl-OrderItemlist-cell--id) (dom/span nil "Shipping"))
-                  (item-cell (css/add-class :sl-OrderItemlist-cell--description) (dom/span nil "Free shipping"))
-                  (item-cell nil)
-                  (item-cell (css/add-class :sl-OrderItemlist-cell--price) (dom/span nil (two-decimal-price 0))))
+                  (:order.item.type/sku grouped-orders))
+                (let [shipping-item (first (:order.item.type/shipping grouped-orders))]
+                  (table/thead-row
+                    (->> (css/add-class :sl-OrderItemlist-row)
+                         (css/add-class :sl-OrderItemlist-row--shipping))
+                    (item-cell (css/add-class :sl-OrderItemlist-cell--id) (dom/span nil "Shipping"))
+                    (item-cell (css/add-class :sl-OrderItemlist-cell--description) (dom/span nil "Free shipping"))
+                    (item-cell nil)
+                    (item-cell (css/add-class :sl-OrderItemlist-cell--price) (dom/span nil (two-decimal-price (:order.item/price shipping-item))))))
                 (table/thead-row
                   (->> (css/add-class :sl-OrderItemlist-row)
                        (css/add-class :sl-OrderItemlist-row--tax))
@@ -276,11 +284,36 @@
                 nil
                 (table/thead-row
                   (->> (css/add-class :sl-OrderItemlist-row)
-                       (css/add-class :sl-OrderItemlist-row--footer))
+                       (css/add-class :sl-OrderItemlist-row--fee))
+                  (item-cell (css/add-class :sl-OrderItemlist-cell--id)
+                             (dom/p nil
+                                    (dom/span nil "Fee")
+                                    (dom/span
+                                      (css/add-class :dropdown-trigger)
+                                      (dom/a
+                                        {:onClick #(.open-dropdown component :dropdown/sulo-fee)}
+                                        (dom/i {:classes ["fa fa-question-circle-o fa-fw"]}))
+                                      (dom/div
+                                        (cond->> (css/add-class :dropdown-pane)
+                                                 (= dropdown :dropdown/sulo-fee)
+                                                 (css/add-class :is-open))
+                                        (dom/p nil (dom/small nil "SULO Live service fee: ")
+                                               (dom/small nil (two-decimal-price (* 0.2 subtotal))))
+                                        (dom/p nil (dom/small nil "Stripe transaction fee: ")
+                                               (dom/small nil (two-decimal-price (* 0.029 total-amount))))))))
+                  (item-cell (css/add-class :sl-OrderItemlist-cell--description)
+                             ;(dom/span nil "SULO Live fee")
+                             (dom/p nil (dom/span nil "Service fee"))
+                             )
+                  (item-cell nil)
+                  (item-cell (css/add-class :sl-OrderItemlist-cell--price) (dom/span nil (two-decimal-price (+ (* 0.029 total-amount) (* 0.2 subtotal))))))
+                (table/thead-row
+                  (->> (css/add-class :sl-OrderItemlist-row)
+                       (css/add-class :sl-OrderItemlist-row--total))
                   (item-cell (css/add-class :sl-OrderItemlist-cell--id) (dom/span nil "Total"))
                   (item-cell nil)
                   (item-cell nil)
-                  (item-cell (css/add-class :sl-OrderItemlist-cell--price) (dom/span nil (two-decimal-price 0))))))))))))
+                  (item-cell (css/add-class :sl-OrderItemlist-cell--price) (dom/span nil (two-decimal-price (:order/amount order)))))))))))))
 
 (defn create-order [component]
   (let [{:keys [products]} (om/get-computed component)]
@@ -339,9 +372,13 @@
     [:query/messages
      {:query/order [:db/id
                     {:order/items [:order.item/type
+                                   :order.item/price
                                    {:order.item/parent [:store.item.sku/variation {:store.item/_skus [:db/id :store.item/name :store.item/price]}]}]}
+                    :order/amount
                     :order/status
-                    {:order/charge [:charge/id]}
+                    :order/subtotal
+                    {:order/charge [:charge/id
+                                    :charge/amount]}
                     {:order/user [:user/email]}
                     {:order/shipping [:shipping/name
                                       {:shipping/address [:shipping.address/country
@@ -353,14 +390,31 @@
                     {:order/store [:store/name {:store/photo [:photo/path]}]}]}
      :query/current-route])
   Object
+  #?(:cljs
+     (open-dropdown
+       [this dd-key]
+       (let [{:keys [on-dropdown-close]} (om/get-state this)]
+         (om/update-state! this assoc :dropdown dd-key)
+         (.addEventListener js/document "click" on-dropdown-close))))
+
+  #?(:cljs
+     (close-dropdown
+       [this click-event]
+       (let [{:keys [dropdown on-dropdown-close]} (om/get-state this)
+             open-dropdown-id (get dropdowns dropdown)]
+         (when-not (= (.-id (.-target click-event)) open-dropdown-id)
+           (om/update-state! this dissoc :dropdown)
+           (.removeEventListener js/document "click" on-dropdown-close)))))
+
   (update-order [this params]
     (let [{:keys [order-id store-id]} (get-route-params this)]
       (msg/om-transact! this `[(store/update-order ~{:params   params
                                                      :order-id order-id
                                                      :store-id store-id})
                                :query/order])))
-  (initLocalState [_]
-    {:items #{}})
+  (initLocalState [this]
+    {:items             #{}
+     :on-dropdown-close (fn [dropdown-key] (.close-dropdown this dropdown-key))})
   (componentDidMount [this]
     (om/update-state! this assoc :did-mount? true))
 

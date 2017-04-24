@@ -35,7 +35,7 @@
   (-create-customer [this account-id opts])
   ;; Charges
   (-create-charge [this params])
-  (-create-refund [this account-secret params]))
+  (-create-refund [this params]))
 
 
 (defn- set-api-key [api-key]
@@ -66,8 +66,8 @@
 (defn create-charge [stripe params]
   (-create-charge stripe params))
 
-(defn create-refund [stripe account-secret params]
-  (-create-refund stripe account-secret params))
+(defn create-refund [stripe params]
+  (-create-refund stripe params))
 
 
 ;; ########### Stripe objects ################
@@ -132,10 +132,10 @@
        :charge/id     (.getId charge)
        :charge/paid?  (.getPaid charge)}))
 
-  (-create-refund [_ account-secret {:keys [charge] :as params}]
-    (set-api-key account-secret)
-    (let [params {"charge"                 charge
-                  "refund_application_fee" true}
+  (-create-refund [_ {:keys [charge] :as params}]
+    (set-api-key api-key)
+    (let [params {"charge"           charge
+                  "reverse_transfer" true}
           refund (Refund/create params)]
       (debug "Created refund: " refund)
       {:refund/status (.getStatus refund)
@@ -145,6 +145,7 @@
 ;; ################## Public ##################
 
 (defn stripe [api-key]
+
   (->StripeRecord api-key))
 
 (defn stripe-stub []

@@ -79,17 +79,23 @@
 (defn create-order [{:keys [state system auth]} store-id {:keys [items source shipping subtotal shipping-fee]}]
   (let [{:keys [stripe/id]} (stripe/pull-stripe (db/db state) store-id)
         {:keys [shipping/address]} shipping
-        order (f/order {:order/items    items
-                        :order/uuid     (db/squuid)
-                        :order/shipping shipping
-                        :order/user     (:user-id auth)
-                        :order/store    store-id})]
+
+        total-amount (+ subtotal shipping-fee)
+        application-fee (* 0.2 subtotal)                    ;Convert to cents for Stripe
+        transaction-fee (* 0.029 total-amount)
+        destination-amount (- total-amount (+ application-fee transaction-fee))
+
+        order (-> (f/order {:order/items    items
+                            :order/uuid     (db/squuid)
+                            :order/shipping shipping
+                            :order/user     (:user-id auth)
+                            :order/store    store-id
+                            :order/amount   (bigdec destination-amount)})
+                  (update :order/items conj {:order.item/type  :order.item.type/shipping
+                                             :order.item/price (bigdec shipping-fee)}))]
     (when source
-      (let [total-amount (* 100 (+ subtotal shipping-fee))  ;Convert to cents for Stripe
-            application-fee (* 100 (* 0.2 subtotal))        ;Convert to cents for Stripe
-            transaction-fee (* 0.029 total-amount)
-            charge (try
-                     (stripe/create-charge (:system/stripe system) {:amount      (int total-amount)
+      (let [charge (try
+                     (stripe/create-charge (:system/stripe system) {:amount      (int (* 100 total-amount)) ;Convert to cents for Stripe
                                                                     ;:application_fee (int (+ application-fee transaction-fee))
                                                                     :currency    "cad"
                                                                     :source      source
@@ -102,7 +108,7 @@
                                                                                             :state       (:shipping.address/region address)
                                                                                             :country     (:shipping.address/country address)}}
                                                                     :destination {:account id
-                                                                                  :amount  (int (- total-amount (+ application-fee transaction-fee)))}})
+                                                                                  :amount  (int (* 100 destination-amount))}}) ;Convert to cents for Stripe
                      (catch CardException e
                        (throw (ex-info (.getMessage e)
                                        {:message (.getMessage e)}))))
@@ -126,8 +132,7 @@
     (if is-status-transition-allowed?
       (let [should-refund? (contains? #{:order.status/canceled :order.status/returned} status)]
         (when should-refund?
-          (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)]
-            (stripe/create-refund (:system/stripe system) secret {:charge (get-in old-order [:order/charge :charge/id])})))
+          (stripe/create-refund (:system/stripe system) {:charge (get-in old-order [:order/charge :charge/id])}))
         (db/transact state [[:db/add order-id :order/status status]]))
       (throw (ex-info (str "Order status transition not allowed, " status " can only transition to " (get allowed-transitions status))
                       {:order-status        status
