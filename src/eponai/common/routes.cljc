@@ -58,7 +58,6 @@
         "shopping-bag"                :shopping-bag
         "business"                    :business
         ["user/" [#"\d+" :user-id]]   user-routes
-        "settings"                    :settings
         "auth"                        :auth
         "login"                       :login
         "unauthorized"                :unauthorized}])
@@ -72,8 +71,6 @@
     (#{:user/profile :user/order :user/order-list} handler)
     ::auth/exact-user
     (= handler :checkout)
-    ::auth/any-user
-    (= handler :settings)
     ::auth/any-user
     :else
     ::auth/public))

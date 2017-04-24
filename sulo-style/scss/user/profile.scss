@@ -1,6 +1,6 @@
 #sulo-profile {
 	.header {
-		border-bottom: 1px solid $light-gray;
+		// border-bottom: 1px solid $light-gray;
 	}
 	.user-info {
 		h1 {
@@ -20,6 +20,43 @@
 				cursor: pointer;
 			}
 		}
+	}
+	.tabs {
+		display: flex;
+		margin: 0 auto;
+		justify-content: center;
+		overflow-x: auto;
+		border: none;
+		border-bottom: $global-border;
+		.tabs-title {
+			a {
+				.stat {
+					font-size: 125%;
+				}
+				padding: 1rem;
+				@include breakpoint(medium) {
+					padding: 1rem 1.5rem;
+				}
+			}
+			margin-right: 0.2rem;
+			transition: all .25s ease-in-out;
+			border-bottom: 3px solid transparent;
+			&:hover, &.is-active {
+				$border-color: map-get($foundation-palette, primary);
+				border-bottom: 3px solid $border-color;
+				a {
+					color: $black;
+				}
+			}
+			&.is-active {
+				a {
+					font-weight: $global-weight-bold;
+				}
+			}
+		}
+	}
+	.tabs-content {
+		border: none;
 	}
 }
 

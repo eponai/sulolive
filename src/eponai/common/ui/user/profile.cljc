@@ -5,6 +5,7 @@
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.elements.grid :as grid]
+    [eponai.common.ui.icons :as icons]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.photo :as photo]
@@ -19,7 +20,7 @@
         {:proxy/photo-upload (om/get-query pu/PhotoUploader)})])
   Object
   (initLocalState [_]
-    {:tab          :following
+    {:tab          :favorites
      :file-upload? false
      ;;TODO: Resolve s3 paths to cloudfront paths
      ;;"https://s3.amazonaws.com/sulo-images/site/collection-women.jpg"
@@ -33,6 +34,7 @@
           photo-url (or (get-in user [:user/photo :photo/path]) photo-url)]
       (dom/div
         {:id "sulo-profile"}
+        (common/wip-label this)
         (dom/div
           (css/add-class :header)
           (when file-upload?
@@ -90,27 +92,62 @@
                     (dom/span nil "Edit Profile"))
                   (dom/a
                     (css/button)
-                    (dom/span nil "+ Follow")))))
+                    (dom/span nil "+ Follow")))))))
 
-            (grid/row-column
-              nil
-              (menu/horizontal
-                (css/align :center)
-                (menu/item-tab {:active?  (= tab :following)
-                                :on-click #(om/update-state! this assoc :tab :following)} "Following")
-                (menu/item-tab {:active?  (= tab :followers)
-                                :on-click #(om/update-state! this assoc :tab :followers)} "Followers")
-                (menu/item-tab {:active?  (= tab :products)
-                                :on-click #(om/update-state! this assoc :tab :products)} "Products")
-                (menu/item-tab {:active?  (= tab :about)
-                                :on-click #(om/update-state! this assoc :tab :about)} "About")))))
+        ;(grid/row-column
+        ;  nil)
+        (dom/ul
+          (css/add-class :tabs (css/align :center))
+          (menu/item-tab
+            {:is-active? (= tab :favorites)}
+            (dom/a {:onClick #(om/update-state! this assoc :tab :products)}
+                   (dom/strong (css/add-class :stat) "0")
+                   (dom/span nil " favorites")))
+          (menu/item-tab
+            {:is-active? (= tab :followers)}
+            (dom/a {:onClick #(om/update-state! this assoc :tab :followers)}
+                   (dom/strong (css/add-class :stat) "0")
+                   (dom/span nil " followers")))
+          (menu/item-tab
+            {:is-active? (= tab :following)}
+            (dom/a {:onClick #(om/update-state! this assoc :tab :following)}
+                   (dom/strong (css/add-class :stat) "0")
+                   (dom/span nil " following")))
+          ;(menu/item-tab
+          ;  {:is-active? (= tab :about)}
+          ;  (dom/a {:onClick #(om/update-state! this assoc :tab :about)}
+          ;         (dom/span nil "About")))
+          )
         (grid/row-column
-          (css/text-align :center)
-          (condp = tab
-            :following (dom/div (css/callout) (dom/span nil "NOt following anyone :("))
-            :followers (dom/div (css/callout) (dom/span nil "NO follwers yet"))
-            :products (dom/div (css/callout) (dom/span nil "No products"))
-            :about (dom/div (css/callout) (dom/span nil "Abount section")))))
-      )))
+          nil
+          (dom/div
+            (css/add-class :tabs-content)
+            (dom/div
+              (cond->> (css/add-class :tabs-panel)
+                       (= tab :following)
+                       (css/add-class :is-active))
+              (dom/div
+                (css/text-align :center)
+                (dom/p nil "Your're not following anyone yet"))))
+
+          (dom/div
+            (css/add-class :tabs-content)
+            (dom/div
+              (cond->> (css/add-class :tabs-panel)
+                       (= tab :followers)
+                       (css/add-class :is-active))
+              (dom/div
+                (css/text-align :center)
+                (dom/p nil "Your don't have any followers yet :("))))
+
+          (dom/div
+            (css/add-class :tabs-content)
+            (dom/div
+              (cond->> (css/add-class :tabs-panel)
+                       (= tab :favorites)
+                       (css/add-class :is-active))
+              (dom/div
+                (css/text-align :center)
+                (dom/p nil "No favorites")))))))))
 
 (def ->Profile (om/factory Profile))

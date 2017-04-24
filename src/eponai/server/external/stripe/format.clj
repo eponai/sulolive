@@ -112,23 +112,24 @@
 ; :field/external-account             "external_account"}
 
 (defn input->legal-entity [legal-entity]
-  (let [{:field.legal-entity/keys [type address business-name business-tax-id first-name last-name dob]} legal-entity
+  (let [{:field.legal-entity/keys [type address business-name business-tax-id first-name last-name dob personal-id-number]} legal-entity
         {:field.legal-entity.address/keys [line1 postal city state]} address
         {:field.legal-entity.dob/keys [day month year]} dob
         ]
     (f/remove-nil-keys
-      {:first_name first-name
-       :last_name  last-name
-       :dob        (f/remove-nil-keys
-                     {:day   day
-                      :month month
-                      :year  year})
-       :address    (f/remove-nil-keys
-                     {:city        city
-                      :line1       line1
-                      :postal_code postal
-                      :state       state})
-       :type       (when (some? type) (name type))})))
+      {:first_name         first-name
+       :last_name          last-name
+       :dob                (f/remove-nil-keys
+                             {:day   day
+                              :month month
+                              :year  year})
+       :address            (f/remove-nil-keys
+                             {:city        city
+                              :line1       line1
+                              :postal_code postal
+                              :state       state})
+       :type               (when (some? type) (name type))
+       :personal_id_number personal-id-number})))
 
 (defn input->payout-schedule [ps]
   (let [{:field.payout-schedule/keys [interval month-anchor week-anchor]} ps]
