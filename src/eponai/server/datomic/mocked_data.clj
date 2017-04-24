@@ -2,7 +2,9 @@
   (:require
     [eponai.common.database :as db]
     [clojure.string :as str]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [medley.core :as medley]
+    [clojure.walk :as walk]))
 
 (defn missing-personal-id-account []
   {:stripe/id     "acct_19k3ozC0YaFL9qxh"
@@ -61,6 +63,9 @@
     #:category{:path  (str/join name-separator name-parts)
                :label (str/capitalize (str/join " " name-parts))}))
 
+(defn hash-map-by [f coll]
+  (into {} (map (juxt f identity)) coll))
+
 (def cats
   [#:category{:path     "clothing"
               :label    "Clothing"
@@ -76,31 +81,33 @@
    #:category{:path     "jewelry"
               :label    "Jewelry"
               :children (fn []
-                          (adult-category "Jewelry" {:unisex-adult (group-by :path [(leaf "earrings")
-                                                                                    (leaf "rings")
-                                                                                    (leaf "necklaces")])}))}
+                          (adult-category "Jewelry" {:unisex-adult (hash-map-by :category/path
+                                                                                [(leaf "earrings")
+                                                                                 (leaf "rings")
+                                                                                 (leaf "necklaces")])}))}
    #:category{:path  "home"
               :label "Home"}
    #:category{:path     "accessories"
               :label    "Accessories"
               :children (fn []
-                          (let [unisex-cats (group-by :path [(leaf "belt")
-                                                             (leaf "caps")
-                                                             (leaf "clothing" "accessories")
-                                                             (leaf "eyewear")
-                                                             (leaf "gloves")
-                                                             (leaf "hats")
-                                                             (leaf "keychains")
-                                                             (leaf "outdoor" "wear" "accessories")
-                                                             (leaf "patches")
-                                                             (leaf "rain" "accessories")
-                                                             (leaf "scarves")
-                                                             (leaf "shoe" "accessories")
-                                                             (leaf "special" "occasion" "accessories")
-                                                             (leaf "sunglasses")
-                                                             (leaf "tech" "accessories")
-                                                             (leaf "umbrellas")
-                                                             (leaf "watches")])]
+                          (let [unisex-cats (hash-map-by :category/path
+                                                         [(leaf "belt")
+                                                          (leaf "caps")
+                                                          (leaf "clothing" "accessories")
+                                                          (leaf "eyewear")
+                                                          (leaf "gloves")
+                                                          (leaf "hats")
+                                                          (leaf "keychains")
+                                                          (leaf "outdoor" "wear" "accessories")
+                                                          (leaf "patches")
+                                                          (leaf "rain" "accessories")
+                                                          (leaf "scarves")
+                                                          (leaf "shoe" "accessories")
+                                                          (leaf "special" "occasion" "accessories")
+                                                          (leaf "sunglasses")
+                                                          (leaf "tech" "accessories")
+                                                          (leaf "umbrellas")
+                                                          (leaf "watches")])]
                             (into
                               [#:category{:path     "childrens"
                                           :label    "Children's Accessories"
@@ -115,20 +122,25 @@
                                                                                 (assoc "socks" (leaf "socks"))
                                                                                 (assoc "wallets" (leaf "wallets")))}))))}])
 
-(defn category-path-separator "/")
+(def category-path-separator "/")
 
 (defn category-path [& path-parts]
   (str/join category-path-separator (cons "" path-parts)))
 
 (defn mock-categories3 []
   (letfn [(join-children-paths [category path]
+            (when (vector? category)
+              (debug "Got vector for category: " category " path: " path))
             (let [new-path (str/join category-path-separator [path (:category/path category)])]
-              (-> (assoc category :category/path new-path)
-                  (update :category/children (fn [children]
-                                               (->> (if (fn? children) (children) children)
-                                                    (into [] (map #(join-children-paths % new-path)))))))))]
-    (into [] (map #(join-children-paths % ""))
-          cats)))
+              (cond-> (assoc category :category/path new-path)
+                      (some? (:category/children category))
+                      (update :category/children (fn [children]
+                                                   (->> (if (fn? children) (children) children)
+                                                        (into [] (map #(join-children-paths % new-path)))))))))]
+    (->> cats
+         (into [] (map #(join-children-paths % "")))
+         ;; (walk/postwalk #(cond-> % (map? %) (assoc :db/id (db/tempid :db.part/user))))
+         )))
 
 (defn mock-stores []
   [
@@ -161,7 +173,7 @@
                         {:store.item/name       "Emerald silver choker"
                          :store.item/price      219.00M
                          :store.item/photos     [(item-photo "https://img1.etsystatic.com/178/0/6380862/il_570xN.1122315115_m1kt.jpg")]
-                         :store.item/category   [[:category/path (category-path "jewelry" "women" "necklaces")]]
+                         :store.item/category   [:category/path (category-path "jewelry" "women" "necklaces")]
                          :store.item/uuid       #uuid "58a4b2b8-4489-4661-9580-c0fe2d132966"
                          :store.item/skus       [{:store.item.sku/uuid      #uuid "58a4b2b8-9c8d-49e1-ab53-8d5c98374f79"
                                                   :store.item.sku/variation "L"
@@ -232,11 +244,11 @@
                   {:store.item/name       "Modern Geometric Wood Bead Necklace"
                    :store.item/price      134.00M
                    :store.item/photos     [(item-photo "https://imgix.ttcdn.co/i/product/original/0/175704-bae48bd385d64dc0bb6ebad3190cc317.jpeg?q=50&w=640&auto=format%2Ccompress&fm=jpeg")]
-                   :store.item/category [:category/path (category-path "accessories" "men" "necklaces")]}
+                   :store.item/category [:category/path (category-path "jewelry" "men" "necklaces")]}
                   {:store.item/name       "Modern Wood Teardrop Stud Earrings"
                    :store.item/price      34.00M
                    :store.item/photos     [(item-photo "https://imgix.ttcdn.co/i/product/original/0/175704-ba70e3b49b0f4a9084ce14f569d1cf60.jpeg?q=50&w=1000&auto=format%2Ccompress&fm=jpeg")]
-                   :store.item/category [:category/path (category-path "accessories" "men" "earrings")]}]}
+                   :store.item/category [:category/path (category-path "jewelry" "men" "earrings")]}]}
 
    ;; Nafsika
    {:db/id       (db/tempid :db.part/user)
@@ -274,15 +286,15 @@
                     {:store.item/name       "Tragus Earring"
                      :store.item/photos     [(item-photo "https://imgix.ttcdn.co/i/product/original/0/449892-7340ea71653e4b53a9057de4f64c1018.png?q=50&w=640&auto=format%2Ccompress&fm=jpeg")]
                      :store.item/price      4.49M
-                     :store.item/category [:category/path (category-path "jewelry" "women" "earring")]}
+                     :store.item/category [:category/path (category-path "jewelry" "women" "earrings")]}
                     {:store.item/name       "Nose Ring"
                      :store.item/photos     [(item-photo "https://imgix.ttcdn.co/i/product/original/0/449892-4603b04cdd4e4a41b281a4aff4a39fe0.png?q=50&w=640&auto=format%2Ccompress&fm=jpeg")]
                      :store.item/price      6.37M
-                     :store.item/category [:category/path (category-path "jewelry" "women" "ring")]}
+                     :store.item/category [:category/path (category-path "jewelry" "women" "rings")]}
                     {:store.item/name       "Nose Ring"
                      :store.item/photos     [(item-photo "https://imgix.ttcdn.co/i/product/original/0/449892-18406d9dfa7e449e8d36627c088c92c1.png?q=50&w=1000&auto=format%2Ccompress&fm=jpeg")]
                      :store.item/price      6.74M
-                     :store.item/category [:category/path (category-path "jewelry" "women" "ring")]}]}
+                     :store.item/category [:category/path (category-path "jewelry" "women" "rings")]}]}
 
    ;; BangiShop
    {:db/id       (db/tempid :db.part/user)
