@@ -52,7 +52,9 @@
          (let [items (filter #(= (c/parse-long store-id) (get-in % [:store.item/_skus :store/_items :db/id])) (:cart/items cart))]
            (msg/om-transact! this `[(store/create-order ~{:order    {:source   source
                                                                      :shipping shipping
-                                                                     :items    items}
+                                                                     :items    items
+                                                                     :shipping-fee 5
+                                                                     :subtotal (review/compute-item-price (:cart/items cart))}
                                                           :store-id (c/parse-long store-id)})])))))
 
   (initLocalState [_]
@@ -78,7 +80,10 @@
           {:checkout/keys [shipping payment]
            :keys [open-section error-message]} (om/get-state this)
           {:keys [route] } current-route
-          checkout-resp (msg/last-message this 'store/create-order)]
+          checkout-resp (msg/last-message this 'store/create-order)
+          subtotal (review/compute-item-price (:cart/items cart))
+          shipping-fee 5
+          grandtotal (+ subtotal shipping-fee)]
 
       (common/page-container
         {:navbar navbar :id "sulo-checkout"}
@@ -90,7 +95,9 @@
             (grid/column-size {:small 12 :medium 8 :large 8})
             (dom/div
               nil
-              (review/->CheckoutReview (:cart/items cart)))
+              (review/->CheckoutReview {:items (:cart/items cart)
+                                        :subtotal subtotal
+                                        :shipping shipping-fee}))
 
             (dom/div
               nil
@@ -104,7 +111,8 @@
               (dom/div
                 (when (not= open-section :payment)
                   (css/add-class :hide))
-                (pay/->CheckoutPayment (om/computed {:error     error-message}
+                (pay/->CheckoutPayment (om/computed {:error  error-message
+                                                     :amount grandtotal}
                                                     {:on-change #(do
                                                                   (om/update-state! this assoc :checkout/payment %)
                                                                   (.place-order this))}))))))))))

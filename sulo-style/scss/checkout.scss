@@ -27,11 +27,33 @@
 	}
 
 	.callout {
-		.items {
-			padding: 2rem 0;
+		.sl-CheckoutItemlist {
+			padding: 1rem 0;
 			border-top: $border;
 			border-bottom: $border;
 			margin-bottom: 0.5rem;
+			p {
+				margin: 0;
+			}
+			display: table;
+			width: 100%;
+			.sl-CheckoutItemlist-row {
+				display: table-row;
+				input {
+					max-width: 4rem;
+					// float: right;
+				}
+				.sl-CheckoutItemlist-cell {
+					display: table-cell;
+					vertical-align: top;
+					padding: 0.5rem;
+					font-size: 90%;
+					&.sl-CheckoutItemlist-cell--photo {
+						width: 3rem;
+						padding: 0.5rem 0;
+					}
+				}
+			}
 		}
 		.receipt {
 			.row {

@@ -32,12 +32,11 @@
 
   (-update-account [this account-id params])
 
-  (-create-customer [this account-id opts]))
-
-(defprotocol IStripeAccount
+  (-create-customer [this account-id opts])
   ;; Charges
-  (-create-charge [this account-secret params])
+  (-create-charge [this params])
   (-create-refund [this account-secret params]))
+
 
 (defn- set-api-key [api-key]
   (if (some? api-key)
@@ -64,8 +63,8 @@
     (s/assert :ext.stripe.params/update-account account)
     (-update-account stripe account-id account)))
 
-(defn create-charge [stripe account-secret params]
-  (-create-charge stripe account-secret params))
+(defn create-charge [stripe params]
+  (-create-charge stripe params))
 
 (defn create-refund [stripe account-secret params]
   (-create-refund stripe account-secret params))
@@ -124,10 +123,8 @@
        :secret (.getSecret keys)
        :publ   (.getPublishable keys)}))
 
-
-  IStripeAccount
-  (-create-charge [_ account-secret params]
-    (set-api-key account-secret)
+  (-create-charge [_ params]
+    (set-api-key api-key)
     (let [params (clojure.walk/stringify-keys params)
           charge (Charge/create params)]
       (debug "Created charge: " charge)
@@ -170,7 +167,6 @@
        :stripe/business-url      "My business URL"})
     (-create-customer [_ _ params]
       (debug "DEV - Fake Stripe: create-customer with params: " params))
-    IStripeAccount
 
     ;; Charge
-    (-create-charge [this account-secret params])))
+    (-create-charge [this params])))

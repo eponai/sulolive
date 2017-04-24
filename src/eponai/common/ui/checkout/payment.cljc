@@ -5,6 +5,7 @@
     [om.next :as om :refer [defui]]
     #?(:cljs
        [eponai.web.utils :as utils])
+    [eponai.common.ui.utils :refer [two-decimal-price]]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.callout :as callout]))
@@ -72,7 +73,7 @@
 
   (render [this]
     (let [{:keys [payment-error card]} (om/get-state this)
-          {:keys [collapse? error]} (om/props this)]
+          {:keys [error amount]} (om/props this)]
       (dom/div
         (css/add-class :checkout-payment)
         (dom/label {:htmlFor "sulo-card-element"} "Card")
@@ -84,6 +85,10 @@
                  (dom/a
                    (css/button {:onClick #(.save-payment this)})
                    (dom/span nil "Complete purchase"))
-                 (dom/p nil (dom/small nil "This sale will be processed as 178.80 US dollars.")))))))
+                 (dom/p nil
+                        (dom/small nil "This sale will be processed as ")
+                        (dom/small nil (two-decimal-price amount))
+                        (dom/small nil " US dollars."))
+                 )))))
 
 (def ->CheckoutPayment (om/factory CheckoutPayment))

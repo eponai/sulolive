@@ -76,8 +76,8 @@
   (let [store (db/lookup-entity (db/db state) store-id)]
     (assoc o :order/store store :order/user user-id)))
 
-(defn create-order [{:keys [state system auth]} store-id {:keys [items source shipping]}]
-  (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)
+(defn create-order [{:keys [state system auth]} store-id {:keys [items source shipping subtotal shipping-fee]}]
+  (let [{:keys [stripe/id]} (stripe/pull-stripe (db/db state) store-id)
         {:keys [shipping/address]} shipping
         order (f/order {:order/items    items
                         :order/uuid     (db/squuid)
@@ -85,19 +85,24 @@
                         :order/user     (:user-id auth)
                         :order/store    store-id})]
     (when source
-      (let [charge (try
-                     (stripe/create-charge (:system/stripe system) secret {:amount          "1000"
-                                                                           :application_fee "200"
-                                                                           :currency        "cad"
-                                                                           :source          source
-                                                                           :metadata        {:order_uuid (:order/uuid order)}
-                                                                           :shipping        {:name    (:shipping/name shipping)
-                                                                                             :address {:line1       (:shipping.address/street address)
-                                                                                                       :line2       (:shipping.address/street2 address)
-                                                                                                       :postal_code (:shipping.address/postal address)
-                                                                                                       :city        (:shipping.address/locality address)
-                                                                                                       :state       (:shipping.address/region address)
-                                                                                                       :country     (:shipping.address/country address)}}})
+      (let [total-amount (* 100 (+ subtotal shipping-fee))  ;Convert to cents for Stripe
+            application-fee (* 100 (* 0.2 subtotal))        ;Convert to cents for Stripe
+            transaction-fee (* 0.029 total-amount)
+            charge (try
+                     (stripe/create-charge (:system/stripe system) {:amount      (int total-amount)
+                                                                    ;:application_fee (int (+ application-fee transaction-fee))
+                                                                    :currency    "cad"
+                                                                    :source      source
+                                                                    :metadata    {:order_uuid (:order/uuid order)}
+                                                                    :shipping    {:name    (:shipping/name shipping)
+                                                                                  :address {:line1       (:shipping.address/street address)
+                                                                                            :line2       (:shipping.address/street2 address)
+                                                                                            :postal_code (:shipping.address/postal address)
+                                                                                            :city        (:shipping.address/locality address)
+                                                                                            :state       (:shipping.address/region address)
+                                                                                            :country     (:shipping.address/country address)}}
+                                                                    :destination {:account id
+                                                                                  :amount  (int (- total-amount (+ application-fee transaction-fee)))}})
                      (catch CardException e
                        (throw (ex-info (.getMessage e)
                                        {:message (.getMessage e)}))))

@@ -30,7 +30,7 @@
 (s/def :shipping.address/street2 (s/or :value string? :empty nil?))
 (s/def :shipping.address/postal (s/and string? #(not-empty %)))
 (s/def :shipping.address/locality (s/and string? #(not-empty %)))
-(s/def :shipping.address/region (s/or :value #(and (string? %) (re-matches #"\w{2}" %)) :empty nil?))
+(s/def :shipping.address/region (s/or :value #(string? (not-empty %)) :empty nil?))
 (s/def :shipping.address/country (s/and string? #(re-matches #"\w{2}" %)))
 
 (s/def :shipping/address (s/keys :req [:shipping.address/street
@@ -234,7 +234,9 @@
 
             (dom/div (css/text-align :right)
                      (when input-validation
-                       (dom/small (css/add-class :text-alert) "Missing required fields"))
+                       (dom/p
+                         nil
+                         (dom/small (css/add-class :text-alert) "You have errors that need to be fixed before continuing")))
                      (dom/a
                        (css/button {:onClick #(.save-shipping this)})
                        "Next")
