@@ -233,10 +233,10 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store.item/categories
+  :db/ident              :store.item/category
   :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/many
-  :db/doc                "Categories this item belongs to."
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Category this item belongs to."
   :db.install/_attribute :db.part/db}
 
  ;; TODO: figure out how to handle categories of different granularities, check out how Etsy is doing this.
@@ -594,19 +594,5 @@
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/many
   :db/doc                "Category subcategories."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :category/level
-  :db/valueType          :db.type/long
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Category level."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :category/photo
-  :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Category photo."
   :db.install/_attribute :db.part/db}
  ]

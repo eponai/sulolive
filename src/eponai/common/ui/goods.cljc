@@ -63,7 +63,9 @@
           {:keys [sorting filters-open?]} (om/get-state this)
           current-category (get-in current-route [:route-params :category] "")
           parent (category-parent category)]
-      
+
+      (debug "Current-category: " current-category)
+      (debug "Parent: " parent)
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse"}
         (when filters-open?

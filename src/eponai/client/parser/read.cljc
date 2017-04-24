@@ -144,7 +144,11 @@
   [{:keys [db target query route-params]} _ {:keys [category search] :as p}]
   (if target
     {:remote true}
-    {:value (db/pull-all-with db query {:where '[[?e :category/level 0]]})}))
+    {:value (db/pull-many db query (sequence (comp
+                                               (map :e)
+                                               (remove (into #{} (map :v) (db/datoms db :aevt :category/children))))
+                                             ;; :avet needs attribute to have :db/index true
+                                             (db/datoms db :avet :category/path category)))}))
 
 (defmethod client-read :query/category
   [{:keys [db query target route-params ast] :as env} _ p]
@@ -152,7 +156,7 @@
     (if target
       {:remote (when (not-empty category) (assoc-in ast [:params :category] category))}
       {:value (db/pull-one-with db query {:where   '[[?e :category/path ?p]]
-                                 :symbols {'?p category}})})))
+                                          :symbols {'?p category}})})))
 
 (defmethod client-read :query/item
   [{:keys [db query target route-params ast]} _ _]

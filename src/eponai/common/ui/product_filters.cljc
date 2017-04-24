@@ -26,7 +26,7 @@
 (defui ProductFilters
   static om/IQuery
   (query [_]
-    ['{:query/top-categories [:category/label :category/path :category/level {:category/children ...}]}])
+    ['{:query/top-categories [:category/label :category/path {:category/children ...}]}])
   Object
   (toggle-filter [this category]
     #?(:cljs

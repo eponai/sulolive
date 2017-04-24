@@ -41,8 +41,8 @@
      {:store.item/skus [:db/id :store.item.sku/variation :store.item.sku/inventory]}
      :store.item/description
      :store.item/navigation
-     {:store.item/categories [:category/label
-                              :category/path]}
+     {:store.item/category [:category/label
+                            :category/path]}
      {:store/_items [{:store/photo [:photo/path]}
                      :store/name]}])
   Object
