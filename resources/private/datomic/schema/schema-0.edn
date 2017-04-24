@@ -524,6 +524,13 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping.address/street2
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Shipping street address line 2 (e.g. apt 50)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
   :db/ident              :shipping.address/postal
   :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one

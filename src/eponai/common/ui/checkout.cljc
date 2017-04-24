@@ -16,7 +16,8 @@
     [eponai.client.parser.message :as msg]
     [eponai.common :as c]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.elements.menu :as menu]))
+    [eponai.common.ui.elements.menu :as menu]
+    [eponai.common.ui.elements.callout :as callout]))
 
 (defn get-route-params [component]
   (get-in (om/props component) [:query/current-route :route-params]))
@@ -89,11 +90,7 @@
             (grid/column-size {:small 12 :medium 8 :large 8})
             (dom/div
               nil
-              (review/->CheckoutReview (om/computed {}
-                                                    {:on-confirm        #(.place-order this)
-                                                     :checkout/payment  payment
-                                                     :checkout/shipping shipping
-                                                     :checkout/items    (:cart/items cart)})))
+              (review/->CheckoutReview (:cart/items cart)))
 
             (dom/div
               nil
@@ -101,12 +98,15 @@
                                                      :shipping shipping}
                                                     {:on-change #(om/update-state! this assoc :checkout/shipping % :open-section :payment)
                                                      :on-open #(om/update-state! this assoc :open-section :shipping)})))
-            (dom/div
+            (callout/callout
               nil
-              (pay/->CheckoutPayment (om/computed {:collapse? (not= open-section :payment)
-                                                   :error error-message}
-                                                  {:on-change #(do
-                                                                (om/update-state! this assoc :checkout/payment %)
-                                                                (.place-order this))})))))))))
+              (dom/h3 nil "2. Payment")
+              (dom/div
+                (when (not= open-section :payment)
+                  (css/add-class :hide))
+                (pay/->CheckoutPayment (om/computed {:error     error-message}
+                                                    {:on-change #(do
+                                                                  (om/update-state! this assoc :checkout/payment %)
+                                                                  (.place-order this))}))))))))))
 
 (def ->Checkout (om/factory Checkout))

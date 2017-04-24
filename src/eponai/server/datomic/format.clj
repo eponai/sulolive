@@ -122,7 +122,8 @@
                                       :shipping.address/locality
                                       :shipping.address/postal
                                       :shipping.address/region
-                                      :shipping.address/country]))]
+                                      :shipping.address/country])
+                      cf/remove-nil-keys)]
     (-> (select-keys s [:shipping/address :shipping/name])
         (update :shipping/address address*)
         cf/add-tempid)))

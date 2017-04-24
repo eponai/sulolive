@@ -13,7 +13,8 @@
        [eponai.common.ui.checkout.google-places :as places])
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.elements.callout :as callout]))
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.common.format :as f]))
 
 (def form-inputs
   {:shipping/name             "sulo-shipping-full-name"
@@ -29,14 +30,14 @@
 (s/def :shipping.address/street2 (s/or :value string? :empty nil?))
 (s/def :shipping.address/postal (s/and string? #(not-empty %)))
 (s/def :shipping.address/locality (s/and string? #(not-empty %)))
-(s/def :shipping.address/region (s/and string? #(re-matches #"\w{2}" %)))
+(s/def :shipping.address/region (s/or :value #(and (string? %) (re-matches #"\w{2}" %)) :empty nil?))
 (s/def :shipping.address/country (s/and string? #(re-matches #"\w{2}" %)))
 
 (s/def :shipping/address (s/keys :req [:shipping.address/street
                                        :shipping.address/postal
-                                       :shipping.address/locality
-                                       :shipping.address/region]
-                                 :opt [:shipping.address/street2]))
+                                       :shipping.address/locality]
+                                 :opt [:shipping.address/street2
+                                       :shipping.address/region]))
 (s/def ::shipping (s/keys :req [:shipping/address
                                 :shipping/name]))
 
@@ -86,12 +87,13 @@
              {:keys [on-change]} (om/get-computed this)
              shipping {:shipping/name    (web-utils/input-value-or-nil-by-id name)
                        :shipping/address {:shipping.address/street   (web-utils/input-value-or-nil-by-id street)
-                                          ;:shipping.address/street2  (web-utils/input-value-or-nil-by-id street2)
+                                          :shipping.address/street2  (web-utils/input-value-or-nil-by-id street2)
                                           :shipping.address/locality (web-utils/input-value-or-nil-by-id locality)
                                           :shipping.address/country  (web-utils/input-value-or-nil-by-id country)
                                           :shipping.address/region   (web-utils/input-value-or-nil-by-id region)
                                           :shipping.address/postal   (web-utils/input-value-or-nil-by-id postal)}}
              validation (validate ::shipping shipping)]
+         (debug "Validation: " validate)
          (when (nil? validation)
            (when on-change
              (on-change shipping)))
@@ -111,8 +113,7 @@
         nil
         (callout/callout
           nil
-          (dom/h3 nil "Ship to")
-          (dom/hr nil)
+          (dom/h3 nil "1. Ship to")
           (dom/div
             (when-not collapse?
               (css/add-class :hide))
@@ -125,12 +126,12 @@
                 (dom/div nil
                          (dom/span nil
                                    (str
-                                           (:shipping.address/locality address)
-                                           ", "
-                                           (:shipping.address/postal address)
-                                           " "
-                                           (:shipping.address/region address)
-                                           )))
+                                     (:shipping.address/locality address)
+                                     ", "
+                                     (:shipping.address/postal address)
+                                     " "
+                                     (:shipping.address/region address)
+                                     )))
                 (dom/div nil (dom/span nil (:shipping.address/country address)))))
             (dom/div
               (css/text-align :right)
@@ -149,16 +150,17 @@
                   {:id           (:shipping/name form-inputs)
                    :type         "text"
                    :name         "name"
-                   :autocomplete "name"}
+                   :autoComplete "name"}
                   input-validation)))
             (grid/row
               nil
               (grid/column
                 nil
-                (dom/label nil "Search address")
-                (dom/input {:id         "auto-complete"
-                               :type    "text"
-                               :onFocus #(geo-locate this)})))
+                ;(dom/label nil "Search address")
+                (dom/input {:id          "auto-complete"
+                            :placeholder "Enter location..."
+                            :type        "text"
+                            :onFocus     #(geo-locate this)})))
             (dom/hr nil)
             (dom/div
               nil
@@ -170,7 +172,7 @@
                   (dom/select
                     {:id           (:shipping.address/country form-inputs)
                      :name         "ship-country"
-                     :autocomplete "shipping country"}
+                     :autoComplete "shipping country"}
                     ;input-validation
                     (dom/option {:value "CA"} "Canada")
                     (dom/option {:value "SE"} "Sweden")
@@ -186,38 +188,17 @@
                     {:id           (:shipping.address/street form-inputs)
                      :type         "text"
                      :name         "ship-address"
-                     :autocomplete "shipping address-line1"}
+                     :autoComplete "shipping address-line1"}
                     input-validation))
                 (grid/column
                   (grid/column-size {:small 12 :medium 4})
-                  (dom/label nil "Apt/Suite/Other")
+                  (dom/label nil "Apt/Suite/Other (optional)")
                   (validate/input
-                    {:type         "text"
-                     :id           (:shipping.address/street2 form-inputs)
-                     :name         "ship-address"
-                     :autocomplete "shipping address-line2"}
+                    {:type "text"
+                     :id   (:shipping.address/street2 form-inputs)}
                     input-validation)))
               (grid/row
                 nil
-                (grid/column
-                  (grid/column-size {:small 12 :large 4})
-                  (dom/label nil "City")
-                  (validate/input
-                    {:type         "text"
-                     :id           (:shipping.address/locality form-inputs)
-                     :name         "ship-city"
-                     :autocomplete "shipping locality"}
-                    input-validation))
-                (grid/column
-                  nil
-                  (dom/label nil "Province")
-                  (dom/select
-                    {:id           (:shipping.address/region form-inputs)
-                     :name         "ship-state"
-                     :autocomplete "shipping region"}
-                    ;input-validation
-                    (dom/option {} "Select Province")
-                    (dom/option {:value "bc"} "British Columbia")))
                 (grid/column
                   nil
                   (dom/label nil "Postal code")
@@ -225,12 +206,38 @@
                     {:id           (:shipping.address/postal form-inputs)
                      :type         "text"
                      :name         "ship-zip"
-                     :autocomplete "shipping postal-code"}
-                    input-validation))))
+                     :autoComplete "shipping postal-code"}
+                    input-validation))
+                (grid/column
+                  (grid/column-size {:small 12 :large 4})
+                  (dom/label nil "City")
+                  (validate/input
+                    {:type         "text"
+                     :id           (:shipping.address/locality form-inputs)
+                     :name         "ship-city"
+                     :autoComplete "shipping locality"}
+                    input-validation))
+                (grid/column
+                  nil
+                  (dom/label nil "State/Province (optional)")
+                  (validate/input
+                    {:id           (:shipping.address/region form-inputs)
+                     :name         "ship-state"
+                     :type         "text"
+                     :autoComplete "shipping region"}
+                    input-validation
+                    ;input-validation
+                    ;(dom/option {} "Select Province")
+                    ;(dom/option {:value "bc"} "British Columbia")
+                    ))
+                ))
 
             (dom/div (css/text-align :right)
+                     (when input-validation
+                       (dom/small (css/add-class :text-alert) "Missing required fields"))
                      (dom/a
-                          (css/button {:onClick #(.save-shipping this)})
-                          "Next"))))))))
+                       (css/button {:onClick #(.save-shipping this)})
+                       "Next")
+                     )))))))
 
 (def ->CheckoutShipping (om/factory CheckoutShipping))

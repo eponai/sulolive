@@ -33,9 +33,7 @@
 (defui CheckoutReview
   Object
   (render [this]
-    (let [{:checkout/keys [shipping payment items]
-           :keys [on-confirm]} (om/get-computed this)
-          {:keys [card]} payment
+    (let [items (om/props this)
           item-count (count items)]
       (debug "CheckoutReview " (om/props this))
       (dom/div nil

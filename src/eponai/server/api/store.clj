@@ -96,7 +96,7 @@
                                                                                                        :line2       (:shipping.address/street2 address)
                                                                                                        :postal_code (:shipping.address/postal address)
                                                                                                        :city        (:shipping.address/locality address)
-                                                                                                       :state       (:shippind.address/region address)
+                                                                                                       :state       (:shipping.address/region address)
                                                                                                        :country     (:shipping.address/country address)}}})
                      (catch CardException e
                        (throw (ex-info (.getMessage e)
