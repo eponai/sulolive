@@ -134,7 +134,7 @@
 
 (defn- x-with
   ([db entity-query] (x-with db entity-query nil))
-  ([db {:keys [find where symbols] :as entity-query} find-pattern]
+  ([db {:keys [find where symbols rules] :as entity-query} find-pattern]
    {:pre [(database? db)
           (or (vector? where) (seq? where) (and (nil? where) (contains? symbols '?e)))
           (or (nil? symbols) (map? symbols))
@@ -149,11 +149,15 @@
          symbol-seq (seq symbols)
          query (where->query where
                              find-pattern
-                             (map first symbol-seq))]
+                             (cond->> (map first symbol-seq)
+                                      (seq rules)
+                                      (cons '%)))]
      (trace "query: " entity-query)
      (apply q query
             db
-            (map second symbol-seq)))))
+            (cond->> (map second symbol-seq)
+                     (seq rules)
+                     (cons rules))))))
 
 (defn lookup-entity
   "Pull full entity with for the specified lookup ref. (Needs to be a unique attribute in lookup ref).
@@ -198,15 +202,17 @@
 
 (defn merge-query
   "Preforms a merge of two query maps with :where and :symbols."
-  [base {:keys [find where symbols] :as addition}]
+  [base {:keys [find where symbols rules] :as addition}]
   {:pre [(map? base) (map? addition)]}
   (cond-> base
           (seq where)
-          (update :where into where)
+          (update :where (fnil into []) where)
           (seq symbols)
           (update :symbols merge symbols)
           (some? find)
-          (assoc :find find)))
+          (assoc :find find)
+          (some? rules)
+          (update :rules (fnil into []) rules)))
 
 ;; Common usages:
 
