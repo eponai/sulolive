@@ -1,4 +1,6 @@
-(def npm-deps {:dompurify "0.8.6"})
+(def npm-deps {
+               ;;:dompurify "0.8.6"
+              })
 (def closure-warns {:non-standard-jsdoc :off})
 
 (defproject budget "0.1.0-SNAPSHOT"
