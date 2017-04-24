@@ -574,18 +574,4 @@
   :db/cardinality        :db.cardinality/many
   :db/doc                "Category subcategories."
   :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :category/level
-  :db/valueType          :db.type/long
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Category level."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :category/photo
-  :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Category photo."
-  :db.install/_attribute :db.part/db}
  ]
