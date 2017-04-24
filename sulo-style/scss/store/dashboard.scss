@@ -10,10 +10,6 @@
           @include button-hollow-style($color);
           border: none;
         }
-
-        // &.#{$name}.dropdown::after {
-        //   border-top-color: $color;
-        // }
       }
     }
 }
@@ -32,12 +28,12 @@
 			@include button-hollow-style($color);
 			border: none;
 		}
-		// margin: 0;
 	}
 }
 
 #sulo-store-dashboard {
 	$dashboard-max-width: 75rem;
+	$dashboard-primary-color: map-get($foundation-palette, action);
 	.navbar, footer, .footer .row, .row {
 		max-width: $dashboard-max-width;
 	}
@@ -61,7 +57,6 @@
 	#sulo-navbar {
 		position: absolute;
 	}
-
 	#store-navbar {
 		$background: map-get($foundation-palette, secondary);
 		background: $white;
@@ -148,25 +143,6 @@
 				position: absolute;
 			}
 		}
-		tr {
-			// padding: 1rem 0;
-			border-top: 1px solid rgba($light-gray, 0.3);
-			&:first-child {
-				border-top: none;
-			}
-			input[type="checkbox"] {
-				margin: 0;
-			}
-			.photo-container {
-				width: 2rem;
-			}
-			td {
-				padding: 0.5rem 0.5rem;
-				@include breakpoint(medium) {
-					padding: 1.25rem 1rem;
-				}
-			}
-		}
 
 		#sulo-main-dashboard {
 			.button {
@@ -174,10 +150,6 @@
 			}
 			.stream-status {
 				@include label-hollow;
-				// span.label.#{$name} {
-
-				// 	font-weight: $global-weight-normal;
-				// }
 				a {
 					display: flex;
 					justify-content: space-between;

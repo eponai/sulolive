@@ -40,6 +40,8 @@ html, body {
 	overflow: hidden;
 }
 
+@include label-hollow;
+
 .product-grid {
 	> .column {
 		padding: 1rem;

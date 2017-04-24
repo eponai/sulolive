@@ -5,9 +5,8 @@
     [eponai.common.ui.checkout.shipping :as ship]
     [eponai.common.ui.checkout.payment :as pay]
     [eponai.common.ui.checkout.review :as review]
-    [eponai.common.ui.dom :as my-dom]
+    [eponai.common.ui.dom :as dom]
     [eponai.client.routes :as routes]
-    [om.dom :as dom]
     [om.next :as om :refer [defui]]
     #?(:cljs [eponai.web.utils :as web-utils])
     [eponai.common.ui.navbar :as nav]
@@ -15,7 +14,10 @@
     [eponai.common.ui.elements.css :as css]
     [taoensso.timbre :refer [debug]]
     [eponai.client.parser.message :as msg]
-    [eponai.common :as c]))
+    [eponai.common :as c]
+    [eponai.common.ui.elements.grid :as grid]
+    [eponai.common.ui.elements.menu :as menu]
+    [eponai.common.ui.elements.callout :as callout]))
 
 (defn get-route-params [component]
   (get-in (om/props component) [:query/current-route :route-params]))
@@ -28,7 +30,8 @@
                                  :store.item.sku/uuid
                                  :store.item.sku/variation
                                  {:store.item/_skus [:store.item/price
-                                                     {:store.item/photos [:photo/path]}
+                                                     {:store.item/photos [:store.item.photo/index
+                                                                          {:store.item.photo/photo [:photo/path]}]}
                                                      :store.item/name
                                                      {:store/_items [:db/id
                                                                      :store/name
@@ -49,58 +52,69 @@
          (let [items (filter #(= (c/parse-long store-id) (get-in % [:store.item/_skus :store/_items :db/id])) (:cart/items cart))]
            (msg/om-transact! this `[(store/create-order ~{:order    {:source   source
                                                                      :shipping shipping
-                                                                     :items    items}
+                                                                     :items    items
+                                                                     :shipping-fee 5
+                                                                     :subtotal (review/compute-item-price (:cart/items cart))}
                                                           :store-id (c/parse-long store-id)})])))))
 
   (initLocalState [_]
     {:checkout/shipping nil
-     :checkout/payment  nil})
+     :checkout/payment  nil
+     :open-section :shipping})
 
   (componentDidUpdate [this _ _]
     (when-let [response (msg/last-message this 'store/create-order)]
       (debug "Response: " response)
-      (if (msg/final? response)
-        (let [message (msg/message response)
-              {:query/keys [auth]} (om/props this)]
-          (debug "message: " message)
+      (when (msg/final? response)
+        (let [message (msg/message response)]
+          (debug "Message: " message)
           (msg/clear-messages! this 'store/create-order)
-          (routes/set-url! this :user/order {:order-id (:db/id message) :user-id (:db/id auth)})))))
+          (if (msg/success? response)
+            (let [{:query/keys [auth]} (om/props this)]
+              (routes/set-url! this :user/order {:order-id (:db/id message) :user-id (:db/id auth)}))
+            (om/update-state! this assoc :error-message message))))))
 
   (render [this]
     (let [{:proxy/keys [navbar]
            :query/keys [cart current-route]} (om/props this)
-          {:checkout/keys [shipping payment]} (om/get-state this)
-          progress (cond (nil? shipping) 1
-                         (nil? payment) 2
-                         :else 3)
-          checkout-resp (msg/last-message this 'store/create-order)]
+          {:checkout/keys [shipping payment]
+           :keys [open-section error-message]} (om/get-state this)
+          {:keys [route] } current-route
+          checkout-resp (msg/last-message this 'store/create-order)
+          subtotal (review/compute-item-price (:cart/items cart))
+          shipping-fee 5
+          grandtotal (+ subtotal shipping-fee)]
 
-      (debug "CHECKOUT STATE: " (om/get-state this))
       (common/page-container
         {:navbar navbar :id "sulo-checkout"}
         (when (msg/pending? checkout-resp)
           (common/loading-spinner nil))
-        (my-dom/div
-          (->> (css/grid-row)
-               (css/align :center)
-               (css/add-class :collapse))
-          (my-dom/div
-            (->> (css/grid-column)
-                 (css/grid-column-size {:small 12 :medium 8 :large 8}))
-            (dom/div #js {:className "progress"}
-              (dom/div #js {:className "progress-meter"
-                            :style     #js {:width (str (int (* 100 (/ progress 3))) "%")}}))
-            (dom/div #js {:className (when-not (= 1 progress) "hide")}
-              (ship/->CheckoutShipping (om/computed {}
-                                                    {:on-change #(om/update-state! this assoc :checkout/shipping %)})))
-            (dom/div #js {:className (when-not (= 2 progress) "hide")}
-              (pay/->CheckoutPayment (om/computed {}
-                                                  {:on-change #(om/update-state! this assoc :checkout/payment %)})))
-            (dom/div #js {:className (when-not (= 3 progress) "hide")}
-              (review/->CheckoutReview (om/computed {}
-                                                    {:on-confirm        #(.place-order this)
-                                                     :checkout/payment  payment
-                                                     :checkout/shipping shipping
-                                                     :checkout/items    (:cart/items cart)})))))))))
+        (grid/row
+          (css/align :center)
+          (grid/column
+            (grid/column-size {:small 12 :medium 8 :large 8})
+            (dom/div
+              nil
+              (review/->CheckoutReview {:items (:cart/items cart)
+                                        :subtotal subtotal
+                                        :shipping shipping-fee}))
+
+            (dom/div
+              nil
+              (ship/->CheckoutShipping (om/computed {:collapse? (not= open-section :shipping)
+                                                     :shipping shipping}
+                                                    {:on-change #(om/update-state! this assoc :checkout/shipping % :open-section :payment)
+                                                     :on-open #(om/update-state! this assoc :open-section :shipping)})))
+            (callout/callout
+              nil
+              (dom/h3 nil "2. Payment")
+              (dom/div
+                (when (not= open-section :payment)
+                  (css/add-class :hide))
+                (pay/->CheckoutPayment (om/computed {:error  error-message
+                                                     :amount grandtotal}
+                                                    {:on-change #(do
+                                                                  (om/update-state! this assoc :checkout/payment %)
+                                                                  (.place-order this))}))))))))))
 
 (def ->Checkout (om/factory Checkout))

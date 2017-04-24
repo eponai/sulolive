@@ -10,7 +10,8 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.format.date :as date]
     [eponai.common.ui.utils :as utils]
-    [eponai.common.ui.elements.photo :as photo]))
+    [eponai.common.ui.elements.photo :as photo]
+    [eponai.common.ui.elements.table :as table]))
 
 (defn primary-photo [product]
   (let [item-photo (first (sort-by :store.item.photo/index (:store.item/photos product)))]
@@ -67,34 +68,33 @@
           (->> (css/grid-row))
           (my-dom/div
             (->> (css/grid-column))
-            (dom/table
-              #js {:className "hover"}
-              (dom/thead
-                nil
-                (dom/tr nil
-                        (dom/th nil (dom/span nil ""))
-                        (dom/th nil "Product Name")
-                        (dom/th nil "Price")
-                        (dom/th nil "Last Updated")))
-              (dom/tbody
-                nil
-                (map-indexed (fn [i p]
-                               (let [product-link (routes/url :store-dashboard/product
-                                                              {:store-id   (:store-id route-params)
-                                                               :product-id (:db/id p)})]
-                                 (dom/tr #js {:key (str i)}
-                                         (dom/td nil
-                                                 (photo/product-photo (primary-photo p)))
-                                         (dom/td nil
-                                                 (dom/a #js {:href product-link}
-                                                        (dom/span nil (:store.item/name p))))
-                                         (dom/td nil
-                                                 (dom/a #js {:href product-link}
-                                                        (dom/span nil (utils/two-decimal-price (:store.item/price p)))))
-                                         (dom/td nil
-                                                 (when (:store.item/updated p)
-                                                   (dom/a #js {:href product-link}
-                                                          (dom/span nil (date/date->string (* 1000 (:store.item/updated p)) "MMM dd yyyy HH:mm"))))))))
+            (table/table
+              (css/add-class :hover)
+              (my-dom/div
+                (css/add-class :thead)
+                (my-dom/div
+                  (css/add-class :tr)
+                        (my-dom/span (css/add-class :th) (dom/span nil ""))
+                        (my-dom/span (css/add-class :th) "Product Name")
+                        (my-dom/span (css/add-class :th) "Price")
+                        (my-dom/span (css/add-class :th) "Last Updated")))
+              (my-dom/div
+                (css/add-class :tbody)
+                (map (fn [p]
+                       (let [product-link (routes/url :store-dashboard/product
+                                                      {:store-id   (:store-id route-params)
+                                                       :product-id (:db/id p)})]
+                         (my-dom/a
+                           (css/add-class :tr {:href product-link})
+                           (my-dom/span (css/add-class :td)
+                                        (photo/product-photo (primary-photo p)))
+                           (my-dom/span (css/add-class :td)
+                                        (:store.item/name p))
+                           (my-dom/span (css/add-class :td)
+                                        (utils/two-decimal-price (:store.item/price p)))
+                           (my-dom/span (css/add-class :td)
+                                        (when (:store.item/updated p)
+                                          (date/date->string (* 1000 (:store.item/updated p)) "MMM dd yyyy HH:mm"))))))
                              products)))))))))
 
 (def ->ProductList (om/factory ProductList))

@@ -56,9 +56,9 @@
 @import "select/default";
 @include sulo-flex-video;
 @include sulo-forms;
-@import "store/store";
 @import "user/user";
 @import "components/components";
+@import "store/store";
 
 @import "base";
 @include sulo-typography;
@@ -77,6 +77,6 @@
 @import "quill";
 @import "chat";
 @import "dropdown";
-@import "help";
+@import "help"
 
 

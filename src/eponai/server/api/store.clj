@@ -5,7 +5,8 @@
     [eponai.server.external.aws-s3 :as s3]
     [eponai.server.external.stripe :as stripe]
     [taoensso.timbre :refer [debug info]]
-    [eponai.common.format :as cf]))
+    [eponai.common.format :as cf])
+  (:import (com.stripe.exception CardException)))
 
 (defn retracts [old-entities new-entities]
   (let [removed (filter #(not (contains? (into #{} (map :db/id new-entities)) (:db/id %))) old-entities)]
@@ -75,33 +76,68 @@
   (let [store (db/lookup-entity (db/db state) store-id)]
     (assoc o :order/store store :order/user user-id)))
 
-(defn create-order [{:keys [state system auth]} store-id {:keys [items source shipping]}]
-  (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)
-        order (f/order {:order/items    items
-                        :order/uuid     (db/squuid)
-                        :order/shipping shipping
-                        :order/user     [:user/email (:email auth)]
-                        :order/store    store-id})
-        result-db (:db-after (db/transact-one state order))]
+(defn create-order [{:keys [state system auth]} store-id {:keys [items source shipping subtotal shipping-fee]}]
+  (let [{:keys [stripe/id]} (stripe/pull-stripe (db/db state) store-id)
+        {:keys [shipping/address]} shipping
+
+        total-amount (+ subtotal shipping-fee)
+        application-fee (* 0.2 subtotal)                    ;Convert to cents for Stripe
+        transaction-fee (* 0.029 total-amount)
+        destination-amount (- total-amount (+ application-fee transaction-fee))
+
+        order (-> (f/order {:order/items    items
+                            :order/uuid     (db/squuid)
+                            :order/shipping shipping
+                            :order/user     (:user-id auth)
+                            :order/store    store-id
+                            :order/amount   (bigdec destination-amount)})
+                  (update :order/items conj {:order.item/type  :order.item.type/shipping
+                                             :order.item/price (bigdec shipping-fee)}))]
     (when source
-      (let [charge (stripe/create-charge (:system/stripe system) secret {:amount          "1000"
-                                                                         :application_fee "200"
-                                                                         :currency        "cad"
-                                                                         :source          source
-                                                                         :metadata        {:order_uuid (:order/uuid order)}})
+      (let [charge (try
+                     (stripe/create-charge (:system/stripe system) {:amount      (int (* 100 total-amount)) ;Convert to cents for Stripe
+                                                                    ;:application_fee (int (+ application-fee transaction-fee))
+                                                                    :currency    "cad"
+                                                                    :source      source
+                                                                    :metadata    {:order_uuid (:order/uuid order)}
+                                                                    :shipping    {:name    (:shipping/name shipping)
+                                                                                  :address {:line1       (:shipping.address/street address)
+                                                                                            :line2       (:shipping.address/street2 address)
+                                                                                            :postal_code (:shipping.address/postal address)
+                                                                                            :city        (:shipping.address/locality address)
+                                                                                            :state       (:shipping.address/region address)
+                                                                                            :country     (:shipping.address/country address)}}
+                                                                    :destination {:account id
+                                                                                  :amount  (int (* 100 destination-amount))}}) ;Convert to cents for Stripe
+                     (catch CardException e
+                       (throw (ex-info (.getMessage e)
+                                       {:message (.getMessage e)}))))
             charge-entity {:db/id     (db/tempid :db.part/user)
                            :charge/id (:charge/id charge)}
             is-paid? (:charge/paid? charge)
-            order-status (if is-paid? :order.status/paid :order.status/created)]
-        (db/transact state [charge-entity
-                            [:db/add [:order/uuid (:order/uuid order)] :order/charge (:db/id charge-entity)]
-                            [:db/add [:order/uuid (:order/uuid order)] :order/status order-status]])))
-    ;; Return order entity to redirect in the client
-    (db/pull result-db [:db/id] [:order/uuid (:order/uuid order)])))
+            order-status (if is-paid? :order.status/paid :order.status/created)
+            charged-order (assoc order :order/status order-status :order/charge (:db/id charge-entity))
+            result-db (:db-after (db/transact state [charge-entity
+                                                     charged-order]))]
+        ;; Return order entity to redirect in the client
+        (db/pull result-db [:db/id] [:order/uuid (:order/uuid order)])))))
 
-(defn update-order [{:keys [state system]} store-id order-id params]
-  (let [{:keys [stripe/secret]} (stripe/pull-stripe (db/db state) store-id)]
-    ))
+(defn update-order [{:keys [state system]} store-id order-id {:keys [order/status]}]
+  (let [old-order (db/pull (db/db state) [:db/id :order/status {:order/charge [:charge/id]}] order-id)
+        allowed-transitions {:order.status/created   #{:order.status/paid :order.status/canceled}
+                             :order.status/paid      #{:order.status/fulfilled :order.status/canceled}
+                             :order.status/fulfilled #{:order.status/returned}}
+        old-status (:order/status old-order)
+        is-status-transition-allowed? (contains? (get allowed-transitions old-status) status)]
+    (if is-status-transition-allowed?
+      (let [should-refund? (contains? #{:order.status/canceled :order.status/returned} status)]
+        (when should-refund?
+          (stripe/create-refund (:system/stripe system) {:charge (get-in old-order [:order/charge :charge/id])}))
+        (db/transact state [[:db/add order-id :order/status status]]))
+      (throw (ex-info (str "Order status transition not allowed, " status " can only transition to " (get allowed-transitions status))
+                      {:order-status        status
+                       :message             "Your order status could not be updated."
+                       :allowed-transitions allowed-transitions})))))
 
 (defn account [{:keys [state system]} store-id]
   (let [{:keys [stripe/id] :as s} (stripe/pull-stripe (db/db state) store-id)]

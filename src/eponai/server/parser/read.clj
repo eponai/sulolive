@@ -67,7 +67,11 @@
 
 (defread query/orders
   [{:keys [db query]} _ {:keys [store-id user-id]}]
-  {:auth    {::auth/store-owner store-id}
+  {:auth    (cond
+              (some? user-id)
+              {::auth/exact-user user-id}
+              (some? store-id)
+              {::auth/store-owner store-id})
    :uniq-by [[:user-id user-id] [:store-id store-id]]}
   {:value (cond (some? store-id)
                 (db/pull-all-with db query {:where   '[[?e :order/store ?s]]

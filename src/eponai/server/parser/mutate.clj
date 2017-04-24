@@ -179,7 +179,7 @@
    :resp {:success "Your account was updated"
           :error   (if (some? exception)
                      (or (.getMessage exception) "Something went wrong")
-                     "Someting went wrong!")}}
+                     "Something went wrong!")}}
   {:action (fn []
              (let [{:stripe/keys [id]} (stripe/pull-stripe (db/db state) store-id)]
                (stripe/update-account (:system/stripe system) id account-params)))})
@@ -211,10 +211,12 @@
              (store/delete-product env (:db/id product)))})
 
 (defmutation store/create-order
-  [{::parser/keys [return] :as env} _ {:keys [order store-id] :as p}]
+  [{::parser/keys [return exception] :as env} _ {:keys [order store-id] :as p}]
   {:auth {::auth/store-owner store-id}
    :resp {:success return
-          :error   "Could not create order"}}
+          :error   (if (some? exception)
+                     (.getMessage exception)
+                     "Could not create order")}}
   {:action (fn []
              (store/create-order env store-id order))})
 
@@ -235,4 +237,4 @@
    :resp {:success "Order created"
           :error   "Could not create order"}}
   {:action (fn []
-             (store/update-order env (c/parse-long store-id) order-id params))})
+             (store/update-order env (c/parse-long store-id) (c/parse-long order-id) params))})

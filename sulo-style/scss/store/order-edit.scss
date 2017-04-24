@@ -1,31 +1,61 @@
-#sulo-edit-order {
-	@include label-hollow;
-	.label {
-		text-transform: uppercase;
-		font-weight: $global-weight-bold;
+.sl-orderstatus {
+	font-weight: $global-weight-bold;
+	font-size: 80%;
+	border: $global-border;
+	$color: map-get($foundation-palette, action);
+	color: $color;
+	border-color: $color;
+	padding: $label-padding;
+	border-radius: $global-radius;
+	&.sl-orderstatus--canceled, 
+	&.sl-orderstatus--returned {
+		border-color: $dark-gray;
+		color: $dark-gray;
 	}
-	$primary-color: map-get($foundation-palette, action);
-	table {
-		margin: 0 auto;
-		th {
+}
+
+.sl-orderlist {
+	$action-color: map-get($foundation-palette, action);
+	.sl-orderlist-row {
+		.sl-orderlist-cell--price, 
+		.sl-orderlist-cell--icon {
+			color: $action-color;
+			font-weight: $global-weight-bold;
+		}
+		.sl-orderlist-cell--icon {
+			width: 3rem;
+		}
+		&.sl-orderlist-row--returned, 
+		&.sl-orderlist-row--canceled {
 			color: $dark-gray;
-			padding-top: 0.5rem;
-			padding-bottom: 0.5rem;
-			font-size: 90%;
-		}
-		a {
-			font-weight: 500;
-		}
-		.sku {
-			border-bottom: $table-border;
-		}
-		.tax, .shipping, tfoot {
-			border: none;
-			td {
-				padding-top: 0.75rem;
-				padding-bottom: 0.75rem;
-				font-size: 90%;
+			.sl-orderlist-cell--price,
+			.sl-orderlist-cell--icon {
+				color: inherit;
 			}
+		}
+		&:hover {
+			color: darken($primary-color, 10%);
+			.sl-orderlist-cell--price,
+			.sl-orderlist-cell--icon {
+				color: inherit;
+			}
+			.sl-orderstatus {
+				color: inherit;
+				border-color: darken($primary-color, 10%);;
+			}
+		}
+	}
+}
+
+#sulo-edit-order {
+	.callout {
+		margin-bottom: 2rem;
+	}
+	.shipping-address {
+		border: $global-border;
+		padding: 0.5rem;
+		label {
+			text-align: left;
 		}
 	}
 	.order-action {
@@ -48,6 +78,44 @@
 		i {
 			margin-right: 1rem;
 			color: $dark-gray;
+		}
+	}
+
+	.sl-OrderItemlist-row {
+		p {
+			margin-bottom: 0;
+		}
+		border: none;
+		.sl-OrderItemlist-cell--price {
+			font-weight: $global-weight-bold;
+		}
+		&.sl-OrderItemlist-row--shipping, 
+		&.sl-OrderItemlist-row--tax {
+			font-size: 85%;
+			border: none;
+		}
+		&.sl-OrderItemlist-row--shipping {
+			// border-top: $global-border-secondary;
+		}
+	}
+	.tfoot {
+		.sl-OrderItemlist-row {
+			border-bottom: $global-border;
+		}
+		.sl-OrderItemlist-row--fee {
+			font-weight: $global-weight-normal;
+			background: $white;
+			.td {
+				font-weight: inherit;
+			}
+
+			.dropdown-pane {
+				p {
+					display: flex;
+					justify-content: space-between;
+					margin-bottom: 0.2rem;
+				}
+			}
 		}
 	}
 }

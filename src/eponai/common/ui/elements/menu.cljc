@@ -71,7 +71,7 @@
   [opts & content]
   (item*
     (select-keys opts [:key])
-    (apply dom/a (dissoc opts :key) content)))
+    (dom/a (dissoc opts :key) content)))
 
 (defn item-dropdown
   "Menu item containg a link that opens a dropdown.
@@ -79,7 +79,7 @@
   [{:keys [dropdown href onClick classes]} & content]
   (item*
     {:classes (conj classes ::css/menu-dropdown)}
-    (apply dom/a {:href href :onClick onClick} content)
+    (dom/a {:href href :onClick onClick} content)
     dropdown))
 
 (defn item-text

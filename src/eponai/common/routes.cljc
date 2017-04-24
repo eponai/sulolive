@@ -33,8 +33,14 @@
    ["/" [#"\d+" :product-id]] :product})
 
 (def help-routes
-  {""         :help
+  {""          :help
    "/encoding" :help/encoding})
+
+(def checkout-routes
+  {""          :checkout
+   "/shipping" :checkout/shipping
+   "/payments" :checkout/payment
+   "/review"   :checkout/review})
 
 (def routes
   ["/" {""                            :index
@@ -42,13 +48,13 @@
         "sell/coming-soon"            :sell-soon
         "live"                        :live
         "store/new"                   :new-store
-        "store"                       :index
+        "store"                       :index/store
         ["store/" [#"\d+" :store-id]] store-routes
         "products"                    product-routes
         "categories"                  {""              :products/all-categories
                                        ["/" :category] :products/categories}
         "help"                        help-routes
-        ["checkout/" :store-id]       :checkout
+        ["checkout/" :store-id]       checkout-routes
         "shopping-bag"                :shopping-bag
         "business"                    :business
         ["user/" [#"\d+" :user-id]]   user-routes

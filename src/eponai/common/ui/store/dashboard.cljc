@@ -270,11 +270,15 @@
                              :stripe/verification
                              :stripe/details-submitted?
                              :stripe/charges-enabled?
-                             :stripe/payouts-enabled?]}
-     ])
+                             :stripe/payouts-enabled?]}])
   Object
   (initLocalState [_]
-    {:selected-tab :products})
+    {:selected-tab :products
+     :did-mount? false})
+  (componentDidMount [this]
+    (let [{:keys [did-mount?]} (om/get-state this)]
+      (when-not did-mount?
+        (om/update-state! this assoc :did-mount? true))))
   (render [this]
     (let [{:proxy/keys [navbar]
            :query/keys [store current-route stripe-account]
@@ -286,6 +290,7 @@
         {:navbar navbar
          :id     "sulo-store-dashboard"}
         (sub-navbar this)
+
         (if-not (= route :store-dashboard)
           ;; Dispatch on the routed component:
           (let [{:keys [component computed-fn factory]} (get route-map (parse-route route))
