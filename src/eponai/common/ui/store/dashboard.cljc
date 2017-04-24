@@ -162,8 +162,8 @@
                  (name stream-state))))
       (callout/callout
         (css/add-class :stream-status)
-        (let [verification (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/verification])
-              status (keyword (:stripe.legal-entity.verification/status verification))]
+        (let [disabled-reason (get-in stripe-account [:stripe/verification :stripe.verification/disabled-reason])
+              status (if (some? disabled-reason) :alert :green)]
           (dom/a
             (->> (css/button-hollow {:href (when (= status :unverified)
                                              (routes/url :store-dashboard/settings#activate {:store-id (:db/id store)}))})
@@ -171,14 +171,9 @@
             (dom/span nil "Account status")
             (if (some? status)
               (dom/span
-                (cond->> (css/add-class :hollow (css/add-class :label))
-                         (= status :pending)
-                         (css/add-class :secondary)
-                         (= status :verified)
-                         (css/add-class :success)
-                         (= status :unverified)
-                         (css/add-class :warning))
-                (name status))
+                (->> (css/add-class :hollow (css/add-class :label))
+                     (css/add-class status))
+                (if (some? disabled-reason) "Disabled" "Enabled"))
               (dom/i {:classes ["fa fa-spinner fa-spin"]}))))))))
 
 (defn verification-status-element [component]
@@ -186,11 +181,11 @@
         {:stripe/keys [charges-enabled? payouts-enabled? verification]} stripe-account
         {:stripe.verification/keys [due-by fields-needed disabled-reason]} verification
         is-alert? (or (false? charges-enabled?) (false? payouts-enabled?) (when (some? due-by) (< due-by (date/current-secs))))
-        is-warning? (boolean (not-empty fields-needed))
+        is-warning? (and (not-empty fields-needed) (some? due-by))
 
         disabled-labels {:fields_needed (dom/p nil (dom/span nil "More information is needed to verify your account. Please ")
                                                (dom/a nil (dom/span nil "provide the required information")) (dom/span nil " to re-enable the account."))}]
-    (when (or is-alert? is-warning?)
+    (when (or is-alert? is-warning? (not-empty fields-needed))
       (callout/callout
         (cond->> (css/add-class :account-status (css/add-class :notification))
                  (or is-alert? is-warning?)

@@ -94,28 +94,33 @@
                                                     {:field.external-account/institution-number institution
                                                      :field.external-account/transit-number     transit
                                                      :field.external-account/account-number     account})})
-             _ (debug "validation INput map: " input-map)
              validation (v/validate :account/activate input-map)]
          (debug "Validation: " validation)
-         (when (and (some? (:field/external-account input-map)) (nil? validation))
-           (.setPublishableKey js/Stripe stripe-key)
-           (.createToken js/Stripe.bankAccount
-                         #js {:country        (:stripe/country stripe-account)
-                              :currency       currency
-                              :routing_number (str transit institution)
-                              :account_number account}
-                         (fn [status ^js/Stripe.bankAccountResponse response]
-                           (when (= status 200)
-                             (let [token (.-id response)
-                                   ip (.-client_ip response)
-                                   tos-acceptance {:field.tos-acceptance/ip   ip
-                                                   :field.tos-acceptance/date (/ (date/date->long (date/today)) 1000)}]
-                               (msg/om-transact! this `[(stripe/update-account
-                                                          ~{:account-params (-> input-map
-                                                                                (assoc :field/external-account token)
-                                                                                (assoc :field/tos-acceptance tos-acceptance))
-                                                            :store-id       (:db/id store)})
-                                                        :query/stripe-account]))))))
+         (when (nil? validation)
+           (if (some? (:field/external-account input-map))
+             (do
+               (.setPublishableKey js/Stripe stripe-key)
+               (.createToken js/Stripe.bankAccount
+                             #js {:country        (:stripe/country stripe-account)
+                                  :currency       currency
+                                  :routing_number (str transit institution)
+                                  :account_number account}
+                             (fn [status ^js/Stripe.bankAccountResponse response]
+                               (when (= status 200)
+                                 (let [token (.-id response)
+                                       ip (.-client_ip response)
+                                       tos-acceptance {:field.tos-acceptance/ip   ip
+                                                       :field.tos-acceptance/date (/ (date/date->long (date/today)) 1000)}]
+                                   (msg/om-transact! this `[(stripe/update-account
+                                                              ~{:account-params (-> input-map
+                                                                                    (assoc :field/external-account token)
+                                                                                    (assoc :field/tos-acceptance tos-acceptance))
+                                                                :store-id       (:db/id store)})
+                                                            :query/stripe-account]))))))
+             (msg/om-transact! this `[(stripe/update-account
+                                        ~{:account-params input-map
+                                          :store-id       (:db/id store)})
+                                      :query/stripe-account])))
 
          (om/update-state! this assoc :input-validation validation))))
   (initLocalState [this]
