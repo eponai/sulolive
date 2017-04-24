@@ -145,13 +145,13 @@
 ;; ################## Public ##################
 
 (defn stripe [api-key]
-
   (->StripeRecord api-key))
 
 (defn stripe-stub []
   (reify IStripeConnect
     (-create-account [_ params]
       (debug "DEV - Fake Stripe: create-account with params: " params))
+
     (-get-account [_ params]
       {:stripe/id                "acct_19k3ozC0YaFL9qxh"
        :stripe/country           "CA"
@@ -166,8 +166,11 @@
                                    :stripe.external-account/country   "CA"}]
        :stripe/business-name     "My business Name"
        :stripe/business-url      "My business URL"})
+
+    (-update-account [_ account-id params])
     (-create-customer [_ _ params]
       (debug "DEV - Fake Stripe: create-customer with params: " params))
 
     ;; Charge
-    (-create-charge [this params])))
+    (-create-charge [this params])
+    (-create-refund [this params])))

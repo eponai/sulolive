@@ -27,7 +27,7 @@
                  [com.draines/postal "2.0.1"]
                  [com.stripe/stripe-java "3.11.0"]
                  [com.taoensso/timbre "4.8.0"]
-                 [environ "1.0.1"]
+                 [environ "1.1.0"]
                  [hiccup "1.0.5"]
                  [org.clojure/data.generators "0.1.2"]
                  [org.clojure/core.async "0.3.442"]
@@ -96,7 +96,7 @@
             [lein-cljsbuild "1.1.5" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
             [lein-figwheel "0.5.7" :exclusions [org.clojure/clojure]]
             [lein-test-out "0.3.1"]
-            [lein-environ "1.0.1"]]
+            [lein-environ "1.1.0"]]
   
   :min-lein-version "2.0.0"
   :clean-targets ^{:protect false} ["resources/public/dev/js/out"

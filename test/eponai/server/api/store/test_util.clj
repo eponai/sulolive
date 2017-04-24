@@ -16,21 +16,21 @@
 
 (defn stripe-test-payment-succeeded [chan]
   (reify stripe/IStripeConnect
-    (-create-charge [_ _ params]
+    (-create-charge [_ params]
       (async/put! chan params)
       {:charge/id    (:source params)
        :charge/paid? true})
-    (-create-refund [_ _ {:keys [charge] :as params}]
+    (-create-refund [_ {:keys [charge] :as params}]
       (async/put! chan params)
       {:refund/charge charge})))
 
 (defn stripe-test-payment-failed [chan]
   (reify stripe/IStripeConnect
-    (-create-charge [_ _ params]
+    (-create-charge [_ params]
       (async/put! chan params)
       {:charge/id    (:source params)
        :charge/paid? false})
-    (-create-refund [_ _ {:keys [charge] :as params}]
+    (-create-refund [_ {:keys [charge] :as params}]
       (async/put! chan params)
       {:refund/charge charge})))
 

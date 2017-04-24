@@ -12,21 +12,23 @@
 (deftest create-order-payment-succeeded
   (testing "Creating order should call Stripe and create a charge."
     (let [;; Prepare DB with products to order
-          product (-> (f/product {:store.item/name "product"})
+          product (-> (f/product {:store.item/name "product" :store.item/price "10"})
                       (assoc :store.item/skus [(f/sku {:store.item.sku/uuid (db/squuid)})]))
           store (-> (store-test)
                     (assoc :store/items [product]))
           user (user-test)
           conn (new-db [store user])
           db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid store)])
-          db-sku (db/pull-one-with (db/db conn) [:db/id] {:where '[[_ :store.item/skus ?e]]})
+          db-sku (db/pull-one-with (db/db conn) [:db/id {:store.item/_skus [:store.item/price]}] {:where '[[_ :store.item/skus ?e]]})
           db-user (db/pull (db/db conn) [:db/id] [:user/email (:user/email user)])
 
           ;; Prepare parameters for order creation
           stripe-chan (async/chan 1)
-          order-params {:items    [db-sku]
-                        :shipping {:shipping/address {:shipping.address/country "se"}}
-                        :source   "payment-source"}
+          order-params {:items        [db-sku]
+                        :shipping     {:shipping/address {:shipping.address/country "se"}}
+                        :source       "payment-source"
+                        :subtotal     0
+                        :shipping-fee 0}
           ;; Create new order
           new-order (api/create-order {:state  conn
                                        :system {:system/stripe (stripe-test-payment-succeeded stripe-chan)}
@@ -48,21 +50,22 @@
 (deftest create-order-payment-failed
   (testing "Creating order should call Stripe and create a charge, charge failed should set order status to created."
     (let [;; Prepare DB with products to order
-          product (-> (f/product {:store.item/name "product"})
+          product (-> (f/product {:store.item/name "product" :store.item/price "10"})
                       (assoc :store.item/skus [(f/sku {:store.item.sku/uuid (db/squuid)})]))
           store (-> (store-test)
                     (assoc :store/items [product]))
           user (user-test)
           conn (new-db [store user])
           db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid store)])
-          db-sku (db/pull-one-with (db/db conn) [:db/id] {:where '[[_ :store.item/skus ?e]]})
+          db-sku (db/pull-one-with (db/db conn) [:db/id {:store.item/_skus [:store.item/price]}] {:where '[[_ :store.item/skus ?e]]})
           db-user (db/pull (db/db conn) [:db/id] [:user/email (:user/email user)])
 
           ;; Prepare parameters for order creation
           stripe-chan (async/chan 1)
           order-params {:items    [db-sku]
                         :shipping {:shipping/address {:shipping.address/country "se"}}
-                        :source   "payment-source"}
+                        :source   "payment-source"
+                        :subtotal 0 :shipping-fee 0}
           ;; Create new order
           new-order (api/create-order {:state  conn
                                        :system {:system/stripe (stripe-test-payment-failed stripe-chan)}
@@ -109,7 +112,7 @@
 
       ;; Verify transitions not allowed throw an exception.
       (are [o s] (thrown-with-msg? ExceptionInfo #"Order status transition not allowed"
-                          (api/update-order {:state conn} (:db/id db-store) (:db/id o) {:order-status s}))
+                                   (api/update-order {:state conn} (:db/id db-store) (:db/id o) {:order-status s}))
                  db-order-created :order.status/fulfilled
                  db-order-created :order.status/returned
 

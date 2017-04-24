@@ -77,6 +77,7 @@
             this))))))
 
 (defn- system [in-prod? {:keys [env] :as config}]
+
   (let [system-map (c/system-map
                      :system/aleph (c/using (aleph/map->Aleph (select-keys config [:handler :port :netty-options]))
                                             {:handler :system/handler})
@@ -106,7 +107,7 @@
                      :system/server-address (c/using (server-address/map->ServerAddress {:schema (:server-url-schema env)
                                                                                          :host   (:server-url-host env)})
                                                      {:aws-elb :system/aws-elb})
-                     :system/stripe (stripe/stripe (env :stripe-secret-key))
+                     :system/stripe (stripe/stripe (:stripe-secret-key env))
                      :system/wowza (wowza/wowza {:secret         (:wowza-jwt-secret env)
                                                  :subscriber-url (:wowza-subscriber-url env)
                                                  :publisher-url  (:wowza-publisher-url env)}))
