@@ -148,7 +148,8 @@
   [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
   {:auth    ::auth/public
    :uniq-by [[:category (or category (:category route-params))]]}
-  {:value (db/pull-all-with db query {:where '[[?e :category/level 0]]})})
+  {:value (db/pull-all-with db query {:where '[[?e :category/path]
+                                               (not [_ :category/children ?e])]})})
 
 (defread query/category
   [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]

@@ -58,10 +58,12 @@
               :label    (str "Women's " label)
               :children (vals (women-fn unisex-adult))}])
 
+(def category-path-separator "_")
+(def category-name-separator "-")
+
 (defn leaf [& name-parts]
-  (let [name-separator "-"]
-    #:category{:path  (str/join name-separator name-parts)
-               :label (str/capitalize (str/join " " name-parts))}))
+  #:category{:path  (str/join category-name-separator name-parts)
+             :label (str/capitalize (str/join " " name-parts))})
 
 (defn hash-map-by [f coll]
   (into {} (map (juxt f identity)) coll))
@@ -122,23 +124,21 @@
                                                                                 (assoc "socks" (leaf "socks"))
                                                                                 (assoc "wallets" (leaf "wallets")))}))))}])
 
-(def category-path-separator "/")
-
 (defn category-path [& path-parts]
-  (str/join category-path-separator (cons "" path-parts)))
+  (str/join category-path-separator path-parts))
 
 (defn mock-categories3 []
   (letfn [(join-children-paths [category path]
             (when (vector? category)
               (debug "Got vector for category: " category " path: " path))
-            (let [new-path (str/join category-path-separator [path (:category/path category)])]
+            (let [new-path (str/join category-path-separator (filter some? [path (:category/path category)]))]
               (cond-> (assoc category :category/path new-path)
                       (some? (:category/children category))
                       (update :category/children (fn [children]
                                                    (->> (if (fn? children) (children) children)
                                                         (into [] (map #(join-children-paths % new-path)))))))))]
     (->> cats
-         (into [] (map #(join-children-paths % "")))
+         (into [] (map #(join-children-paths % nil)))
          ;; (walk/postwalk #(cond-> % (map? %) (assoc :db/id (db/tempid :db.part/user))))
          )))
 
@@ -214,19 +214,19 @@
     :store/items [{:store.item/name     "Linen duvet cover - Woodrose"
                    :store.item/price    34.00M
                    :store.item/photos   [(item-photo "https://img1.etsystatic.com/141/1/11651126/il_570xN.1142044641_1j6c.jpg")]
-                   :store.item/category [:category/path "/home"]}
+                   :store.item/category [:category/path "home"]}
                   {:store.item/name     "Linen pillowcases with ribbons"
                    :store.item/price    52.00M
                    :store.item/photos   [(item-photo "https://img0.etsystatic.com/137/0/11651126/il_570xN.1003284712_ip5e.jpg")]
-                   :store.item/category [:category/path "/home"]}
+                   :store.item/category [:category/path "home"]}
                   {:store.item/name     "Stone washed linen duvet cover"
                    :store.item/price    134.00M
                    :store.item/photos   [(item-photo "https://img0.etsystatic.com/133/0/11651126/il_570xN.915745904_opjr.jpg")]
-                   :store.item/category [:category/path "/home"]}
+                   :store.item/category [:category/path "home"]}
                   {:store.item/name     "Linen fitted sheet - Aquamarine"
                    :store.item/price    34.00M
                    :store.item/photos   [(item-photo "https://img1.etsystatic.com/126/0/11651126/il_570xN.1098073811_5ca0.jpg")]
-                   :store.item/category [:category/path "/home"]}]}
+                   :store.item/category [:category/path "home"]}]}
 
    ;; thislovesthat
    {:db/id       (db/tempid :db.part/user)
@@ -311,12 +311,6 @@
                                                                             "https://img1.etsystatic.com/125/0/8829348/il_570xN.988317889_kzc9.jpg"])
                    :store.item/price      4.49M
                    :store.item/category [:category/path (category-path "shoes" "women")]}
-                  ;{:store.item/name       "Leather Shoes (green)"
-                  ; :store.item/photos     [(photo "https://img1.etsystatic.com/032/0/8829348/il_570xN.636027815_eg26.jpg")
-                  ;                         (photo "https://img1.etsystatic.com/028/0/8829348/il_570xN.636027807_ozll.jpg")]
-                  ; :store.item/price      4.49M
-                  ; :store.item/categories [[:category/path "women"]
-                  ;                         [:category/path "women-shoes"]]}
                   {:store.item/name       "Leather Boots"
                    :store.item/photos     [(item-photo "https://img0.etsystatic.com/172/4/8829348/il_570xN.1104988862_cb12.jpg")]
                    :store.item/price      6.37M

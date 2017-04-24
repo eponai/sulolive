@@ -282,7 +282,7 @@
                    {:user/photo [:photo/path]}
                    {:store.owner/_user [{:store/_owners [:store/name :db/id
                                                          {:store/photo [:photo/path]}]}]}]}
-     '{:query/top-categories [:category/label :category/path :category/level {:category/children ...}]}
+     '{:query/top-categories [:category/label :category/path {:category/children ...}]}
      :query/current-route])
   Object
   #?(:cljs

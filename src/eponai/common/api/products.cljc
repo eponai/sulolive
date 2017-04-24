@@ -3,7 +3,7 @@
 
 (defn find-by-category [c]
   {:where   '[[?c :category/path ?coll]
-              [?e :store.item/categories ?c]]
+              [?e :store.item/category ?c]]
    :symbols {'?coll c}})
 
 (defn find-all []
