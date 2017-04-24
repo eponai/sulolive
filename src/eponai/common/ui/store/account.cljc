@@ -22,7 +22,8 @@
     [eponai.common :as c]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.store.account.validate :as v]
-    [eponai.client.routes :as routes]))
+    [eponai.client.routes :as routes]
+    [eponai.common.ui.common :as common]))
 
 (defn tabs-panel [is-active? & content]
   (dom/div
@@ -74,6 +75,7 @@
 
       (grid/row-column
         {:id "sulo-account-settings"}
+        (common/wip-label this)
         (dom/h3 nil "Settings")
         (grid/row
           (css/add-class :collapse)

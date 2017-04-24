@@ -293,57 +293,63 @@
                 routed-props (:routing/store-dashboard props)]
             (factory (om/computed routed-props (computed-fn (assoc props :store store :route-params route-params)))))
           ;; Render the store's dashboard:
-          (grid/row
-            (css/align :center {:id "sulo-main-dashboard"})
-            (grid/column
-              (grid/column-size {:small 10 :medium 4 :large 3})
-              (store-info-element this))
-            (grid/column
-              (grid/column-size {:small 12 :medium 8 :large 9})
-              (callout/callout
-                nil
-                (callout/header nil "Getting started")
-                (menu/vertical
-                  nil
-
-                  (check-list-item
-                    (some? (:store/description store))
-                    (routes/url :store-dashboard/settings {:store-id store-id})
-                    (dom/span nil "Describe your store"))
-
-                  (check-list-item
-                    (boolean (not-empty (:store/items store)))
-                    (routes/url :store-dashboard/create-product {:store-id store-id})
-                    (dom/span nil "Add your first product"))
-
-                  (check-list-item
-                    false
-                    (routes/url :store-dashboard/stream {:store-id store-id})
-                    (dom/span nil "Setup your first stream"))
-
-                  (check-list-item
-                    (:stripe/details-submitted? stripe-account)
-                    (routes/url :store-dashboard/settings#activate {:store-id store-id})
-                    (dom/span nil "Activate your account"))))
-
-              (if (:stripe/details-submitted? stripe-account)
-                (verification-status-element this)
+          (dom/div
+            {:id "sulo-main-dashboard"}
+            (grid/row-column
+              nil
+              (common/wip-label this)
+              (dom/h3 nil (dom/span nil "Dashboard ")))
+            (grid/row
+              (css/align :center)
+              (grid/column
+                (grid/column-size {:small 10 :medium 4 :large 3})
+                (store-info-element this))
+              (grid/column
+                (grid/column-size {:small 12 :medium 8 :large 9})
                 (callout/callout
-                  (->> (css/add-class :notification)
-                       (css/add-class :action))
-                  (grid/row
+                  nil
+                  (callout/header nil "Getting started")
+                  (menu/vertical
                     nil
-                    (grid/column
-                      (css/add-class :shrink)
-                      (dom/i {:classes ["fa fa-info fa-fw"]}))
-                    (grid/column
+
+                    (check-list-item
+                      (some? (:store/description store))
+                      (routes/url :store-dashboard/settings {:store-id store-id})
+                      (dom/span nil "Describe your store"))
+
+                    (check-list-item
+                      (boolean (not-empty (:store/items store)))
+                      (routes/url :store-dashboard/create-product {:store-id store-id})
+                      (dom/span nil "Add your first product"))
+
+                    (check-list-item
+                      false
+                      (routes/url :store-dashboard/stream {:store-id store-id})
+                      (dom/span nil "Setup your first stream"))
+
+                    (check-list-item
+                      (:stripe/details-submitted? stripe-account)
+                      (routes/url :store-dashboard/settings#activate {:store-id store-id})
+                      (dom/span nil "Activate your account"))))
+
+                (if (:stripe/details-submitted? stripe-account)
+                  (verification-status-element this)
+                  (callout/callout
+                    (->> (css/add-class :notification)
+                         (css/add-class :action))
+                    (grid/row
                       nil
-                      (callout/header nil "Activate your account")))
-                  (dom/p nil
-                         (dom/span nil "Before ")
-                         (dom/a {:href (routes/url :store-dashboard/settings#activate {:store-id store-id})} (dom/span nil "activating your account"))
-                         (dom/span nil ", you can only use SULO Live in test mode. You can manage your store, but it'll not be visible to the public."))
-                  (dom/p nil
-                         "Once you've activated you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our terms of service. If there is a problem, we'll get in touch right away to resolve it as quickly as possible."))))))))))
+                      (grid/column
+                        (css/add-class :shrink)
+                        (dom/i {:classes ["fa fa-info fa-fw"]}))
+                      (grid/column
+                        nil
+                        (callout/header nil "Activate your account")))
+                    (dom/p nil
+                           (dom/span nil "Before ")
+                           (dom/a {:href (routes/url :store-dashboard/settings#activate {:store-id store-id})} (dom/span nil "activating your account"))
+                           (dom/span nil ", you can only use SULO Live in test mode. You can manage your store, but it'll not be visible to the public."))
+                    (dom/p nil
+                           "Once you've activated you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our terms of service. If there is a problem, we'll get in touch right away to resolve it as quickly as possible.")))))))))))
 
 (def ->Dashboard (om/factory Dashboard))

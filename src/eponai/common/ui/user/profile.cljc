@@ -34,6 +34,7 @@
           photo-url (or (get-in user [:user/photo :photo/path]) photo-url)]
       (dom/div
         {:id "sulo-profile"}
+        (common/wip-label this)
         (dom/div
           (css/add-class :header)
           (when file-upload?

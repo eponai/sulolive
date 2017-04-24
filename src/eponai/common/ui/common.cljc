@@ -7,7 +7,8 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.navbar :as nav]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [om.next :as om]))
 
 (defn order-status-element [order]
   (let [status (:order/status order)]
@@ -155,3 +156,12 @@
           (css/add-class :page-content)
           content))
       (footer nil))))
+
+(defn wip-label [_]
+  (dom/div
+    (css/text-align :center)
+    (dom/span (->> {:id    "wip-tooltip"
+                    :title "This page is still a work in progress and might have unexpected behaviors. Thank you for understanding."}
+                   (css/add-class :label)
+                   (css/add-class :wip-label)
+                   (css/add-class :green)) "Work in progress")))
