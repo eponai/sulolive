@@ -6,7 +6,8 @@
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.css :as css]
     [taoensso.timbre :refer [debug]]
-    [eponai.client.routes :as routes]))
+    [eponai.client.routes :as routes]
+    [eponai.common.ui.common :as common]))
 
 (defn store-element [s]
   (debug "Store element: " s)
@@ -89,7 +90,8 @@
         (my-dom/div
           (->> (css/grid-row)
                css/grid-column)
-          (dom/h3 nil "My Orders")
+          (common/wip-label this)
+          (dom/h1 nil "My Orders")
           (map
             (fn [o]
               (dom/div nil

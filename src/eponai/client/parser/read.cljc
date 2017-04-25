@@ -130,6 +130,19 @@
       {:remote true }
       {:value cart})))                                      ;(common.read/compute-cart-price cart)
 
+(defmethod client-read :query/checkout
+  [{:keys [db query route-params target ast]} _ _]
+  (let [store-id (c/parse-long-safe (:store-id route-params))]
+    (debug "query/checkout with store-id: " store-id)
+    (if target
+      {:remote (assoc-in ast [:params :store-id] store-id)}
+      {:value (when (some? store-id)
+                (db/pull-all-with db query {:where   '[[?u :user/cart ?c]
+                                                       [?c :cart/items ?e]
+                                                       [?i :store.item/skus ?e]
+                                                       [?s :store/items ?i]]
+                                            :symbols {'?s store-id}}))})))
+
 (defmethod client-read :query/items
   [{:keys [db query target route-params ast] :as env} _ p]
   (let [{:keys [category search]} route-params]

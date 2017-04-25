@@ -41,6 +41,15 @@
   {:value (query/one db db-history query {:where   '[[?u :user/cart ?e]]
                                           :symbols {'?u (:user-id auth)}})})
 
+(defread query/checkout
+  [{:keys [db db-history query auth]} _ {:keys [store-id]}]
+  {:auth ::auth/any-user}
+  {:value (db/pull-all-with db query {:where   '[[?u :user/cart ?c]
+                                                     [?c :cart/items ?e]
+                                                     [?i :store.item/skus ?e]
+                                                     [?s :store/items ?i]]
+                                          :symbols {'?s store-id}})})
+
 (defread query/store
   [{:keys [db db-history query]} _ {:keys [store-id]}]
   {:auth    ::auth/public
