@@ -1,6 +1,7 @@
 (ns eponai.server.datomic.mocked-data
   (:require
     [eponai.common.database :as db]
+    [eponai.common.api.products :as products]
     [clojure.string :as str]
     [taoensso.timbre :refer [debug]]
     [medley.core :as medley]
@@ -64,12 +65,9 @@
                :label    (str "Women's " label)
                :children (vals (women-fn unisex-adult))}])
 
-(def category-path-separator "_")
-(def category-name-separator "-")
-
 (defn leaf [& name-parts]
-  #:category {:path  (str/join category-name-separator name-parts)
-              :label (str/capitalize (str/join " " name-parts))})
+  #:category{:path  (str/join products/category-name-separator name-parts)
+             :label (str/capitalize (str/join " " name-parts))})
 
 (defn hash-map-by [f coll]
   (into {} (map (juxt f identity)) coll))
@@ -131,13 +129,13 @@
                                                                                  (assoc "wallets" (leaf "wallets")))}))))}])
 
 (defn category-path [& path-parts]
-  (str/join category-path-separator path-parts))
+  (str/join products/category-path-separator path-parts))
 
 (defn mock-categories3 []
   (letfn [(join-children-paths [category path]
             (when (vector? category)
               (debug "Got vector for category: " category " path: " path))
-            (let [new-path (str/join category-path-separator (filter some? [path (:category/path category)]))]
+            (let [new-path (str/join products/category-path-separator (filter some? [path (:category/path category)]))]
               (cond-> (assoc category :category/path new-path)
                       (some? (:category/children category))
                       (update :category/children (fn [children]

@@ -13,7 +13,8 @@
     [eponai.server.external.chat :as chat]
     [eponai.server.api.store :as store]
     [eponai.common.api.products :as products]
-    [eponai.server.api.user :as user]))
+    [eponai.server.api.user :as user]
+    [taoensso.timbre :as timbre]))
 
 (defmacro defread
   ""
@@ -259,3 +260,20 @@
                     (chat/initial-read chat store query)
                     (chat/read-messages chat store query read-basis-t-for-this-key))
                   (parser/value-with-basis-t (chat/last-read chat)))})))
+
+(defread query/browse-items
+  [{:keys [db query route-params]} _ {:keys [browse-filter category-path]}]
+  {:auth    ::auth/public
+   :uniq-by (let [bf (or browse-filter (:browse-filter route-params))
+                  cp (or category-path (:category-path category-path))]
+              (or (and bf [[:browse-filter bf]])
+                  (and cp [[:category-path cp]])))}
+  (let [bf (or browse-filter (:browse-filter route-params))
+        cp (or category-path (:category-path category-path))]
+    {:value (db/pull-all-with db query (cond
+                                         (some? bf)
+                                         (products/find-with-filter bf)
+                                         (some? cp)
+                                         (products/find-by-category cp)
+                                         :else
+                                         (products/find-all)))}))

@@ -53,6 +53,9 @@
         "products"                    product-routes
         "categories"                  {""              :products/all-categories
                                        ["/" :category] :products/categories}
+        "browse"                      [["" :browse/all-items]
+                                       [["/category/" :category-path] :browse/category]
+                                       [["/" :browse-filter] :browse/filtered]]
         "help"                        help-routes
         ["checkout/" :store-id]       checkout-routes
         "shopping-bag"                :shopping-bag

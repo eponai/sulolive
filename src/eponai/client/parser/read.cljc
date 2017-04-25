@@ -9,7 +9,7 @@
     [eponai.client.routes :as client.routes]
     [eponai.common.ui.router :as router]
     [eponai.common :as c]
-    [taoensso.timbre :refer [debug]]
+    [taoensso.timbre :as timbre :refer [debug]]
     [eponai.client.auth :as auth]
     [eponai.common.api.products :as products]))
 
@@ -163,15 +163,32 @@
                     :else
                     (db/pull-all-with db query (products/find-all)))})))
 
+(defmethod client-read :query/browse-items
+  [{:keys [db target query route-params ast]} _ _]
+  (let [{:keys [browse-filter category-path]} route-params]
+    (if target
+      {:remote (cond-> ast
+                       (some? browse-filter)
+                       (assoc-in [:params :browse-filter] browse-filter)
+                       (some? category-path)
+                       (assoc-in [:params :category-path] category-path))}
+      {:value (db/pull-all-with db query (cond
+                                           (some? browse-filter)
+                                           (products/find-with-filter browse-filter)
+                                           (some? category-path)
+                                           (products/find-by-category category-path)
+                                           :else
+                                           (products/find-all)))})))
+
 (defmethod client-read :query/top-categories
-  [{:keys [db target query route-params]} _ {:keys [category search] :as p}]
+  [{:keys [db target query route-params]} _ _]
   (if target
     {:remote true}
     {:value (db/pull-many db query (sequence (comp
                                                (map :e)
                                                (remove (into #{} (map :v) (db/datoms db :aevt :category/children))))
                                              ;; :avet needs attribute to have :db/index true
-                                             (db/datoms db :avet :category/path category)))}))
+                                             (db/datoms db :avet :category/path)))}))
 
 (defmethod client-read :query/category
   [{:keys [db query target route-params ast] :as env} _ p]

@@ -45,7 +45,7 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:query/items (om/get-query product/Product)}
+     {:query/browse-items (om/get-query product/Product)}
      '{:query/category [:category/label {:category/photo [:photo/path]} :category/path
                         {:category/_children ...}
                         {:category/children ...}]}
@@ -59,13 +59,12 @@
      :filters-open? false})
   (render [this]
     (let [{:proxy/keys       [navbar product-filters]
-           :query/keys [current-route items category top-categories]} (om/props this)
+           :query/keys [current-route category top-categories]} (om/props this)
           {:keys [sorting filters-open?]} (om/get-state this)
+          items (:query/browse-items (om/props this))
           current-category (get-in current-route [:route-params :category] "")
           parent (category-parent category)]
 
-      (debug "Current-category: " current-category)
-      (debug "Parent: " parent)
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse"}
         (when filters-open?
