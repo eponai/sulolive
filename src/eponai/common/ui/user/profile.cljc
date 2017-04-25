@@ -67,7 +67,7 @@
               nil
               (grid/column
                 (css/text-align :center)
-                (dom/h1 nil (:user/name user))))
+                (dom/h1 nil (get-in user [:user/profile :user.profile/name]))))
 
             (grid/row
               (css/align :center)
@@ -79,7 +79,7 @@
                          (css/add-class :edit-enabled))
 
                 (dom/a {:onClick #(when is-current-user? (om/update-state! this assoc :file-upload? true))}
-                       (photo/circle {:src photo-url}))))
+                       (photo/user-photo user))))
 
             (grid/row
               (css/align :center)

@@ -17,12 +17,13 @@
   (render [this]
     (let [{:keys [user]} (om/get-computed this)]
       (dom/div #js {:id "sulo-profile-edit"}
+        (common/wip-label this)
         (my-dom/div
           (css/grid-row)
           (my-dom/div
             (css/grid-column)
 
-            (dom/h3 nil "Edit Profile")
+            (dom/h1 nil "Edit Profile")
             (my-dom/div
               (css/add-class ::css/callout)
               ;(dom/h4 #js {:className "header"} "Public Information")
@@ -47,7 +48,7 @@
                     (my-dom/div
                       (css/grid-column)
                       (dom/input #js {:type         "text"
-                                      :defaultValue (:user/name user)})))
+                                      :defaultValue (get-in user [:user/profile :user.profile/name])})))
 
                   (my-dom/div
                     (css/grid-row)

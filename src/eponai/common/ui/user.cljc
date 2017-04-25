@@ -16,8 +16,8 @@
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:query/user [:db/id
                    :user/email
-                   {:user/photo [:photo/path]}
-                   :user/name]}
+                   {:user/profile [{:user.profile/photo [:photo/path]}
+                                   :user.profile/name]}]}
      {:query/auth [:db/id]}
      {:proxy/profile (om/get-query profile/Profile)}
      {:proxy/order (om/get-query o/Order)}

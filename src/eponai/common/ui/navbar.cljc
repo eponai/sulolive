@@ -279,7 +279,7 @@
                                                      {:store/_items [:store/name]}]}]}]}
      {:query/auth [:db/id
                    :user/email
-                   {:user/photo [:photo/path]}
+                   {:user/profile [{:user.profile/photo [:photo/path]}]}
                    {:store.owner/_user [{:store/_owners [:store/name :db/id
                                                          {:store/photo [:photo/path]}]}]}]}
      '{:query/top-categories [:category/label :category/path {:category/children ...}]}
