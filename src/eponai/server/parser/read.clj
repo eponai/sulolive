@@ -45,10 +45,10 @@
   [{:keys [db db-history query auth]} _ {:keys [store-id]}]
   {:auth ::auth/any-user}
   {:value (db/pull-all-with db query {:where   '[[?u :user/cart ?c]
-                                                     [?c :cart/items ?e]
-                                                     [?i :store.item/skus ?e]
-                                                     [?s :store/items ?i]]
-                                          :symbols {'?s store-id}})})
+                                                 [?c :cart/items ?e]
+                                                 [?i :store.item/skus ?e]
+                                                 [?s :store/items ?i]]
+                                      :symbols {'?s store-id}})})
 
 (defread query/store
   [{:keys [db db-history query]} _ {:keys [store-id]}]
@@ -84,10 +84,10 @@
    :uniq-by [[:user-id user-id] [:store-id store-id]]}
   {:value (cond (some? store-id)
                 (db/pull-all-with db query {:where   '[[?e :order/store ?s]]
-                                                       :symbols {'?s store-id}})
+                                            :symbols {'?s store-id}})
                 (some? user-id)
                 (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
-                                                       :symbols {'?u user-id}}))})
+                                            :symbols {'?u user-id}}))})
 
 (defread query/inventory
   [{:keys [query db]} _ {:keys [store-id]}]
@@ -100,14 +100,14 @@
 
 (defread query/order
   [{:keys [state query db] :as env} _ {:keys [order-id store-id user-id]}]
-  {:auth {::auth/store-owner store-id}
+  {:auth    {::auth/store-owner store-id}
    :uniq-by [[:user-id user-id] [:store-id store-id] [:order-id order-id]]}
   {:value (cond (some? store-id)
-                (db/pull-one-with db query {:where '[[?e :order/store ?s]]
+                (db/pull-one-with db query {:where   '[[?e :order/store ?s]]
                                             :symbols {'?e order-id
                                                       '?s store-id}})
                 (some? user-id)
-                (db/pull-one-with db query {:where '[[?e :order/user ?u]]
+                (db/pull-one-with db query {:where   '[[?e :order/user ?u]]
                                             :symbols {'?e order-id
                                                       '?u user-id}}))})
 
@@ -148,7 +148,7 @@
 
 (defread query/items
   [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
-  {:auth ::auth/public
+  {:auth    ::auth/public
    :uniq-by [[:category (or category (:category route-params))]]}
   {:value (let [c (or category (:category route-params))]
             (cond (some? category)
@@ -173,7 +173,7 @@
 
 (defread query/item
   [{:keys [db db-history query]} _ {:keys [product-id]}]
-  {:auth ::auth/public
+  {:auth    ::auth/public
    :uniq-by [[:product-id product-id]]}
   {:value (query/one db db-history query
                      {:where   '[[?e :store.item/name]]
@@ -237,7 +237,7 @@
                :ui.singleton.stream-config/publisher-url  (wowza/publisher-url wowza)}})))
 
 (defread query/chat
-  [{:keys [db-history query system]
+  [{:keys         [db-history query system]
     ::parser/keys [read-basis-t-for-this-key chat-update-basis-t]} k {:keys [store] :as params}]
   {:auth    ::auth/public
    :uniq-by [[:store-id (:db/id store)]]}

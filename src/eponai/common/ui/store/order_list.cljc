@@ -63,7 +63,7 @@
                                          (table/td
                                            (css/add-class :sl-orderlist-cell opts)
                                            content))]
-                    (table/tbody-row
+                    (table/tbody-link-row
                       (->> {:href product-link}
                            (css/add-class :sl-orderlist-row)
                            (css/add-class (str "sl-orderlist-row--" (name (:order/status o)))))

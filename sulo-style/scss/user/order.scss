@@ -18,3 +18,37 @@
 		padding: 0.5rem;
 	}
 }
+
+.sulo-order-element {
+	.callout .header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		font-weight: $global-weight-normal;
+		p {
+			margin: 0;
+		}
+		> div {
+			display: flex;
+			align-items: center;
+		}
+		.photo-container {
+			margin-right: 1rem;
+			width: 2rem;
+			max-width: 2rem;
+		}
+		.table {
+			// .photo-container {
+			// 	width: 2rem;
+			// 	max-width: 2rem;
+			// }
+		}
+	}
+
+	.sl-OrderItemlist-cell--photo {
+		.photo-container {
+			min-width: 1rem;
+		}
+		// width: 0.5rem;
+	}
+}

@@ -29,13 +29,15 @@
      {:query/checkout [:db/id
                        {:cart/_items [:user/_cart]}
                        :store.item.sku/variation
+                       :store.item.sku/inventory
                        {:store.item/_skus [:store.item/price
                                            {:store.item/photos [:store.item.photo/index
                                                                 {:store.item.photo/photo [:photo/path]}]}
                                            :store.item/name
                                            {:store/_items [:db/id
                                                            :store/name
-                                                           {:store/photo [:photo/path]}]}]}]}
+                                                           {:store/photo [:photo/path]}]}]}
+                       ]}
      :query/current-route
      {:query/auth [:db/id
                    :user/email]}
@@ -44,17 +46,17 @@
   #?(:cljs
      (place-order
        [this]
-       (let [{:query/keys [current-route cart]} (om/props this)
+       (let [{:query/keys [current-route checkout]} (om/props this)
              {:checkout/keys [shipping payment]} (om/get-state this)
              {:keys [source]} payment
              {:keys [route-params]} current-route
              {:keys [store-id]} route-params]
-         (let [items (filter #(= (c/parse-long store-id) (get-in % [:store.item/_skus :store/_items :db/id])) (:cart/items cart))]
+         (let [items checkout]
            (msg/om-transact! this `[(store/create-order ~{:order    {:source   source
                                                                      :shipping shipping
                                                                      :items    items
                                                                      :shipping-fee 5
-                                                                     :subtotal (review/compute-item-price (:cart/items cart))}
+                                                                     :subtotal (review/compute-item-price items)}
                                                           :store-id (c/parse-long store-id)})])))))
 
   (initLocalState [_]

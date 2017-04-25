@@ -64,6 +64,7 @@
     (-update-account stripe account-id account)))
 
 (defn create-charge [stripe params]
+  (debug "Create charge: " params)
   (-create-charge stripe params))
 
 (defn create-refund [stripe params]

@@ -1,6 +1,7 @@
 (ns eponai.common.ui.common
   (:require
     [eponai.client.routes :as routes]
+    [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.grid :as grid]
@@ -165,3 +166,28 @@
                    (css/add-class :label)
                    (css/add-class :wip-label)
                    (css/add-class :primary)) "Work in progress")))
+
+
+(defn is-new-order? [component]
+  (let [{:query/keys [current-route]} (om/props component)]
+    (nil? (get-in current-route [:route-params :order-id]))))
+
+(defn is-order-not-found? [component]
+  (let [{:query/keys [current-route order]} (om/props component)]
+    (and (some? (get-in current-route [:route-params :order-id]))
+         (nil? order))))
+
+(defn order-not-found [component return-href]
+  (let [{:query/keys [current-route]} (om/props component)
+        {:keys [order-id store-id]} (:route-params current-route)]
+    (grid/row-column
+      nil
+      (dom/h3 nil "Order not found")
+      (callout/callout
+        (->> (css/text-align :center)
+             (css/add-class :not-found))
+        (dom/p nil (dom/i {:classes ["fa fa-times-circle fa-2x"]}))
+        (dom/p nil
+               (dom/strong nil (str "Order #" order-id " was not found in "))
+               (dom/a {:href return-href}
+                      (dom/strong nil "your orders")))))))

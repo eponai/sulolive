@@ -1,79 +1,120 @@
 (ns eponai.common.ui.user.order-receipt
   (:require
-    [eponai.common.ui.dom :as my-dom]
+    [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.photo :as photo]
-    [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.css :as css]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.common.ui.elements.grid :as grid]
+    [eponai.common.ui.utils :refer [two-decimal-price]]
+    [eponai.common.ui.common :as common]
+    [eponai.client.routes :as routes]
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.common.ui.elements.table :as table]
+    [eponai.common.format.date :as date]
+    [eponai.common.ui.elements.menu :as menu]))
 
 (defn store-element [s]
-  (debug "Store element: " s)
   (let [{:store/keys [photo] store-name :store/name} s]
-    (dom/div nil
-      (photo/circle {:src (:photo/path photo)})
-      (dom/div #js {:className "text-center"} (dom/p nil (dom/strong #js {:className "store-name"} store-name))))))
+    (dom/div
+      nil
+      (photo/store-photo s)
+      (dom/div
+        (css/text-align :center)
+        (dom/p nil (dom/strong
+                     (css/add-class :store-name) store-name))))))
 
 (defn order-element [component order]
-  (let [skus (filter #(= (:order.item/type %) :sku) (:order/items order))
-        not-skus (remove #(= (:order.item/type %) :sku) (:order/items order))]
-    (my-dom/div
-      (->> (css/grid-row)
-           (css/align :bottom))
-      (my-dom/div
-        (->> (css/grid-column)
-             (css/grid-column-size {:small 4 :medium 2}))
-        (store-element (:order/store order)))
-      (my-dom/div
-        (css/grid-column)
-        (dom/table
-          nil
-          (dom/tbody
+  (let [{:query/keys [current-route]} (om/props component)
+        grouped-order-items (group-by :order.item/type (:order/items order))
+        {:order/keys [store]} order
+        {:keys [route-params]} current-route]
+    ;(let [skus (filter #(= (:order.item/type %) :order.item.type/sku) (:order/items order))
+    ;      not-skus (remove #(= (:order.item/type %) :order.item.type/sku) (:order/items order))])
+    (dom/div
+      (css/add-class :sulo-order-element)
+      (callout/callout
+        nil
+        (dom/div
+          (css/add-class :header)
+          (dom/div nil
+                   (dom/a
+                     {:href (routes/url :store {:store-id (:db/id store)})}
+                     (photo/store-photo store))
+                   (dom/p nil
+                          (dom/span nil "Purchased from ")
+                          (dom/a {:href (routes/url :store {:store-id (:db/id store)})} (:store/name store))))
+          (dom/p nil (date/date->string (date/current-millis))))
+
+        (grid/row
+          (css/align :top)
+          (grid/column
             nil
-            (map-indexed
-              (fn [i item]
-                (dom/tr #js {:key i :className "order-item-sku"}
-                        (dom/td
-                          nil
-                          (dom/a nil (:order.item/parent item)))
-                        (dom/td
-                          nil
-                          (dom/span nil (:order.item/description item)))
-                        (dom/td
-                          nil
-                          (dom/span nil (:order.item/amount item)))))
-              skus))
-          (dom/tfoot
-            nil
-            (map-indexed
-              (fn [i item]
-                (dom/tr
-                  #js {:key (+ i (count skus))}
-                  (dom/td
-                    nil)
-                  (dom/td nil
-                          (dom/span nil (:order.item/description item)))
-                  (dom/td nil
-                          (dom/span nil (:order.item/amount item)))))
-              not-skus)))))))
+            (table/table
+              nil
+              (table/tbody
+                nil
+                (map
+                  (fn [oi]
+                    (debug "Order item: " oi)
+                    (let [item (get-in oi [:order.item/parent :store.item/_skus])
+                          photos (:store.item/photos item)
+                          sorted-photos (sort-by :store.item.photo/index photos)]
+                      (table/tbody-row
+                        nil
+                        (table/td
+                          (->> (css/add-class :sl-OrderItemlist-cell)
+                               (css/add-class :sl-OrderItemlist-cell--photo))
+                          (photo/product-photo (:store.item.photo/photo (first sorted-photos))))
+                        (table/td
+                          (->> (css/add-class :sl-OrderItemlist-cell)
+                               (css/add-class :sl-OrderItemlist-cell--photo)) (:store.item/name item)))))
+                  (:order.item.type/sku grouped-order-items))
+                )))
+          (grid/column
+            (->> (css/text-align :right)
+                 (css/add-class :shrink))
+
+            (grid/row-column
+              nil
+              (dom/h2 nil (two-decimal-price (:order/amount order))))))))))
 
 (defui Order
   static om/IQuery
   (query [_]
     [:query/current-route
-     {:query/order [:order/items
-                    {:order/store [:store/name {:store/photo [:photo/path]}]}]}])
+     {:query/order [:db/id
+                    :order/uuid
+                    :order/status
+                    :order/amount
+                    {:order/items [:order.item/type
+                                   {:order.item/parent [{:store.item/_skus [:store.item/name
+                                                                            {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+                                                                                                 :store.item.photo/index]}]}]}]}
+                    {:order/shipping [:shipping/name
+                                      :shipping/address]}
+                    :order/user
+                    {:order/store [{:store/photo [:photo/path]}
+                                   :store/name]}]}])
   Object
   (render [this]
     (let [{:query/keys [current-route order]} (om/props this)
           {:keys [route route-params]} current-route]
       (debug "Order receipt: " order)
-      (dom/div #js {:id "sulo-order-receipt"}
-        (my-dom/div
-          (->> (css/grid-row)
-               css/grid-column)
-          (dom/h3 nil "Order " (dom/small nil (:order-id route-params)))
-          (dom/div #js {:className "callout"}
+      (dom/div
+        {:id "sulo-order-receipt"}
+        (common/wip-label this)
+        (grid/row-column
+          nil
+          (menu/breadcrumbs
+            nil
+            (menu/item nil (dom/a {:href (routes/url :user/order-list route-params)} (dom/span nil "My orders")))
+            (menu/item nil (dom/span nil "Order"))))
+        (if (common/is-order-not-found? this)
+          (common/order-not-found this (routes/url :user/order-list route-params))
+          (grid/row-column
+            nil
+            (dom/h1 nil (dom/span nil (str "Order #" (:order-id route-params))))
             (order-element this order)))))))
 
 (def ->Order (om/factory Order))

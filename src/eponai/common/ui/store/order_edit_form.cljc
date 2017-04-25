@@ -357,15 +357,6 @@
                (dom/a {:href (routes/url :store-dashboard/order-list {:store-id store-id})}
                       (dom/strong nil "your orders")))))))
 
-(defn is-new-order? [component]
-  (let [{:query/keys [current-route]} (om/props component)]
-    (nil? (get-in current-route [:route-params :order-id]))))
-
-(defn is-order-not-found? [component]
-  (let [{:query/keys [current-route order]} (om/props component)]
-    (and (some? (get-in current-route [:route-params :order-id]))
-         (nil? order))))
-
 (defui OrderEditForm
   static om/IQuery
   (query [_]
@@ -429,11 +420,11 @@
       (debug "CURRENT ORDER: " order)
       (dom/div
         {:id "sulo-edit-order"}
-        (when-not did-mount?
-          (common/loading-spinner nil))
-        (if (is-order-not-found? this)
-          (order-not-found this)
-          (if (is-new-order? this)
+        ;(when-not did-mount?
+        ;  (common/loading-spinner nil))
+        (if (common/is-order-not-found? this)
+          (common/order-not-found this (routes/url :store-dashboard/order-list {:store-id store-id}))
+          (if (common/is-new-order? this)
             (create-order this)
             (edit-order this)))
 

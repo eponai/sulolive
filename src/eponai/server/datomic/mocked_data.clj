@@ -307,6 +307,7 @@
    ;; BangiShop
    {:db/id       (db/tempid :db.part/user)
     :store/name  "BangiShop"
+    :store/stripe {:stripe/id "acct_19jze1BbOp8CGZPS"}
     :store/cover (photo "https://img1.etsystatic.com/142/0/8829348/isbl_3360x840.24031443_roffucs6.jpg")
     :store/photo (photo "https://img1.etsystatic.com/136/0/8829348/isla_500x500.18128391_dro0qzqd.jpg")
     :store/items [{:store.item/name       "Leather Shoes (silver)"

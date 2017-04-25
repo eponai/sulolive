@@ -212,7 +212,7 @@
 
 (defmutation store/create-order
   [{::parser/keys [return exception] :as env} _ {:keys [order store-id] :as p}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/any-user true}
    :resp {:success return
           :error   (let [default-msg "Could not create order"]
                      (if (some? exception)
