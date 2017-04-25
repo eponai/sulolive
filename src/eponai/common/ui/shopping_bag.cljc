@@ -131,6 +131,7 @@
       (debug "Shopping bag: " cart)
       (common/page-container
         {:navbar navbar :id "sulo-shopping-bag"}
+        (common/wip-label this)
         (grid/row-column
           nil
           (dom/h1 nil "Shopping bag")

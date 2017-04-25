@@ -1,112 +1,97 @@
 (ns eponai.server.external.stripe.format
   (:require
-    [eponai.common.format :as f])
-  (:import
-    (com.stripe.model Address
-                      Account
-                      Account$Verification
-                      AccountTransferSchedule
-                      BankAccount
-                      ExternalAccount
-                      Card
-                      CountrySpec
-                      LegalEntity
-                      LegalEntity$DateOfBirth
-                      LegalEntity$Verification
-                      VerificationFields
-                      VerificationFieldsDetails)))
+    [eponai.common.format :as f]))
 
-(defn stripe->verification-fields [^VerificationFields v]
-  (let [min-fields (fn [^VerificationFieldsDetails field-details]
-                     (.getMinimum field-details))]
-    {:country-spec.verification-fields/individual {:country-spec.verification-fields.individual/minimum (min-fields (.getIndividual v))}
-     :country-spec.verification-fields/company    {:country-spec.verification-fields.company/minimum (min-fields (.getCompany v))}}))
+(defn stripe->verification-fields [verification-fields]
+  {:country-spec.verification-fields/individual {:country-spec.verification-fields.individual/minimum (:minimum (:individual verification-fields))}
+   :country-spec.verification-fields/company    {:country-spec.verification-fields.company/minimum (:minimum (:company verification-fields))}})
 
-(defn stripe->country-spec [^CountrySpec c]
-  {:country-spec/id                                (.getId c)
-   :country-spec/default-currency                  (.getDefaultCurrency c)
-   :country-spec/supported-payment-currencies      (.getSupportedPaymentCurrencies c)
-   :country-spec/supported-bank-account-currencies (.getSupportedBankAccountCurrencies c)
-   :country-spec/supported-payment-methods         (.getSupportedPaymentMethods c)
-   :country-spec/verification-fields               (stripe->verification-fields (.getVerificationFields c))})
-
-(defn stripe->verification [^Account$Verification v]
+(defn stripe->country-spec [country-spec]
   (f/remove-nil-keys
-    {:stripe.verification/fields-needed (.getFieldsNeeded v)
-     :stripe.verification/due-by        (.getDueBy v)
-     :stripe.verification/disabled-reason (.getDisabledReason v)}))
+    {:country-spec/id                                (:id country-spec)
+     :country-spec/default-currency                  (:default_currency country-spec)
+     :country-spec/supported-payment-currencies      (:supported_payment_currencies country-spec)
+     :country-spec/supported-bank-account-currencies (:supported_bank_account_currencies country-spec)
+     :country-spec/supported-payment-methods         (:supported_payment_methods country-spec)
+     :country-spec/verification-fields               (stripe->verification-fields (:verification_fields country-spec))}))
+
+(defn stripe->verification [verification]
+  (f/remove-nil-keys
+    {:stripe.verification/fields-needed   (:fields_needed verification)
+     :stripe.verification/due-by          (:due_by verification)
+     :stripe.verification/disabled-reason (:disabled_reason verification)}))
 
 
-(defn stripe->legal-entity [^LegalEntity le]
-  (let [dob* (fn [^LegalEntity$DateOfBirth dob]
+(defn stripe->legal-entity [legal-entity]
+  (let [dob* (fn [dob]
                (f/remove-nil-keys
-                 {:stripe.legal-entity.dob/year  (.getYear dob)
-                  :stripe.legal-entity.dob/month (.getMonth dob)
-                  :stripe.legal-entity.dob/day   (.getDay dob)}))
-        address* (fn [^Address a]
-                   {:stripe.legal-entity.address/city   (.getCity a)
-                    :stripe.legal-entity.address/postal (.getPostalCode a)
-                    :stripe.legal-entity.address/line1  (.getLine1 a)
-                    :stripe.legal-entity.address/state  (.getState a)})
-        verification* (fn [^LegalEntity$Verification v]
-                        {:stripe.legal-entity.verification/status (.getStatus v)
-                         :stripe.legal-entity.verification/details (.getDetails v)})]
+                 {:stripe.legal-entity.dob/year  (:year dob)
+                  :stripe.legal-entity.dob/month (:month dob)
+                  :stripe.legal-entity.dob/day   (:day dob)}))
+        address* (fn [address]
+                   {:stripe.legal-entity.address/city   (:city address)
+                    :stripe.legal-entity.address/postal (:postal_code address)
+                    :stripe.legal-entity.address/line1  (:line1 address)
+                    :stripe.legal-entity.address/state  (:state address)})
+        verification* (fn [v]
+                        {:stripe.legal-entity.verification/status  (:status v)
+                         :stripe.legal-entity.verification/details (:details v)})]
     (f/remove-nil-keys
-      {:stripe.legal-entity/first-name    (.getFirstName le)
-       :stripe.legal-entity/last-name     (.getLastName le)
-       :stripe.legal-entity/dob           (dob* (.getDob le))
-       :stripe.legal-entity/address       (address* (.getAddress le))
-       :stripe.legal-entity/business-name (.getBusinessName le)
-       :stripe.legal-entity/type          (keyword (.getType le))
-       :stripe.legal-entity/verification  (verification* (.getVerification le))})))
+      {:stripe.legal-entity/first-name    (:first_name legal-entity)
+       :stripe.legal-entity/last-name     (:last_name legal-entity)
+       :stripe.legal-entity/dob           (dob* (:dob legal-entity))
+       :stripe.legal-entity/address       (address* (:address legal-entity))
+       :stripe.legal-entity/business-name (:business_name legal-entity)
+       :stripe.legal-entity/type          (keyword (:type legal-entity))
+       :stripe.legal-entity/verification  (verification* (:verification legal-entity))})))
 
-(defn stripe->bank-account [^BankAccount ba]
-  {:stripe.external-account/id                    (.getId ba)
-   :stripe.external-account/bank-name             (.getBankName ba)
-   :stripe.external-account/routing-number        (.getRoutingNumber ba)
-   :stripe.external-account/default-for-currency? (.getDefaultForCurrency ba)
-   :stripe.external-account/status                (.getStatus ba)
-   :stripe.external-account/last4                 (.getLast4 ba)
-   :stripe.external-account/currency              (.getCurrency ba)
-   :stripe.external-account/country               (.getCountry ba)})
+(defn stripe->bank-account [bank-account]
+  {:stripe.external-account/id                    (:id bank-account)
+   :stripe.external-account/bank-name             (:bank_name bank-account)
+   :stripe.external-account/routing-number        (:routing_number bank-account)
+   :stripe.external-account/default-for-currency? (:default_for_currency bank-account)
+   :stripe.external-account/status                (:status bank-account)
+   :stripe.external-account/last4                 (:last4 bank-account)
+   :stripe.external-account/currency              (:currency bank-account)
+   :stripe.external-account/country               (:country bank-account)})
 
-(defn stripe->card [^Card c]
-  {:stripe.external-account/id    (.getId c)
-   :stripe.external-account/last4 (.getLast4 c)
-   :stripe.external-account/brand (.getBrand c)})
+(defn stripe->card [card]
+  {:stripe.external-account/id    (:id card)
+   :stripe.external-account/last4 (:last4 card)
+   :stripe.external-account/brand (:brand card)})
 
-(defn stripe->account [^Account a]
-  (let [ext-account* (fn [^ExternalAccount ea]
-                       (let [object (.getObject ea)
+(defn stripe->account [account]
+  (let [ext-account* (fn [ext-account]
+                       (let [object (:object ext-account)
                              account (cond (= "bank_account")
-                                           (stripe->bank-account ea)
+                                           (stripe->bank-account ext-account)
                                            (= "card")
-                                           (stripe->card ea))]
+                                           (stripe->card ext-account))]
                          (assoc account :stripe.external-account/object object)))
-        payout-schedule* (fn [^AccountTransferSchedule ats]
-                           {:stripe.payout-schedule/interval     (.getInterval ats)
-                            :stripe.payout-schedule/month-anchor (.getMonthlyAnchor ats)
-                            :stripe.payout-schedule/week-anchor  (.getWeeklyAnchor ats)
-                            :stripe.payout-schedule/delay-days (.getDelayDays ats)})]
+        payout-schedule* (fn [payout-shedule]
+                           (f/remove-nil-keys
+                             {:stripe.payout-schedule/interval     (:interval payout-shedule)
+                              :stripe.payout-schedule/month-anchor (:monthly_anchor payout-shedule)
+                              :stripe.payout-schedule/week-anchor  (:weekly_anchor payout-shedule)
+                              :stripe.payout-schedule/delay-days   (:delay_days payout-shedule)}))]
     (f/remove-nil-keys
-      {:stripe/id                 (.getId a)
-       :stripe/business-name      (.getBusinessName a)
-       :stripe/business-url       (.getBusinessURL a)
-       :stripe/charges-enabled?   (.getChargesEnabled a)
-       :stripe/country            (.getCountry a)
-       :stripe/default-currency   (.getDefaultCurrency a)
-       :stripe/details-submitted? (.getDetailsSubmitted a)
-       :stripe/external-accounts  (map ext-account* (.getData (.getExternalAccounts a)))
-       :stripe/legal-entity       (stripe->legal-entity (.getLegalEntity a))
-       :stripe/payouts-enabled?   (.getTransfersEnabled a)
-       :stripe/payout-schedule    (payout-schedule* (.getTransferSchedule a))
-       :stripe/verification       (stripe->verification (.getVerification a))})))
+      {:stripe/id                 (:id account)
+       :stripe/business-name      (:business_name account)
+       :stripe/business-url       (:business_url account)
+       :stripe/charges-enabled?   (:charges_enabled account)
+       :stripe/country            (:country account)
+       :stripe/default-currency   (:default_currency account)
+       :stripe/details-submitted? (:details_submitted account)
+       :stripe/external-accounts  (map ext-account* (:data (:external_accounts account)))
+       :stripe/legal-entity       (stripe->legal-entity (:legal_entity account))
+       :stripe/payouts-enabled?   (:transfers_enabled account)
+       :stripe/payout-schedule    (payout-schedule* (:transfer_schedule account))
+       :stripe/verification       (stripe->verification (:verification account))})))
 
 (defn input->legal-entity [legal-entity]
   (let [{:field.legal-entity/keys [type address business-name business-tax-id first-name last-name dob personal-id-number]} legal-entity
         {:field.legal-entity.address/keys [line1 postal city state]} address
-        {:field.legal-entity.dob/keys [day month year]} dob
-        ]
+        {:field.legal-entity.dob/keys [day month year]} dob]
     (f/remove-nil-keys
       {:first_name         first-name
        :last_name          last-name
@@ -125,9 +110,9 @@
 (defn input->payout-schedule [ps]
   (let [{:field.payout-schedule/keys [interval month-anchor week-anchor]} ps]
     (f/remove-nil-keys
-      {:interval interval
+      {:interval       interval
        :monthly_anchor month-anchor
-       :weekly_anchor week-anchor})))
+       :weekly_anchor  week-anchor})))
 
 (defn input->account-params [account-params]
   (let [{:field/keys [legal-entity external-account tos-acceptance default-currency payout-schedule]} account-params]

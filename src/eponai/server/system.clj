@@ -156,6 +156,6 @@
               :system/mailchimp (mailchimp/mail-chimp-stub))
             ;; Conditionals for common ones to try real implementation of:
             (nil? (env :use-real-stripe))
-            (assoc :system/stripe (stripe/stripe-stub))
+            (assoc :system/stripe (stripe/stripe-stub (:stripe-secret-key env)))
             (nil? (env :use-real-wowza))
             (assoc :system/wowza (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})))))

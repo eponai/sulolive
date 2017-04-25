@@ -1,14 +1,15 @@
 (ns eponai.server.external.stripe.specs
   (:require
     [clojure.spec :as s]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.common :as c]))
 
 
 ;; ###################################### SPECS
 
-(s/def :ext.stripe.legal-entity.dob/year number?)
-(s/def :ext.stripe.legal-entity.dob/month number?)
-(s/def :ext.stripe.legal-entity.dob/day number?)
+(s/def :ext.stripe.legal-entity.dob/year #(number? (c/parse-long-safe %)))
+(s/def :ext.stripe.legal-entity.dob/month #(number? (c/parse-long-safe %)))
+(s/def :ext.stripe.legal-entity.dob/day #(number? (c/parse-long-safe %)))
 (s/def :ext.stripe.legal-entity/first_name string?)
 (s/def :ext.stripe.legal-entity/last_name string?)
 (s/def :ext.stripe.legal-entity/type (s/and string? #(contains? #{"individual" "company"} %)))

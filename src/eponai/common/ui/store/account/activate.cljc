@@ -140,6 +140,7 @@
           message (msg/last-message this 'stripe/update-account)]
 
       (debug "Stripe account: " stripe-account)
+      (debug "Country specs: " stripe-country-spec)
       (dom/div
         {:id "sulo-activate-account-form"}
         (cond (msg/final? message)

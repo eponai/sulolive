@@ -23,13 +23,20 @@
 			max-width: 2rem;
 		}
 	}
+	.table {
+		table-layout: fixed;
+	}
 
 	.td {
 		vertical-align: top;
 	}
 	.sl-OrderItemlist-cell--photo {
-		min-width: 4rem;
-		width: 6rem;
+		.photo-container {
+			
+		}
+		// min-width: 4rem;
+		// max-width: 4rem;
+		// width: 6rem;
 	}
 	.sl-OrderItemlist-cell--price {
 		font-weight: $global-weight-bold;
