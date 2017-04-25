@@ -73,7 +73,7 @@
                         sku {:store.item.sku/variation variation
                              :store.item.sku/inventory {:store.item.sku.inventory/value (keyword inventory)}}]
                     (if (some? old-sku)
-                      (assoc sku :store.item.sku/uuid (:store.item.sku/uuid old-sku))
+                      (assoc sku :db/id (:db/id old-sku))
                       sku)))
                 (range sku-count)))
          (let [inventory (utils/selected-value-by-id input-main-inventory)]
@@ -87,7 +87,7 @@
 (defn photo-uploader [component index]
   (let [{:keys [did-mount?]} (om/get-state component)
         {:proxy/keys [photo-upload]} (om/props component)]
-    
+
     (when did-mount?
       #?(:cljs
          (pu/->PhotoUploader (om/computed

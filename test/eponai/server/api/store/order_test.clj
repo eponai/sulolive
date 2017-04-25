@@ -13,7 +13,7 @@
   (testing "Creating order should call Stripe and create a charge."
     (let [;; Prepare DB with products to order
           product (-> (f/product {:store.item/name "product" :store.item/price "10"})
-                      (assoc :store.item/skus [(f/sku {:store.item.sku/uuid (db/squuid)})]))
+                      (assoc :store.item/skus [(f/sku {:store.item.sku/variation "sku"})]))
           store (-> (store-test)
                     (assoc :store/items [product]))
           user (user-test)
@@ -51,7 +51,7 @@
   (testing "Creating order should call Stripe and create a charge, charge failed should set order status to created."
     (let [;; Prepare DB with products to order
           product (-> (f/product {:store.item/name "product" :store.item/price "10"})
-                      (assoc :store.item/skus [(f/sku {:store.item.sku/uuid (db/squuid)})]))
+                      (assoc :store.item/skus [(f/sku {:store.item.sku/variation "sku"})]))
           store (-> (store-test)
                     (assoc :store/items [product]))
           user (user-test)

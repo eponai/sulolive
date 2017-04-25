@@ -22,7 +22,6 @@
   (query [_]
     [{:query/inventory [:store.item/name
                         :store.item/description
-                        :store.item/uuid
                         {:store.item/photos [{:store.item.photo/photo [:photo/path]}
                                              :store.item.photo/index]}]}])
   Object

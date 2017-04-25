@@ -214,9 +214,10 @@
   [{::parser/keys [return exception] :as env} _ {:keys [order store-id] :as p}]
   {:auth {::auth/store-owner store-id}
    :resp {:success return
-          :error   (if (some? exception)
-                     (.getMessage exception)
-                     "Could not create order")}}
+          :error   (let [default-msg "Could not create order"]
+                     (if (some? exception)
+                       (:user-message (ex-data exception) default-msg)
+                       default-msg))}}
   {:action (fn []
              (store/create-order env store-id order))})
 

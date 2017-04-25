@@ -111,7 +111,7 @@
                                                                                   :amount  (int (* 100 destination-amount))}}) ;Convert to cents for Stripe
                      (catch CardException e
                        (throw (ex-info (.getMessage e)
-                                       {:message (.getMessage e)}))))
+                                       {:user-message (.getMessage e)}))))
             charge-entity {:db/id     (db/tempid :db.part/user)
                            :charge/id (:charge/id charge)}
             is-paid? (:charge/paid? charge)

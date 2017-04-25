@@ -281,14 +281,6 @@
 
  ;;; Stock item SKU
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store.item.sku/uuid
-  :db/valueType          :db.type/uuid
-  :db/cardinality        :db.cardinality/one
-  :db/unique             :db.unique/identity
-  :db/doc                "Item SKU identifier."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
   :db/ident              :store.item.sku/variation
   :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one
@@ -297,6 +289,7 @@
 
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :store.item.sku/inventory
+  :db/isComponent        true
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
   :db/doc                "Item SKU inventory"

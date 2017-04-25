@@ -25,6 +25,12 @@
   {:db/id      (db/tempid :db.part/user)
    :photo/path url})
 
+(defn sku [& [v]]
+  (cond-> {:store.item.sku/inventory {:store.item.sku.inventory/type  :store.item.inventory.type/bucket
+                                      :store.item.sku.inventory/value :store.item.inventory.value/in-stock}}
+          (some? v)
+          (assoc :store.item.sku/variation v)))
+
 (defn item-photo [url & [i]]
   {:db/id                  (db/tempid :db.part/user)
    :store.item.photo/photo (photo url)
@@ -164,21 +170,15 @@
                          :store.item/category   [:category/path (category-path "jewelry" "women" "rings")]
                          :store.item/navigation (db/tempid :db.part/user -1002)
                          :store.item/uuid       #uuid "58a4b30e-3c8b-49c4-ab08-796c05b4275b"
-                         :store.item/skus       [{:store.item.sku/uuid      #uuid "58a4b30e-e33e-442f-b018-a18284604e13"
-                                                  :store.item.sku/variation "S"
-                                                  :store.item.sku/inventory {:db/id                          (db/tempid :db.part/user)
-                                                                             :store.item.sku.inventory/type  :store.item.inventory.type/bucket
-                                                                             :store.item.sku.inventory/value :store.item.inventory.value/in-stock}
-                                                  }]}
+                         :store.item/skus       [(sku "S")
+                                                 (sku "M")
+                                                 (sku "L")]}
                         {:store.item/name       "Emerald silver choker"
                          :store.item/price      219.00M
                          :store.item/photos     [(item-photo "https://img1.etsystatic.com/178/0/6380862/il_570xN.1122315115_m1kt.jpg")]
                          :store.item/category   [:category/path (category-path "jewelry" "women" "necklaces")]
                          :store.item/uuid       #uuid "58a4b2b8-4489-4661-9580-c0fe2d132966"
-                         :store.item/skus       [{:store.item.sku/uuid      #uuid "58a4b2b8-9c8d-49e1-ab53-8d5c98374f79"
-                                                  :store.item.sku/inventory {:db/id                          (db/tempid :db.part/user)
-                                                                             :store.item.sku.inventory/type  :store.item.inventory.type/bucket
-                                                                             :store.item.sku.inventory/value :store.item.inventory.value/in-stock}}]
+                         :store.item/skus       [(sku)]
                          :store.item/navigation (db/tempid :db.part/user -1001)}
                         {:store.item/name       "Ear Floral Cuff in Sterling Silver"
                          :store.item/navigation (db/tempid :db.part/user -1000)
@@ -186,12 +186,7 @@
                          :store.item/photos     [(item-photo "https://img1.etsystatic.com/124/0/6380862/il_570xN.883522367_34xx.jpg")]
                          :store.item/category   [:category/path (category-path "jewelry" "women")]
                          :store.item/uuid       #uuid "58a4b270-fd5d-4cd9-a5ec-ee6c683c679b"
-                         :store.item/skus       [{:db/id                    (db/tempid :db.part/user -100)
-                                                  :store.item.sku/uuid      #uuid "58a4b270-b918-4007-a9f4-93508411e496"
-                                                  :store.item.sku/variation "M"
-                                                  :store.item.sku/inventory {:db/id                          (db/tempid :db.part/user)
-                                                                             :store.item.sku.inventory/type  :store.item.inventory.type/bucket
-                                                                             :store.item.sku.inventory/value :store.item.inventory.value/in-stock}}]}
+                         :store.item/skus       [(sku "M")]}
                         {:store.item/name       "Sun Stone geometrical Sterling Silver Ring"
                          :store.item/navigation (db/tempid :db.part/user -1002)
                          :store.item/price      211.00M
@@ -201,9 +196,7 @@
                                            :user/email  test-user-email
                                            :user/photo  (photo "https://s3.amazonaws.com/sulo-images/photos/real/5f/ef/5fef55ce7dcc3057db6e4c8f1739fe0d0574a8882611e40c37950fa82f816d40/men.jpg")
                                            :user/name   "Diana"
-                                           :user/stripe {:stripe/id "cus_A9paOisnJJQ0wS"}
-                                           :user/cart   {:db/id      (db/tempid :db.part/user)
-                                                         :cart/items [(db/tempid :db.part/user -100)]}}
+                                           :user/stripe {:stripe/id "cus_A9paOisnJJQ0wS"}}
                         :store.owner/role :store.owner.role/admin}}
    ;; MagicLinen
    {:db/id       (db/tempid :db.part/user)
@@ -213,19 +206,23 @@
     :store/items [{:store.item/name     "Linen duvet cover - Woodrose"
                    :store.item/price    34.00M
                    :store.item/photos   [(item-photo "https://img1.etsystatic.com/141/1/11651126/il_570xN.1142044641_1j6c.jpg")]
-                   :store.item/category [:category/path "home"]}
+                   :store.item/category [:category/path "home"]
+                   :store.item/skus       [(sku)]}
                   {:store.item/name     "Linen pillowcases with ribbons"
                    :store.item/price    52.00M
                    :store.item/photos   [(item-photo "https://img0.etsystatic.com/137/0/11651126/il_570xN.1003284712_ip5e.jpg")]
-                   :store.item/category [:category/path "home"]}
+                   :store.item/category [:category/path "home"]
+                   :store.item/skus       [(sku)]}
                   {:store.item/name     "Stone washed linen duvet cover"
                    :store.item/price    134.00M
                    :store.item/photos   [(item-photo "https://img0.etsystatic.com/133/0/11651126/il_570xN.915745904_opjr.jpg")]
-                   :store.item/category [:category/path "home"]}
+                   :store.item/category [:category/path "home"]
+                   :store.item/skus       [(sku)]}
                   {:store.item/name     "Linen fitted sheet - Aquamarine"
                    :store.item/price    34.00M
                    :store.item/photos   [(item-photo "https://img1.etsystatic.com/126/0/11651126/il_570xN.1098073811_5ca0.jpg")]
-                   :store.item/category [:category/path "home"]}]}
+                   :store.item/category [:category/path "home"]
+                   :store.item/skus       [(sku)]}]}
 
    ;; thislovesthat
    {:db/id       (db/tempid :db.part/user)
@@ -235,19 +232,23 @@
     :store/items [{:store.item/name     "Glitter & Navy Blue Envelope Clutch"
                    :store.item/photos   [(item-photo "https://imgix.ttcdn.co/i/product/original/0/175704-f4b3f5a3acdd4997a3a4ea18186cca19.jpeg?q=50&w=640&auto=format%2Ccompress&fm=jpeg")]
                    :store.item/price    34.00M
-                   :store.item/category [:category/path (category-path "accessories" "men")]}
+                   :store.item/category [:category/path (category-path "accessories" "men")]
+                   :store.item/skus       [(sku)]}
                   {:store.item/name       "Mint Green & Gold Scallop Canvas Clutch"
                    :store.item/photos     [(item-photo "https://imgix.ttcdn.co/i/product/original/0/175704-78f7ed01cfc44fa690640e04ee83a81e.jpeg?q=50&w=640&auto=format%2Ccompress&fm=jpeg")]
                    :store.item/price      52.00M
-                   :store.item/category [:category/path (category-path "accessories" "men")]}
+                   :store.item/category [:category/path (category-path "accessories" "men")]
+                   :store.item/skus       [(sku)]}
                   {:store.item/name       "Modern Geometric Wood Bead Necklace"
                    :store.item/price      134.00M
                    :store.item/photos     [(item-photo "https://imgix.ttcdn.co/i/product/original/0/175704-bae48bd385d64dc0bb6ebad3190cc317.jpeg?q=50&w=640&auto=format%2Ccompress&fm=jpeg")]
-                   :store.item/category [:category/path (category-path "jewelry" "men" "necklaces")]}
+                   :store.item/category [:category/path (category-path "jewelry" "men" "necklaces")]
+                   :store.item/skus       [(sku)]}
                   {:store.item/name       "Modern Wood Teardrop Stud Earrings"
                    :store.item/price      34.00M
                    :store.item/photos     [(item-photo "https://imgix.ttcdn.co/i/product/original/0/175704-ba70e3b49b0f4a9084ce14f569d1cf60.jpeg?q=50&w=1000&auto=format%2Ccompress&fm=jpeg")]
-                   :store.item/category [:category/path (category-path "jewelry" "men" "earrings")]}]}
+                   :store.item/category [:category/path (category-path "jewelry" "men" "earrings")]
+                   :store.item/skus       [(sku)]}]}
 
    ;; Nafsika
    {:db/id       (db/tempid :db.part/user)
@@ -258,19 +259,23 @@
                    :store.item/photos   (map-indexed #(item-photo %2 %1) ["https://img0.etsystatic.com/164/1/7745893/il_570xN.1094898766_ewls.jpg"
                                                                           "https://img0.etsystatic.com/156/0/7745893/il_570xN.1094898750_jnvm.jpg"])
                    :store.item/price    34.00M
-                   :store.item/category [:category/path (category-path "jewelry" "women" "rings")]}
+                   :store.item/category [:category/path (category-path "jewelry" "women" "rings")]
+                   :store.item/skus       [(sku)]}
                   {:store.item/name     "Bunny Charm Necklace"
                    :store.item/photos   (map-indexed #(item-photo %2 %1) ["https://img1.etsystatic.com/121/1/7745893/il_570xN.1116392641_6zg2.jpg"])
                    :store.item/price    52.00M
-                   :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]}
+                   :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
+                   :store.item/skus       [(sku)]}
                   {:store.item/name     "Red Moss Planter Fall Cube Necklace"
                    :store.item/photos   [(item-photo "https://img0.etsystatic.com/127/0/7745893/il_570xN.988546292_nvbz.jpg")]
                    :store.item/price    134.00M
-                   :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]}
+                   :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
+                   :store.item/skus       [(sku)]}
                   {:store.item/name     "Elvish Twig Ring"
                    :store.item/photos   [(item-photo "https://img0.etsystatic.com/123/1/7745893/il_570xN.987968604_8ix5.jpg")]
                    :store.item/price    34.00M
-                   :store.item/category [:category/path (category-path "jewelry" "women" "rings")]}]}
+                   :store.item/category [:category/path (category-path "jewelry" "women" "rings")]
+                   :store.item/skus       [(sku)]}]}
 
    ;; FlowerRainbowNJ
    {:db/id         (db/tempid :db.part/user)
@@ -281,19 +286,23 @@
     :store/items   [{:store.item/name       "Nose Stud"
                      :store.item/photos     [(item-photo "https://imgix.ttcdn.co/i/product/original/0/449892-c7eed40ca74a4ed7abc555640c0936ad.png?q=50&w=640&auto=format%2Ccompress&fm=jpeg")]
                      :store.item/price      24.74M
-                     :store.item/category [:category/path (category-path "jewelry" "women")]}
+                     :store.item/category [:category/path (category-path "jewelry" "women")]
+                     :store.item/skus       [(sku)]}
                     {:store.item/name       "Tragus Earring"
                      :store.item/photos     [(item-photo "https://imgix.ttcdn.co/i/product/original/0/449892-7340ea71653e4b53a9057de4f64c1018.png?q=50&w=640&auto=format%2Ccompress&fm=jpeg")]
                      :store.item/price      4.49M
-                     :store.item/category [:category/path (category-path "jewelry" "women" "earrings")]}
+                     :store.item/category [:category/path (category-path "jewelry" "women" "earrings")]
+                     :store.item/skus       [(sku)]}
                     {:store.item/name       "Nose Ring"
                      :store.item/photos     [(item-photo "https://imgix.ttcdn.co/i/product/original/0/449892-4603b04cdd4e4a41b281a4aff4a39fe0.png?q=50&w=640&auto=format%2Ccompress&fm=jpeg")]
                      :store.item/price      6.37M
-                     :store.item/category [:category/path (category-path "jewelry" "women" "rings")]}
+                     :store.item/category [:category/path (category-path "jewelry" "women" "rings")]
+                     :store.item/skus       [(sku)]}
                     {:store.item/name       "Nose Ring"
                      :store.item/photos     [(item-photo "https://imgix.ttcdn.co/i/product/original/0/449892-18406d9dfa7e449e8d36627c088c92c1.png?q=50&w=1000&auto=format%2Ccompress&fm=jpeg")]
                      :store.item/price      6.74M
-                     :store.item/category [:category/path (category-path "jewelry" "women" "rings")]}]}
+                     :store.item/category [:category/path (category-path "jewelry" "women" "rings")]
+                     :store.item/skus       [(sku)]}]}
 
    ;; BangiShop
    {:db/id       (db/tempid :db.part/user)
@@ -304,16 +313,19 @@
                    :store.item/photos     (map-indexed #(item-photo %2 %1) ["https://img1.etsystatic.com/138/1/8829348/il_570xN.1040522475_mbon.jpg"
                                                                             "https://img0.etsystatic.com/133/0/8829348/il_570xN.993989824_3pdl.jpg"])
                    :store.item/price      24.74M
-                   :store.item/category [:category/path (category-path "shoes" "women")]}
+                   :store.item/category [:category/path (category-path "shoes" "women")]
+                   :store.item/skus       [(sku)]}
                   {:store.item/name       "Leather Shoes (yellow)"
                    :store.item/photos     (map-indexed #(item-photo %2 %1) ["https://img1.etsystatic.com/120/0/8829348/il_570xN.988317879_5pik.jpg"
                                                                             "https://img1.etsystatic.com/125/0/8829348/il_570xN.988317889_kzc9.jpg"])
                    :store.item/price      4.49M
-                   :store.item/category [:category/path (category-path "shoes" "women")]}
+                   :store.item/category [:category/path (category-path "shoes" "women")]
+                   :store.item/skus       [(sku)]}
                   {:store.item/name       "Leather Boots"
                    :store.item/photos     [(item-photo "https://img0.etsystatic.com/172/4/8829348/il_570xN.1104988862_cb12.jpg")]
                    :store.item/price      6.37M
-                   :store.item/category [:category/path (category-path "shoes" "women" "boots")]}]}
+                   :store.item/category [:category/path (category-path "shoes" "women" "boots")]
+                   :store.item/skus       [(sku)]}]}
 
    ;; MIRIMIRIFASHION
    {:db/id         (db/tempid :db.part/user)
@@ -326,17 +338,20 @@
                                                                             "https://img0.etsystatic.com/119/0/5695768/il_570xN.1041709156_noxy.jpg"
                                                                             "https://img0.etsystatic.com/108/0/5695768/il_570xN.1041709214_ae4i.jpg"])
                      :store.item/price    24.74M
-                     :store.item/category [:category/path (category-path "clothing" "women" "dresses")]}
+                     :store.item/category [:category/path (category-path "clothing" "women" "dresses")]
+                     :store.item/skus       [(sku)]}
                     {:store.item/name       "Maxi skirt"
                      :store.item/photos     (map-indexed #(item-photo %2 %1) ["https://img0.etsystatic.com/000/0/5695768/il_570xN.272372530.jpg"
                                                                               "https://img0.etsystatic.com/000/0/5695768/il_570xN.272372548.jpg"])
                      :store.item/price      4.49M
-                     :store.item/category [:category/path (category-path "clothing" "women" "skirts")]}
+                     :store.item/category [:category/path (category-path "clothing" "women" "skirts")]
+                     :store.item/skus       [(sku)]}
                     {:store.item/name       "Leather Boots"
                      :store.item/photos     (map-indexed #(item-photo %2 %1) ["https://img1.etsystatic.com/136/1/5695768/il_570xN.1087733031_du1y.jpg"
                                                                               "https://img1.etsystatic.com/125/0/5695768/il_570xN.1087733249_hz9c.jpg"])
                      :store.item/price      6.37M
-                     :store.item/category [:category/path (category-path "shoes" "women" "boots")]}]}
+                     :store.item/category [:category/path (category-path "shoes" "women" "boots")]
+                     :store.item/skus       [(sku)]}]}
 
    ;; RecycledBeautifully
    {:db/id       (db/tempid :db.part/user)
@@ -346,15 +361,18 @@
     :store/items [{:store.item/name       "Tree of Life wire"
                    :store.item/photos     [(item-photo "https://img1.etsystatic.com/059/2/7946526/il_570xN.728670429_e1dd.jpg")]
                    :store.item/price      24.74M
-                   :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]}
+                   :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
+                   :store.item/skus       [(sku)]}
                   {:store.item/name       "Tree of Life copper"
                    :store.item/photos     [(item-photo "https://img0.etsystatic.com/142/1/7946526/il_570xN.1094904882_t58t.jpg")]
                    :store.item/price      42.49M
-                   :store.item/category [:category/path (category-path "jewelry" "women")]}
+                   :store.item/category [:category/path (category-path "jewelry" "women")]
+                   :store.item/skus       [(sku)]}
                   {:store.item/name       "Tree of Life wire"
                    :store.item/photos     [(item-photo "https://img0.etsystatic.com/166/1/7946526/il_570xN.1074937810_dh62.jpg")]
                    :store.item/price      64.37M
-                   :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]}]}
+                   :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
+                   :store.item/skus       [(sku)]}]}
    ])
 
 (defn mock-chats [stores]

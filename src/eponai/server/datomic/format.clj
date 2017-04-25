@@ -93,7 +93,7 @@
       common.format/add-tempid))
 
 (defn sku [s]
-  (let [sku (-> (select-keys s [:db/id :store.item.sku/uuid :store.item.sku/variation :store.item.sku/inventory])
+  (let [sku (-> (select-keys s [:db/id :store.item.sku/variation :store.item.sku/inventory])
                 common.format/add-tempid)]
     (cond-> sku
             (some? (:store.item.sku/inventory sku))

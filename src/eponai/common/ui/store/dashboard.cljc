@@ -246,13 +246,12 @@
                     :store/description
                     :store/return-policy
                     :store/tagline
-                    {:store/items [:store.item/uuid
-                                   :store.item/name
+                    {:store/items [:store.item/name
                                    :store.item/description
                                    :store.item/price
                                    {:store.item/photos [{:store.item.photo/photo [:photo/path]}
                                                         :store.item.photo/index]}
-                                   {:store.item/skus [:store.item.sku/uuid
+                                   {:store.item/skus [:db/id
                                                       {:store.item.sku/inventory [:store.item.sku.inventory/value]}
                                                       :store.item.sku/variation]}]}
                     :store/collections
