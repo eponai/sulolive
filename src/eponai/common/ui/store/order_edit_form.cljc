@@ -14,7 +14,8 @@
     [eponai.common.format.date :as date]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.utils :refer [two-decimal-price]]
-    [eponai.common.ui.elements.table :as table]))
+    [eponai.common.ui.elements.table :as table]
+    [eponai.common.ui.elements.menu :as menu]))
 
 (def form-elements
   {:input-currency "oef-input-currency"
@@ -422,6 +423,13 @@
         {:id "sulo-edit-order"}
         ;(when-not did-mount?
         ;  (common/loading-spinner nil))
+        (grid/row-column
+          nil
+          (menu/breadcrumbs
+            nil
+            (menu/item nil (dom/a {:href (routes/url :store-dashboard/order-list {:store-id store-id})}
+                                  "Orders"))
+            (menu/item nil (dom/span nil "Order details"))))
         (if (common/is-order-not-found? this)
           (common/order-not-found this (routes/url :store-dashboard/order-list {:store-id store-id}))
           (if (common/is-new-order? this)

@@ -22,25 +22,26 @@
     ;      not-skus (remove #(= (:order.item/type %) :order.item.type/sku) (:order/items order))])
     (dom/div
       (css/add-class :sulo-order-element)
+      (dom/div
+        (css/add-class :header)
+        (dom/div nil
+                 (dom/a
+                   {:href (routes/url :store {:store-id (:db/id store)})}
+                   (photo/store-photo store))
+                 (dom/p nil
+                        (dom/span nil "Order ")
+                        (dom/a {:href (routes/url :user/order (assoc route-params :order-id (:db/id order)))} (dom/strong nil (str "#" (:db/id order))))
+                        (dom/span nil " from ")
+                        (dom/a {:href (routes/url :store {:store-id (:db/id store)})} (:store/name store))))
+        (dom/p nil (date/date->string (date/current-millis))))
       (callout/callout
         nil
-        (dom/div
-          (css/add-class :header)
-          (dom/div nil
-                   (dom/a
-                     {:href (routes/url :store {:store-id (:db/id store)})}
-                     (photo/store-photo store))
-                   (dom/p nil
-                          (dom/span nil "Order ")
-                          (dom/a {:href (routes/url :user/order (assoc route-params :order-id (:db/id order)))} (dom/strong nil (str "#" (:db/id order))))
-                          (dom/span nil " from ")
-                          (dom/a {:href (routes/url :store {:store-id (:db/id store)})} (:store/name store))))
-          (dom/p nil (date/date->string (date/current-millis))))
+
 
         (grid/row
           (css/align :top)
           (grid/column
-            nil
+            (grid/column-size {:small 12 :large 8})
             (table/table
               nil
               (table/tbody
@@ -48,7 +49,8 @@
                 (map
                   (fn [oi]
                     (debug "Order item: " oi)
-                    (let [item (get-in oi [:order.item/parent :store.item/_skus])
+                    (let [sku (:order.item/parent oi)
+                          item (:store.item/_skus sku)
                           photos (:store.item/photos item)
                           sorted-photos (sort-by :store.item.photo/index photos)]
                       (table/tbody-row
@@ -59,22 +61,24 @@
                           (photo/product-photo (:store.item.photo/photo (first sorted-photos))))
                         (table/td
                           (->> (css/add-class :sl-OrderItemlist-cell)
-                               (css/add-class :sl-OrderItemlist-cell--photo)) (:store.item/name item)))))
+                               (css/add-class :sl-OrderItemlist-cell--description))
+                          (dom/div nil (dom/span nil (:store.item/name item)))
+                          (dom/div nil (dom/small nil (:store.item.sku/variation sku))))
+                        (table/td
+                          (->> (css/add-class :sl-OrderItemlist-cell)
+                               (css/add-class :sl-OrderItemlist-cell--price)
+                               (css/text-align :right))
+                          (dom/div nil (dom/span nil (two-decimal-price (:store.item/price item))))))))
                   (:order.item.type/sku grouped-order-items))
                 )))
           (grid/column
-            (->> (css/text-align :right)
-                 (css/add-class :shrink))
+            (css/text-align :right)
 
-            (grid/row-column
-              nil
-              (dom/h2 nil (two-decimal-price (:order/amount order))))
-            (grid/row-column
-              nil
-              (dom/a
-                (css/button-hollow {:href (routes/url :user/order {:order-id (:db/id order)
-                                                                   :user-id  (get-in current-route [:route-params :user-id])})})
-                (dom/span nil "View Order")))))))))
+            (dom/h3 nil (str "Amount: " (two-decimal-price (:order/amount order))))
+            (dom/a
+              (css/button-hollow {:href (routes/url :user/order {:order-id (:db/id order)
+                                                                 :user-id  (get-in current-route [:route-params :user-id])})})
+              (dom/span nil "View Order"))))))))
 
 (defui OrderList
   static om/IQuery
@@ -85,7 +89,9 @@
                      :order/status
                      :order/amount
                      {:order/items [:order.item/type
-                                    {:order.item/parent [{:store.item/_skus [:store.item/name
+                                    {:order.item/parent [:store.item.sku/variation
+                                                         {:store.item/_skus [:store.item/name
+                                                                             :store.item/price
                                                                              {:store.item/photos [{:store.item.photo/photo [:photo/path]}
                                                                                                   :store.item.photo/index]}]}]}]}
                      {:order/shipping [:shipping/name

@@ -1,8 +1,6 @@
 
 #sulo-user {
-	h3 {
-		font-family: $header-font-family-serif;
-	}
+
 	.page-container {
 		$color: map-get($foundation-palette, primary);
 		// background: rgba($color, 0.03);
