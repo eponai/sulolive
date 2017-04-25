@@ -175,6 +175,7 @@
      :on-error (fn [request v]
                  (debug "Unable to authorize user: " v)
                  (if (nil? (:auth v))
+                   ;; TODO: Prompt login then redirect back to where the user came from.
                    (prompt-login request)
                    (unauthorize request)))}))
 

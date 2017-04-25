@@ -58,6 +58,7 @@
   (parser
     {::parser/read-basis-t-graph  (some-> read-basis-t-graph (atom))
      ::parser/chat-update-basis-t (::parser/chat-update-basis-t body)
+     ::parser/auth-responder      (::parser/auth-responder request)
      :state                       conn
      :auth                        (:identity request)
      :params                      (:params request)

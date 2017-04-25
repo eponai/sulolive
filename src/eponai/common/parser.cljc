@@ -439,7 +439,7 @@
 
 (defn wrap-server-mutate-auth [mutate]
   (wrap-auth server-auth-role mutate
-             (fn [{::keys [auth-responder auth]} _ _]
+             (fn [{::keys [auth-responder] :keys [auth]} _ _]
                (let [message (if (empty? auth)
                                (do (auth/-prompt-login auth-responder nil)
                                    "You need to log in to perform this action")
