@@ -35,8 +35,8 @@
                                                                 {:store.item.photo/photo [:photo/path]}]}
                                            :store.item/name
                                            {:store/_items [:db/id
-                                                           :store/name
-                                                           {:store/photo [:photo/path]}]}]}
+                                                           {:store/profile [:store.profile/name
+                                                                            {:store.profile/photo [:photo/path]}]}]}]}
                        ]}
      :query/current-route
      {:query/auth [:db/id

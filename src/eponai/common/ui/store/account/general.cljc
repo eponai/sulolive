@@ -36,17 +36,18 @@
                    store-tagline (utils/input-value-by-id (:field.general/store-tagline v/form-inputs))
                    store-description (quill/get-HTML about)
                    store-return-policy (quill/get-HTML return-policy)]
-               (msg/om-transact! this [(list 'store/update-info {:db/id             (:db/id store)
-                                                                 :store/name        store-name
-                                                                 :store/tagline     store-tagline
-                                                                 :store/description store-description
-                                                                 :store/return-policy store-return-policy})
+               (msg/om-transact! this [(list 'store/update-info {:db/id         (:db/id store)
+                                                                 :store/profile {:store.profile/name          store-name
+                                                                                 :store.profile/tagline       store-tagline
+                                                                                 :store.profile/description   store-description
+                                                                                 :store.profile/return-policy store-return-policy}})
                                        (list 'store.photo/upload {:photo uploaded-photo :store-id (:db/id store)})
                                        :query/store]))))
   (render [this]
     (let [{:keys [modal uploaded-photo]} (om/get-state this)
           {:proxy/keys [photo-upload]} (om/props this)
           {:keys [store]} (om/get-computed this)
+          {:store/keys [profile]} store
           {:store/keys [description return-policy]} store
           update-msg (msg/last-message this 'store/update-info)
           photo-msg (msg/last-message this 'store.photo/upload)]
@@ -84,7 +85,7 @@
               nil
               (dom/input {:type         "text"
                           :id           (:field.general/store-name v/form-inputs)
-                          :defaultValue (:store/name store)})))
+                          :defaultValue (:store.profile/name profile)})))
           (grid/row
             nil
             (label-column
@@ -96,7 +97,7 @@
                 (->> {:type         "text"
                       :placeholder  "Keep calm and wear pretty jewelry"
                       :id           (:field.general/store-tagline v/form-inputs)
-                      :defaultValue (:store/tagline store)}
+                      :defaultValue (:store.profile/tagline profile)}
                      (css/add-class :tagline-input)))))
           (grid/row
             nil

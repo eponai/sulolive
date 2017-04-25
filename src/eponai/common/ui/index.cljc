@@ -69,15 +69,15 @@
                              :store.item/price
                              {:store.item/photos [{:store.item.photo/photo [:photo/path]}
                                                   :store.item.photo/index]}
-                             {:store/_items [:store/name]}]}
+                             {:store/_items [{:store/profile [:store.profile/name]}]}]}
      {:query/featured-stores [:db/id
-                              :store/name
+                              {:store/profile [:store.profile/name
+                                               {:store.profile/photo [:photo/path]}]}
                               :store/featured
                               :store/featured-img-src
-                              {:store/photo [:photo/path]}
                               {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path]}
                                                                          :store.item.photo/index]}]}]}
-     {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id :store/name {:store/photo [:photo/path]}]}]}])
+     {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}]}]}])
   Object
   (render [this]
     (let [{:keys [proxy/navbar query/featured-items query/featured-streams]} (om/props this)

@@ -43,7 +43,8 @@
 (defn online-channel-element [channel]
   (let [{:stream/keys [store]
          stream-name  :stream/title} channel
-        {:store/keys [photo]} store
+        {{:store.profile/keys [photo]
+          store-name :store.profile/name} :store/profile} store
         store-link (routes/url :store {:store-id (:db/id store)})]
     (grid/column
       (->> (css/add-class :content-item)
@@ -65,7 +66,7 @@
       (dom/div
         (css/add-class :text)
         (dom/a {:href store-link}
-               (dom/strong nil (:store/name store)))))))
+               (dom/strong nil store-name))))))
 
 (defn content-section [{:keys [href class sizes]} header content footer]
   (dom/div

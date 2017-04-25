@@ -87,7 +87,7 @@
 
 (defn store-photo [store]
   (let [default-src "/assets/img/storefront.jpg"
-        photo-src (get-in store [:store/photo :photo/path] default-src)]
+        photo-src (get-in store [:store/profile :store.profile/photo :photo/path] default-src)]
     (circle {:src photo-src
              :classes [:store-photo]})))
 

@@ -14,7 +14,9 @@
 
 (defn store-element [s]
   (debug "Store element: " s)
-  (let [{:store/keys [photo] store-name :store/name} s]
+  (let [{:store/keys [profile]} s
+        {:store.profile/keys [photo]
+         store-name :store.profile/name} profile]
     (grid/row
       (->> (css/add-class :expanded)
            (css/add-class :store-container)

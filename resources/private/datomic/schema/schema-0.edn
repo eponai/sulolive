@@ -17,6 +17,20 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
+  :db/ident              :user/stripe
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "User Stripe info."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :user/cart
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "User owning the cart."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
   :db/ident              :user/profile
   :db/isComponent        true
   :db/valueType          :db.type/ref
@@ -24,6 +38,7 @@
   :db/doc                "User public profile."
   :db.install/_attribute :db.part/db}
 
+ ;; ################# User.profile ######
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :user.profile/name
   :db/valueType          :db.type/string
@@ -36,20 +51,6 @@
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
   :db/doc                "User profile photo."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :user/stripe
-  :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "User Stripe info."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :user/cart
-  :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "User owning the cart."
   :db.install/_attribute :db.part/db}
 
  ;; ########## STRIPE ##################
@@ -101,64 +102,19 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store/collections
-  :db/isComponent        true
-  :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/many
-  :db/doc                "Store custom collections."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
   :db/ident              :store/items
   :db/isComponent        true
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/many
-  :db/doc                "Store custom collections."
+  :db/doc                "Items this store has."
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store/name
-  :db/valueType          :db.type/string
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Name of a store"
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store/description
-  :db/valueType          :db.type/bytes
-  :db/cardinality        :db.cardinality/one
-  :db/fulltext           true
-  :db/doc                "Name of a store"
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store/return-policy
-  :db/valueType          :db.type/bytes
-  :db/cardinality        :db.cardinality/one
-  :db/fulltext           true
-  :db/doc                "Return policy of a store"
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store/tagline
-  :db/valueType          :db.type/string
-  :db/cardinality        :db.cardinality/one
-  :db/fulltext           true
-  :db/doc                "Name of a store"
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store/photo
+  :db/ident              :store/profile
+  :db/isComponent        true
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Profile photo of the store"
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store/cover
-  :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Cover photo for the store"
+  :db/doc                "Public profile of this store."
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
@@ -168,6 +124,54 @@
   :db/cardinality        :db.cardinality/many
   :db/doc                "Navigations inside the store"
   :db.install/_attribute :db.part/db}
+
+ ;;################# Store.profile ##############
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store.profile/name
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Name of a store"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store.profile/description
+  :db/valueType          :db.type/bytes
+  :db/cardinality        :db.cardinality/one
+  :db/fulltext           true
+  :db/doc                "Name of a store"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store.profile/return-policy
+  :db/valueType          :db.type/bytes
+  :db/cardinality        :db.cardinality/one
+  :db/fulltext           true
+  :db/doc                "Return policy of a store"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store.profile/tagline
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/fulltext           true
+  :db/doc                "Name of a store"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store.profile/photo
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Profile photo of the store"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store.profile/cover
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Cover photo for the store"
+  :db.install/_attribute :db.part/db}
+
+ ;; @############### store.navigation #############
 
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :store.navigation/path
@@ -220,15 +224,13 @@
   :db/ident              :store.item/description
   :db/valueType          :db.type/bytes
   :db/cardinality        :db.cardinality/one
-  ;:db/fulltext           true
-  :db/doc                "Description of the item"
+  :db/doc                "Description of the item, bytes from HTML string."
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :store.item/navigation
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
-  ;:db/fulltext           true
   :db/doc                "Item navigation inside store"
   :db.install/_attribute :db.part/db}
 

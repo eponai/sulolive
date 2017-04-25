@@ -33,7 +33,7 @@
          (if-let [subscriber-host (.subscriber-host this)]
            (let [store (:store (om/get-computed this))
                  stream-id (stream/stream-id store)
-                 photo-url (get-in store [:store/photo :photo/path] "/assets/img/storefront.jpg")
+                 photo-url (get-in store [:store/profile :store.profile/photo :photo/path] "/assets/img/storefront.jpg")
                  stream-url (stream/wowza-live-stream-url subscriber-host stream-id)
                  _ (debug "photo: url: " photo-url)
                  player (js/WowzaPlayer.create

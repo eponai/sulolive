@@ -80,9 +80,10 @@
    :resp {:success "Photo uploaded"
           :error   "Could not upload photo :("}}
   {:action (fn []
-             (let [photo (f/photo (s3/upload-photo (:system/aws-s3 system) (:photo params)))]
+             (let [old-profile (db/pull (db/db state) [:user.profile] (:user-id auth))
+                   photo (f/photo (s3/upload-photo (:system/aws-s3 system) (:photo params)))]
                (db/transact state [photo
-                                   [:db/add (:user-id auth) :user/photo (:db/id photo)]])))})
+                                   [:db/add (:db/id old-profile) :user.profile/photo (:db/id photo)]])))})
 
 (defn- with-store [{:keys [state auth db]} k {:keys [store-id]} f]
   (if-let [store (db/one-with db {:where   '[[?e :store/owners ?owner]
@@ -102,13 +103,14 @@
    :resp {:success "Photo uploaded"
           :error   "Could not upload photo :("}}
   {:action (fn []
-             (let [old-photo (db/pull (db/db state) [:store/photo] store-id)
+             (let [{old-profile :store/profile} (db/pull (db/db state) [{:store/profile [:db/id :store.profile/photo]}] store-id)
+                   old-photo (:store.profile/photo old-profile)
                    s3-photo (f/photo (s3/upload-photo (:system/aws-s3 system) photo))
                    new-photo (cond-> s3-photo
                                      (some? (:db/id old-photo))
-                                     (assoc s3-photo :db/id (:db/id old-photo)))]
+                                     (assoc :db/id (:db/id old-photo)))]
                (db/transact state [new-photo
-                                   [:db/add store-id :store/photo (:db/id new-photo)]])))})
+                                   [:db/add (:db/id old-profile) :store.profile/photo (:db/id new-photo)]])))})
 
 (defmutation stream-token/generate
   [{:keys [state db parser ::parser/return auth system] :as env} k {:keys [store-id] :as p}]
@@ -136,15 +138,17 @@
 
 ;########### STORE @############
 (defmutation store/update-info
-  [{:keys [state ::parser/return ::parser/exception auth system]} _ store]
+  [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [store/profile] :as store}]
   {:auth {::auth/store-owner (:db/id store)}
    :resp {:success "Your store info was updated"
           :error   "Could not update store info"}}
   {:action (fn []
-             (let [s (-> (select-keys store [:db/id :store/name :store/description :store/tagline :store/return-policy])
-                         (update :store/description #(f/str->bytes (quill/sanitize-html %)))
-                         (update :store/return-policy #(f/str->bytes (quill/sanitize-html %)))
-                         f/remove-nil-keys)]
+             (let [db-store (db/pull (db/db state) [:store/profile] (:db/id store))
+                   s (-> (select-keys profile [:store.profile/name :store.profile/description :store.profile/tagline :store.profile/return-policy])
+                         (update :store.profile/description #(f/str->bytes (quill/sanitize-html %)))
+                         (update :store.profile/return-policy #(f/str->bytes (quill/sanitize-html %)))
+                         f/remove-nil-keys
+                         (assoc :db/id (:db/id (:store/profile db-store))))]
                (debug "store/update-info with params: " s)
                (db/transact-one state s)))})
 

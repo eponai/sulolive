@@ -54,7 +54,7 @@
   [{:keys [db db-history query]} _ {:keys [store-id]}]
   {:auth    ::auth/public
    :uniq-by [[:store-id store-id]]}
-  {:value (query/one db db-history query {:where   '[[?e :store/name]]
+  {:value (query/one db db-history query {:where   '[[?e :store/profile]]
                                           :symbols {'?e store-id}})})
 
 (defread query/store-items
@@ -221,7 +221,7 @@
   [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
   ;; TODO: Come up with a way to feature stores.
-  {:value (->> (query/all db db-history query {:where '[[?e :store/name]]})
+  {:value (->> (query/all db db-history query {:where '[[?e :store/profile]]})
                (take 4)
                (feature-all db-history :store))})
 

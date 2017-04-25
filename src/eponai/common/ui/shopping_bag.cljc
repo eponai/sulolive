@@ -20,7 +20,7 @@
   (reduce + (map :store.item/price items)))
 
 (defn store-element [s]
-  (let [{store-name :store/name} s]
+  (let [store-name (get-in s [:store/profile :store.profile/name])]
     (grid/row
       (->> (css/add-class :store-container)
            (css/align :center))
@@ -116,8 +116,8 @@
                                                      {:store.item/photos [{:store.item.photo/photo [:photo/path]}
                                                                           :store.item.photo/index]}
                                                      :store.item/name
-                                                     {:store/_items [:store/name
-                                                                     {:store/photo [:photo/path]}]}]}]}]}
+                                                     {:store/_items [:store.profile/name
+                                                                     {:store.profile/photo [:photo/path]}]}]}]}]}
      {:query/auth [:user/email]}])
   Object
   (componentWillReceiveProps [this p]

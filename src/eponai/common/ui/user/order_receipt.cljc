@@ -15,7 +15,8 @@
     [eponai.common.ui.elements.menu :as menu]))
 
 (defn store-element [s]
-  (let [{:store/keys [photo] store-name :store/name} s]
+  (let [{:store/keys  [photo]
+         {store-name :store.profile/name} :store.profile} s]
     (dom/div
       nil
       (photo/store-photo s)
@@ -43,7 +44,7 @@
                      (photo/store-photo store))
                    (dom/p nil
                           (dom/span nil "Purchased from ")
-                          (dom/a {:href (routes/url :store {:store-id (:db/id store)})} (:store/name store))))
+                          (dom/a {:href (routes/url :store {:store-id (:db/id store)})} (:store.profile/name (:store/profile store)))))
           (dom/p nil (date/date->string (date/current-millis))))
 
         (grid/row
@@ -94,8 +95,8 @@
                     {:order/shipping [:shipping/name
                                       :shipping/address]}
                     :order/user
-                    {:order/store [{:store/photo [:photo/path]}
-                                   :store/name]}]}])
+                    {:order/store [{:store/profile [{:store.profile/photo [:photo/path]}
+                                                    :store.profile/name]}]}]}])
   Object
   (render [this]
     (let [{:query/keys [current-route order]} (om/props this)

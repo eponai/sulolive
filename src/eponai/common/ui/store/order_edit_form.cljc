@@ -82,7 +82,7 @@
 (defn edit-order [component]
   (let [{:keys [query/order]} (om/props component)
         {:keys [dropdown]} (om/get-state component)
-        {:order/keys [id amount currency items]} order
+        {:order/keys [id amount currency items store]} order
 
         skus (filter #(= :order.item.type/sku (:order.item/type %)) items)
         tax (some #(when (= :tax (:order.item/type %)) %) items)
@@ -191,7 +191,7 @@
                   (label-column nil (dom/label nil "Email: "))
                   (grid/column
                     nil
-                    (dom/p nil (dom/a {:href (str "mailto:" order-email "?subject=" (:store/name (:order/store order)) " Order #" (:db/id order) "")} order-email))))
+                    (dom/p nil (dom/a {:href (str "mailto:" order-email "?subject=" (:store.profile/name (:store/profile store)) " Order #" (:db/id order) "")} order-email))))
                 (grid/row
                   nil
                   (label-column nil (dom/label nil "Status: "))
@@ -379,7 +379,7 @@
                                                           :shipping.address/postal
                                                           :shipping.address/locality
                                                           :shipping.address/region]}]}
-                    {:order/store [:store/name {:store/photo [:photo/path]}]}]}
+                    {:order/store [{:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}]}]}
      :query/current-route])
   Object
   #?(:cljs

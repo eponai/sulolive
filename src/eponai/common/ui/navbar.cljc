@@ -98,7 +98,7 @@
               (css/add-class :nested)
               (menu/item-link
                 {:href (routes/url :store-dashboard {:store-id (:db/id store)})}
-                (:store/name store)))))
+                (get-in store [:store/profile :store.profile/name])))))
         (when user
           (menu/item
             (css/add-class :user-info)
@@ -276,12 +276,12 @@
     [{:query/cart [{:cart/items [{:store.item/_skus [:store.item/price
                                                      {:store.item/photos [:photo/path]}
                                                      :store.item/name
-                                                     {:store/_items [:store/name]}]}]}]}
+                                                     {:store/_items [{:store/profile [:store.profile/name]}]}]}]}]}
      {:query/auth [:db/id
                    :user/email
                    {:user/profile [{:user.profile/photo [:photo/path]}]}
-                   {:store.owner/_user [{:store/_owners [:store/name :db/id
-                                                         {:store/photo [:photo/path]}]}]}]}
+                   {:store.owner/_user [{:store/_owners [:db/id
+                                                         {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}]}]}]}
      '{:query/top-categories [:category/label :category/path {:category/children ...}]}
      :query/current-route])
   Object

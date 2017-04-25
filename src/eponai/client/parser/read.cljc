@@ -232,7 +232,7 @@
                                               (map :store.item/img-src)
                                               (take 2))]
                        {:db/id                  store
-                        :store/featured-img-src [img-1 (:store/photo s) img-2]}))]
+                        :store/featured-img-src [img-1 (:store.profile/photo (:store/profile s)) img-2]}))]
              (sort-by :db/id
                       (into [] (comp (map photos-fn)
                                      (map #(merge % (db/pull db query (:db/id %)))))

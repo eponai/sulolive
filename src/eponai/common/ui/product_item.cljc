@@ -41,7 +41,7 @@
           nil
           (dom/span nil "by ")
           (dom/a {:href (routes/url :store {:store-id (:db/id store)})}
-                 (dom/span nil (:store/name store)))))
+                 (dom/span nil (:store.profile/name (:store/profile store))))))
 
       (dom/div
         (css/add-class :text)

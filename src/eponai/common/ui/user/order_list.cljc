@@ -17,6 +17,7 @@
   (let [{:query/keys [current-route]} (om/props component)
         grouped-order-items (group-by :order.item/type (:order/items order))
         {:order/keys [store]} order
+        {:store/keys [profile]} store
         {:keys [route-params]} current-route]
     ;(let [skus (filter #(= (:order.item/type %) :order.item.type/sku) (:order/items order))
     ;      not-skus (remove #(= (:order.item/type %) :order.item.type/sku) (:order/items order))])
@@ -32,7 +33,7 @@
                         (dom/span nil "Order ")
                         (dom/a {:href (routes/url :user/order (assoc route-params :order-id (:db/id order)))} (dom/strong nil (str "#" (:db/id order))))
                         (dom/span nil " from ")
-                        (dom/a {:href (routes/url :store {:store-id (:db/id store)})} (:store/name store))))
+                        (dom/a {:href (routes/url :store {:store-id (:db/id store)})} (:store.profile/name profile))))
         (dom/p nil (date/date->string (date/current-millis))))
       (callout/callout
         nil
@@ -97,8 +98,8 @@
                      {:order/shipping [:shipping/name
                                        :shipping/address]}
                      :order/user
-                     {:order/store [{:store/photo [:photo/path]}
-                                    :store/name]}]}])
+                     {:order/store [{:store/profile [{:store.profile/photo [:photo/path]}
+                                                     :store.profile/name]}]}]}])
   Object
   (render [this]
     (let [{:query/keys [orders current-route]} (om/props this)]
