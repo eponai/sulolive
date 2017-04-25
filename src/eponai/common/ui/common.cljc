@@ -164,4 +164,4 @@
                     :title "This page is still a work in progress and might have unexpected behaviors. Thank you for understanding."}
                    (css/add-class :label)
                    (css/add-class :wip-label)
-                   (css/add-class :green)) "Work in progress")))
+                   (css/add-class :primary)) "Work in progress")))

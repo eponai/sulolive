@@ -176,7 +176,6 @@
                          :store.item/category   [:category/path (category-path "jewelry" "women" "necklaces")]
                          :store.item/uuid       #uuid "58a4b2b8-4489-4661-9580-c0fe2d132966"
                          :store.item/skus       [{:store.item.sku/uuid      #uuid "58a4b2b8-9c8d-49e1-ab53-8d5c98374f79"
-                                                  :store.item.sku/variation "L"
                                                   :store.item.sku/inventory {:db/id                          (db/tempid :db.part/user)
                                                                              :store.item.sku.inventory/type  :store.item.inventory.type/bucket
                                                                              :store.item.sku.inventory/value :store.item.inventory.value/in-stock}}]

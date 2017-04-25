@@ -87,7 +87,7 @@
 (defn photo-uploader [component index]
   (let [{:keys [did-mount?]} (om/get-state component)
         {:proxy/keys [photo-upload]} (om/props component)]
-    (debug "photo uploader setting id: " photo-upload)
+    
     (when did-mount?
       #?(:cljs
          (pu/->PhotoUploader (om/computed
@@ -130,7 +130,7 @@
   (delete-product [this]
     (let [{:keys [product-id store-id]} (get-route-params this)]
       (msg/om-transact! this `[(store/delete-product ~{:store-id store-id
-                                                       :product {:db/id (c/parse-long product-id)}})])))
+                                                       :product  {:db/id (c/parse-long product-id)}})])))
 
   (update-product [this]
     (let [{:keys [product-id store-id]} (get-route-params this)
@@ -147,8 +147,9 @@
     (let [{:keys [store-id]} (get-route-params this)
           product (input-product this)
           skus (input-skus this product)]
-      (msg/om-transact! this `[(store/create-product ~{:product  (-> (assoc product :store.item/uuid (db/squuid))
-                                                                     (assoc :store.item/skus skus))
+      (msg/om-transact! this `[(store/create-product ~{:product  (cond-> product
+                                                                         (not-empty skus)
+                                                                         (assoc :store.item/skus skus))
                                                        :store-id store-id})
                                :query/store])
       (om/update-state! this dissoc :uploaded-photo)))
@@ -179,7 +180,6 @@
           delete-resp (msg/last-message this 'store/delete-product)
           is-loading? (or (message-pending-fn update-resp) (message-pending-fn create-resp) (message-pending-fn delete-resp))
           ]
-      (warn "PRODUCT: " product)
 
       (dom/div
         {:id "sulo-edit-product"}
@@ -379,11 +379,11 @@
             (css/button-hollow {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
             (dom/span nil "Cancel"))
           (dom/a
-            (->> {:onClick #(when-not is-loading?
-                             (cond (some? product-id)
-                                   (.update-product this)
-                                   (= action "create")
-                                   (.create-product this)))}
+            (->> {
+                  :onClick #(when-not is-loading?
+                             (if (is-new-product? this)
+                               (.create-product this)
+                               (.update-product this)))}
                  (css/button))
             (if is-loading?
               (dom/i {:classes ["fa fa-spinner fa-spin"]})
