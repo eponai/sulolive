@@ -1,6 +1,7 @@
 (ns eponai.client.parser.read
   (:require
     [clojure.set :as set]
+    [clojure.string :as str]
     [eponai.common.parser :as parser :refer [client-read]]
     [eponai.common.parser.util :as parser.util]
     [eponai.common.database :as db]
@@ -165,18 +166,14 @@
 
 (defmethod client-read :query/browse-items
   [{:keys [db target query route-params ast]} _ _]
-  (let [{:keys [browse-filter category-path]} route-params]
+  (let [{:keys [browse-filter top-category]} route-params]
     (if target
-      {:remote (cond-> ast
-                       (some? browse-filter)
-                       (assoc-in [:params :browse-filter] browse-filter)
-                       (some? category-path)
-                       (assoc-in [:params :category-path] category-path))}
+      {:remote (update ast :params (fnil merge {}) route-params)}
       {:value (db/pull-all-with db query (cond
                                            (some? browse-filter)
-                                           (products/find-with-filter browse-filter)
-                                           (some? category-path)
-                                           (products/find-by-category category-path)
+                                           (products/find-with-browse-filter browse-filter route-params)
+                                           (some? top-category)
+                                           (products/find-with-category-names top-category route-params)
                                            :else
                                            (products/find-all)))})))
 

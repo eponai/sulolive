@@ -29,7 +29,7 @@
    "/profile" :user/profile})
 
 (def product-routes
-  {""                         :products
+  {""                         :browse/all-items
    ["/" [#"\d+" :product-id]] :product})
 
 (def help-routes
@@ -42,6 +42,27 @@
    "/payments" :checkout/payment
    "/review"   :checkout/review})
 
+(defn- branch-handler [handler param sub-handler]
+  {"" handler
+   ["/" param] sub-handler})
+
+(def browse-categories
+  [["" :browse/all-items]
+   [["/category/" :top-category]
+    (branch-handler :browse/category
+                    :sub-category
+                    (branch-handler :browse/category+sub-category
+                                    :sub-sub-category
+                                    :browse/category+sub-sub-category))]
+   [["/" :browse-filter]
+    (branch-handler :browse/filtered
+                    :top-category
+                    (branch-handler :browse/filtered+top-category
+                                    :sub-category
+                                    (branch-handler :browse/filtered+sub-category
+                                                    :sub-sub-category
+                                                    :browse/filtered+sub-sub-category)))]])
+
 (def routes
   ["/" {""                            :index
         "coming-soon"                 :coming-soon
@@ -51,11 +72,7 @@
         "store"                       :index/store
         ["store/" [#"\d+" :store-id]] store-routes
         "products"                    product-routes
-        "categories"                  {""              :products/all-categories
-                                       ["/" :category] :products/categories}
-        "browse"                      [["" :browse/all-items]
-                                       [["/category/" :category-path] :browse/category]
-                                       [["/" :browse-filter] :browse/filtered]]
+        "browse"                      browse-categories
         "help"                        help-routes
         ["checkout/" :store-id]       checkout-routes
         "shopping-bag"                :shopping-bag

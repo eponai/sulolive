@@ -6,8 +6,10 @@
     [clojure.walk :as walk]
     [datascript.db]
     [om.next :as om]
-    #?(:clj [datomic.api :as datomic])
-    [datascript.core :as datascript])
+    #?(:clj
+    [datomic.api :as datomic])
+    [datascript.core :as datascript]
+    [medley.core :as medley])
   #?(:clj
      (:import [clojure.lang ExceptionInfo]
               [datomic Connection]
@@ -150,6 +152,18 @@
    :in    (into '[$] symbols)
    :where where-clauses})
 
+(defn- add-fulltext-search [db fulltext where symbols]
+  (let [fulltext-by-id (into {} (comp (map #(cond-> % (nil? (:db %)) (assoc :db '$)))
+                                      (map (juxt :id #(fulltext-search db %))))
+                             fulltext)
+        where (->> where
+                   (into [] (mapcat (fn [clause]
+                                  (if-let [fulltext-id (get clause :fulltext-id false)]
+                                    (:where (get fulltext-by-id fulltext-id))
+                                    [clause])))))
+        symbols (transduce (map :symbols) into symbols (vals fulltext-by-id))]
+    [where symbols]))
+
 (defn- x-with
   ([db entity-query] (x-with db entity-query nil))
   ([db {:keys [fulltext find where symbols rules] :as entity-query} find-pattern]
@@ -163,22 +177,15 @@
            " are not equal. :find: " find " find-pattern: " find-pattern
            ". Use (find-with ...) instead of (all-with ...)"
            "or (one-with ...) when supplying your own :find."))
-   (when (some? fulltext)
-     (assert (some #{:fulltext} where)
+   (when (seq fulltext)
+     (assert (= (count fulltext)
+                (count (filter #(and (map? %) (= :fulltext-id (ffirst %))) where)))
              (str "No :fulltext placeholder found the where clauses when :fulltext key"
-                  " was present in the query. Fix: Put a :fulltext key in the where clauses."
-                  " Clauses found: " where)))
-   (let [fulltext-map (when fulltext (fulltext-search db (cond-> fulltext
-                                                                 (nil? (:db fulltext))
-                                                                 (assoc :db '$))))
-         where (cond->> where
-                        (some? (:where fulltext-map))
-                        (into [] (mapcat (fn [clause]
-                                           (if (= clause :fulltext)
-                                             (:where fulltext-map)
-                                             [clause])))))
+                  " was present in the query. Fix: For each fulltext search, place a map"
+                  " with {:fulltext-id :your-id} in the where clauses. Where clauses where: " where)))
+   (let [[where symbols] (add-fulltext-search db fulltext where symbols)
          find-pattern (or find find-pattern)
-         symbol-seq (seq (merge symbols (:symbols fulltext-map)))
+         symbol-seq (seq symbols)
          _ (trace "entity-query: " entity-query)
          query (where->query where
                              find-pattern
@@ -237,7 +244,7 @@
 
 (defn merge-query
   "Preforms a merge of two query maps with :where and :symbols."
-  [base {:keys [find where symbols rules] :as addition}]
+  [base {:keys [fulltext find where symbols rules] :as addition}]
   {:pre [(map? base) (map? addition)]}
   (cond-> base
           (seq where)
@@ -247,7 +254,9 @@
           (some? find)
           (assoc :find find)
           (some? rules)
-          (update :rules (fnil into []) rules)))
+          (update :rules (fnil into []) rules)
+          (some? fulltext)
+          (update :fulltext (fnil into []) fulltext)))
 
 ;; Common usages:
 

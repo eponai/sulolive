@@ -353,7 +353,7 @@
                    {:user/profile [{:user.profile/photo [:photo/path]}]}
                    {:store.owner/_user [{:store/_owners [:db/id
                                                          {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}]}]}]}
-     '{:query/top-categories [:category/label :category/path {:category/children ...}]}
+     '{:query/top-categories [:category/label :category/path :category/name {:category/children ...}]}
      :query/current-route])
   Object
   #?(:cljs

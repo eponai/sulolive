@@ -42,7 +42,8 @@
      :store.item/description
      :store.item/section
      {:store.item/category [:category/label
-                            :category/path]}
+                            :category/path
+                            :category/name]}
      {:store/_items [{:store/profile [{:store.profile/photo [:photo/path]}
                                       :store.profile/name]}]}])
   Object

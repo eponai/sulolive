@@ -46,10 +46,10 @@
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:query/browse-items (om/get-query product/Product)}
-     '{:query/category [:category/label {:category/photo [:photo/path]} :category/path
+     '{:query/category [:category/label :category/path :category/name
                         {:category/_children ...}
                         {:category/children ...}]}
-     {:query/top-categories [:category/label :category/path]}
+     {:query/top-categories [:category/label :category/path :category/name]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
      :query/current-route])
   Object

@@ -35,8 +35,6 @@
                      :factory   bag/->ShoppingBag}
    :help            {:component help/Help
                      :factory   help/->Help}
-   :products        {:component goods/Goods
-                     :factory   goods/->Goods}
    :browse          {:component goods/Goods
                      :factory   goods/->Goods}
    :product         {:component product/ProductPage
