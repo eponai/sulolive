@@ -41,7 +41,8 @@
         (grid/row-column
           nil
           (table/table
-            (css/add-class :hover (css/add-class :sl-orderlist))
+            (->> (css/add-class :hover (css/add-class :sl-orderlist))
+                 (css/add-class :stack))
             (table/thead
               nil
               (table/thead-row

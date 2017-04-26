@@ -119,7 +119,7 @@
 
           ;; Content
           (grid/column
-            nil
+            (css/grid-column-size {:small 12 :medium 9 :large 10})
             (dom/div
               (->> (css/add-class :tabs-content)
                    (css/add-class ::css/vertical))

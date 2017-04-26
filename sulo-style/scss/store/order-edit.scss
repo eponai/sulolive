@@ -111,7 +111,9 @@
 			.td {
 				font-weight: inherit;
 			}
-
+			.dropdown-trigger {
+				display: inline-block;
+			}
 			.dropdown-pane {
 				p {
 					display: flex;

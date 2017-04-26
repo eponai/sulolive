@@ -10,9 +10,15 @@
 	}
 
 	.profile-photo {
-		margin: 1rem auto;
+		margin: 1.75rem auto;
+		display: flex;
+		justify-content: center;
 		a {
 			cursor: auto;
+		}
+		.photo-container {
+			max-width: 10rem;
+			min-width: 10rem;
 		}
 
 		&.edit-enabled {

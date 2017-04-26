@@ -23,12 +23,15 @@
 	}
 	.top-bar-left {
 		ul {
-			li:last-child {
+			li:first-child, li:nth-child(2), li:last-child {
 				border-right: $global-border;
 			}
 		}
 	}
-	position: fixed;
+	position: absolute;
+	@include breakpoint(large) {
+		position: fixed;
+	}
 	width: 100%;
 	z-index: $navbar-zindex;
 
@@ -115,5 +118,4 @@
 	@include breakpoint(medium) {
 		font-size: 1.2rem;
 	}
-	border-right: $global-border;
 }

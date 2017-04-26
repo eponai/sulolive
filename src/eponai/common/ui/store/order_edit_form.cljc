@@ -233,7 +233,8 @@
           (callout/callout
             nil
             (table/table
-              (css/add-class :unstriped)
+              (->> (css/add-class :unstriped)
+                   (css/add-class :stack))
               (table/thead
                 nil
                 (table/thead-row
@@ -287,9 +288,9 @@
                   (->> (css/add-class :sl-OrderItemlist-row)
                        (css/add-class :sl-OrderItemlist-row--fee))
                   (item-cell (css/add-class :sl-OrderItemlist-cell--id)
-                             (dom/p nil
+                             (dom/div nil
                                     (dom/span nil "Fee")
-                                    (dom/span
+                                    (dom/div
                                       (css/add-class :dropdown-trigger)
                                       (dom/a
                                         {:onClick #(.open-dropdown component :dropdown/sulo-fee)}
@@ -298,9 +299,11 @@
                                         (cond->> (css/add-class :dropdown-pane)
                                                  (= dropdown :dropdown/sulo-fee)
                                                  (css/add-class :is-open))
-                                        (dom/p nil (dom/small nil "SULO Live service fee: ")
+                                        (dom/p nil
+                                               (dom/small nil "SULO Live service fee: ")
                                                (dom/small nil (two-decimal-price (* 0.2 subtotal))))
-                                        (dom/p nil (dom/small nil "Stripe transaction fee: ")
+                                        (dom/p nil
+                                               (dom/small nil "Stripe transaction fee: ")
                                                (dom/small nil (two-decimal-price (* 0.029 total-amount))))))))
                   (item-cell (css/add-class :sl-OrderItemlist-cell--description)
                              ;(dom/span nil "SULO Live fee")

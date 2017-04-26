@@ -69,30 +69,21 @@
                 (css/text-align :center)
                 (dom/h1 nil (get-in user [:user/profile :user.profile/name]))))
 
-            (grid/row
-              (css/align :center)
+            (grid/row-column
+              (cond->> (css/add-class :profile-photo)
+                       is-current-user?
+                       (css/add-class :edit-enabled))
+              (photo/user-photo user))
 
-              (grid/column
-                (cond->> (->> (grid/column-size {:small 4 :medium 3 :large 2})
-                              (css/add-class :profile-photo))
-                         is-current-user?
-                         (css/add-class :edit-enabled))
-
-                (dom/a {:onClick #(when is-current-user? (om/update-state! this assoc :file-upload? true))}
-                       (photo/user-photo user))))
-
-            (grid/row
-              (css/align :center)
-              (grid/column
-                (->> (grid/column-size {:small 4 :medium 3 :large 2})
-                     (css/text-align :center))
-                (if is-current-user?
-                  (dom/a
-                    (css/button-hollow {:href (routes/url :user/profile {:user-id (:db/id user)})})
-                    (dom/span nil "Edit Profile"))
-                  (dom/a
-                    (css/button)
-                    (dom/span nil "+ Follow")))))))
+            (grid/row-column
+              (css/text-align :center)
+              (if is-current-user?
+                (dom/a
+                  (css/button-hollow {:href (routes/url :user/profile {:user-id (:db/id user)})})
+                  (dom/span nil "Edit Profile"))
+                (dom/a
+                  (css/button)
+                  (dom/span nil "+ Follow"))))))
 
         ;(grid/row-column
         ;  nil)

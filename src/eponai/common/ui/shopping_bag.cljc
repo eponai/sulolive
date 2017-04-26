@@ -116,8 +116,8 @@
                                                      {:store.item/photos [{:store.item.photo/photo [:photo/path]}
                                                                           :store.item.photo/index]}
                                                      :store.item/name
-                                                     {:store/_items [:store.profile/name
-                                                                     {:store.profile/photo [:photo/path]}]}]}]}]}
+                                                     {:store/_items [{:store/profile [:store.profile/name
+                                                                                      {:store.profile/photo [:photo/path]}]}]}]}]}]}
      {:query/auth [:user/email]}])
   Object
   (componentWillReceiveProps [this p]

@@ -71,7 +71,8 @@
         nav-breakpoint :medium]
     (dom/div
       (->> {:id "store-navbar"}
-           (css/add-class :navbar-container))
+           (css/add-class :navbar-container)
+           (css/show-for :large))
       (dom/nav
         (->> (css/add-class :navbar)
              (css/add-class :top-bar))
@@ -302,7 +303,7 @@
             (grid/row
               (css/align :center)
               (grid/column
-                (grid/column-size {:small 10 :medium 4 :large 3})
+                (grid/column-size {:small 12 :medium 4 :large 3})
                 (store-info-element this))
               (grid/column
                 (grid/column-size {:small 12 :medium 8 :large 9})
