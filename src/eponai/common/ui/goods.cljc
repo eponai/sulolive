@@ -15,10 +15,10 @@
     [taoensso.timbre :refer [debug]]))
 
 (def sorting-vals
-  {:sort/name-inc  {:key :store.item/name :reverse? false}
-   :sort/name-dec  {:key :store.item/name :reverse? true}
-   :sort/price-inc {:key :store.item/price :reverse? false}
-   :sort/price-dec {:key :store.item/price :reverse? true}})
+  {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
+   :sort/name-dec  {:key [:store.item/name :store.item/price] :reverse? true}
+   :sort/price-inc {:key [:store.item/price :store.item/name] :reverse? false}
+   :sort/price-dec {:key [:store.item/price :store.item/name] :reverse? true}})
 
 (defn breadcrumbs [category]
   (let [items (loop [c category
@@ -54,8 +54,7 @@
      :query/current-route])
   Object
   (initLocalState [_]
-    {:sorting {:key      :store.item/name
-               :reverse? false}
+    {:sorting       (get sorting-vals :sort/price-inc)
      :filters-open? false})
   (render [this]
     (let [{:proxy/keys       [navbar product-filters]
@@ -188,7 +187,7 @@
                     (dom/option {:value (name :sort/price-inc)} "Price (low to high)")
                     (dom/option {:value (name :sort/price-dec)} "Price (high to low)"))))
 
-              (let [sorted (sort-by (:key sorting) items)
+              (let [sorted (sort-by (apply juxt (:key sorting)) items)
                     ordered-products (if (:reverse? sorting)
                                        (reverse sorted)
                                        sorted)]
