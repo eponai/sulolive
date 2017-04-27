@@ -174,6 +174,13 @@
                                            (products/find-with-category-names route-params)
                                            (products/find-all)))})))
 
+(defmethod client-read :query/browse-category
+  [{:keys [db target query route-params]} _ _]
+  (when-not target
+    (let [smallest-category (products/smallest-category route-params)]
+      {:value (db/pull-one-with db query (db/merge-query (products/find-with-category-names route-params)
+                                                         {:where [[(list 'identity smallest-category) '?e]]}))})))
+
 (defmethod client-read :query/browse-nav
   [{:keys [db target query route route-params ast]} _ _]
   (if target
@@ -188,20 +195,34 @@
           ;; In query/browse-items we're getting correct items anyway. (?)
           pull-distinct-by-name (fn [entity-query]
                                   (->> (db/pull-all-with db query entity-query)
-                                       (into [] (medley/distinct-by :category/name))))]
+                                       (into [] (medley/distinct-by :category/name))))
+          add-routes (fn [route params category-level children]
+                       (into [] (map #(assoc % :category/route (common.routes/path route (assoc params category-level (:category/name %)))))
+                             children))]
       {:value
        (condp = browse-route
-         :browse/gender {:category/name     sub-category
+         :browse/all-items nil
+         :browse/gender {:category/route    (common.routes/path :browse/gender {:sub-category sub-category})
+                         :category/name     sub-category
                          :category/label    (str/capitalize sub-category)
-                         :category/children (if (nil? top-category)
-                                              (pull-distinct-by-name find-top)
-                                              [(-> (db/pull-one-with db query find-top)
-                                                   (assoc :category/children (pull-distinct-by-name find-sub-sub)))])}
+                         :category/children (->> (if (nil? top-category)
+                                                   (pull-distinct-by-name find-top)
+                                                   [(-> (db/pull-one-with db query find-top)
+                                                        (assoc :category/children (->> (pull-distinct-by-name find-sub-sub)
+                                                                                       (add-routes :browse/gender+top+sub-sub {:sub-category sub-category
+                                                                                                                               :top-category top-category}
+                                                                                                   :sub-sub-category))))])
+                                                 (add-routes :browse/gender+top {:sub-category sub-category} :top-category))}
          :browse/category (-> (db/pull-one-with db query find-top)
-                              (assoc :category/children (if (nil? sub-category)
-                                                          (pull-distinct-by-name find-sub)
-                                                          [(-> (db/pull-one-with db query find-sub)
-                                                               (assoc :category/children (pull-distinct-by-name find-sub-sub)))])))
+                              (assoc :category/route (common.routes/path :browse/category {:top-category top-category}))
+                              (assoc :category/children (->> (if (nil? sub-category)
+                                                               (pull-distinct-by-name find-sub)
+                                                               [(-> (db/pull-one-with db query find-sub)
+                                                                    (assoc :category/children (->> (pull-distinct-by-name find-sub-sub)
+                                                                                                   (add-routes :browse/category+sub+sub-sub {:sub-category sub-category
+                                                                                                                                             :top-category top-category}
+                                                                                                               :sub-sub-category))))])
+                                                             (add-routes :browse/category+sub {:top-category top-category} :sub-category))))
          (warn "query/browse-nav called with unknown route: " browse-route))})))
 
 (defmethod client-read :query/top-categories

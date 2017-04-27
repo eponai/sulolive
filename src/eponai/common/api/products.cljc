@@ -1,10 +1,26 @@
 (ns eponai.common.api.products
-  (:require [clojure.string]
-            [clojure.set :as set]
-            [eponai.common.database :as db]))
+  (:require [clojure.string :as str]
+            [eponai.common.routes :as routes]
+            [eponai.common.database :as db]
+            [taoensso.timbre :refer [debug warn]]))
 
 (def category-path-separator " ")
+(def category-path-separator-pattern (re-pattern category-path-separator))
 (def category-name-separator "-")
+
+(def gender-categories #{"women" "men" "boys" "girls" "unisex-adult" "unisex-kids"})
+(def gender-category? (comp gender-categories :category/name))
+
+(defn category-display-name [{:category/keys [label] :as c}]
+  (if (gender-category? c)
+    (str/capitalize (:category/name c))
+    label))
+
+(defn category-names [{:category/keys [path] :as c}]
+  (when-not path
+    (warn "No path in category: " c " when creating category names"))
+  (->> (str/split path category-path-separator-pattern)
+       (zipmap [:top-category :sub-category :sub-sub-category])))
 
 (def eq-or-child-category-rule
   '[[(eq-or-child-category? ?c ?x)
@@ -24,12 +40,13 @@
   {:where '[[?e :store.item/name]]})
 
 (defn- normalize-gender [category-name]
-  (let [unisex-categories {"women" "unisex-adult"
-                           "men"   "unisex-adult"
-                           "boys"  "unisex-kids"
-                           "girls" "unisex-kids"}]
-    (cons category-name (some-> (get unisex-categories category-name)
-                                (vector)))))
+  (let [unisex-categories {"women"        ["unisex-adult"]
+                           "men"          ["unisex-adult"]
+                           "boys"         ["unisex-kids"]
+                           "girls"        ["unisex-kids"]
+                           "unisex-adult" ["women" "men"]
+                           "unisex-kids"  ["boys" "girls"]}]
+    (cons category-name (get unisex-categories category-name))))
 
 (defn category-names-query [{:keys [top-category sub-category sub-sub-category]}]
   {:pre [(or top-category sub-category sub-sub-category)]}

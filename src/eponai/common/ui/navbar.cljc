@@ -57,6 +57,13 @@
 ;                   (dom/a #js {:className "button expanded gray"
 ;                               :href      (routes/url :shopping-bag nil)} "View My Bag"))))))
 
+(def top-level-category-links
+  [{:label "women" :href (routes/url :browse/gender {:sub-category "women"})}
+   {:label "men" :href (routes/url :browse/gender {:sub-category "men"})}
+   {:label "kids" :href (routes/url :browse/gender {:sub-category "unisex-kids"})}
+   {:label "home" :href (routes/url :browse/category {:top-category "home"})}
+   {:label "art" :href (routes/url :browse/category {:top-category "art"})}])
+
 (defn category-dropdown [component]
   (let [{:keys [dropdown-key]} (om/get-state component)]
     (my-dom/div
@@ -65,11 +72,11 @@
                (css/add-class :is-open))
       (menu/vertical
         {:classes [::css/categories]}
-        (map-indexed
-          (fn [i c]
-            (menu/item-link {:href (routes/url :products/categories {:category c})}
-                            (dom/span nil (s/capitalize c))))
-          ["women" "men" "kids" "home" "art"])))))
+        (map
+          (fn [{:keys [label href]}]
+            (menu/item-link {:href href}
+                            (dom/span nil (s/capitalize label))))
+          top-level-category-links)))))
 
 (defn user-dropdown [component user]
   (let [store (get (first (get user :store.owner/_user)) :store/_owners)
@@ -111,17 +118,16 @@
          content))
 
 (defn collection-links [& [disabled?]]
-  (map-indexed
-    (fn [i c]
-      (let [opts (cond-> {:key (str "nav-" c "-" i)}
-                         (not disabled?)
-                         (assoc :href (routes/url :products/categories {:category (.toLowerCase c)})))]
+  (map
+    (fn [{:keys [href label]}]
+      (let [opts (when (not disabled?)
+                   {:href href})]
         (menu/item-link
           (->> opts
                (css/add-class :category)
                (css/show-for :large))
-          (dom/span nil (s/capitalize c)))))
-    ["women" "men" "kids" "home" "art"]))
+          (dom/span nil (s/capitalize label)))))
+    top-level-category-links))
 
 (defn live-link [& [on-click]]
   (let [opts (if on-click

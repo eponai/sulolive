@@ -48,19 +48,22 @@
    ["/" param] sub-handler})
 
 (def browse-categories
-  [["" :browse/all-items]
+  [
+   ;; Can't do 'all-items' right now, as it doesn't make sense when navigating?
+   ;; We've got our categories at the top right now.
+   ;;["" :browse/all-items]
    [["/category/" :top-category]
     (branch-handler :browse/category
                     :sub-category
-                    (branch-handler :browse/category+sub-category
+                    (branch-handler :browse/category+sub
                                     :sub-sub-category
-                                    :browse/category+sub-sub-category))]
+                                    :browse/category+sub+sub-sub))]
    [["/" :sub-category]
     (branch-handler :browse/gender
                     :top-category
-                    (branch-handler :browse/gender+top-category
+                    (branch-handler :browse/gender+top
                                     :sub-sub-category
-                                    :browse/gender+sub-sub-category))]])
+                                    :browse/gender+top+sub-sub))]])
 
 (defn normalize-browse-route [route]
   (letfn [(remove-from-char [s c]
