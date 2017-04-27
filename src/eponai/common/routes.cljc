@@ -1,7 +1,8 @@
 (ns eponai.common.routes
   (:require [bidi.bidi :as bidi]
             [taoensso.timbre :refer [debug error]]
-            [eponai.common.auth :as auth]))
+            [eponai.common.auth :as auth]
+            [clojure.string :as str]))
 
 (def store-routes
   {""           :store
@@ -55,11 +56,19 @@
                                     :sub-sub-category
                                     :browse/category+sub-sub-category))]
    [["/" :sub-category]
-    (branch-handler :browse/filtered
+    (branch-handler :browse/gender
                     :top-category
-                    (branch-handler :browse/filtered+top-category
+                    (branch-handler :browse/gender+top-category
                                     :sub-sub-category
-                                    :browse/filtered+sub-sub-category))]])
+                                    :browse/gender+sub-sub-category))]])
+
+(defn normalize-browse-route [route]
+  (letfn [(remove-from-char [s c]
+            (if-let [idx (str/index-of s c)]
+              (subs s 0 idx)
+              s))]
+    (keyword (namespace route)
+             (remove-from-char (name route) "+"))))
 
 (def routes
   ["/" {""                            :index

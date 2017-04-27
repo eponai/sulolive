@@ -8,11 +8,13 @@
     [eponai.common.parser.read :as common.read]
     [om.next.impl.parser :as om.parser]
     [eponai.client.routes :as client.routes]
+    [eponai.common.routes :as common.routes]
     [eponai.common.ui.router :as router]
     [eponai.common :as c]
-    [taoensso.timbre :as timbre :refer [debug]]
+    [taoensso.timbre :as timbre :refer [debug warn]]
     [eponai.client.auth :as auth]
-    [eponai.common.api.products :as products]))
+    [eponai.common.api.products :as products]
+    [medley.core :as medley]))
 
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.
@@ -159,23 +161,48 @@
   (let [{:keys [category search]} route-params]
     (if target
       {:remote (assoc-in ast [:params :category] category)}
-      {:value (cond (some? category)
-                    (db/pull-all-with db query (products/find-by-category category))
-                    :else
-                    (db/pull-all-with db query (products/find-all)))})))
+      {:value (if (some? category)
+                (db/pull-all-with db query (products/find-by-category category))
+                (db/pull-all-with db query (products/find-all)))})))
 
 (defmethod client-read :query/browse-items
   [{:keys [db target query route-params ast]} _ _]
   (let [{:keys [top-category sub-category]} route-params]
     (if target
       {:remote (update ast :params (fnil merge {}) route-params)}
-      (timbre/with-level
-        :trace
-        {:value (db/pull-all-with db query (cond
-                                             (or (some? sub-category) (some? top-category))
-                                             (products/find-with-category-names route-params)
-                                             :else
-                                             (products/find-all)))}))))
+      {:value (db/pull-all-with db query (if (or (some? sub-category) (some? top-category))
+                                           (products/find-with-category-names route-params)
+                                           (products/find-all)))})))
+
+(defmethod client-read :query/browse-nav
+  [{:keys [db target query route route-params ast]} _ _]
+  (if target
+    {:remote true}
+    (let [{:keys [top-category sub-category]} route-params
+          browse-route (common.routes/normalize-browse-route route)
+          cat-query (products/category-names-query (dissoc route-params :sub-sub-category))
+          find-top (db/merge-query cat-query {:where '[[(identity ?top) ?e]]})
+          find-sub (db/merge-query cat-query {:where '[[(identity ?sub) ?e]]})
+          find-sub-sub (db/merge-query cat-query {:where '[[?sub :category/children ?e]]})
+          ;; deduping by name because it doesn't matter if we get multiple unisex shoes and women's shoes.
+          ;; In query/browse-items we're getting correct items anyway. (?)
+          pull-distinct-by-name (fn [entity-query]
+                                  (->> (db/pull-all-with db query entity-query)
+                                       (into [] (medley/distinct-by :category/name))))]
+      {:value
+       (condp = browse-route
+         :browse/gender {:category/name     sub-category
+                         :category/label    (str/capitalize sub-category)
+                         :category/children (if (nil? top-category)
+                                              (pull-distinct-by-name find-top)
+                                              [(-> (db/pull-one-with db query find-top)
+                                                   (assoc :category/children (pull-distinct-by-name find-sub-sub)))])}
+         :browse/category (-> (db/pull-one-with db query find-top)
+                              (assoc :category/children (if (nil? sub-category)
+                                                          (pull-distinct-by-name find-sub)
+                                                          [(-> (db/pull-one-with db query find-sub)
+                                                               (assoc :category/children (pull-distinct-by-name find-sub-sub)))])))
+         (warn "query/browse-nav called with unknown route: " browse-route))})))
 
 (defmethod client-read :query/top-categories
   [{:keys [db target query route-params]} _ _]

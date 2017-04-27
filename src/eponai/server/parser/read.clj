@@ -270,3 +270,14 @@
                                            (products/find-with-category-names params)
                                            :else
                                            (products/find-all)))})
+
+;; Get all categories.
+(defread query/browse-nav
+  [{:keys [db db-history query]} _ _]
+  {:auth ::auth/public}
+  {:value (let [children-keys #{:category/children :category/_children}]
+            (query/all db db-history
+                       (into [] (comp (remove children-keys)
+                                      (remove #(and (map? %) (some children-keys (keys %)))))
+                             query)
+                       {:where '[[?e :category/path]]}))})
