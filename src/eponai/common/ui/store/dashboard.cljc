@@ -71,7 +71,8 @@
         nav-breakpoint :medium]
     (dom/div
       (->> {:id "store-navbar"}
-           (css/add-class :navbar-container))
+           (css/add-class :navbar-container)
+           (css/show-for :large))
       (dom/nav
         (->> (css/add-class :navbar)
              (css/add-class :top-bar))
@@ -121,6 +122,8 @@
 
 (defn store-info-element [component]
   (let [{:query/keys [store stripe-account]} (om/props component)
+        {:store/keys [profile]} store
+        {store-name :store.profile/name} profile
         store-id (:db/id store)
         ;; Implement a :query/stream-by-store-id ?
         stream-state (or (-> store :stream/_store first :stream/state) :stream.state/offline)]
@@ -129,7 +132,7 @@
       nil
       (callout/callout
         (css/add-class :profile-photo-container)
-        (callout/header nil (:store/name store))
+        (callout/header nil store-name)
         (grid/row
           (css/align :center)
           (grid/column
@@ -239,23 +242,21 @@
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:query/store [:db/id
                     :store/uuid
-                    :store/name
+                    {:store/profile [:store.profile/description
+                                     :store.profile/name
+                                     :store.profile/tagline
+                                     :store.profile/return-policy
+                                     {:store.profile/photo [:photo/path]}]}
                     {:store/owners [{:store.owner/user [:user/email]}]}
-                    {:store/photo [:photo/path]}
                     :store/stripe
-                    :store/description
-                    :store/return-policy
-                    :store/tagline
-                    {:store/items [:store.item/uuid
-                                   :store.item/name
+                    {:store/items [:store.item/name
                                    :store.item/description
                                    :store.item/price
                                    {:store.item/photos [{:store.item.photo/photo [:photo/path]}
                                                         :store.item.photo/index]}
-                                   {:store.item/skus [:store.item.sku/uuid
+                                   {:store.item/skus [:db/id
                                                       {:store.item.sku/inventory [:store.item.sku.inventory/value]}
                                                       :store.item.sku/variation]}]}
-                    :store/collections
                     {:stream/_store [:stream/state]}]}
      :query/current-route
      :query/messages
@@ -302,7 +303,7 @@
             (grid/row
               (css/align :center)
               (grid/column
-                (grid/column-size {:small 10 :medium 4 :large 3})
+                (grid/column-size {:small 12 :medium 4 :large 3})
                 (store-info-element this))
               (grid/column
                 (grid/column-size {:small 12 :medium 8 :large 9})
@@ -313,7 +314,7 @@
                     nil
 
                     (check-list-item
-                      (some? (:store/description store))
+                      (some? (:store.profile/description (:store/profile store)))
                       (routes/url :store-dashboard/settings {:store-id store-id})
                       (dom/span nil "Describe your store"))
 

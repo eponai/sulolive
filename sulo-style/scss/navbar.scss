@@ -23,15 +23,15 @@
 	}
 	.top-bar-left {
 		ul {
-			li:last-child {
-				// border-right
-				// a {
-					border-right: $global-border;
-				// }
+			li:first-child, li:nth-child(2), li:last-child {
+				border-right: $global-border;
 			}
 		}
 	}
-	position: fixed;
+	position: absolute;
+	@include breakpoint(large) {
+		position: fixed;
+	}
 	width: 100%;
 	z-index: $navbar-zindex;
 
@@ -54,18 +54,12 @@
 			border-color: $medium-gray;
 			min-width: 2rem;
 		}
-		// .user-photo {
-		// 	min-width: 2rem;
-		// }
 	}
 	.store-photo-item > a {
 		padding: 0 0.5rem;
 		.photo-container {
 			border-radius: 6px;
 			min-width: 2rem;
-			// .store-photo {
-			// 	min-width: 2rem;
-			// }
 		}
 	}
 }
@@ -84,25 +78,14 @@
 
 .navbar {
 	flex: 1;
-	.top-bar-right li {
-		// padding-top: 0.5rem;
-	}
 	max-width: $global-width;
 	margin: 0 auto;
 	padding: 0;
-	a:not(.button) {		
-		// color: $navbar-font-color;
-		// text-transform: uppercase;
-		// font-style: italic;
-	}
 	.button.tiny {
 		font-size: 0.8rem;
 	}
 	&.top-bar, ul {
 		background: transparent;
-		// i { 
-		// 	font-size: 1.25rem;
-		// }
 	}
 	input {
 		@include sulo-form-element(rem-calc(16));
@@ -131,12 +114,8 @@
 	font-weight: bold;
 	font-size: 1rem;
 	color: $black;
-	// font-style: italic;
-	// padding: 0;
-	// color: $black;
+
 	@include breakpoint(medium) {
 		font-size: 1.2rem;
-		// padding: 0.7rem 1rem;
 	}
-	border-right: $global-border;
 }

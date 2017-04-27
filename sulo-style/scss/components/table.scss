@@ -179,14 +179,14 @@ $show-header-for-stacked: false !default;
   }
 
   .tfoot {
-    display: none;
+    // display: none;
   }
 
   .tr,
   .th,
   .td {
     display: flex;
-    // justify-content: space-between;
+    justify-content: space-between;
     flex: 0 0 auto;
     flex-wrap: wrap;
   }

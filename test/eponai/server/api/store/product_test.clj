@@ -19,17 +19,17 @@
           db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid new-store)])
 
           ;; Prepare data for creating new products
-          params {:store.item/name "product" :store.item/uuid (db/squuid) :store.item/price "10" :store.item/skus [{:store.item.sku/variation "variation"}]}
+          params {:store.item/name "product" :store.item/price "10" :store.item/skus [{:store.item.sku/variation "variation"}]}
           s3-chan (async/chan 1)]
       (store/create-product {:state conn :system {:system/aws-s3 (s3-test s3-chan)}} (:db/id db-store) params)
       (let [result-db (db/db conn)
             ;; Pull new data after creation
-            new-db-store (db/pull result-db [:db/id {:store/items [:store.item/uuid :store.item/photos :store.item/skus]}] (:db/id db-store))
+            new-db-store (db/pull result-db [:db/id {:store/items [:store.item/name :store.item/photos :store.item/skus]}] (:db/id db-store))
             db-product (first (get new-db-store :store/items))]
 
         ;; Verify
         (is (= 1 (count (:store/items new-db-store)) (count (:store.item/skus db-product)))) ;;Verify that our store has one product
-        (is (= (:store.item/uuid db-product) (:store.item/uuid params))) ;;Verify that the store's item is the same as the newly created product
+        (is (= (:store.item/name db-product) (:store.item/name params))) ;;Verify that the store's item is the same as the newly created product
         (is (nil? (async/poll! s3-chan)))                   ;;Verify that S3 was called with the photo we wanted to upload
         (is (empty? (get db-product :store.item/photos))))))) ;; Verify that no photo entities were created for the product
 
@@ -43,19 +43,19 @@
           db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid store)])
 
           ;; Prepare data for creating new products
-          params {:store.item/name "product" :store.item/uuid (db/squuid) :store.item/photos [{:location "someurl.com"}] :store.item/price "10"}
+          params {:store.item/name "product" :store.item/photos [{:location "someurl.com"}] :store.item/price "10"}
           s3-chan (async/chan 1)]
       (store/create-product {:state conn :system {:system/aws-s3 (s3-test s3-chan)}} (:db/id db-store) params)
       (let [result-db (db/db conn)
             ;; Pull new data after creation
-            new-db-store (db/pull result-db [:db/id {:store/items [:store.item/uuid
+            new-db-store (db/pull result-db [:db/id {:store/items [:store.item/name
                                                                    {:store.item/photos [{:store.item.photo/photo [:db/id :photo/path]}]}]}] (:db/id db-store))
             db-product (first (get new-db-store :store/items))
             item-photos (get db-product :store.item/photos)]
 
         ;; Verify
         (is (= 1 (count (:store/items new-db-store))))      ;;Verify that our store has one product
-        (is (= (:store.item/uuid db-product) (:store.item/uuid params))) ;;Verify that the store's item is the same as the newly created product
+        (is (= (:store.item/name db-product) (:store.item/name params))) ;;Verify that the store's item is the same as the newly created product
         (is (= 1 (count item-photos)))                      ;; Verify that we now have a photo entity for the product in the DB
         (is (= (async/poll! s3-chan)
                (get-in (first item-photos) [:store.item.photo/photo :photo/path]))) ;;Verify that S3 was called with the photo we wanted to upload
@@ -71,20 +71,20 @@
           db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid store)])
 
           ;; Prepare data for creating new products
-          params {:store.item/name                                                                                                          "product" :store.item/uuid (db/squuid) :store.item/photos [{:location "first-photo"}
+          params {:store.item/name "product" :store.item/photos [{:location "first-photo"}
                                                                                               {:location "second-photo"}] :store.item/price "10"}
           s3-chan (async/chan 1)]
       (store/create-product {:state conn :system {:system/aws-s3 (s3-test s3-chan)}} (:db/id db-store) params)
       (let [result-db (db/db conn)
             ;; Pull new data after creation
-            new-db-store (db/pull result-db [:db/id {:store/items [:store.item/uuid
+            new-db-store (db/pull result-db [:db/id {:store/items [:store.item/name
                                                                    {:store.item/photos [{:store.item.photo/photo [:db/id :photo/path]}]}]}] (:db/id db-store))
             db-product (first (get new-db-store :store/items))
             item-photos (get db-product :store.item/photos)]
 
         ;; Verify
         (is (= 1 (count (:store/items new-db-store))))      ;;Verify that our store has one product
-        (is (= (:store.item/uuid db-product) (:store.item/uuid params))) ;;Verify that the store's item is the same as the newly created product
+        (is (= (:store.item/name db-product) (:store.item/name params))) ;;Verify that the store's item is the same as the newly created product
         (is (= 2 (count item-photos)))                      ;; Verify that the new product has two photos
         (is (= (async/poll! s3-chan)
                (get-in (first item-photos) [:store.item.photo/photo :photo/path]))) ;;Verify that S3 was called with the photo we wanted to upload

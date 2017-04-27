@@ -69,15 +69,15 @@
                              :store.item/price
                              {:store.item/photos [{:store.item.photo/photo [:photo/path]}
                                                   :store.item.photo/index]}
-                             {:store/_items [:store/name]}]}
+                             {:store/_items [{:store/profile [:store.profile/name]}]}]}
      {:query/featured-stores [:db/id
-                              :store/name
+                              {:store/profile [:store.profile/name
+                                               {:store.profile/photo [:photo/path]}]}
                               :store/featured
                               :store/featured-img-src
-                              {:store/photo [:photo/path]}
                               {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path]}
                                                                          :store.item.photo/index]}]}]}
-     {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id :store/name {:store/photo [:photo/path]}]}]}])
+     {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}]}]}])
   Object
   (render [this]
     (let [{:keys [proxy/navbar query/featured-items query/featured-streams]} (om/props this)
@@ -157,11 +157,15 @@
             (common/content-section {:href  "/streams"
                                      :class "online-channels"}
                                     "Stores streaming right now"
-                                    (div (->> (css/grid-row)
-                                              (css/grid-row-columns {:small 2 :medium 4}))
-                                         (map (fn [c]
-                                                (common/online-channel-element c))
-                                              featured-streams))
+                                    (grid/row
+                                      (css/add-class :collapse)
+                                      (grid/column
+                                        (css/add-class :online-streams)
+                                        (map (fn [c]
+                                               (my-dom/div
+                                                 (css/add-class :online-stream)
+                                                 (common/online-channel-element c)))
+                                             featured-streams)))
                                     "See More")
 
             (common/content-section {:class "collections"}
@@ -200,14 +204,16 @@
             (common/content-section {:href (routes/url :products nil)
                                      :class "new-arrivals"}
                                     "New arrivals"
-                                    (div (->> (css/grid-row)
-                                              (css/grid-row-columns {:small 2 :medium 4}))
-                                         (map-indexed
-                                           (fn [i p]
-                                             (my-dom/div
-                                               (css/grid-column {:key (str i)})
-                                               (pi/product-element {:open-url? true} p)))
-                                           (take 4 featured-items)))
+                                    (grid/row
+                                      (css/add-class :collapse)
+                                      (grid/column
+                                        (css/add-class :new-arrivals-container)
+                                        (map
+                                          (fn [p]
+                                            (my-dom/div
+                                              (css/add-class :new-arrival-item)
+                                              (pi/product-element {:open-url? true} p)))
+                                          (take 4 featured-items))))
                                     "See More")
 
             (banner {:color :default}

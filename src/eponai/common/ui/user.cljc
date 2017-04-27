@@ -16,16 +16,16 @@
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:query/user [:db/id
                    :user/email
-                   {:user/photo [:photo/path]}
-                   :user/name]}
+                   {:user/profile [{:user.profile/photo [:photo/path]}
+                                   :user.profile/name]}]}
      {:query/auth [:db/id]}
-     {:proxy/profile (om/get-query profile/Profile)}
+     {:proxy/profile-edit (om/get-query pe/ProfileEdit)}
      {:proxy/order (om/get-query o/Order)}
      {:proxy/order-list (om/get-query uo/OrderList)}
      :query/current-route])
   Object
   (render [this]
-    (let [{:proxy/keys [order navbar profile order-list]
+    (let [{:proxy/keys [order navbar order-list profile-edit]
            :query/keys [user auth current-route]} (om/props this)
           {:keys [route]} current-route]
       (dom/div
@@ -35,9 +35,9 @@
           (condp = route
             :user/order-list (uo/->OrderList order-list)
             :user/order (o/->Order order)
-            :user/profile (pe/->ProfileEdit (om/computed {}
+            :user/profile (pe/->ProfileEdit (om/computed profile-edit
                                                          {:user user}))
-            :user (profile/->Profile (om/computed profile
+            :user (profile/->Profile (om/computed {}
                                                   {:user             user
                                                    :is-current-user? (= (:db/id user) (:db/id auth))}))))))))
 

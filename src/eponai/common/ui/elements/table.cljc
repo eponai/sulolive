@@ -18,8 +18,11 @@
 (defn thead-row [opts & content]
   (dom/div (css/add-class :tr opts) content))
 
-(defn tbody-row [opts & content]
+(defn tbody-link-row [opts & content]
   (dom/a (css/add-class :tr opts) content))
+
+(defn tbody-row [opts & content]
+  (dom/div (css/add-class :tr opts) content))
 
 (defn th [opts & content]
   (dom/span (css/add-class :th opts) content))

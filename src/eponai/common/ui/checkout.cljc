@@ -26,16 +26,18 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:query/cart [{:cart/items [:db/id
-                                 :store.item.sku/uuid
-                                 :store.item.sku/variation
-                                 {:store.item/_skus [:store.item/price
-                                                     {:store.item/photos [:store.item.photo/index
-                                                                          {:store.item.photo/photo [:photo/path]}]}
-                                                     :store.item/name
-                                                     {:store/_items [:db/id
-                                                                     :store/name
-                                                                     {:store/photo [:photo/path]}]}]}]}]}
+     {:query/checkout [:db/id
+                       {:cart/_items [:user/_cart]}
+                       :store.item.sku/variation
+                       :store.item.sku/inventory
+                       {:store.item/_skus [:store.item/price
+                                           {:store.item/photos [:store.item.photo/index
+                                                                {:store.item.photo/photo [:photo/path]}]}
+                                           :store.item/name
+                                           {:store/_items [:db/id
+                                                           {:store/profile [:store.profile/name
+                                                                            {:store.profile/photo [:photo/path]}]}]}]}
+                       ]}
      :query/current-route
      {:query/auth [:db/id
                    :user/email]}
@@ -44,17 +46,17 @@
   #?(:cljs
      (place-order
        [this]
-       (let [{:query/keys [current-route cart]} (om/props this)
+       (let [{:query/keys [current-route checkout]} (om/props this)
              {:checkout/keys [shipping payment]} (om/get-state this)
              {:keys [source]} payment
              {:keys [route-params]} current-route
              {:keys [store-id]} route-params]
-         (let [items (filter #(= (c/parse-long store-id) (get-in % [:store.item/_skus :store/_items :db/id])) (:cart/items cart))]
+         (let [items checkout]
            (msg/om-transact! this `[(store/create-order ~{:order    {:source   source
                                                                      :shipping shipping
                                                                      :items    items
                                                                      :shipping-fee 5
-                                                                     :subtotal (review/compute-item-price (:cart/items cart))}
+                                                                     :subtotal (review/compute-item-price items)}
                                                           :store-id (c/parse-long store-id)})])))))
 
   (initLocalState [_]
@@ -76,14 +78,16 @@
 
   (render [this]
     (let [{:proxy/keys [navbar]
-           :query/keys [cart current-route]} (om/props this)
+           :query/keys [checkout current-route]} (om/props this)
           {:checkout/keys [shipping payment]
            :keys [open-section error-message]} (om/get-state this)
           {:keys [route] } current-route
           checkout-resp (msg/last-message this 'store/create-order)
-          subtotal (review/compute-item-price (:cart/items cart))
+          subtotal (review/compute-item-price checkout)
           shipping-fee 5
           grandtotal (+ subtotal shipping-fee)]
+
+      (debug "Checkout props: " checkout)
 
       (common/page-container
         {:navbar navbar :id "sulo-checkout"}
@@ -95,7 +99,7 @@
             (grid/column-size {:small 12 :medium 8 :large 8})
             (dom/div
               nil
-              (review/->CheckoutReview {:items (:cart/items cart)
+              (review/->CheckoutReview {:items checkout
                                         :subtotal subtotal
                                         :shipping shipping-fee}))
 

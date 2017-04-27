@@ -112,10 +112,6 @@
 			margin-right: 0.5rem;
 			border-right: 2px solid transparent;
 			transition: border .25s ease-in-out;
-			// border-bottom: $global-border;
-			// padding: 0.25rem 0;
-			// border-right: none;
-
 			&:last-child {
 				border: none;
 				border-right: 2px solid transparent;
@@ -165,6 +161,13 @@
 				color: map-get($foundation-palette, success);
 			} 
 			padding: 0.5rem 0;
+		}
+
+		.tabs-panel {
+			padding: 0;
+			@include breakpoint(medium) {
+				padding: 1rem;
+			}
 		}
 	}
 }

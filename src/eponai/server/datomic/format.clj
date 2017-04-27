@@ -93,7 +93,7 @@
       common.format/add-tempid))
 
 (defn sku [s]
-  (let [sku (-> (select-keys s [:db/id :store.item.sku/uuid :store.item.sku/variation :store.item.sku/inventory])
+  (let [sku (-> (select-keys s [:db/id :store.item.sku/variation :store.item.sku/inventory])
                 common.format/add-tempid)]
     (cond-> sku
             (some? (:store.item.sku/inventory sku))
@@ -133,7 +133,7 @@
                 {:db/id             (db/tempid :db.part/user)
                  :order.item/type   :order.item.type/sku
                  :order.item/parent (:db/id sku)
-                 :order.item/price  (bigdec (get-in sku [:store.item/_skus :store.item/price]))})]
+                 :order.item/amount  (bigdec (get-in sku [:store.item/_skus :store.item/price]))})]
     (-> (select-keys o [:db/id :order/uuid :order/shipping :order/user :order/store :order/items :order/amount])
         (update :order/shipping shipping)
         (update :order/items #(map item* %))

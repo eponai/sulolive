@@ -1,20 +1,50 @@
-#sulo-order-receipt {
+.sulo-order-element {
+	.callout {
+		margin-bottom: 2.5rem;
+	}
 	h3 {
-		small {
-			text-transform: none;
-			font-weight: $global-weight-bold;
+		text-transform: none;
+	}
+	.header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 0.5rem;
+		p {
+			margin: 0;
+		}
+		> div {
+			display: flex;
+			align-items: center;
+		}
+		.photo-container {
+			margin-right: 1rem;
+			width: 2rem;
+			max-width: 2rem;
 		}
 	}
-}
-
-#sulo-user-order-list {
-	$border: 1px solid $light-gray;
-	.order-item-sku {
-		// padding: 1rem 0;
-		// border-top: $border;
-		// border-bottom: $border;
+	.table {
+		table-layout: fixed;
 	}
-	td {
-		padding: 0.5rem;
+
+	.td {
+		vertical-align: top;
+	}
+	.sl-OrderItemlist-cell--photo {
+		.photo-container {
+			
+		}
+		// min-width: 4rem;
+		// max-width: 4rem;
+		// width: 6rem;
+	}
+	.sl-OrderItemlist-cell--price {
+		font-weight: $global-weight-bold;
+	}
+	.sl-OrderItemlist-cell--description {
+		small {
+			color: $dark-gray;
+			font-size: 100%;
+		}
 	}
 }

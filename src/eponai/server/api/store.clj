@@ -92,7 +92,7 @@
                             :order/store    store-id
                             :order/amount   (bigdec destination-amount)})
                   (update :order/items conj {:order.item/type  :order.item.type/shipping
-                                             :order.item/price (bigdec shipping-fee)}))]
+                                             :order.item/amount (bigdec shipping-fee)}))]
     (when source
       (let [charge (try
                      (stripe/create-charge (:system/stripe system) {:amount      (int (* 100 total-amount)) ;Convert to cents for Stripe
@@ -111,7 +111,7 @@
                                                                                   :amount  (int (* 100 destination-amount))}}) ;Convert to cents for Stripe
                      (catch CardException e
                        (throw (ex-info (.getMessage e)
-                                       {:message (.getMessage e)}))))
+                                       {:user-message (.getMessage e)}))))
             charge-entity {:db/id     (db/tempid :db.part/user)
                            :charge/id (:charge/id charge)}
             is-paid? (:charge/paid? charge)

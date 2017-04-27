@@ -32,6 +32,16 @@
       {:remote (assoc-in ast [:params :store-id] store-id)}
       {:value (common.read/multiply-store-items store)})))
 
+(defmethod client-read :query/stores
+  [{:keys [db query target]} _ _]
+  ;(debug "Read query/auth: ")
+  (if target
+    {:remote true}
+    {:value (db/pull-all-with db query {:where '[[?s :stream/state ?states]
+                                                 [?s :stream/store ?e]]
+                                        :symbols {'[?states ...] [:stream.state/online
+                                                                 :stream.state/offline]}})}))
+
 (defmethod client-read :query/store-items
   [{:keys [db query target ast route-params]} _ _]
   (let [store-id (c/parse-long (:store-id route-params))
@@ -43,8 +53,8 @@
                    (assoc-in [:params :navigation] navigation))}
       {:value (let [params (if (not-empty navigation)
                              {:where   '[[?s :store/items ?e]
-                                         [?e :store.item/navigation ?n]
-                                         [?n :store.navigation/path ?p]]
+                                         [?e :store.item/section ?n]
+                                         [?n :store.section/path ?p]]
                               :symbols {'?s store-id
                                         '?p navigation}}
                              {:where   '[[?s :store/items ?e]]
@@ -129,6 +139,19 @@
     (if target
       {:remote true }
       {:value cart})))                                      ;(common.read/compute-cart-price cart)
+
+(defmethod client-read :query/checkout
+  [{:keys [db query route-params target ast]} _ _]
+  (let [store-id (c/parse-long-safe (:store-id route-params))]
+    (debug "query/checkout with store-id: " store-id)
+    (if target
+      {:remote (assoc-in ast [:params :store-id] store-id)}
+      {:value (when (some? store-id)
+                (db/pull-all-with db query {:where   '[[?u :user/cart ?c]
+                                                       [?c :cart/items ?e]
+                                                       [?i :store.item/skus ?e]
+                                                       [?s :store/items ?i]]
+                                            :symbols {'?s store-id}}))})))
 
 (defmethod client-read :query/items
   [{:keys [db query target route-params ast] :as env} _ p]
@@ -219,7 +242,7 @@
                                               (map :store.item/img-src)
                                               (take 2))]
                        {:db/id                  store
-                        :store/featured-img-src [img-1 (:store/photo s) img-2]}))]
+                        :store/featured-img-src [img-1 (:store.profile/photo (:store/profile s)) img-2]}))]
              (sort-by :db/id
                       (into [] (comp (map photos-fn)
                                      (map #(merge % (db/pull db query (:db/id %)))))

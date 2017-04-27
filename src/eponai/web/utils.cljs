@@ -23,6 +23,18 @@
         (> size 640) :medium
         :else :small))
 
+(defn add-class-to-element [el class]
+  (when (some? el)
+    (let [old-classname (.-className el)]
+      (debug "oldclass: " old-classname)
+      (set! (.-className el) (clojure.string/join " " [old-classname class])))))
+
+(defn remove-class-to-element [el class]
+  (when (some? el)
+    (let [old-classname (str " " (.-className el) " ")
+          new-classname (clojure.string/replace old-classname (str " " class) " ")]
+      (set! (.-className el) (clojure.string/trim new-classname)))))
+
 (defn elements-by-class
   ([classname]
     (elements-by-class js/document classname))

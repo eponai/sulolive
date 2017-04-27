@@ -20,7 +20,7 @@
   (reduce + (map :store.item/price items)))
 
 (defn store-element [s]
-  (let [{store-name :store/name} s]
+  (let [store-name (get-in s [:store/profile :store.profile/name])]
     (grid/row
       (->> (css/add-class :store-container)
            (css/align :center))
@@ -79,48 +79,45 @@
               (utils/two-decimal-price price))))))))
 
 (defn store-items-element [component skus-by-store]
-  (let [{:query/keys [cart]} (om/props component)
-        {:keys [cart/items]} cart]
-    (dom/div
-      nil
-      (map
-        (fn [[s skus]]
-          (dom/div
-            (->> (css/callout)
-                 (css/add-class :cart-checkout-item))
-            (store-element s)
-            (menu/vertical
-              nil
-              (map sku-menu-item skus))
-            (grid/row
-              (->> (css/align :middle)
-                   (css/text-align :right)
-                   (css/add-class :item))
-              (let [item-price (compute-item-price (map #(get % :store.item/_skus) skus))
-                    shipping-price 0]
-                (grid/column
-                  nil
-                  (dom/p nil
-                         (dom/span nil "Total: ")
-                         (dom/strong nil (utils/two-decimal-price (+ item-price shipping-price))))
-                  (dom/a
-                    (->> {:href (routes/url :checkout {:store-id (:db/id s)})}
-                         (css/button)) "Checkout"))))))
-        skus-by-store))))
+  (dom/div
+    nil
+    (map
+      (fn [[s skus]]
+        (dom/div
+          (->> (css/callout)
+               (css/add-class :cart-checkout-item))
+          (store-element s)
+          (menu/vertical
+            nil
+            (map sku-menu-item skus))
+          (grid/row
+            (->> (css/align :middle)
+                 (css/text-align :right)
+                 (css/add-class :item))
+            (let [item-price (compute-item-price (map #(get % :store.item/_skus) skus))
+                  shipping-price 0]
+              (grid/column
+                nil
+                (dom/p nil
+                       (dom/span nil "Total: ")
+                       (dom/strong nil (utils/two-decimal-price (+ item-price shipping-price))))
+                (dom/a
+                  (->> {:href (routes/url :checkout {:store-id (:db/id s)})}
+                       (css/button)) "Checkout"))))))
+      skus-by-store)))
 
 (defui ShoppingBag
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:query/cart [{:cart/items [:db/id
-                                 :store.item.sku/uuid
                                  :store.item.sku/variation
                                  {:store.item/_skus [:store.item/price
                                                      {:store.item/photos [{:store.item.photo/photo [:photo/path]}
                                                                           :store.item.photo/index]}
                                                      :store.item/name
-                                                     {:store/_items [:store/name
-                                                                     {:store/photo [:photo/path]}]}]}]}]}
+                                                     {:store/_items [{:store/profile [:store.profile/name
+                                                                                      {:store.profile/photo [:photo/path]}]}]}]}]}]}
      {:query/auth [:user/email]}])
   Object
   (componentWillReceiveProps [this p]
@@ -134,6 +131,7 @@
       (debug "Shopping bag: " cart)
       (common/page-container
         {:navbar navbar :id "sulo-shopping-bag"}
+        (common/wip-label this)
         (grid/row-column
           nil
           (dom/h1 nil "Shopping bag")

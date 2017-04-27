@@ -1,6 +1,7 @@
 (ns eponai.common.ui.common
   (:require
     [eponai.client.routes :as routes]
+    [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.grid :as grid]
@@ -42,9 +43,10 @@
 (defn online-channel-element [channel]
   (let [{:stream/keys [store]
          stream-name  :stream/title} channel
-        {:store/keys [photo]} store
+        {{:store.profile/keys [photo]
+          store-name :store.profile/name} :store/profile} store
         store-link (routes/url :store {:store-id (:db/id store)})]
-    (grid/column
+    (dom/div
       (->> (css/add-class :content-item)
            (css/add-class :stream-item))
       (dom/a
@@ -64,7 +66,7 @@
       (dom/div
         (css/add-class :text)
         (dom/a {:href store-link}
-               (dom/strong nil (:store/name store)))))))
+               (dom/strong nil store-name))))))
 
 (defn content-section [{:keys [href class sizes]} header content footer]
   (dom/div
@@ -164,4 +166,29 @@
                     :title "This page is still a work in progress and might have unexpected behaviors. Thank you for understanding."}
                    (css/add-class :label)
                    (css/add-class :wip-label)
-                   (css/add-class :green)) "Work in progress")))
+                   (css/add-class :primary)) "Work in progress")))
+
+
+(defn is-new-order? [component]
+  (let [{:query/keys [current-route]} (om/props component)]
+    (nil? (get-in current-route [:route-params :order-id]))))
+
+(defn is-order-not-found? [component]
+  (let [{:query/keys [current-route order]} (om/props component)]
+    (and (some? (get-in current-route [:route-params :order-id]))
+         (nil? order))))
+
+(defn order-not-found [component return-href]
+  (let [{:query/keys [current-route]} (om/props component)
+        {:keys [order-id store-id]} (:route-params current-route)]
+    (grid/row-column
+      nil
+      (dom/h3 nil "Order not found")
+      (callout/callout
+        (->> (css/text-align :center)
+             (css/add-class :not-found))
+        (dom/p nil (dom/i {:classes ["fa fa-times-circle fa-2x"]}))
+        (dom/p nil
+               (dom/strong nil (str "Order #" order-id " was not found in "))
+               (dom/a {:href return-href}
+                      (dom/strong nil "your orders")))))))

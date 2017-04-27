@@ -70,6 +70,19 @@
 		left: 0;
 		width: 100%;
 		height: 2.5rem;
+				.menu-dropdown {
+			position:relative;
+			width: 100%;
+			margin: 0;
+			// background: $dashboard-primary-color;
+			border-bottom: 3px solid $dashboard-primary-color;
+			.dropdown-pane {
+				// border: none;
+				position: absolute;
+				top: 100%;
+				// background: $dashboard-primary-color;
+			}
+		}
 		.navbar {
 			max-width: $dashboard-max-width;
 			margin: 0 auto;
@@ -107,7 +120,10 @@
 		h3 {
 			margin-top: 0;
 		}
-		padding-top: 5rem;
+		padding-top: 2.5rem;
+		@include breakpoint(large) {
+			padding-top: 5rem;
+		}
 		.wip-label {
 			margin-top: -2.5rem;
 			position: absolute;

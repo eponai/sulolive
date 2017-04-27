@@ -40,11 +40,11 @@
                           :store.item.photo/index]}
      {:store.item/skus [:db/id :store.item.sku/variation :store.item.sku/inventory]}
      :store.item/description
-     :store.item/navigation
+     :store.item/section
      {:store.item/category [:category/label
                             :category/path]}
-     {:store/_items [{:store/photo [:photo/path]}
-                     :store/name]}])
+     {:store/_items [{:store/profile [{:store.profile/photo [:photo/path]}
+                                      :store.profile/name]}]}])
   Object
   (initLocalState [_]
     {:selected-tab       :rating
@@ -180,8 +180,7 @@
                    (css/add-class :store-info))
               (grid/column
                 (grid/column-size {:small 3 :medium 2})
-                (photo/circle
-                  {:src (:photo/path (:store/photo store))}))
+                (photo/store-photo store))
 
               (grid/column
                 nil
@@ -191,15 +190,15 @@
                   (css/add-class :store-name)
                   (dom/a
                     {:href (str "/store/" (:db/id store))}
-                    (dom/span nil (:store/name store))))
+                    (dom/span nil (:store.profile/name (:store/profile store)))))
                 (dom/div
-                  (css/add-class :store-tagline) (dom/p nil (:store/description store)))
+                  (css/add-class :store-tagline) (dom/p nil (:store.profile/description (:store/profile store))))
                 (dom/div nil (dom/a
                                (css/button-hollow) (dom/span nil "+ Follow")))))
             (dom/hr nil))
 
           (common/content-section {}
-                                  (dom/div nil (dom/span nil "More from ") (dom/a nil (:store/name store)))
+                                  (dom/div nil (dom/span nil "More from ") (dom/a nil (:store.profile/name (:store/profile store))))
                                   (dom/div nil)
                                   "Load More")
 

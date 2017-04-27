@@ -21,7 +21,7 @@
 
 (defn about-section [component]
   (let [{:query/keys [store]} (om/props component)
-        {:store/keys [description return-policy]} store]
+        {:store.profile/keys [description return-policy]} (:store/profile store)]
     (grid/row-column
       nil
       (dom/div
@@ -39,15 +39,15 @@
      {:proxy/stream (om/get-query stream/Stream)}
      {:proxy/chat (om/get-query chat/StreamChat)}
      {:query/store [:db/id
-                    {:store/cover [:photo/path]}
-                    {:store/photo [:photo/path]}
-                    {:store/navigations [:store.navigation/label :store.navigation/path]}
+                    {:store/sections [:store.section/label :store.section/path]}
                     ;{:store/items (om/get-query item/Product)}
                     {:stream/_store [:stream/state :stream/title]}
-                    :store/description
-                    :store/return-policy
-                    :store/tagline
-                    :store/name]}
+                    {:store/profile [:store.profile/name
+                                     :store.profile/description
+                                     :store.profile/tagline
+                                     :store.profile/return-policy
+                                     {:store.profile/photo [:photo/path]}
+                                     {:store.profile/cover [:photo/path]}]}]}
      {:query/store-items (om/get-query item/Product)}
      :query/current-route])
   Object
@@ -55,13 +55,15 @@
     (let [{:keys [fullscreen?] :as st} (om/get-state this)
           {:query/keys [store store-items current-route]
            :proxy/keys [navbar] :as props} (om/props this)
-          {:store/keys [cover photo]
-           stream      :stream/_store
-           store-name  :store/name} store
+          {:store/keys [profile]
+           stream      :stream/_store} store
+          {:store.profile/keys [photo cover tagline description]
+           store-name :store.profile/name} profile
           stream (first stream)
           is-live? (= :stream.state/live (:stream/state stream))
           show-chat? (:show-chat? st is-live?)
           {:keys [route route-params]} current-route]
+      (debug "Store: " store)
       (common/page-container
         {:navbar navbar
          :id     "sulo-store"}
@@ -126,7 +128,7 @@
               (->> (grid/column-order {:small 3 :medium 3})
                    (css/add-class :quote-section)
                    (css/text-align :center))
-              (dom/span nil (:store/tagline store)))))
+              (dom/span nil tagline))))
 
         (dom/div
           {:id "shop"}
@@ -149,7 +151,7 @@
                                   (dom/span nil "All Items")))
                 (map-indexed
                   (fn [i n]
-                    (let [{:store.navigation/keys [path label]} n
+                    (let [{:store.section/keys [path label]} n
                           is-active? (= path (:navigation route-params))]
                       (menu/item
                         (cond->> {:key (+ 10 i)}
@@ -158,7 +160,7 @@
                         (dom/a
                           {:href (routes/url :store/navigation {:navigation path :store-id   (:db/id store)})}
                           (dom/span nil label)))))
-                  (:store/navigations store)))))
+                  (:store/sections store)))))
           (if (= route :store/about)
             (about-section this)
 

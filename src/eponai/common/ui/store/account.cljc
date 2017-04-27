@@ -23,7 +23,8 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.store.account.validate :as v]
     [eponai.client.routes :as routes]
-    [eponai.common.ui.common :as common]))
+    [eponai.common.ui.common :as common]
+    [eponai.client.parser.message :as msg]))
 
 (defn tabs-panel [is-active? & content]
   (dom/div
@@ -61,7 +62,10 @@
   Object
 
   (save-legal-entity [this le]
-    (debug "Save Legal entity: " le))
+    (debug "Save Legal entity: " le)
+    (let [{:keys [store]} (om/get-computed this)]
+      (msg/om-transact! this `[('stripe/update-account ~{:account-params {:field/legal-entity le}
+                                                         :store-id       (:db/id store)})])))
 
   (initLocalState [_]
     {:active-tab    :payouts})
@@ -115,7 +119,7 @@
 
           ;; Content
           (grid/column
-            nil
+            (css/grid-column-size {:small 12 :medium 9 :large 10})
             (dom/div
               (->> (css/add-class :tabs-content)
                    (css/add-class ::css/vertical))

@@ -8,12 +8,7 @@
 	.button {
 		margin: 0;
 	}
-	.page-content {
-		padding-top: 2rem;
-		.callout {
-			border: $global-border;
-		}
-	}
+
 	.cart-checkout-item {
 		.menu {
 			border-top: $global-border;			
@@ -29,7 +24,6 @@
 	}
 
 	a.name {
-		// margin-bottom: 2%;
 		max-height: 4.5rem;
 		overflow: hidden;
 		display: -webkit-box;
@@ -51,11 +45,6 @@
 		&.callout {
 			border: none;
 		}
-		// padding: 1.5rem;
-		h5 {
-			// margin-top: 2rem;
-		}
-		// padding: 2.5rem;
 	}
 	
 	.cart-loading {

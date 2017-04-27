@@ -48,15 +48,15 @@
 }
 
 #sulo-edit-order {
-	.callout {
-		margin-bottom: 2rem;
-	}
 	.shipping-address {
 		border: $global-border;
 		padding: 0.5rem;
 		label {
 			text-align: left;
 		}
+	}
+	.breadcrumbs {
+		margin-top: -1rem;
 	}
 	.order-action {
 		border: 1px solid $light-gray;
@@ -108,13 +108,21 @@
 			.td {
 				font-weight: inherit;
 			}
-
+			.dropdown-trigger {
+				display: inline-block;
+				&:hover, &:focus {
+					.dropdown-pane {
+						display: block;
+					}
+				}
+			}
 			.dropdown-pane {
 				p {
 					display: flex;
 					justify-content: space-between;
 					margin-bottom: 0.2rem;
 				}
+				max-width: 90%;
 			}
 		}
 	}

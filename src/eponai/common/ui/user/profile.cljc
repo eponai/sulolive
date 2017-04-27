@@ -14,10 +14,6 @@
     [eponai.client.routes :as routes]))
 
 (defui Profile
-  static om/IQuery
-  (query [_]
-    [#?(:cljs
-        {:proxy/photo-upload (om/get-query pu/PhotoUploader)})])
   Object
   (initLocalState [_]
     {:tab          :favorites
@@ -37,62 +33,30 @@
         (common/wip-label this)
         (dom/div
           (css/add-class :header)
-          (when file-upload?
-            (common/modal
-              {:on-close #(om/update-state! this assoc :file-upload? false)}
-              (dom/div
-                nil
-                (dom/h2 nil "Change Profile Photo")
-                (menu/vertical
-                  nil
-                  (menu/item
-                    nil
-                    (when did-mount?
-                      #?(:cljs
-                         (pu/->PhotoUploader
-                           (om/computed
-                             photo-upload
-                             {:on-photo-upload (fn [photo]
-                                                 (om/transact! this [(list 'photo/upload {:photo photo})
-                                                                     :query/user])
-                                                 (om/update-state! this assoc :file-upload? false))})))))
-                  (menu/item
-                    nil
-                    (dom/a
-                      (->> (css/button-hollow)
-                           (css/add-class :expanded)) "Remove Photo"))))))
+
           (dom/div
             (css/add-class :user-info)
             (grid/row
               nil
               (grid/column
                 (css/text-align :center)
-                (dom/h1 nil (:user/name user))))
+                (dom/h1 nil (get-in user [:user/profile :user.profile/name]))))
 
-            (grid/row
-              (css/align :center)
+            (grid/row-column
+              (cond->> (css/add-class :profile-photo)
+                       is-current-user?
+                       (css/add-class :edit-enabled))
+              (photo/user-photo {:user user}))
 
-              (grid/column
-                (cond->> (->> (grid/column-size {:small 4 :medium 3 :large 2})
-                              (css/add-class :profile-photo))
-                         is-current-user?
-                         (css/add-class :edit-enabled))
-
-                (dom/a {:onClick #(when is-current-user? (om/update-state! this assoc :file-upload? true))}
-                       (photo/circle {:src photo-url}))))
-
-            (grid/row
-              (css/align :center)
-              (grid/column
-                (->> (grid/column-size {:small 4 :medium 3 :large 2})
-                     (css/text-align :center))
-                (if is-current-user?
-                  (dom/a
-                    (css/button-hollow {:href (routes/url :user/profile {:user-id (:db/id user)})})
-                    (dom/span nil "Edit Profile"))
-                  (dom/a
-                    (css/button)
-                    (dom/span nil "+ Follow")))))))
+            (grid/row-column
+              (css/text-align :center)
+              (if is-current-user?
+                (dom/a
+                  (css/button-hollow {:href (routes/url :user/profile {:user-id (:db/id user)})})
+                  (dom/span nil "Edit Profile"))
+                (dom/a
+                  (css/button)
+                  (dom/span nil "+ Follow"))))))
 
         ;(grid/row-column
         ;  nil)

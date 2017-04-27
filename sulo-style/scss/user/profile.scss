@@ -9,12 +9,13 @@
 		}
 	}
 
-	.profile-photo {
-		margin: 1rem auto;
+	.user-profile-photo {
+		// margin: 1.75rem auto;
+		display: flex;
+		justify-content: center;
 		a {
 			cursor: auto;
 		}
-
 		&.edit-enabled {
 			a {
 				cursor: pointer;
@@ -59,23 +60,56 @@
 		border: none;
 	}
 }
-
 #sulo-profile-edit {
-			.callout {
-			border: 1px solid $light-gray;
-			// box-shadow: 0 1px 2px 0 rgba($primary-color, 0.1);
-			padding: 0.5rem;
-			@include breakpoint(medium) {
-				padding: 2rem;
-			}
-			.button {
-				margin: 0;
-			}
-			.header {
-				font-weight: $global-weight-bold;
-				border-bottom: 1px solid $light-gray;
-				padding-bottom: 0.5rem;
-				margin-bottom: 2rem;
+	label {
+		text-align: left;
+		@include breakpoint(medium) {
+			text-align: right;
+		}
+	}
+	.callout {
+		border: 1px solid $light-gray;
+		// box-shadow: 0 1px 2px 0 rgba($primary-color, 0.1);
+		padding: 0.5rem;
+		@include breakpoint(medium) {
+			padding: 2rem;
+		}
+		.button {
+			margin: 0;
+		}
+		.header {
+			font-weight: $global-weight-bold;
+			border-bottom: 1px solid $light-gray;
+			padding-bottom: 0.5rem;
+			margin-bottom: 2rem;
+		}
+	}
+	.user-profile-photo {
+		display: flex;
+		justify-content: center;
+		.photo-container {
+			max-width: 15rem;
+			min-width: 15rem;
+			cursor: pointer;
+			.overlay {
+				opacity: 0;
+				transition: opacity .25s ease-in-out;
+				background: rgba($primary-color, 0.3);
+				.content {
+					display: flex;
+					flex-direction: column;
+					align-items: center;
+				}
+				.button {
+					margin-bottom: 0.5rem;
+				}
+				&.is-active {
+					opacity: 1;
+					i {
+						color: $light-gray;
+					}
+				}
 			}
 		}
+	}
 }

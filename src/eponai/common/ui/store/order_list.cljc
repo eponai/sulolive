@@ -15,7 +15,7 @@
 (defui OrderList
   static om/IQuery
   (query [_]
-    [{:query/orders [:order/store :order/uuid :order/status {:order/items [:order.item/price]} :order/amount]}])
+    [{:query/orders [:order/store :order/uuid :order/status {:order/items [:order.item/amount]} :order/amount]}])
   Object
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
@@ -46,16 +46,17 @@
               nil
               (table/thead-row
                 nil
-                (table/th nil "")
+                (table/th (css/show-for :medium) "")
                 (table/th nil "Amount")
                 (table/th nil "Status")
                 (table/th nil "ID")
-                (table/th nil "Last Updated")))
+                (table/th
+                  (css/show-for :medium) "Last Updated")))
             (table/tbody
               nil
               (map
                 (fn [o]
-                  (let [total-price (reduce + 0 (map :order.item/price (:order/items o)))
+                  (let [total-price (reduce + 0 (map :order.item/amount (:order/items o)))
                         product-link (routes/url :store-dashboard/order
                                                  {:store-id (:db/id store)
                                                   :order-id (:db/id o)})
@@ -63,15 +64,19 @@
                                          (table/td
                                            (css/add-class :sl-orderlist-cell opts)
                                            content))]
-                    (table/tbody-row
+                    (table/tbody-link-row
                       (->> {:href product-link}
                            (css/add-class :sl-orderlist-row)
                            (css/add-class (str "sl-orderlist-row--" (name (:order/status o)))))
-                      (orderlist-cell (css/add-class :sl-orderlist-cell--icon) (dom/i {:classes ["fa fa-opencart fa-fw"]}))
+                      (orderlist-cell
+                        (->> (css/add-class :sl-orderlist-cell--icon)
+                             (css/show-for :medium)) (dom/i {:classes ["fa fa-opencart fa-fw"]}))
                       (orderlist-cell (css/add-class :sl-orderlist-cell--price) (two-decimal-price (:order/amount o)))
                       (orderlist-cell (css/add-class :sl-orderlist-cell--status) (common/order-status-element o))
-                      (orderlist-cell (css/add-class :sl-orderlist-cell--id) (:db/id o))
-                      (orderlist-cell (css/add-class :sl-orderlist-cell--updated) (date/date->string (* 1000 (:order/updated o 0)))))))
+                      (orderlist-cell (css/add-class :sl-orderlist-cell--id) (dom/span nil (:db/id o)))
+                      (orderlist-cell
+                        (->> (css/add-class :sl-orderlist-cell--updated)
+                             (css/show-for :medium)) (date/date->string (* 1000 (:order/updated o 0)))))))
                 orders))))))))
 
 (def ->OrderList (om/factory OrderList))

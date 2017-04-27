@@ -5,16 +5,13 @@ $primary-color: map-get($foundation-palette, primary);
 		color: $dark-gray;
 	}
 }
-table td {
-	.photo-container {
-		// min-width: 4rem; 
-	}
-}
+
 .photo-container {
 	// border: 1px solid $light-gray;
 	// box-shadow: 0 1px 3px 0 rgba($primary-color, 0.1);
 	flex: 1;
 	display: flex;
+	position: relative;
 	&.collage {
 		.photo-container {
 			display: flex;
@@ -34,7 +31,18 @@ table td {
 				// border-radius:
 			}
 		}
-		border: 1px solid $light-gray;
+		border: $global-border;
+	}
+	.overlay {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		top: 0;
+		left: 0;
+		border-radius: inherit;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 }
 

@@ -1,4 +1,7 @@
 #sulo-store {
+	.callout {
+		border: none;
+	}
 	.store-container {
 		padding: 0.5rem 0;
 		@include breakpoint(medium) {
