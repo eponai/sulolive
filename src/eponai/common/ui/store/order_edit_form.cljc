@@ -90,11 +90,11 @@
         order-created (when-some [created (:order/created order)]
                         (date/date->string (* 1000 created) "MMM dd yyyy HH:mm"))
         grouped-orders (group-by :order.item/type items)
-        subtotal (reduce + 0 (map :order.item/price (:order.item.type/sku grouped-orders)))
+        subtotal (reduce + 0 (map :order.item/amount (:order.item.type/sku grouped-orders)))
 
         ;order (assoc order :order/status :order.status/returned)
         order-email (get-in order [:order/user :user/email])
-        total-amount (reduce + 0 (map :order.item/price items))
+        total-amount (reduce + 0 (map :order.item/amount items))
         order-status (:order/status order)]
     (dom/div
       nil
@@ -231,7 +231,7 @@
                       (item-cell (css/add-class :sl-OrderItemlist-cell--id) (dom/span nil "Shipping"))
                       (item-cell (css/add-class :sl-OrderItemlist-cell--description) (dom/span nil "Free shipping"))
                       (item-cell nil)
-                      (item-cell (css/add-class :sl-OrderItemlist-cell--price) (dom/span nil (two-decimal-price (:order.item/price shipping-item))))))
+                      (item-cell (css/add-class :sl-OrderItemlist-cell--price) (dom/span nil (two-decimal-price (:order.item/amount shipping-item))))))
                   (table/thead-row
                     (->> (css/add-class :sl-OrderItemlist-row)
                          (css/add-class :sl-OrderItemlist-row--tax))
@@ -388,7 +388,7 @@
     [:query/messages
      {:query/order [:db/id
                     {:order/items [:order.item/type
-                                   :order.item/price
+                                   :order.item/amount
                                    {:order.item/parent [:store.item.sku/variation {:store.item/_skus [:db/id :store.item/name :store.item/price]}]}]}
                     :order/amount
                     :order/status

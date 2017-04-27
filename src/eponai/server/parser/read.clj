@@ -57,6 +57,14 @@
   {:value (query/one db db-history query {:where   '[[?e :store/profile]]
                                           :symbols {'?e store-id}})})
 
+(defread query/stores
+  [{:keys [db db-history query]} _ _]
+  {:auth ::auth/public}
+  {:value (query/all db db-history query {:where '[[?s :stream/state ?states]
+                                                   [?s :stream/store ?e]]
+                                          :symbols {'[?states ...] [:stream.state/online
+                                                                   :stream.state/offline]}})})
+
 (defread query/store-items
   [{:keys [db db-history query]} _ {:keys [store-id navigation]}]
   {:auth    ::auth/public

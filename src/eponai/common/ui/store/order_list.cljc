@@ -15,7 +15,7 @@
 (defui OrderList
   static om/IQuery
   (query [_]
-    [{:query/orders [:order/store :order/uuid :order/status {:order/items [:order.item/price]} :order/amount]}])
+    [{:query/orders [:order/store :order/uuid :order/status {:order/items [:order.item/amount]} :order/amount]}])
   Object
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
@@ -56,7 +56,7 @@
               nil
               (map
                 (fn [o]
-                  (let [total-price (reduce + 0 (map :order.item/price (:order/items o)))
+                  (let [total-price (reduce + 0 (map :order.item/amount (:order/items o)))
                         product-link (routes/url :store-dashboard/order
                                                  {:store-id (:db/id store)
                                                   :order-id (:db/id o)})

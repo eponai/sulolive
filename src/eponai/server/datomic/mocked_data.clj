@@ -381,11 +381,11 @@
               {:chat/store (:db/id s)})
             stores)))
 
-(defn mock-streams [stores]
+(defn mock-streams [stores state]
   (vec (map-indexed
          (fn [i s]
            {:stream/title (str "Stream " i)
-            :stream/state :stream.state/offline
+            :stream/state state
             :stream/store (:db/id s)})
          stores)))
 
@@ -400,10 +400,11 @@
   (let [categories (mock-categories3)
         stores (mock-stores)
         chats (mock-chats stores)
-        streams (mock-streams (take 4 stores))
+        live-streams (mock-streams (take 4 stores) :stream.state/offline)
+        streams (mock-streams (drop 4 stores) :stream.state/offline)
         storeless-user (user-no-store)]
     (db/transact conn categories)
     (db/transact-one conn storeless-user)
     (debug "Categories added")
-    (db/transact conn (concat stores streams chats))
+    (db/transact conn (concat stores live-streams streams chats))
     (debug "Stores with items, chats and streams added")))

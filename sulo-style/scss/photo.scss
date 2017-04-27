@@ -31,7 +31,7 @@ $primary-color: map-get($foundation-palette, primary);
 				// border-radius:
 			}
 		}
-		border: 1px solid $light-gray;
+		border: $global-border;
 	}
 	.overlay {
 		position: absolute;

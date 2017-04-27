@@ -32,6 +32,16 @@
       {:remote (assoc-in ast [:params :store-id] store-id)}
       {:value (common.read/multiply-store-items store)})))
 
+(defmethod client-read :query/stores
+  [{:keys [db query target]} _ _]
+  ;(debug "Read query/auth: ")
+  (if target
+    {:remote true}
+    {:value (db/pull-all-with db query {:where '[[?s :stream/state ?states]
+                                                 [?s :stream/store ?e]]
+                                        :symbols {'[?states ...] [:stream.state/online
+                                                                 :stream.state/offline]}})}))
+
 (defmethod client-read :query/store-items
   [{:keys [db query target ast route-params]} _ _]
   (let [store-id (c/parse-long (:store-id route-params))

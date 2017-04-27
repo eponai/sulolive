@@ -137,9 +137,24 @@
 		}
 	}
 	.sulo-items-container {
+		padding-bottom: 6rem;
 		select {
 			font-size: 90%;
 			font-weight: $global-weight-bold;
+		}
+		// border-bottom: $global-border;
+
+		> .header {
+			// text-transform: uppercase;
+			border-bottom: $global-border;
+			font-size: 100%;
+			font-weight: $global-weight-bold;
+		}
+		&.empty {
+			padding: 4rem 0;
+			text-align: center;
+			color: $dark-gray;
+			font-size: 120%;
 		}
 	}
 	&#sulo-live {
