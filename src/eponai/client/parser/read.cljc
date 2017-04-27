@@ -166,16 +166,16 @@
 
 (defmethod client-read :query/browse-items
   [{:keys [db target query route-params ast]} _ _]
-  (let [{:keys [browse-filter top-category]} route-params]
+  (let [{:keys [top-category sub-category]} route-params]
     (if target
       {:remote (update ast :params (fnil merge {}) route-params)}
-      {:value (db/pull-all-with db query (cond
-                                           (some? browse-filter)
-                                           (products/find-with-browse-filter browse-filter route-params)
-                                           (some? top-category)
-                                           (products/find-with-category-names top-category route-params)
-                                           :else
-                                           (products/find-all)))})))
+      (timbre/with-level
+        :trace
+        {:value (db/pull-all-with db query (cond
+                                             (or (some? sub-category) (some? top-category))
+                                             (products/find-with-category-names route-params)
+                                             :else
+                                             (products/find-all)))}))))
 
 (defmethod client-read :query/top-categories
   [{:keys [db target query route-params]} _ _]

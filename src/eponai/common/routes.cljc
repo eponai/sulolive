@@ -54,14 +54,12 @@
                     (branch-handler :browse/category+sub-category
                                     :sub-sub-category
                                     :browse/category+sub-sub-category))]
-   [["/" :browse-filter]
+   [["/" :sub-category]
     (branch-handler :browse/filtered
                     :top-category
                     (branch-handler :browse/filtered+top-category
-                                    :sub-category
-                                    (branch-handler :browse/filtered+sub-category
-                                                    :sub-sub-category
-                                                    :browse/filtered+sub-sub-category)))]])
+                                    :sub-sub-category
+                                    :browse/filtered+sub-sub-category))]])
 
 (def routes
   ["/" {""                            :index
