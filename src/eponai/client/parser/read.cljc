@@ -225,6 +225,15 @@
                                                              (add-routes :browse/category+sub {:top-category top-category} :sub-category))))
          (warn "query/browse-nav called with unknown route: " browse-route))})))
 
+(defmethod client-read :query/owned-store
+  [{:keys [db target query]} _ _]
+  (if target
+    {:remote true}
+    (when-let [user-id (auth/current-auth db)]
+      {:value (db/pull-one-with db query {:where   '[[?owners :store.owner/user ?user]
+                                                     [?e :store/owners ?owners]]
+                                          :symbols {'?user user-id}})})))
+
 (defmethod client-read :query/top-categories
   [{:keys [db target query route-params]} _ _]
   (if target

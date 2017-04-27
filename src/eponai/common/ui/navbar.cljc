@@ -78,9 +78,8 @@
                             (dom/span nil (s/capitalize label))))
           top-level-category-links)))))
 
-(defn user-dropdown [component user]
-  (let [store (get (first (get user :store.owner/_user)) :store/_owners)
-        {:keys [dropdown-key]} (om/get-state component)]
+(defn user-dropdown [component user owned-store]
+  (let [{:keys [dropdown-key]} (om/get-state component)]
     (my-dom/div
       (cond->> (->> (css/add-class :dropdown-pane)
                     (css/add-class :user-dropdown))
@@ -88,15 +87,15 @@
                (css/add-class :is-open))
       (menu/vertical
         (css/add-class :user-dropdown-menu)
-        (when store
+        (when owned-store
           (menu/item
             (css/add-class :my-stores)
             (dom/label nil (dom/small nil "Manage Store"))
             (menu/vertical
               (css/add-class :nested)
               (menu/item-link
-                {:href (routes/url :store-dashboard {:store-id (:db/id store)})}
-                (get-in store [:store/profile :store.profile/name])))))
+                {:href (routes/url :store-dashboard {:store-id (:db/id owned-store)})}
+                (get-in owned-store [:store/profile :store.profile/name])))))
         (when user
           (menu/item
             (css/add-class :user-info)
@@ -177,7 +176,7 @@
         right-menu))))
 
 (defn help-navbar [component]
-  (let [{:query/keys [auth]} (om/props component)]
+  (let [{:query/keys [auth owned-store]} (om/props component)]
     (navbar-content
       (dom/div #js {:className "top-bar-left"}
         (menu/horizontal
@@ -192,7 +191,7 @@
         (menu/horizontal nil
                          (if (some? auth)
                            (menu/item-dropdown
-                             {:dropdown (user-dropdown component auth)
+                             {:dropdown (user-dropdown component auth owned-store)
                               :classes  [:user-photo-item]
                               :href     "#"
                               :onClick  #(.open-dropdown component :dropdown/user)}
@@ -226,8 +225,7 @@
               (my-dom/span nil title))))
 
 (defn sidebar [component]
-  (let [{:query/keys [auth]} (om/props component)
-        store (get (first (get auth :store.owner/_user)) :store/_owners)]
+  (let [{:query/keys [auth owned-store]} (om/props component)]
     (my-dom/div
       (css/add-class :sidebar-container {:onClick #(.close-sidebar component)})
       (my-dom/div {:classes [:sidebar-overlay]})
@@ -258,17 +256,17 @@
                          (sidebar-link component :user {:user-id (:db/id auth)} "Profile")
                          (sidebar-link component :user/order-list {:user-id (:db/id auth)} "Purchases")))
             )
-          (when (some? store)
+          (when (some? owned-store)
             (menu/item
               nil
-              (my-dom/label nil (str "Manage " (get-in store [:store/profile :store.profile/name])))
+              (my-dom/label nil (str "Manage " (get-in owned-store [:store/profile :store.profile/name])))
               (menu/vertical
                 nil
-                (sidebar-link component :store-dashboard {:store-id (:db/id store)} "Dashboard")
-                (sidebar-link component :store-dashboard/stream {:store-id (:db/id store)} "Stream")
-                (sidebar-link component :store-dashboard/product-list {:store-id (:db/id store)} "Products")
-                (sidebar-link component :store-dashboard/order-list {:store-id (:db/id store)} "Orders")
-                (sidebar-link component :store-dashboard/settings {:store-id (:db/id store)} "Settings"))))
+                (sidebar-link component :store-dashboard {:store-id (:db/id owned-store)} "Dashboard")
+                (sidebar-link component :store-dashboard/stream {:store-id (:db/id owned-store)} "Stream")
+                (sidebar-link component :store-dashboard/product-list {:store-id (:db/id owned-store)} "Products")
+                (sidebar-link component :store-dashboard/order-list {:store-id (:db/id owned-store)} "Orders")
+                (sidebar-link component :store-dashboard/settings {:store-id (:db/id owned-store)} "Settings"))))
           (if (some? auth)
             (menu/item nil (my-dom/a
                              (->> {:href (routes/url :logout)
@@ -281,7 +279,7 @@
 (defn standard-navbar [component]
   (let [{:keys [did-mount?]} (om/get-state component)
         {:keys [coming-soon?]} (om/get-computed component)
-        {:query/keys [cart auth]} (om/props component)]
+        {:query/keys [cart auth owned-store]} (om/props component)]
     (navbar-content
       (dom/div #js {:className "top-bar-left"}
         (menu/horizontal
@@ -322,7 +320,7 @@
                                                              (set! js/window.location (str "/goods?search=" search-string))))))})))
           (if (some? auth)
             (menu/item-dropdown
-              (->> {:dropdown (user-dropdown component auth)
+              (->> {:dropdown (user-dropdown component auth owned-store)
                     :classes  [:user-photo-item]
                     :href     "#"
                     :onClick  #(.open-dropdown component :dropdown/user)}
@@ -357,9 +355,11 @@
      {:query/auth [:db/id
                    :user/email
                    {:user/profile [{:user.profile/photo [:photo/path]}]}
-                   {:store.owner/_user [{:store/_owners [:db/id
-                                                         {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}]}]}]}
-     '{:query/top-categories [:category/label :category/path :category/name {:category/children ...}]}
+                   {:user/photo [:photo/path]}]}
+     {:query/owned-store [:db/id
+                          {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
+                          ;; to be able to query the store on the client side.
+                          {:store/owners [{:store.owner/user [:db/id]}]}]}
      :query/current-route])
   Object
   #?(:cljs

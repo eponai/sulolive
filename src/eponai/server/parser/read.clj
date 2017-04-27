@@ -281,3 +281,11 @@
                                       (remove #(and (map? %) (some children-keys (keys %)))))
                              query)
                        {:where '[[?e :category/path]]}))})
+
+(defread query/owned-store
+  [{:keys [db db-history auth query]} _ _]
+  {:auth ::auth/any-user}
+  {:value (query/one db db-history query
+                     {:where   '[[?owners :store.owner/user ?user]
+                                 [?e :store/owners ?owners]]
+                      :symbols {'?user (:user-id auth)}})})
