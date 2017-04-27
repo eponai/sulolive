@@ -46,7 +46,7 @@
         {{:store.profile/keys [photo]
           store-name :store.profile/name} :store/profile} store
         store-link (routes/url :store {:store-id (:db/id store)})]
-    (grid/column
+    (dom/div
       (->> (css/add-class :content-item)
            (css/add-class :stream-item))
       (dom/a
