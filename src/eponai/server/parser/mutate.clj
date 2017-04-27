@@ -80,10 +80,21 @@
    :resp {:success "Photo uploaded"
           :error   "Could not upload photo :("}}
   {:action (fn []
-             (let [old-profile (db/pull (db/db state) [:user.profile] (:user-id auth))
+             (let [old-profile (db/one-with (db/db state) {:where   '[[?u :user/profile ?e]]
+                                                           :symbols {'?u (:user-id auth)}})
                    photo (f/photo (s3/upload-photo (:system/aws-s3 system) (:photo params)))]
                (db/transact state [photo
-                                   [:db/add (:db/id old-profile) :user.profile/photo (:db/id photo)]])))})
+                                   [:db/add old-profile :user.profile/photo (:db/id photo)]])))})
+
+(defmutation user.info/update
+  [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ {:keys [:user/name]}]
+  {:auth ::auth/any-user
+   :resp {:success "Photo uploaded"
+          :error   "Could not upload photo :("}}
+  {:action (fn []
+             (let [old-profile (db/one-with (db/db state) {:where   '[[?u :user/profile ?e]]
+                                                           :symbols {'?u (:user-id auth)}})]
+               (db/transact state [[:db/add old-profile :user.profile/name name]])))})
 
 (defn- with-store [{:keys [state auth db]} k {:keys [store-id]} f]
   (if-let [store (db/one-with db {:where   '[[?e :store/owners ?owner]
@@ -104,13 +115,19 @@
           :error   "Could not upload photo :("}}
   {:action (fn []
              (let [{old-profile :store/profile} (db/pull (db/db state) [{:store/profile [:db/id :store.profile/photo]}] store-id)
-                   old-photo (:store.profile/photo old-profile)
-                   s3-photo (f/photo (s3/upload-photo (:system/aws-s3 system) photo))
-                   new-photo (cond-> s3-photo
-                                     (some? (:db/id old-photo))
-                                     (assoc :db/id (:db/id old-photo)))]
-               (db/transact state [new-photo
-                                   [:db/add (:db/id old-profile) :store.profile/photo (:db/id new-photo)]])))})
+                   old-photo (:store.profile/photo old-profile)]
+               (if (some? photo)
+                 (let [s3-photo (f/photo (s3/upload-photo (:system/aws-s3 system) photo))
+                       new-photo (cond-> s3-photo
+                                         (some? (:db/id old-photo))
+                                         (assoc :db/id (:db/id old-photo)))
+                       dbtxs (cond-> [new-photo
+                                      [:db/add (:db/id old-profile) :store.profile/photo (:db/id new-photo)]]
+                                     (some? old-photo)
+                                     [:db.fn/retractEntity (:db/id old-photo)])]
+                   (db/transact state dbtxs))
+                 (when (some? (:db/id old-photo))
+                   (db/transact state [:db.fn/retractEntity (:db/id old-photo)])))))})
 
 (defmutation stream-token/generate
   [{:keys [state db parser ::parser/return auth system] :as env} k {:keys [store-id] :as p}]

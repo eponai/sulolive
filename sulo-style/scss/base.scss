@@ -38,7 +38,7 @@ $chat-width-small: rem-calc(200);
 }
 html, body {
 	overflow: hidden;
-	font-size: 90%;
+	// font-size: 90%;
 	@include breakpoint(medium) {
 		font-size: $global-font-size;
 	}

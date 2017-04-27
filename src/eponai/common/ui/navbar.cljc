@@ -190,7 +190,7 @@
                               :classes  [:user-photo-item]
                               :href     "#"
                               :onClick  #(.open-dropdown component :dropdown/user)}
-                             (photo/user-photo auth))
+                             (photo/user-photo {:user auth}))
                            (my-dom/a
                              (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
                                   (css/button-hollow))
@@ -321,7 +321,7 @@
                     :href     "#"
                     :onClick  #(.open-dropdown component :dropdown/user)}
                    (css/show-for :large))
-              (photo/user-photo auth))
+              (photo/user-photo {:user auth}))
             ;(my-dom/a
             ;  (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
             ;       (css/button-hollow))
@@ -333,7 +333,7 @@
                    (css/add-class :user-photo-item))
               (my-dom/a
                 {:href (routes/url :user {:user-id (:db/id auth)})}
-                (photo/user-photo auth))))
+                (photo/user-photo {:user auth}))))
           (menu/item
             nil
             (my-dom/a {:href (routes/url :shopping-bag)}

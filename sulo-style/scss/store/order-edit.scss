@@ -48,9 +48,6 @@
 }
 
 #sulo-edit-order {
-	.callout {
-		margin-bottom: 2rem;
-	}
 	.shipping-address {
 		border: $global-border;
 		padding: 0.5rem;
@@ -113,6 +110,11 @@
 			}
 			.dropdown-trigger {
 				display: inline-block;
+				&:hover, &:focus {
+					.dropdown-pane {
+						display: block;
+					}
+				}
 			}
 			.dropdown-pane {
 				p {
@@ -120,6 +122,7 @@
 					justify-content: space-between;
 					margin-bottom: 0.2rem;
 				}
+				max-width: 90%;
 			}
 		}
 	}

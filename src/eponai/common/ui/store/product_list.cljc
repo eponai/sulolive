@@ -11,7 +11,8 @@
     [eponai.common.format.date :as date]
     [eponai.common.ui.utils :as utils]
     [eponai.common.ui.elements.photo :as photo]
-    [eponai.common.ui.elements.table :as table]))
+    [eponai.common.ui.elements.table :as table]
+    [eponai.common.ui.elements.grid :as grid]))
 
 (defn primary-photo [product]
   (let [item-photo (first (sort-by :store.item.photo/index (:store.item/photos product)))]
@@ -63,10 +64,10 @@
                          :placeholder "Search Products..."
                          :type        "text"}))
 
-        (my-dom/div
-          (->> (css/grid-row))
-          (my-dom/div
-            (->> (css/grid-column))
+        (grid/row
+          (css/add-class :collapse)
+          (grid/column
+            nil
             (table/table
               (css/add-class :hover)
               (my-dom/div
@@ -75,8 +76,12 @@
                   (css/add-class :tr)
                         (my-dom/span (css/add-class :th) (dom/span nil ""))
                         (my-dom/span (css/add-class :th) "Product Name")
-                        (my-dom/span (css/add-class :th) "Price")
-                        (my-dom/span (css/add-class :th) "Last Updated")))
+                        (my-dom/span
+                          (->> (css/add-class :th)
+                               (css/text-align :right)) "Price")
+                        (my-dom/span
+                          (->> (css/add-class :th)
+                               (css/show-for :medium)) "Last Updated")))
               (my-dom/div
                 (css/add-class :tbody)
                 (map (fn [p]
@@ -89,10 +94,14 @@
                                         (photo/product-photo (primary-photo p)))
                            (my-dom/span (css/add-class :td)
                                         (:store.item/name p))
-                           (my-dom/span (css/add-class :td)
-                                        (utils/two-decimal-price (:store.item/price p)))
-                           (my-dom/span (css/add-class :td)
-                                        (when (:store.item/updated p)
+                           (my-dom/span
+                             (->> (css/add-class :td)
+                                  (css/text-align :right))
+                             (utils/two-decimal-price (:store.item/price p)))
+                           (my-dom/span
+                             (->> (css/add-class :td)
+                                  (css/show-for :medium))
+                             (when (:store.item/updated p)
                                           (date/date->string (* 1000 (:store.item/updated p)) "MMM dd yyyy HH:mm"))))))
                              products)))))))))
 

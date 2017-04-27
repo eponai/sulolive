@@ -11,6 +11,7 @@ $primary-color: map-get($foundation-palette, primary);
 	// box-shadow: 0 1px 3px 0 rgba($primary-color, 0.1);
 	flex: 1;
 	display: flex;
+	position: relative;
 	&.collage {
 		.photo-container {
 			display: flex;
@@ -31,6 +32,17 @@ $primary-color: map-get($foundation-palette, primary);
 			}
 		}
 		border: 1px solid $light-gray;
+	}
+	.overlay {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		top: 0;
+		left: 0;
+		border-radius: inherit;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 }
 

@@ -14,10 +14,6 @@
     [eponai.client.routes :as routes]))
 
 (defui Profile
-  static om/IQuery
-  (query [_]
-    [#?(:cljs
-        {:proxy/photo-upload (om/get-query pu/PhotoUploader)})])
   Object
   (initLocalState [_]
     {:tab          :favorites
@@ -37,30 +33,7 @@
         (common/wip-label this)
         (dom/div
           (css/add-class :header)
-          (when file-upload?
-            (common/modal
-              {:on-close #(om/update-state! this assoc :file-upload? false)}
-              (dom/div
-                nil
-                (dom/h2 nil "Change Profile Photo")
-                (menu/vertical
-                  nil
-                  (menu/item
-                    nil
-                    (when did-mount?
-                      #?(:cljs
-                         (pu/->PhotoUploader
-                           (om/computed
-                             photo-upload
-                             {:on-photo-upload (fn [photo]
-                                                 (om/transact! this [(list 'photo/upload {:photo photo})
-                                                                     :query/user])
-                                                 (om/update-state! this assoc :file-upload? false))})))))
-                  (menu/item
-                    nil
-                    (dom/a
-                      (->> (css/button-hollow)
-                           (css/add-class :expanded)) "Remove Photo"))))))
+
           (dom/div
             (css/add-class :user-info)
             (grid/row
@@ -73,7 +46,7 @@
               (cond->> (css/add-class :profile-photo)
                        is-current-user?
                        (css/add-class :edit-enabled))
-              (photo/user-photo user))
+              (photo/user-photo {:user user}))
 
             (grid/row-column
               (css/text-align :center)

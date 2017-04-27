@@ -41,17 +41,17 @@
         (grid/row-column
           nil
           (table/table
-            (->> (css/add-class :hover (css/add-class :sl-orderlist))
-                 (css/add-class :stack))
+            (css/add-class :hover (css/add-class :sl-orderlist))
             (table/thead
               nil
               (table/thead-row
                 nil
-                (table/th nil "")
+                (table/th (css/show-for :medium) "")
                 (table/th nil "Amount")
                 (table/th nil "Status")
                 (table/th nil "ID")
-                (table/th nil "Last Updated")))
+                (table/th
+                  (css/show-for :medium) "Last Updated")))
             (table/tbody
               nil
               (map
@@ -68,11 +68,15 @@
                       (->> {:href product-link}
                            (css/add-class :sl-orderlist-row)
                            (css/add-class (str "sl-orderlist-row--" (name (:order/status o)))))
-                      (orderlist-cell (css/add-class :sl-orderlist-cell--icon) (dom/i {:classes ["fa fa-opencart fa-fw"]}))
+                      (orderlist-cell
+                        (->> (css/add-class :sl-orderlist-cell--icon)
+                             (css/show-for :medium)) (dom/i {:classes ["fa fa-opencart fa-fw"]}))
                       (orderlist-cell (css/add-class :sl-orderlist-cell--price) (two-decimal-price (:order/amount o)))
                       (orderlist-cell (css/add-class :sl-orderlist-cell--status) (common/order-status-element o))
-                      (orderlist-cell (css/add-class :sl-orderlist-cell--id) (:db/id o))
-                      (orderlist-cell (css/add-class :sl-orderlist-cell--updated) (date/date->string (* 1000 (:order/updated o 0)))))))
+                      (orderlist-cell (css/add-class :sl-orderlist-cell--id) (dom/span nil (:db/id o)))
+                      (orderlist-cell
+                        (->> (css/add-class :sl-orderlist-cell--updated)
+                             (css/show-for :medium)) (date/date->string (* 1000 (:order/updated o 0)))))))
                 orders))))))))
 
 (def ->OrderList (om/factory OrderList))

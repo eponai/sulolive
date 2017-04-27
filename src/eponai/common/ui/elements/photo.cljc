@@ -15,7 +15,7 @@
            content)))
 
 (defn- photo-container [opts & content]
-  (apply dom/div (css/add-class ::css/photo-container opts) content))
+  (dom/div (css/add-class ::css/photo-container opts) content))
 
 ;; Functiosn for creating elements in the UI
 (defn photo [opts]
@@ -28,10 +28,11 @@
     nil
     (photo* (css/add-class ::css/photo-square opts))))
 
-(defn circle [opts]
+(defn circle [opts & content]
   (photo-container
     {:classes [::css/photo-circle]}
-    (photo* (css/add-class ::css/photo-square opts))))
+    (photo* (css/add-class ::css/photo-square opts))
+    content))
 
 (defn full [opts]
   (photo-container
@@ -44,6 +45,13 @@
     (photo* (->> opts
                  (css/add-class ::css/photo-square)
                  (css/add-class ::css/photo-thumbnail)))))
+
+(defn overlay [opts & content]
+  (dom/div
+    (css/add-class ::css/overlay opts)
+    (dom/div
+      (css/add-class ::css/photo-overlay-content)
+      content)))
 
 (defn with-overlay [opts photo-element & content]
   (dom/div
@@ -91,11 +99,14 @@
     (circle {:src photo-src
              :classes [:store-photo]})))
 
-(defn user-photo [user]
+(defn user-photo [{:keys [user] :as opts}  & content]
   (let [default-src "/assets/img/storefront.jpg"
         photo-src (get-in user [:user/profile :user.profile/photo :photo/path] default-src)]
-    (circle {:src photo-src
-             :classes [:user-photo]})))
+    (dom/div
+      (css/add-class :user-profile-photo (dissoc opts :user))
+      (circle {:src     photo-src
+               :classes [:user-photo]}
+              content))))
 
 (defn product-photo [photo]
   (let [default-src "/assets/img/storefront.jpg"

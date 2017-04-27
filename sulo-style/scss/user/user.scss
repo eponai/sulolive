@@ -11,6 +11,15 @@
 		background: $white;
 		font-size: 0.9rem;
 	}
+
+	.user-profile-photo {
+		margin: 1.75rem auto;
+		.photo-container {
+			max-width: 10rem;
+			min-width: 10rem;
+		}
+	}
+
 }
 
 @import "profile";
