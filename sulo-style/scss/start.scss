@@ -100,6 +100,7 @@ $section-footer-color: $primary-color;
 	      			background: transparent;
 				}
 				.online-stream {
+					padding: 0.5rem;
 					width: $global-width / 6;
 					min-width: $global-width / 6;
 					@include breakpoint(medium) {

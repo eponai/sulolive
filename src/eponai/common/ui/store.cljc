@@ -39,7 +39,7 @@
      {:proxy/stream (om/get-query stream/Stream)}
      {:proxy/chat (om/get-query chat/StreamChat)}
      {:query/store [:db/id
-                    {:store/navigations [:store.navigation/label :store.navigation/path]}
+                    {:store/sections [:store.section/label :store.section/path]}
                     ;{:store/items (om/get-query item/Product)}
                     {:stream/_store [:stream/state :stream/title]}
                     {:store/profile [:store.profile/name
@@ -63,6 +63,7 @@
           is-live? (= :stream.state/live (:stream/state stream))
           show-chat? (:show-chat? st is-live?)
           {:keys [route route-params]} current-route]
+      (debug "Store: " store)
       (common/page-container
         {:navbar navbar
          :id     "sulo-store"}
@@ -150,7 +151,7 @@
                                   (dom/span nil "All Items")))
                 (map-indexed
                   (fn [i n]
-                    (let [{:store.navigation/keys [path label]} n
+                    (let [{:store.section/keys [path label]} n
                           is-active? (= path (:navigation route-params))]
                       (menu/item
                         (cond->> {:key (+ 10 i)}
@@ -159,7 +160,7 @@
                         (dom/a
                           {:href (routes/url :store/navigation {:navigation path :store-id   (:db/id store)})}
                           (dom/span nil label)))))
-                  (:store/navigations store)))))
+                  (:store/sections store)))))
           (if (= route :store/about)
             (about-section this)
 

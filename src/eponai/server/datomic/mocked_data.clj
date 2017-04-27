@@ -151,53 +151,53 @@
 (defn mock-stores []
   [
    ;; ikcha
-   {:db/id             (db/tempid :db.part/user)
-    :store/profile     {:store.profile/name "ikcha"
-                        :store.profile/photo       (photo "https://img1.etsystatic.com/151/0/6380862/isla_500x500.24111301_nvjpi6zo.jpg")}
-    :store/stripe      (stripe-account)
-    :store/navigations [{:db/id                  (db/tempid :db.part/user -1000)
-                         :store.navigation/path  "earrings"
-                         :store.navigation/label "Earrings"}
-                        {:db/id                  (db/tempid :db.part/user -1001)
-                         :store.navigation/path  "necklaces"
-                         :store.navigation/label "Necklaces"}
-                        {:db/id                  (db/tempid :db.part/user -1002)
-                         :store.navigation/path  "rings"
-                         :store.navigation/label "Rings"}]
-    :store/items       [{:store.item/name       "Rutilated Quartz & Yellow Citrine Sterling Silver Cocktail Ring - Bohemian"
-                         :store.item/price      318.00M
-                         :store.item/photos     [(item-photo "https://img1.etsystatic.com/106/1/6380862/il_570xN.883668651_pp7m.jpg")]
-                         :store.item/category   [:category/path (category-path "jewelry" "women" "rings")]
-                         :store.item/navigation (db/tempid :db.part/user -1002)
-                         :store.item/uuid       #uuid "58a4b30e-3c8b-49c4-ab08-796c05b4275b"
-                         :store.item/skus       [(sku "S")
-                                                 (sku "M")
-                                                 (sku "L")]}
-                        {:store.item/name       "Emerald silver choker"
-                         :store.item/price      219.00M
-                         :store.item/photos     [(item-photo "https://img1.etsystatic.com/178/0/6380862/il_570xN.1122315115_m1kt.jpg")]
-                         :store.item/category   [:category/path (category-path "jewelry" "women" "necklaces")]
-                         :store.item/uuid       #uuid "58a4b2b8-4489-4661-9580-c0fe2d132966"
-                         :store.item/skus       [(sku)]
-                         :store.item/navigation (db/tempid :db.part/user -1001)}
-                        {:store.item/name       "Ear Floral Cuff in Sterling Silver"
-                         :store.item/navigation (db/tempid :db.part/user -1000)
-                         :store.item/price      68.00M
-                         :store.item/photos     [(item-photo "https://img1.etsystatic.com/124/0/6380862/il_570xN.883522367_34xx.jpg")]
-                         :store.item/category   [:category/path (category-path "jewelry" "women")]
-                         :store.item/uuid       #uuid "58a4b270-fd5d-4cd9-a5ec-ee6c683c679b"
-                         :store.item/skus       [(sku "M")]}
-                        {:store.item/name       "Sun Stone geometrical Sterling Silver Ring"
-                         :store.item/navigation (db/tempid :db.part/user -1002)
-                         :store.item/price      211.00M
-                         :store.item/photos     [(item-photo "https://img0.etsystatic.com/130/1/6380862/il_570xN.883902058_swjc.jpg")]
-                         :store.item/category   [:category/path (category-path "jewelry" "women" "rings")]}]
-    :store/owners      {:store.owner/user {:db/id        (db/tempid :db.part/user)
-                                           :user/email   test-user-email
-                                           :user/profile {:user.profile/photo (photo "https://s3.amazonaws.com/sulo-images/photos/real/5f/ef/5fef55ce7dcc3057db6e4c8f1739fe0d0574a8882611e40c37950fa82f816d40/men.jpg")
-                                                          :user.profile/name  "Diana"}
-                                           :user/stripe  {:stripe/id "cus_A9paOisnJJQ0wS"}}
-                        :store.owner/role :store.owner.role/admin}}
+   {:db/id          (db/tempid :db.part/user)
+    :store/profile  {:store.profile/name  "ikcha"
+                     :store.profile/photo (photo "https://img1.etsystatic.com/151/0/6380862/isla_500x500.24111301_nvjpi6zo.jpg")}
+    :store/stripe   (stripe-account)
+    :store/sections [{:db/id               (db/tempid :db.part/user -1000)
+                      :store.section/path  "earrings"
+                      :store.section/label "Earrings"}
+                     {:db/id               (db/tempid :db.part/user -1001)
+                      :store.section/path  "necklaces"
+                      :store.section/label "Necklaces"}
+                     {:db/id               (db/tempid :db.part/user -1002)
+                      :store.section/path  "rings"
+                      :store.section/label "Rings"}]
+    :store/items    [{:store.item/name     "Rutilated Quartz & Yellow Citrine Sterling Silver Cocktail Ring - Bohemian"
+                      :store.item/price    318.00M
+                      :store.item/photos   [(item-photo "https://img1.etsystatic.com/106/1/6380862/il_570xN.883668651_pp7m.jpg")]
+                      :store.item/category [:category/path (category-path "jewelry" "women" "rings")]
+                      :store.item/section  (db/tempid :db.part/user -1002)
+                      :store.item/uuid     #uuid "58a4b30e-3c8b-49c4-ab08-796c05b4275b"
+                      :store.item/skus     [(sku "S")
+                                            (sku "M")
+                                            (sku "L")]}
+                     {:store.item/name     "Emerald silver choker"
+                      :store.item/price    219.00M
+                      :store.item/photos   [(item-photo "https://img1.etsystatic.com/178/0/6380862/il_570xN.1122315115_m1kt.jpg")]
+                      :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
+                      :store.item/uuid     #uuid "58a4b2b8-4489-4661-9580-c0fe2d132966"
+                      :store.item/skus     [(sku)]
+                      :store.item/section  (db/tempid :db.part/user -1001)}
+                     {:store.item/name     "Ear Floral Cuff in Sterling Silver"
+                      :store.item/section  (db/tempid :db.part/user -1000)
+                      :store.item/price    68.00M
+                      :store.item/photos   [(item-photo "https://img1.etsystatic.com/124/0/6380862/il_570xN.883522367_34xx.jpg")]
+                      :store.item/category [:category/path (category-path "jewelry" "women")]
+                      :store.item/uuid     #uuid "58a4b270-fd5d-4cd9-a5ec-ee6c683c679b"
+                      :store.item/skus     [(sku "M")]}
+                     {:store.item/name     "Sun Stone geometrical Sterling Silver Ring"
+                      :store.item/section  (db/tempid :db.part/user -1002)
+                      :store.item/price    211.00M
+                      :store.item/photos   [(item-photo "https://img0.etsystatic.com/130/1/6380862/il_570xN.883902058_swjc.jpg")]
+                      :store.item/category [:category/path (category-path "jewelry" "women" "rings")]}]
+    :store/owners   {:store.owner/user {:db/id        (db/tempid :db.part/user)
+                                        :user/email   test-user-email
+                                        :user/profile {:user.profile/photo (photo "https://s3.amazonaws.com/sulo-images/photos/real/5f/ef/5fef55ce7dcc3057db6e4c8f1739fe0d0574a8882611e40c37950fa82f816d40/men.jpg")
+                                                       :user.profile/name  "Diana"}
+                                        :user/stripe  {:stripe/id "cus_A9paOisnJJQ0wS"}}
+                     :store.owner/role :store.owner.role/admin}}
    ;; MagicLinen
    {:db/id         (db/tempid :db.part/user)
     :store/profile {:store.profile/name  "MagicLinen"
@@ -306,9 +306,9 @@
 
    ;; BangiShop
    {:db/id         (db/tempid :db.part/user)
-    :store/profile {:store.profile/name "BangiShop"
-                    :store.profile/cover   (photo "https://img1.etsystatic.com/142/0/8829348/isbl_3360x840.24031443_roffucs6.jpg")
-                    :store.profile/photo   (photo "https://img1.etsystatic.com/136/0/8829348/isla_500x500.18128391_dro0qzqd.jpg")}
+    :store/profile {:store.profile/name  "BangiShop"
+                    :store.profile/cover (photo "https://img1.etsystatic.com/142/0/8829348/isbl_3360x840.24031443_roffucs6.jpg")
+                    :store.profile/photo (photo "https://img1.etsystatic.com/136/0/8829348/isla_500x500.18128391_dro0qzqd.jpg")}
     :store/stripe  {:stripe/id "acct_19jze1BbOp8CGZPS"}
     :store/items   [{:store.item/name     "Leather Shoes (silver)"
                      :store.item/photos   (map-indexed #(item-photo %2 %1) ["https://img1.etsystatic.com/138/1/8829348/il_570xN.1040522475_mbon.jpg"
@@ -333,7 +333,7 @@
     :store/profile {:store.profile/name    "MIRIMIRIFASHION"
                     :store.profile/tagline "Handmade exclusive fashion designer shop."
                     ;:store/cover #db/id[:db.part/user -51]
-                    :store.profile/photo           (photo "https://img0.etsystatic.com/132/0/5695768/isla_500x500.17344782_h4dngp5g.jpg")}
+                    :store.profile/photo   (photo "https://img0.etsystatic.com/132/0/5695768/isla_500x500.17344782_h4dngp5g.jpg")}
     :store/items   [{:store.item/name     "Hoodie Dress"
                      :store.item/photos   (map-indexed #(item-photo %2 %1) ["https://img1.etsystatic.com/109/1/5695768/il_570xN.1088263217_thkk.jpg"
                                                                             "https://img0.etsystatic.com/119/0/5695768/il_570xN.1041709156_noxy.jpg"
@@ -393,7 +393,7 @@
   {:db/id        (db/tempid :db.part/user)
    :user/email   "dev+nostore@sulo.live"
    :user/profile {:user.profile/photo (photo "/assets/img/categories/women-clothing.jpg")
-                  :user.profile/name          "Storeless"}
+                  :user.profile/name  "Storeless"}
    :user/stripe  {:stripe/id "cus_AT7bKjMaCIWpei"}})
 
 (defn add-data [conn]

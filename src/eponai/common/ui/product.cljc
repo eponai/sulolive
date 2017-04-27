@@ -40,7 +40,7 @@
                           :store.item.photo/index]}
      {:store.item/skus [:db/id :store.item.sku/variation :store.item.sku/inventory]}
      :store.item/description
-     :store.item/navigation
+     :store.item/section
      {:store.item/category [:category/label
                             :category/path]}
      {:store/_items [{:store/profile [{:store.profile/photo [:photo/path]}

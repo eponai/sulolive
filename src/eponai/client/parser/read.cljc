@@ -43,8 +43,8 @@
                    (assoc-in [:params :navigation] navigation))}
       {:value (let [params (if (not-empty navigation)
                              {:where   '[[?s :store/items ?e]
-                                         [?e :store.item/navigation ?n]
-                                         [?n :store.navigation/path ?p]]
+                                         [?e :store.item/section ?n]
+                                         [?n :store.section/path ?p]]
                               :symbols {'?s store-id
                                         '?p navigation}}
                              {:where   '[[?s :store/items ?e]]
