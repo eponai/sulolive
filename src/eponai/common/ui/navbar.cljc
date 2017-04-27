@@ -314,7 +314,7 @@
                                                          (when (= 13 (.. e -keyCode))
                                                            (let [search-string (.. e -target -value)]
                                                              (set! js/window.location (str "/goods?search=" search-string))))))})))
-          (when (some? auth)
+          (if (some? auth)
             (menu/item-dropdown
               (->> {:dropdown (user-dropdown component auth)
                     :classes  [:user-photo-item]
@@ -322,10 +322,12 @@
                     :onClick  #(.open-dropdown component :dropdown/user)}
                    (css/show-for :large))
               (photo/user-photo {:user auth}))
-            ;(my-dom/a
-            ;  (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
-            ;       (css/button-hollow))
-            ;  (dom/span nil "Sign in"))
+            (menu/item
+              (css/show-for :large)
+              (my-dom/a
+                (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
+                     (css/button-hollow))
+                (dom/span nil "Sign in")))
             )
           (when (some? auth)
             (menu/item
