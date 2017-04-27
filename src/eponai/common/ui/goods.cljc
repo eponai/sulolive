@@ -26,7 +26,7 @@
   (let [items (into [] (comp (take-while #(= 1 (count (:category/children %))))
                              (map (comp first :category/children))
                              (map (fn [category]
-                                    (menu/item nil (dom/a {:href (:category/route category)}
+                                    (menu/item nil (dom/a {:href (:category/href category)}
                                                           (products/category-display-name category))))))
                     (iterate (comp first :category/children)
                              {:category/children [browse-nav]}))]
@@ -44,7 +44,7 @@
           (cond->> {:key i}
                    (= path (:category/path current-category))
                    (css/add-class ::css/is-active))
-          (dom/a {:href (:category/route category)}
+          (dom/a {:href (:category/href category)}
                  (dom/span nil (products/category-display-name category)))))
       categories)))
 
@@ -53,7 +53,7 @@
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:query/browse-items (om/get-query product/Product)}
-     {:query/browse-nav [:category/name :category/label :category/path :category/route]}
+     {:query/browse-nav [:category/name :category/label :category/path :category/href]}
      {:query/browse-category [:category/path]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
      :query/current-route])
@@ -77,7 +77,7 @@
             (common/modal {:on-close #(om/update-state! this assoc :filters-open? false)
                            :size     "full"}
                           (pf/->ProductFilters (om/computed product-filters
-                                                            {:on-change #(om/update-state! this assoc :filters-open? false)})))))
+                                                            {:on-click #(om/update-state! this assoc :filters-open? false)})))))
         (grid/row
           nil
           (grid/column
@@ -109,7 +109,7 @@
                 nil
                 (menu/item
                   nil
-                  (dom/a {:href (:category/route browse-nav)}
+                  (dom/a {:href (:category/href browse-nav)}
                          (dom/strong nil (products/category-display-name browse-nav)))
                   (if (= 1 (count (:category/children browse-nav)))
                     (let [[category] (:category/children browse-nav)]
@@ -117,7 +117,7 @@
                         nil
                         (menu/item
                           nil
-                          (dom/a {:href (:category/route category)}
+                          (dom/a {:href (:category/href category)}
                                  (dom/strong nil (products/category-display-name category)))
                           (vertical-category-menu (:category/children category) browse-category))))
                     (vertical-category-menu (:category/children browse-nav) browse-category))))))

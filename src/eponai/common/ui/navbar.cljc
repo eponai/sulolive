@@ -57,15 +57,9 @@
 ;                   (dom/a #js {:className "button expanded gray"
 ;                               :href      (routes/url :shopping-bag nil)} "View My Bag"))))))
 
-(def top-level-category-links
-  [{:label "women" :href (routes/url :browse/gender {:sub-category "women"})}
-   {:label "men" :href (routes/url :browse/gender {:sub-category "men"})}
-   {:label "kids" :href (routes/url :browse/gender {:sub-category "unisex-kids"})}
-   {:label "home" :href (routes/url :browse/category {:top-category "home"})}
-   {:label "art" :href (routes/url :browse/category {:top-category "art"})}])
-
 (defn category-dropdown [component]
-  (let [{:keys [dropdown-key]} (om/get-state component)]
+  (let [{:keys [dropdown-key]} (om/get-state component)
+        {:query/keys [top-nav-categories]} (om/props component)]
     (my-dom/div
       (cond->> {:classes [:dropdown-pane :collection-dropdown]}
                (= dropdown-key :dropdown/collection)
@@ -76,7 +70,7 @@
           (fn [{:keys [label href]}]
             (menu/item-link {:href href}
                             (dom/span nil (s/capitalize label))))
-          top-level-category-links)))))
+          top-nav-categories)))))
 
 (defn user-dropdown [component user owned-store]
   (let [{:keys [dropdown-key]} (om/get-state component)]
@@ -116,7 +110,7 @@
   (apply dom/div #js {:className "navbar top-bar"}
          content))
 
-(defn collection-links [& [disabled?]]
+(defn collection-links [component disabled?]
   (map
     (fn [{:keys [href label]}]
       (let [opts (when (not disabled?)
@@ -126,7 +120,7 @@
                (css/add-class :category)
                (css/show-for :large))
           (dom/span nil (s/capitalize label)))))
-    top-level-category-links))
+    (:query/top-nav-categories (om/props component))))
 
 (defn live-link [& [on-click]]
   (let [opts (if on-click
@@ -170,7 +164,7 @@
                  (css/add-class :category))
             (dom/span nil "Shop"))
 
-          (collection-links true)))
+          (collection-links component true)))
 
       (dom/div #js {:className "top-bar-right"}
         right-menu))))
@@ -300,7 +294,7 @@
           ;       (css/add-class :category))
           ;  (dom/span nil "Shop"))
 
-          (collection-links)))
+          (collection-links component false)))
       (dom/div #js {:className "top-bar-right"}
         (menu/horizontal
           nil
@@ -360,6 +354,7 @@
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.
                           {:store/owners [{:store.owner/user [:db/id]}]}]}
+     {:query/top-nav-categories [:label :href]}
      :query/current-route])
   Object
   #?(:cljs
@@ -433,7 +428,7 @@
 
   (render [this]
     (let [
-          {:query/keys [cart auth current-route top-categories]} (om/props this)
+          {:query/keys [cart auth current-route]} (om/props this)
           {:keys [route route-params]} current-route
           {:keys [sidebar-open?]} (om/get-state this)
           #?@(:cljs [screen-width (.-innerWidth js/window)]

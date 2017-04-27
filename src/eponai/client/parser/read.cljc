@@ -14,7 +14,8 @@
     [taoensso.timbre :as timbre :refer [debug warn]]
     [eponai.client.auth :as auth]
     [eponai.common.api.products :as products]
-    [medley.core :as medley]))
+    [medley.core :as medley]
+    [eponai.common.routes :as routes]))
 
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.
@@ -185,45 +186,10 @@
   [{:keys [db target query route route-params ast]} _ _]
   (if target
     {:remote true}
-    (let [{:keys [top-category sub-category]} route-params
-          browse-route (common.routes/normalize-browse-route route)
-          cat-query (products/category-names-query (dissoc route-params :sub-sub-category))
-          find-top (db/merge-query cat-query {:where '[[(identity ?top) ?e]]})
-          find-sub (db/merge-query cat-query {:where '[[(identity ?sub) ?e]]})
-          find-sub-sub (db/merge-query cat-query {:where '[[?sub :category/children ?e]]})
-          ;; deduping by name because it doesn't matter if we get multiple unisex shoes and women's shoes.
-          ;; In query/browse-items we're getting correct items anyway. (?)
-          pull-distinct-by-name (fn [entity-query]
-                                  (->> (db/pull-all-with db query entity-query)
-                                       (into [] (medley/distinct-by :category/name))))
-          add-routes (fn [route params category-level children]
-                       (into [] (map #(assoc % :category/route (common.routes/path route (assoc params category-level (:category/name %)))))
-                             children))]
-      {:value
-       (condp = browse-route
-         :browse/all-items nil
-         :browse/gender {:category/route    (common.routes/path :browse/gender {:sub-category sub-category})
-                         :category/name     sub-category
-                         :category/label    (str/capitalize sub-category)
-                         :category/children (->> (if (nil? top-category)
-                                                   (pull-distinct-by-name find-top)
-                                                   [(-> (db/pull-one-with db query find-top)
-                                                        (assoc :category/children (->> (pull-distinct-by-name find-sub-sub)
-                                                                                       (add-routes :browse/gender+top+sub-sub {:sub-category sub-category
-                                                                                                                               :top-category top-category}
-                                                                                                   :sub-sub-category))))])
-                                                 (add-routes :browse/gender+top {:sub-category sub-category} :top-category))}
-         :browse/category (-> (db/pull-one-with db query find-top)
-                              (assoc :category/route (common.routes/path :browse/category {:top-category top-category}))
-                              (assoc :category/children (->> (if (nil? sub-category)
-                                                               (pull-distinct-by-name find-sub)
-                                                               [(-> (db/pull-one-with db query find-sub)
-                                                                    (assoc :category/children (->> (pull-distinct-by-name find-sub-sub)
-                                                                                                   (add-routes :browse/category+sub+sub-sub {:sub-category sub-category
-                                                                                                                                             :top-category top-category}
-                                                                                                               :sub-sub-category))))])
-                                                             (add-routes :browse/category+sub {:top-category top-category} :sub-category))))
-         (warn "query/browse-nav called with unknown route: " browse-route))})))
+    {:value (condp = (routes/normalize-browse-route route)
+              :browse/gender (products/browse-navigation-tree db query true route-params)
+              :browse/category (products/browse-navigation-tree db query false route-params)
+              (warn "query/browse-nav called with unknown route: " route))}))
 
 (defmethod client-read :query/owned-store
   [{:keys [db target query]} _ _]
@@ -243,6 +209,18 @@
                                                (remove (into #{} (map :v) (db/datoms db :aevt :category/children))))
                                              ;; :avet needs attribute to have :db/index true
                                              (db/datoms db :avet :category/path)))}))
+
+(defmethod client-read :query/top-nav-categories
+  [{:keys [target query]} _ _]
+  (assert (every? (set query) [:label :href])
+          (str "Query was not :label and :href, wat, was: " query))
+  (when-not target
+    {:value
+     [{:label "women" :href (client.routes/url :browse/gender {:sub-category "women"})}
+      {:label "men" :href (client.routes/url :browse/gender {:sub-category "men"})}
+      {:label "kids" :href (client.routes/url :browse/gender {:sub-category "unisex-kids"})}
+      {:label "home" :href (client.routes/url :browse/category {:top-category "home"})}
+      {:label "art" :href (client.routes/url :browse/category {:top-category "art"})}]}))
 
 (defmethod client-read :query/category
   [{:keys [db query target route-params ast] :as env} _ p]
