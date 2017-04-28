@@ -27,7 +27,7 @@
     (let [{:keys [proxy/photo-upload]} (om/props this)
           {:keys [tab file-upload? photo-url did-mount?]} (om/get-state this)
           {:keys [is-current-user? user]} (om/get-computed this)
-          photo-url (or (get-in user [:user/photo :photo/path]) photo-url)]
+          photo-url (or (get-in user [:user/profile :user.profile/photo :photo/path]) photo-url)]
       (dom/div
         {:id "sulo-profile"}
         (common/wip-label this)

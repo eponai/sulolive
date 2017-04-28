@@ -32,7 +32,7 @@
                (my-dom/div
                  (->> (css/grid-column)
                       (css/grid-column-size {:small 2 :large 2}))
-                 (photo/circle {:src (get-in msg [:chat.message/user :user/photo :photo/path])}))
+                 (photo/circle {:src (get-in msg [:chat.message/user :user/profile :user.profile/photo :photo/path])}))
                (my-dom/div (css/grid-column)
                            (dom/small nil
                                       (dom/strong nil (str (get-in msg [:chat.message/user :user/email])

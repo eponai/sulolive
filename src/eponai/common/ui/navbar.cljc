@@ -348,8 +348,7 @@
                                                      {:store/_items [{:store/profile [:store.profile/name]}]}]}]}]}
      {:query/auth [:db/id
                    :user/email
-                   {:user/profile [{:user.profile/photo [:photo/path]}]}
-                   {:user/photo [:photo/path]}]}
+                   {:user/profile [{:user.profile/photo [:photo/path]}]}]}
      {:query/owned-store [:db/id
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.

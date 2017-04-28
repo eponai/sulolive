@@ -35,7 +35,7 @@
                    ;; ex chat modes: :chat.mode/public :chat.mode/sub-only :chat.mode/fb-authed :chat.mode/owner-only
                    :chat/modes
                    {:chat/messages [:chat.message/client-side-message?
-                                    {:chat.message/user [:user/email {:user/photo [:photo/path]}]}
+                                    {:chat.message/user [:user/email {:user/profile [{:user.profile/photo [:photo/path]}]}]}
                                     :chat.message/text
                                     :chat.message/timestamp]}]}
      {:query/auth [:db/id]}])
