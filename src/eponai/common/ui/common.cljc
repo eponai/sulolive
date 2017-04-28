@@ -146,7 +146,7 @@
         ;(menu/item-link nil (dom/small nil "Terms & Conditions"))
         (menu/item-text nil (dom/small {:classes ["copyright"]} "© eponai hb 2017"))))))
 
-(defn page-container [{:keys [navbar id class-name]} & content]
+(defn page-container [{:keys [navbar id class-name no-footer?]} & content]
   (dom/div
     (css/add-class (str "sulo-page " class-name) {:id id})
     (dom/div
@@ -157,7 +157,8 @@
         (dom/div
           (css/add-class :page-content)
           content))
-      (footer nil))))
+      (when-not no-footer?
+        (footer nil)))))
 
 (defn wip-label [_]
   (dom/div

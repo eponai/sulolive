@@ -6,7 +6,7 @@
     [eponai.common.ui.checkout :as checkout]
     [eponai.common.ui.shopping-bag :as bag]
     [eponai.common.ui.store :as store]
-    [eponai.common.ui.store.new-store :as new-store]
+    [eponai.web.ui.start-store :as start-store]
     [eponai.common.ui.store.dashboard :as store-dashboard]
     [eponai.common.ui.goods :as goods]
     [eponai.common.ui.index :as index]
@@ -21,12 +21,12 @@
                      :factory   index/->Index}
    :coming-soon     {:component index/ComingSoon
                      :factory   index/->ComingSoon}
+   :sell            {:component start-store/StartStore
+                     :factory start-store/->StartStore}
    :sell-soon       {:component index/ComingSoonBiz
                      :factory   index/->ComingSoonBiz}
    :store           {:component store/Store
                      :factory   store/->Store}
-   :new-store       {:component new-store/NewStore
-                     :factory   new-store/->NewStore}
    :store-dashboard {:component store-dashboard/Dashboard
                      :factory   store-dashboard/->Dashboard}
    :checkout        {:component checkout/Checkout

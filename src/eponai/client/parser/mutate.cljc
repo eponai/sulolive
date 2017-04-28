@@ -65,6 +65,11 @@
   (if target
     {:remote (some? (:photo p))}))
 
+(defmethod client-mutate 'store/create
+  [{:keys [target]} _ p]
+  (if target
+    {:remote true}))
+
 ;; ########### STORE #################
 
 (defmethod client-mutate 'store/update-info

@@ -81,7 +81,7 @@
                (css/add-class :is-open))
       (menu/vertical
         (css/add-class :user-dropdown-menu)
-        (when owned-store
+        (if owned-store
           (menu/item
             (css/add-class :my-stores)
             (dom/label nil (dom/small nil "Manage Store"))
@@ -89,7 +89,15 @@
               (css/add-class :nested)
               (menu/item-link
                 {:href (routes/url :store-dashboard {:store-id (:db/id owned-store)})}
-                (get-in owned-store [:store/profile :store.profile/name])))))
+                (get-in owned-store [:store/profile :store.profile/name]))))
+          (menu/item
+            (css/add-class :my-stores)
+            (dom/label nil (dom/small nil "Manage store"))
+            (menu/vertical
+              (css/add-class :nested)
+              (menu/item-link
+                {:href (routes/url :sell)}
+                (my-dom/small nil "Start a store")))))
         (when user
           (menu/item
             (css/add-class :user-info)

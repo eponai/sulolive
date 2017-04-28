@@ -205,6 +205,18 @@
              (let [{:stripe/keys [id]} (stripe/pull-stripe (db/db state) store-id)]
                (stripe/update-account (:system/stripe system) id account-params)))})
 
+(defmutation store/create
+  [{:keys [state ::parser/return ::parser/exception auth system] :as env} _ params]
+  {:auth ::auth/any-user
+   :resp {:success return
+          :error   "Could not create Stripe account"}}
+  {:action (fn []
+             (let [{store-owner :store.owner/_user} (db/pull (db/db state) [:store.owner/_user] (:user-id auth))]
+               (if (some? store-owner)
+                 (throw (ex-info "Cannot create multiple stores for one user."
+                                 {:user-id (:user-id auth)}))
+                 (store/create env params))))})
+
 (defmutation store/create-product
   [env _ {:keys [product store-id] :as p}]
   {:auth {::auth/store-owner store-id}

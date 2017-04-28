@@ -77,8 +77,8 @@
   ["/" {""                            :index
         "coming-soon"                 :coming-soon
         "sell/coming-soon"            :sell-soon
+        "sell"                        :sell
         "live"                        :live
-        "store/new"                   :new-store
         "store"                       :index/store
         ["store/" [#"\d+" :store-id]] store-routes
         "products"                    product-routes
