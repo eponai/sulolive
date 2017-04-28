@@ -19,8 +19,12 @@
                                    :stripe/secret (:secret stripe-account)
                                    :stripe/publ   (:publ stripe-account)}
                    :store/owners  {:store.owner/role :store.owner.role/admin
-                                   :store.owner/user (:user-id auth)}}]
-    (db/transact state [new-store])
+                                   :store.owner/user (:user-id auth)}}
+        stream {:db/id        (db/tempid :db.part/user)
+                :stream/store (:db/id new-store)
+                :stream/state :stream.state/offline}]
+    (db/transact state [new-store
+                        stream])
     (db/pull (db/db state) [:db/id] [:store/uuid (:store/uuid new-store)])))
 
 (defn retracts [old-entities new-entities]

@@ -5,6 +5,12 @@
 }
 
 #sulo-help {
+	h3 {
+		text-transform: none;
+	}
+	ul.nested {
+		margin-left: 2rem;
+	}
 	#sulo-navbar {
 		position: absolute;
 		input {
