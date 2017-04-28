@@ -1,6 +1,7 @@
 (ns eponai.server.datomic.mocked-data
   (:require
     [eponai.common.database :as db]
+    [eponai.common.api.products :as products]
     [clojure.string :as str]
     [taoensso.timbre :refer [debug]]
     [medley.core :as medley]
@@ -40,13 +41,13 @@
                             :or   {unisex-fn vals
                                    boys-fn   vals
                                    girls-fn  vals}}]
-  [#:category {:path     "unisex-kids"
+  [#:category {:name     "unisex-kids"
                :label    (str "Unisex Kids' " label)
                :children (unisex-fn unisex-kids)}
-   #:category {:path     "boys"
+   #:category {:name     "boys"
                :label    (str "Boy's " label)
                :children (boys-fn unisex-kids)}
-   #:category {:path     "girls"
+   #:category {:name     "girls"
                :label    (str "Girl's " label)
                :children (girls-fn unisex-kids)}])
 
@@ -54,97 +55,94 @@
                              :or   {unisex-fn identity
                                     men-fn    identity
                                     women-fn  identity}}]
-  [#:category {:path     "unisex-adult"
+  [#:category {:name     "unisex-adult"
                :label    (str "Unisex Adult " label)
                :children (vals (unisex-fn unisex-adult))}
-   #:category {:path     "men"
+   #:category {:name     "men"
                :label    (str "Men's " label)
                :children (vals (men-fn unisex-adult))}
-   #:category {:path     "women"
+   #:category {:name     "women"
                :label    (str "Women's " label)
                :children (vals (women-fn unisex-adult))}])
 
-(def category-path-separator "_")
-(def category-name-separator "-")
-
 (defn leaf [& name-parts]
-  #:category {:path  (str/join category-name-separator name-parts)
-              :label (str/capitalize (str/join " " name-parts))})
+  #:category{:name  (str/join products/category-name-separator name-parts)
+             :label (str/capitalize (str/join " " name-parts))})
 
 (defn hash-map-by [f coll]
   (into {} (map (juxt f identity)) coll))
 
 (def cats
-  [#:category {:path     "clothing"
-               :label    "Clothing"
-               :children (fn []
-                           (adult-category "Clothing" {:unisex-adult {"pants" (leaf "pants")}
-                                                       :women-fn     #(-> %
-                                                                          (assoc "skirts" (leaf "skirts"))
-                                                                          (assoc "dresses" (leaf "dresses")))}))}
-   #:category {:path     "shoes"
-               :label    "Shoes"
-               :children (fn []
-                           (adult-category "Shoes" {:unisex-adult {"boots" (leaf "boots")}}))}
-   #:category {:path     "jewelry"
-               :label    "Jewelry"
-               :children (fn []
-                           (adult-category "Jewelry" {:unisex-adult (hash-map-by :category/path
-                                                                                 [(leaf "earrings")
-                                                                                  (leaf "rings")
-                                                                                  (leaf "necklaces")])}))}
-   #:category {:path  "home"
-               :label "Home"}
-   #:category {:path     "accessories"
-               :label    "Accessories"
-               :children (fn []
-                           (let [unisex-cats (hash-map-by :category/path
-                                                          [(leaf "belt")
-                                                           (leaf "caps")
-                                                           (leaf "clothing" "accessories")
-                                                           (leaf "eyewear")
-                                                           (leaf "gloves")
-                                                           (leaf "hats")
-                                                           (leaf "keychains")
-                                                           (leaf "outdoor" "wear" "accessories")
-                                                           (leaf "patches")
-                                                           (leaf "rain" "accessories")
-                                                           (leaf "scarves")
-                                                           (leaf "shoe" "accessories")
-                                                           (leaf "special" "occasion" "accessories")
-                                                           (leaf "sunglasses")
-                                                           (leaf "tech" "accessories")
-                                                           (leaf "umbrellas")
-                                                           (leaf "watches")])]
-                             (into
-                               [#:category {:path     "childrens"
-                                            :label    "Children's Accessories"
-                                            :children (-> unisex-cats
-                                                          (assoc "socks" (leaf "socks"))
-                                                          (vals))}]
-                               (adult-category "Accessories" {:unisex-adult unisex-cats
-                                                              :men-fn       #(assoc % "socks" (leaf "socks"))
-                                                              :women-fn     #(-> %
-                                                                                 (assoc "hair-acc" (leaf "hair" "accessories"))
-                                                                                 (assoc "handbag" (leaf "handbag" "accessories"))
-                                                                                 (assoc "socks" (leaf "socks"))
-                                                                                 (assoc "wallets" (leaf "wallets")))}))))}])
+  [#:category{:name     "clothing"
+              :label    "Clothing"
+              :children (fn []
+                          (adult-category "Clothing" {:unisex-adult {"pants" (leaf "pants")}
+                                                      :women-fn     #(-> %
+                                                                         (assoc "skirts" (leaf "skirts"))
+                                                                         (assoc "dresses" (leaf "dresses")))}))}
+   #:category{:name     "shoes"
+              :label    "Shoes"
+              :children (fn []
+                          (adult-category "Shoes" {:unisex-adult {"boots" (leaf "boots")}}))}
+   #:category{:name     "jewelry"
+              :label    "Jewelry"
+              :children (fn []
+                          (adult-category "Jewelry" {:unisex-adult (hash-map-by :category/name
+                                                                                [(leaf "earrings")
+                                                                                 (leaf "rings")
+                                                                                 (leaf "necklaces")])}))}
+   #:category{:name  "home"
+              :label "Home"}
+   #:category{:name     "accessories"
+              :label    "Accessories"
+              :children (fn []
+                          (let [unisex-cats (hash-map-by :category/name
+                                                         [(leaf "belt")
+                                                          (leaf "caps")
+                                                          (leaf "clothing" "accessories")
+                                                          (leaf "eyewear")
+                                                          (leaf "gloves")
+                                                          (leaf "hats")
+                                                          (leaf "keychains")
+                                                          (leaf "outdoor" "wear" "accessories")
+                                                          (leaf "patches")
+                                                          (leaf "rain" "accessories")
+                                                          (leaf "scarves")
+                                                          (leaf "shoe" "accessories")
+                                                          (leaf "special" "occasion" "accessories")
+                                                          (leaf "sunglasses")
+                                                          (leaf "tech" "accessories")
+                                                          (leaf "umbrellas")
+                                                          (leaf "watches")])]
+                            (into
+                              [#:category{:name     "childrens"
+                                          :label    "Children's Accessories"
+                                          :children (-> unisex-cats
+                                                        (assoc "socks" (leaf "socks"))
+                                                        (vals))}]
+                              (adult-category "Accessories" {:unisex-adult unisex-cats
+                                                             :men-fn       #(assoc % "socks" (leaf "socks"))
+                                                             :women-fn     #(-> %
+                                                                                (assoc "hair-acc" (leaf "hair" "accessories"))
+                                                                                (assoc "handbag" (leaf "handbag" "accessories"))
+                                                                                (assoc "socks" (leaf "socks"))
+                                                                                (assoc "wallets" (leaf "wallets")))}))))}])
 
 (defn category-path [& path-parts]
-  (str/join category-path-separator path-parts))
+  (str/join products/category-path-separator path-parts))
 
 (defn mock-categories3 []
-  (letfn [(join-children-paths [category path]
-            (when (vector? category)
-              (debug "Got vector for category: " category " path: " path))
-            (let [new-path (str/join category-path-separator (filter some? [path (:category/path category)]))]
+  (letfn [(category-path-from-names [category path]
+            (let [new-path (->> [path (:category/name category)]
+                                (filter some?)
+                                (str/join products/category-path-separator))]
               (cond-> (assoc category :category/path new-path)
                       (some? (:category/children category))
                       (update :category/children (fn [children]
                                                    (->> (if (fn? children) (children) children)
-                                                        (into [] (map #(join-children-paths % new-path)))))))))]
+                                                        (into [] (map #(category-path-from-names % new-path)))))))))]
     (->> cats
-         (into [] (map #(join-children-paths % nil)))
+         (into [] (map #(category-path-from-names % nil)))
          ;; (walk/postwalk #(cond-> % (map? %) (assoc :db/id (db/tempid :db.part/user))))
          )))
 

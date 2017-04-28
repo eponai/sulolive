@@ -1,7 +1,8 @@
 (ns eponai.common.routes
   (:require [bidi.bidi :as bidi]
             [taoensso.timbre :refer [debug error]]
-            [eponai.common.auth :as auth]))
+            [eponai.common.auth :as auth]
+            [clojure.string :as str]))
 
 (def store-routes
   {""           :store
@@ -29,7 +30,7 @@
    "/profile" :user/profile})
 
 (def product-routes
-  {""                         :products
+  {""                         :browse/all-items
    ["/" [#"\d+" :product-id]] :product})
 
 (def help-routes
@@ -42,6 +43,36 @@
    "/payments" :checkout/payment
    "/review"   :checkout/review})
 
+(defn- branch-handler [handler param sub-handler]
+  {"" handler
+   ["/" param] sub-handler})
+
+(def browse-categories
+  [
+   ;; Can't do 'all-items' right now, as it doesn't make sense when navigating?
+   ;; We've got our categories at the top right now.
+   ;;["" :browse/all-items]
+   [["/category/" :top-category]
+    (branch-handler :browse/category
+                    :sub-category
+                    (branch-handler :browse/category+sub
+                                    :sub-sub-category
+                                    :browse/category+sub+sub-sub))]
+   [["/" :sub-category]
+    (branch-handler :browse/gender
+                    :top-category
+                    (branch-handler :browse/gender+top
+                                    :sub-sub-category
+                                    :browse/gender+top+sub-sub))]])
+
+(defn normalize-browse-route [route]
+  (letfn [(remove-from-char [s c]
+            (if-let [idx (str/index-of s c)]
+              (subs s 0 idx)
+              s))]
+    (keyword (namespace route)
+             (remove-from-char (name route) "+"))))
+
 (def routes
   ["/" {""                            :index
         "coming-soon"                 :coming-soon
@@ -51,8 +82,7 @@
         "store"                       :index/store
         ["store/" [#"\d+" :store-id]] store-routes
         "products"                    product-routes
-        "categories"                  {""              :products/all-categories
-                                       ["/" :category] :products/categories}
+        "browse"                      browse-categories
         "help"                        help-routes
         ["checkout/" :store-id]       checkout-routes
         "shopping-bag"                :shopping-bag

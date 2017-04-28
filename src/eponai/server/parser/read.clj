@@ -13,7 +13,8 @@
     [eponai.server.external.chat :as chat]
     [eponai.server.api.store :as store]
     [eponai.common.api.products :as products]
-    [eponai.server.api.user :as user]))
+    [eponai.server.api.user :as user]
+    [taoensso.timbre :as timbre]))
 
 (defmacro defread
   ""
@@ -259,3 +260,33 @@
                     (chat/initial-read chat store query)
                     (chat/read-messages chat store query read-basis-t-for-this-key))
                   (parser/value-with-basis-t (chat/last-read chat)))})))
+
+(defread query/browse-items
+  [{:keys [db db-history query]} _ {:keys [top-category sub-category sub-sub-category] :as params}]
+  {:auth    ::auth/public
+   :uniq-by [[:tc top-category] [:sc sub-category] [:ssc sub-sub-category]]}
+  {:value (query/all db db-history query (cond
+                                           (or (some? sub-category) (some? top-category))
+                                           (products/find-with-category-names params)
+                                           :else
+                                           (products/find-all)))})
+
+;; Get all categories.
+(defread query/browse-nav
+  [{:keys [db db-history query]} _ _]
+  {:auth ::auth/public}
+  {:value (let [children-keys #{:category/children :category/_children}]
+            (query/all db db-history
+                       (into [{:category/children [:db/id]}]
+                             (comp (remove children-keys)
+                                   (remove #(and (map? %) (some children-keys (keys %)))))
+                             query)
+                       {:where '[[?e :category/path]]}))})
+
+(defread query/owned-store
+  [{:keys [db db-history auth query]} _ _]
+  {:auth ::auth/any-user}
+  {:value (query/one db db-history query
+                     {:where   '[[?owners :store.owner/user ?user]
+                                 [?e :store/owners ?owners]]
+                      :symbols {'?user (:user-id auth)}})})

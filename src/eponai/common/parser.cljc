@@ -583,8 +583,6 @@
           :mutate            client-mutate
           :elide-paths       false
           :txs-by-project    (atom {})
-          ::db->route-params (fn [db]
-                               (:route-params (client.routes/current-route db)))
           ::db-state         (atom {})}
          custom-state))
 
@@ -603,26 +601,29 @@
         db-state (deref (::db-state state))]
     (if (identical? db (:db db-state))
       db-state
-      (reset! (::db-state state) {:db              db
-                                  :route-params    ((::db->route-params state) db)
-                                  :query-params    (client-query-params env state)
-                                  :auth            (when-let [email (client.auth/authed-email db)]
-                                                     {:email email})
-                                  ::auth-responder (reify
-                                                     auth/IAuthResponder
-                                                     (-redirect [this path]
-                                                       ;; This redirect could be done cljs side with pushy and :shared/browser-history
-                                                       ;; but we don't use this yet, so let's not implement it yet.
-                                                       (throw (ex-info "Unsupported function -redirect. Implement if needed"
-                                                                       {:this this :path path :method :IAuthResponder/-redirect})))
-                                                     (-prompt-login [this anything]
-                                                       (client.auth/show-lock (:shared/auth-lock (:shared env))))
-                                                     (-unauthorize [this]
-                                                       ;;TODO: When :shared/jumbotron is implemented (a place where we
-                                                       ;;      can show messages to a user), call the jumbotron with
-                                                       ;;      an unauthorized message
-                                                       #?(:cljs (js/alert "You're unauthorized to do that action"))
-                                                       ))}))))
+      (let [{:keys [route-params route]} (client.routes/current-route db)]
+        (reset! (::db-state state)
+                {:db              db
+                 :route-params    route-params
+                 :route           route
+                 :query-params    (client-query-params env state)
+                 :auth            (when-let [email (client.auth/authed-email db)]
+                                    {:email email})
+                 ::auth-responder (reify
+                                    auth/IAuthResponder
+                                    (-redirect [this path]
+                                      ;; This redirect could be done cljs side with pushy and :shared/browser-history
+                                      ;; but we don't use this yet, so let's not implement it yet.
+                                      (throw (ex-info "Unsupported function -redirect. Implement if needed"
+                                                      {:this this :path path :method :IAuthResponder/-redirect})))
+                                    (-prompt-login [this anything]
+                                      (client.auth/show-lock (:shared/auth-lock (:shared env))))
+                                    (-unauthorize [this]
+                                      ;;TODO: When :shared/jumbotron is implemented (a place where we
+                                      ;;      can show messages to a user), call the jumbotron with
+                                      ;;      an unauthorized message
+                                      #?(:cljs (js/alert "You're unauthorized to do that action"))
+                                      ))})))))
 
 (defn client-parser
   ([] (client-parser (client-parser-state)))

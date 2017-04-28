@@ -1,17 +1,21 @@
 (ns eponai.client.parser.read
   (:require
     [clojure.set :as set]
+    [clojure.string :as str]
     [eponai.common.parser :as parser :refer [client-read]]
     [eponai.common.parser.util :as parser.util]
     [eponai.common.database :as db]
     [eponai.common.parser.read :as common.read]
     [om.next.impl.parser :as om.parser]
     [eponai.client.routes :as client.routes]
+    [eponai.common.routes :as common.routes]
     [eponai.common.ui.router :as router]
     [eponai.common :as c]
-    [taoensso.timbre :refer [debug]]
+    [taoensso.timbre :as timbre :refer [debug warn]]
     [eponai.client.auth :as auth]
-    [eponai.common.api.products :as products]))
+    [eponai.common.api.products :as products]
+    [medley.core :as medley]
+    [eponai.common.routes :as routes]))
 
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.
@@ -158,20 +162,65 @@
   (let [{:keys [category search]} route-params]
     (if target
       {:remote (assoc-in ast [:params :category] category)}
-      {:value (cond (some? category)
-                    (db/pull-all-with db query (products/find-by-category category))
-                    :else
-                    (db/pull-all-with db query (products/find-all)))})))
+      {:value (if (some? category)
+                (db/pull-all-with db query (products/find-by-category category))
+                (db/pull-all-with db query (products/find-all)))})))
+
+(defmethod client-read :query/browse-items
+  [{:keys [db target query route-params ast]} _ _]
+  (let [{:keys [top-category sub-category]} route-params]
+    (if target
+      {:remote (update ast :params (fnil merge {}) route-params)}
+      {:value (db/pull-all-with db query (if (or (some? sub-category) (some? top-category))
+                                           (products/find-with-category-names route-params)
+                                           (products/find-all)))})))
+
+(defmethod client-read :query/browse-category
+  [{:keys [db target query route-params]} _ _]
+  (when-not target
+    (let [smallest-category (products/smallest-category route-params)]
+      {:value (db/pull-one-with db query (db/merge-query (products/find-with-category-names route-params)
+                                                         {:where [[(list 'identity smallest-category) '?e]]}))})))
+
+(defmethod client-read :query/browse-nav
+  [{:keys [db target query route route-params ast]} _ _]
+  (if target
+    {:remote true}
+    {:value (condp = (routes/normalize-browse-route route)
+              :browse/gender (products/browse-navigation-tree db query true route-params)
+              :browse/category (products/browse-navigation-tree db query false route-params)
+              (warn "query/browse-nav called with unknown route: " route))}))
+
+(defmethod client-read :query/owned-store
+  [{:keys [db target query]} _ _]
+  (if target
+    {:remote true}
+    (when-let [user-id (auth/current-auth db)]
+      {:value (db/pull-one-with db query {:where   '[[?owners :store.owner/user ?user]
+                                                     [?e :store/owners ?owners]]
+                                          :symbols {'?user user-id}})})))
 
 (defmethod client-read :query/top-categories
-  [{:keys [db target query route-params]} _ {:keys [category search] :as p}]
+  [{:keys [db target query route-params]} _ _]
   (if target
     {:remote true}
     {:value (db/pull-many db query (sequence (comp
                                                (map :e)
                                                (remove (into #{} (map :v) (db/datoms db :aevt :category/children))))
                                              ;; :avet needs attribute to have :db/index true
-                                             (db/datoms db :avet :category/path category)))}))
+                                             (db/datoms db :avet :category/path)))}))
+
+(defmethod client-read :query/top-nav-categories
+  [{:keys [target query]} _ _]
+  (assert (every? (set query) [:label :href])
+          (str "Query was not :label and :href, wat, was: " query))
+  (when-not target
+    {:value
+     [{:label "women" :href (client.routes/url :browse/gender {:sub-category "women"})}
+      {:label "men" :href (client.routes/url :browse/gender {:sub-category "men"})}
+      {:label "kids" :href (client.routes/url :browse/gender {:sub-category "unisex-kids"})}
+      {:label "home" :href (client.routes/url :browse/category {:top-category "home"})}
+      {:label "art" :href (client.routes/url :browse/category {:top-category "art"})}]}))
 
 (defmethod client-read :query/category
   [{:keys [db query target route-params ast] :as env} _ p]

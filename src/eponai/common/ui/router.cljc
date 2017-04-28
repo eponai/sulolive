@@ -35,7 +35,7 @@
                      :factory   bag/->ShoppingBag}
    :help            {:component help/Help
                      :factory   help/->Help}
-   :products        {:component goods/Goods
+   :browse          {:component goods/Goods
                      :factory   goods/->Goods}
    :product         {:component product/ProductPage
                      :factory   product/->ProductPage}
@@ -46,7 +46,7 @@
    :login           {:component index/Login
                      :factory   index/->Login}
    :unauthorized    {:component index/Unauthorized
-                     :factory index/->Unauthorized}})
+                     :factory   index/->Unauthorized}})
 
 (defn normalize-route
   "We need to normalize our routes now that we have namespaced route matches.
