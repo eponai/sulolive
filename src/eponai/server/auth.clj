@@ -7,7 +7,7 @@
     [buddy.auth.protocols :as auth.protocols]
     [manifold.deferred :as deferred]
     [environ.core :refer [env]]
-    [taoensso.timbre :refer [error debug]]
+    [taoensso.timbre :refer [error debug warn]]
     [ring.util.response :as r]
     [eponai.server.datomic.format :as f]
     [eponai.server.external.auth0 :as auth0]
@@ -73,9 +73,11 @@
         ;; Parses the jws token and returns token validation errors
         (try
           (let [auth0-user (auth.protocols/-authenticate jws-backend request data)]
-           (when (some? auth0-user)
-             (authenticate-auth0-user conn auth0-user)
-             auth0-user))
+            (when (some? auth0-user)
+              (if-not (some? (:email auth0-user))
+                (warn "Authenticated an auth0 user but it had no email. Auth0-user: " auth0-user)
+                (do (authenticate-auth0-user conn auth0-user)
+                    auth0-user))))
           (catch Exception e
             (if-let [token-failure (when-let [data (ex-data e)]
                                      (let [{:keys [type cause]} data]
