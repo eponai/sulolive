@@ -65,15 +65,14 @@
         {:redirect-url state})))
   (refresh [this token]
     (letfn [(token->refreshed-token [token]
-              (-> (http/post "https://sulo.auth0.com/delegation"
-                             {:form-params {:client_id     client-id
-                                            :client_secret client-secret
-                                            :grant_type    "urn:ietf:params:oauth:grant-type:jwt-bearer"
-                                            :id_token      token}})
-                  (:body)
-                  (read-json)
-                  (:id_token))
-              (read-json (:body)))]
+              (let [response (http/post "https://sulo.auth0.com/delegation"
+                                        {:form-params {:client_id     client-id
+                                                       :client_secret client-secret
+                                                       :grant_type    "urn:ietf:params:oauth:grant-type:jwt-bearer"
+                                                       :scope         "openid email"
+                                                       :id_token      token}})]
+                (debug "Response after requesting a refreshed token: " response)
+                (-> response :body (read-json) :id_token)))]
       (try
         (token->refreshed-token token)
         (catch Exception e
