@@ -154,7 +154,7 @@
                   "Sign up to follow others and share your faves.")))
 
 
-            (common/content-section {:href  "/streams"
+            (common/content-section {:href  (routes/url :live)
                                      :class "online-channels"}
                                     "Stores streaming right now"
                                     (grid/row
