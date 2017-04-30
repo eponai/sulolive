@@ -1,0 +1,55 @@
+#sulo-start-store {
+	h1 {
+		font-family: $header-font-family-sans-serif;
+		font-weight: $global-weight-bold;
+		text-transform: none;
+		font-size: 250%;
+		text-shadow: 1px 1px 0 rgba($white, 0.75);
+
+		strong {
+			font-style: normal;
+			font-weight: bold;
+			color: map-get($foundation-palette, primary);
+		}
+	}
+	.page-content-container {
+		display: flex;
+		flex-direction: column;
+	}
+	.page-content {
+		padding-bottom: 0;
+		height: 100%;
+		flex: 1 0 auto;
+		display: flex;
+		flex-direction: column;
+	}
+	.photo.cover {
+		padding: 0;
+		flex: 1 0 auto;
+		background-position: center top;
+		img {
+			object-position: 50% 0%;
+		}
+	}
+	.photo.cover {
+		.overlay {
+			padding-top: 8rem;
+			position: absolute;
+			background: rgba($white, 0.5);
+			height: 100%;
+			width: 100%;
+			top: 0;
+			// display: flex;
+			// align-items: center;
+			// justify-content: center;
+		}
+	}
+
+	.callout {
+		background: rgba($white, 0.9);
+		border: none;
+		input, select {
+			margin-bottom: 0.2rem;
+		}
+	}
+}

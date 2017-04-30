@@ -8,6 +8,25 @@
     [eponai.common.format :as cf])
   (:import (com.stripe.exception CardException)))
 
+
+(defn create [{:keys [state auth system]} {:keys [country name]}]
+  (let [stripe-account (stripe/create-account (:system/stripe system) country)
+        new-store {:db/id         (db/tempid :db.part/user)
+                   :store/uuid    (db/squuid)
+                   :store/profile {:store.profile/name name}
+                   :store/stripe  {:db/id         (db/tempid :db.part/user)
+                                   :stripe/id     (:id stripe-account)
+                                   :stripe/secret (:secret stripe-account)
+                                   :stripe/publ   (:publ stripe-account)}
+                   :store/owners  {:store.owner/role :store.owner.role/admin
+                                   :store.owner/user (:user-id auth)}}
+        stream {:db/id        (db/tempid :db.part/user)
+                :stream/store (:db/id new-store)
+                :stream/state :stream.state/offline}]
+    (db/transact state [new-store
+                        stream])
+    (db/pull (db/db state) [:db/id] [:store/uuid (:store/uuid new-store)])))
+
 (defn retracts [old-entities new-entities]
   (let [removed (filter #(not (contains? (into #{} (map :db/id new-entities)) (:db/id %))) old-entities)]
     (reduce (fn [l remove-photo]
@@ -91,7 +110,7 @@
                             :order/user     (:user-id auth)
                             :order/store    store-id
                             :order/amount   (bigdec destination-amount)})
-                  (update :order/items conj {:order.item/type  :order.item.type/shipping
+                  (update :order/items conj {:order.item/type   :order.item.type/shipping
                                              :order.item/amount (bigdec shipping-fee)}))]
     (when source
       (let [charge (try

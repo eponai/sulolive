@@ -106,28 +106,31 @@
           nil
           (menu/vertical {}
                          (menu/item-text nil (dom/span nil "Discover"))
-                         (menu/item-link nil (dom/span nil "HOME"))
-                         (menu/item-link nil (dom/span nil "WOMEN"))
-                         (menu/item-link nil (dom/span nil "MEN"))
-                         (menu/item-link nil (dom/span nil "KIDS"))))
+                         (menu/item-link {:href (routes/url :browse/category {:top-category "home"})} (dom/span nil "HOME"))
+                         (menu/item-link {:href (routes/url :browse/gender {:sub-category "women"})} (dom/span nil "WOMEN"))
+                         (menu/item-link {:href (routes/url :browse/gender {:sub-category "men"})} (dom/span nil "MEN"))
+                         (menu/item-link {:href (routes/url :browse/gender {:sub-category "unisex-kids"})} (dom/span nil "KIDS"))))
 
         (grid/column
           nil
           (menu/vertical {}
                          (menu/item-text nil (dom/span nil "Learn More"))
-                         (menu/item-link nil (dom/span nil "About Us"))
-                         (menu/item-link nil (dom/span nil "Contact"))
-                         (menu/item-link nil (dom/span nil "Help"))
+                         (menu/item-link {:href "https://blog.sulo.live/introducing-sulo-live-b3de8206a419"
+                                          :target "_blank"} (dom/span nil "About us"))
+                         (menu/item-link {:href "mailto:hello@sulo.live"} (dom/span nil "Contact"))
+                         (menu/item-link {:href (routes/url :help)} (dom/span nil "Help"))
                          (menu/item-link nil (dom/span nil "Legal"))
-                         (menu/item-link nil (dom/span nil "Shipping & Returns"))))
+                         ;(menu/item-link nil (dom/span nil "Shipping & Returns"))
+                         ))
         (grid/column
           nil
           (menu/vertical {}
                          (menu/item-text nil (dom/span nil "SULO"))
-                         (menu/item-link nil (dom/span nil "Start a Shop"))
-                         (menu/item-link nil (dom/span nil "Sign Up/Sign In"))
-                         (menu/item-link nil (dom/span nil "Press"))
-                         (menu/item-link nil (dom/span nil "Blog"))
+                         (menu/item-link {:href (routes/url :sell)} (dom/span nil "Start a store"))
+                         (menu/item-link nil (dom/span nil "Sign up/Sign in"))
+                         ;(menu/item-link nil (dom/span nil "Press"))
+                         (menu/item-link {:href "https://blog.sulo.live"
+                                          :target "_blank"} (dom/span nil "Blog"))
                          (menu/item-link nil (dom/span nil "FAQ"))))
         (grid/column
           (->> (grid/column-size {:small 12 :medium 4})
@@ -137,7 +140,7 @@
           (menu/horizontal
             {:key "social"}
             (menu/item-link nil (dom/i {:classes ["fa fa-instagram fa-fw"]}))
-            (menu/item-link nil (dom/i {:classes ["fa fa-twitter fa-fw"]}))
+            ;(menu/item-link nil (dom/i {:classes ["fa fa-twitter fa-fw"]}))
             (menu/item-link nil (dom/i {:classes ["fa fa-facebook fa-fw"]})))))
       (menu/horizontal
         (->> {:key "legal"}
@@ -146,7 +149,7 @@
         ;(menu/item-link nil (dom/small nil "Terms & Conditions"))
         (menu/item-text nil (dom/small {:classes ["copyright"]} "© eponai hb 2017"))))))
 
-(defn page-container [{:keys [navbar id class-name]} & content]
+(defn page-container [{:keys [navbar id class-name no-footer?]} & content]
   (dom/div
     (css/add-class (str "sulo-page " class-name) {:id id})
     (dom/div
@@ -157,7 +160,8 @@
         (dom/div
           (css/add-class :page-content)
           content))
-      (footer nil))))
+      (when-not no-footer?
+        (footer nil)))))
 
 (defn wip-label [_]
   (dom/div

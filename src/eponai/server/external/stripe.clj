@@ -139,23 +139,23 @@
 
       (-create-account [_ {:keys [country]}]
         (let [{:keys [accounts]} @state
-              id (count accounts)
+              id (str (count accounts))
               new-account {:id      id
                            :secret  (str "secret_" id)
                            :publ    (str "publ_" id)
                            :country country
                            :managed true}]
+          (debug "Created fake Stripe account: " new-account)
           (swap! state update :accounts assoc id new-account)
           new-account))
 
       (-get-account [_ account-id]
         (let [{:keys [accounts]} @state
               account (get accounts account-id)]
-          (debug "Fetched stub account: " account)
+          (debug "Fetched fake Stripe account: " account)
           (f/stripe->account account)))
 
       (-update-account [_ account-id params]
-        (debug "Update account wiht params: " params)
         (let [{:keys [accounts]} @state
               account (get accounts account-id)
               new-account (cond-> (merge account (dissoc params :external_account :payout_schedule))
@@ -169,14 +169,16 @@
                                   (some? (:payout_schedule params))
                                   (assoc :transfer_schedule (:payout_schedule params)))
               stripe-account (stub/add-account-verifications new-account)]
+          (debug "Updated fake Stripe account: " stripe-account)
           (swap! state update :accounts assoc account-id stripe-account)
           (f/stripe->account stripe-account)))
 
       (-create-customer [_ {:keys [email]}]
         (let [{:keys [customers]} @state
-              id (count customers)
-              new-customer {:id    (str id)
+              id (str (count customers))
+              new-customer {:id    id
                             :email email}]
+          (debug "Created fake Stripe customer: " new-customer)
           (swap! state update :customers assoc id new-customer)
           new-customer))
 
@@ -185,6 +187,7 @@
         (let [{:keys [charges]} @state
               id (str (count charges))
               charge (assoc params :id id :status "succeeded" :paid true)]
+          (debug "Created fake Stripe charge: " charge)
           (swap! state update :charges assoc id charge)
           {:charge/status (:status charge)
            :charge/id     (:id charge)
