@@ -21,15 +21,22 @@
 
 (defn about-section [component]
   (let [{:query/keys [store]} (om/props component)
-        {:store.profile/keys [description return-policy]} (:store/profile store)]
+        {:store.profile/keys [description name]} (:store/profile store)]
     (grid/row-column
       nil
       (dom/div
         (css/callout)
-        (quill/->QuillRenderer {:html (f/bytes->str description)}))
+        (dom/p nil (dom/strong nil (str "About " name)))
+        (quill/->QuillRenderer {:html (f/bytes->str description)})))))
+
+(defn policies-section [component]
+  (let [{:query/keys [store]} (om/props component)
+        {:store.profile/keys [return-policy]} (:store/profile store)]
+    (grid/row-column
+      nil
       (dom/div
         (css/callout)
-        (dom/p (css/add-class :header) "Return policy")
+        (dom/p nil (dom/strong nil "Returns"))
         (quill/->QuillRenderer {:html (f/bytes->str return-policy)})))))
 
 (defui Store
@@ -58,7 +65,7 @@
           {:store/keys [profile]
            stream      :stream/_store} store
           {:store.profile/keys [photo cover tagline description]
-           store-name :store.profile/name} profile
+           store-name          :store.profile/name} profile
           stream (first stream)
           is-live? (= :stream.state/live (:stream/state stream))
           show-chat? (:show-chat? st is-live?)
@@ -138,13 +145,18 @@
             (grid/column
               nil
               (menu/horizontal
-                (css/add-class :navigation (css/align :center))
+                (css/add-class :navigation)
 
                 (menu/item (cond->> (css/add-class :about)
                                     (= route :store/about)
                                     (css/add-class ::css/is-active))
                            (dom/a {:href (routes/url :store/about {:store-id (:db/id store)})}
                                   (dom/span nil "About")))
+                (menu/item (cond->> (css/add-class :about)
+                                    (= route :store/policies)
+                                    (css/add-class ::css/is-active))
+                           (dom/a {:href (routes/url :store/policies {:store-id (:db/id store)})}
+                                  (dom/span nil "Policies")))
                 (menu/item (when (= :store route)
                              (css/add-class ::css/is-active))
                            (dom/a {:href (routes/url :store {:store-id (:db/id store)})}
@@ -158,14 +170,16 @@
                                  is-active?
                                  (css/add-class ::css/is-active))
                         (dom/a
-                          {:href (routes/url :store/navigation {:navigation path :store-id   (:db/id store)})}
+                          {:href (routes/url :store/navigation {:navigation path :store-id (:db/id store)})}
                           (dom/span nil label)))))
                   (:store/sections store)))))
-          (if (= route :store/about)
-            (about-section this)
-
-            (grid/products store-items
-                           (fn [p]
-                             (pi/->ProductItem {:product p})))))))))
+          (cond (= route :store/about)
+                (about-section this)
+                (= route :store/policies)
+                (policies-section this)
+                :else
+                (grid/products store-items
+                               (fn [p]
+                                 (pi/->ProductItem {:product p})))))))))
 
 (def ->Store (om/factory Store))
