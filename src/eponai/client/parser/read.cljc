@@ -141,7 +141,7 @@
 
 (defmethod client-read :query/cart
   [{:keys [db query target ast]} _ _]
-  (let [cart (db/pull-one-with db query {:where '[[?e :cart/items]]})]
+  (let [cart (db/pull-one-with db query {:where '[[?e :user.cart/items]]})]
     (if target
       {:remote true }
       {:value cart})))                                      ;(common.read/compute-cart-price cart)
@@ -154,7 +154,7 @@
       {:remote (assoc-in ast [:params :store-id] store-id)}
       {:value (when (some? store-id)
                 (db/pull-all-with db query {:where   '[[?u :user/cart ?c]
-                                                       [?c :cart/items ?e]
+                                                       [?c :user.cart/items ?e]
                                                        [?i :store.item/skus ?e]
                                                        [?s :store/items ?i]]
                                             :symbols {'?s store-id}}))})))

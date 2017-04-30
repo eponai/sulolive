@@ -110,7 +110,7 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:query/cart [{:cart/items [:db/id
+     {:query/cart [{:user.cart/items [:db/id
                                  :store.item.sku/variation
                                  {:store.item/_skus [:store.item/price
                                                      {:store.item/photos [{:store.item.photo/photo [:photo/path]}
@@ -126,7 +126,7 @@
         (om/update-state! this assoc :did-mount? true))))
   (render [this]
     (let [{:keys [query/cart proxy/navbar]} (om/props this)
-          {:keys [cart/items]} cart
+          {:keys [user.cart/items]} cart
           skus-by-store (items-by-store items)]
       (debug "Shopping bag: " cart)
       (common/page-container

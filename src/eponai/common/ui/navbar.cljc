@@ -268,14 +268,19 @@
                 (sidebar-link component :store-dashboard/product-list {:store-id (:db/id owned-store)} "Products")
                 (sidebar-link component :store-dashboard/order-list {:store-id (:db/id owned-store)} "Orders")
                 (sidebar-link component :store-dashboard/settings {:store-id (:db/id owned-store)} "Settings"))))
+
+          (when (and (some? auth)
+                     (nil? owned-store))
+            (menu/item nil (my-dom/a
+                             (->> {:href (routes/url :sell)}
+                                  (css/button)) (my-dom/span nil "Start a store"))))
           (if (some? auth)
             (menu/item nil (my-dom/a
-                             (->> {:href (routes/url :logout)
-                                   :onClick #(.close-sidebar component)}
+                             (->> {:href "/logout"}
                                   (css/button-hollow)) (my-dom/span nil "Sign out")))
             (menu/item nil (my-dom/a
                              (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
-                                  (css/button-hollow)) (my-dom/span nil "Sign in")))))))))
+                                  (css/button)) (my-dom/span nil "Sign in")))))))))
 
 (defn standard-navbar [component]
   (let [{:keys [did-mount?]} (om/get-state component)
@@ -343,13 +348,16 @@
                 (photo/user-photo {:user auth}))))
           (menu/item
             nil
-            (my-dom/a {:href (routes/url :shopping-bag)}
-                      (icons/shopping-bag))))))))
+            (my-dom/a {:classes ["shopping-bag-icon"]
+                       :href (routes/url :shopping-bag)}
+                      (icons/shopping-bag)
+                      (when (< 0 (count (:user.cart/items cart)))
+                        (my-dom/span (css/add-class :badge) (count (:user.cart/items cart)))))))))))
 
 (defui Navbar
   static om/IQuery
   (query [_]
-    [{:query/cart [{:cart/items [{:store.item/_skus [:store.item/price
+    [{:query/cart [{:user.cart/items [{:store.item/_skus [:store.item/price
                                                      {:store.item/photos [:photo/path]}
                                                      :store.item/name
                                                      {:store/_items [{:store/profile [:store.profile/name]}]}]}]}]}
