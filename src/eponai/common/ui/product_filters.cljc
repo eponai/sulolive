@@ -26,7 +26,7 @@
 (defui ProductFilters
   static om/IQuery
   (query [_]
-    [{:query/navigation [:category/name :category/label :category/href]}])
+    [{:query/navigation [:category/name :category/label :category/path :category/href]}])
   Object
   (toggle-filter [this category]
     (let [{:keys [active]} (om/get-state this)]

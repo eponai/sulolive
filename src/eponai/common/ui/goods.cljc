@@ -38,16 +38,17 @@
 (defn- vertical-category-menu [children current-category]
   (menu/vertical
     (css/add-class :nested)
-    (map-indexed
-      (fn [i {:category/keys [path] :as category}]
-        (menu/item
-          (cond->> {:key i}
-                   (and (some? current-category)
-                        (= path (:category/path current-category)))
-                   (css/add-class ::css/is-active))
-          (dom/a {:href (:category/href category)}
-                 (dom/span nil (products/category-display-name category)))))
-      children)))
+    (->> children
+         (sort-by :category/name)
+         (map-indexed
+           (fn [i {:category/keys [path] :as category}]
+             (menu/item
+               (cond->> {:key i}
+                        (and (some? current-category)
+                             (= path (:category/path current-category)))
+                        (css/add-class ::css/is-active))
+               (dom/a {:href (:category/href category)}
+                      (dom/span nil (products/category-display-name category)))))))))
 
 (defn selected-navigation [component]
   (let [{:query/keys [current-route navigation]} (om/props component)

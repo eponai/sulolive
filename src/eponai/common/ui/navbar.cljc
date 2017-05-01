@@ -112,7 +112,6 @@
 (defn collection-links [component disabled?]
   (map
     (fn [{:category/keys [href name] :as a}]
-      (debug "Category: " a)
       (let [opts (when (not disabled?)
                    {:href href})]
         (menu/item-link
@@ -353,7 +352,7 @@
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.
                           {:store/owners [{:store.owner/user [:db/id]}]}]}
-     {:query/navigation [:category/name :category/href :category/label]}
+     {:query/navigation [:category/name :category/label :category/path :category/href]}
      :query/current-route])
   Object
   #?(:cljs
