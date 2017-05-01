@@ -45,10 +45,10 @@
           (css/align :right)
           secondary)))))
 
-(defn collection-element [{:keys [url title full?]}]
+(defn collection-element [{:keys [href url title full?]}]
   ;; Use the whole thing as hover elem
   (my-dom/a
-    {:href    (routes/url :products/categories {:category (.toLowerCase title)})
+    {:href    href
      :classes [:full :category-photo]}
     (photo/with-overlay
       nil
@@ -176,22 +176,26 @@
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
-                                             (collection-element {:url   "/assets/img/home-new.jpg"
+                                             (collection-element {:href (routes/url :browse/category {:top-category "home"})
+                                                                  :url   "/assets/img/home-new.jpg"
                                                                   :title "Home"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
-                                             (collection-element {:url   "/assets/img/women-new.jpg"
+                                             (collection-element {:href (routes/url :browse/gender {:sub-category "women"})
+                                                                  :url   "/assets/img/women-new.jpg"
                                                                   :title "Women"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
-                                             (collection-element {:url   "/assets/img/men-new.jpg"
+                                             (collection-element {:href (routes/url :browse/gender {:sub-category "men"})
+                                                                  :url   "/assets/img/men-new.jpg"
                                                                   :title "Men"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
-                                             (collection-element {:url   "/assets/img/kids-new.jpg"
+                                             (collection-element {:href (routes/url :browse/gender {:sub-category "unisex-kids"})
+                                                                  :url   "/assets/img/kids-new.jpg"
                                                                   :title "Kids"}))))
                                     ;(map (fn [s t]
                                     ;       (collection-element {:url (first (:store/featured-img-src s))
