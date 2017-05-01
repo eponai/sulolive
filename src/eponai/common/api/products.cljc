@@ -17,12 +17,6 @@
     (str/capitalize (:category/name c))
     label))
 
-(defn category-names [{:category/keys [path] :as c}]
-  (when-not path
-    (warn "No path in category: " c " when creating category names"))
-  (->> (str/split path category-path-separator-pattern)
-       (zipmap [:top-category :sub-category :sub-sub-category])))
-
 (def eq-or-child-category-rule
   '[[(eq-or-child-category? ?c ?x)
      [(identity ?c) ?x]]

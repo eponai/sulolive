@@ -59,7 +59,7 @@
 
 (defn category-dropdown [component]
   (let [{:keys [dropdown-key]} (om/get-state component)
-        {:query/keys [top-nav-categories]} (om/props component)]
+        {:query/keys [navigation]} (om/props component)]
     (my-dom/div
       (cond->> {:classes [:dropdown-pane :collection-dropdown]}
                (= dropdown-key :dropdown/collection)
@@ -67,10 +67,9 @@
       (menu/vertical
         {:classes [::css/categories]}
         (map
-          (fn [{:keys [label href]}]
-            (menu/item-link {:href href}
-                            (dom/span nil (s/capitalize label))))
-          top-nav-categories)))))
+          (fn [{:category/keys [label href]}]
+            (menu/item-link {:href href} (dom/span nil label)))
+          navigation)))))
 
 (defn user-dropdown [component user owned-store]
   (let [{:keys [dropdown-key]} (om/get-state component)]
@@ -120,15 +119,15 @@
 
 (defn collection-links [component disabled?]
   (map
-    (fn [{:keys [href label]}]
+    (fn [{:category/keys [href name] :as a}]
       (let [opts (when (not disabled?)
                    {:href href})]
         (menu/item-link
           (->> opts
                (css/add-class :category)
                (css/show-for :large))
-          (dom/span nil (s/capitalize label)))))
-    (:query/top-nav-categories (om/props component))))
+          (dom/span nil (s/capitalize name)))))
+    (:query/navigation (om/props component))))
 
 (defn live-link [& [on-click]]
   (let [opts (if on-click
@@ -361,7 +360,7 @@
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.
                           {:store/owners [{:store.owner/user [:db/id]}]}]}
-     {:query/top-nav-categories [:label :href]}
+     {:query/navigation [:category/name :category/label :category/path :category/href]}
      :query/current-route])
   Object
   #?(:cljs

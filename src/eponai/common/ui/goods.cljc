@@ -1,6 +1,7 @@
 (ns eponai.common.ui.goods
   (:require
     [eponai.client.routes :as routes]
+    [eponai.common.routes :as common.routes]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
@@ -22,39 +23,63 @@
    :sort/price-inc {:key [:store.item/price :store.item/name] :reverse? false}
    :sort/price-dec {:key [:store.item/price :store.item/name] :reverse? true}})
 
-(defn nav-breadcrumbs [browse-nav]
-  (let [items (into [] (comp (take-while #(= 1 (count (:category/children %))))
-                             (map (comp first :category/children))
-                             (map (fn [category]
-                                    (menu/item nil (dom/a {:href (:category/href category)}
-                                                          (products/category-display-name category))))))
-                    (iterate (comp first :category/children)
-                             {:category/children [browse-nav]}))]
+(defn nav-breadcrumbs [categories]
+  (let [items (into [(menu/item nil (dom/a {:href (routes/url :browse/all-items)}
+                                           "All"))]
+                    (map (fn [category]
+                           (menu/item nil (dom/a {:href (:category/href category)}
+                                                 (products/category-display-name category)))))
+                    categories)]
     (menu/breadcrumbs
       (when-not (< 1 (count items))
         {:classes [:invisible]})
       items)))
 
-(defn- vertical-category-menu [categories current-category]
+(defn- vertical-category-menu [children current-category]
   (menu/vertical
     (css/add-class :nested)
-    (map-indexed
-      (fn [i {:category/keys [path] :as category}]
-        (menu/item
-          (cond->> {:key i}
-                   (= path (:category/path current-category))
-                   (css/add-class ::css/is-active))
-          (dom/a {:href (:category/href category)}
-                 (dom/span nil (products/category-display-name category)))))
-      categories)))
+    (->> children
+         (sort-by :category/name)
+         (map-indexed
+           (fn [i {:category/keys [path] :as category}]
+             (menu/item
+               (cond->> {:key i}
+                        (and (some? current-category)
+                             (= path (:category/path current-category)))
+                        (css/add-class ::css/is-active))
+               (dom/a {:href (:category/href category)}
+                      (dom/span nil (products/category-display-name category)))))))))
+
+(defn selected-navigation [component]
+  (let [{:query/keys [current-route navigation]} (om/props component)
+        {:keys [route route-params]} current-route
+        {:keys [top-category sub-category sub-sub-category]} route-params
+        selected-names (if (= :browse/gender (common.routes/normalize-browse-route route))
+                         [sub-category top-category sub-sub-category]
+                         [top-category sub-category sub-sub-category])
+        selected-nav-path (fn self [categories [n & names]]
+                  (when n
+                    (some (fn [[i category]]
+                            (when (= n (:category/name category))
+                              (if-let [next-find (self (:category/children category)
+                                                       names)]
+                                (cons i (cons :category/children next-find))
+                                (cons i nil))))
+                          (map-indexed vector categories))))]
+    (vec (selected-nav-path navigation selected-names))))
+
+(defn category-seq [component]
+  (let [{:query/keys [navigation]} (om/props component)
+        [top-idx & paths] (selected-navigation component)]
+    (when-let [top-cat (get navigation top-idx)]
+      (reductions get-in top-cat (partition 2 paths)))))
 
 (defui Goods
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:query/browse-items (om/get-query product/Product)}
-     {:query/browse-nav [:category/name :category/label :category/path :category/href]}
-     {:query/browse-category [:category/path]}
+     {:query/navigation [:category/name :category/label :category/path :category/href]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
      :query/current-route])
   Object
@@ -63,11 +88,10 @@
      :filters-open? false})
   (render [this]
     (let [{:proxy/keys [navbar product-filters]
-           :query/keys [browse-items browse-nav browse-category]} (om/props this)
+           :query/keys [browse-items navigation selected-navigation]} (om/props this)
           {:keys [sorting filters-open?]} (om/get-state this)
+          [top-category sub-category :as categories] (category-seq this)
           items browse-items]
-
-      (debug "Browse nav: " (:query/browse-nav (om/props this)))
 
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse"}
@@ -82,10 +106,10 @@
           nil
           (grid/column
             nil
-            (nav-breadcrumbs browse-nav)
+            (nav-breadcrumbs (category-seq this))
             (dom/h1 nil (str/upper-case
-                          (if-let [label (products/category-display-name browse-nav)]
-                            label
+                          (if (some? top-category)
+                            (products/category-display-name top-category)
                             "All")))
             ))
         (grid/row
@@ -104,23 +128,23 @@
                  (css/add-class :navigation)
                  (css/show-for :large))
             ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
-            (if (not-empty browse-nav)
+            (if (nil? top-category)
+              (vertical-category-menu navigation nil)
               (menu/vertical
                 nil
                 (menu/item
                   nil
-                  (dom/a {:href (:category/href browse-nav)}
-                         (dom/strong nil (products/category-display-name browse-nav)))
-                  (if (= 1 (count (:category/children browse-nav)))
-                    (let [[category] (:category/children browse-nav)]
-                      (menu/vertical
+                  (dom/a {:href (:category/href top-category)}
+                         (dom/strong nil (products/category-display-name top-category)))
+                  (if (some? sub-category)
+                    (menu/vertical
+                      nil
+                      (menu/item
                         nil
-                        (menu/item
-                          nil
-                          (dom/a {:href (:category/href category)}
-                                 (dom/strong nil (products/category-display-name category)))
-                          (vertical-category-menu (:category/children category) browse-category))))
-                    (vertical-category-menu (:category/children browse-nav) browse-category))))))
+                        (dom/a {:href (:category/href sub-category)}
+                               (dom/strong nil (products/category-display-name sub-category)))
+                        (vertical-category-menu (:category/children sub-category) (last categories))))
+                    (vertical-category-menu (:category/children top-category) (last categories)))))))
           (grid/column
             (grid/column-size {:small 12 :large 9})
 

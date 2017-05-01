@@ -111,6 +111,10 @@
   (iter-equals? (d/datoms db1 :eavt eid)
                 (d/datoms db2 :eavt eid)))
 
+(defn attr-equal? [db1 db2 attr]
+  (iter-equals? (d/datoms db1 :aevt attr)
+                (d/datoms db2 :aevt attr)))
+
 (defn has-id? [db id]
   (some? (first (d/datoms db :eavt id))))
 

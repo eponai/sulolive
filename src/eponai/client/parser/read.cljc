@@ -2,10 +2,12 @@
   (:require
     [clojure.set :as set]
     [clojure.string :as str]
+    [om.next.impl.parser :as parser.impl]
     [eponai.common.parser :as parser :refer [client-read]]
     [eponai.common.parser.util :as parser.util]
     [eponai.common.database :as db]
     [eponai.common.parser.read :as common.read]
+    [eponai.common.datascript :as datascript]
     [om.next.impl.parser :as om.parser]
     [eponai.client.routes :as client.routes]
     [eponai.common.routes :as common.routes]
@@ -157,15 +159,6 @@
                                                        [?s :store/items ?i]]
                                             :symbols {'?s store-id}}))})))
 
-(defmethod client-read :query/items
-  [{:keys [db query target route-params ast] :as env} _ p]
-  (let [{:keys [category search]} route-params]
-    (if target
-      {:remote (assoc-in ast [:params :category] category)}
-      {:value (if (some? category)
-                (db/pull-all-with db query (products/find-by-category category))
-                (db/pull-all-with db query (products/find-all)))})))
-
 (defmethod client-read :query/browse-items
   [{:keys [db target query route-params ast]} _ _]
   (let [{:keys [top-category sub-category]} route-params]
@@ -174,22 +167,6 @@
       {:value (db/pull-all-with db query (if (or (some? sub-category) (some? top-category))
                                            (products/find-with-category-names route-params)
                                            (products/find-all)))})))
-
-(defmethod client-read :query/browse-category
-  [{:keys [db target query route-params]} _ _]
-  (when-not target
-    (let [smallest-category (products/smallest-category route-params)]
-      {:value (db/pull-one-with db query (db/merge-query (products/find-with-category-names route-params)
-                                                         {:where [[(list 'identity smallest-category) '?e]]}))})))
-
-(defmethod client-read :query/browse-nav
-  [{:keys [db target query route route-params ast]} _ _]
-  (if target
-    {:remote true}
-    {:value (condp = (routes/normalize-browse-route route)
-              :browse/gender (products/browse-navigation-tree db query true route-params)
-              :browse/category (products/browse-navigation-tree db query false route-params)
-              (warn "query/browse-nav called with unknown route: " route))}))
 
 (defmethod client-read :query/owned-store
   [{:keys [db target query]} _ _]
@@ -200,35 +177,105 @@
                                                      [?e :store/owners ?owners]]
                                           :symbols {'?user user-id}})})))
 
-(defmethod client-read :query/top-categories
+(defn remove-query-key
+  ([k] (comp (remove k) (remove #(and (map? %) (some k (keys %))))))
+  ([k query]
+   (into [] (remove-query-key k) query)))
+
+(defn- add-all-hrefs [category params->route-handler param-order]
+  (letfn [(with-hrefs [category parent-names]
+            (let [names (conj parent-names (:category/name category))
+                  params (zipmap param-order names)]
+              (-> category
+                  (assoc :category/href (client.routes/url (params->route-handler params) params))
+                  (update :category/children (fn [children]
+                                               (into (empty children) (map #(with-hrefs % names)) children))))))]
+    (with-hrefs category [])))
+
+(defn assoc-gender-hrefs [category]
+  (add-all-hrefs category
+                 (fn [{:keys [top-category sub-category sub-sub-category]}]
+                   (or (when sub-sub-category :browse/gender+top+sub-sub)
+                       (when top-category :browse/gender+top)
+                       (when sub-category :browse/gender)
+                       :browse/all-items))
+                 [:sub-category :top-category :sub-sub-category]))
+
+(defn assoc-category-hrefs [category]
+  (add-all-hrefs category
+                 (fn [{:keys [top-category sub-category sub-sub-category]}]
+                   (or (when sub-sub-category :browse/category+sub+sub-sub)
+                       (when sub-category :browse/category+sub)
+                       (when top-category :browse/category)
+                       :browse/all-items))
+                 [:top-category :sub-category :sub-sub-category]))
+
+(defn navigate-gender [db query gender]
+  (when (db/one-with db (db/merge-query (products/category-names-query {:sub-category gender})
+                                        {:where '[[(identity ?sub) ?e]]}))
+    (let [query-without-children (into [] (remove-query-key :category/children) query)]
+      (-> {:category/name     gender
+           :category/label    (str/capitalize gender)
+           :category/children (->> (db/pull-all-with db query-without-children
+                                                     (db/merge-query (products/category-names-query {:sub-category gender})
+                                                                     {:where '[[?e :category/children ?sub]]}))
+                                   (into []
+                                         (map (fn [category]
+                                                (->> (db/merge-query (products/category-names-query
+                                                                       {:top-category (:category/name category)
+                                                                        :sub-category gender})
+                                                                     {:where '[[?sub :category/children ?e]]})
+                                                     (db/pull-all-with db query-without-children)
+                                                     (assoc category :category/children))))))}
+          (assoc-gender-hrefs)))))
+
+(defn navigate-category [db query category-name]
+  (some-> (db/pull-one-with db (into [{:category/children '...}]
+                                     (remove-query-key :category/children)
+                                     query)
+                            (db/merge-query (products/category-names-query {:top-category category-name})
+                                            {:where '[[(identity ?top) ?e]]}))
+          (assoc-category-hrefs)))
+
+(defn nav-categories [db query]
+  (letfn [(distinct-by-name [category]
+            (cond-> category
+                    (contains? category :category/children)
+                    (update :category/children
+                            (fn [children]
+                              (into [] (comp (medley/distinct-by :category/name)
+                                             (map distinct-by-name))
+                                    children)))))]
+    (into [] (comp (filter some?) (map distinct-by-name))
+          [(navigate-gender db query "women")
+           (navigate-gender db query "men")
+           (navigate-gender db query "unisex-kids")
+           (navigate-category db query "home")
+           (navigate-category db query "art")])))
+
+(def memoized-nav-categories
+  (let [cache (atom nil)]
+    (fn [db query]
+      (let [{:keys [last-db last-val last-query] :as c} @cache]
+        (assert (or (nil? last-query) (= query last-query))
+                (str "Query for :query/navigation must always be the same for us to be able to cache it."
+                     " Queries weren't: " query " and " (:query c)))
+        (if (and (some? last-val)
+                 (or (identical? db last-db)
+                     (and (datascript/attr-equal? db last-db :category/name)
+                          (datascript/attr-equal? db last-db :category/label)
+                          (datascript/attr-equal? db last-db :category/path)
+                          (datascript/attr-equal? db last-db :category/children))))
+          last-val
+          (let [ret (nav-categories db query)]
+            (reset! cache {:last-db db :last-val ret :last-query query})
+            ret))))))
+
+(defmethod client-read :query/navigation
   [{:keys [db target query route-params]} _ _]
   (if target
     {:remote true}
-    {:value (db/pull-many db query (sequence (comp
-                                               (map :e)
-                                               (remove (into #{} (map :v) (db/datoms db :aevt :category/children))))
-                                             ;; :avet needs attribute to have :db/index true
-                                             (db/datoms db :avet :category/path)))}))
-
-(defmethod client-read :query/top-nav-categories
-  [{:keys [target query]} _ _]
-  (assert (every? (set query) [:label :href])
-          (str "Query was not :label and :href, wat, was: " query))
-  (when-not target
-    {:value
-     [{:label "women" :href (client.routes/url :browse/gender {:sub-category "women"})}
-      {:label "men" :href (client.routes/url :browse/gender {:sub-category "men"})}
-      {:label "kids" :href (client.routes/url :browse/gender {:sub-category "unisex-kids"})}
-      {:label "home" :href (client.routes/url :browse/category {:top-category "home"})}
-      {:label "art" :href (client.routes/url :browse/category {:top-category "art"})}]}))
-
-(defmethod client-read :query/category
-  [{:keys [db query target route-params ast] :as env} _ p]
-  (let [{:keys [category]} route-params]
-    (if target
-      {:remote (when (not-empty category) (assoc-in ast [:params :category] category))}
-      {:value (db/pull-one-with db query {:where   '[[?e :category/path ?p]]
-                                          :symbols {'?p category}})})))
+    {:value (memoized-nav-categories db query)}))
 
 (defmethod client-read :query/item
   [{:keys [db query target route-params ast]} _ _]
