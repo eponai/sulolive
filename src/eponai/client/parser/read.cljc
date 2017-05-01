@@ -281,7 +281,7 @@
            (navigate-category db query "home")
            (navigate-category db query "art")])))
 
-(defmethod client-read :query/top-nav-categories2
+(defmethod client-read :query/navigation
   [{:keys [db target query route-params]} _ _]
   (if target
     {:remote true}
@@ -318,27 +318,8 @@
                   :category/href  (client.routes/url :browse/all-items)
                   :category/label "All"
                   :category/children
-                                  (->> (:value (client-read env :query/top-nav-categories2 nil))
+                                  (->> (:value (client-read env :query/navigation nil))
                                        (into [] (map #(dissoc % :category/children))))})}))))
-
-(defmethod client-read :query/navigation-selected
-  [{:keys [db target route route-params] :as env} k p]
-  (when-not target
-    (let [{:keys [top-category sub-category sub-sub-category]} route-params
-          selected-names (if (= :browse/gender (routes/normalize-browse-route route))
-                           [sub-category top-category sub-sub-category]
-                           [top-category sub-category sub-sub-category])
-          find-it (fn self [categories [n & names]]
-                    (when n
-                      (some (fn [[i category]]
-                                         (when (= n (:category/name category))
-                                           (if-let [next-find (self (:category/children category)
-                                                                    names)]
-                                             (cons i (cons :category/children next-find))
-                                             (cons i nil))))
-                            (map-indexed vector categories))))]
-      {:value (vec (find-it (nav-categories db [:category/name])
-                            selected-names))})))
 
 (defmethod client-read :query/browse-nav
   [{:keys [db target query route route-params ast]} _ _]

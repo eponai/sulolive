@@ -1,6 +1,7 @@
 (ns eponai.common.ui.goods
   (:require
     [eponai.client.routes :as routes]
+    [eponai.common.routes :as common.routes]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
@@ -48,10 +49,28 @@
                  (dom/span nil (products/category-display-name category)))))
       children)))
 
+(defn selected-navigation [component]
+  (let [{:query/keys [current-route navigation]} (om/props component)
+        {:keys [route route-params]} current-route
+        {:keys [top-category sub-category sub-sub-category]} route-params
+        selected-names (if (= :browse/gender (common.routes/normalize-browse-route route))
+                         [sub-category top-category sub-sub-category]
+                         [top-category sub-category sub-sub-category])
+        selected-nav-path (fn self [categories [n & names]]
+                  (when n
+                    (some (fn [[i category]]
+                            (when (= n (:category/name category))
+                              (if-let [next-find (self (:category/children category)
+                                                       names)]
+                                (cons i (cons :category/children next-find))
+                                (cons i nil))))
+                          (map-indexed vector categories))))]
+    (vec (selected-nav-path navigation selected-names))))
+
 (defn category-seq [component]
-  (let [{:query/keys [top-nav-categories2 navigation-selected]} (om/props component)
-        [top-idx & paths] navigation-selected]
-    (when-let [top-cat (get top-nav-categories2 top-idx)]
+  (let [{:query/keys [navigation]} (om/props component)
+        [top-idx & paths] (selected-navigation component)]
+    (when-let [top-cat (get navigation top-idx)]
       (reductions get-in top-cat (partition 2 paths)))))
 
 (defui Goods
@@ -59,8 +78,7 @@
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:query/browse-items (om/get-query product/Product)}
-     {:query/top-nav-categories2 [:category/name :category/label :category/path :category/href]}
-     :query/navigation-selected
+     {:query/navigation [:category/name :category/label :category/path :category/href]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
      :query/current-route])
   Object
@@ -69,14 +87,10 @@
      :filters-open? false})
   (render [this]
     (let [{:proxy/keys [navbar product-filters]
-           :query/keys [browse-items top-nav-categories2 navigation-selected]} (om/props this)
+           :query/keys [browse-items navigation selected-navigation]} (om/props this)
           {:keys [sorting filters-open?]} (om/get-state this)
-          [top-category sub-category sub-sub-category :as categories] (category-seq this)
+          [top-category sub-category :as categories] (category-seq this)
           items browse-items]
-
-      (debug "navigation-selected: " navigation-selected)
-      (debug "Categories: " categories)
-      (debug "Browse nav: " (:query/browse-nav2 (om/props this)))
 
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse"}
@@ -114,7 +128,7 @@
                  (css/show-for :large))
             ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
             (if (nil? top-category)
-              (vertical-category-menu top-nav-categories2 nil)
+              (vertical-category-menu navigation nil)
               (menu/vertical
                 nil
                 (menu/item

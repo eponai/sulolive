@@ -26,7 +26,7 @@
 (defui ProductFilters
   static om/IQuery
   (query [_]
-    [{:query/top-nav-categories2 [:category/name :category/label :category/href]}])
+    [{:query/navigation [:category/name :category/label :category/href]}])
   Object
   (toggle-filter [this category]
     (let [{:keys [active]} (om/get-state this)]
@@ -40,7 +40,7 @@
 
   (render [this]
     (let [{:keys [active]} (om/get-state this)
-          {:query/keys [top-nav-categories2]} (om/props this)]
+          {:query/keys [navigation]} (om/props this)]
       (dom/div
         {:id "product-filters"}
         (dom/h3 (css/add-class :header) "Filter by Category")
@@ -64,6 +64,6 @@
                                     (dom/span nil "+")
                                     (dom/span nil "-"))))
                        (submenu this top-nav-cat))))
-                 top-nav-categories2)))))))
+                 navigation)))))))
 
 (def ->ProductFilters (om/factory ProductFilters))

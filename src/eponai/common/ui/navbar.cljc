@@ -59,7 +59,7 @@
 
 (defn category-dropdown [component]
   (let [{:keys [dropdown-key]} (om/get-state component)
-        {:query/keys [top-nav-categories2]} (om/props component)]
+        {:query/keys [navigation]} (om/props component)]
     (my-dom/div
       (cond->> {:classes [:dropdown-pane :collection-dropdown]}
                (= dropdown-key :dropdown/collection)
@@ -69,7 +69,7 @@
         (map
           (fn [{:category/keys [label href]}]
             (menu/item-link {:href href} (dom/span nil label)))
-          top-nav-categories2)))))
+          navigation)))))
 
 (defn user-dropdown [component user owned-store]
   (let [{:keys [dropdown-key]} (om/get-state component)]
@@ -120,7 +120,7 @@
                (css/add-class :category)
                (css/show-for :large))
           (dom/span nil (s/capitalize name)))))
-    (:query/top-nav-categories2 (om/props component))))
+    (:query/navigation (om/props component))))
 
 (defn live-link [& [on-click]]
   (let [opts (if on-click
@@ -353,7 +353,7 @@
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.
                           {:store/owners [{:store.owner/user [:db/id]}]}]}
-     {:query/top-nav-categories2 [:category/name :category/href :category/label]}
+     {:query/navigation [:category/name :category/href :category/label]}
      :query/current-route])
   Object
   #?(:cljs

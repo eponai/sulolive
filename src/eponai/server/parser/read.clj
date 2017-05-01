@@ -272,7 +272,7 @@
                                            (products/find-all)))})
 
 ;; Get all categories.
-(defread query/top-nav-categories2
+(defread query/navigation
   [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
   {:value (let [children-keys #{:category/children :category/_children}]
