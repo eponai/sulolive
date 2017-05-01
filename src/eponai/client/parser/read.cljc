@@ -266,12 +266,20 @@
     (assoc :category/root true)))
 
 (defn nav-categories [db query]
-  (into [] (filter some?)
-        [(navigate-gender db query "women")
-         (navigate-gender db query "men")
-         (navigate-gender db query "unisex-kids")
-         (navigate-category db query "home")
-         (navigate-category db query "art")]))
+  (letfn [(distinct-by-name [category]
+            (cond-> category
+                    (contains? category :category/children)
+                    (update :category/children
+                            (fn [children]
+                              (into [] (comp (medley/distinct-by :category/name)
+                                             (map distinct-by-name))
+                                    children)))))]
+    (into [] (comp (filter some?) (map distinct-by-name))
+          [(navigate-gender db query "women")
+           (navigate-gender db query "men")
+           (navigate-gender db query "unisex-kids")
+           (navigate-category db query "home")
+           (navigate-category db query "art")])))
 
 (defmethod client-read :query/top-nav-categories2
   [{:keys [db target query route-params]} _ _]

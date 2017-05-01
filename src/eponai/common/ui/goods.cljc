@@ -23,9 +23,11 @@
    :sort/price-dec {:key [:store.item/price :store.item/name] :reverse? true}})
 
 (defn nav-breadcrumbs [categories]
-  (let [items (into [] (map (fn [category]
-                              (menu/item nil (dom/a {:href (:category/href category)}
-                                                    (products/category-display-name category)))))
+  (let [items (into [(menu/item nil (dom/a {:href (routes/url :browse/all-items)}
+                                           "All"))]
+                    (map (fn [category]
+                           (menu/item nil (dom/a {:href (:category/href category)}
+                                                 (products/category-display-name category)))))
                     categories)]
     (menu/breadcrumbs
       (when-not (< 1 (count items))
