@@ -158,15 +158,6 @@
                                                        [?s :store/items ?i]]
                                             :symbols {'?s store-id}}))})))
 
-(defmethod client-read :query/items
-  [{:keys [db query target route-params ast] :as env} _ p]
-  (let [{:keys [category search]} route-params]
-    (if target
-      {:remote (assoc-in ast [:params :category] category)}
-      {:value (if (some? category)
-                (db/pull-all-with db query (products/find-by-category category))
-                (db/pull-all-with db query (products/find-all)))})))
-
 (defmethod client-read :query/browse-items
   [{:keys [db target query route-params ast]} _ _]
   (let [{:keys [top-category sub-category]} route-params]
@@ -176,13 +167,6 @@
                                            (products/find-with-category-names route-params)
                                            (products/find-all)))})))
 
-(defmethod client-read :query/browse-category
-  [{:keys [db target query route-params]} _ _]
-  (when-not target
-    (let [smallest-category (products/smallest-category route-params)]
-      {:value (db/pull-one-with db query (db/merge-query (products/find-with-category-names route-params)
-                                                         {:where [[(list 'identity smallest-category) '?e]]}))})))
-
 (defmethod client-read :query/owned-store
   [{:keys [db target query]} _ _]
   (if target
@@ -191,16 +175,6 @@
       {:value (db/pull-one-with db query {:where   '[[?owners :store.owner/user ?user]
                                                      [?e :store/owners ?owners]]
                                           :symbols {'?user user-id}})})))
-
-(defmethod client-read :query/top-categories
-  [{:keys [db target query route-params]} _ _]
-  (if target
-    {:remote true}
-    {:value (db/pull-many db query (sequence (comp
-                                               (map :e)
-                                               (remove (into #{} (map :v) (db/datoms db :aevt :category/children))))
-                                             ;; :avet needs attribute to have :db/index true
-                                             (db/datoms db :avet :category/path)))}))
 
 (defn remove-query-key
   ([k] (comp (remove k) (remove #(and (map? %) (some k (keys %))))))
@@ -286,57 +260,6 @@
   (if target
     {:remote true}
     {:value (nav-categories db query)}))
-
-(comment
-
-  (defmethod client-read :query/browse-nav2
-   [{:keys [db target query route route-params] :as env}]
-   (when-not target
-     (let [{:keys [top-category sub-category]} route-params]
-       {:value (condp = (routes/normalize-browse-route route)
-                 :browse/gender
-                 (some-> (navigate-gender db query sub-category)
-                         (update :category/children
-                                 (fn [children]
-                                   (into [] (if (nil? top-category)
-                                              (map #(dissoc % :category/children))
-                                              (filter #(= top-category (:category/name %))))
-                                         children))))
-
-                 :browse/category
-                 (some->
-                   (navigate-category db query top-category)
-                   (update :category/children
-                           (fn [children]
-                             (into [] (if (nil? sub-category)
-                                        (map #(dissoc :category/children))
-                                        (filter #(= sub-category (:category/name %))))
-                                   children))))
-
-                 :browse/all-items
-                 {:category/name  "all"
-                  :category/href  (client.routes/url :browse/all-items)
-                  :category/label "All"
-                  :category/children
-                                  (->> (:value (client-read env :query/navigation nil))
-                                       (into [] (map #(dissoc % :category/children))))})}))))
-
-(defmethod client-read :query/browse-nav
-  [{:keys [db target query route route-params ast]} _ _]
-  (if target
-    {:remote true}
-    {:value (condp = (routes/normalize-browse-route route)
-              :browse/gender (products/browse-navigation-tree db query true route-params)
-              :browse/category (products/browse-navigation-tree db query false route-params)
-              (warn "query/browse-nav called with unknown route: " route))}))
-
-(defmethod client-read :query/category
-  [{:keys [db query target route-params ast] :as env} _ p]
-  (let [{:keys [category]} route-params]
-    (if target
-      {:remote (when (not-empty category) (assoc-in ast [:params :category] category))}
-      {:value (db/pull-one-with db query {:where   '[[?e :category/path ?p]]
-                                          :symbols {'?p category}})})))
 
 (defmethod client-read :query/item
   [{:keys [db query target route-params ast]} _ _]
