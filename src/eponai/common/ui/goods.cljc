@@ -39,7 +39,8 @@
       (fn [i {:category/keys [path] :as category}]
         (menu/item
           (cond->> {:key i}
-                   (= path (:category/path current-category))
+                   (and (some? current-category)
+                        (= path (:category/path current-category)))
                    (css/add-class ::css/is-active))
           (dom/a {:href (:category/href category)}
                  (dom/span nil (products/category-display-name category)))))
@@ -110,7 +111,8 @@
                  (css/add-class :navigation)
                  (css/show-for :large))
             ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
-            (when (some? top-category)
+            (if (nil? top-category)
+              (vertical-category-menu top-nav-categories2 nil)
               (menu/vertical
                 nil
                 (menu/item

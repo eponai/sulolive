@@ -205,7 +205,7 @@
                                     ""
                                     )
 
-            (common/content-section {:href (routes/url :products nil)
+            (common/content-section {:href (routes/url :browse/all-items)
                                      :class "new-arrivals"}
                                     "New arrivals"
                                     (grid/row
