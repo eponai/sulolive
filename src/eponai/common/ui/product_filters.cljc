@@ -9,46 +9,24 @@
     [eponai.common.database :as db]
     [taoensso.timbre :refer [debug]]))
 
-(defn submenu [component {:keys [label]}]
-  (let [{:keys [active]} (om/get-state component)
-        db (db/to-db component)
-        gender? (products/gender-category? {:category/name label})
-        nav-tree (products/browse-navigation-tree db
-                                                  [:category/name :category/label :category/path]
-                                                  gender?
-                                                  (if gender?
-                                                    {:sub-category label}
-                                                    {:top-category label}))
-        {:category/keys [children]} nav-tree]
-    (debug "label: " label)
-    (debug "nav-tree: " nav-tree)
-    (when (not-empty children)
+(defn submenu [component {:category/keys [name children]}]
+  (let [{:keys [active]} (om/get-state component)]
+    (when (seq children)
       (menu/vertical
         (cond->> {:classes [:nested :submenu]}
-                 (= active label)
+                 (= active name)
                  (css/add-class ::css/is-active))
-        (map (fn [c]
-               (let [{:category/keys [href]} c]
-                 (menu/item {:classes [:is-submenu-item]}
-                            (dom/a {:href    href
-                                    :onClick #(.clicked-category component)}
-                                   (dom/span nil (products/category-display-name c))))))
+        (map (fn [{:category/keys [href label]}]
+               (menu/item {:classes [:is-submenu-item]}
+                          (dom/a {:href    href
+                                  :onClick #(.clicked-category component)}
+                                 (dom/span nil label))))
              children)))))
-
-(comment
-  (let [db (db/to-db this)
-        gender? (products/gender-category? {:category/name label})
-        nav-tree (products/browse-navigation-tree db
-                                                  [:db/id :category/name :category/label :category/path]
-                                                  gender?
-                                                  (if gender?
-                                                    {:sub-category label}
-                                                    {:top-category label}))]))
 
 (defui ProductFilters
   static om/IQuery
   (query [_]
-    [{:query/top-nav-categories [:label :href]}])
+    [{:query/top-nav-categories2 [:category/name :category/label :category/href]}])
   Object
   (toggle-filter [this category]
     (let [{:keys [active]} (om/get-state this)]
@@ -62,7 +40,7 @@
 
   (render [this]
     (let [{:keys [active]} (om/get-state this)
-          {:query/keys [top-nav-categories]} (om/props this)]
+          {:query/keys [top-nav-categories2]} (om/props this)]
       (dom/div
         {:id "product-filters"}
         (dom/h3 (css/add-class :header) "Filter by Category")
@@ -71,7 +49,7 @@
           (menu/vertical
             (->> {:data-accordion-menu true}
                  (css/add-class :navigation))
-            (map (fn [{:keys [label href] :as top-nav-cat}]
+            (map (fn [{:category/keys [name label href] :as top-nav-cat}]
                    (let []
                      (menu/item
                        {:aria-expanded (some? active)}
@@ -81,11 +59,11 @@
                                        (dom/strong nil label))
                                 (dom/a
                                   (->> {:href    "#"
-                                        :onClick #(.toggle-filter this label)})
-                                  (if (= active label)
+                                        :onClick #(.toggle-filter this name)})
+                                  (if (= active name)
                                     (dom/span nil "+")
                                     (dom/span nil "-"))))
                        (submenu this top-nav-cat))))
-                 top-nav-categories)))))))
+                 top-nav-categories2)))))))
 
 (def ->ProductFilters (om/factory ProductFilters))
