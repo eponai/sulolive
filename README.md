@@ -4,7 +4,8 @@ Vancouver's local marketplace online
 
 ## Installation
 
-Download from http://example.com/FIXME.
+* Clone this project ```git clone git@github.com:jourmoney/sulo.git```
+* Navigate to the cloned sulo/ folder ```cd sulo```
 
 ## Usage
 ### Server
