@@ -169,7 +169,7 @@
 		}
 		ul {
 			border-top: 1px solid $medium-gray;
-			&.nested {
+			&.nested, ul {
 				border: none;
 			}
 			li.is-active {

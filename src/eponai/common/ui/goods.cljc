@@ -129,7 +129,15 @@
                  (css/show-for :large))
             ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
             (if (nil? top-category)
-              (vertical-category-menu navigation nil)
+              (menu/vertical
+                nil
+                (->> navigation
+                     (sort-by :category/name)
+                     (map (fn [category]
+                            (menu/item
+                              nil
+                              (dom/a {:href (:category/href category)}
+                                     (dom/span nil (products/category-display-name category))))))))
               (menu/vertical
                 nil
                 (menu/item
