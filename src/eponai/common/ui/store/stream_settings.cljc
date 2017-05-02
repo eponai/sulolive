@@ -5,7 +5,7 @@
     [eponai.client.parser.message :as msg]
     [eponai.client.chat :as client.chat]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [debug]]
+    [taoensso.timbre :refer [debug warn]]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.chat :as chat]
     [eponai.common.ui.elements.menu :as menu]
@@ -99,25 +99,28 @@
                              (css/add-class :live))
                     (condp = stream-state
                       :stream.state/online "Online"
-                      :stream.state/live "Live"))))
+                      :stream.state/live "Live"
+                      (warn "Unknown stream-state: " stream-state)))))
               (grid/column
                 (css/text-align :right)
-                (condp = stream-state
-                  :stream.state/online
+                (cond
+                  (= stream-state :stream.state/online)
                   (dom/a
                     (->> (css/button {:onClick #(om/transact! this [(list 'stream/go-live {:store-id (:db/id store)}) :query/stream])})
                          (css/add-class :highlight))
                     (dom/strong nil "Go live!"))
-                  :stream.state/offline
+                  (or (nil? stream-state) (= stream-state :stream.state/offline))
                   (dom/a
                     (css/button-hollow {:onClick #(binding [parser/*parser-allow-local-read* false]
                                                    (om/transact! this [{:query/stream [:stream/state]}]))})
                     (dom/i {:classes ["fa fa-refresh fa-fw"]})
                     (dom/strong nil "Refresh"))
-                  :stream.state/live
+                  (= stream-state :stream.state/live)
                   (dom/a
                     (css/button-hollow)
-                    (dom/strong nil "Stop streaming"))))))
+                    (dom/strong nil "Stop streaming"))
+                  :else
+                  (warn "Unknown stream-state: " stream-state)))))
 
           (callout/callout
             nil

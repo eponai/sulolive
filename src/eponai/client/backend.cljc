@@ -106,7 +106,8 @@
       (loop [retry-time-ms 500]
         (let [{:keys  [method url opts response-fn post-merge-fn shutting-down?
                        redirect-fn]
-               ::keys [skip?]}
+               ::keys [skip?]
+               :as reified-remote}
               ((get remote->send remote-key) query)]
           (if skip?
             (do (debug "Skipping send of query: " query)
@@ -120,7 +121,12 @@
                                  :else
                                  (<! (send (condp = method
                                              :get http/get
-                                             :post http/post)
+                                             :post http/post
+                                             (throw (ex-info (str "unknown send method: " method)
+                                                             {:method     method
+                                                              :remote     reified-remote
+                                                              :remote-key remote-key
+                                                              :query      query})))
                                            url opts))))]
               (cond
                 (true? success)

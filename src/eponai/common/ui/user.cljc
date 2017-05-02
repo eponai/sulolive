@@ -8,7 +8,7 @@
     [eponai.common.ui.user.profile-edit :as pe]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug warn]]))
 
 (defui User
   static om/IQuery
@@ -39,6 +39,7 @@
                                                          {:user user}))
             :user (profile/->Profile (om/computed {}
                                                   {:user             user
-                                                   :is-current-user? (= (:db/id user) (:db/id auth))}))))))))
+                                                   :is-current-user? (= (:db/id user) (:db/id auth))}))
+            (warn "Unknown route: " route)))))))
 
 (def ->User (om/factory User))

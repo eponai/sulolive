@@ -84,7 +84,9 @@
                                        (when (= type :validation)
                                          (condp = cause
                                            :exp ::token-expired
-                                           :signature ::token-manipulated))))]
+                                           :signature ::token-manipulated
+                                           (do (warn "unknown validation type: " type)
+                                               nil)))))]
               token-failure
               (do
                 ;; TODO: Return nil to support multiple auth backends?
