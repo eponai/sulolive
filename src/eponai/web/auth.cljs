@@ -5,9 +5,12 @@
     [cemerick.url :as url]
     [taoensso.timbre :refer [debug]]))
 
+(def urls-redirecting-to-index
+  (into #{} (map routes/url) [:login :coming-soon :sell-soon]))
+
 (defn- redirect-to-after-login []
   (let [current-url (str js/window.location.pathname)]
-    (if (= current-url (routes/url :login))
+    (if (contains? urls-redirecting-to-index current-url)
       (routes/url :index)
       current-url)))
 

@@ -95,6 +95,8 @@
 
 (defn auth-roles [handler]
   (cond
+    (#{:coming-soon :sell-soon} handler)
+    ::auth/public
     (= handler :store-dashboard)
     ::auth/store-owner
     (= (namespace handler) "store-dashboard")
@@ -104,7 +106,7 @@
     (= handler :checkout)
     ::auth/any-user
     :else
-    ::auth/public))
+    ::auth/any-user))
 
 (defn path
   "Takes a route and its route-params and returns a path"

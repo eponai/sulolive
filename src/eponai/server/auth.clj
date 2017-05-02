@@ -176,8 +176,10 @@
                      (buddy/error auth-val))))
      :on-error (fn [request v]
                  (debug "Unable to authorize user: " v)
-                 (if (nil? (:auth v))
+                 (cond
+                   ;; For now we send users to :coming-soon
                    ;; TODO: Prompt login then redirect back to where the user came from.
-                   (prompt-login request)
+                   (nil? (:auth v))
+                   (redirect request (routes/path :coming-soon))
+                   :else
                    (unauthorize request)))}))
-

@@ -130,7 +130,7 @@
   (GET "/auth" request (auth/authenticate request))
 
   (GET "/logout" request (-> (auth/redirect request (or (get-in request [:params :redirect])
-                                                        (routes/path :index)))
+                                                        (routes/path :coming-soon)))
                              (auth/remove-auth-cookie)))
 
   (GET "/devcards" request
