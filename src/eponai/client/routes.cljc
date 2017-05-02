@@ -51,17 +51,20 @@
 
   Example:
   (set-url! this :store-dashboard/product {:store-id 1 :dashboard-option products :product-id 2})"
-  [component route route-params]
-  {:pre [(om/component? component)]}
-  (if-let [bidi-url (url route route-params)]
-    (do (debug "Will set url: " bidi-url " created with " [:route route :route-params route-params])
-        ;; There's no URL to set in clj land, so do nothing.
-        #?(:cljs
-           (if-let [history (:shared/browser-history (om/shared component))]
-             (pushy/set-token! history bidi-url)
-             (warn "No history found in shared for component: " component
-                   ". Make sure :history was passed to the reconciler."))))
-    (warn "Unable to create a url with route: " route " route-params: " route-params)))
+  ([component url]
+   {:pre [(or (nil? url) (string? url))]}
+   #?(;; There's no URL to set in clj land, so do nothing.
+      :clj nil
+      :cljs (if-let [history (:shared/browser-history (om/shared component))]
+              (pushy/set-token! history url)
+              (warn "No history found in shared for component: " component
+                    ". Make sure :history was passed to the reconciler."))))
+  ([component route route-params]
+   {:pre [(om/component? component)]}
+   (if-let [bidi-url (url route route-params)]
+     (do (debug "Will set url: " bidi-url " created with " [:route route :route-params route-params])
+         (set-url! component bidi-url))
+     (warn "Unable to create a url with route: " route " route-params: " route-params))))
 
 (defn current-route [x]
   (-> (db/to-db x)

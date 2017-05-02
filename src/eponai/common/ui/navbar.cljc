@@ -202,11 +202,11 @@
                                   (css/button-hollow))
                              (dom/span nil "Sign in"))))))))
 
-(defn sidebar-category [component route route-params title]
+(defn sidebar-category [component href title]
   (menu/item
     (css/add-class :category)
     (my-dom/a {:onClick #(do (.close-sidebar component)
-                             (routes/set-url! component route route-params))}
+                             (routes/set-url! component href))}
               (my-dom/span nil title))))
 
 (defn sidebar-highlight [component route route-params title]
@@ -226,7 +226,7 @@
               (my-dom/span nil title))))
 
 (defn sidebar [component]
-  (let [{:query/keys [auth owned-store]} (om/props component)]
+  (let [{:query/keys [auth owned-store navigation]} (om/props component)]
     (my-dom/div
       (css/add-class :sidebar-container {:onClick #(.close-sidebar component)})
       (my-dom/div {:classes [:sidebar-overlay]})
@@ -246,9 +246,9 @@
             (menu/vertical
               nil
               (map
-                (fn [c]
-                  (sidebar-category component :products/categories {:category c} (s/capitalize c)))
-                ["women" "men" "kids" "home" "art"])))
+                (fn [{:category/keys [name href]}]
+                  (sidebar-category component href (s/capitalize name)))
+                navigation)))
           (when (some? auth)
             (menu/item nil
                        (my-dom/label nil "Your account")
