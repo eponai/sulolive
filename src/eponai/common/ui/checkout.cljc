@@ -27,7 +27,7 @@
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:query/checkout [:db/id
-                       {:cart/_items [:user/_cart]}
+                       {:user.cart/_items [:user/_cart]}
                        :store.item.sku/variation
                        :store.item.sku/inventory
                        {:store.item/_skus [:store.item/price

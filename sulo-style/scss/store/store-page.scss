@@ -52,10 +52,22 @@
 		}
 	}
 	#shop {
-		ul.menu.navigation {
-			font-weight: 500;
+		.menu-container {
+			overflow-x: scroll;
 			border-top: 1px solid $light-gray;
 			border-bottom: 1px solid $light-gray;
+			&::-webkit-scrollbar {
+     			height: 0;
+			}
+			&::-webkit-scrollbar-track {
+      			background: transparent;
+			}
+			&::-webkit-scrollbar-thumb {
+      			background: $primary-color;
+			}
+		}
+		ul.menu.navigation {
+			font-weight: 500;
 		}
 		.about {
 			border-right: 1px solid $medium-gray;

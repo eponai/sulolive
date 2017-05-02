@@ -21,6 +21,7 @@
                               ["/" [#"\w+" :order-id]]  :store-dashboard/order}
                  "/stream"   :store-dashboard/stream}
    "/nav"       {"/about"                          :store/about
+                 "/policies"                       :store/policies
                  ["/" [#"(\d|\w|-)+" :navigation]] :store/navigation}})
 
 (def user-routes
@@ -44,7 +45,7 @@
    "/review"   :checkout/review})
 
 (defn- branch-handler [handler param sub-handler]
-  {"" handler
+  {""          handler
    ["/" param] sub-handler})
 
 (def browse-categories

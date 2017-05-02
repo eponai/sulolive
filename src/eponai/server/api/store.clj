@@ -10,7 +10,7 @@
 
 
 (defn create [{:keys [state auth system]} {:keys [country name]}]
-  (let [stripe-account (stripe/create-account (:system/stripe system) country)
+  (let [stripe-account (stripe/create-account (:system/stripe system) {:country country})
         new-store {:db/id         (db/tempid :db.part/user)
                    :store/uuid    (db/squuid)
                    :store/profile {:store.profile/name name}

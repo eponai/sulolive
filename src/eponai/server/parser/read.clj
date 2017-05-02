@@ -46,7 +46,7 @@
   [{:keys [db db-history query auth]} _ {:keys [store-id]}]
   {:auth ::auth/any-user}
   {:value (db/pull-all-with db query {:where   '[[?u :user/cart ?c]
-                                                 [?c :cart/items ?e]
+                                                 [?c :user.cart/items ?e]
                                                  [?i :store.item/skus ?e]
                                                  [?s :store/items ?i]]
                                       :symbols {'?s store-id}})})

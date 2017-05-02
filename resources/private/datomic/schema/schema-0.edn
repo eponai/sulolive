@@ -27,6 +27,7 @@
   :db/ident              :user/cart
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
+  :db/isComponent        true
   :db/doc                "User owning the cart."
   :db.install/_attribute :db.part/db}
 
@@ -359,7 +360,7 @@
  ;; ################# Cart
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :cart/items
+  :db/ident              :user.cart/items
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/many
   :db/doc                "Cart items."

@@ -14,8 +14,8 @@
 ;;     eponai.<platform>.parser.mutate
 
 (defn logged-in-update-cart [state item]
-  (let [cart (db/one-with (db/db state) {:where '[[?e :cart/items]]})]
-    (db/transact-one state [:db/add cart :cart/items (:db/id item)])))
+  (let [cart (db/one-with (db/db state) {:where '[[?e :user.cart/items]]})]
+    (db/transact-one state [:db/add cart :user.cart/items (:db/id item)])))
 
 (defmethod client-mutate 'shopping-bag/add-item
   [{:keys [target state]} _ {:keys [item]}]

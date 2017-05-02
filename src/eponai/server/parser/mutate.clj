@@ -55,9 +55,9 @@
                    cart (db/one-with (db/db state) {:where   '[[?u :user/cart ?e]]
                                                     :symbols {'?u user-id}})]
                (if (some? cart)
-                 (db/transact-one state [:db/add cart :cart/items (c/parse-long sku)])
-                 (let [new-cart {:db/id      (db/tempid :db.part/user)
-                                 :cart/items [(c/parse-long sku)]}]
+                 (db/transact-one state [:db/add cart :user.cart/items (c/parse-long sku)])
+                 (let [new-cart {:db/id           (db/tempid :db.part/user)
+                                 :user.cart/items [(c/parse-long sku)]}]
                    (db/transact state [new-cart
                                        [:db/add user-id :user/cart (:db/id new-cart)]])))))})
 
