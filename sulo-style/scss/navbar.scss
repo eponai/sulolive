@@ -143,7 +143,16 @@
 	font-weight: bold;
 	font-size: 1rem;
 	color: $black;
+	display: flex;
+	flex-direction: column;
 
+	small {
+		font-size: 50%;
+		margin-top: 0.1rem;
+		color: map-get($foundation-palette, primary);
+		// font-style: italic;
+		// text-transform: lowercase;
+	}
 	@include breakpoint(medium) {
 		font-size: 1.2rem;
 	}

@@ -153,7 +153,8 @@
 (defn navbar-brand [& [href]]
   (menu/item-link {:href (or href "/")
                    :id   "navbar-brand"}
-                  (dom/span nil "Sulo")))
+                  (dom/span nil "Sulo")
+                  (dom/small nil "Preview")))
 
 (defn coming-soon-navbar [component]
   (let [{:keys [coming-soon? right-menu on-live-click]} (om/get-computed component)]

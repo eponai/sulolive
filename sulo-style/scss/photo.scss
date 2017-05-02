@@ -6,6 +6,12 @@ $primary-color: map-get($foundation-palette, primary);
 	}
 }
 
+.photo-small {
+  filter: blur(50px);
+  /* this is needed so Safari keeps sharp edges */
+  transform: scale(1);
+}
+
 .photo-container {
 	// border: 1px solid $light-gray;
 	// box-shadow: 0 1px 3px 0 rgba($primary-color, 0.1);
@@ -82,6 +88,7 @@ $primary-color: map-get($foundation-palette, primary);
 	position: relative;
 
 	border-radius: inherit;
+	overflow: hidden;
 
 	img {
 		border-radius: inherit;
