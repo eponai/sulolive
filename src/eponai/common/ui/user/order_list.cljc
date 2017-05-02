@@ -108,7 +108,7 @@
         {:id "sulo-user-order-list"}
         (grid/row-column
           nil
-          (common/wip-label this)
+
           (dom/h1 nil "My Orders")
           (map #(order-element this %) orders)
           )))))

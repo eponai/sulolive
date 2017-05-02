@@ -80,7 +80,7 @@
 
       (grid/row-column
         {:id "sulo-account-settings"}
-        (common/wip-label this)
+
         (dom/h3 nil "Settings")
         (grid/row
           (css/add-class :collapse)

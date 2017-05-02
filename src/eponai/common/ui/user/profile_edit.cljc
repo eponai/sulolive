@@ -51,7 +51,7 @@
           {:keys [user]} (om/get-computed this)
           {:keys [queue-photo photo-menu-open?]} (om/get-state this)]
       (my-dom/div {:id "sulo-profile-edit"}
-        (common/wip-label this)
+
         (grid/row-column
           nil
           (dom/h1 nil "Edit Profile"))

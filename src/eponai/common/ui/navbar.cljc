@@ -460,9 +460,11 @@
                             (dom/div #js {:className "top-bar-left"}
                               (menu/horizontal
                                 nil
-                                (menu/item-link {:href "/"
-                                                 :id   "navbar-brand"}
-                                                (dom/span nil "Sulo")))))
+                                (navbar-brand)
+                                ;(menu/item-link {:href "/"
+                                ;                 :id   "navbar-brand"}
+                                ;                (dom/span nil "Sulo"))
+                                )))
                           (or (= route :coming-soon) (= route :sell-soon))
                           (coming-soon-navbar this)
                           (and (some? route) (= (namespace route) "help"))

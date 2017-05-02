@@ -163,15 +163,6 @@
       (when-not no-footer?
         (footer nil)))))
 
-(defn wip-label [_]
-  (dom/div
-    (css/text-align :center)
-    (dom/span (->> {:id    "wip-tooltip"
-                    :title "This page is still a work in progress and might have unexpected behaviors. Thank you for understanding."}
-                   (css/add-class :label)
-                   (css/add-class :wip-label)
-                   (css/add-class :primary)) "Work in progress")))
-
 
 (defn is-new-order? [component]
   (let [{:query/keys [current-route]} (om/props component)]

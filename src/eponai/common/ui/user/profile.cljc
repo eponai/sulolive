@@ -30,7 +30,7 @@
           photo-url (or (get-in user [:user/profile :user.profile/photo :photo/path]) photo-url)]
       (dom/div
         {:id "sulo-profile"}
-        (common/wip-label this)
+
         (dom/div
           (css/add-class :header)
 
