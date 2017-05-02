@@ -57,7 +57,8 @@
      {:proxy/activate-account (om/get-query activate/Activate)}
      {:proxy/payouts (om/get-query payouts/Payouts)}
      {:proxy/general (om/get-query general/General)}
-     :query/current-route])
+     :query/current-route
+     :query/messages])
 
   Object
 

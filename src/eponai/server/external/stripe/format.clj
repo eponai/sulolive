@@ -85,7 +85,7 @@
        :stripe/external-accounts  (map ext-account* (:data (:external_accounts account)))
        :stripe/legal-entity       (stripe->legal-entity (:legal_entity account))
        :stripe/payouts-enabled?   (:transfers_enabled account)
-       :stripe/payout-schedule    (payout-schedule* (:transfer_schedule account))
+       :stripe/payout-schedule    (payout-schedule* (:payout_schedule account))
        :stripe/verification       (stripe->verification (:verification account))})))
 
 (defn input->legal-entity [legal-entity]

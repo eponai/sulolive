@@ -18,7 +18,7 @@
 	}
 	.page-content {
 		padding-bottom: 0;
-		height: 100%;
+		// height: 100%;
 		flex: 1 0 auto;
 		display: flex;
 		flex-direction: column;
@@ -28,17 +28,24 @@
 		flex: 1 0 auto;
 		background-position: center top;
 		img {
-			object-position: 50% 0%;
+			display: none;
+			// object-position: 50% 0%;
 		}
 	}
 	.photo.cover {
+		display: flex;
+		flex-direction: column;
 		.overlay {
-			padding-top: 8rem;
-			position: absolute;
+			padding: 4rem 0;
+			@include breakpoint(large) {
+				padding: 10rem 0;
+			}
+			flex: 1 0 auto;
+			// position: absolute;
 			background: rgba($white, 0.5);
-			height: 100%;
-			width: 100%;
-			top: 0;
+			// height: 100%;
+			// width: 100%;
+			// top: 0;
 			// display: flex;
 			// align-items: center;
 			// justify-content: center;
