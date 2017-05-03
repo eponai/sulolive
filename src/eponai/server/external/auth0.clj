@@ -86,20 +86,19 @@
   (secret [this]
     (.getBytes "sulo-dev-secret"))
   (authenticate [this code state]
-    (if-let [email (:user/email (db/lookup-entity (db/db (:conn (:datomic this))) [:user/email code]))]
-      (let [now (quot (System/currentTimeMillis) 1000)
-            tomorrow (+ now (* 24 3600))
-            auth-data {:email          email
-                       :email_verified true
-                       :iss            "localhost"
-                       :iat            now
-                       :exp            tomorrow}
-            jwt-secret (secret this)]
-        (debug "Authing self-signed jwt token on localhost with auth-data: " auth-data)
-        {:token        (jwt/sign auth-data jwt-secret)
-         :token-type   "Bearer"
-         :redirect-url state})
-      {:redirect-url state}))
+    (let [email code
+          now (quot (System/currentTimeMillis) 1000)
+          tomorrow (+ now (* 24 3600))
+          auth-data {:email          email
+                     :email_verified true
+                     :iss            "localhost"
+                     :iat            now
+                     :exp            tomorrow}
+          jwt-secret (secret this)]
+      (debug "Authing self-signed jwt token on localhost with auth-data: " auth-data)
+      {:token        (jwt/sign auth-data jwt-secret)
+       :token-type   "Bearer"
+       :redirect-url state}))
   (refresh [this token]
     (letfn [(token->refreshed-token [token]
               (let [{:keys [email]} (jwt/unsign token (secret this))]
