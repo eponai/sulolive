@@ -351,7 +351,7 @@
                   {:defaultValue (:country-spec/default-currency stripe-country-spec)
                    :id (:field.external-account/currency v/form-inputs)}
                   (map (fn [[k v]]
-                         (let [^String code k]
+                         (let [code (when k (name k))]
                            (dom/option {:value code} code)))
                        (:country-spec/supported-bank-account-currencies stripe-country-spec)))))
             (grid/row

@@ -102,7 +102,7 @@
                     (tabs-title this :store-dashboard/settings#activate
                                 (css/add-class :activate)
                                 (dom/i {:classes ["fa fa-check fa-fw"]})
-                                (dom/small nil "Activate account"))
+                                (dom/small nil (dom/s nil "Activate account")))
                     (not-empty (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed]))
                     (tabs-title this :store-dashboard/settings#activate
                                 (css/add-class :activate)
