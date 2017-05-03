@@ -104,7 +104,7 @@
       (debug "Order receipt: " order)
       (dom/div
         {:id "sulo-order-receipt"}
-        (common/wip-label this)
+
         (grid/row-column
           nil
           (menu/breadcrumbs

@@ -1,4 +1,7 @@
 
+a.disabled {
+	pointer-events: none !important;
+}
 #sulo-account-settings {
 	input, select {
 		&[disabled] {
@@ -118,6 +121,9 @@
 			}
 			a {
 				transition: all .25s ease-in-out;
+				&[disabled] {
+					cursor: not-allowed;
+				}
 			}
 			&.is-active, &:hover {
 				border-right: 2px solid $primary-color;

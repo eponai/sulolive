@@ -76,7 +76,9 @@
               (grid/column
                 (css/add-class :shrink)
                 (dom/a
-                  (->> {:onClick #(om/update-state! component assoc :modal :payout-schedule)}
+                  (->> {:onClick #(om/update-state! component assoc :modal :payout-schedule)
+                        :aria-disabled true}
+                       (css/add-class :disabled)
                        (css/button-hollow)
                        (css/add-class :small))
 
@@ -357,13 +359,16 @@
                                      (css/add-class :small)
                                      (css/add-class ::css/color-alert)) (dom/span nil "Delete")))
                             (dom/a
-                              (->> {:onClick #(om/update-state! this assoc :modal :bank-account :modal-object bank-acc)}
+                              (->> {:onClick #(om/update-state! this assoc :modal :bank-account :modal-object bank-acc)
+                                    :aria-disabled true}
+                                   (css/add-class :disabled)
                                    (css/button-hollow)
                                    (css/add-class :small)) (dom/span nil "Edit"))
                             )))))
                   external-accounts)
                 (dom/a
-                  (css/button-hollow)
+                  (->> (css/button-hollow {:aria-disabled true})
+                       (css/add-class :disabled))
                   (dom/span nil "Add bank account..."))))
             (when (= modal :bank-account)
               (let [on-close #(om/update-state! this dissoc :modal :modal-object :stripe-validation)

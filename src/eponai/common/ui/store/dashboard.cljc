@@ -299,7 +299,7 @@
             {:id "sulo-main-dashboard"}
             (grid/row-column
               nil
-              (common/wip-label this)
+
               (dom/h3 nil (dom/span nil "Dashboard ")))
             (grid/row
               (css/align :center)
