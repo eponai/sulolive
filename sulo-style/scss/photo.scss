@@ -6,16 +6,10 @@ $primary-color: map-get($foundation-palette, primary);
 	}
 }
 
-.photo-small {
-  filter: blur(50px);
-  /* this is needed so Safari keeps sharp edges */
-  transform: scale(1);
-}
-
 .photo-container {
 	// border: 1px solid $light-gray;
 	// box-shadow: 0 1px 3px 0 rgba($primary-color, 0.1);
-	background: $light-gray;
+	background: rgba($light-gray, 0.2);
 	flex: 1;
 	display: flex;
 	position: relative;
@@ -99,6 +93,23 @@ $primary-color: map-get($foundation-palette, primary);
 		height: 100%;
 		width: 100%;
 		object-fit: cover;
+		&.small {
+			transition: opacity .5s ease-out .5s;
+			opacity: 1;
+			// filter: blur(50px);
+  				/* this is needed so Safari keeps sharp edges */
+  			transform: scale(1);
+			&.loaded {
+				// opacity: 0;
+			}
+		}
+		&.main {
+			opacity: 0;
+			transition: opacity .25s ease-in;
+			&.loaded {
+				opacity: 1;
+			}
+		}
 	}
 	&.square {
 		padding-top: 100%;		

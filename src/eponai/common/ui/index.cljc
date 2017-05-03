@@ -3,6 +3,7 @@
     [eponai.common.ui.common :as common]
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.elements.photo :as photo]
+    [eponai.web.ui.photo :as p]
     [eponai.common.ui.product-item :as pi]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
@@ -38,22 +39,22 @@
         nil
         (grid/column
           (cond->> (->> (grid/column-size {:small 9 :medium 8})
-                       (css/text-align align))
-                  (= align :right)
-                  (grid/column-offset {:small 3 :medium 4}))
+                        (css/text-align align))
+                   (= align :right)
+                   (grid/column-offset {:small 3 :medium 4}))
           primary)
         (grid/column
           (css/align :right)
           secondary)))))
 
-(defn collection-element [{:keys [href url title full?]}]
+(defn collection-element [{:keys [href url title full? url-small photo-id]}]
   ;; Use the whole thing as hover elem
   (my-dom/a
     {:href    href
      :classes [:full :category-photo]}
     (photo/with-overlay
       nil
-      (photo/photo {:src url})
+      (p/photo {:photo-id photo-id})
       ;(if full?
       ;  (photo/full {:src url})
       ;  (photo/photo {:src url}))
@@ -113,7 +114,7 @@
                             (css/add-class :search-container))
                        (div (->> (css/grid-column)
                                  (css/grid-column-size {:small 12 :medium 8}))
-                            (dom/input #js {:className "drop-shadow"
+                            (dom/input #js {:className   "drop-shadow"
                                             :placeholder "What are you looking for?"
                                             :type        "text"
                                             :value       (or input-search "")
@@ -177,27 +178,27 @@
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
-                                             (collection-element {:href (routes/url :browse/category {:top-category "home"})
-                                                                  :url   (photos/transform "static/home" :transformation/preview)
-                                                                  :title "Home"}))
+                                             (collection-element {:href     (routes/url :browse/category {:top-category "home"})
+                                                                  :photo-id "static/home"
+                                                                  :title    "Home"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
-                                             (collection-element {:href (routes/url :browse/gender {:sub-category "women"})
-                                                                  :url   (photos/transform "static/women" :transformation/preview)
-                                                                  :title "Women"}))
+                                             (collection-element {:href     (routes/url :browse/gender {:sub-category "women"})
+                                                                  :photo-id "static/women"
+                                                                  :title    "Women"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
-                                             (collection-element {:href (routes/url :browse/gender {:sub-category "men"})
-                                                                  :url  (photos/transform "static/men" :transformation/preview)
-                                                                        :title "Men"}))
+                                             (collection-element {:href      (routes/url :browse/gender {:sub-category "men"})
+                                                                  :photo-id  "static/men"
+                                                                  :title     "Men"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
-                                             (collection-element {:href (routes/url :browse/gender {:sub-category "unisex-kids"})
-                                                                  :url   (photos/transform "static/kids" :transformation/preview)
-                                                                  :title "Kids"}))))
+                                             (collection-element {:href     (routes/url :browse/gender {:sub-category "unisex-kids"})
+                                                                  :photo-id "static/kids"
+                                                                  :title    "Kids"}))))
                                     ;(map (fn [s t]
                                     ;       (collection-element {:url (first (:store/featured-img-src s))
                                     ;                            :title t}))
@@ -206,7 +207,7 @@
                                     ""
                                     )
 
-            (common/content-section {:href (routes/url :browse/all-items)
+            (common/content-section {:href  (routes/url :browse/all-items)
                                      :class "new-arrivals"}
                                     "New arrivals"
                                     (grid/row

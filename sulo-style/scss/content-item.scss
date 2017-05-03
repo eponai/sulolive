@@ -15,35 +15,27 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 
 	&.stream-item {
 		.photo-container {
-			margin: 0;
-		}
-		.overlay-container {
-			margin-bottom: 0.5rem;
-
 			.overlay {
-				// transition: background .2s ease-in-out;
-				&:hover {
-					// background: rgba($black, 0.5);
-					.content .video {
-						height: 5rem;
-						width: 5rem;
-						font-size: 1.5rem;
-					}
-				}
 				.content {
 					padding: $global-padding;
-					display: flex;
-					justify-content: center;
 					.video {
+						$color: $white;
+						background: rgba($color, 0.85);
 						box-shadow: $box-shadow;
-						display: flex;
-						align-items: center;
-						justify-content: center;
 						border-radius: 50%;
 						height: 4rem;
 						width: 4rem;
+						display: flex;
+						align-items: center;
+						justify-content: center;
 						transition: all .25s ease-in-out;
-						background: rgba($white, 0.85);
+					}
+				}
+				&:hover {
+					.video {
+						height: 5rem;
+						width: 5rem;
+						font-size: 1.5rem;
 					}
 				}
 			}

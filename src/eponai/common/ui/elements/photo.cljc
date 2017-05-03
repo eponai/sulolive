@@ -6,14 +6,17 @@
     [taoensso.timbre :refer [debug error warn]]))
 
 ;; Element helper functions
-(defn- photo* [{:keys [src classes]} & content]
+(defn- photo* [{:keys [src classes src-small]} & content]
   (if-not (string? src)
     (warn "Ignoring invalid photo src type, expecting a URL string. Got src: " src)
-    (apply dom/div
-           {:classes (conj classes ::css/photo)
-            :style   {:backgroundImage (str "url(" src ")")}}
-           (dom/img {:src src})
-           content)))
+    (dom/div
+      {:classes (conj classes ::css/photo)
+       :style   {:backgroundImage (str "url(" src ")")}}
+      (when src-small
+        (dom/img {:src     src-small
+                  :classes ["photo-small"]}))
+      (dom/img {:src src})
+      content)))
 
 (defn- photo-container [opts & content]
   (dom/div (css/add-class ::css/photo-container opts) content))
