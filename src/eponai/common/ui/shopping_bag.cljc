@@ -146,7 +146,7 @@
               (icons/empty-shopping-bag)
               ;(dom/p (css/add-class :header))
               (dom/a
-                (->> {:href (routes/url :products/all-categories)}
+                (->> {:href (routes/url :browse/all-items)}
                      (css/button-hollow))
                 (dom/span nil "Go to the market - start shopping")))))))))
 
