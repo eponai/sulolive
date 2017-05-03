@@ -153,6 +153,15 @@
              (db/transact state [{:stream/store store-id
                                   :stream/state :stream.state/live}]))})
 
+(defmutation stream/go-offline
+  [{:keys [state auth] :as env} k {:keys [store-id] :as p}]
+  {:auth {::auth/store-owner store-id}
+   :resp {:success "Went offline!"
+          :error   "Could not go offline"}}
+  {:action (fn []
+             (db/transact state [{:stream/store store-id
+                                  :stream/state :stream.state/offline}]))})
+
 ;########### STORE @############
 (defmutation store/update-info
   [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [store/profile] :as store}]

@@ -117,7 +117,7 @@
                     (dom/strong nil "Refresh"))
                   (= stream-state :stream.state/live)
                   (dom/a
-                    (css/button-hollow)
+                    (css/button-hollow {:onClick #(om/transact! this [(list 'stream/go-offline {:store-id (:db/id store)}) :query/stream])})
                     (dom/strong nil "Stop streaming"))
                   :else
                   (warn "Unknown stream-state: " stream-state)))))

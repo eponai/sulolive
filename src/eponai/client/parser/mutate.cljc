@@ -155,6 +155,11 @@
   (when target
     {:remote true}))
 
+(defmethod client-mutate 'stream/go-offline
+  [{:keys [state target]} _ {:keys [store-id]}]
+  (when target
+    {:remote true}))
+
 (defmethod client-mutate 'user/checkout
   [{:keys [target]} k p]
   (if target
