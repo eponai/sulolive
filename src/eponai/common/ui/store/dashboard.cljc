@@ -65,9 +65,9 @@
     (keyword ns (first path))))
 
 (defn sub-navbar [component]
-  (let [{:query/keys [current-route store]} (om/props component)
-        {:keys [route]} current-route
-        store-id (:db/id store)
+  (let [{:query/keys [current-route]} (om/props component)
+        {:keys [route route-params]} current-route
+        store-id (:store-id route-params)
         nav-breakpoint :medium]
     (dom/div
       (->> {:id "store-navbar"}
@@ -121,10 +121,10 @@
                 (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]})))))))))
 
 (defn store-info-element [component]
-  (let [{:query/keys [store stripe-account]} (om/props component)
+  (let [{:query/keys [store stripe-account current-route]} (om/props component)
         {:store/keys [profile]} store
         {store-name :store.profile/name} profile
-        store-id (:db/id store)
+        store-id (get-in current-route [:route-params :store-id])
         ;; Implement a :query/stream-by-store-id ?
         stream-state (or (-> store :stream/_store first :stream/state) :stream.state/offline)]
 
@@ -151,7 +151,7 @@
       (callout/callout
         (css/add-class :stream-status)
         (dom/a
-          (->> (css/button-hollow {:href (routes/url :store-dashboard/stream {:store-id (:db/id store)})})
+          (->> (css/button-hollow {:href (routes/url :store-dashboard/stream {:store-id store-id})})
                (css/add-class :primary))
                (dom/span nil "Stream status")
                (dom/span
@@ -169,7 +169,7 @@
               status (if (some? disabled-reason) :alert :green)]
           (dom/a
             (->> (css/button-hollow {:href (when (= status :unverified)
-                                             (routes/url :store-dashboard/settings#activate {:store-id (:db/id store)}))})
+                                             (routes/url :store-dashboard/settings#activate {:store-id store-id}))})
                  (css/add-class :primary))
             (dom/span nil "Account status")
             (if (some? status)
@@ -180,9 +180,10 @@
               (dom/i {:classes ["fa fa-spinner fa-spin"]}))))))))
 
 (defn verification-status-element [component]
-  (let [{:query/keys [stripe-account store]} (om/props component)
+  (let [{:query/keys [stripe-account current-route]} (om/props component)
         {:stripe/keys [charges-enabled? payouts-enabled? verification]} stripe-account
         {:stripe.verification/keys [due-by fields-needed disabled-reason]} verification
+        store-id (get-in current-route [:route-params :store-id])
         is-alert? (or (false? charges-enabled?) (false? payouts-enabled?) (when (some? due-by) (< due-by (date/current-secs))))
         is-warning? (and (not-empty fields-needed) (some? due-by))
 
@@ -217,12 +218,12 @@
                   (some? due-by)
                   (dom/p nil
                          (dom/span nil "More information needs to be collected to keep this account enabled. Please ")
-                         (dom/a {:href (routes/url :store-dashboard/settings#activate {:store-id (:db/id store)})} "provide the required information")
+                         (dom/a {:href (routes/url :store-dashboard/settings#activate {:store-id store-id})} "provide the required information")
                          (dom/span nil " to prevent disruption in service to this account."))
                   (some? fields-needed)
                   (dom/p nil
                          (dom/span nil "If this account continues to process more volume, more information may need to be collected. To prevent disruption in service to this account you can choose to ")
-                         (dom/a {:href (routes/url :store-dashboard/settings#activate {:store-id (:db/id store)})} "provide the information")
+                         (dom/a {:href (routes/url :store-dashboard/settings#activate {:store-id store-id})} "provide the information")
                          (dom/span nil " proactively.")))
             ))))))
 
@@ -280,7 +281,7 @@
            :query/keys [store current-route stripe-account]
            :as         props} (om/props this)
           {:keys [route route-params]} current-route
-          store-id (:db/id store)]
+          store-id (get-in current-route [:route-params :store-id])]
 
       (common/page-container
         {:navbar navbar
