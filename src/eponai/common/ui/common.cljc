@@ -51,12 +51,7 @@
            (css/add-class :stream-item))
       (dom/a
         {:href store-link}
-        (photo/with-overlay
-          nil
-          (photo/square
-            {:src (:photo/path photo)})
-          (dom/div (css/add-class :video)
-                   (dom/i {:classes ["fa fa-play fa-fw"]}))))
+        (photo/stream-photo store))
       (dom/div
         (->> (css/add-class :text)
              (css/add-class :header))

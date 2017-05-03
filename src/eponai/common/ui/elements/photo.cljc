@@ -94,6 +94,16 @@
     (circle {:src photo-src
              :classes [:store-photo]})))
 
+(defn stream-photo [store]
+  (let [default-src "/assets/img/storefront.jpg"
+        photo-src (get-in store [:store/profile :store.profile/photo :photo/path] default-src)]
+    (with-overlay
+      nil
+      (square
+        {:src photo-src})
+      (dom/div (css/add-class :video)
+               (dom/i {:classes ["fa fa-play fa-fw"]})))))
+
 (defn user-photo [{:keys [user] :as opts}  & content]
   (let [default-src "/assets/img/storefront.jpg"
         photo-src (get-in user [:user/profile :user.profile/photo :photo/path] default-src)]
