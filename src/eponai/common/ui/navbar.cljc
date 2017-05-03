@@ -197,7 +197,7 @@
                               :classes  [:user-photo-item]
                               :href     "#"
                               :onClick  #(.open-dropdown component :dropdown/user)}
-                             (photo/user-photo {:user auth}))
+                             (photo/user-photo-tiny {:user auth}))
                            (my-dom/a
                              (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
                                   (css/button-hollow))
@@ -332,7 +332,7 @@
                     :href     "#"
                     :onClick  #(.open-dropdown component :dropdown/user)}
                    (css/show-for :large))
-              (photo/user-photo {:user auth}))
+              (photo/user-photo-tiny {:user auth}))
             (menu/item
               (css/show-for :large)
               (my-dom/a
@@ -346,7 +346,7 @@
                    (css/add-class :user-photo-item))
               (my-dom/a
                 {:href (routes/url :user {:user-id (:db/id auth)})}
-                (photo/user-photo {:user auth}))))
+                (photo/user-photo-tiny {:user auth}))))
           (menu/item
             nil
             (my-dom/a {:classes ["shopping-bag-icon"]
@@ -364,7 +364,7 @@
                                                      {:store/_items [{:store/profile [:store.profile/name]}]}]}]}]}
      {:query/auth [:db/id
                    :user/email
-                   {:user/profile [{:user.profile/photo [:photo/path]}]}]}
+                   {:user/profile [{:user.profile/photo [:photo/path :photo/id]}]}]}
      {:query/owned-store [:db/id
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.
@@ -462,6 +462,7 @@
                               (menu/horizontal
                                 nil
                                 (navbar-brand)
+                                ;(menu/item-link {:href "/"
                                 ;(menu/item-link {:href "/"
                                 ;                 :id   "navbar-brand"}
                                 ;                (dom/span nil "Sulo"))

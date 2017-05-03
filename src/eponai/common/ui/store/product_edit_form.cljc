@@ -273,6 +273,7 @@
                     (let [file-id (str "file-" i)
                           {:store.item.photo/keys [photo]} p
                           {:keys [in-queue?]} p
+
                           photo-url (or (:url p) (:photo/path photo) p)]
                       (grid/column
                         nil

@@ -83,9 +83,9 @@
   {:db/id      (d/tempid :db.part/user)
    :photo/path url})
 
-(defn item-photo [url index]
+(defn item-photo [p index]
   {:db/id                  (d/tempid :db.part/user)
-   :store.item.photo/photo (photo url)
+   :store.item.photo/photo (cf/add-tempid (select-keys p [:photo/path :photo/id]))
    :store.item.photo/index index})
 
 (defn inventory [i]

@@ -4,20 +4,21 @@
 	.page-container {
 		$color: map-get($foundation-palette, primary);
 		// background: rgba($color, 0.03);
+	}
 
+	.page-content-container {
+		.user-profile-photo {
+			margin: 1.75rem auto;
+			.photo-container {
+				max-width: 15rem;
+				min-width: 15rem;
+			}
+		}
 	}
 
 	tfoot {
 		background: $white;
 		font-size: 0.9rem;
-	}
-
-	.user-profile-photo {
-		margin: 1.75rem auto;
-		.photo-container {
-			max-width: 10rem;
-			min-width: 10rem;
-		}
 	}
 
 }

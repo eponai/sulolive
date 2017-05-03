@@ -36,7 +36,7 @@
     [:db/id
      :store.item/name
      :store.item/price
-     {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+     {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                           :store.item.photo/index]}
      {:store.item/skus [:db/id :store.item.sku/variation :store.item.sku/inventory]}
      :store.item/description
@@ -44,7 +44,7 @@
      {:store.item/category [:category/label
                             :category/path
                             :category/name]}
-     {:store/_items [{:store/profile [{:store.profile/photo [:photo/path]}
+     {:store/_items [{:store/profile [{:store.profile/photo [:photo/path :photo/id]}
                                       :store.profile/name]}]}])
   Object
   (initLocalState [_]
@@ -181,7 +181,7 @@
                    (css/add-class :store-info))
               (grid/column
                 (grid/column-size {:small 3 :medium 2})
-                (photo/store-photo store))
+                (photo/store-photo store :transformation/thumbnail))
 
               (grid/column
                 nil

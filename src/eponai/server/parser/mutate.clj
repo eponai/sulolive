@@ -18,7 +18,8 @@
     [eponai.server.external.aws-s3 :as s3]
     [eponai.common.format :as f]
     [eponai.common.ui.om-quill :as quill]
-    [eponai.common.auth :as auth]))
+    [eponai.common.auth :as auth]
+    [eponai.server.external.cloudinary :as cloudinary]))
 
 (defmacro defmutation
   "Creates a message and mutate defmethod at the same time.
@@ -82,7 +83,8 @@
   {:action (fn []
              (let [old-profile (db/one-with (db/db state) {:where   '[[?u :user/profile ?e]]
                                                            :symbols {'?u (:user-id auth)}})
-                   photo (f/photo (s3/upload-photo (:system/aws-s3 system) (:photo params)))]
+                   photo (f/add-tempid (cloudinary/upload-dynamic-photo (:system/cloudinary system) (:photo params)))]
+               (debug "UPloaded photo: " photo)
                (db/transact state [photo
                                    [:db/add old-profile :user.profile/photo (:db/id photo)]])))})
 

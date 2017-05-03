@@ -65,7 +65,7 @@
       uploaded
       (fn [{:keys [file]} c]
         (async/take! (http/post (cloudinary-endpoint "upload") {:form-params       {:file          file
-                                                                                    :upload_preset "pr24buag"}
+                                                                                    :upload_preset "product-photo"}
                                                                 :headers           {"X-Requested-With" "XMLHttpRequest"}
                                                                 :with-credentials? false})
                      (fn [response]

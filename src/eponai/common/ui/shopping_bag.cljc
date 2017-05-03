@@ -27,7 +27,7 @@
 
       (grid/column
         (grid/column-size {:small 3 :medium 2 :large 1})
-        (photo/store-photo s))
+        (photo/store-photo s :transformation/thumbnail))
 
       (grid/column
         (->> (grid/column-size {:small 12})

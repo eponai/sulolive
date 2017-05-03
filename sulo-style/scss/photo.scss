@@ -15,6 +15,7 @@ $primary-color: map-get($foundation-palette, primary);
 .photo-container {
 	// border: 1px solid $light-gray;
 	// box-shadow: 0 1px 3px 0 rgba($primary-color, 0.1);
+	background: $light-gray;
 	flex: 1;
 	display: flex;
 	position: relative;

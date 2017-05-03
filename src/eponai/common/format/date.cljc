@@ -171,7 +171,7 @@
 
 (defn current-secs []
   (let [now (c/to-long (now))]
-    #?(:clj  (with-precision 10
-               (/ now 1000))
-       :cljs (/ now 1000))))
+    #?(:clj  (int (with-precision 10
+                    (/ now 1000)))
+       :cljs (int (/ now 1000)))))
 

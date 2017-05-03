@@ -15,7 +15,8 @@
     [eponai.client.utils :as utils]
     [eponai.common.ui.icons :as icons]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.elements.grid :as grid]))
+    [eponai.common.ui.elements.grid :as grid]
+    [eponai.common.photos :as photos]))
 
 (defn top-feature [opts icon title text]
   (dom/div #js {:className "feature-item column"}
@@ -67,17 +68,17 @@
      {:query/featured-items [:db/id
                              :store.item/name
                              :store.item/price
-                             {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+                             {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                   :store.item.photo/index]}
                              {:store/_items [{:store/profile [:store.profile/name]}]}]}
      {:query/featured-stores [:db/id
                               {:store/profile [:store.profile/name
-                                               {:store.profile/photo [:photo/path]}]}
+                                               {:store.profile/photo [:photo/path :photo/id]}]}
                               :store/featured
                               :store/featured-img-src
-                              {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+                              {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                                          :store.item.photo/index]}]}]}
-     {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}]}]}])
+     {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id {:store/profile [:store.profile/name {:store.profile/photo [:photo/path :photo/id]}]}]}]}])
   Object
   (render [this]
     (let [{:keys [proxy/navbar query/featured-items query/featured-streams]} (om/props this)
@@ -177,25 +178,25 @@
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
                                              (collection-element {:href (routes/url :browse/category {:top-category "home"})
-                                                                  :url   "/assets/img/home-new.jpg"
+                                                                  :url   (photos/transform "static/home" :transformation/preview)
                                                                   :title "Home"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
                                              (collection-element {:href (routes/url :browse/gender {:sub-category "women"})
-                                                                  :url   "/assets/img/women-new.jpg"
+                                                                  :url   (photos/transform "static/women" :transformation/preview)
                                                                   :title "Women"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
                                              (collection-element {:href (routes/url :browse/gender {:sub-category "men"})
-                                                                  :url   "/assets/img/men-new.jpg"
-                                                                  :title "Men"}))
+                                                                  :url  (photos/transform "static/men" :transformation/preview)
+                                                                        :title "Men"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
                                              (collection-element {:href (routes/url :browse/gender {:sub-category "unisex-kids"})
-                                                                  :url   "/assets/img/kids-new.jpg"
+                                                                  :url   (photos/transform "static/kids" :transformation/preview)
                                                                   :title "Kids"}))))
                                     ;(map (fn [s t]
                                     ;       (collection-element {:url (first (:store/featured-img-src s))

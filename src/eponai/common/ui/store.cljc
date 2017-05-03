@@ -53,8 +53,8 @@
                                      :store.profile/description
                                      :store.profile/tagline
                                      :store.profile/return-policy
-                                     {:store.profile/photo [:photo/path]}
-                                     {:store.profile/cover [:photo/path]}]}]}
+                                     {:store.profile/photo [:photo/path :photo/id]}
+                                     {:store.profile/cover [:photo/path :photo/id]}]}]}
      {:query/store-items (om/get-query item/Product)}
      :query/current-route])
   Object
@@ -115,7 +115,7 @@
 
                 (grid/column
                   (grid/column-size {:small 12 :medium 2})
-                  (photo/store-photo store))
+                  (photo/store-photo store :transformation/thumbnail))
 
                 (grid/column
                   (css/add-class :shrink)

@@ -2,6 +2,7 @@
   (:require
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.dom :as dom]
+    [eponai.common.photos :as photos]
     [taoensso.timbre :refer [debug error warn]]))
 
 ;; Element helper functions
@@ -82,21 +83,33 @@
              [(photo* {:src     large
                        :classes [::css/photo-square]})
               (photo-container nil
-                               (photo* {:src mini-1
+                               (photo* {:src     mini-1
                                         :classes [::css/photo-square]})
-                               (photo* {:src mini-2
+                               (photo* {:src     mini-2
                                         :classes [::css/photo-square]}))])
-                 (partition 3 srcs))))
+           (partition 3 srcs))))
 
-(defn store-photo [store]
+(defn store-photo [store & [transformation]]
   (let [default-src "/assets/img/storefront.jpg"
-        photo-src (get-in store [:store/profile :store.profile/photo :photo/path] default-src)]
-    (circle {:src photo-src
+        {:photo/keys [path id]} (get-in store [:store/profile :store.profile/photo])
+        photo-src (cond (some? id)
+                        (photos/transform id (or transformation :transformation/thumbnail-large))
+                        (some? path)
+                        path
+                        :else
+                        default-src)]
+    (circle {:src     photo-src
              :classes [:store-photo]})))
 
 (defn stream-photo [store]
   (let [default-src "/assets/img/storefront.jpg"
-        photo-src (get-in store [:store/profile :store.profile/photo :photo/path] default-src)]
+        {:photo/keys [path id]} (get-in store [:store/profile :store.profile/photo])
+        photo-src (cond (some? id)
+                        (photos/transform id :transformation/thumbnail-large)
+                        (some? path)
+                        path
+                        :else
+                        default-src)]
     (with-overlay
       nil
       (square
@@ -104,16 +117,35 @@
       (dom/div (css/add-class :video)
                (dom/i {:classes ["fa fa-play fa-fw"]})))))
 
-(defn user-photo [{:keys [user] :as opts}  & content]
+(defn user-photo [{:keys [user transformation] :as opts} & content]
+  (debug "USer photo: " opts)
   (let [default-src "/assets/img/storefront.jpg"
-        photo-src (get-in user [:user/profile :user.profile/photo :photo/path] default-src)]
+        {:photo/keys [id path]} (get-in user [:user/profile :user.profile/photo])
+        photo-src (cond (some? id)
+                        (photos/transform id (or transformation :transformation/thumbnail-large))
+                        (some? path)
+                        path
+                        :else
+                        default-src)]
     (dom/div
-      (css/add-class :user-profile-photo (dissoc opts :user))
+      (css/add-class :user-profile-photo (dissoc opts :user :transformation))
       (circle {:src     photo-src
                :classes [:user-photo]}
               content))))
 
+(defn user-photo-tiny [opts & content]
+  (debug "USer photo tiny: " (assoc opts :transformation :transformation/thumbnail-tiny))
+  (user-photo
+    (assoc opts :transformation :transformation/thumbnail-tiny)
+    content))
+
 (defn product-photo [photo]
   (let [default-src "/assets/img/storefront.jpg"
-        photo-src (:photo/path photo default-src)]
+        {:photo/keys [id path]} photo
+        photo-src (cond (some? id)
+                        (photos/transform id :transformation/thumbnail-large)
+                        (some? path)
+                        path
+                        :else
+                        default-src)]
     (square {:src photo-src})))

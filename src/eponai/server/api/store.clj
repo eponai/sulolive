@@ -5,7 +5,8 @@
     [eponai.server.external.aws-s3 :as s3]
     [eponai.server.external.stripe :as stripe]
     [taoensso.timbre :refer [debug info]]
-    [eponai.common.format :as cf])
+    [eponai.common.format :as cf]
+    [eponai.server.external.cloudinary :as cloudinary])
   (:import (com.stripe.exception CardException)))
 
 
@@ -43,10 +44,10 @@
             db-txs-retracts
             new)))
 
-(defn photo-entities [aws-s3 ps]
+(defn photo-entities [cloudinary ps]
   (map-indexed (fn [i new-photo]
-                 (if (some? (:location new-photo))
-                   (f/item-photo (s3/upload-photo aws-s3 new-photo) i)
+                 (if (some? (:url new-photo))
+                   (f/item-photo (cloudinary/upload-dynamic-photo cloudinary new-photo) i)
                    (-> new-photo (assoc :store.item.photo/index i) cf/add-tempid)))
                ps))
 
@@ -62,7 +63,7 @@
         product-sku-txs (into product-txs (edit-many-txs (:db/id product) :store.item/skus [] new-skus))
 
         ;; Create photo transactions, upload to S3 if necessary
-        new-photos (photo-entities (:system/aws-s3 system) photos)
+        new-photos (photo-entities (:system/cloudinary system) photos)
         product-sku-photo-txs (into product-sku-txs (edit-many-txs (:db/id product) :store.item/photos [] new-photos))]
 
     ;; Transact all updates to Datomic once
@@ -82,7 +83,7 @@
         product-sku-txs (into product-txs (edit-many-txs product-id :store.item/skus old-skus new-skus))
 
         ;; Update photos, remove photos that are not included in the photos collections from the client.
-        new-photos (photo-entities (:system/aws-s3 system) photos)
+        new-photos (photo-entities (:system/cloudinary system) photos)
         product-sku-photo-txs (into product-sku-txs (edit-many-txs product-id :store.item/photos old-photos new-photos))]
 
     ;; Transact updates into datomic
