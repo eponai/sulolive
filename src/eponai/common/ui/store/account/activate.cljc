@@ -350,9 +350,9 @@
                 (dom/select
                   {:defaultValue (:country-spec/default-currency stripe-country-spec)
                    :id (:field.external-account/currency v/form-inputs)}
-                  (map (fn [cur]
-                         (let [^String code (key cur)]
-                           (dom/option {:value code} (.toUpperCase code))))
+                  (map (fn [[k v]]
+                         (let [^String code k]
+                           (dom/option {:value code} code)))
                        (:country-spec/supported-bank-account-currencies stripe-country-spec)))))
             (grid/row
               nil
@@ -396,10 +396,16 @@
           (dom/p (css/add-class :header))
           ;(dom/a (css/button-hollow)
           ;       (dom/span nil "Save for later"))
+
           (dom/a
-            (->> {:onClick #(.activate-account this)}
-                 (css/button))
+            (->> {:onClick #(.activate-account this)
+                  :aria-disabled true
+                  :title "Excuse the mess, settings are currently under development. Thanks for understanding"}
+                 (css/button)
+                 (css/add-class :disabled))
             (dom/span nil "Activate account"))
-          (dom/p nil (dom/small nil "By activating your account, you agree to our Services Agreement.")))))))
+          (dom/p nil (dom/small nil "Excuse the mess, settings are currently under development. Thanks for understanding"))
+          ;(dom/p nil (dom/small nil "By activating your account, you agree to our Services Agreement."))
+          )))))
 
 (def ->Activate (om/factory Activate))

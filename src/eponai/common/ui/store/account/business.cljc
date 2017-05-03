@@ -145,5 +145,7 @@
         (dom/div
           (css/text-align :right)
           (dom/a
-            (->> {:onClick #(save-legal-entity component)}
+            (->> {:onClick #(save-legal-entity component)
+                  :aria-disabled true}
+                 (css/add-class :disabled)
                  (css/button)) (dom/span nil "Save")))))))

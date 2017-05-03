@@ -82,5 +82,5 @@
       (grid/row-column
         (css/text-align :right)
         (dom/a
-          (css/button)
+          (css/button {:disabled true})
           (dom/span nil "Save"))))))
