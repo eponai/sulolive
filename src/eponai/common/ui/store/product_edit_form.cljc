@@ -109,7 +109,7 @@
     (css/add-class :empty-photo)
     (dom/div
       nil
-      (dom/i {:classes ["fa fa-plus fa-4x"]}))))
+      (dom/i {:classes ["fa fa-plus fa-2x"]}))))
 
 (defui ProductEditForm
   static om/IQuery
@@ -180,6 +180,7 @@
           delete-resp (msg/last-message this 'store/delete-product)
           is-loading? (or (message-pending-fn update-resp) (message-pending-fn create-resp) (message-pending-fn delete-resp))
           ]
+      (debug "Uploaded photos; " uploaded-photos)
 
       (dom/div
         {:id "sulo-edit-product"}
@@ -272,7 +273,7 @@
                     (let [file-id (str "file-" i)
                           {:store.item.photo/keys [photo]} p
                           {:keys [in-queue?]} p
-                          photo-url (or (:location p) (:photo/path photo) p)]
+                          photo-url (or (:url p) (:photo/path photo) p)]
                       (grid/column
                         nil
                         ;(dom/label
