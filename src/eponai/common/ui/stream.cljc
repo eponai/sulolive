@@ -39,7 +39,7 @@
                  player (js/WowzaPlayer.create
                           wowza-element-id
                           #js {:license                       "PLAY1-aaEJk-4mGcn-jW3Yr-Fxaab-PAYm4"
-                               :title                         "THis is some crazy title!"
+                               :title                         ""
                                :description                   "",
                                :sourceURL                     stream-url
                                :autoPlay                      true
