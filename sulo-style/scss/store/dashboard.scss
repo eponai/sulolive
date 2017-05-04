@@ -31,9 +31,10 @@
 	}
 }
 
+$dashboard-max-width: 75rem;
+$dashboard-primary-color: map-get($foundation-palette, action);
+
 #sulo-store-dashboard {
-	$dashboard-max-width: 75rem;
-	$dashboard-primary-color: map-get($foundation-palette, action);
 	.navbar, footer, .footer .row, .row {
 		max-width: $dashboard-max-width;
 	}

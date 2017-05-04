@@ -1,0 +1,42 @@
+#sulo-store-dashboard {
+	#sulo-store.edit-store {
+		@include foundation-button;
+		padding: 0;
+		// margin-top: -2.5rem;
+		border: $global-border;
+		.row {
+			max-width: 54rem;
+			margin-left: auto;
+			margin-right: auto;
+			&.expanded {
+				max-width: $dashboard-max-width;
+			}
+		}
+		.product-item, .photo-container .overlay {
+			// transition: all .25s ease-in-out;
+			// position: relative;
+			&:hover {
+				// box-shadow: 0 0 10px 3px $dashboard-primary-color;
+			}
+		}
+		.photo-container .overlay {
+			justify-content: flex-start;
+			align-items: flex-start;
+			padding: 1rem;
+			.button {
+				$background: rgba($white, 0.5);
+				background: $background;
+				border: none;
+				i {
+					margin-right: 0.5rem;
+				}
+				&:hover {
+					background: darken($background, 20%);
+				}
+			}
+			&:hover {
+				// background: rgba($dashboard-primary-color, 0.2);
+			}
+		}
+	}
+}

@@ -17,6 +17,7 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.format :as f]
     [eponai.common.ui.elements.photo :as photo]
+    [eponai.web.ui.store.edit-store :as es]
     [medley.core :as medley]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.elements.grid :as grid]
@@ -39,6 +40,8 @@
                                                  :computed-fn (fn [{:keys [store route-params]}]
                                                                 {:route-params route-params
                                                                  :products     (:store/items store)})}
+                :store-dashboard/edit           {:component es/EditStore
+                                                 :computed-fn  compute-store}
                 :store-dashboard/stream         {:component   ss/StreamSettings
                                                  :computed-fn compute-store}
                 :store-dashboard/settings       {:component   as/AccountSettings
@@ -79,6 +82,14 @@
              (css/add-class :top-bar))
         (menu/horizontal
           (css/add-class :top-bar-left)
+          (menu/item (when (= route :store-dashboard/edit)
+                       (css/add-class ::css/is-active))
+                     (dom/a
+                       (css/add-class :category {:href (routes/url :store-dashboard/edit {:store-id store-id})})
+                       (dom/span (css/show-for nav-breakpoint) "Profile")
+                       (dom/i
+                         (css/hide-for nav-breakpoint {:classes [:fa :fa-dashboard :fa-fw]}))))
+
           (menu/item (when (= route :store-dashboard)
                        (css/add-class ::css/is-active))
                      (dom/a
@@ -165,16 +176,16 @@
         (dom/a
           (->> (css/button-hollow {:href (routes/url :store-dashboard/stream {:store-id store-id})})
                (css/add-class :primary))
-               (dom/span nil "Stream status")
-               (dom/span
-                 (cond->> (css/add-class :label)
-                          (= stream-state :stream.state/offline)
-                          (css/add-class :primary)
-                          (= stream-state :stream.state/online)
-                          (css/add-class :success)
-                          (= stream-state :stream.state/live)
-                          (css/add-class :highlight))
-                 (name stream-state))))
+          (dom/span nil "Stream status")
+          (dom/span
+            (cond->> (css/add-class :label)
+                     (= stream-state :stream.state/offline)
+                     (css/add-class :primary)
+                     (= stream-state :stream.state/online)
+                     (css/add-class :success)
+                     (= stream-state :stream.state/live)
+                     (css/add-class :highlight))
+            (name stream-state))))
       (callout/callout
         (css/add-class :stream-status)
         (let [disabled-reason (get-in stripe-account [:stripe/verification :stripe.verification/disabled-reason])
@@ -259,7 +270,7 @@
                                      :store.profile/name
                                      :store.profile/tagline
                                      :store.profile/return-policy
-                                     {:store.profile/cover [:photo/path :photo/id]}
+                                     {:store.profile/cover [:photo/id]}
                                      {:store.profile/photo [:photo/path :photo/id]}]}
                     {:store/owners [{:store.owner/user [:user/email]}]}
                     :store/stripe
@@ -284,7 +295,7 @@
   Object
   (initLocalState [_]
     {:selected-tab :products
-     :did-mount? false})
+     :did-mount?   false})
   (componentDidMount [this]
     (let [{:keys [did-mount?]} (om/get-state this)]
       (when-not did-mount?

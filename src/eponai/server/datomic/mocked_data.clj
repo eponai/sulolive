@@ -151,7 +151,8 @@
    ;; ikcha
    {:db/id          (db/tempid :db.part/user)
     :store/profile  {:store.profile/name  "ikcha"
-                     :store.profile/photo (photo "mocked/isla_500x500.24111301_nvjpi6zo")}
+                     :store.profile/photo (photo "mocked/isla_500x500.24111301_nvjpi6zo")
+                     :store.profile/cover (photo "mocked/isbl_3360x840.20468865_f7kumdbt")}
     :store/stripe   (stripe-account)
     :store/sections [{:db/id               (db/tempid :db.part/user -1000)
                       :store.section/path  "earrings"
@@ -251,7 +252,7 @@
    ;; Nafsika
    {:db/id         (db/tempid :db.part/user)
     :store/profile {:store.profile/name  "Nafsika"
-                    :store.profile/cover (photo "mocked/isbl_3360x840.20468865_f7kumdbt")
+
                     :store.profile/photo (photo "mocked/isla_500x500.22177516_ath1ugrh")}
     :store/items   [{:store.item/name     "Silver Twig Ring Milky"
                      :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1094898766_ewls"

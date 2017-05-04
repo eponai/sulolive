@@ -87,7 +87,7 @@
             (menu/vertical
               (css/add-class :nested)
               (menu/item-link
-                {:href (routes/url :store-dashboard {:store-id (:db/id owned-store)})}
+                {:href (routes/url :store-dashboard/edit {:store-id (:db/id owned-store)})}
                 (get-in owned-store [:store/profile :store.profile/name]))))
           (menu/item
             (css/add-class :my-stores)
