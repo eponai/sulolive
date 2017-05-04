@@ -53,6 +53,6 @@
   (render [this]
     (let [{:keys [routing/app-root query/current-route]} (om/props this)
           route (normalize-route (:route current-route :index))
-          {:keys [factory component]} (get route->component [route])
+          {:keys [factory component]} (get route->component route)
           factory (or factory (om/factory component))]
       (factory app-root))))

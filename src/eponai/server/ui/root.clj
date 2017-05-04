@@ -43,11 +43,6 @@
              (when release?
                (dom/script {:src "https://kickoffpages-kickofflabs.netdna-ssl.com/w/89256/144137.js"}))])
 
-          (dom/script {:src "https://js.stripe.com/v2/"
-                       :type common/text-javascript})
-          (dom/script {:src "https://js.stripe.com/v3/"
-                       :type common/text-javascript})
-
 
           (dom/script {:src "https://maps.googleapis.com/maps/api/js?key=AIzaSyB8bKA0NO74KlYr5dpoJgM_k6CvtjV8rFQ&libraries=places"})
 
