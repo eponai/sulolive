@@ -14,7 +14,9 @@
     [om.next :as om :refer [defui]]
     [eponai.client.parser.message :as msg]
     [eponai.common.ui.common :as common]
-    [eponai.common.ui.elements.callout :as callout]))
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.web.ui.photo :as p]
+    [taoensso.timbre :refer [debug]]))
 
 (defn label-column [opts & content]
   (grid/column
@@ -29,7 +31,7 @@
      :query/messages])
   Object
   (save-store [this]
-    #?(:cljs (let [{:keys [uploaded-photo]
+    #?(:cljs (let [{:keys       [uploaded-photo]
                     :quill/keys [about return-policy]} (om/get-state this)
                    {:keys [store]} (om/get-computed this)
 
@@ -52,6 +54,7 @@
           {:store/keys [description return-policy]} store
           update-msg (msg/last-message this 'store/update-info)
           photo-msg (msg/last-message this 'store.photo/upload)]
+      (debug "Uploaded photo: " uploaded-photo)
       (dom/div
         nil
         (when (or (msg/pending? update-msg) (msg/pending? photo-msg))
@@ -64,9 +67,10 @@
             (grid/column
               (->> (css/text-align :center)
                    (grid/column-size {:small 6 :medium 4 :large 3}))
-              (if (some? (:location uploaded-photo))
-                (photo/circle {:src (:location uploaded-photo)})
-                (photo/store-photo store))
+              (if (some? (:public_id uploaded-photo))
+                (p/circle {:photo-id       (:public_id uploaded-photo)
+                           :transformation :transformation/thumbnail-large})
+                (p/store-photo store :transformation/thumbnail-large))
 
               #?(:cljs
                  (pu/->PhotoUploader

@@ -28,31 +28,32 @@
         (let []
           (dom/div
             {:classes (conj classes ::css/photo)
-             :style {:backgroundImage (str "url(" url-small ")")}}
+             :style   {:backgroundImage (str "url(" url-small ")")}}
             (dom/div
               (cond-> (css/add-class :background)
-                       loaded-main?
+                      loaded-main?
                       (assoc :style {:backgroundImage (str "url(" url ")")})
                       loaded-main?
-                      (update :classes conj :loaded))
+                      (update :classes conj :loaded)))
 
-              (when url-small
-                (dom/img
-                  {:src     url-small
-                   :classes ["small"]}))
+            (when url-small
               (dom/img
-                (cond->> {:src     (when loaded-main? url)
-                          :classes ["main"]
-                          :onLoad  #(do (debug "Large image loaded") (om/update-state! this assoc :loaded-main? true))}
-                         loaded-main?
-                         (css/add-class :loaded)))
-              content)))))))
+                {:src     url-small
+                 :classes ["small"]}))
+            (dom/img
+              (cond->> {:src     (when loaded-main? url)
+                        :classes ["main"]
+                        :onLoad  #(do (debug "Large image loaded") (om/update-state! this assoc :loaded-main? true))}
+                       loaded-main?
+                       (css/add-class :loaded)))
+            (dom/div (css/add-class :content)
+                     content)))))))
 
 (def ->Photo (om/factory Photo))
 
 (defn photo [props & content]
   (dom/div
-    (css/add-class ::css/photo-container)
+    (css/add-class ::css/photo-container (select-keys props [:classes]))
     (->Photo props)
     content))
 
@@ -82,7 +83,15 @@
   (let [{:store.item/keys [photos]} product
         {:store.item.photo/keys [photo]} (get (into [] (sort-by :store.item.photo/index photos)) (or index 0))
         photo-id (:photo/id photo "static/storefront")]
-    (square {:photo-id photo-id})))
+    (square {:photo-id       photo-id
+             :transformation transformation})))
+
+(defn store-photo [store & [{:keys [transformation]}]]
+  (let [photo (get-in store [:store/profile :store.profile/photo])
+        photo-id (:photo/id photo "static/storefront")]
+    (circle (->> {:photo-id       photo-id
+                  :transformation transformation}
+                 (css/add-class :store-photo)))))
 
 (defn stream-photo [store]
   (let [photo (get-in store [:store/profile :store.profile/photo])

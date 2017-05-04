@@ -119,8 +119,8 @@
              (let [{old-profile :store/profile} (db/pull (db/db state) [{:store/profile [:db/id :store.profile/photo]}] store-id)
                    old-photo (:store.profile/photo old-profile)]
                (if (some? photo)
-                 (let [s3-photo (f/photo (s3/upload-photo (:system/aws-s3 system) photo))
-                       new-photo (cond-> s3-photo
+                 (let [cl-photo (f/add-tempid (cloudinary/upload-dynamic-photo (:system/cloudinary system) photo))
+                       new-photo (cond-> cl-photo
                                          (some? (:db/id old-photo))
                                          (assoc :db/id (:db/id old-photo)))
                        dbtxs (cond-> [new-photo

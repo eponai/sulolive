@@ -20,7 +20,8 @@
     [medley.core :as medley]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.format.date :as date]))
+    [eponai.common.format.date :as date]
+    [eponai.web.ui.photo :as p]))
 
 (defn find-product [store product-id]
   (let [product-id (c/parse-long product-id)]
@@ -137,7 +138,7 @@
           (css/align :center)
           (grid/column
             (grid/column-size {:small 12 :medium 10})
-            (photo/store-photo store)))
+            (p/store-photo store {:transformation :transformation/thumbnail})))
         (grid/row
           (css/align :center)
           (grid/column
@@ -247,13 +248,13 @@
                                      :store.profile/name
                                      :store.profile/tagline
                                      :store.profile/return-policy
-                                     {:store.profile/photo [:photo/path]}]}
+                                     {:store.profile/photo [:photo/path :photo/id]}]}
                     {:store/owners [{:store.owner/user [:user/email]}]}
                     :store/stripe
                     {:store/items [:store.item/name
                                    :store.item/description
                                    :store.item/price
-                                   {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+                                   {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                         :store.item.photo/index]}
                                    {:store.item/skus [:db/id
                                                       {:store.item.sku/inventory [:store.item.sku.inventory/value]}
