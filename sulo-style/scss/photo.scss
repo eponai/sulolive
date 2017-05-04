@@ -84,7 +84,16 @@ $primary-color: map-get($foundation-palette, primary);
 
 	border-radius: inherit;
 	overflow: hidden;
-
+	.background {
+		background: transparent;
+		background-size: cover;
+		background-repeat: no-repeat;
+		background-position: center center;
+		transition: background .25s ease-in;
+		&.loaded {
+			// : 1;
+		}
+	}
 	img {
 		border-radius: inherit;
 		position: absolute;
@@ -94,14 +103,10 @@ $primary-color: map-get($foundation-palette, primary);
 		width: 100%;
 		object-fit: cover;
 		&.small {
-			transition: opacity .5s ease-out .5s;
 			opacity: 1;
 			// filter: blur(50px);
   				/* this is needed so Safari keeps sharp edges */
   			transform: scale(1);
-			&.loaded {
-				// opacity: 0;
-			}
 		}
 		&.main {
 			opacity: 0;

@@ -13,7 +13,8 @@
     [eponai.common.ui.om-quill :as quill]
     [om.next :as om :refer [defui]]
     [eponai.client.parser.message :as msg]
-    [eponai.common.ui.common :as common]))
+    [eponai.common.ui.common :as common]
+    [eponai.common.ui.elements.callout :as callout]))
 
 (defn label-column [opts & content]
   (grid/column
@@ -55,9 +56,9 @@
         nil
         (when (or (msg/pending? update-msg) (msg/pending? photo-msg))
           (common/loading-spinner))
-        (dom/div
-          (css/callout)
-          (dom/p (css/add-class :header) "Store information")
+        (callout/callout-small
+          nil
+          (callout/header nil "Profile photo")
           (grid/row
             (css/align :center)
             (grid/column
@@ -73,9 +74,9 @@
                      photo-upload
                      {:on-photo-upload (fn [photo]
                                          (om/update-state! this assoc :uploaded-photo photo))}))))))
-        (dom/div
-          (css/callout)
-
+        (callout/callout-small
+          nil
+          (callout/header nil "Store information")
           (grid/row
             nil
             (label-column

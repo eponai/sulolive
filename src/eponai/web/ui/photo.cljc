@@ -14,39 +14,39 @@
       #?(:cljs
          (let [image-large (js/Image.)]
            (set! (.-onload image-large) #(do
-                                          (debug "IMAGE LOADED LARGE") (om/update-state! this assoc :loaded-main? true)))
+                                          (debug "IMAGE LOADED LARGE")
+                                          (om/update-state! this assoc :loaded-main? true)))
            (set! (.-src image-large) url)))))
 
   (render [this]
-    (let [{:keys [overlay style photo-id transformation classes]} (om/props this)
-          {:keys [loaded-main? loaded-small?]} (om/get-state this)
+    (let [{:keys [content style photo-id transformation classes]} (om/props this)
+          {:keys [loaded-main?]} (om/get-state this)
           url-small (photos/transform photo-id :transformation/micro)
           url (photos/transform photo-id (or transformation :transformation/preview))]
       (if-not (string? photo-id)
         (warn "Ignoring invalid photo src type, expecting a URL string. Got src: " photo-id)
         (let []
           (dom/div
-            (cond->
-              {:classes (conj classes ::css/photo)}
-              loaded-main?
-              (assoc :style {:backgroundImage (str "url(" url ")")}))
-
-            (when url-small
-              (dom/img
-                (cond->> {:src     url-small
-                          :classes ["small"]
-                          :onLoad  #(do
-                                     (debug "Small image loaded.")
-                                     (om/update-state! this assoc :loaded-small? true))}
-                         loaded-small?
-                         (css/add-class :loaded))))
-            (dom/img
-              (cond->> {:src     (when loaded-main? url)
-                        :classes ["main"]
-                        :onLoad  #(do (debug "Large image loaded") (om/update-state! this assoc :loaded-main? true))}
+            {:classes (conj classes ::css/photo)
+             :style {:backgroundImage (str "url(" url-small ")")}}
+            (dom/div
+              (cond-> (css/add-class :background)
                        loaded-main?
-                       (css/add-class :loaded)))
-            overlay))))))
+                      (assoc :style {:backgroundImage (str "url(" url ")")})
+                      loaded-main?
+                      (update :classes conj :loaded))
+
+              (when url-small
+                (dom/img
+                  {:src     url-small
+                   :classes ["small"]}))
+              (dom/img
+                (cond->> {:src     (when loaded-main? url)
+                          :classes ["main"]
+                          :onLoad  #(do (debug "Large image loaded") (om/update-state! this assoc :loaded-main? true))}
+                         loaded-main?
+                         (css/add-class :loaded)))
+              content)))))))
 
 (def ->Photo (om/factory Photo))
 
@@ -65,6 +65,11 @@
 (defn cover [props & content]
   (photo (-> (css/add-class :cover props)
              (assoc :style :style/cover)) content))
+
+(defn header [props & content]
+  (->Photo
+    (-> (css/add-class ::css/photo-header props)
+        (assoc :content content))))
 
 (defn overlay [opts & content]
   (dom/div

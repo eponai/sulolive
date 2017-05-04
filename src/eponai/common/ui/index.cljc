@@ -90,8 +90,8 @@
           {:navbar navbar}
           (dom/div #js {:id "sulo-index-container" :onScroll #(debug "Did scroll page: " %)}
 
-            (photo/header
-              (css/add-class :center {:src "/assets/img/home-header-bg.jpg"})
+            (p/header
+              (css/add-class :center {:photo-id "static/home-header-bg"})
               (div
                 (->> (css/grid-row)
                      (css/add-class :intro-header)

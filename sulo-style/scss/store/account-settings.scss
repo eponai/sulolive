@@ -2,6 +2,11 @@
 a.disabled {
 	pointer-events: none !important;
 }
+#external_account.currency {
+	option {
+		text-transform: uppercase;
+	}
+}
 #sulo-account-settings {
 	input, select {
 		&[disabled] {
@@ -33,6 +38,8 @@ a.disabled {
 	.icon {
 		$size: 32px;
 		margin-right: 0.5rem;
+		width: $size;
+		height: $size;
 		svg {
 			width: $size;
 			height: $size;
@@ -44,16 +51,28 @@ a.disabled {
 	}
 
 .bank-account-container {
-	border: $global-border;
-	border-radius: $global-radius;
+	// border: $global-border;
+	// border-radius: $global-radius;
 	margin-bottom: 0.5rem;
 }
 	.bank-account {
 		display: flex;
 		// padding: 0.5rem 1rem;
 		align-items: center;
+
 		.bank-detail {
-			margin-right: 1rem;
+			margin-right: 0.5rem;
+			&:last-child, &:first-child {
+				margin-right: 0;
+			}
+			flex: 0 1 auto;
+			min-width: 0;
+			@include breakpoint(medium) {
+				margin-right: 1rem;
+				&:first-child {
+					margin-right: 1rem;
+				}
+			}
 			font-size: 90%;
 			.label {
 				background: $white;
@@ -63,6 +82,10 @@ a.disabled {
 			}
 			i {
 				color: $primary-color;
+				display: none;
+				@include breakpoint(medium) {
+					display: block;
+				}
 			}
 			&.currency {
 				font-weight: $global-weight-bold;
@@ -70,35 +93,37 @@ a.disabled {
 			}
 			&.account {
 				color: $dark-gray;
+				flex: 1 0 auto;
 			}
 			&.country {
 				text-transform: uppercase;
 			}
 			&.bank-name {
 				text-transform: uppercase;
+				@include wrap-text;
 			}
 		}
 	}
 	.payout-schedule-container {
 		// margin: 1rem 0;
-		border: $global-border;
 		font-size: 95%;
 		// font-weight: $global-weight-bold;
 
 	}
 	.payout-schedule, .bank-account, .default-currency {
-		padding: 0.5rem 1rem;
+		padding: 0.5rem;
+		@include breakpoint(medium) {
+			padding: 0.5rem 1rem;
+		}
+		border: $global-border;
 	}
 	.payout-schedule {
-		// border: $global-border;
-		// padding: 0;
+		@include wrap-text;
 		border-radius: $global-radius;
 		select {
 			max-width: 100%;
 			margin-bottom: 0;
 		}
-		// display: flex;
-		// align-items: center;
 	}
 
 	.profile-photo-edit {
@@ -150,10 +175,13 @@ a.disabled {
 		}
 		border: $global-border;
 		.callout {
-			padding: 0;
-			margin-bottom: 2.5rem;
+			// padding: 0;
+			&.warning {
+				// padding: 0.25rem 0.5rem;
+			}
+			// margin-bottom: 2.5rem;
 			&:last-child {
-				margin-bottom: 0;
+				// margin-bottom: 0;
 			}
 			.button {
 				margin-bottom: 0;

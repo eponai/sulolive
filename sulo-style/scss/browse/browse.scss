@@ -1,2 +1,13 @@
 @import "goods";
 @import "filters";
+
+
+.empty-container {
+	text-align: center;
+	.shoutout {
+		// padding: 4rem 0;
+		text-align: center;
+		color: $dark-gray;
+		font-size: 120%;
+	}
+}

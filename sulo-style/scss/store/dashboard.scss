@@ -26,7 +26,7 @@
 		&.hollow {
 			@include action-button($color, hollow);
 			@include button-hollow-style($color);
-			border: none;
+			// border: none;
 		}
 	}
 }
@@ -168,6 +168,16 @@
 			.button {
 				margin: 0;
 			}
+			.profile-photo-container {
+				.photo-container.circle {
+					max-width: 20rem;
+					// min-width: 20rem;
+					margin: 0 auto;
+				}
+				.button {
+					margin: 0.5rem;
+				}
+			}
 			.stream-status {
 				@include label-hollow;
 				a {
@@ -187,6 +197,9 @@
 				margin-bottom: 0.25rem;
 				i {
 					color: $light-gray;
+				}
+				a {
+					border: none;
 				}
 				&.done {
 					a {

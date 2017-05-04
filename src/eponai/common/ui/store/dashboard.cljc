@@ -136,18 +136,18 @@
         (grid/row
           (css/align :center)
           (grid/column
-            (grid/column-size {:small 12 :medium 10 :large 8})
+            (grid/column-size {:small 12 :medium 10})
             (photo/store-photo store)))
         (grid/row
           (css/align :center)
           (grid/column
             (css/add-class :shrink)
             (dom/a
-              (css/button-hollow {:href (routes/url :store {:store-id store-id})}) "View"))
+              (css/button-hollow {:href (routes/url :store {:store-id store-id})}) "View store"))
           (grid/column
             (css/add-class :shrink)
             (dom/a
-              (css/button-hollow {:href (routes/url :store-dashboard/settings {:store-id store-id})}) "Edit"))))
+              (css/button-hollow {:href (routes/url :store-dashboard/settings {:store-id store-id})}) "Edit store"))))
       (callout/callout
         (css/add-class :stream-status)
         (dom/a

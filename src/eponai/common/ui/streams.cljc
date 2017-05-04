@@ -62,8 +62,8 @@
                                      (common/online-channel-element s)))
                                  streams)))
               (my-dom/div
-                {:classes ["sulo-items-container empty"]}
-                (my-dom/span nil "No stores are LIVE right now :'(")))
+                {:classes ["sulo-items-container empty-container"]}
+                (my-dom/span (css/add-class :shoutout) "No stores are LIVE right now :'(")))
             (my-dom/div
               {:classes ["sulo-items-container"]}
               (my-dom/p (css/add-class :header) "Other cool stores currently offline")

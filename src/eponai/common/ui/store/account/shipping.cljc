@@ -2,7 +2,8 @@
   (:require
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
-    [eponai.common.ui.elements.grid :as grid]))
+    [eponai.common.ui.elements.grid :as grid]
+    [eponai.common.ui.elements.callout :as callout]))
 
 (defn shipping-options [component]
   (dom/div
@@ -30,6 +31,9 @@
     ;        (dom/span (css/add-class :show-for-sr) "Allow Free Pickup")
     ;        (dom/span (css/add-class :switch-inactive) "No")
     ;        (dom/span (css/add-class :switch-active) "Yes")))))
+    (callout/callout-small
+      (css/add-class :warning)
+      (dom/p nil (dom/small nil "Settings are under development and this info cannot be saved. Excuse the mess, thank you for understanding.")))
     (dom/div
       (css/callout)
       (dom/p (css/add-class :header) "Shipping")
@@ -82,5 +86,5 @@
       (grid/row-column
         (css/text-align :right)
         (dom/a
-          (css/button {:disabled true})
+          (css/button (css/add-class :disabled))
           (dom/span nil "Save"))))))

@@ -38,17 +38,9 @@
         {:keys [store]} (om/get-computed component)]
     (menu/item-tab
       (merge opts
-             (cond->
-               {:is-active? (= (:route current-route) k)}
-               (not= k :store-dashboard/settings)
-               (assoc :title "Excuse the mess, settings are currently under development. Thanks for understanding")))
+             {:is-active? (= (:route current-route) k)})
       (dom/a
-        (cond->>
-          (cond-> {:href (routes/url k {:store-id (:db/id store)})}
-                  (not= k :store-dashboard/settings)
-                  (assoc :aria-disabled true))
-          (not= k :store-dashboard/settings)
-          (css/add-class :disabled))
+        {:href (routes/url k {:store-id (:db/id store)})}
         content))))
 
 (defui AccountSettings
@@ -102,28 +94,28 @@
                     (tabs-title this :store-dashboard/settings#activate
                                 (css/add-class :activate)
                                 (dom/i {:classes ["fa fa-check fa-fw"]})
-                                (dom/small nil (dom/s nil "Activate account")))
+                                (dom/small nil "Activate account"))
                     (not-empty (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed]))
                     (tabs-title this :store-dashboard/settings#activate
                                 (css/add-class :activate)
                                 (dom/i {:classes ["fa fa-check fa-fw"]})
-                                (dom/small nil (dom/s nil "Verify account"))))
+                                (dom/small nil "Verify account")))
 
               (tabs-title this :store-dashboard/settings
                           nil
                           (dom/small nil "General"))
               (tabs-title this :store-dashboard/settings#shipping
                           nil
-                          (dom/small nil (dom/s nil "Shipping")))
+                          (dom/small nil "Shipping"))
               (tabs-title this :store-dashboard/settings#payments
                           nil
-                          (dom/small nil (dom/s nil "Payments")))
+                          (dom/small nil "Payments"))
               (tabs-title this :store-dashboard/settings#payouts
                           nil
-                          (dom/small nil (dom/s nil "Payouts")))
+                          (dom/small nil "Payouts"))
               (tabs-title this :store-dashboard/settings#business
                           nil
-                          (dom/small nil (dom/s nil "Business")))))
+                          (dom/small nil "Business"))))
 
 
           ;; Content

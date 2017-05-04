@@ -15,7 +15,8 @@
     [eponai.common :as c]
     [eponai.common.format.date :as date]
     [eponai.client.routes :as routes]
-    [eponai.common.format :as format]))
+    [eponai.common.format :as format]
+    [eponai.common.ui.elements.callout :as callout]))
 
 (def stripe-key "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")
 
@@ -152,13 +153,17 @@
                   (msg/message message)))
               (msg/pending? message)
               (common/loading-spinner nil))
+        (callout/callout-small
+          (css/add-class :warning)
+          (dom/p nil (dom/small nil "Settings are under development and this info cannot be saved. Excuse the mess, thank you for understanding.")))
         (dom/div
           (css/callout)
           (dom/p (css/add-class :header) "What's this?")
           (dom/p nil
                  (dom/span nil "SULO Live is using Stripe under the hood to handle orders, payments and transfers for you.
                  The information requested in this form is required by Stripe for verification to keep payments and transfers enabled on your account. ")
-                 (dom/a {:href "https://stripe.com/docs/connect/identity-verification"}
+                 (dom/a {:href "https://stripe.com/docs/connect/identity-verification"
+                         :target "_blank"}
                         (dom/span nil "Learn more")))
           (dom/p nil "Your account details are reviewed by Stripe to ensure they comply with their terms of service. If there's a problem, we'll get in touch right away to resolve it as quickly as possible.")
           (dom/p nil "We don't use this information for any other purpose than to pass along to Stripe and let you manage your account."))
@@ -399,14 +404,11 @@
           ;       (dom/span nil "Save for later"))
 
           (dom/a
-            (->> {:onClick #(.activate-account this)
-                  :aria-disabled true
-                  :title "Excuse the mess, settings are currently under development. Thanks for understanding"}
+            (->> {:onClick #(.activate-account this)}
                  (css/button)
                  (css/add-class :disabled))
             (dom/span nil "Activate account"))
-          (dom/p nil (dom/small nil "Excuse the mess, settings are currently under development. Thanks for understanding"))
-          ;(dom/p nil (dom/small nil "By activating your account, you agree to our Services Agreement."))
+          (dom/p nil (dom/small nil "By activating your account, you agree to our Services Agreement."))
           )))))
 
 (def Activate (script-loader/stripe-loader Activate-no-loader))
