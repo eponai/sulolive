@@ -18,9 +18,10 @@
 	.breadcrumbs {
 		margin-top: -1rem;
 	}
-	.photo {
-		&:hover {
-			cursor: pointer;
+
+	.photo-container {
+		.overlay {
+			background: rgba($white, 0.5);
 		}
 	}
 	.empty-photo {

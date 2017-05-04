@@ -9,45 +9,59 @@
 (defui Photo
   Object
   (componentDidMount [this]
-    (let [{:keys [photo-id transformation]} (om/props this)
-          url (photos/transform photo-id (or transformation :transformation/preview))]
+    (let [{:keys [photo-id transformation]} (om/props this)]
       #?(:cljs
-         (let [image-large (js/Image.)]
-           (set! (.-onload image-large) #(do
-                                          (debug "IMAGE LOADED LARGE")
-                                          (om/update-state! this assoc :loaded-main? true)))
-           (set! (.-src image-large) url)))))
+         (when (some? photo-id)
+           (let [image-large (js/Image.)
+                 url (photos/transform photo-id (or transformation :transformation/preview))]
+             (set! (.-onload image-large) #(do
+                                            (debug "IMAGE LOADED LARGE")
+                                            (om/update-state! this assoc :loaded-main? true)))
+             (set! (.-src image-large) url))))))
 
   (render [this]
-    (let [{:keys [content style photo-id transformation classes]} (om/props this)
-          {:keys [loaded-main?]} (om/get-state this)
-          url-small (photos/transform photo-id :transformation/micro)
-          url (photos/transform photo-id (or transformation :transformation/preview))]
-      (if-not (string? photo-id)
-        (warn "Ignoring invalid photo src type, expecting a URL string. Got src: " photo-id)
-        (let []
-          (dom/div
-            {:classes (conj classes ::css/photo)
-             :style   {:backgroundImage (str "url(" url-small ")")}}
-            (dom/div
-              (cond-> (css/add-class :background)
-                      loaded-main?
-                      (assoc :style {:backgroundImage (str "url(" url ")")})
-                      loaded-main?
-                      (update :classes conj :loaded)))
+    (let [{:keys [content src photo-id transformation classes]} (om/props this)]
+      (cond (some? photo-id)
+            (let [{:keys [loaded-main?]} (om/get-state this)
+                  url-small (photos/transform photo-id :transformation/micro)
+                  url (photos/transform photo-id (or transformation :transformation/preview))]
+              (if-not (string? photo-id)
+                (warn "Ignoring invalid photo src type, expecting a URL string. Got src: " photo-id)
+                (dom/div
+                  {:classes (conj classes ::css/photo)
+                   :style   {:backgroundImage (str "url(" url-small ")")}}
+                  (dom/div
+                    (cond-> (css/add-class :background)
+                            loaded-main?
+                            (assoc :style {:backgroundImage (str "url(" url ")")})
+                            loaded-main?
+                            (update :classes conj :loaded)))
 
-            (when url-small
+                  (when url-small
+                    (dom/img
+                      {:src     url-small
+                       :classes ["small"]}))
+                  (dom/img
+                    (cond->> {:src     (when loaded-main? url)
+                              :classes ["main"]
+                              :onLoad  #(do (debug "Large image loaded") (om/update-state! this assoc :loaded-main? true))}
+                             loaded-main?
+                             (css/add-class :loaded)))
+                  (dom/div (css/add-class :content)
+                           content))))
+
+            (some? src)
+            (dom/div
+              {:classes (conj classes ::css/photo)
+               :style   {:backgroundImage (str "url(" src ")")}}
               (dom/img
-                {:src     url-small
-                 :classes ["small"]}))
-            (dom/img
-              (cond->> {:src     (when loaded-main? url)
-                        :classes ["main"]
-                        :onLoad  #(do (debug "Large image loaded") (om/update-state! this assoc :loaded-main? true))}
-                       loaded-main?
-                       (css/add-class :loaded)))
-            (dom/div (css/add-class :content)
-                     content)))))))
+                {:src     src
+                 :classes ["main loaded"]})
+              (dom/div (css/add-class :content)
+                       content))
+
+            :else
+            (warn "Photo component got no data source, expecing a photo key or a src.")))))
 
 (def ->Photo (om/factory Photo))
 

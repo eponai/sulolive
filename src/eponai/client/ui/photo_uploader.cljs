@@ -44,7 +44,8 @@
       (set! (.-onloadend reader) (fn []
                                    (put! upload-queue {:file     (.-result reader)
                                                        :metadata {:x-amz-meta-size (.-size file)}})
-                                   ;(on-photo-queue (.-result reader))
+                                   (when on-photo-queue
+                                     (on-photo-queue (.-result reader)))
                                    ))
       (.readAsDataURL reader file)
       ;)
@@ -117,11 +118,9 @@
     (go
       (while true
         (let [{:keys [dropped-queue upload-queue uploaded uploads]} (om/get-state this)
-              {:keys [on-photo-upload]} (om/get-computed this)]
-          (let [[response ch] (alts! [uploaded])]
+              {:keys [on-photo-upload on-photo-queue]} (om/get-computed this)]
+          (let [[response ch] (alts! [uploaded upload-queue])]
             (cond
-              ;(= ch dropped-queue)
-              ;(put! upload-queue v)
               (= ch uploaded)
               (do
                 (when on-photo-upload

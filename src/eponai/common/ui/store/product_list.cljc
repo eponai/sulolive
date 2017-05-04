@@ -10,13 +10,9 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.format.date :as date]
     [eponai.common.ui.utils :as utils]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.table :as table]
-    [eponai.common.ui.elements.grid :as grid]))
-
-(defn primary-photo [product]
-  (let [item-photo (first (sort-by :store.item.photo/index (:store.item/photos product)))]
-    (get item-photo :store.item.photo/photo)))
+    [eponai.common.ui.elements.grid :as grid]
+    [eponai.web.ui.photo :as p]))
 
 (defui ProductList
   static om/IQuery
@@ -34,12 +30,6 @@
                      (filter #(clojure.string/includes? (.toLowerCase (:store.item/name %))
                                                         (.toLowerCase search-input)) inventory)
                      inventory)]
-      ;(debug "Render product list: " inventory)
-      ;#?(:cljs
-      ;   (do
-      ;     (debug "Convert id: " (:store.item/uuid (first inventory)))
-      ;     (let [b (crypt/encodeString (:store.item/uuid (first inventory)) true)]
-      ;       (debug "Converted uuid: " b))))
       (dom/div nil
         (my-dom/div
           (->> (css/grid-row))
@@ -57,8 +47,6 @@
         (my-dom/div
           (->> (css/grid-row)
                (css/grid-column))
-          ;(my-dom/div
-          ;  {:className "callout transparent"})
           (my-dom/input {:value       (or search-input "")
                          :onChange    #(om/update-state! this assoc :search-input (.. % -target -value))
                          :placeholder "Search Products..."
@@ -91,7 +79,7 @@
                          (my-dom/a
                            (css/add-class :tr {:href product-link})
                            (my-dom/span (css/add-class :td)
-                                        (photo/product-photo (primary-photo p)))
+                                        (p/product-photo p {:transformation :transformation/thumbnail-tiny}))
                            (my-dom/span (css/add-class :td)
                                         (:store.item/name p))
                            (my-dom/span

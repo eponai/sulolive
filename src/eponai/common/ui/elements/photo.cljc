@@ -27,7 +27,7 @@
     nil
     (photo* opts)))
 
-(defn square [opts]
+(defn square [opts & content]
   (photo-container
     nil
     (photo* (css/add-class ::css/photo-square opts))))

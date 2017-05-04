@@ -18,7 +18,8 @@
     [eponai.common :as c]
     [eponai.common.database :as db]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.elements.menu :as menu]))
+    [eponai.common.ui.elements.menu :as menu]
+    [eponai.web.ui.photo :as p]))
 
 (def form-elements
   {:input-price          "input-price"
@@ -93,9 +94,8 @@
          (pu/->PhotoUploader (om/computed
                                photo-upload
                                {:on-photo-queue  (fn [img-result]
-                                                   ;(debug "Got photo: " photo)
-                                                   (om/update-state! component assoc :queue-photo {:location  img-result
-                                                                                                   :in-queue? true}))
+                                                   (debug "Got photo: " img-result)
+                                                   (om/update-state! component assoc :queue-photo {:src img-result}))
                                 :on-photo-upload (fn [photo]
                                                    (om/update-state! component (fn [st]
                                                                                  (-> st
@@ -168,9 +168,8 @@
     {:sku-count 1})
 
   (render [this]
-    (let [{:keys [uploaded-photos queue-photo variations? did-mount? sku-count]} (om/get-state this)
-          {:keys [product-id store-id action]} (get-route-params this)
-          {:keys [proxy/photo-upload]} (om/props this)
+    (let [{:keys [uploaded-photos queue-photo did-mount? sku-count]} (om/get-state this)
+          {:keys [product-id store-id]} (get-route-params this)
           {:keys [product]} (om/get-computed this)
           {:store.item/keys [price photos skus description]
            item-name        :store.item/name} product
@@ -180,7 +179,6 @@
           delete-resp (msg/last-message this 'store/delete-product)
           is-loading? (or (message-pending-fn update-resp) (message-pending-fn create-resp) (message-pending-fn delete-resp))
           ]
-      (debug "Uploaded photos; " uploaded-photos)
 
       (dom/div
         {:id "sulo-edit-product"}
@@ -241,7 +239,7 @@
                 nil
                 (label-column
                   nil
-                  (dom/label nil "Price"))
+                  (dom/label nil "Price in CAD"))
                 (grid/column
                   nil
                   (grid/row
@@ -256,10 +254,11 @@
                                   :max          "99999999.99"
                                   :defaultValue (or price "")}))
 
-                    (grid/column
-                      nil
-                      (dom/select {:defaultValue "usd"}
-                                  (dom/option {:value "usd"} "USD")))))))
+                    ;(grid/column
+                    ;  nil
+                    ;  (dom/select {:defaultValue "usd"}
+                    ;              (dom/option {:value "usd"} "USD")))
+                    ))))
 
             (callout/callout
               nil
@@ -270,38 +269,30 @@
                      (grid/columns-in-row {:small 3 :medium 4 :large 5}))
                 (map-indexed
                   (fn [i p]
-                    (let [file-id (str "file-" i)
-                          {:store.item.photo/keys [photo]} p
-                          {:keys [in-queue?]} p
-
-                          photo-url (or (:url p) (:photo/path photo) p)]
+                    (let [{:store.item.photo/keys [photo]} p
+                          photo-key (or (:public_id p) (:photo/id photo) p)]
                       (grid/column
                         nil
                         ;(dom/label
                         ;  {:htmlFor file-id})
-                        (when (some? photo-url)
+                        (when (some? photo-key)
                           (dom/div
                             nil
-                            (if in-queue?
-                              (photo/with-overlay
-                                nil
-                                (photo/square {:src photo-url})
-                                (dom/i {:classes ["fa fa-spinner fa-spin"]}))
-                              (photo/square {:src photo-url}))
-                            (when-not in-queue?
-                              (dom/a
-                                (->>
-                                  {:onClick #(.remove-uploaded-photo this i)}
-                                  (css/button-hollow)) (dom/span nil "Remove")))))
-                        ;(photo-uploader this i)
-                        )))
-                  (if queue-photo
-                    (conj uploaded-photos queue-photo)
-                    uploaded-photos))
-                (when (> 5 (count uploaded-photos))
+                            (p/square {:photo-id       photo-key
+                                       :transformation :transformation/thumbnail})
+                            (dom/a
+                              (->>
+                                {:onClick #(.remove-uploaded-photo this i)}
+                                (css/button-hollow)) (dom/span nil "Remove")))))))
+                  uploaded-photos)
+                (when (some? queue-photo)
                   (grid/column
                     nil
-                    ;(photo/product-photo nil)
+                    (p/square {:src (:src queue-photo)}
+                              (p/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]})))))
+                (when (and (nil? queue-photo) (> 5 (count (conj uploaded-photos))))
+                  (grid/column
+                    nil
                     (dom/label
                       {:htmlFor (str "file-" (count photos))}
                       (empty-photo-button)
