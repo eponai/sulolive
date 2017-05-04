@@ -17,7 +17,6 @@
     [eponai.common.ui.icons :as icons]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.photos :as photos]
     [eponai.common.ui.elements.callout :as callout]))
 
 (defn top-feature [opts icon title text]
@@ -53,15 +52,11 @@
   (my-dom/a
     {:href    href
      :classes [:full :category-photo]}
-    (photo/with-overlay
-      nil
-      (p/photo {:photo-id photo-id})
-      ;(if full?
-      ;  (photo/full {:src url})
-      ;  (photo/photo {:src url}))
-      (my-dom/div
-        (->> (css/text-align :center))
-        (dom/span nil title)))))
+    (p/photo {:photo-id photo-id}
+             (p/overlay
+               nil(my-dom/div
+                          (->> (css/text-align :center))
+                          (dom/span nil title))))))
 
 (defui Index
   static om/IQuery
