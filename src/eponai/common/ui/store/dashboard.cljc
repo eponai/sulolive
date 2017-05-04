@@ -78,7 +78,7 @@
         (->> (css/add-class :navbar)
              (css/add-class :top-bar))
         (menu/horizontal
-          nil
+          (css/add-class :top-bar-left)
           (menu/item (when (= route :store-dashboard)
                        (css/add-class ::css/is-active))
                      (dom/a
@@ -119,7 +119,17 @@
               (css/add-class :category {:href (routes/url :store-dashboard/settings {:store-id store-id})})
               (dom/span (css/show-for nav-breakpoint) "Settings")
               (dom/i
-                (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]})))))))))
+                (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]})))))
+        (menu/horizontal
+          (->> (css/add-class :top-bar-right)
+               (css/align :right))
+          (menu/item
+            nil
+            (dom/a
+              {:href (routes/url :store {:store-id store-id})}
+              (dom/span (css/show-for nav-breakpoint) "Go to store")
+              (dom/i
+                (css/hide-for nav-breakpoint {:classes [:fa :fa-home :fa-fw]})))))))))
 
 (defn store-info-element [component]
   (let [{:query/keys [store stripe-account current-route]} (om/props component)
