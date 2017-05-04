@@ -162,15 +162,20 @@
       (dom/div #js {:className "top-bar-left"}
         (menu/horizontal
           nil
+          (menu/item
+            nil
+            (my-dom/a
+              (css/hide-for :large {:onClick #(.open-sidebar component)})
+              (my-dom/i {:classes ["fa fa-bars fa-fw"]})))
           (navbar-brand (routes/url :coming-soon))
 
           (live-link on-live-click)
-          (menu/item-dropdown
-            (->> {:dropdown (category-dropdown component)
-                  :onClick  #(.open-dropdown component :dropdown/collection)}
-                 (css/hide-for :large)
-                 (css/add-class :category))
-            (dom/span nil "Shop"))
+          ;(menu/item-dropdown
+          ;  (->> {:dropdown (category-dropdown component)
+          ;        :onClick  #(.open-dropdown component :dropdown/collection)}
+          ;       (css/hide-for :large)
+          ;       (css/add-class :category))
+          ;  (dom/span nil "Shop"))
 
           (collection-links component true)))
 
@@ -211,13 +216,19 @@
               (my-dom/span nil title))))
 
 (defn sidebar-highlight [component route route-params title]
-  (menu/item
-    (css/add-class :category)
-    (my-dom/a
-      (->> {:onClick #(do (.close-sidebar component)
-                          (routes/set-url! component route route-params))}
-           (css/add-class ::css/highlight ))
-      (my-dom/span nil title))))
+  (let [{:query/keys [current-route]} (om/props component)
+        {:keys [on-live-click]} (om/get-computed component)]
+    (menu/item
+      (css/add-class :category)
+      (my-dom/a
+        (->> {:onClick #(do (.close-sidebar component)
+                            (if (or (= (:route current-route route) :coming-soon)
+                                    (= (:route current-route route) :sell-soon))
+                              (when on-live-click
+                                (on-live-click))
+                              (routes/set-url! component route route-params)))}
+             (css/add-class ::css/highlight))
+        (my-dom/span nil title)))))
 
 (defn sidebar-link [component route route-params title]
   (menu/item
@@ -227,7 +238,7 @@
               (my-dom/span nil title))))
 
 (defn sidebar [component]
-  (let [{:query/keys [auth owned-store navigation]} (om/props component)]
+  (let [{:query/keys [auth owned-store navigation current-route]} (om/props component)]
     (my-dom/div
       (css/add-class :sidebar-container {:onClick #(.close-sidebar component)})
       (my-dom/div {:classes [:sidebar-overlay]})
@@ -298,14 +309,6 @@
               (my-dom/i {:classes ["fa fa-bars fa-fw"]})))
           (navbar-brand)
           (live-link)
-
-          ;(menu/item-dropdown
-          ;  (->> {:dropdown (category-dropdown component)
-          ;        :href     "#"
-          ;        :onClick  #(.open-dropdown component :dropdown/collection)}
-          ;       (css/hide-for :large)
-          ;       (css/add-class :category))
-          ;  (dom/span nil "Shop"))
 
           (collection-links component false)))
       (dom/div #js {:className "top-bar-right"}

@@ -38,14 +38,25 @@
 			color: red;
 		}
 	}
+	#sulo-sidebar {
+		a:not(.button) {
+			// pointer-events: none;
+		}
+		a:not(.button):not(.highlight) {
+			pointer-events: none;
+			text-decoration: line-through;
+			color: $dark-gray;
+		}
+	}
 	.info-banner {
 		$bg: lighten(map-get($foundation-palette, warning), 35%);
 		background: rgba($bg, 0.85);
-		// color: $white;
-		font-weight: 500;
+		font-weight: $global-weight-bold;
 		border: none;
 		box-shadow: 0px 1px 2px 0 rgba($black, 0.1);
 		transition: visibility 0s linear 0.25s, opacity 0.25s linear;
+		padding: 1rem !important;
+		// text-transform: none;
 		&.invisible {
 			opacity: 0;
 		}
@@ -95,15 +106,9 @@
 		// margin-top: 3%;
 		border: none;
 		background: rgba($white, 0.85);
-		text-transform: uppercase;
 		&.transparent {
 			background: transparent;
 		}
-
-		// strong {
-		// 	text-transform: uppercase;
-		// }
-
 		form {
 			margin: 2rem auto 0 auto;
 		}

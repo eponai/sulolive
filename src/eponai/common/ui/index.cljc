@@ -17,7 +17,8 @@
     [eponai.common.ui.icons :as icons]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.photos :as photos]))
+    [eponai.common.photos :as photos]
+    [eponai.common.ui.elements.callout :as callout]))
 
 (defn top-feature [opts icon title text]
   (dom/div #js {:className "feature-item column"}
@@ -140,8 +141,6 @@
                 (top-feature
                   nil
                   (icons/shopping-bag)
-                  ;(dom/img #js {:src "/assets/img/icons/shopping-bag.png"})
-                  ;(dom/i #js {:className (str "fa fa-fw fa-shopping-bag")})
                   "Shop and Discover"
                   "Get lost in a marketplace filled with your local gems.")
                 (top-feature
@@ -273,14 +272,13 @@
 (def ->ComingSoonContent (om/factory ComingSoonContent))
 
 (defn callout-banner [open?]
-  (div
-    (cond->> {:classes [::css/callout ::css/primary :info-banner]}
+  (callout/callout-small
+    (cond->> (css/add-class :info-banner)
              (not open?)
              (css/add-class :invisible))
-    ;(div (->> (css/add-class :close-button)) (dom/small nil "x"))
-    (div (->> (css/grid-row)
-              css/grid-column)
-         (dom/span nil "Sign up to check out the LIVE market when it opens!"))))
+    (grid/row-column
+      nil
+      (dom/span nil "Sign up to check out the LIVE market when it opens!"))))
 
 (defui ComingSoon
   static om/IQuery
@@ -309,12 +307,8 @@
                                                            (my-dom/span nil (dom/span nil "Sell on SULO?"))
                                                            (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
 
-          (photo/header
-            {:src
-             ;; TODO: We should resolve the s3 path to a configurable cloudfront path
-             ;; "https://s3.amazonaws.com/sulo-images/site/home-header-bg.jpg"
-             "https://d30slnyi7gxcwc.cloudfront.net/site/home-header-bg.jpg"
-             }
+          (p/header
+            {:photo-id "static/home-header-bg"}
 
             (callout-banner live-open?)
             (->ComingSoonContent
@@ -401,13 +395,8 @@
                                                            (my-dom/span nil (dom/span nil "Shop on SULO?"))
                                                            (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
           (debug "Live opene: " live-open?)
-          (photo/header
-            {:src
-
-             ;;TODO: Resolve s3 paths to cloudfront paths
-             ;;"https://s3.amazonaws.com/sulo-images/site/coming-soon-sell-bg.jpg"
-             "https://d30slnyi7gxcwc.cloudfront.net/site/coming-soon-sell-bg.jpg"
-             }
+          (p/header
+            {:photo-id "static/coming-soon-sell-bg"}
 
             (callout-banner live-open?)
             (->ComingSoonContent
