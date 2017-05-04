@@ -90,11 +90,8 @@
 
 (defn stripe-loader [component]
   ;; {:pre [(satisfies? IRenderLoadingScripts component)]}
-  #?(:cljs
-     (letfn [(loaded-stripe? [] (exists? js/Stripe))]
-       (js-loader {:scripts   [[loaded-stripe? "https://js.stripe.com/v2/"]
-                               [loaded-stripe? "https://js.stripe.com/v3/"]]
-                   :component component}))
-     :clj
-     (let [loader (js-loader {:component component})]
-       loader)))
+  (letfn [(loaded-stripe? []
+            #?(:cljs (exists? js/Stripe)))]
+    (js-loader {:component component
+                :scripts   [[loaded-stripe? "https://js.stripe.com/v2/"]
+                            [loaded-stripe? "https://js.stripe.com/v3/"]]})))
