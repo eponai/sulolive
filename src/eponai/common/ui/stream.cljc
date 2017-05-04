@@ -5,7 +5,8 @@
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     #?(:cljs [eponai.web.utils :as utils])
-    [taoensso.timbre :refer [debug error info]]))
+    [taoensso.timbre :refer [debug error info]]
+    [eponai.common.ui.script-loader :as script-loader]))
 
 (defn add-fullscreen-listener [f]
   #?(:cljs
@@ -19,10 +20,21 @@
 
 (def wowza-element-id "sulo-wowza")
 
-(defui Stream
+(defn render-stream [this computed]
+  (let [{:keys [stream-title widescreen?]} computed]
+    (dom/div #js {:id "sulo-video-container" :className (str "flex-video"
+                                                             (when widescreen? " widescreen"))}
+      (dom/div #js {:className (str "sulo-spinner-container")}
+        (dom/i #js {:className "fa fa-spinner fa-spin fa-4x"}))
+      (dom/div #js {:id wowza-element-id}))))
+
+(defui Stream-no-loader
   static om/IQuery
   (query [this]
     [{:query/stream-config [:ui.singleton.stream-config/subscriber-url]}])
+  static script-loader/IRenderLoadingScripts
+  (render-while-loading-scripts [this props]
+    (render-stream this (om/get-computed props)))
   Object
   (subscriber-host [this]
     (get-in (om/props this) [:query/stream-config :ui.singleton.stream-config/subscriber-url]))
@@ -86,11 +98,9 @@
                                   (on-fullscreen-change (not fullscreen?))))}))
 
   (render [this]
-    (let [{:keys [stream-title widescreen?]} (om/get-computed this)]
-      (dom/div #js {:id "sulo-video-container" :className (str "flex-video"
-                                                               (when widescreen? " widescreen"))}
-        (dom/div #js {:className (str "sulo-spinner-container")}
-          (dom/i #js {:className "fa fa-spinner fa-spin fa-4x"}))
-        (dom/div #js {:id wowza-element-id})))))
+    (render-stream this (om/get-computed this))))
 
+(def Stream (script-loader/js-loader {:component Stream-no-loader
+                                      #?@(:cljs [:scripts [[#(exists? js/WowzaPlayer)
+                                                            "//player.wowza.com/player/1.0.07.4414/wowzaplayer.min.js"]]])}))
 (def ->Stream (om/factory Stream))

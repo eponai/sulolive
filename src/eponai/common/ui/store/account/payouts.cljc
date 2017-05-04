@@ -11,7 +11,8 @@
     [eponai.common.ui.elements.grid :as grid]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
-    [eponai.client.parser.message :as msg]))
+    [eponai.client.parser.message :as msg]
+    [eponai.common.ui.script-loader :as script-loader]))
 
 (def prefix-key "payouts-details-")
 
@@ -226,7 +227,7 @@
                                      (om/update-state! component dissoc :modal))}
                          (css/button)) (dom/span nil "Save")))))))))))
 
-(defui Payouts
+(defui Payouts-no-loader
   static om/IQuery
   (query [_]
     [:query/messages
@@ -472,5 +473,7 @@
         ;  ;  (dom/a (css/button) (dom/span nil "Save")))
         ;  )
         ))))
+
+(def Payouts (script-loader/stripe-loader Payouts-no-loader))
 
 (def ->Payouts (om/factory Payouts))

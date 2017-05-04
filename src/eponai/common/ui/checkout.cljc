@@ -1,7 +1,5 @@
 (ns eponai.common.ui.checkout
   (:require
-    #?(:cljs
-       [eponai.common.ui.checkout.google-places :as places])
     [eponai.common.ui.checkout.shipping :as ship]
     [eponai.common.ui.checkout.payment :as pay]
     [eponai.common.ui.checkout.review :as review]

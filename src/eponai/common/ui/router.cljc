@@ -17,36 +17,21 @@
 (def dom-app-id "the-sulo-app")
 
 (def route->component
-  {:index           {:component index/Index
-                     :factory   index/->Index}
-   :coming-soon     {:component index/ComingSoon
-                     :factory   index/->ComingSoon}
-   :sell            {:component start-store/StartStore
-                     :factory start-store/->StartStore}
-   :sell-soon       {:component index/ComingSoonBiz
-                     :factory   index/->ComingSoonBiz}
-   :store           {:component store/Store
-                     :factory   store/->Store}
-   :store-dashboard {:component store-dashboard/Dashboard
-                     :factory   store-dashboard/->Dashboard}
-   :checkout        {:component checkout/Checkout
-                     :factory   checkout/->Checkout}
-   :shopping-bag    {:component bag/ShoppingBag
-                     :factory   bag/->ShoppingBag}
-   :help            {:component help/Help
-                     :factory   help/->Help}
-   :browse          {:component goods/Goods
-                     :factory   goods/->Goods}
-   :product         {:component product/ProductPage
-                     :factory   product/->ProductPage}
-   :live            {:component streams/Streams
-                     :factory   streams/->Streams}
-   :user            {:component user/User
-                     :factory   user/->User}
-   :login           {:component index/Login
-                     :factory   index/->Login}
-   :unauthorized    {:component index/Unauthorized
-                     :factory   index/->Unauthorized}})
+  {:index           {:component index/Index}
+   :coming-soon     {:component index/ComingSoon}
+   :sell            {:component start-store/StartStore}
+   :sell-soon       {:component index/ComingSoonBiz}
+   :store           {:component store/Store}
+   :store-dashboard {:component store-dashboard/Dashboard}
+   :checkout        {:component checkout/Checkout}
+   :shopping-bag    {:component bag/ShoppingBag}
+   :help            {:component help/Help}
+   :browse          {:component goods/Goods}
+   :product         {:component product/ProductPage}
+   :live            {:component streams/Streams}
+   :user            {:component user/User}
+   :login           {:component index/Login}
+   :unauthorized    {:component index/Unauthorized}})
 
 (defn normalize-route
   "We need to normalize our routes now that we have namespaced route matches.
@@ -68,5 +53,6 @@
   (render [this]
     (let [{:keys [routing/app-root query/current-route]} (om/props this)
           route (normalize-route (:route current-route :index))
-          factory (get-in route->component [route :factory])]
+          {:keys [factory component]} (get route->component route)
+          factory (or factory (om/factory component))]
       (factory app-root))))

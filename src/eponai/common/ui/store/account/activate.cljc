@@ -6,6 +6,7 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.store.account.validate :as v]
     [eponai.common.ui.elements.input-validate :as v-input]
+    [eponai.common.ui.script-loader :as script-loader]
     [eponai.client.parser.message :as msg]
     #?(:cljs
        [eponai.web.utils :as utils])
@@ -44,7 +45,7 @@
     (grid/column-size {:small 12 :large 3} opts)
     content))
 
-(defui Activate
+(defui Activate-no-loader
   static om/IQuery
   (query [this]
     [:query/stripe-country-spec
@@ -407,5 +408,7 @@
           (dom/p nil (dom/small nil "Excuse the mess, settings are currently under development. Thanks for understanding"))
           ;(dom/p nil (dom/small nil "By activating your account, you agree to our Services Agreement."))
           )))))
+
+(def Activate (script-loader/stripe-loader Activate-no-loader))
 
 (def ->Activate (om/factory Activate))

@@ -6,6 +6,7 @@
     #?(:cljs
        [eponai.web.utils :as utils])
     [eponai.common.ui.utils :refer [two-decimal-price]]
+    [eponai.common.ui.script-loader :as script-loader]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.callout :as callout]))
@@ -34,7 +35,31 @@
          (debug "Payment Ret : " ret)
          ret))))
 
-(defui CheckoutPayment
+(defn render-payment [this props state]
+  (let [{:keys [payment-error card]} state
+        {:keys [error amount]} props]
+    (dom/div
+      (css/add-class :checkout-payment)
+      (dom/label {:htmlFor "sulo-card-element"} "Card")
+      (dom/div {:id "sulo-card-element"})
+      (dom/div
+        (css/text-align :center {:id "card-errors"})
+        (dom/small nil (or error payment-error)))
+      (dom/div (css/text-align :right)
+               (dom/a
+                 (css/button (when-not (script-loader/is-loading-scripts? this)
+                               {:onClick #(.save-payment this)}))
+                 (dom/span nil "Complete purchase"))
+               (dom/p nil
+                      (dom/small nil "This sale will be processed as ")
+                      (dom/small nil (two-decimal-price amount))
+                      (dom/small nil " US dollars."))
+               ))))
+
+(defui CheckoutPayment-no-loader
+  static script-loader/IRenderLoadingScripts
+  (render-while-loading-scripts [this props]
+    (render-payment this props nil))
   Object
   #?(:cljs
      (save-payment
@@ -72,23 +97,8 @@
            (om/update-state! this assoc :card card :stripe stripe)))))
 
   (render [this]
-    (let [{:keys [payment-error card]} (om/get-state this)
-          {:keys [error amount]} (om/props this)]
-      (dom/div
-        (css/add-class :checkout-payment)
-        (dom/label {:htmlFor "sulo-card-element"} "Card")
-        (dom/div {:id "sulo-card-element"})
-        (dom/div
-          (css/text-align :center {:id        "card-errors"})
-          (dom/small nil (or error payment-error)))
-        (dom/div (css/text-align :right)
-                 (dom/a
-                   (css/button {:onClick #(.save-payment this)})
-                   (dom/span nil "Complete purchase"))
-                 (dom/p nil
-                        (dom/small nil "This sale will be processed as ")
-                        (dom/small nil (two-decimal-price amount))
-                        (dom/small nil " US dollars."))
-                 )))))
+    (render-payment this (om/props this) (om/get-state this))))
+
+(def CheckoutPayment (script-loader/stripe-loader CheckoutPayment-no-loader))
 
 (def ->CheckoutPayment (om/factory CheckoutPayment))
