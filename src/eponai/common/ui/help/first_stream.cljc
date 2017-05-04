@@ -15,6 +15,12 @@
       (dom/h1 nil "Your first stream")
       (dom/div
         nil
+        (dom/p nil
+               (dom/span nil
+                         (str "In this guide we'll get you streaming from your first time from your computer to SULO Live. If you want"
+                              " to set up streaming on your mobile device instead of your computer, we recommend you read this"
+                              " guide first, then head over to the "))
+               (dom/a {:href (routes/path :help/mobile-stream)} "Mobile Stream Guide"))
         (dom/p nil "Before you can start streaming on SULO Live, you need to download encoding software. Encoding software allows you to capture content, including your desktop, camera, microphone, and more, and send it to SULO Live to be streamed to all your fans.")
 
         (dom/h2 nil "Download encoding software")
@@ -117,15 +123,15 @@
                                   " Streaming live to customers will take some time getting used to"
                                   " and we want to help you as much as we can.")))
         (dom/p nil
-               (dom/span nil " If you're having problems with quality or latency, check out the ")
-               (dom/a {:href (routes/path :help/quality)}
-                      (dom/span nil "Quality Settings Guide")))
-        (dom/p nil
                (dom/span nil
                          (str " If you want to stream while you're on the go, or need more flexible"
                               " cameras than your webcam or laptop cam, see the "))
                (dom/a {:href (routes/path :help/mobile-stream)}
                       (dom/span nil "Mobile Streaming Guide")))
+        (dom/p nil
+               (dom/span nil " If you're having problems with quality or latency, check out the ")
+               (dom/a {:href (routes/path :help/quality)}
+                      (dom/span nil "Quality Settings Guide")))
         (dom/p nil
                (dom/span nil
                          (str " If you want to get inspiration and see what other people are doing"

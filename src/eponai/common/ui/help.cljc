@@ -78,7 +78,7 @@
                 ;  (dom/section
                 ;    nil))
                 (dom/h1 nil "SULO Live help")
-                (dom/h2 nil "Menu")
+                (dom/h2 nil "Guides")
                 (menu/vertical
                   nil
                   (menu/item nil
