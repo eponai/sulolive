@@ -9,7 +9,7 @@ $primary-color: map-get($foundation-palette, primary);
 .photo-container {
 	// border: 1px solid $light-gray;
 	// box-shadow: 0 1px 3px 0 rgba($primary-color, 0.1);
-	background: rgba($light-gray, 0.2);
+	background: rgba($light-gray, 0.4);
 	flex: 1;
 	display: flex;
 	position: relative;
@@ -85,10 +85,11 @@ $primary-color: map-get($foundation-palette, primary);
 	border-radius: inherit;
 	overflow: hidden;
 	.background {
+		border-radius: inherit;
 		position: absolute;
-		background-size: cover;
-		background-repeat: no-repeat;
-		background-position: center center;
+		background-size: inherit;
+		background-repeat: inherit;
+		background-position: inherit;
 		transition: opacity .25s ease-in;
 		width: 100%;
 		height: 100%;
@@ -132,8 +133,6 @@ $primary-color: map-get($foundation-palette, primary);
 	}
 	&.circle {
 		padding-top: 100%;		
-		border-radius: 50%;
-		overflow: hidden;
 	}
 	&.thumbnail {
 		margin: 0;
@@ -157,6 +156,7 @@ $primary-color: map-get($foundation-palette, primary);
 
 	&.contain {
 		background-size: contain;
+
 		img {
 			object-fit: contain;
 		}

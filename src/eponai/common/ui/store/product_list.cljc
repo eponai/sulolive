@@ -79,7 +79,7 @@
                          (my-dom/a
                            (css/add-class :tr {:href product-link})
                            (my-dom/span (css/add-class :td)
-                                        (p/product-photo p {:transformation :transformation/thumbnail-tiny}))
+                                        (p/product-preview p {:transformation :transformation/thumbnail-tiny}))
                            (my-dom/span (css/add-class :td)
                                         (:store.item/name p))
                            (my-dom/span

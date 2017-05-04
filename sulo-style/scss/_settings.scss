@@ -432,9 +432,9 @@ $maincontent-shadow: 0 0 10px rgba($black, 0.5);
 // 25. Orbit
 // ---------
 
-$orbit-bullet-background: $medium-gray;
-$orbit-bullet-background-active: $dark-gray;
-$orbit-bullet-diameter: 1.2rem;
+$orbit-bullet-background: rgba($light-gray, 0.5);//$medium-gray;
+$orbit-bullet-background-active: $orbit-bullet-background;//$dark-gray;
+$orbit-bullet-diameter: 4rem;
 $orbit-bullet-margin: 0.1rem;
 $orbit-bullet-margin-top: 0.8rem;
 $orbit-bullet-margin-bottom: 0.8rem;

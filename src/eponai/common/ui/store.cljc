@@ -129,8 +129,8 @@
                        (css/text-align :center)
                        (css/add-class :follow-section))
                   (dom/div nil
-                           (dom/a (css/button) "+ Follow")
-                           (dom/a (css/button-hollow) "Contact")))))
+                           (common/follow-button nil)
+                           (common/contact-button nil)))))
             (grid/column
               (->> (grid/column-order {:small 3 :medium 3})
                    (css/add-class :quote-section)

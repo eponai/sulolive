@@ -28,7 +28,7 @@
         (->> {:onClick on-click
               :href    goods-href}
              (css/add-class :primary-photo))
-        (p/product-photo product))
+        (p/product-preview product))
 
       (dom/div
         (->> (css/add-class :header)

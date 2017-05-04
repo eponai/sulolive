@@ -15,9 +15,6 @@
 
 #sulo-product {
 	padding: 3% 0;
-	hr {
-		border-color: $light-gray;
-	}
 	.section {
 		.header {
 			a {
@@ -29,15 +26,41 @@
 	.product-info-container {
 		display: flex;
 		flex-direction: column;
-		// justify-content: space-between;
 		.title {
-			font-weight: 500;
-			font-size: 1.3rem;
-			text-transform: uppercase;
-			margin-bottom: 0.1rem;
+			font-size: 120%;
 		}
 		.price {
-			font-size: 1.25rem;
+			font-weight: $global-weight-bold;
+			font-size: 110%;
+		}
+	}
+	.orbit {
+		.orbit-container {
+			.photo-container {
+				background: transparent;
+			}
+		}
+		.orbit-bullets {
+			button {
+				height: $orbit-bullet-diameter;
+				width: $orbit-bullet-diameter;
+				border-radius: 0;
+			}
+		}
+		li.orbit-slide {
+			display: list-item;
+			opacity: 0;
+			position: absolute;
+			visibility: hidden;
+			// transition: visibility 0s, opacity 0.25s ease-in;
+			transition: visibility 0s 0.25s, opacity .25s ease-in-out;
+			&.is-active {
+				position: relative;
+				opacity: 1;
+				visibility: visible;
+				// transition-delay: 0;
+				transition: visibility 0s, opacity .25s ease-in-out;
+			}
 		}
 	}
 

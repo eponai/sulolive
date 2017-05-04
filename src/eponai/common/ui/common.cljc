@@ -20,6 +20,17 @@
              (css/add-class (str "sl-orderstatus--" (name status))))
         (name status)))))
 
+(defn follow-button [opts]
+  (dom/a
+    (->> (css/button opts)
+         (css/add-class :disabled))
+    (dom/span nil "+ Follow")))
+
+(defn contact-button [opts]
+  (dom/a (->> (css/button-hollow opts)
+              (css/add-class :disabled))
+         (dom/span nil "Contact")))
+
 (defn modal [opts & content]
   (let [{:keys [on-close size]} opts]
     (dom/div

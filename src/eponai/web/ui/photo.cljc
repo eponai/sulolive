@@ -67,7 +67,7 @@
 
 (defn photo [props & content]
   (dom/div
-    (css/add-class ::css/photo-container (select-keys props [:classes]))
+    (css/add-class ::css/photo-container)
     (->Photo props)
     content))
 
@@ -75,7 +75,11 @@
   (photo (css/add-class :square props) content))
 
 (defn circle [props & content]
-  (photo (css/add-class :circle props) content))
+  (dom/div
+    (->> (css/add-class ::css/photo-container)
+         (css/add-class :circle))
+    (->Photo (css/add-class :circle props))
+    content))
 
 (defn cover [props & content]
   (photo (-> (css/add-class :cover props)
@@ -93,12 +97,19 @@
       (css/add-class ::css/photo-overlay-content)
       content)))
 
-(defn product-photo [product & [{:keys [index transformation]}]]
+(defn product-photo [product & [{:keys [index transformation classes]}]]
   (let [{:store.item/keys [photos]} product
-        {:store.item.photo/keys [photo]} (get (into [] (sort-by :store.item.photo/index photos)) (or index 0))
-        photo-id (:photo/id photo "static/storefront")]
-    (square {:photo-id       photo-id
-             :transformation transformation})))
+        {item-photo :store.item.photo/photo} (get (into [] (sort-by :store.item.photo/index photos)) (or index 0))
+        photo-id (:photo/id item-photo "static/storefront")]
+    (photo {:photo-id       photo-id
+            :transformation transformation
+            :classes        classes})))
+
+(defn product-preview [product & [opts]]
+  (product-photo product (css/add-class :square opts)))
+
+(defn product-thumbnail [product & [opts]]
+  (product-preview product (css/add-class :thumbnail opts)))
 
 (defn store-photo [store & [{:keys [transformation]}]]
   (let [photo (get-in store [:store/profile :store.profile/photo])
