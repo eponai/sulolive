@@ -31,26 +31,25 @@
                                                         (.toLowerCase search-input)) inventory)
                      inventory)]
       (dom/div nil
-        (my-dom/div
-          (->> (css/grid-row))
-          (my-dom/div
-            (css/grid-column)
-            (dom/h3 nil "Products"))
-          (my-dom/div
-            (->> (css/grid-column)
+        (grid/row-column
+          nil
+          (dom/h3 nil "Products"))
+        (grid/row
+          nil
+          (grid/column
+            nil
+            (my-dom/input {:value       (or search-input "")
+                           :onChange    #(om/update-state! this assoc :search-input (.. % -target -value))
+                           :placeholder "Search Products..."
+                           :type        "text"}))
+          (grid/column
+            (->> (css/add-class :shrink)
                  (css/text-align :right))
             (dom/a #js {:className "button"
                         :href      (routes/url :store-dashboard/create-product
                                                {:store-id (:store-id route-params)
                                                 :action   "create"})}
                    "Add product")))
-        (my-dom/div
-          (->> (css/grid-row)
-               (css/grid-column))
-          (my-dom/input {:value       (or search-input "")
-                         :onChange    #(om/update-state! this assoc :search-input (.. % -target -value))
-                         :placeholder "Search Products..."
-                         :type        "text"}))
 
         (grid/row
           (css/add-class :collapse)

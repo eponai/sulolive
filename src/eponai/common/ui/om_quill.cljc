@@ -32,7 +32,8 @@
                  (a/html-sanitize policy dirty-html))))))
 
 (defn get-HTML #?@(:cljs [[^js/Quill editor]
-                          (sanitize-html (.. editor -root -innerHTML))]
+                          (when editor
+                            (sanitize-html (.. editor -root -innerHTML)))]
                    :clj[[editor] nil]))
 
 (defn toolbar-opts []

@@ -8,6 +8,46 @@ a.disabled {
 	}
 }
 #sulo-account-settings {
+	label.text-left {
+		text-align: left;
+	}
+	.upload-photo {
+		.photo-container {
+			background: $white;
+			border: $global-border;
+			.overlay {
+				cursor: pointer;
+				transition: opacity .25s ease-in-out, background .25s ease-in-out;
+				background: transparent;
+				&:hover {
+					background: rgba($light-gray, 0.3);
+				}
+				.content {
+					// font-size: 1rem;
+					padding: 0.5rem 1rem;
+					border-radius: $global-radius;
+					background: rgba($white, 0.5);
+				}
+				justify-content: flex-end;
+				align-items: flex-start;
+				padding: 1rem;
+			}
+		}
+		.circle {
+			max-width: 10rem;
+			margin: 0 auto;
+			.overlay {
+				justify-content: center;
+			}
+		}
+		&.loading .overlay {
+			background: rgba($white, 0.5);
+			align-items: center;
+			.content {
+				background: transparent;
+			}
+		}
+	}
 	input, select {
 		&[disabled] {
 			background-color: darken($white, 5%);

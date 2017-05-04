@@ -81,9 +81,14 @@
     (->Photo (css/add-class :circle props))
     content))
 
-(defn cover [props & content]
-  (photo (-> (css/add-class :cover props)
-             (assoc :style :style/cover)) content))
+(defn cover [{:keys [placeholder? photo-id] :as props} & content]
+  (let [photo-key (if placeholder?
+                    (or photo-id "static/storefront")
+                    photo-id)]
+    (photo (-> (css/add-class :cover props)
+               (assoc :style :style/cover)
+               (assoc :photo-id photo-key))
+           content)))
 
 (defn header [props & content]
   (->Photo
@@ -111,12 +116,13 @@
 (defn product-thumbnail [product & [opts]]
   (product-preview product (css/add-class :thumbnail opts)))
 
-(defn store-photo [store & [{:keys [transformation]}]]
+(defn store-photo [store {:keys [transformation]} & content]
   (let [photo (get-in store [:store/profile :store.profile/photo])
         photo-id (:photo/id photo "static/storefront")]
     (circle (->> {:photo-id       photo-id
                   :transformation transformation}
-                 (css/add-class :store-photo)))))
+                 (css/add-class :store-photo))
+            content)))
 
 (defn stream-photo [store]
   (let [photo (get-in store [:store/profile :store.profile/photo])

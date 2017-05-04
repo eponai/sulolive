@@ -127,6 +127,7 @@
             nil
             (dom/a
               {:href (routes/url :store {:store-id store-id})}
+              (dom/i (css/show-for nav-breakpoint {:classes ["fa fa-home fa-fw"]}))
               (dom/span (css/show-for nav-breakpoint) "Go to store")
               (dom/i
                 (css/hide-for nav-breakpoint {:classes [:fa :fa-home :fa-fw]})))))))))
@@ -258,6 +259,7 @@
                                      :store.profile/name
                                      :store.profile/tagline
                                      :store.profile/return-policy
+                                     {:store.profile/cover [:photo/path :photo/id]}
                                      {:store.profile/photo [:photo/path :photo/id]}]}
                     {:store/owners [{:store.owner/user [:user/email]}]}
                     :store/stripe
