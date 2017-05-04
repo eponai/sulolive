@@ -35,8 +35,11 @@
    ["/" [#"\d+" :product-id]] :product})
 
 (def help-routes
-  {""          :help
-   "/encoding" :help/encoding})
+  {""               :help
+   "/first-stream"  :help/first-stream
+   "/mobile-stream" :help/mobile-stream
+   "/quality"       :help/quality
+   "/faq"           :help/faq})
 
 (def checkout-routes
   {""          :checkout

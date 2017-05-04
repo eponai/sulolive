@@ -234,8 +234,9 @@
                     (dom/p nil "Setup encoding software")
                     (dom/p nil
                            (dom/small nil "Before you can start streaming on SULO Live, you need to download encoding software, and then set it up. Learn more about setting up encoders in our ")
-                           (dom/a {:href (routes/url :help/encoding)
-                                   :target "_blank"} (dom/small nil "Guide to Encoding"))
+                           (dom/a {:href (routes/url :help/first-stream)
+                                   :target "_blank"}
+                                  (dom/small nil "First Stream Guide"))
                            (dom/small nil ". You'll need to use the Server URL and Stream key to configure the encoding software.")))
 
                   ;"Before you can start streaming on YouTube, you need to download encoding software, and then set it up. Learn about Live Verified encoders in our Guide to Encoding.\nYou may need to use the server URL and stream name / key below to configure the encoding software."
