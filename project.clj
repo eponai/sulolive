@@ -263,7 +263,8 @@
                                                              :output-dir    "target/android"
                                                              :optimizations :simple}}]}}
 
-             :web-prod {:cljsbuild {:builds [{:id           "release"
+             :web-prod {:jvm-opts     ^:replace ["-Xmx3g" "-server"]
+                        :cljsbuild {:builds [{:id           "release"
                                               :source-paths ["src/" "src-hacks/web/" "env/client/prod"]
                                               :compiler     {:closure-defines {"goog.DEBUG" false}
                                                              :main            "env.web.main"
@@ -282,7 +283,8 @@
                                                              ;;   :verbose         true
                                                              :npm-deps        ~npm-deps
                                                              }}]}}
-             :web      {:exclusions   [org.clojure/clojure org.clojure/clojurescript]
+             :web      {:jvm-opts     ^:replace ["-Xmx3g" "-server"]
+                        :exclusions   [org.clojure/clojure org.clojure/clojurescript]
                         :dependencies [[figwheel-sidecar "0.5.7"]]
                         :cljsbuild    {:builds [{:id           "dev"
                                                  :figwheel     {:on-jsload "eponai.web.figwheel/reload!"}
