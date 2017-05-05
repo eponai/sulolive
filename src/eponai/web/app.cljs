@@ -1,8 +1,10 @@
 (ns eponai.web.app
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
     [eponai.common.ui.components]
     [eponai.client.utils :as utils]
     [eponai.web.auth :as auth]
+    [eponai.web.modules :as modules]
     [eponai.common.parser :as parser]
     [eponai.client.parser.read]
     [eponai.client.parser.mutate]
@@ -15,7 +17,8 @@
     [medley.core :as medley]
     [goog.dom :as gdom]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [error debug warn]]
+    [om.next.protocols :as om.protocols]
+    [taoensso.timbre :refer [error debug warn info]]
     ;; Routing
     [cemerick.url :as url]
     [bidi.bidi :as bidi]
@@ -23,13 +26,21 @@
     [eponai.client.local-storage :as local-storage]
     [eponai.client.routes :as routes]
     [eponai.common.routes :as common.routes]
-    [eponai.common.ui.router :as router]))
+    [eponai.common.ui.router :as router]
+    [cljs.core.async :as async]))
 
 (defn update-route-fn [reconciler-atom]
   (fn [{:keys [handler route-params] :as match}]
-    (let [r @reconciler-atom]
-      (try (routes/transact-route! r handler {:route-params route-params
-                                              :queue?       (some? (om/app-root r))})
+    (let [reconciler @reconciler-atom
+          modules (get-in reconciler [:config :shared :shared/modules])]
+      (try (routes/transact-route! reconciler handler {:route-params route-params
+                                                       :queue?       (some? (om/app-root reconciler))})
+           (when-not (modules/loaded-route? modules handler)
+             (info "Hadn't required route: " handler "will do so.")
+             (modules/require-route! modules handler (fn []
+                                                       (info "Required route: " handler)
+                                                       (om.protocols/reindex! reconciler)
+                                                       (om/force-root-render! reconciler))))
            (catch :default e
              (debug "Tried to set route: " match ", got error: " e))))))
 
@@ -58,9 +69,10 @@
 (defonce history-atom (atom nil))
 (defonce reconciler-atom (atom nil))
 
-(defn- run [{:keys [auth-lock]
-             :or   {auth-lock (auth/auth0-lock)}
-             :as run-options}]
+(defn- run [{:keys [auth-lock modules]
+             :or   {auth-lock (auth/auth0-lock)
+                    modules (modules/advanced-compilation-modules @router/routes)}
+             :as   run-options}]
   (let [init? (atom false)
         _ (when-let [h @history-atom]
             (pushy/stop! h))
@@ -75,17 +87,18 @@
         add-schema-to-query-once (apply-once (fn [q]
                                                {:pre [(sequential? q)]}
                                                (into [:datascript/schema] q)))
+        initial-module-loaded-chan (async/chan)
+        initial-merge-chan (async/chan)
         send-fn (backend/send! reconciler-atom
                                ;; TODO: Make each remote's basis-t isolated from another
                                ;;       Maybe protocol it?
                                remote-config
                                {:did-merge-fn (apply-once
-                                                (fn [reconciler]
+                                                (fn []
+                                                  (reset! init? true)
                                                   (when-not @init?
-                                                    (reset! init? true)
-                                                    (debug "First merge happened. Adding reconciler to root.")
-                                                    (binding [parser/*parser-allow-remote* false]
-                                                      (om/add-root! reconciler router/Router (gdom/getElement router/dom-app-id))))))
+                                                    (debug "Initial merge happened."))
+                                                  (async/close! initial-merge-chan)))
                                 :query-fn     (fn [query remote]
                                                 (cond-> query (= :remote remote) (add-schema-to-query-once)))})
         reconciler (reconciler/create {:conn                       conn
@@ -93,6 +106,7 @@
                                        :ui->props                  (utils/cached-ui->props-fn parser)
                                        :send-fn                    send-fn
                                        :remotes                    (:order remote-config)
+                                       :shared/modules             modules
                                        :shared/browser-history     history
                                        :shared/store-chat-listener (web.chat/store-chat-listener reconciler-atom)
                                        :shared/auth-lock           auth-lock
@@ -105,13 +119,25 @@
       ;; We ensure that routes has been inited
       (when-not (:route (routes/current-route reconciler))
         (set-current-route! history update-route!)))
+    (modules/require-route! modules
+                            (:route (routes/current-route reconciler))
+                            (fn [route]
+                              (debug "Initial module has loaded for route: " route)
+                              (async/close! initial-module-loaded-chan)))
+    (go
+      (async/<! initial-merge-chan)
+      (async/<! initial-module-loaded-chan)
+      (debug "Adding reconciler to root.")
+      (binding [parser/*parser-allow-remote* false]
+        (om/add-root! reconciler router/Router (gdom/getElement router/dom-app-id))))
     (utils/init-state! reconciler send-fn router/Router)))
 
 (defn run-prod []
   (run {}))
 
 (defn run-dev [& [deps]]
-  (run (merge {:auth-lock (auth/fake-lock)}
+  (run (merge {:auth-lock (auth/fake-lock)
+               :modules   (modules/dev-modules)}
               deps)))
 
 (defn on-reload! []

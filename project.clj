@@ -3,6 +3,30 @@
               })
 (def closure-warns {:non-standard-jsdoc :off})
 
+(defn modules [output-dir]
+  (letfn [(module [[route namespaces]]
+            [route (if (map? namespaces)
+                     namespaces
+                     {:output-to (str output-dir "/closure-modules/" (name route) ".js")
+                      :entries   (into #{} (map str) namespaces)})])]
+    (into {}
+      (map module)
+      `{:cljs-base       {:output-to ~(str output-dir "/budget.js")}
+        :index           [eponai.common.ui.index]
+        :unauthorized    [eponai.web.ui.unauthorized]
+        :login           [eponai.web.ui.login]
+        :coming-soon     [eponai.web.ui.coming-soon]
+        :sell            [eponai.web.ui.start-store]
+        :store           [eponai.common.ui.store]
+        :checkout        [eponai.common.ui.checkout]
+        :browse          [eponai.common.ui.goods]
+        :shopping-bag    [eponai.common.ui.shopping-bag]
+        :product         [eponai.common.ui.product]
+        :live            [eponai.common.ui.streams]
+        :help            [eponai.common.ui.help]
+        :user            [eponai.common.ui.user]
+        :store-dashboard [eponai.common.ui.store.dashboard]})))
+
 (defproject budget "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
@@ -56,7 +80,7 @@
                  [cljsjs/react "15.4.2-2"]
                  [cljsjs/react-dom "15.4.2-2"]
                  [com.cognitect/transit-cljs "0.8.239"]
-                 [org.clojure/clojurescript "1.9.521"   
+                 [org.clojure/clojurescript "1.9.521"
                   ;;  :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]
@@ -97,7 +121,7 @@
             [lein-figwheel "0.5.7" :exclusions [org.clojure/clojure]]
             [lein-test-out "0.3.1"]
             [lein-environ "1.1.0"]]
-  
+
   :min-lein-version "2.0.0"
   :clean-targets ^{:protect false} ["resources/public/dev/js/out"
                                     "resources/public/devcards/js/out"
@@ -266,7 +290,7 @@
              :web-prod {:jvm-opts     ^:replace ["-Xmx3g" "-server"]
                         :cljsbuild {:builds [{:id           "release"
                                               :source-paths ["src/" "src-hacks/web/" "env/client/prod"]
-                                              :compiler     {:closure-defines {"goog.DEBUG" false}
+                                              :compiler     {:closure-defines {"goog.DEBUG" true}
                                                              :main            "env.web.main"
                                                              :asset-path      "/release/js/out"
                                                              :output-to       "resources/public/release/js/out/budget.js"
@@ -278,10 +302,11 @@
                                                              :infer-externs true
                                                              ;; :language-in     :ecmascript5
                                                              ;; :parallel-build  true
-                                                             ;;   :pseudo-names true
-                                                             ;;   :pretty-print true
-                                                             ;;   :verbose         true
+                                                             ;; :pseudo-names true
+                                                             ;; :pretty-print true
+                                                             ;; :verbose         true
                                                              :npm-deps        ~npm-deps
+                                                             :modules ~(modules "resources/public/release/js/out/")
                                                              }}]}}
              :web      {:jvm-opts     ^:replace ["-Xmx3g" "-server"]
                         :exclusions   [org.clojure/clojure org.clojure/clojurescript]
@@ -292,6 +317,7 @@
                                                  :compiler     {:main           "env.web.main"
                                                                 :asset-path     "/dev/js/out"
                                                                 :output-to      "resources/public/dev/js/out/budget.js"
+                                                                ;; :modules ~(modules "/dev/js/out")
                                                                 :output-dir     "resources/public/dev/js/out/"
                                                                 :optimizations  :none
                                                                 :parallel-build true

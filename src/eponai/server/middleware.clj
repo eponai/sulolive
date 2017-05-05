@@ -204,3 +204,10 @@
 
 (defn init-datascript-db [conn]
   (common.datascript/init-db (query/schema (db/db conn)) (client.utils/initial-ui-state)))
+
+(defn wrap-js-files [handler cljs-build-id]
+  (fn [request]
+    (let [path (ring.request/path-info request)]
+      (if-not (str/starts-with? path "/js")
+        (handler request)
+        (ring.response/resource-response (str "/" cljs-build-id path) {:root "public"})))))

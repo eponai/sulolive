@@ -122,11 +122,13 @@
    ])
 
 (defn budget-js-path [cljs-build-id]
-  (str "/"
-       (cond (= cljs-build-id "release") "release"
-             (= cljs-build-id "devcards") "devcards"
-             :else "dev")
-       "/js/out/budget.js"))
+  (comment
+    (str "/"
+         (cond (= cljs-build-id "release") "release"
+               (= cljs-build-id "devcards") "devcards"
+               :else "dev")
+         ))
+  "/js/out/budget.js")
 
 
 (defn auth0-lock-passwordless [release?]

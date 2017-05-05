@@ -16,7 +16,8 @@
     [eponai.common.api.products :as products]
     [clojure.string :as str]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    #?(:cljs [eponai.web.modules :as modules])))
 
 (def sorting-vals
   {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
@@ -191,3 +192,5 @@
 (def ->Goods (om/factory Goods))
 
 (defmethod router/route->component :browse [_] {:component Goods})
+#?(:cljs
+   (modules/set-loaded! :browse))

@@ -42,7 +42,8 @@
                :shared/keys [browser-history
                              auth-lock
                              local-storage
-                             store-chat-listener]
+                             store-chat-listener
+                             modules]
                :or   {conn          (utils/create-conn)
                       local-storage (local-storage/->local-storage)
                       remotes       (remote-order)
@@ -56,7 +57,8 @@
                                          :remotes    remotes
                                          :send       send-fn
                                          :merge      merge
-                                         :shared     {:shared/browser-history     browser-history
+                                         :shared     {:shared/modules             modules
+                                                      :shared/browser-history     browser-history
                                                       :shared/local-storage       local-storage
                                                       :shared/auth-lock           auth-lock
                                                       :shared/store-chat-listener store-chat-listener}

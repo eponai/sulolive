@@ -9,13 +9,16 @@
     [eponai.common.ui.checkout :as checkout]
     [eponai.common.ui.shopping-bag :as bag]
     [eponai.common.ui.store :as store]
-    [eponai.web.ui.start-store :as start-store]
     [eponai.common.ui.store.dashboard :as store-dashboard]
     [eponai.common.ui.goods :as goods]
     [eponai.common.ui.index :as index]
     [eponai.common.ui.product :as product]
     [eponai.common.ui.streams :as streams]
     [eponai.common.ui.user :as user]
+    [eponai.web.ui.start-store :as start-store]
+    [eponai.web.ui.coming-soon :as coming-soon]
+    [eponai.web.ui.login :as login]
+    [eponai.web.ui.unauthorized :as unauthorized]
     [om.next :as om]
     [medley.core :as medley]])
     [clojure.walk :as walk]))
@@ -23,9 +26,8 @@
 #?(:clj
    (defmacro compiled-queries []
      (let [routes {:index           {:component index/Index}
-                   :coming-soon     {:component index/ComingSoon}
+                   :coming-soon     {:component coming-soon/ComingSoon}
                    :sell            {:component start-store/StartStore}
-                   :sell-soon       {:component index/ComingSoonBiz}
                    :store           {:component store/Store}
                    :store-dashboard {:component store-dashboard/Dashboard}
                    :checkout        {:component checkout/Checkout}
@@ -35,8 +37,8 @@
                    :product         {:component product/ProductPage}
                    :live            {:component streams/Streams}
                    :user            {:component user/User}
-                   :login           {:component index/Login}
-                   :unauthorized    {:component index/Unauthorized}}]
+                   :login           {:component login/Login}
+                   :unauthorized    {:component unauthorized/Unauthorized}}]
        (medley/map-vals (fn [{:keys [component]}]
                           {:query (->> (om/get-query component)
                                        (walk/postwalk

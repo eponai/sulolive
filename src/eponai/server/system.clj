@@ -44,6 +44,7 @@
                                        ::m/parser              (parser/server-parser)
                                        ::m/cljs-build-id       (or cljs-build-id "dev")
                                        ::m/system              system})
+                        (m/wrap-js-files cljs-build-id)
                         (m/wrap-defaults in-production? disable-anti-forgery)
                         m/wrap-trace-request
                         (cond-> (and in-production? (not disable-ssl))
