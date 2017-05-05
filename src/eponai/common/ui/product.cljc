@@ -9,6 +9,7 @@
     [eponai.common.ui.common :as common]
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.navbar :as nav]
+    [eponai.common.ui.router :as router]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.om-quill :as quill]
@@ -241,3 +242,5 @@
         (->Product item)))))
 
 (def ->ProductPage (om/factory ProductPage))
+
+(defmethod router/route->component :product [_] {:component ProductPage})

@@ -10,6 +10,7 @@
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.elements.css :as css]
+    [eponai.common.ui.router :as router]
     [taoensso.timbre :refer [debug]]
     [eponai.client.parser.message :as msg]
     [eponai.common :as c]
@@ -120,3 +121,5 @@
                                                                   (.place-order this))}))))))))))
 
 (def ->Checkout (om/factory Checkout))
+
+(defmethod router/route->component :checkout [_] {:component Checkout})

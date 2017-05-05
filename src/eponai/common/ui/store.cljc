@@ -8,6 +8,7 @@
     [eponai.common.ui.product :as item]
     [eponai.common.ui.stream :as stream]
     [eponai.common.ui.om-quill :as quill]
+    [eponai.common.ui.router :as router]
     [eponai.common.format :as f]
     [eponai.client.routes :as routes]
     #?(:cljs [eponai.web.utils :as utils])
@@ -183,3 +184,5 @@
                                  (pi/->ProductItem {:product p})))))))))
 
 (def ->Store (om/factory Store))
+
+(defmethod router/route->component :store [_] {:component Store})

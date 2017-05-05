@@ -1,5 +1,6 @@
 (ns eponai.web.app
   (:require
+    [eponai.common.ui.components]
     [eponai.client.utils :as utils]
     [eponai.web.auth :as auth]
     [eponai.common.parser :as parser]

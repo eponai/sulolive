@@ -8,6 +8,7 @@
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.navbar :as nav]
+    [eponai.common.ui.router :as router]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.callout :as callout]
@@ -113,3 +114,5 @@
                        (dom/span nil ". We're happy to help!"))))))))))
 
 (def ->Help (om/factory Help))
+
+(defmethod router/route->component :help [_] {:component Help})

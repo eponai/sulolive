@@ -12,6 +12,7 @@
     [eponai.common.ui.product :as product]
     [eponai.common.ui.product-filters :as pf]
     [eponai.common.ui.product-item :as pi]
+    [eponai.common.ui.router :as router]
     [eponai.common.api.products :as products]
     [clojure.string :as str]
     [om.next :as om :refer [defui]]
@@ -188,3 +189,5 @@
                                  (pi/->ProductItem {:product p})))))))))))
 
 (def ->Goods (om/factory Goods))
+
+(defmethod router/route->component :browse [_] {:component Goods})

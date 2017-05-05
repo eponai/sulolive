@@ -17,7 +17,8 @@
     [eponai.common.ui.icons :as icons]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.elements.callout :as callout]))
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.common.ui.router :as router]))
 
 (defn top-feature [opts icon title text]
   (dom/div #js {:className "feature-item column"}
@@ -478,3 +479,9 @@
       (dom/strong nil "UNAUTHORIZED :("))))
 
 (def ->Unauthorized (om/factory Unauthorized))
+
+(defmethod router/route->component :index [_] {:component Index})
+(defmethod router/route->component :coming-soon [_] {:component ComingSoon})
+(defmethod router/route->component :sell-soon [_] {:component ComingSoonBiz})
+(defmethod router/route->component :login [_] {:component Login})
+(defmethod router/route->component :unauthorized [_] {:component Unauthorized})

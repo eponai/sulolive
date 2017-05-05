@@ -8,6 +8,7 @@
        [eponai.web.utils :as utils])
     [eponai.common.ui.dom :as dom]
     [om.next :as om :refer [defui]]
+    [eponai.common.ui.router :as router]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.elements.photo :as photo]
@@ -130,3 +131,5 @@
         ))))
 
 (def ->StartStore (om/factory StartStore))
+
+(defmethod router/route->component :sell [_] {:component StartStore})
