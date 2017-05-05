@@ -72,76 +72,85 @@
   (let [{:query/keys [current-route]} (om/props component)
         {:keys [route route-params]} current-route
         store-id (:store-id route-params)
-        nav-breakpoint :medium]
+        nav-breakpoint :medium
+        routes->titles {:store-dashboard                   "Dashboard"
+                        :store-dashboard/stream            "Stream"
+                        :store-dashboard/product-list      "Products"
+                        :store-dashboard/product           "Products"
+                        :store-dashboard/create-product    "Products"
+                        :store-dashboard/order-list        "Orders"
+                        :store-dashboard/order             "Orders"
+                        :store-dashboard/settings          "Settings"
+                        :store-dashboard/settings#payments "Settings"
+                        :store-dashboard/settings#general  "Settings"
+                        :store-dashboard/settings#shipping "Settings"
+                        :store-dashboard/settings#activate "Settings"
+                        :store-dashboard/settings#business "Settings"}]
     (dom/div
       (->> {:id "store-navbar"}
-           (css/add-class :navbar-container)
-           (css/show-for :large))
+           (css/add-class :navbar-container))
       (dom/nav
         (->> (css/add-class :navbar)
              (css/add-class :top-bar))
         (menu/horizontal
           (css/add-class :top-bar-left)
-          (menu/item (when (= route :store-dashboard/edit)
-                       (css/add-class ::css/is-active))
-                     (dom/a
-                       (css/add-class :category {:href (routes/url :store-dashboard/edit {:store-id store-id})})
-                       (dom/span (css/show-for nav-breakpoint) "Profile")
-                       (dom/i
-                         (css/hide-for nav-breakpoint {:classes [:fa :fa-dashboard :fa-fw]}))))
-
-          (menu/item (when (= route :store-dashboard)
-                       (css/add-class ::css/is-active))
-                     (dom/a
-                       (css/add-class :category {:href (routes/url :store-dashboard {:store-id store-id})})
-                       (dom/span (css/show-for nav-breakpoint) "Dashboard")
-                       (dom/i
-                         (css/hide-for nav-breakpoint {:classes [:fa :fa-dashboard :fa-fw]}))))
-          (menu/item (when (= route :store-dashboard/stream)
-                       (css/add-class ::css/is-active))
-                     (dom/a
-                       (css/add-class :category {:href (routes/url :store-dashboard/stream {:store-id store-id})})
-                       (dom/span (css/show-for nav-breakpoint) "Stream")
-                       (dom/i
-                         (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]}))))
-          (menu/item
-            (when (or (= route :store-dashboard/product-list)
-                      (= route :store-dashboard/product)
-                      (= route :store-dashboard/create-product))
-              (css/add-class ::css/is-active))
-            (dom/a
-              (css/add-class :category {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
-              (dom/span (css/show-for nav-breakpoint) "Products")
-              (dom/i
-                (css/hide-for nav-breakpoint {:classes [:fa :fa-gift :fa-fw]}))))
-          (menu/item
-            (when (or (= route :store-dashboard/order-list)
-                      (= route :store-dashboard/order))
-              (css/add-class ::css/is-active))
-            (dom/a
-              (css/add-class :category {:href (routes/url :store-dashboard/order-list {:store-id store-id})})
-              (dom/span (css/show-for nav-breakpoint) "Orders")
-              (dom/i
-                (css/hide-for nav-breakpoint {:classes [:fa :fa-file-text-o :fa-fw]}))))
-          (menu/item
-            (when (= (parse-route route) :store-dashboard/settings)
-              (css/add-class ::css/is-active))
-            (dom/a
-              (css/add-class :category {:href (routes/url :store-dashboard/settings {:store-id store-id})})
-              (dom/span (css/show-for nav-breakpoint) "Settings")
-              (dom/i
-                (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]})))))
-        (menu/horizontal
-          (->> (css/add-class :top-bar-right)
-               (css/align :right))
-          (menu/item
-            nil
-            (dom/a
-              {:href (routes/url :store {:store-id store-id})}
-              (dom/i (css/show-for nav-breakpoint {:classes ["fa fa-home fa-fw"]}))
-              (dom/span (css/show-for nav-breakpoint) "Go to store")
-              (dom/i
-                (css/hide-for nav-breakpoint {:classes [:fa :fa-home :fa-fw]})))))))))
+          (menu/item-text nil (dom/span nil (routes->titles (:route current-route)))))
+        ;(menu/horizontal
+        ;  (css/add-class :top-bar-left)
+        ;  (menu/item-text nil (dom/span nil (routes->titles (:route current-route))))
+        ;  (menu/item (when (= route :store-dashboard)
+        ;               (css/add-class ::css/is-active))
+        ;             (dom/a
+        ;               (css/add-class :category {:href (routes/url :store-dashboard {:store-id store-id})})
+        ;               (dom/span (css/show-for nav-breakpoint) "Dashboard")
+        ;               (dom/i
+        ;                 (css/hide-for nav-breakpoint {:classes [:fa :fa-dashboard :fa-fw]}))))
+        ;  (menu/item (when (= route :store-dashboard/stream)
+        ;               (css/add-class ::css/is-active))
+        ;             (dom/a
+        ;               (css/add-class :category {:href (routes/url :store-dashboard/stream {:store-id store-id})})
+        ;               (dom/span (css/show-for nav-breakpoint) "Stream")
+        ;               (dom/i
+        ;                 (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]}))))
+        ;  (menu/item
+        ;    (when (or (= route :store-dashboard/product-list)
+        ;              (= route :store-dashboard/product)
+        ;              (= route :store-dashboard/create-product))
+        ;      (css/add-class ::css/is-active))
+        ;    (dom/a
+        ;      (css/add-class :category {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
+        ;      (dom/span (css/show-for nav-breakpoint) "Products")
+        ;      (dom/i
+        ;        (css/hide-for nav-breakpoint {:classes [:fa :fa-gift :fa-fw]}))))
+        ;  (menu/item
+        ;    (when (or (= route :store-dashboard/order-list)
+        ;              (= route :store-dashboard/order))
+        ;      (css/add-class ::css/is-active))
+        ;    (dom/a
+        ;      (css/add-class :category {:href (routes/url :store-dashboard/order-list {:store-id store-id})})
+        ;      (dom/span (css/show-for nav-breakpoint) "Orders")
+        ;      (dom/i
+        ;        (css/hide-for nav-breakpoint {:classes [:fa :fa-file-text-o :fa-fw]}))))
+        ;  (menu/item
+        ;    (when (= (parse-route route) :store-dashboard/settings)
+        ;      (css/add-class ::css/is-active))
+        ;    (dom/a
+        ;      (css/add-class :category {:href (routes/url :store-dashboard/settings {:store-id store-id})})
+        ;      (dom/span (css/show-for nav-breakpoint) "Settings")
+        ;      (dom/i
+        ;        (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]})))))
+        ;(menu/horizontal
+        ;  (->> (css/add-class :top-bar-right)
+        ;       (css/align :right))
+        ;  (menu/item
+        ;    nil
+        ;    (dom/a
+        ;      {:href (routes/url :store {:store-id store-id})}
+        ;      (dom/i (css/show-for nav-breakpoint {:classes ["fa fa-home fa-fw"]}))
+        ;      (dom/span (css/show-for nav-breakpoint) "Go to store")
+        ;      (dom/i
+        ;        (css/hide-for nav-breakpoint {:classes [:fa :fa-home :fa-fw]})))))
+        ))))
 
 (defn store-info-element [component]
   (let [{:query/keys [store stripe-account current-route]} (om/props component)
@@ -321,10 +330,6 @@
           ;; Render the store's dashboard:
           (dom/div
             {:id "sulo-main-dashboard"}
-            (grid/row-column
-              nil
-
-              (dom/h3 nil (dom/span nil "Dashboard ")))
             (grid/row
               (css/align :center)
               (grid/column

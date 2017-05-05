@@ -15,7 +15,6 @@
            (let [image-large (js/Image.)
                  url (photos/transform photo-id (or transformation :transformation/preview))]
              (set! (.-onload image-large) #(do
-                                            (debug "IMAGE LOADED LARGE")
                                             (om/update-state! this assoc :loaded-main? true)))
              (set! (.-src image-large) url))))))
 
@@ -44,7 +43,7 @@
                   (dom/img
                     (cond->> {:src     (when loaded-main? url)
                               :classes ["main"]
-                              :onLoad  #(do (debug "Large image loaded") (om/update-state! this assoc :loaded-main? true))}
+                              :onLoad  #(om/update-state! this assoc :loaded-main? true)}
                              loaded-main?
                              (css/add-class :loaded)))
                   (dom/div (css/add-class :content)
@@ -127,7 +126,6 @@
 (defn stream-photo [store]
   (let [photo (get-in store [:store/profile :store.profile/photo])
         photo-id (:photo/id photo "static/storefront")]
-    (debug " Stream photo: " photo)
     (square
       {:photo-id photo-id}
       (overlay

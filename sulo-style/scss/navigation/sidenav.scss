@@ -16,9 +16,12 @@ $sidenav-width: 75%;
 	z-index: 10;
 
 	li.category {
-		font-weight: bold;
+		font-weight: $global-weight-bold;
 		text-transform: uppercase;
 		// font-size: 80%;
+	}
+	li.back {
+		font-weight: $global-weight-bold;
 	}
 	> ul {
 		> li {

@@ -52,18 +52,19 @@
 @include motion-ui-animations;
 
 @import "mixins";
+@import "base";
 @import "forms/forms";
+@include sulo-forms;
+@include sulo-typography;
+@import "navbar";
+
 @import "select/default";
 @include sulo-flex-video;
-@include sulo-forms;
 @import "user/user";
 @import "components/components";
 @import "store/store";
 @import "navigation/navigation";
 
-@import "base";
-@include sulo-typography;
-@import "navbar";
 @import "start";
 @import "coming-soon"; 
 @import "photo";

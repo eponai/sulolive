@@ -31,9 +31,6 @@
                                                         (.toLowerCase search-input)) inventory)
                      inventory)]
       (dom/div nil
-        (grid/row-column
-          nil
-          (dom/h3 nil "Products"))
         (grid/row
           nil
           (grid/column
