@@ -30,7 +30,7 @@
                      (filter #(clojure.string/includes? (.toLowerCase (:store.item/name %))
                                                         (.toLowerCase search-input)) inventory)
                      inventory)]
-      (dom/div nil
+      (my-dom/div {:id "sulo-product-list"}
         (grid/row
           nil
           (grid/column

@@ -8,6 +8,11 @@ $editor-font-family: $header-font-family-sans-serif;//$header-font-family-serif;
 		font-size: 1.25rem;
 	}
 }
+.quill-content-render {
+	.ql-toolbar {
+		visibility: hidden;
+	}
+}
 #sulo-store-dashboard {
 	.sl-quill-editor-container {
 		border: $global-border;
@@ -15,29 +20,59 @@ $editor-font-family: $header-font-family-sans-serif;//$header-font-family-serif;
 }
 
 .sl-quill-editor-container {
-	min-height: 23rem;
+	min-height: 10rem;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
+	position: relative;
+	.ql-editor.ql-blank {
+		&::before {
+			color: $dark-gray;
+		}
+	}
 	.ql-container {
 		font-size: $global-font-size;
-		min-height: 20rem;
+		// min-height: 20rem;
 		height: 20rem;
+		transition: height .25s ease-in-out, padding-top .25 ease-in-out;
 		border: none;
+		padding-top: 3rem;
+		position: relative;
+		z-index: 0;
 	}
 	.ql-toolbar {
-		min-height: 3rem;
+		position: absolute;
+		// background: $white;
+		z-index: 1;
+		top: 0;
+		left: 0;
+		right: 0;
+		// min-height: 3rem;
+		// height: 3rem;
+		visibility: visible;
+		transition: opacity .25s ease-in-out, visibility 0s linear .25s;
 		border: none;
 		border-bottom: $global-border;
 		font-family: $editor-font-family;
 
 	}
-	.ql-disabled {
-		.ql-editor {
-			cursor: auto;
-		}
-	}
 	.ql-bubble {
 		border: none;
+	}
+
+	&.disabled {
+		.ql-toolbar {
+			opacity: 0;
+			visibility: hidden;
+			transition-delay: 0;
+			// overflow: hidden; 
+			// min-height: 0;
+			// height: 0;
+			// padding: 0;
+		}
+		.ql-container {
+			padding-top: 0;
+			height: 10rem;
+		}
 	}
 }

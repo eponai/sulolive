@@ -40,8 +40,8 @@
                                                  :computed-fn (fn [{:keys [store route-params]}]
                                                                 {:route-params route-params
                                                                  :products     (:store/items store)})}
-                :store-dashboard/edit           {:component es/EditStore
-                                                 :computed-fn  compute-store}
+                :store-dashboard/profile        {:component   es/EditStore
+                                                 :computed-fn compute-store}
                 :store-dashboard/stream         {:component   ss/StreamSettings
                                                  :computed-fn compute-store}
                 :store-dashboard/settings       {:component   as/AccountSettings
@@ -72,20 +72,7 @@
   (let [{:query/keys [current-route]} (om/props component)
         {:keys [route route-params]} current-route
         store-id (:store-id route-params)
-        nav-breakpoint :medium
-        routes->titles {:store-dashboard                   "Dashboard"
-                        :store-dashboard/stream            "Stream"
-                        :store-dashboard/product-list      "Products"
-                        :store-dashboard/product           "Products"
-                        :store-dashboard/create-product    "Products"
-                        :store-dashboard/order-list        "Orders"
-                        :store-dashboard/order             "Orders"
-                        :store-dashboard/settings          "Settings"
-                        :store-dashboard/settings#payments "Settings"
-                        :store-dashboard/settings#general  "Settings"
-                        :store-dashboard/settings#shipping "Settings"
-                        :store-dashboard/settings#activate "Settings"
-                        :store-dashboard/settings#business "Settings"}]
+        nav-breakpoint :medium]
     (dom/div
       (->> {:id "store-navbar"}
            (css/add-class :navbar-container))
@@ -94,7 +81,7 @@
              (css/add-class :top-bar))
         (menu/horizontal
           (css/add-class :top-bar-left)
-          (menu/item-text nil (dom/span nil (routes->titles (:route current-route)))))
+          (menu/item-text (css/show-for :large) (dom/span nil (get nav/routes->titles (:route current-route)))))
         ;(menu/horizontal
         ;  (css/add-class :top-bar-left)
         ;  (menu/item-text nil (dom/span nil (routes->titles (:route current-route))))

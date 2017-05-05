@@ -87,7 +87,7 @@
             (menu/vertical
               (css/add-class :nested)
               (menu/item-link
-                {:href (routes/url :store-dashboard/edit {:store-id (:db/id owned-store)})}
+                {:href (routes/url :store-dashboard {:store-id (:db/id owned-store)})}
                 (get-in owned-store [:store/profile :store.profile/name]))))
           (menu/item
             (css/add-class :my-stores)
@@ -214,6 +214,22 @@
                                   (css/button-hollow))
                              (dom/span nil "Sign in"))))))))
 
+(def routes->titles
+  {:store-dashboard                   "Dashboard"
+   :store-dashboard/profile "Profile"
+   :store-dashboard/stream            "Stream"
+   :store-dashboard/product-list      "Products"
+   :store-dashboard/product           "Products"
+   :store-dashboard/create-product    "Products"
+   :store-dashboard/order-list        "Orders"
+   :store-dashboard/order             "Orders"
+   :store-dashboard/settings          "Settings"
+   :store-dashboard/settings#payments "Settings"
+   :store-dashboard/settings#general  "Settings"
+   :store-dashboard/settings#shipping "Settings"
+   :store-dashboard/settings#activate "Settings"
+   :store-dashboard/settings#business "Settings"})
+
 (defn manage-store-navbar [component]
   (let [{:query/keys [auth owned-store current-route]} (om/props component)]
 
@@ -232,7 +248,7 @@
             (css/show-for :large {:href "/"
                                   :id   "navbar-brand"})
             (dom/span nil "SULO")
-            (dom/small nil "Preview"))
+            (dom/small nil "Store preview"))
           (menu/item-link
             (->> {:href    (routes/url :store {:store-id (:db/id owned-store)})
                   :classes ["store-name"]}
@@ -248,6 +264,7 @@
             ;  (css/hide-for :medium)
             ;  (dom/i #js {:className "fa fa-video-camera fa-fw"}))
             )
+          (menu/item-text (css/hide-for :large) (dom/span nil (get routes->titles (:route current-route))))
           ))
 
       (dom/div #js {:className "top-bar-right"}
@@ -324,7 +341,7 @@
                   nil
                   (sidebar-link component :store-dashboard {:store-id (:db/id owned-store)}
                                 (my-dom/span nil "Dashboard"))
-                  (sidebar-link component :store-dashboard/settings {:store-id (:db/id owned-store)}
+                  (sidebar-link component :store-dashboard/profile {:store-id (:db/id owned-store)}
                                 (my-dom/span nil "Profile"))
                   (sidebar-link component :store-dashboard/stream {:store-id (:db/id owned-store)}
                                 (my-dom/span nil "Stream"))

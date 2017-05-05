@@ -7,7 +7,7 @@
 (def store-routes
   {""           :store
    "/dashboard" {""          :store-dashboard
-                 "/edit"     :store-dashboard/edit
+                 "/profile"     :store-dashboard/profile
                  "/settings" {""          :store-dashboard/settings
                               "/shipping" :store-dashboard/settings#shipping
                               "/payments" :store-dashboard/settings#payments

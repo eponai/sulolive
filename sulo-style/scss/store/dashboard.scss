@@ -8,7 +8,7 @@
       @else {
         &.#{$name} {
           @include button-hollow-style($color);
-          border: none;
+          // border: none;
         }
       }
     }
@@ -58,9 +58,18 @@ $dashboard-primary-color: map-get($foundation-palette, action);
 		border-bottom: $global-border;
 		// background: map-get($foundation-palette, action);
 	}
+	#sulo-navbar, #store-navbar {
+		li.menu-text {
+			color: $dark-gray;
+			font-weight: normal;
+			@include breakpoint(medium) {
+				font-size: 120%;
+			}
+		}
+	}
 
 	#sulo-navbar {
-		position: absolute;
+		// position: absolute;
 		.top-bar-left {
 			ul {
 				font-size: 120%;
@@ -89,6 +98,11 @@ $dashboard-primary-color: map-get($foundation-palette, action);
 		left: 0;
 		width: 100%;
 		height: $subnav-height;
+		@include breakpoint(large) {
+			position: fixed;
+			top: $navbar-height;
+			z-index: $subnavbar-zindex;
+		}
 		.menu-dropdown {
 			position:relative;
 			width: 100%;
@@ -111,11 +125,6 @@ $dashboard-primary-color: map-get($foundation-palette, action);
 			height: 100%;
 			display: flex;
 			align-items: center;
-			li.menu-text {
-				color: $dark-gray;
-				font-weight: normal;
-				font-size: 120%;
-			}
 		}
 		// li {
 		// 	border-bottom: 3px solid transparent;
