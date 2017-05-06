@@ -12,7 +12,7 @@
     [eponai.common.ui.store.dashboard :as store-dashboard]
     [eponai.common.ui.goods :as goods]
     [eponai.common.ui.index :as index]
-    [eponai.common.ui.product :as product]
+    [eponai.common.ui.product-page :as product-page]
     [eponai.common.ui.streams :as streams]
     [eponai.common.ui.user :as user]
     [eponai.web.ui.start-store :as start-store]
@@ -34,7 +34,7 @@
                    :shopping-bag    {:component bag/ShoppingBag}
                    :help            {:component help/Help}
                    :browse          {:component goods/Goods}
-                   :product         {:component product/ProductPage}
+                   :product         {:component product-page/ProductPage}
                    :live            {:component streams/Streams}
                    :user            {:component user/User}
                    :login           {:component login/Login}

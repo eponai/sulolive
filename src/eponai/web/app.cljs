@@ -42,21 +42,18 @@
                                                      (some? (om/app-root reconciler)))
                                  :delayed-queue (when-not loaded-route?
                                                   (fn [queue-cb]
-                                                    (debug "Delaying queue to require route: " handler)
                                                     (modules/require-route!
                                                       modules handler
                                                       (fn []
                                                         (binding [parser/*parser-allow-remote* allow-remotes?]
                                                           (debug "Allow remotes?: " allow-remotes?)
-                                                          (debug "App root: " (om/app-root reconciler))
                                                           (if-let [app-root (om/app-root reconciler)]
-                                                            (do (info "Required route: " handler "! Reindexing...")
+                                                            (do (debug "Required route: " handler "! Reindexing...")
                                                                 (debug "query before reindex: " (om/get-query app-root))
                                                                 (add-root! reconciler)
                                                                 (debug "query after reindex: " (om/get-query (om/app-root reconciler)))
-                                                                (info "Re indexed! Queuing reads...")
-                                                                (queue-cb)
-                                                                (info "Queued reads!"))
+                                                                (debug "Re indexed! Queuing reads...")
+                                                                (queue-cb))
                                                             (do (debug "No root query, nothing to queue.."))))))))}))
       (catch :default e
         (error "Error when transacting route: " e)))))

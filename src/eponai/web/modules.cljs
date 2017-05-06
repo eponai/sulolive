@@ -4,7 +4,7 @@
     [goog.module.ModuleManager :as module-manager]
     [goog.module.ModuleLoader]
     [medley.core :as medley]
-    [taoensso.timbre :refer [debug info]])
+    [taoensso.timbre :refer [debug error]])
   (:import goog.module.ModuleManager))
 
 (defprotocol IModuleLoader
@@ -29,23 +29,23 @@
     (let [module-id (route->module route)
           module (.getModuleInfo manager module-id)
           ret (some-> module (.isLoaded))]
-      (info "Loaded-route: " route " id: " module-id " module:" module " loaded?: " ret)
+      (debug "Loaded-route: " route " id: " module-id " module:" module " loaded?: " ret)
       ret))
   (require-route! [this route callback]
-    (info "Requiring route: " route)
+    (debug "Requiring route: " route)
     (if (loaded-route? this route)
-      (do (info "ALREADY Required route: " route)
+      (do (debug "ALREADY Required route: " route)
           (callback route))
       (try (.execOnLoad manager (route->module route)
                         #(do
-                           (info "Required route!!!!!: " route)
+                           (debug "Required route!!!!!: " route)
                            (try
                              (callback route)
                              (catch :default e
-                               (info "Error after calling callback: " e)))))
-           (info "CALLED .execOnLoad with module: " (route->module route))
+                               (debug "Error after calling callback: " e)))))
+           (debug "CALLED .execOnLoad with module: " (route->module route))
            (catch :default e
-             (info "Exception calling execOnLoad: " e " route: " route))))))
+             (error "Exception calling execOnLoad: " e " route: " route))))))
 
 (def manager (module-manager/getInstance))
 (def loader (goog.module.ModuleLoader.))
@@ -54,9 +54,9 @@
   (let [route->js-file (into {} (comp (map route->module)
                                       (map (juxt identity #(vector (str "/js/out/closure-modules/" % ".js")))))
                              routes)
-        _ (info "route->js-file: " route->js-file)
+        _ (debug "route->js-file: " route->js-file)
         module-infos (medley/map-vals (constantly []) route->js-file)
-        _ (info "module-infos: " module-infos)
+        _ (debug "module-infos: " module-infos)
         modules (clj->js route->js-file)
         module-info (clj->js module-infos)
         ]
@@ -75,6 +75,5 @@
          (.getInstance goog.module.ModuleManager)
          (.setLoaded (route->module route)))
        (debug "DID mark module" (route->module route) "loaded!")
-       (debug "Could probably load it if it already hasn't been loaded?, then set it? Weird.")
        (catch :default e
-         (info "Unable to mark module: " (route->module route) "as loaded: " e))))
+         (error "Unable to mark module: " (route->module route) "as loaded: " e))))

@@ -6,30 +6,29 @@
 (defn modules [output-dir]
   (letfn [(path [route module?]
             (str output-dir "/" (when module? "closure-modules/") (name route) ".js"))
-          (module [[route namespaces]]
-            [route (if (map? namespaces)
-                     namespaces
-                     {:output-to (path route true)
-                      :entries   (into #{} (map str) namespaces)})])]
-    (into {}
+          (module [[route {:keys [entries depends-on] :as m}]]
+            [route (cond-> (assoc m :output-to (path route true))
+                     (some? depends-on)
+                     (update :depends-on set)
+                     :always
+                     (update :entries set))])]
+    (into {:cljs-base {:output-to (path :budget false)}}
       (map module)
-      `{:cljs-base       {:output-to ~(path :budget false)}
-        :index           [eponai.common.ui.index]
-        :unauthorized    [eponai.web.ui.unauthorized]
-        :login           {:output-to  ~(path :login true)
-                          :entries    #{eponai.web.ui.login}
-                          :depends-on #{:index}}
-        :coming-soon     [eponai.web.ui.coming-soon]
-        :sell            [eponai.web.ui.start-store]
-        :store           [eponai.common.ui.store]
-        :checkout        [eponai.common.ui.checkout]
-        :browse          [eponai.common.ui.goods]
-        :shopping-bag    [eponai.common.ui.shopping-bag]
-        :product         [eponai.common.ui.product]
-        :live            [eponai.common.ui.streams]
-        :help            [eponai.common.ui.help]
-        :user            [eponai.common.ui.user]
-        :store-dashboard [eponai.common.ui.store.dashboard]})))
+      `{:index           {:entries [eponai.common.ui.index]}
+        :unauthorized    {:entries [eponai.web.ui.unauthorized]}
+        :login           {:entries    [eponai.web.ui.login]
+                          :depends-on [:index]}
+        :coming-soon     {:entries [eponai.web.ui.coming-soon]}
+        :sell            {:entries [eponai.web.ui.start-store]}
+        :store           {:entries [eponai.common.ui.store]}
+        :checkout        {:entries [eponai.common.ui.checkout]}
+        :browse          {:entries [eponai.common.ui.goods]}
+        :shopping-bag    {:entries [eponai.common.ui.shopping-bag]}
+        :product         {:entries [eponai.common.ui.product-page]}
+        :live            {:entries [eponai.common.ui.streams]}
+        :help            {:entries [eponai.common.ui.help]}
+        :user            {:entries [eponai.common.ui.user]}
+        :store-dashboard {:entries [eponai.common.ui.store.dashboard]}})))
 
 (defproject budget "0.1.0-SNAPSHOT"
   :description "FIXME: write description"

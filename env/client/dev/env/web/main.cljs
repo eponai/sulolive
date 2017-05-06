@@ -9,7 +9,7 @@
             [eponai.common.ui.store.dashboard :as store-dashboard]
             [eponai.common.ui.goods :as goods]
             [eponai.common.ui.index :as index]
-            [eponai.common.ui.product :as product]
+            [eponai.common.ui.product-page :as product-page]
             [eponai.common.ui.streams :as streams]
             [eponai.common.ui.user :as user]
             [eponai.web.ui.coming-soon :as coming-soon]

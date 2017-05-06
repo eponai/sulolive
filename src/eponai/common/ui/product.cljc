@@ -228,19 +228,3 @@
           )))))
 
 (def ->Product (om/factory Product))
-
-(defui ProductPage
-  static om/IQuery
-  (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:query/item (om/get-query Product)}])
-  Object
-  (render [this]
-    (let [{:keys [query/item proxy/navbar]} (om/props this)]
-      (common/page-container
-        {:navbar navbar :id "sulo-product-page"}
-        (->Product item)))))
-
-(def ->ProductPage (om/factory ProductPage))
-
-(router/register-component :product ProductPage)
