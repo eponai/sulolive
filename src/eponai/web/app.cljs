@@ -82,10 +82,10 @@
 (defonce reconciler-atom (atom nil))
 
 (defn- run [{:keys [auth-lock modules]
-             :or   {auth-lock (auth/auth0-lock)
-                    modules   (modules/advanced-compilation-modules router/routes)}
+             :or   {auth-lock (auth/auth0-lock)}
              :as   run-options}]
-  (let [init? (atom false)
+  (let [modules (or modules (modules/advanced-compilation-modules router/routes))
+        init? (atom false)
         _ (when-let [h @history-atom]
             (pushy/stop! h))
         match-route (partial bidi/match-route (common.routes/without-coming-soon-route common.routes/routes))
@@ -154,7 +154,7 @@
 
 (defn run-dev [& [deps]]
   (run (merge {:auth-lock (auth/fake-lock)
-               :modules   (modules/dev-modules)}
+               :modules   (modules/dev-modules router/routes)}
               deps)))
 
 (defn on-reload! []

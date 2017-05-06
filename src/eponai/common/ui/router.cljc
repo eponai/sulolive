@@ -1,4 +1,5 @@
 (ns eponai.common.ui.router
+  #?(:cljs (:require-macros [eponai.common.ui.router :refer [register-component]]))
   (:require
     [om.next :as om :refer [defui]]
     [om.dom]
@@ -30,6 +31,11 @@
           (defmethod route->component ~route [~'_] {:component ~component})
           ~(when in-cljs? `(eponai.web.modules/set-loaded! ~route))))))
 
+
+#?(:cljs
+   (def register-component register-component))
+
+
 (def routes [:unauthorized :index :store :checkout :browse
              :shopping-bag :login :sell :product :live :help
              :user :store-dashboard :coming-soon])
@@ -55,7 +61,7 @@
                                         (or (nil? next-route)
                                             (modules/loaded-route? (om/shared this :shared/modules) next-route))
                                         (utils/shouldComponentUpdate-om this props state))]
-                              (debug "should-component update: " ret)
+                              (debug "should component update: " ret)
                               ret)))
   (render [this]
     (let [{:keys [routing/app-root query/current-route]} (om/props this)
@@ -63,10 +69,8 @@
           {:keys [factory component]} (route->component route)
           _ (when (nil? component)
               (error "Sorry. No component found for route: " route
-                     ". Make sure to implement multimethod router/route->component in your component's namespace"
-                     " for route: " route
-                     ". You also have to call (router/register-component <route> <component>) at the end of your component"
-                     ". You also have to require your component's namespace in env/client/dev/env/web/main.cljs"
+                     ". You have to call (router/register-component <route> <component>) at the end of your component"
+                     ". You also have to require your component's namespace in eponai.common.ui_namespaces.cljc"
                      ". We're making it this complicated because we want module code splitting."))
           factory (or factory (om/factory component))]
       (factory app-root))))

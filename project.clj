@@ -12,7 +12,8 @@
                      (update :depends-on set)
                      :always
                      (update :entries set))])]
-    (into {:cljs-base {:output-to (path :budget false)}}
+    (into `{:cljs-base {:entries   #{env.web.main}
+                        :output-to ~(path :budget false)}}
       (map module)
       `{:react-select    {:entries [eponai.common.ui.components.select
                                     cljsjs.react-select]}
@@ -43,20 +44,20 @@
                                     eponai.common.ui.user.profile
                                     eponai.common.ui.user.profile-edit]}
         :store-dashboard {:depends-on [:react-select]
-                          :entries [eponai.common.ui.store.dashboard
-                                    eponai.common.ui.store.account
-                                    eponai.common.ui.store.order-edit-form
-                                    eponai.common.ui.store.order-list
-                                    eponai.common.ui.store.product-edit-form
-                                    eponai.common.ui.store.product-list
-                                    eponai.common.ui.store.stream-settings
-                                    eponai.common.ui.store.account.activate
-                                    eponai.common.ui.store.account.business
-                                    eponai.common.ui.store.account.general
-                                    eponai.common.ui.store.account.payments
-                                    eponai.common.ui.store.account.payouts
-                                    eponai.common.ui.store.account.shipping
-                                    ]}})))
+                          :entries    [eponai.common.ui.store.dashboard
+                                       eponai.common.ui.store.account
+                                       eponai.common.ui.store.order-edit-form
+                                       eponai.common.ui.store.order-list
+                                       eponai.common.ui.store.product-edit-form
+                                       eponai.common.ui.store.product-list
+                                       eponai.common.ui.store.stream-settings
+                                       eponai.common.ui.store.account.activate
+                                       eponai.common.ui.store.account.business
+                                       eponai.common.ui.store.account.general
+                                       eponai.common.ui.store.account.payments
+                                       eponai.common.ui.store.account.payouts
+                                       eponai.common.ui.store.account.shipping
+                                       ]}})))
 
 (defproject budget "0.1.0-SNAPSHOT"
   :description "FIXME: write description"

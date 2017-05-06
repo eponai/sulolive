@@ -12,16 +12,6 @@
   (require-route! [this route callback])
   (prefetch-route [this route]))
 
-(defn dev-modules []
-  ;; Modules are always loaded in dev, because modules only work in advanced and simple compilation.
-  (reify IModuleLoader
-    (loaded-route? [this route]
-      true)
-    (require-route! [this route callback]
-      (callback route))
-    (prefetch-route [this route]
-      nil)))
-
 (defn- route->module [route]
   (or (namespace route)
       (name route)))
@@ -56,10 +46,11 @@
         (catch :default e
           (error "Got error prefetching route: " route " error:" e))))))
 
-(def manager (module-manager/getInstance))
 (def loader (goog.module.ModuleLoader.))
+(def manager (doto (module-manager/getInstance)
+               (.setLoader loader)))
 
-(defn advanced-compilation-modules [routes]
+(defn init-manager [routes]
   (let [route->js-file (into {} (comp (map route->module)
                                       (map (juxt identity #(vector (str "/js/out/closure-modules/" % ".js")))))
                              routes)
@@ -67,22 +58,42 @@
         module-infos (medley/map-vals (constantly []) route->js-file)
         _ (debug "module-infos: " module-infos)
         modules (clj->js route->js-file)
-        module-info (clj->js module-infos)
-        ]
-    ;;(when js/goog.DEBUG)
-    ;;(.setDebugMode loader true)
-    (.setLoader manager loader)
-    (.setAllModuleInfo manager module-info)
-    (.setModuleUris manager modules)
-    (ModuleLoader. manager)))
+        module-info (clj->js module-infos)]
+    (doto manager
+      (.setAllModuleInfo module-info)
+      (.setModuleUris modules))))
+
+(def routes-loaded-pre-init (atom #{}))
 
 (defn set-loaded!
   "Mark a module as loaded"
   [route]
-  (debug "Will mark module" (route->module route) "loaded! route: " route)
-  (try (->
-         (.getInstance goog.module.ModuleManager)
-         (.setLoaded (route->module route)))
-       (debug "DID mark module" (route->module route) "loaded!")
-       (catch :default e
-         (error "Unable to mark module: " (route->module route) "as loaded: " e))))
+  (let [manager (.getInstance goog.module.ModuleManager)
+        module (route->module route)
+        module-info (.getModuleInfo manager )]
+    (if (= js/undefined module-info)
+      (swap! routes-loaded-pre-init conj route)
+      (try
+        (.setLoaded manager module)
+        (catch :default e
+          (error "Unable to mark module: " (route->module route) "as loaded: " e))))))
+
+(defn advanced-compilation-modules [routes]
+  (when-let [routes (seq @routes-loaded-pre-init)]
+    (throw (ex-info "Some routes were loaded before initializing modules: " routes
+                    {:routes routes
+                     :cause  :loaded-pre-init})))
+  (ModuleLoader. (init-manager routes)))
+
+(defn dev-modules [routes]
+  (init-manager routes)
+  (when-let [routes (seq @routes-loaded-pre-init)]
+    (run! set-loaded! routes))
+  ;; Modules are always loaded in dev, because modules only work in advanced and simple compilation.
+  (reify IModuleLoader
+    (loaded-route? [this route]
+      true)
+    (require-route! [this route callback]
+      (callback route))
+    (prefetch-route [this route]
+      nil)))
