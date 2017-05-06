@@ -19,7 +19,7 @@
          {store-name :store.profile/name} :store.profile} s]
     (dom/div
       nil
-      (photo/store-photo s)
+      (photo/store-photo s :transformation/thumbnail-tiny)
       (dom/div
         (css/text-align :center)
         (dom/p nil (dom/strong
@@ -41,7 +41,7 @@
           (dom/div nil
                    (dom/a
                      {:href (routes/url :store {:store-id (:db/id store)})}
-                     (photo/store-photo store))
+                     (photo/store-photo store :transformation/thumbnail-tiny))
                    (dom/p nil
                           (dom/span nil "Purchased from ")
                           (dom/a {:href (routes/url :store {:store-id (:db/id store)})} (:store.profile/name (:store/profile store)))))

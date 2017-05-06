@@ -30,9 +30,6 @@
         {:id "sl-order-list"}
         (grid/row-column
           nil
-          (dom/h3 nil "Orders"))
-        (grid/row-column
-          nil
           (dom/input {:value       (or search-input "")
                       :placeholder "Search Orders..."
                       :type        "text"

@@ -9,7 +9,8 @@
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.navbar :as nav]
     [taoensso.timbre :refer [debug]]
-    [om.next :as om]))
+    [om.next :as om]
+    [eponai.web.ui.photo :as p]))
 
 (defn order-status-element [order]
   (let [status (:order/status order)]
@@ -18,6 +19,17 @@
         (->> (css/add-class :sl-orderstatus)
              (css/add-class (str "sl-orderstatus--" (name status))))
         (name status)))))
+
+(defn follow-button [opts]
+  (dom/a
+    (->> (css/button opts)
+         (css/add-class :disabled))
+    (dom/span nil "+ Follow")))
+
+(defn contact-button [opts]
+  (dom/a (->> (css/button-hollow opts)
+              (css/add-class :disabled))
+         (dom/span nil "Contact")))
 
 (defn modal [opts & content]
   (let [{:keys [on-close size]} opts]
@@ -51,7 +63,7 @@
            (css/add-class :stream-item))
       (dom/a
         {:href store-link}
-        (photo/stream-photo store))
+        (p/stream-photo store))
       (dom/div
         (->> (css/add-class :text)
              (css/add-class :header))

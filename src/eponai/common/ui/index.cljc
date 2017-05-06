@@ -3,6 +3,7 @@
     [eponai.common.ui.common :as common]
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.elements.photo :as photo]
+    [eponai.web.ui.photo :as p]
     [eponai.common.ui.product-item :as pi]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
@@ -15,7 +16,8 @@
     [eponai.client.utils :as utils]
     [eponai.common.ui.icons :as icons]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.elements.grid :as grid]))
+    [eponai.common.ui.elements.grid :as grid]
+    [eponai.common.ui.elements.callout :as callout]))
 
 (defn top-feature [opts icon title text]
   (dom/div #js {:className "feature-item column"}
@@ -37,28 +39,24 @@
         nil
         (grid/column
           (cond->> (->> (grid/column-size {:small 9 :medium 8})
-                       (css/text-align align))
-                  (= align :right)
-                  (grid/column-offset {:small 3 :medium 4}))
+                        (css/text-align align))
+                   (= align :right)
+                   (grid/column-offset {:small 3 :medium 4}))
           primary)
         (grid/column
           (css/align :right)
           secondary)))))
 
-(defn collection-element [{:keys [href url title full?]}]
+(defn collection-element [{:keys [href url title full? url-small photo-id]}]
   ;; Use the whole thing as hover elem
   (my-dom/a
     {:href    href
      :classes [:full :category-photo]}
-    (photo/with-overlay
-      nil
-      (photo/photo {:src url})
-      ;(if full?
-      ;  (photo/full {:src url})
-      ;  (photo/photo {:src url}))
-      (my-dom/div
-        (->> (css/text-align :center))
-        (dom/span nil title)))))
+    (p/photo {:photo-id photo-id}
+             (p/overlay
+               nil(my-dom/div
+                          (->> (css/text-align :center))
+                          (dom/span nil title))))))
 
 (defui Index
   static om/IQuery
@@ -67,17 +65,17 @@
      {:query/featured-items [:db/id
                              :store.item/name
                              :store.item/price
-                             {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+                             {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                   :store.item.photo/index]}
                              {:store/_items [{:store/profile [:store.profile/name]}]}]}
      {:query/featured-stores [:db/id
                               {:store/profile [:store.profile/name
-                                               {:store.profile/photo [:photo/path]}]}
+                                               {:store.profile/photo [:photo/path :photo/id]}]}
                               :store/featured
                               :store/featured-img-src
-                              {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+                              {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                                          :store.item.photo/index]}]}]}
-     {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}]}]}])
+     {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id {:store/profile [:store.profile/name {:store.profile/photo [:photo/path :photo/id]}]}]}]}])
   Object
   (render [this]
     (let [{:keys [proxy/navbar query/featured-items query/featured-streams]} (om/props this)
@@ -88,8 +86,8 @@
           {:navbar navbar}
           (dom/div #js {:id "sulo-index-container" :onScroll #(debug "Did scroll page: " %)}
 
-            (photo/header
-              (css/add-class :center {:src "/assets/img/home-header-bg.jpg"})
+            (p/header
+              (css/add-class :center {:photo-id "static/home-header-bg"})
               (div
                 (->> (css/grid-row)
                      (css/add-class :intro-header)
@@ -112,7 +110,7 @@
                             (css/add-class :search-container))
                        (div (->> (css/grid-column)
                                  (css/grid-column-size {:small 12 :medium 8}))
-                            (dom/input #js {:className "drop-shadow"
+                            (dom/input #js {:className   "drop-shadow"
                                             :placeholder "What are you looking for?"
                                             :type        "text"
                                             :value       (or input-search "")
@@ -138,8 +136,6 @@
                 (top-feature
                   nil
                   (icons/shopping-bag)
-                  ;(dom/img #js {:src "/assets/img/icons/shopping-bag.png"})
-                  ;(dom/i #js {:className (str "fa fa-fw fa-shopping-bag")})
                   "Shop and Discover"
                   "Get lost in a marketplace filled with your local gems.")
                 (top-feature
@@ -176,27 +172,27 @@
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
-                                             (collection-element {:href (routes/url :browse/category {:top-category "home"})
-                                                                  :url   "/assets/img/home-new.jpg"
-                                                                  :title "Home"}))
+                                             (collection-element {:href     (routes/url :browse/category {:top-category "home"})
+                                                                  :photo-id "static/home"
+                                                                  :title    "Home"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
-                                             (collection-element {:href (routes/url :browse/gender {:sub-category "women"})
-                                                                  :url   "/assets/img/women-new.jpg"
-                                                                  :title "Women"}))
+                                             (collection-element {:href     (routes/url :browse/gender {:sub-category "women"})
+                                                                  :photo-id "static/women"
+                                                                  :title    "Women"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
-                                             (collection-element {:href (routes/url :browse/gender {:sub-category "men"})
-                                                                  :url   "/assets/img/men-new.jpg"
-                                                                  :title "Men"}))
+                                             (collection-element {:href      (routes/url :browse/gender {:sub-category "men"})
+                                                                  :photo-id  "static/men"
+                                                                  :title     "Men"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
-                                             (collection-element {:href (routes/url :browse/gender {:sub-category "unisex-kids"})
-                                                                  :url   "/assets/img/kids-new.jpg"
-                                                                  :title "Kids"}))))
+                                             (collection-element {:href     (routes/url :browse/gender {:sub-category "unisex-kids"})
+                                                                  :photo-id "static/kids"
+                                                                  :title    "Kids"}))))
                                     ;(map (fn [s t]
                                     ;       (collection-element {:url (first (:store/featured-img-src s))
                                     ;                            :title t}))
@@ -205,7 +201,7 @@
                                     ""
                                     )
 
-            (common/content-section {:href (routes/url :browse/all-items)
+            (common/content-section {:href  (routes/url :browse/all-items)
                                      :class "new-arrivals"}
                                     "New arrivals"
                                     (grid/row
@@ -271,14 +267,13 @@
 (def ->ComingSoonContent (om/factory ComingSoonContent))
 
 (defn callout-banner [open?]
-  (div
-    (cond->> {:classes [::css/callout ::css/primary :info-banner]}
+  (callout/callout-small
+    (cond->> (css/add-class :info-banner)
              (not open?)
              (css/add-class :invisible))
-    ;(div (->> (css/add-class :close-button)) (dom/small nil "x"))
-    (div (->> (css/grid-row)
-              css/grid-column)
-         (dom/span nil "Sign up to check out the LIVE market when it opens!"))))
+    (grid/row-column
+      nil
+      (dom/span nil "Sign up to check out the LIVE market when it opens!"))))
 
 (defui ComingSoon
   static om/IQuery
@@ -307,12 +302,8 @@
                                                            (my-dom/span nil (dom/span nil "Sell on SULO?"))
                                                            (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
 
-          (photo/header
-            {:src
-             ;; TODO: We should resolve the s3 path to a configurable cloudfront path
-             ;; "https://s3.amazonaws.com/sulo-images/site/home-header-bg.jpg"
-             "https://d30slnyi7gxcwc.cloudfront.net/site/home-header-bg.jpg"
-             }
+          (p/header
+            {:photo-id "static/home-header-bg"}
 
             (callout-banner live-open?)
             (->ComingSoonContent
@@ -399,13 +390,8 @@
                                                            (my-dom/span nil (dom/span nil "Shop on SULO?"))
                                                            (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
           (debug "Live opene: " live-open?)
-          (photo/header
-            {:src
-
-             ;;TODO: Resolve s3 paths to cloudfront paths
-             ;;"https://s3.amazonaws.com/sulo-images/site/coming-soon-sell-bg.jpg"
-             "https://d30slnyi7gxcwc.cloudfront.net/site/coming-soon-sell-bg.jpg"
-             }
+          (p/header
+            {:photo-id "static/coming-soon-sell-bg"}
 
             (callout-banner live-open?)
             (->ComingSoonContent

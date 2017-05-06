@@ -18,7 +18,8 @@
     [eponai.server.external.aws-s3 :as s3]
     [eponai.common.format :as f]
     [eponai.common.ui.om-quill :as quill]
-    [eponai.common.auth :as auth]))
+    [eponai.common.auth :as auth]
+    [eponai.server.external.cloudinary :as cloudinary]))
 
 (defmacro defmutation
   "Creates a message and mutate defmethod at the same time.
@@ -82,7 +83,8 @@
   {:action (fn []
              (let [old-profile (db/one-with (db/db state) {:where   '[[?u :user/profile ?e]]
                                                            :symbols {'?u (:user-id auth)}})
-                   photo (f/photo (s3/upload-photo (:system/aws-s3 system) (:photo params)))]
+                   photo (f/add-tempid (cloudinary/upload-dynamic-photo (:system/cloudinary system) (:photo params)))]
+               (debug "UPloaded photo: " photo)
                (db/transact state [photo
                                    [:db/add old-profile :user.profile/photo (:db/id photo)]])))})
 
@@ -109,25 +111,28 @@
                      :auth     auth}))))
 
 (defmutation store.photo/upload
-  [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ {:keys [photo store-id]}]
+  [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ {:keys [photo photo-key store-id] :as p}]
   {:auth {::auth/store-owner store-id}
    :resp {:success "Photo uploaded"
           :error   "Could not upload photo :("}}
   {:action (fn []
-             (let [{old-profile :store/profile} (db/pull (db/db state) [{:store/profile [:db/id :store.profile/photo]}] store-id)
-                   old-photo (:store.profile/photo old-profile)]
-               (if (some? photo)
-                 (let [s3-photo (f/photo (s3/upload-photo (:system/aws-s3 system) photo))
-                       new-photo (cond-> s3-photo
-                                         (some? (:db/id old-photo))
-                                         (assoc :db/id (:db/id old-photo)))
-                       dbtxs (cond-> [new-photo
-                                      [:db/add (:db/id old-profile) :store.profile/photo (:db/id new-photo)]]
-                                     (some? old-photo)
-                                     [:db.fn/retractEntity (:db/id old-photo)])]
-                   (db/transact state dbtxs))
-                 (when (some? (:db/id old-photo))
-                   (db/transact state [:db.fn/retractEntity (:db/id old-photo)])))))})
+             (debug "Photo upload Store with params: " p)
+             (when (keyword? photo-key)
+               (let [{old-profile :store/profile} (db/pull (db/db state) [{:store/profile [:db/id {photo-key [:db/id :photo/id]}]}] store-id)
+                     old-photo (get old-profile photo-key)]
+                 (if (some? photo)
+                   (when-not (= (:photo/id old-photo)
+                                (cloudinary/real-photo-id (:system/cloudinary system) (:public_id photo)))
+                     (let [cl-photo (cloudinary/upload-dynamic-photo (:system/cloudinary system) photo)
+                           new-photo (cond-> (f/add-tempid cl-photo)
+                                             (some? (:db/id old-photo))
+                                             (assoc :db/id (:db/id old-photo)))
+                           dbtxs (cond-> [new-photo]
+                                         (nil? old-photo)
+                                         (conj [:db/add (:db/id old-profile) photo-key (:db/id new-photo)]))]
+                       (db/transact state dbtxs)))
+                   (when (some? (:db/id old-photo))
+                     (db/transact state [:db.fn/retractEntity (:db/id old-photo)]))))))})
 
 (defmutation stream-token/generate
   [{:keys [state db parser ::parser/return auth system] :as env} k {:keys [store-id] :as p}]
@@ -177,6 +182,15 @@
                          (assoc :db/id (:db/id (:store/profile db-store))))]
                (debug "store/update-info with params: " s)
                (db/transact-one state s)))})
+
+(defmutation store/update-sections
+  [env _ {:keys [store-id] :as p}]
+  {:auth {::auth/store-owner store-id}
+   :resp {:success "Your store sections were updated"
+          :error   "Could not update store sections."}}
+  {:action (fn []
+             (debug "store/update-sections with params: " p)
+             (store/update-sections env (c/parse-long store-id) p))})
 
 ;######## STRIPE ########
 

@@ -8,7 +8,7 @@
       @else {
         &.#{$name} {
           @include button-hollow-style($color);
-          border: none;
+          // border: none;
         }
       }
     }
@@ -26,14 +26,18 @@
 		&.hollow {
 			@include action-button($color, hollow);
 			@include button-hollow-style($color);
-			border: none;
+			// border: none;
 		}
 	}
 }
 
+$dashboard-max-width: 100%;
+$dashboard-primary-color: map-get($foundation-palette, action);
+
 #sulo-store-dashboard {
-	$dashboard-max-width: 75rem;
-	$dashboard-primary-color: map-get($foundation-palette, action);
+	.page-container {
+		background: rgba($light-gray, 0.5);
+	}
 	.navbar, footer, .footer .row, .row {
 		max-width: $dashboard-max-width;
 	}
@@ -52,10 +56,34 @@
 	#sulo-navbar .navbar-container {
 		box-shadow: none;
 		border-bottom: $global-border;
+		// background: map-get($foundation-palette, action);
+	}
+	#sulo-navbar, #store-navbar {
+		li.menu-text {
+			color: $dark-gray;
+			font-weight: normal;
+			@include breakpoint(medium) {
+				font-size: 120%;
+			}
+		}
 	}
 
 	#sulo-navbar {
-		position: absolute;
+		// position: absolute;
+		.top-bar-left {
+			ul {
+				font-size: 120%;
+				li {
+					border: none;
+					&.store-name {
+						font-size: 120%;
+					}
+				}
+				li:first-child, li:nth-child(2) {
+					border-right: $global-border;
+				}
+			}
+		}
 	}
 	#store-navbar {
 		$background: map-get($foundation-palette, secondary);
@@ -69,8 +97,13 @@
 		top: 0;
 		left: 0;
 		width: 100%;
-		height: 2.5rem;
-				.menu-dropdown {
+		height: $subnav-height;
+		@include breakpoint(large) {
+			position: fixed;
+			top: $navbar-height;
+			z-index: $subnavbar-zindex;
+		}
+		.menu-dropdown {
 			position:relative;
 			width: 100%;
 			margin: 0;
@@ -93,34 +126,34 @@
 			display: flex;
 			align-items: center;
 		}
-		li {
-			border-bottom: 3px solid transparent;
-			margin-right: 1rem;
-			transition: border-color .25s ease-in-out;
-		}
-		li {
-			&:hover, &.is-active {
-				$border-color: map-get($foundation-palette, action);
-				border-bottom: 3px solid $border-color;
-				a {
-					color: $black;
-				}
-			}
-			&.is-active {
-				a {
-					font-weight: $global-weight-bold;
-				}
-			}
-		}
+		// li {
+		// 	border-bottom: 3px solid transparent;
+		// 	margin-right: 1rem;
+		// 	transition: border-color .25s ease-in-out;
+		// }
+		// li {
+			// &:hover, &.is-active {
+			// 	$border-color: map-get($foundation-palette, action);
+			// 	border-bottom: 3px solid $border-color;
+			// 	a {
+			// 		color: $black;
+			// 	}
+			// }
+			// &.is-active {
+			// 	a {
+			// 		font-weight: $global-weight-bold;
+			// 	}
+			// }
+		// }
 	}
 
 	.page-content {
-		@include sulo-action-buttons;
+		// @include sulo-action-buttons;
 
 		h3 {
 			margin-top: 0;
 		}
-		padding-top: 2.5rem;
+		padding-top: 5rem;
 		@include breakpoint(large) {
 			padding-top: 5rem;
 		}
@@ -168,6 +201,16 @@
 			.button {
 				margin: 0;
 			}
+			.profile-photo-container {
+				.photo-container.circle {
+					max-width: 20rem;
+					// min-width: 20rem;
+					margin: 0 auto;
+				}
+				.button {
+					margin: 0.5rem;
+				}
+			}
 			.stream-status {
 				@include label-hollow;
 				a {
@@ -187,6 +230,9 @@
 				margin-bottom: 0.25rem;
 				i {
 					color: $light-gray;
+				}
+				a {
+					border: none;
 				}
 				&.done {
 					a {

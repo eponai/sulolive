@@ -5,6 +5,7 @@
     [compojure.core :as compojure]
     [taoensso.timbre :refer [debug]]
     [eponai.server.middleware :as m]
+    [eponai.server.external.cloudinary :as cloudinary]
     [eponai.common.parser :as parser]
     [eponai.server.routes :as server-routes]
     [environ.core :as environ]
@@ -91,6 +92,9 @@
                                                     :zone       (:aws-s3-bucket-photos-zone env)
                                                     :access-key (:aws-access-key-id env)
                                                     :secret     (:aws-secret-access-key env)})
+                     :system/cloudinary (cloudinary/->Cloudinary
+                                          (:cloudinary-api-key env)
+                                          (:cloudinary-api-secret env))
                      :system/chat (c/using (chat/map->DatomicChat {})
                                            {:chat-datomic :system/chat-datomic
                                             :sulo-datomic :system/datomic})

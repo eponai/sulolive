@@ -19,11 +19,13 @@
      {:query/streams [:stream/title
                       :stream/state
                       {:stream/store [{:store/profile [:store.profile/name
-                                                       {:store.profile/photo [:photo/path]}]}]}]}
+                                                       {:store.profile/photo [:photo/path
+                                                                              :photo/id]}]}]}]}
      {:query/stores [:db/id
                      {:stream/_store [:stream/state]}
                      {:store/profile [:store.profile/name
-                                      {:store.profile/photo [:photo/path]}]}]}])
+                                      {:store.profile/photo [:photo/path
+                                                             :photo/id]}]}]}])
   Object
   (render [this]
     (let [{:keys [query/streams query/stores proxy/navbar]} (om/props this)]
@@ -60,8 +62,8 @@
                                      (common/online-channel-element s)))
                                  streams)))
               (my-dom/div
-                {:classes ["sulo-items-container empty"]}
-                (my-dom/span nil "No stores are LIVE right now :'(")))
+                {:classes ["sulo-items-container empty-container"]}
+                (my-dom/span (css/add-class :shoutout) "No stores are LIVE right now :'(")))
             (my-dom/div
               {:classes ["sulo-items-container"]}
               (my-dom/p (css/add-class :header) "Other cool stores currently offline")

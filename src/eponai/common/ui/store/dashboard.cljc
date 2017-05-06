@@ -17,10 +17,12 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.format :as f]
     [eponai.common.ui.elements.photo :as photo]
+    [eponai.web.ui.store.edit-store :as es]
     [medley.core :as medley]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.format.date :as date]))
+    [eponai.common.format.date :as date]
+    [eponai.web.ui.photo :as p]))
 
 (defn find-product [store product-id]
   (let [product-id (c/parse-long product-id)]
@@ -38,6 +40,8 @@
                                                  :computed-fn (fn [{:keys [store route-params]}]
                                                                 {:route-params route-params
                                                                  :products     (:store/items store)})}
+                :store-dashboard/profile        {:component   es/EditStore
+                                                 :computed-fn compute-store}
                 :store-dashboard/stream         {:component   ss/StreamSettings
                                                  :computed-fn compute-store}
                 :store-dashboard/settings       {:component   as/AccountSettings
@@ -71,54 +75,69 @@
         nav-breakpoint :medium]
     (dom/div
       (->> {:id "store-navbar"}
-           (css/add-class :navbar-container)
-           (css/show-for :large))
+           (css/add-class :navbar-container))
       (dom/nav
         (->> (css/add-class :navbar)
              (css/add-class :top-bar))
         (menu/horizontal
-          nil
-          (menu/item (when (= route :store-dashboard)
-                       (css/add-class ::css/is-active))
-                     (dom/a
-                       (css/add-class :category {:href (routes/url :store-dashboard {:store-id store-id})})
-                       (dom/span (css/show-for nav-breakpoint) "Dashboard")
-                       (dom/i
-                         (css/hide-for nav-breakpoint {:classes [:fa :fa-dashboard :fa-fw]}))))
-          (menu/item (when (= route :store-dashboard/stream)
-                       (css/add-class ::css/is-active))
-                     (dom/a
-                       (css/add-class :category {:href (routes/url :store-dashboard/stream {:store-id store-id})})
-                       (dom/span (css/show-for nav-breakpoint) "Stream")
-                       (dom/i
-                         (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]}))))
-          (menu/item
-            (when (or (= route :store-dashboard/product-list)
-                      (= route :store-dashboard/product)
-                      (= route :store-dashboard/create-product))
-              (css/add-class ::css/is-active))
-            (dom/a
-              (css/add-class :category {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
-              (dom/span (css/show-for nav-breakpoint) "Products")
-              (dom/i
-                (css/hide-for nav-breakpoint {:classes [:fa :fa-gift :fa-fw]}))))
-          (menu/item
-            (when (or (= route :store-dashboard/order-list)
-                      (= route :store-dashboard/order))
-              (css/add-class ::css/is-active))
-            (dom/a
-              (css/add-class :category {:href (routes/url :store-dashboard/order-list {:store-id store-id})})
-              (dom/span (css/show-for nav-breakpoint) "Orders")
-              (dom/i
-                (css/hide-for nav-breakpoint {:classes [:fa :fa-file-text-o :fa-fw]}))))
-          (menu/item
-            (when (= (parse-route route) :store-dashboard/settings)
-              (css/add-class ::css/is-active))
-            (dom/a
-              (css/add-class :category {:href (routes/url :store-dashboard/settings {:store-id store-id})})
-              (dom/span (css/show-for nav-breakpoint) "Settings")
-              (dom/i
-                (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]})))))))))
+          (css/add-class :top-bar-left)
+          (menu/item-text (css/show-for :large) (dom/span nil (get nav/routes->titles (:route current-route)))))
+        ;(menu/horizontal
+        ;  (css/add-class :top-bar-left)
+        ;  (menu/item-text nil (dom/span nil (routes->titles (:route current-route))))
+        ;  (menu/item (when (= route :store-dashboard)
+        ;               (css/add-class ::css/is-active))
+        ;             (dom/a
+        ;               (css/add-class :category {:href (routes/url :store-dashboard {:store-id store-id})})
+        ;               (dom/span (css/show-for nav-breakpoint) "Dashboard")
+        ;               (dom/i
+        ;                 (css/hide-for nav-breakpoint {:classes [:fa :fa-dashboard :fa-fw]}))))
+        ;  (menu/item (when (= route :store-dashboard/stream)
+        ;               (css/add-class ::css/is-active))
+        ;             (dom/a
+        ;               (css/add-class :category {:href (routes/url :store-dashboard/stream {:store-id store-id})})
+        ;               (dom/span (css/show-for nav-breakpoint) "Stream")
+        ;               (dom/i
+        ;                 (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]}))))
+        ;  (menu/item
+        ;    (when (or (= route :store-dashboard/product-list)
+        ;              (= route :store-dashboard/product)
+        ;              (= route :store-dashboard/create-product))
+        ;      (css/add-class ::css/is-active))
+        ;    (dom/a
+        ;      (css/add-class :category {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
+        ;      (dom/span (css/show-for nav-breakpoint) "Products")
+        ;      (dom/i
+        ;        (css/hide-for nav-breakpoint {:classes [:fa :fa-gift :fa-fw]}))))
+        ;  (menu/item
+        ;    (when (or (= route :store-dashboard/order-list)
+        ;              (= route :store-dashboard/order))
+        ;      (css/add-class ::css/is-active))
+        ;    (dom/a
+        ;      (css/add-class :category {:href (routes/url :store-dashboard/order-list {:store-id store-id})})
+        ;      (dom/span (css/show-for nav-breakpoint) "Orders")
+        ;      (dom/i
+        ;        (css/hide-for nav-breakpoint {:classes [:fa :fa-file-text-o :fa-fw]}))))
+        ;  (menu/item
+        ;    (when (= (parse-route route) :store-dashboard/settings)
+        ;      (css/add-class ::css/is-active))
+        ;    (dom/a
+        ;      (css/add-class :category {:href (routes/url :store-dashboard/settings {:store-id store-id})})
+        ;      (dom/span (css/show-for nav-breakpoint) "Settings")
+        ;      (dom/i
+        ;        (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]})))))
+        ;(menu/horizontal
+        ;  (->> (css/add-class :top-bar-right)
+        ;       (css/align :right))
+        ;  (menu/item
+        ;    nil
+        ;    (dom/a
+        ;      {:href (routes/url :store {:store-id store-id})}
+        ;      (dom/i (css/show-for nav-breakpoint {:classes ["fa fa-home fa-fw"]}))
+        ;      (dom/span (css/show-for nav-breakpoint) "Go to store")
+        ;      (dom/i
+        ;        (css/hide-for nav-breakpoint {:classes [:fa :fa-home :fa-fw]})))))
+        ))))
 
 (defn store-info-element [component]
   (let [{:query/keys [store stripe-account current-route]} (om/props component)
@@ -136,33 +155,33 @@
         (grid/row
           (css/align :center)
           (grid/column
-            (grid/column-size {:small 12 :medium 10 :large 8})
-            (photo/store-photo store)))
+            (grid/column-size {:small 12 :medium 10})
+            (p/store-photo store {:transformation :transformation/thumbnail})))
         (grid/row
           (css/align :center)
           (grid/column
             (css/add-class :shrink)
             (dom/a
-              (css/button-hollow {:href (routes/url :store {:store-id store-id})}) "View"))
+              (css/button-hollow {:href (routes/url :store {:store-id store-id})}) "View store"))
           (grid/column
             (css/add-class :shrink)
             (dom/a
-              (css/button-hollow {:href (routes/url :store-dashboard/settings {:store-id store-id})}) "Edit"))))
+              (css/button-hollow {:href (routes/url :store-dashboard/settings {:store-id store-id})}) "Edit store"))))
       (callout/callout
         (css/add-class :stream-status)
         (dom/a
           (->> (css/button-hollow {:href (routes/url :store-dashboard/stream {:store-id store-id})})
                (css/add-class :primary))
-               (dom/span nil "Stream status")
-               (dom/span
-                 (cond->> (css/add-class :label)
-                          (= stream-state :stream.state/offline)
-                          (css/add-class :primary)
-                          (= stream-state :stream.state/online)
-                          (css/add-class :success)
-                          (= stream-state :stream.state/live)
-                          (css/add-class :highlight))
-                 (name stream-state))))
+          (dom/span nil "Stream status")
+          (dom/span
+            (cond->> (css/add-class :label)
+                     (= stream-state :stream.state/offline)
+                     (css/add-class :primary)
+                     (= stream-state :stream.state/online)
+                     (css/add-class :success)
+                     (= stream-state :stream.state/live)
+                     (css/add-class :highlight))
+            (name stream-state))))
       (callout/callout
         (css/add-class :stream-status)
         (let [disabled-reason (get-in stripe-account [:stripe/verification :stripe.verification/disabled-reason])
@@ -247,13 +266,16 @@
                                      :store.profile/name
                                      :store.profile/tagline
                                      :store.profile/return-policy
-                                     {:store.profile/photo [:photo/path]}]}
+                                     {:store.profile/cover [:photo/id]}
+                                     {:store.profile/photo [:photo/path :photo/id]}]}
                     {:store/owners [{:store.owner/user [:user/email]}]}
                     :store/stripe
+                    {:store/sections [:store.section/label]}
                     {:store/items [:store.item/name
                                    :store.item/description
                                    :store.item/price
-                                   {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+                                   {:store.item/section [:store.section/label]}
+                                   {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                         :store.item.photo/index]}
                                    {:store.item/skus [:db/id
                                                       {:store.item.sku/inventory [:store.item.sku.inventory/value]}
@@ -271,7 +293,7 @@
   Object
   (initLocalState [_]
     {:selected-tab :products
-     :did-mount? false})
+     :did-mount?   false})
   (componentDidMount [this]
     (let [{:keys [did-mount?]} (om/get-state this)]
       (when-not did-mount?
@@ -297,10 +319,6 @@
           ;; Render the store's dashboard:
           (dom/div
             {:id "sulo-main-dashboard"}
-            (grid/row-column
-              nil
-
-              (dom/h3 nil (dom/span nil "Dashboard ")))
             (grid/row
               (css/align :center)
               (grid/column

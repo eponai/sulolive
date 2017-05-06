@@ -5,21 +5,24 @@
     [eponai.server.external.aws-s3 :as s3]
     [eponai.server.external.stripe :as stripe]
     [taoensso.timbre :refer [debug info]]
-    [eponai.common.format :as cf])
+    [eponai.common.format :as cf]
+    [eponai.server.external.cloudinary :as cloudinary]
+    [eponai.common.format.date :as date])
   (:import (com.stripe.exception CardException)))
 
 
 (defn create [{:keys [state auth system]} {:keys [country name]}]
   (let [stripe-account (stripe/create-account (:system/stripe system) {:country country})
-        new-store {:db/id         (db/tempid :db.part/user)
-                   :store/uuid    (db/squuid)
-                   :store/profile {:store.profile/name name}
-                   :store/stripe  {:db/id         (db/tempid :db.part/user)
-                                   :stripe/id     (:id stripe-account)
-                                   :stripe/secret (:secret stripe-account)
-                                   :stripe/publ   (:publ stripe-account)}
-                   :store/owners  {:store.owner/role :store.owner.role/admin
-                                   :store.owner/user (:user-id auth)}}
+        new-store {:db/id            (db/tempid :db.part/user)
+                   :store/uuid       (db/squuid)
+                   :store/profile    {:store.profile/name name}
+                   :store/stripe     {:db/id         (db/tempid :db.part/user)
+                                      :stripe/id     (:id stripe-account)
+                                      :stripe/secret (:secret stripe-account)
+                                      :stripe/publ   (:publ stripe-account)}
+                   :store/owners     {:store.owner/role :store.owner.role/admin
+                                      :store.owner/user (:user-id auth)}
+                   :store/created-at (date/current-millis)}
         stream {:db/id        (db/tempid :db.part/user)
                 :stream/store (:db/id new-store)
                 :stream/state :stream.state/offline}]
@@ -43,10 +46,10 @@
             db-txs-retracts
             new)))
 
-(defn photo-entities [aws-s3 ps]
+(defn photo-entities [cloudinary ps]
   (map-indexed (fn [i new-photo]
-                 (if (some? (:location new-photo))
-                   (f/item-photo (s3/upload-photo aws-s3 new-photo) i)
+                 (if (some? (:url new-photo))
+                   (f/item-photo (cloudinary/upload-dynamic-photo cloudinary new-photo) i)
                    (-> new-photo (assoc :store.item.photo/index i) cf/add-tempid)))
                ps))
 
@@ -62,7 +65,7 @@
         product-sku-txs (into product-txs (edit-many-txs (:db/id product) :store.item/skus [] new-skus))
 
         ;; Create photo transactions, upload to S3 if necessary
-        new-photos (photo-entities (:system/aws-s3 system) photos)
+        new-photos (photo-entities (:system/cloudinary system) photos)
         product-sku-photo-txs (into product-sku-txs (edit-many-txs (:db/id product) :store.item/photos [] new-photos))]
 
     ;; Transact all updates to Datomic once
@@ -82,11 +85,19 @@
         product-sku-txs (into product-txs (edit-many-txs product-id :store.item/skus old-skus new-skus))
 
         ;; Update photos, remove photos that are not included in the photos collections from the client.
-        new-photos (photo-entities (:system/aws-s3 system) photos)
+        new-photos (photo-entities (:system/cloudinary system) photos)
         product-sku-photo-txs (into product-sku-txs (edit-many-txs product-id :store.item/photos old-photos new-photos))]
 
     ;; Transact updates into datomic
     (db/transact state product-sku-photo-txs)))
+
+(defn update-sections [{:keys [state]} store-id {:keys [sections]}]
+  (let [old-store (db/pull (db/db state) [:db/id :store/sections] store-id)
+        old-sections (:store/sections old-store)
+        new-sections (map cf/add-tempid sections)
+        section-txs (into [] (edit-many-txs store-id :store/sections old-sections new-sections))]
+    (when (not-empty section-txs)
+      (db/transact state section-txs))))
 
 (defn delete-product [{:keys [state]} product-id]
   (db/transact state [[:db.fn/retractEntity product-id]]))

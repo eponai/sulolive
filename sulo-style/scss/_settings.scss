@@ -120,7 +120,7 @@ $header-font-style: normal;
 $font-family-monospace: Consolas, 'Liberation Mono', Courier, monospace;
 $header-sizes: (
   small: (
-    'h1': 28,
+    'h1': 24,
     'h2': 20,
     'h3': 19,
     'h4': 18,
@@ -432,9 +432,9 @@ $maincontent-shadow: 0 0 10px rgba($black, 0.5);
 // 25. Orbit
 // ---------
 
-$orbit-bullet-background: $medium-gray;
-$orbit-bullet-background-active: $dark-gray;
-$orbit-bullet-diameter: 1.2rem;
+$orbit-bullet-background: rgba($light-gray, 0.5);//$medium-gray;
+$orbit-bullet-background-active: $orbit-bullet-background;//$dark-gray;
+$orbit-bullet-diameter: 4rem;
 $orbit-bullet-margin: 0.1rem;
 $orbit-bullet-margin-top: 0.8rem;
 $orbit-bullet-margin-bottom: 0.8rem;
@@ -520,9 +520,9 @@ $table-color-scale: 2%;
 $table-border: $global-border;//smart-scale($table-background, $table-color-scale);
 $table-padding: 0.75rem 0.5rem;//rem-calc(14);
 $table-hover-scale: 2%;
-$table-row-hover: rgba(map-get($foundation-palette, action), 0.05);//darken($table-background, $table-hover-scale);
-$table-row-stripe-hover: rgba(map-get($foundation-palette, action), 0.05);//darken($table-background, $table-color-scale + $table-hover-scale);
-$table-striped-background: rgba(map-get($foundation-palette, action), 0.03);
+$table-row-hover: rgba($light-gray, 0.2);//darken($table-background, $table-hover-scale);
+$table-row-stripe-hover: rgba($light-gray, 0.2);//darken($table-background, $table-color-scale + $table-hover-scale);
+$table-striped-background: rgba($light-gray, 0.2);
 $table-stripe: none;
 $table-head-background: $white;//smart-scale($table-background, $table-color-scale / 2);
 $table-foot-background: smart-scale($table-background, $table-color-scale);

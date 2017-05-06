@@ -13,7 +13,9 @@ $footer-font-color: $white;
 $footer-height-small: 6rem;
 $footer-height: 4rem;
 
-$navbar-zindex: 3;
+$navbar-zindex: 4;
+$subnavbar-zindex: 3;
+$dropdown-zindex: 4;
 
 $chat-width-large: rem-calc(400);
 $chat-width-small: rem-calc(200);

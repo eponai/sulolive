@@ -22,6 +22,7 @@
 	position: relative;
 	.dropdown-pane {
 		position: fixed;
+		z-index: $dropdown-zindex;
 		right: 0;
 		top: $navbar-height;
 		border: 1px solid $light-gray;

@@ -13,7 +13,8 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.om-quill :as quill]
     [eponai.common.format :as f]
-    [eponai.common.ui.elements.grid :as grid]))
+    [eponai.common.ui.elements.grid :as grid]
+    [eponai.web.ui.photo :as p]))
 
 ;(defn reviews-list [reviews]
 ;  (apply dom/div
@@ -36,7 +37,7 @@
     [:db/id
      :store.item/name
      :store.item/price
-     {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+     {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                           :store.item.photo/index]}
      {:store.item/skus [:db/id :store.item.sku/variation :store.item.sku/inventory]}
      :store.item/description
@@ -44,7 +45,7 @@
      {:store.item/category [:category/label
                             :category/path
                             :category/name]}
-     {:store/_items [{:store/profile [{:store.profile/photo [:photo/path]}
+     {:store/_items [{:store/profile [{:store.profile/photo [:photo/path :photo/id]}
                                       :store.profile/name]}]}])
   Object
   (initLocalState [_]
@@ -82,9 +83,6 @@
             nil
             (grid/column
               (grid/column-size {:small 12 :medium 8})
-              ;(photo/photo
-              ;  (css/add-class :contain {:src photo-url}))
-
               (dom/div
                 (css/add-class :orbit)
                 (menu/horizontal
@@ -105,22 +103,20 @@
                                  (css/add-class ::css/is-active)
                                  (= active-photo-index i)
                                  (css/add-class ::css/is-in))
-                        (photo/photo
-                          (->> {:src (get-in p [:store.item.photo/photo :photo/path])}
+                        (p/product-photo
+                          item
+                          (->> {:index i}
                                (css/add-class :orbit-image)
-                               (css/add-class :contain)))
-                        ;(dom/figcaption #js {:className "orbit-caption"} "Photo")
-                        ))
+                               (css/add-class :contain)))))
                     photos))
                 (dom/nav
                   (css/add-class :orbit-bullets)
                   (map-indexed
                     (fn [i p]
                       (dom/button
-                        {
-                         :onClick #(om/update-state! this assoc :active-photo-index i)}
-                        (photo/thumbail
-                          {:src (get-in p [:store.item.photo/photo :photo/path])})))
+                        {:onClick #(om/update-state! this assoc :active-photo-index i)}
+                        (p/product-thumbnail item {:index          i
+                                                   :transformation :transformation/thumbnail})))
                     photos))))
 
             (grid/column
@@ -133,12 +129,12 @@
               (when (not-empty variations)
                 (dom/div nil
                          (dom/select
-                              {:id (get form-elements :selected-sku)}
-                              (map
-                                (fn [sku]
-                                  (dom/option
-                                    {:value (:db/id sku)} (:store.item.sku/variation sku)))
-                                variations))))
+                           {:id (get form-elements :selected-sku)}
+                           (map
+                             (fn [sku]
+                               (dom/option
+                                 {:value (:db/id sku)} (:store.item.sku/variation sku)))
+                             variations))))
               (dom/div
                 (css/add-class :product-action-container)
                 ;(my-dom/div (->> (css/grid-row))
@@ -152,8 +148,8 @@
                 ;(dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
                 ;            :className "button expanded hollow"} "Save")
                 (dom/a
-                  (cond->> (->> {:onClick   #(when (not-empty skus)
-                                              (.add-to-bag this))}
+                  (cond->> (->> {:onClick #(when (not-empty skus)
+                                            (.add-to-bag this))}
                                 (css/button)
                                 (css/expanded))
                            (empty? skus)
@@ -181,7 +177,8 @@
                    (css/add-class :store-info))
               (grid/column
                 (grid/column-size {:small 3 :medium 2})
-                (photo/store-photo store))
+                (p/store-photo store {:transformation :transformation/thumbnail})
+                )
 
               (grid/column
                 nil
@@ -194,14 +191,14 @@
                     (dom/span nil (:store.profile/name (:store/profile store)))))
                 (dom/div
                   (css/add-class :store-tagline) (dom/p nil (:store.profile/description (:store/profile store))))
-                (dom/div nil (dom/a
-                               (css/button-hollow) (dom/span nil "+ Follow")))))
+                (dom/div nil
+                         (common/follow-button nil))))
             (dom/hr nil))
 
-          (common/content-section {}
-                                  (dom/div nil (dom/span nil "More from ") (dom/a nil (:store.profile/name (:store/profile store))))
-                                  (dom/div nil)
-                                  "Load More")
+          ;(common/content-section {}
+          ;                        (dom/div nil (dom/span nil "More from ") (dom/a nil (:store.profile/name (:store/profile store))))
+          ;                        (dom/div nil)
+          ;                        "Load More")
 
           ;(my-dom/div
           ;  (css/grid-column)

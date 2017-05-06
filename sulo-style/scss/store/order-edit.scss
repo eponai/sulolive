@@ -2,7 +2,7 @@
 	font-weight: $global-weight-bold;
 	font-size: 80%;
 	border: $global-border;
-	$color: map-get($foundation-palette, action);
+	$color: map-get($foundation-palette, primary);
 	color: $color;
 	border-color: $color;
 	padding: $label-padding;

@@ -12,8 +12,8 @@
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
     [eponai.client.parser.message :as msg]
-    [eponai.common.ui.script-loader :as script-loader]))
-
+    [eponai.common.ui.script-loader :as script-loader]
+    [eponai.common.ui.elements.callout :as callout]))
 (def prefix-key "payouts-details-")
 
 (def stripe-key "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")
@@ -61,7 +61,7 @@
             (grid/row
               (css/align :middle)
               (grid/column
-                nil
+                (grid/column-size {:small 9})
                 (dom/div
                   (css/add-class :payout-schedule)
                   (let [{:stripe.payout-schedule/keys [interval month-anchor week-anchor]} payout-schedule
@@ -75,7 +75,8 @@
                                        " - " delay-days " day rolling basis")))))
 
               (grid/column
-                (css/add-class :shrink)
+                (->> (grid/column-size {:small 3})
+                     (css/text-align :right))
                 (dom/a
                   (->> {:onClick #(om/update-state! component assoc :modal :payout-schedule)
                         :aria-disabled true}
@@ -304,6 +305,9 @@
                        (css/add-class :notification)
                        (css/add-class ::css/color-alert))
                   (dom/p nil (msg/message message)))))
+        (callout/callout-small
+          (css/add-class :warning)
+          (dom/p nil (dom/small nil "Settings are under development and this info cannot be saved. Excuse the mess, thank you for understanding.")))
         (dom/div
           (css/callout)
           (dom/p (css/add-class :header) "Payouts")
@@ -332,7 +336,7 @@
                         (grid/row
                           (css/align :middle)
                           (grid/column
-                            nil
+                            (grid/column-size {:small 9})
                             (dom/div
                               {:classes [:bank-account]}
                               (dom/div {:classes ["bank-detail icon"]}
@@ -351,7 +355,8 @@
                               (dom/div {:classes ["bank-detail country"]}
                                        (dom/span nil country))))
                           (grid/column
-                            (css/add-class :shrink)
+                            (->> (grid/column-size {:small 3})
+                                 (css/text-align :right))
                             (when-not (and default-for-currency?
                                            (= currency default-currency))
                               (dom/a

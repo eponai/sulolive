@@ -12,89 +12,105 @@
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
-    [eponai.client.auth :as auth])
+    [eponai.client.auth :as auth]
+    ;[clojure.core.async :as async]
+    [cljs.core.async :as async]
+    [cljs-http.client :as http])
   (:import [goog.events EventType]))
 
-;(defn resize-image [img width height]
-;  (let [canvas (doto (.createElement js/document "canvas")
-;                 (aset "width" width)
-;                 (aset "height" height))
-;        ctx  (.getContext canvas "2d")]
-;    (.drawImage ctx img 0 0 width height)
-;    canvas))
-
-(s/def ::photo-size #(>= 5000000 %))
-(defn filelist-files [^js/DataTransfer filelist]
-  (let [filelist (.-files filelist)]
-    (vec (for [k (js-keys filelist)
-               :let [value (aget filelist k)]
-               :when (identical? (type value) js/File)]
-           value))))
-
-(defn event-files
-  "Takes a goog event and returns the files
-  TODO: also get jquery events working"
-  [^js/Event event]
-  (filelist-files (-> event .getBrowserEvent .-dataTransfer)))
-
-(defn listen-file-drop
-  ([el] (listen-file-drop el (chan)))
-  ([el out & {:keys [concat]
-              :or {concat true}}]
-   ;(let [handler (events/FileDropHandler. el true)])
-   ;(events/listen el EventType.DROP
-   ;               (fn [e] (let [files (event-files e)]
-   ;                         (.log js/console "dropped")
-   ;                         (.log js/console (-> e .getBrowserEvent .-dataTransfer .-files prim-seq))
-   ;                         (if concat
-   ;                           (doseq [f files] (put! out f))
-   ;                           (put! out files)))))
-   out))
-
-(defn hashed [eid]
-  (let [digest (fn [^js/goog.crypt.Sha256 hasher bytes]
-                 (.update hasher bytes)
-                 (.digest hasher))
-        str->bytes (fn [s]
-                     (goog.crypt/stringToUtf8ByteArray s))]
-    (goog.crypt/byteArrayToHex (digest (goog.crypt.Sha256.) (str->bytes (str eid))))))
+;(defn hashed [eid]
+;  (let [digest (fn [^js/goog.crypt.Sha256 hasher bytes]
+;                 (.update hasher bytes)
+;                 (.digest hasher))
+;        str->bytes (fn [s]
+;                     (goog.crypt/stringToUtf8ByteArray s))]
+;    (goog.crypt/byteArrayToHex (digest (goog.crypt.Sha256.) (str->bytes (str eid))))))
 
 (defn queue-file [^js/Event e owner {:keys [upload-queue]}]
   (let [^js/File file (first (array-seq (.. e -target -files)))
         {:keys [on-photo-queue]} (om/get-computed owner)
-        validation (s/explain-data ::photo-size (.-size file))]
+        ;validation (s/explain-data ::photo-size (.-size file))
+        ]
     (debug {:original file})
-    (when (nil? validation)
-      (put! upload-queue {:file     file
-                          :metadata {:x-amz-meta-size (.-size file)}}))
-    (when on-photo-queue
-      ;reader.onloadend = function() {
-      ;                               img.src = reader.result;
-      ;                               }
-      ;reader.readAsDataURL(file);
-      (let [reader (js/FileReader.)]
-        (set! (.-onloadend reader) (fn []
-                                     (on-photo-queue (.-result reader))))
-        (.readAsDataURL reader file)))
-    (om/update-state! owner assoc :loading? (nil? validation) :validation validation)))
+    ;(when (nil? validation)
+    ;  (put! upload-queue {:file     file
+    ;                      :metadata {:x-amz-meta-size (.-size file)}}))
+    ;(when on-photo-queue
+    ;reader.onloadend = function() {
+    ;                               img.src = reader.result;
+    ;                               }
+    ;reader.readAsDataURL(file);
+    (let [reader (js/FileReader.)]
+      (set! (.-onloadend reader) (fn []
+                                   (put! upload-queue {:file     (.-result reader)
+                                                       :metadata {:x-amz-meta-size (.-size file)}})
+                                   (when on-photo-queue
+                                     (on-photo-queue (.-result reader)))
+                                   ))
+      (.readAsDataURL reader file)
+      ;)
+      )
+    ;(om/update-state! owner assoc :loading? (nil? validation) :validation validation)
+    ))
+
+(defn cloudinary-endpoint [endpoint]
+  (let [api "http://api.cloudinary.com/v1_1"
+        cloud-name "sulolive"
+        resource-type "image"]
+    (clojure.string/join "/" [api cloud-name resource-type endpoint])))
+
+(defn cloudinary-pipe [uploaded]
+  (let [queue (chan)]
+    (async/pipeline-async
+      3
+      uploaded
+      (fn [{:keys [file]} c]
+        (async/take! (http/post (cloudinary-endpoint "upload") {:form-params       {:file          file
+                                                                                    :upload_preset "product-photo"}
+                                                                :headers           {"X-Requested-With" "XMLHttpRequest"}
+                                                                :with-credentials? false})
+                     (fn [response]
+                       (let [upload-data (:body response)]
+                         (debug "Cloudinary upload data: " upload-data)
+                         (async/put! uploaded upload-data)
+                         (async/close! c)))))
+      queue)
+    queue)
+
+  ;(let [opts (merge {:server-url "/sign" :response-parser #(reader/read-string %)}
+  ;                  opts)
+  ;      to-process (chan)
+  ;      signed (chan)]
+  ;  (async/pipeline-async 3
+  ;                        signed
+  ;                        (partial sign-file
+  ;                           (:server-url opts)
+  ;                           (:response-parser opts)
+  ;                           (:key-fn opts)
+  ;                           (:headers-fn opts))
+  ;                        to-process)
+  ;  (async/pipeline-async 3 report-chan upload-file signed)
+  ;  to-process)
+  )
 
 (defui PhotoUploader
   static om/IQuery
   (query [_]
     [{:query/auth [:user/email]}])
   Object
-  (s3-key [this filename]
-    (let [{:keys [query/auth]} (om/props this)]
-      (let [sha-dbid (hashed (:db/id auth))
-            chars 2
-            level1 (clojure.string/join (take chars sha-dbid))
-            level2 (clojure.string/join (take chars (drop chars sha-dbid)))]
-        (str "photos/temp/" level1 "/" level2 "/" sha-dbid "/" filename))))
+  ;(s3-key [this filename]
+  ;(let [{:keys [query/auth]} (om/props this)]
+  ;  (let [sha-dbid (hashed (:db/id auth))
+  ;        chars 2
+  ;        level1 (clojure.string/join (take chars sha-dbid))
+  ;        level2 (clojure.string/join (take chars (drop chars sha-dbid)))]
+  ;    (str "photos/temp/" level1 "/" level2 "/" sha-dbid "/" filename)))
+  ;)
 
   (initLocalState [this]
     (let [uploaded (chan 20)]
       {:dropped-queue (chan 20)
-       :upload-queue  (s3/s3-pipe uploaded {:server-url "/aws" :key-fn #(.s3-key this %)})
+       :upload-queue  (cloudinary-pipe uploaded)            ;(s3/s3-pipe uploaded {:server-url "/aws" :key-fn #(.s3-key this %)})
        :uploaded      uploaded
        :uploads       []}))
   (componentDidMount [this]
@@ -102,18 +118,16 @@
     (go
       (while true
         (let [{:keys [dropped-queue upload-queue uploaded uploads]} (om/get-state this)
-              {:keys [on-photo-upload]} (om/get-computed this)]
-          (let [[v ch] (alts! [uploaded])]
+              {:keys [on-photo-upload on-photo-queue]} (om/get-computed this)]
+          (let [[response ch] (alts! [uploaded upload-queue])]
             (cond
-              ;(= ch dropped-queue)
-              ;(put! upload-queue v)
               (= ch uploaded)
               (do
                 (when on-photo-upload
-                  (on-photo-upload  (:response v)))
+                  (on-photo-upload response))
                 (om/update-state! this (fn [st] (-> st
                                                     (assoc :loading? false)
-                                                    (update :uploads conj v)))))))))))
+                                                    (update :uploads conj response)))))))))))
 
   (componentDidUpdate [this prev-props prev-state]
     (let [new-state (om/get-state this)

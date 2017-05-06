@@ -8,7 +8,8 @@
     #?(:cljs
        [eponai.web.utils :as utils])
     [om.next :as om]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.common.ui.elements.callout :as callout]))
 
 (defn label-column [opts content]
   (grid/column
@@ -52,6 +53,9 @@
 
     (dom/div
       nil
+      (callout/callout-small
+        (css/add-class :warning)
+        (dom/p nil (dom/small nil "Settings are under development and this info cannot be saved. Excuse the mess, thank you for understanding.")))
       (dom/div
         (css/callout)
         (dom/p (css/add-class :header) "Business details")
@@ -148,4 +152,4 @@
             (->> {:onClick #(save-legal-entity component)
                   :aria-disabled true}
                  (css/add-class :disabled)
-                 (css/button)) (dom/span nil "Save")))))))
+                 (css/button))(dom/span nil "Save")))))))

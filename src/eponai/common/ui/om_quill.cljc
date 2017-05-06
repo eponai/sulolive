@@ -3,11 +3,13 @@
     #?(:cljs
        [cljsjs.quill])
     #?(:clj
-       [autoclave.core :as a])
+        [autoclave.core :as a])
     ;; #?(:cljs dompurify)
-    [om.dom :as dom]
-    [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [debug error]]))
+        [om.dom :as dom]
+        [om.next :as om :refer [defui]]
+        [taoensso.timbre :refer [debug error]]
+        [eponai.common.ui.dom :as my-dom]
+        [eponai.common.ui.elements.css :as css]))
 
 (defn get-contents [editor]
   #?(:cljs
@@ -32,8 +34,9 @@
                  (a/html-sanitize policy dirty-html))))))
 
 (defn get-HTML #?@(:cljs [[^js/Quill editor]
-                          (sanitize-html (.. editor -root -innerHTML))]
-                   :clj[[editor] nil]))
+                          (when editor
+                            (sanitize-html (.. editor -root -innerHTML)))]
+                   :clj  [[editor] nil]))
 
 (defn toolbar-opts []
   #?(:cljs
@@ -46,16 +49,23 @@
                ;[{"color" []} {"background" []}]
                ["clean"]
                ])),)
+
+(defn set-content [editor content]
+  (when editor
+    (.. editor -clipboard (dangerouslyPasteHTML (sanitize-html content)))))
+
 (defui QuillEditor
   Object
   (componentDidMount [this]
-    (let [{:keys [on-editor-created]} (om/get-computed this)
-          {:keys [content placeholder theme id]} (om/props this)]
+    (let [{:keys [on-editor-created on-text-change]} (om/get-computed this)
+          {:keys [content placeholder theme id enable?]} (om/props this)
+          read-only (if (some? enable?) (not enable?) false)]
       #?(:cljs
          (let [element (.getElementById js/document (str id "-quill-editor"))
                editor (js/Quill. element (clj->js
                                            {:theme       (or theme "snow")
                                             :modules     {:toolbar (toolbar-opts)}
+                                            :readOnly    read-only
                                             :placeholder placeholder}))
                ;parchment (js/Quill.import "parchment")
                ;quill-style (.. parchment -Attributor -Style)
@@ -64,10 +74,24 @@
            ;(.setContents editor (js/JSON.parse content))
            (.. editor -clipboard (dangerouslyPasteHTML (sanitize-html content)))
            (when on-editor-created
-             (on-editor-created editor))))))
+             (on-editor-created editor))
+           (when on-text-change
+             (.on editor "text-change" (fn [_ _ _]
+                                         (on-text-change editor))))
+           (om/update-state! this assoc :editor editor)))))
+  (componentDidUpdate [this prev-state prev-props]
+    (let [{:keys [editor]} (om/get-state this)
+          {:keys [enable?]} (om/props this)]
+      (when editor
+        (.enable editor enable?))))
+
   (render [this]
-    (let [{:keys [id]} (om/props this)]
-      (dom/div #js {:id (str id "-quill-editor-container") :className "sl-quill-editor-container rich-text-input"}
+    (let [{:keys [id classes enable?]} (om/props this)]
+      (my-dom/div
+        (cond->> (css/add-class "sl-quill-editor-container rich-text-input" {:id      (str id "-quill-editor-container")
+                                                                             :classes classes})
+                 (not enable?)
+                 (css/add-class "disabled"))
         (dom/div #js {:id (str id "-quill-editor") :className "sl-quill-editor"})))))
 
 (def ->QuillEditor (om/factory QuillEditor))
@@ -75,9 +99,11 @@
 (defui QuillRenderer
   Object
   (render [this]
-    (let [{:keys [html]} (om/props this)]
-      (dom/div
-        #js {:className               "ql-editor"
-             :dangerouslySetInnerHTML #js {:__html (sanitize-html html)}}))))
+    (let [{:keys [html placeholder classes]} (om/props this)]
+      (my-dom/div
+        (->> {:placeholder             placeholder
+              :classes                 classes
+              :dangerouslySetInnerHTML #js {:__html (sanitize-html html)}}
+             (css/add-class "ql-editor"))))))
 
 (def ->QuillRenderer (om/factory QuillRenderer))

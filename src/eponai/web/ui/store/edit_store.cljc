@@ -1,0 +1,511 @@
+(ns eponai.web.ui.store.edit-store
+  (:require
+    [eponai.common.ui.dom :as dom]
+    #?(:cljs
+       [eponai.client.ui.photo-uploader :as pu])
+    #?(:cljs
+       [eponai.web.utils :as utils])
+    [eponai.common.ui.utils :refer [two-decimal-price]]
+    [om.next :as om :refer [defui]]
+    [eponai.common.ui.common :as common]
+    [eponai.common.ui.elements.grid :as grid]
+    [eponai.web.ui.photo :as photo]
+    [eponai.common.ui.elements.css :as css]
+    [taoensso.timbre :refer [debug]]
+    [eponai.common.ui.elements.menu :as menu]
+    [eponai.client.routes :as routes]
+    [eponai.common.ui.om-quill :as quill]
+    [eponai.common.format :as f]
+    [eponai.common.ui.product-item :as pi]
+    ;[eponai.common.ui.elements.photo :as old-photo]
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.client.parser.message :as msg]
+    [clojure.string :as string]))
+
+(def form-inputs
+  {:field.general/store-name    "general.store-name"
+   :field.general/store-tagline "general.store-tagline"})
+
+(defn photo-uploader [component id]
+  (let [{:proxy/keys [photo-upload]} (om/props component)]
+
+    #?(:cljs
+       (pu/->PhotoUploader (om/computed
+                             photo-upload
+                             {:on-photo-queue  (fn [img-result]
+                                                 (om/update-state! component assoc (keyword id "queue") {:src img-result}))
+                              :on-photo-upload (fn [photo]
+                                                 (om/update-state! component (fn [st]
+                                                                               (-> st
+                                                                                   (dissoc (keyword id "queue"))
+                                                                                   (assoc (keyword id "upload") photo)))))
+                              :id              id
+                              :hide-label?     true})))))
+
+(defn edit-button [opts & content]
+  (dom/a
+    (->> (css/button-hollow opts)
+         (css/add-class :shrink))
+    (dom/i {:classes ["fa fa-pencil fa-fw"]})
+    (dom/span nil "Edit")
+    ))
+
+(defn save-button [opts & content]
+  (dom/a (css/button opts)
+         (dom/span nil "Save")))
+
+(defn cancel-button [opts & content]
+  (dom/a (css/button-hollow opts)
+         (dom/span nil "Cancel")))
+
+(defn edit-about-section [component]
+  (let [{:keys [store]} (om/get-computed component)
+        {:about/keys [on-editor-change-desc
+                      on-editor-create-desc] :as state} (om/get-state component)
+        {{:store.profile/keys [cover tagline description]
+          store-name          :store.profile/name} :store/profile} store
+        ]
+    (dom/div
+      (css/add-class :sl-store-about-section)
+      (dom/div
+        (css/add-class :section-title)
+        (dom/h1 nil (dom/small nil "About"))
+        (if (:edit/info state)
+          (dom/div
+            nil
+            (cancel-button {:onClick #(om/update-state! component assoc :edit/info false)})
+            (save-button {:onClick #(.save-store component)}))
+          (edit-button {:onClick #(om/update-state! component assoc :edit/info true)})))
+      (when (and (:edit/info state) (:error/about state))
+        (dom/p (css/add-class :section-error) (dom/small (css/add-class :text-alert) (:error/about state))))
+
+      (callout/callout
+        (css/add-class :section-content)
+
+        ;; Enable Cover upload when in edit mode for the info section
+        (if (:edit/info state)
+          (let [{:cover/keys [upload queue]} state]
+            (if (some? queue)
+              (dom/div
+                {:classes "upload-photo cover loading"}
+                (photo/cover {:src (:src queue)}
+                             (photo/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))))
+              (dom/label {:htmlFor "file-cover"
+                          :classes ["upload-photo cover"]}
+                         (if (some? upload)
+                           (photo/cover {:photo-id       (:public_id upload)
+                                         :transformation :transformation/preview}
+                                        (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]})))
+                           (photo/cover {:photo-id     (:photo/id cover)
+                                         :placeholder? true}
+                                        (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]}))))
+                         ;(dom/label
+                         ;  {:htmlFor (str "file-" (count photos))})
+                         (photo-uploader component "cover"))))
+          (photo/cover {:photo-id     (:photo/id cover)
+                        :placeholder? true}))
+
+
+        (dom/div
+          (css/add-class :store-container)
+
+          (grid/row
+            (->> (css/align :middle)
+                 (css/align :center))
+
+            (grid/column
+              (grid/column-size {:small 12 :medium 2})
+
+              ;; Enable photo upload when in edit mode for the info section
+              (if (:edit/info state)
+                (let [{:profile/keys [upload queue]} state]
+
+                  (if (some? queue)
+                    (dom/div
+                      {:classes ["upload-photo circle loading"]}
+                      (photo/circle {:src (:src queue)}
+                                    (photo/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))))
+                    (dom/label {:htmlFor "file-profile"
+                                :classes ["upload-photo circle"]}
+                               (if (some? upload)
+                                 (photo/circle {:photo-id       (:public_id upload)
+                                                :transformation :transformation/thumbnail}
+                                               (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]})))
+                                 (photo/store-photo store {:transformation :transformation/thumbnail}
+                                                    (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]}))))
+                               (photo-uploader component "profile"))))
+                (photo/store-photo store {:transformation :transformation/thumbnail})))
+
+            (if (:edit/info state)
+              (grid/column
+                nil
+                (dom/input {:type         "text"
+                            :placeholder  "Store name"
+                            :defaultValue store-name
+                            :id           (:field.general/store-name form-inputs)
+                            :maxLength    (:text-max/store-name state)})
+                (dom/input {:type         "text"
+                            :placeholder  "Keep calm and wear pretty jewelry"
+                            :defaultValue tagline
+                            :id           (:field.general/store-tagline form-inputs)
+                            :maxLength    (:text-max/tagline state)}))
+              (grid/column
+                (css/add-class :shrink)
+                (dom/div (css/add-class :store-name)
+                         (dom/strong nil store-name))
+                (dom/p nil
+                       (dom/span (css/add-class :tagline)
+                                 (or (not-empty tagline) "No tagline")))))))
+
+        ;; About description
+        (grid/row
+          (->> (css/add-class :expanded)
+               (css/add-class :collapse)
+               (css/align :bottom))
+          (grid/column
+            nil (dom/label nil "Description"))
+          (when (:edit/info state)
+            (grid/column
+              (css/text-align :right)
+              (dom/small
+                nil
+                (- (:text-max/about state) (:text-length/about state))))))
+
+        (dom/div (css/add-class :about-container)
+                 (quill/->QuillEditor (om/computed {:content     (f/bytes->str description)
+                                                    :enable?     (:edit/info state)
+                                                    :id          "about"
+                                                    :placeholder "No description"}
+                                                   {:on-editor-created on-editor-create-desc
+                                                    :on-text-change    on-editor-change-desc}))
+                 )))))
+
+(defn products-section [component]
+  (let [{:keys [store]} (om/get-computed component)
+        {:products/keys                [selected-section search-input edit-sections]
+         :products.edit-sections?/keys [new-section-count]} (om/get-state component)
+        {:store/keys [items]} store
+        items (cond->> items
+                       (not= selected-section :all)
+                       (filter #(= selected-section (get-in % [:store.item/section :db/id])))
+                       (not-empty search-input)
+                       (filter #(clojure.string/includes? (.toLowerCase (:store.item/name %))
+                                                          (.toLowerCase search-input))))]
+    (dom/div
+      nil
+      (when (some? edit-sections)
+        (common/modal
+          {:on-close #(om/update-state! component dissoc :products/edit-sections)}
+          (let [items-by-section (group-by #(get-in % [:store.item/section :db/id]) items)]
+            (dom/div
+              nil
+              (dom/p (css/add-class :header) "Edit sections")
+              (menu/vertical
+                (css/add-class :edit-sections-menu)
+                (map-indexed
+                  (fn [i s]
+                    (let [no-items (count (get items-by-section (:db/id s)))]
+                      (menu/item (css/add-class :edit-sections-item)
+                                 ;(dom/a nil (dom/i {:classes ["fa "]}))
+                                 (dom/input
+                                   {:type        "text"
+                                    :id          (str "input.section-" i)
+                                    :placeholder "New section"
+                                    :value       (:store.section/label s "")
+                                    :onChange    #(om/update-state! component update :products/edit-sections
+                                                                    (fn [sections]
+                                                                      (let [old (get sections i)
+                                                                            new (assoc old :store.section/label (.-value (.-target %)))]
+                                                                        (assoc sections i new))))})
+                                 (if (= 1 no-items)
+                                   (dom/small nil (str no-items " item"))
+                                   (dom/small nil (str no-items " items")))
+                                 (dom/a {:onClick #(om/update-state! component update :products/edit-sections
+                                                                     (fn [sections]
+                                                                       (into [] (remove nil? (assoc sections i nil)))))}
+                                        (dom/i {:classes ["fa fa-trash-o fa-fw"]})))))
+                  edit-sections)
+                ;(map (fn [_]
+                ;       (menu/item (css/add-class :edit-sections-item)
+                ;                  ;(dom/a nil (dom/i {:classes ["fa "]}))
+                ;                  (dom/input {:type        "text"
+                ;                              :placeholder "New section"})
+                ;                  (dom/a nil (dom/i {:classes ["fa fa-trash-o fa-fw"]}))))
+                ;     (range new-section-count))
+                )
+
+              (dom/a (css/button-hollow {:onClick #(om/update-state! component update :products/edit-sections conj {})})
+                     (dom/i {:classes ["fa fa-plus-circle fa-fw"]})
+                     (dom/span nil "Add section"))
+              (dom/hr nil)
+              (dom/div
+                (css/text-align :right)
+                (cancel-button {:onClick #(om/update-state! component dissoc :products/edit-sections)})
+                (save-button {:onClick #(.save-sections component)}))))))
+      (callout/callout-small
+        nil
+
+
+        ;(dom/label nil "Sections")
+        (grid/row
+          (->> (css/add-class :expanded)
+               (css/add-class :collapse))
+          (grid/column
+            (grid/column-size {:small 12 :medium 10})
+            (menu/horizontal
+              (css/add-class :product-section-menu)
+              (menu/item
+                (when (= selected-section :all)
+                  (css/add-class :is-active))
+                (dom/a
+                  {:onClick #(om/update-state! component assoc :products/selected-section :all)}
+                  (dom/span nil "All items")))
+              (map (fn [s]
+                     (menu/item
+                       (when (= selected-section (:db/id s))
+                         (css/add-class :is-active))
+                       (dom/a {:onClick #(om/update-state! component assoc :products/selected-section (:db/id s))}
+                              (dom/span nil (string/capitalize (:store.section/label s))))))
+                   (:store/sections store))
+              ;(menu/item
+              ;  nil
+              ;  (dom/a {:onClick #(om/update-state! component assoc :products/edit-sections? true)}
+              ;         (dom/i {:classes ["fa fa-pencil fa-fw"]})
+              ;         (dom/span nil "Edit sections")))
+              ))
+          (grid/column
+            (->> (grid/column-size {:small 12 :medium 2})
+                 (css/text-align :right))
+            (dom/a (css/button-hollow {:onClick #(om/update-state! component assoc :products/edit-sections (into [] (:store/sections store)))})
+                   (dom/i {:classes ["fa fa-pencil fa-fw"]})
+                   (dom/span nil "Edit sections"))))
+
+        ;(dom/label nil "Products")
+        (dom/input
+          {:key         "profile.products.search"
+           :value       (or search-input "")
+           :onChange    #(om/update-state! component assoc :products/search-input (.. % -target -value))
+           :placeholder "Search Products..."
+           :type        "text"})
+        (grid/products items
+                       (fn [p]
+                         (let [{:store.item/keys [price]
+                                item-name        :store.item/name} p]
+                           (dom/div
+                             (->> (css/add-class :content-item)
+                                  (css/add-class :product-item))
+                             (dom/div
+                               (->>
+                                 (css/add-class :primary-photo))
+                               (photo/product-preview p))
+
+                             (dom/div
+                               (->> (css/add-class :header)
+                                    (css/add-class :text))
+                               (dom/div
+                                 nil
+                                 (dom/span nil item-name)))
+                             ;(dom/div
+                             ;  (css/add-class :text)
+                             ;  (dom/small
+                             ;    nil
+                             ;    (dom/span nil "by ")
+                             ;    (dom/a {:href (routes/url :store {:store-id (:db/id store)})}
+                             ;           (dom/span nil (:store.profile/name (:store/profile store))))))
+
+                             (dom/div
+                               (css/add-class :text)
+                               (dom/strong nil (two-decimal-price price)))
+                             (menu/horizontal
+                               (css/add-class :edit-item-menu)
+                               (menu/item nil
+                                          (dom/a {:href (routes/url :store-dashboard/product
+                                                                    {:product-id (:db/id p)
+                                                                     :store-id   (:db/id store)})}
+                                                 (dom/i {:classes ["fa fa-pencil fa-fw"]})
+                                                 (dom/span nil "Go to edit"))))))))))))
+
+(defui EditStore
+  static om/IQuery
+  (query [_]
+    [#?(:cljs
+        {:proxy/photo-upload (om/get-query pu/PhotoUploader)})
+     :query/current-route
+     :query/messages])
+  Object
+  (save-sections [this]
+    (let [{:products/keys [edit-sections]} (om/get-state this)
+          {:query/keys [current-route]} (om/props this)
+          new-sections (filter #(not-empty (string/trim (:store.section/label % ""))) edit-sections)]
+      (debug "Saving new sections: " new-sections)
+      (msg/om-transact! this [(list 'store/update-sections {:sections new-sections
+                                                            :store-id (get-in current-route [:route-params :store-id])})
+                              :query/store])
+      (om/update-state! this dissoc :products/edit-sections)))
+
+  (save-store [this]
+    #?(:cljs
+       (let [{uploaded-photo :profile/upload
+              uploaded-cover :cover/upload
+              :editor/keys   [about] :as state} (om/get-state this)
+             {:keys [store]} (om/get-computed this)
+
+             store-name (utils/input-value-by-id (:field.general/store-name form-inputs))
+             store-tagline (utils/input-value-by-id (:field.general/store-tagline form-inputs))
+             store-description (when about (quill/get-HTML about))
+             description-length (or (when about (.getLength about)) 0)]
+
+         (if (< description-length (:text-max/about state))
+           (do
+             (msg/om-transact! this (cond-> [(list 'store/update-info {:db/id         (:db/id store)
+                                                                       :store/profile {:store.profile/name        store-name
+                                                                                       :store.profile/tagline     store-tagline
+                                                                                       :store.profile/description store-description}})]
+                                            (some? uploaded-photo)
+                                            (conj (list 'store.photo/upload {:photo     uploaded-photo
+                                                                             :photo-key :store.profile/photo
+                                                                             :store-id  (:db/id store)}))
+
+                                            (some? uploaded-cover)
+                                            (conj (list 'store.photo/upload {:photo     uploaded-cover
+                                                                             :photo-key :store.profile/cover
+                                                                             :store-id  (:db/id store)}))
+
+                                            :always
+                                            (conj :query/store)))
+             (om/update-state! this assoc :edit/info false))
+           (om/update-state! this assoc :error/about "Sorry, your description is too long.")))))
+  (save-return-policy [this]
+    #?(:cljs
+       (let [{:editor/keys [return-policy] :as state} (om/get-state this)
+             {:keys [store]} (om/get-computed this)
+             store-return-policy (when return-policy (quill/get-HTML return-policy))
+             text-lentgh (or (when return-policy (.getLength return-policy)) 0)]
+         (if (< text-lentgh (:text-max/return-policy state))
+           (do
+             (msg/om-transact! this [(list 'store/update-info {:db/id         (:db/id store)
+                                                               :store/profile {:store.profile/return-policy store-return-policy}})
+                                     :query/store])
+             (om/update-state! this assoc :edit/return-policy false))
+           (om/update-state! this assoc :error/return-policy "Sorry, your return policy is too long.")))))
+
+  (initLocalState [this]
+    {:edit/info                                false
+     :edit/return-policy                       false
+     :edit/shipping-policy                     false
+
+     :about/on-editor-change-desc              #(om/update-state! this assoc :text-length/about (.getLength %))
+     :about/on-editor-create-desc              #(om/update-state! this assoc
+                                                                  :editor/about %
+                                                                  :text-length/about (.getLength %))
+
+     :return-policy/on-editor-create           #(om/update-state! this assoc
+                                                                  :editor/return-policy %
+                                                                  :text-length/return-policy (.getLength %))
+     :return-policy/on-editor-change           #(om/update-state! this assoc :text-length/return-policy (.getLength %))
+
+     :shipping-policy/on-editor-create         #(om/update-state! this assoc
+                                                                  :editor/shipping-policy %
+                                                                  :text-length/shipping-policy (.getLength %))
+     :shipping-policy/on-editor-change         #(om/update-state! this assoc :text-length/shipping-policy (.getLength %))
+
+     :products.edit-sections/new-section-count 0
+     :text-max/store-name                      100
+     :text-max/tagline                         140
+     :text-max/about                           500
+     :text-max/return-policy                   500
+     :text-max/shipping-policy                 500
+
+     :text-length/about                        0
+     :text-length/return-policy                0
+     :text-length/shipping-policy              0
+
+     :products/selected-section                :all})
+  (render [this]
+    (let [{:keys [store]} (om/get-computed this)
+          {{:store.profile/keys [return-policy]} :store/profile
+           store-items                           :store/items} store
+          {:query/keys [current-route]} (om/props this)
+          {:keys [store-id]} (:route-params current-route)
+          shipping-policy nil
+          {:return-policy/keys [on-editor-create on-editor-change] :as state} (om/get-state this)]
+      (debug "Edit store: " store)
+      (dom/div
+        {:id "sulo-store-edit"}
+        (grid/row-column
+          {:id "sulo-store" :classes ["edit-store"]}
+          (edit-about-section this)
+
+          (grid/row
+            (->> (css/add-class :expanded)
+                 (css/add-class :collapse)
+                 (css/add-class :policies))
+            (grid/column
+              (grid/column-size {:small 12 :medium 6})
+              (dom/div
+                (css/add-class :section-title)
+                (dom/h1 nil (dom/small nil "Return policy"))
+                (if (:edit/return-policy state)
+                  (dom/div
+                    nil
+                    (cancel-button {:onClick #(do
+                                               (om/update-state! this assoc :edit/return-policy false)
+                                               (quill/set-content (:editor/return-policy state) (f/bytes->str return-policy)))})
+                    (save-button {:onClick #(.save-return-policy this)}))
+                  (edit-button {:onClick #(om/update-state! this assoc :edit/return-policy true)})))
+              (when (and (:edit/return-policy state) (:error/return-policy state))
+                (dom/p (css/add-class :section-error) (dom/small (css/add-class :text-alert) (:error/return-policy state))))
+
+              (callout/callout-small
+                nil
+                (when (:edit/return-policy state)
+                  (dom/div
+                    (css/text-align :right)
+                    (dom/small
+                      nil (- (:text-max/return-policy state)
+                             (:text-length/return-policy state)))))
+                (quill/->QuillEditor (om/computed {:content     (f/bytes->str return-policy)
+                                                   :id          "return-policy"
+                                                   :enable?     (:edit/return-policy state)
+                                                   :placeholder "No return policy"}
+                                                  {:on-editor-created on-editor-create
+                                                   :on-text-change    on-editor-change}))))
+            (grid/column
+              (grid/column-size {:small 12 :medium 6})
+              (dom/div
+                (css/add-class :section-title)
+                (dom/h1 nil (dom/small nil "Shipping policy"))
+                (if (:edit/shipping-policy state)
+                  (dom/div
+                    nil
+                    (cancel-button {:onClick #(do
+                                               (om/update-state! this assoc :edit/shipping-policy false)
+                                               (quill/set-content (:editor/shipping-policy state) (f/bytes->str shipping-policy)))})
+                    (save-button nil))
+                  (edit-button {:onClick #(om/update-state! this assoc :edit/shipping-policy true)})))
+              (callout/callout-small
+                nil
+                (when (:edit/shipping-policy state)
+                  (dom/div
+                    (css/text-align :right)
+                    (dom/small
+                      nil (- (:text-max/shipping-policy state)
+                             (:text-length/shipping-policy state)))))
+                (quill/->QuillEditor (om/computed {:content     (f/bytes->str shipping-policy)
+                                                   :id          "shipping-policy"
+                                                   :enable?     (:edit/shipping-policy state)
+                                                   :placeholder "No shipping policy"}
+                                                  {:on-editor-created (:shipping-policy/on-editor-create state)
+                                                   :on-text-change    (:shipping-policy/on-editor-change state)}))
+                )))
+
+          (dom/div
+            (css/add-class :section-title)
+            (dom/h1 nil (dom/small nil "Products"))
+            (dom/a
+              (css/button-hollow {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
+              (dom/span nil "Manage products")))
+
+          (products-section this))))))
+
+(def ->EditStore (om/factory EditStore))

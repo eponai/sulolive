@@ -54,9 +54,7 @@
                 (dom/a
                   (css/button-hollow {:href (routes/url :user/profile {:user-id (:db/id user)})})
                   (dom/span nil "Edit Profile"))
-                (dom/a
-                  (css/button)
-                  (dom/span nil "+ Follow"))))))
+                (common/follow-button nil)))))
 
         ;(grid/row-column
         ;  nil)

@@ -24,15 +24,14 @@
           ;; (common/auth0-lock-passwordless release?)
           (common/auth0-lock release?)
 
-
-          (when release?
-            (dom/script {:src       "https://cdn.greta.io/greta.min.js"
-                         :type      common/text-javascript
-                         :id        "gretaScript"
-                         :data-ac   "b554c0b026bb448362dfe657846bf982"
-                         ;; Using data-lazy right now because we have etsy images on our site
-                         ;; which doesn't have CORS set up (for good reason).
-                         :data-lazy "true"}))
+          (dom/script {:src       "https://cdn.greta.io/greta.min.js"
+                       :type      common/text-javascript
+                       :id        "gretaScript"
+                       :data-ac   "b554c0b026bb448362dfe657846bf982"
+                       ;; Using data-lazy right now because we have etsy images on our site
+                       ;; which doesn't have CORS set up (for good reason).
+                       ;:data-lazy "true"
+                       })
 
           (when  (= route :coming-soon)
             [(dom/script {:src "https://code.jquery.com/jquery-1.11.0.min.js"})

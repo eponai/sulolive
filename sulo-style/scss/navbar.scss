@@ -140,7 +140,7 @@
 }
 #navbar-brand {
 	text-transform: uppercase;
-	font-weight: bold;
+	font-weight: $global-weight-bold;
 	font-size: 1rem;
 	color: $black;
 	display: flex;

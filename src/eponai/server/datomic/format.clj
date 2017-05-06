@@ -83,9 +83,9 @@
   {:db/id      (d/tempid :db.part/user)
    :photo/path url})
 
-(defn item-photo [url index]
+(defn item-photo [p index]
   {:db/id                  (d/tempid :db.part/user)
-   :store.item.photo/photo (photo url)
+   :store.item.photo/photo (cf/add-tempid (select-keys p [:photo/path :photo/id]))
    :store.item.photo/index index})
 
 (defn inventory [i]
@@ -105,6 +105,7 @@
 
 (defn product [params]
   (-> (select-keys params [:db/id :store.item/name :store.item/description :store.item/price :store.item/uuid])
+      (assoc :store.item/created-at (date/current-millis))
       ;(update :store.item/skus #(map sku %))
       (update :store.item/description #(when (some? %) (.getBytes %)))
       (update :store.item/price input->price)
@@ -112,9 +113,10 @@
       common.format/remove-nil-keys))
 
 (defn auth0->user [auth0]
-  {:db/id         (d/tempid :db.part/user)
-   :user/email    (:email auth0)
-   :user/verified (:email_verified auth0)})
+  {:db/id           (d/tempid :db.part/user)
+   :user/email      (:email auth0)
+   :user/verified   (:email_verified auth0)
+   :user/created-at (date/current-millis)})
 
 (defn shipping [s]
   (let [address* #(-> (select-keys % [:shipping.address/street
