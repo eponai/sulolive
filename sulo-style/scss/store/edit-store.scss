@@ -96,10 +96,14 @@
 
 		.product-section-menu {
 			// border-bottom: $global-border;
+			margin-bottom: 2rem;
 			flex-wrap: wrap;
 			li {
-				border-right: $global-border;
+				// border-right: $global-border;
 				border-bottom: $global-border;
+				&:first-child {
+					border-right: $global-border;
+				}
 				a {
 					color: $dark-gray;
 					&:hover {
@@ -115,9 +119,27 @@
 			}
 		}
 
+		.edit-sections-menu {
+			margin-bottom: 1rem;
+			.edit-sections-item {
+				border-bottom: $global-border;
+				padding: 0.5rem 0;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				> * {
+					flex: 0 0 auto;
+				}
+				input {
+					width: 15rem;
+					max-width: 50%;
+				}
+			}
+		}
+
 		.content-item {
 			padding-top: 0;
-			padding-bottom: 0.5rem;
+			// padding-bottom: 0.5rem;
 			border: $global-border;
 			.text {
 				padding: 0 0.5rem;
