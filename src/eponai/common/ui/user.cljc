@@ -2,10 +2,11 @@
   (:require
     [eponai.common.ui.user.order-list :as uo]
     [eponai.common.ui.user.order-receipt :as o]
-    [eponai.common.ui.navbar :as nav]
-    [eponai.common.ui.common :as common]
     [eponai.common.ui.user.profile :as profile]
     [eponai.common.ui.user.profile-edit :as pe]
+    [eponai.common.ui.navbar :as nav]
+    [eponai.common.ui.common :as common]
+    [eponai.common.ui.router :as router]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug warn]]))
@@ -44,3 +45,5 @@
             (warn "Unknown route: " route)))))))
 
 (def ->User (om/factory User))
+
+(router/register-component :user User)

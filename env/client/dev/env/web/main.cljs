@@ -1,7 +1,8 @@
 (ns env.web.main
   (:require [eponai.web.app :as app]
             [eponai.client.devtools :as devtools]
-            [plomber.core :as plomber]))
+            [plomber.core :as plomber]
+            [eponai.common.ui-namespaces]))
 
 (set! js/window.mixpanel #js {"track" (fn [& args] )})
 

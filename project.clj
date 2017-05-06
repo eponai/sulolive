@@ -3,6 +3,65 @@
               })
 (def closure-warns {:non-standard-jsdoc :off})
 
+(defn modules [output-dir]
+  (letfn [(path [route module?]
+            (str output-dir "/" (when module? "closure-modules/") (name route) ".js"))
+          (module [[route {:keys [entries depends-on] :as m}]]
+            [route (cond-> (assoc m :output-to (path route true))
+                     (some? depends-on)
+                     (update :depends-on set)
+                     :always
+                     (update :entries set))])]
+    (into `{:cljs-base {:entries   #{env.web.main}
+                        :output-to ~(path :budget false)}}
+      (map module)
+      `{
+        ;; Extra groupings
+        :react-select    {:entries [eponai.common.ui.components.select
+                                    cljsjs.react-select]}
+
+        ;; Routes
+        :index           {:entries [eponai.common.ui.index]}
+        :unauthorized    {:entries [eponai.web.ui.unauthorized]}
+        :login           {:entries    [eponai.web.ui.login]
+                          :depends-on [:index]}
+        :coming-soon     {:entries [eponai.web.ui.coming-soon]}
+        :sell            {:entries [eponai.web.ui.start-store]}
+        :store           {:entries [eponai.common.ui.store]}
+        :checkout        {:entries [eponai.common.ui.checkout
+                                    eponai.common.ui.checkout.shipping
+                                    eponai.common.ui.checkout.payment
+                                    eponai.common.ui.checkout.review]}
+        :browse          {:entries [eponai.common.ui.goods]}
+        :shopping-bag    {:entries [eponai.common.ui.shopping-bag]}
+        :product         {:entries [eponai.common.ui.product-page]}
+        :live            {:entries [eponai.common.ui.streams]}
+        :help            {:entries [eponai.common.ui.help
+                                    eponai.common.ui.help.faq
+                                    eponai.common.ui.help.first-stream
+                                    eponai.common.ui.help.mobile-stream
+                                    eponai.common.ui.help.quality]}
+        :user            {:entries [eponai.common.ui.user
+                                    eponai.common.ui.user.order-list
+                                    eponai.common.ui.user.order-receipt
+                                    eponai.common.ui.user.profile
+                                    eponai.common.ui.user.profile-edit]}
+        :store-dashboard {:depends-on [:react-select]
+                          :entries    [eponai.common.ui.store.dashboard
+                                       eponai.common.ui.store.account
+                                       eponai.common.ui.store.order-edit-form
+                                       eponai.common.ui.store.order-list
+                                       eponai.common.ui.store.product-edit-form
+                                       eponai.common.ui.store.product-list
+                                       eponai.common.ui.store.stream-settings
+                                       eponai.common.ui.store.account.activate
+                                       eponai.common.ui.store.account.business
+                                       eponai.common.ui.store.account.general
+                                       eponai.common.ui.store.account.payments
+                                       eponai.common.ui.store.account.payouts
+                                       eponai.common.ui.store.account.shipping
+                                       ]}})))
+
 (defproject budget "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
@@ -56,14 +115,14 @@
                  [cljsjs/react "15.4.2-2"]
                  [cljsjs/react-dom "15.4.2-2"]
                  [com.cognitect/transit-cljs "0.8.239"]
-                 [org.clojure/clojurescript "1.9.521"   
+                 [org.clojure/clojurescript "1.9.521"
                   ;;  :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]
                  [com.google.guava/guava "21.0"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]
                  [cljs-http "0.1.39"]
-                 [org.clojure/tools.reader "1.0.0-alpha2"]
+                 [org.clojure/tools.reader "1.0.0-beta4"]
                  [garden "1.3.2"]
                  [datascript "0.15.4"]
                  [cljsjs/stripe "2.0-0"]
@@ -97,7 +156,7 @@
             [lein-figwheel "0.5.7" :exclusions [org.clojure/clojure]]
             [lein-test-out "0.3.1"]
             [lein-environ "1.1.0"]]
-  
+
   :min-lein-version "2.0.0"
   :clean-targets ^{:protect false} ["resources/public/dev/js/out"
                                     "resources/public/devcards/js/out"
@@ -134,6 +193,12 @@
                                       ["with-profile" "web-prod" "cljsbuild" "once" "release"]]
             "prod-build-server"      ^{:doc "Recompile server code with release build."}
                                      ["do" "uberjar"]
+            "simple-build-web"       ^{:doc "Recompile web code with release build."}
+                                     ["do"
+                                      ["with-profile" "+web" "cljsbuild" "once" "simple"]]
+            "simple-build-web-auto"  ^{:doc "Recompile web code with release build."}
+                                     ["do"
+                                      ["with-profile" "+web" "cljsbuild" "auto" "simple"]]
             "dev-build-ios"          ^{:doc "Compile mobile code in development mode."}
                                      ["do"
                                       ["with-profile" "+mobile" "cljsbuild" "once" "ios"]]
@@ -266,7 +331,7 @@
              :web-prod {:jvm-opts     ^:replace ["-Xmx3g" "-server"]
                         :cljsbuild {:builds [{:id           "release"
                                               :source-paths ["src/" "src-hacks/web/" "env/client/prod"]
-                                              :compiler     {:closure-defines {"goog.DEBUG" false}
+                                              :compiler     {:closure-defines {"goog.DEBUG" true}
                                                              :main            "env.web.main"
                                                              :asset-path      "/release/js/out"
                                                              :output-to       "resources/public/release/js/out/budget.js"
@@ -276,12 +341,14 @@
                                                                                "src-hacks/js/externs/red5pro.js"
                                                                                "src-hacks/js/externs/hls.js"]
                                                              :infer-externs true
+                                                             ;; :preloads [env.web.preloads]
                                                              ;; :language-in     :ecmascript5
                                                              ;; :parallel-build  true
-                                                             ;;   :pseudo-names true
-                                                             ;;   :pretty-print true
-                                                             ;;   :verbose         true
+                                                             ;; :pseudo-names true
+                                                             ;; :pretty-print true
+                                                             ;; :verbose         true
                                                              :npm-deps        ~npm-deps
+                                                             :modules ~(modules "resources/public/release/js/out/")
                                                              }}]}}
              :web      {:jvm-opts     ^:replace ["-Xmx3g" "-server"]
                         :exclusions   [org.clojure/clojure org.clojure/clojurescript]
@@ -292,6 +359,7 @@
                                                  :compiler     {:main           "env.web.main"
                                                                 :asset-path     "/dev/js/out"
                                                                 :output-to      "resources/public/dev/js/out/budget.js"
+                                                                ;; :modules ~(modules "/dev/js/out")
                                                                 :output-dir     "resources/public/dev/js/out/"
                                                                 :optimizations  :none
                                                                 :parallel-build true
@@ -333,6 +401,24 @@
                                                                 :source-map     true
                                                                 :closure-warnings ~closure-warns
                                                                 :npm-deps       ~npm-deps
+                                                                }}
+                                                {:id           "simple"
+                                                 :source-paths ["src/" "src-hacks/web/" "env/client/simple"]
+                                                 :compiler     {:closure-defines {"goog.DEBUG" true}
+                                                                :main            "env.web.main"
+                                                                :asset-path      "/simple/js/out"
+                                                                :output-to       "resources/public/simple/js/out/budget.js"
+                                                                :output-dir      "resources/public/simple/js/out/"
+                                                                :optimizations   :simple
+                                                                :externs         ["src-hacks/js/externs/stripe-checkout.js"]
+                                                                :infer-externs true
+                                                                ;; :language-in     :ecmascript5
+                                                                :parallel-build  true
+                                                                :pretty-print true
+                                                                ;; :source-map   true
+                                                                ;; :verbose         true
+                                                                :npm-deps        ~npm-deps
+                                                                :modules ~(modules "resources/public/simple/js/out/")
                                                                 }}]}}}
 
    ;;;;;;;;;;;;;

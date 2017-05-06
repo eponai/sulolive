@@ -8,6 +8,7 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.grid :as grid]
+    [eponai.common.ui.router :as router]
     [eponai.client.routes :as routes]
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.callout :as callout]))
@@ -87,3 +88,5 @@
                      stores)))))))))
 
 (def ->Streams (om/factory Streams))
+
+(router/register-component :live Streams)

@@ -292,7 +292,7 @@
       (my-dom/a
         (->> {:onClick #(do (.close-sidebar component)
                             (if (or (= (:route current-route route) :coming-soon)
-                                    (= (:route current-route route) :sell-soon))
+                                    (= (:route current-route route) :coming-soon/sell))
                               (when on-live-click
                                 (on-live-click))
                               (routes/set-url! component route route-params)))}
@@ -590,7 +590,7 @@
                                (or (= route :store-dashboard) (= (name :store-dashboard) (namespace route))))
                           (manage-store-navbar this)
 
-                          (or (= route :coming-soon) (= route :sell-soon))
+                          (or (= route :coming-soon) (= route :coming-soon/sell))
                           (coming-soon-navbar this)
 
                           (and (some? route) (= (namespace route) "help"))

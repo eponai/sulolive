@@ -8,6 +8,7 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.utils :as utils]
     [eponai.common.ui.navbar :as nav]
+    [eponai.common.ui.router :as router]
     [taoensso.timbre :refer [debug]]
     [eponai.client.routes :as routes]
     [eponai.common.ui.elements.menu :as menu]
@@ -151,3 +152,5 @@
                 (dom/span nil "Go to the market - start shopping")))))))))
 
 (def ->ShoppingBag (om/factory ShoppingBag))
+
+(router/register-component :shopping-bag ShoppingBag)

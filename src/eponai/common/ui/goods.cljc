@@ -7,11 +7,11 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.product :as product]
     [eponai.common.ui.product-filters :as pf]
     [eponai.common.ui.product-item :as pi]
+    [eponai.common.ui.router :as router]
     [eponai.common.api.products :as products]
     [clojure.string :as str]
     [om.next :as om :refer [defui]]
@@ -188,3 +188,5 @@
                                  (pi/->ProductItem {:product p})))))))))))
 
 (def ->Goods (om/factory Goods))
+
+(router/register-component :browse Goods)

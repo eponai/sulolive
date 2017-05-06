@@ -32,16 +32,22 @@
    for example, and I'm not sure it works with datascript(?))."
   ([x route]
    (transact-route! x route nil))
-  ([x route {:keys [queue? route-params tx] :or {queue? true}}]
+  ([x route {:keys [delayed-queue queue? route-params tx] :or {queue? true}}]
    {:pre [(or (om/reconciler? x) (om/component? x))
           (keyword? route)]}
    (let [reconciler (cond-> x (om/component? x) (om/get-reconciler))
          tx (when-not (nil? tx)
-              (cond->> tx (not (vector? tx)) (vector)))]
-     (om/transact! reconciler (cond-> [(list 'routes/set-route! {:route route
-                                                                 :route-params route-params})]
-                                      :always (into tx)
-                                      queue? (into (om/transform-reads reconciler [root-route-key :query/current-route])))))))
+              (cond->> tx (not (vector? tx)) (vector)))
+         reads-fn #(-> (om/transform-reads reconciler [root-route-key])
+                       (conj :query/current-route))
+         tx (cond-> [(list 'routes/set-route! {:route route
+                                               :route-params route-params})]
+                    :always (into tx)
+                    queue? (into (reads-fn)))]
+     (debug "Transacting tx: " tx)
+     (om/transact! reconciler tx)
+     (when (fn? delayed-queue)
+       (delayed-queue #(om/transact! reconciler (reads-fn)))))))
 
 ;; "Takes a route and its route-params and returns an url"
 (def url routes/path)

@@ -81,7 +81,7 @@
 (def routes
   ["/" {""                            :index
         "coming-soon"                 :coming-soon
-        "sell/coming-soon"            :sell-soon
+        "sell/coming-soon"            :coming-soon/sell
         "sell"                        :sell
         "live"                        :live
         "store"                       :index/store
@@ -99,7 +99,7 @@
 
 (defn auth-roles [handler]
   (cond
-    (#{:coming-soon :sell-soon} handler)
+    (#{:coming-soon :coming-soon/sell} handler)
     ::auth/public
     (= handler :store-dashboard)
     ::auth/store-owner

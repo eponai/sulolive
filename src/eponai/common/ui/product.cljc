@@ -9,6 +9,7 @@
     [eponai.common.ui.common :as common]
     [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.navbar :as nav]
+    [eponai.common.ui.router :as router]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.om-quill :as quill]
@@ -227,17 +228,3 @@
           )))))
 
 (def ->Product (om/factory Product))
-
-(defui ProductPage
-  static om/IQuery
-  (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:query/item (om/get-query Product)}])
-  Object
-  (render [this]
-    (let [{:keys [query/item proxy/navbar]} (om/props this)]
-      (common/page-container
-        {:navbar navbar :id "sulo-product-page"}
-        (->Product item)))))
-
-(def ->ProductPage (om/factory ProductPage))

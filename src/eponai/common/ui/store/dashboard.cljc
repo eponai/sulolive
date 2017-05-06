@@ -12,6 +12,7 @@
     [eponai.common.ui.store.product-edit-form :as pef]
     [eponai.common.ui.store.product-list :as pl]
     [eponai.common.ui.store.stream-settings :as ss]
+    [eponai.common.ui.router :as router]
     [eponai.common.ui.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
@@ -373,3 +374,5 @@
                            "Once you've activated you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our terms of service. If there is a problem, we'll get in touch right away to resolve it as quickly as possible.")))))))))))
 
 (def ->Dashboard (om/factory Dashboard))
+
+(router/register-component :store-dashboard Dashboard)
