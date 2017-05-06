@@ -8,11 +8,14 @@
 
 ;; Inspired by https://www.martinklepsch.org/posts/just-in-time-script-loading-with-react-and-clojuresript.html
 
-(defn filter-loaded [scripts]
-  (reduce (fn [acc [loaded? src]]
-            (if (loaded?) acc (conj acc src)))
-          []
-          scripts))
+(let [sources-loaded (atom #{})]
+  (defn filter-loaded [scripts]
+    (let [filtered (into [] (comp (remove #(contains? @sources-loaded (val %)))
+                                  (remove #((key %)))
+                                  (map val))
+                         scripts)]
+      (swap! sources-loaded into filtered)
+      filtered)))
 
 (defprotocol IRenderLoadingScripts
   (render-while-loading-scripts [this props]
