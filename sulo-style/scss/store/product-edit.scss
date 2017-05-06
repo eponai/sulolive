@@ -1,4 +1,6 @@
 #sulo-edit-product {
+	max-width: $global-width;
+	margin: 0 auto;
 	h3 {
 		@include wrap-text;
 		small {

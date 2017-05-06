@@ -148,7 +148,7 @@ $dashboard-primary-color: map-get($foundation-palette, action);
 	}
 
 	.page-content {
-		@include sulo-action-buttons;
+		// @include sulo-action-buttons;
 
 		h3 {
 			margin-top: 0;

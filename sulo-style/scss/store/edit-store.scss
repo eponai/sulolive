@@ -93,5 +93,32 @@
 				}
 			}
 		}
+
+		.content-item {
+			padding-top: 0;
+			// padding-bottom: 1rem;
+			border: $global-border;
+			.text {
+				padding: 0 0.5rem;
+				justify-content: flex-start;
+				font-size: 80%;
+			}
+			.edit-item-menu {
+				justify-content: stretch;
+				border-top: $global-border;
+				margin-top: 0.5rem;
+				li {
+					flex: 1 0 auto;
+					border-right: $global-border;
+					&:last-child {
+						border-right: none;
+					}
+					a {
+						justify-content: center;
+					}
+				}
+			}
+			// .edit-item-
+		}
 	}
 }

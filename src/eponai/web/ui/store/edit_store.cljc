@@ -5,6 +5,7 @@
        [eponai.client.ui.photo-uploader :as pu])
     #?(:cljs
        [eponai.web.utils :as utils])
+    [eponai.common.ui.utils :refer [two-decimal-price]]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.elements.grid :as grid]
@@ -261,6 +262,7 @@
           {{:store.profile/keys [return-policy]} :store/profile
            store-items                           :store/items} store
           {:query/keys [current-route]} (om/props this)
+          {:keys [store-id]} (:route-params current-route)
           shipping-policy nil
           state (om/get-state this)]
       (debug "Edit store: " store)
@@ -342,11 +344,53 @@
                                                                                              (- (:text-max/shipping-policy state)
                                                                                                 (.getLength %)))})))))
 
-          (dom/h1 nil (dom/small nil "Products"))
+          (dom/div
+            (css/add-class :section-title)
+            (dom/h1 nil (dom/small nil "Products"))
+            (dom/a
+              (css/button-hollow {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
+              (dom/span nil "Product list")))
+
           (callout/callout-small
             nil
+            (dom/input
+              {:type        "text"
+               :placeholder "Search products..."})
             (grid/products store-items
                            (fn [p]
-                             (pi/->ProductItem {:product p})))))))))
+                             (let [{:store.item/keys [price]
+                                    item-name :store.item/name} p]
+                               (dom/div
+                                 (->> (css/add-class :content-item)
+                                      (css/add-class :product-item))
+                                 (dom/div
+                                   (->>
+                                     (css/add-class :primary-photo))
+                                   (photo/product-preview p))
+
+                                 (dom/div
+                                   (->> (css/add-class :header)
+                                        (css/add-class :text))
+                                   (dom/div
+                                     nil
+                                     (dom/span nil item-name)))
+                                 ;(dom/div
+                                 ;  (css/add-class :text)
+                                 ;  (dom/small
+                                 ;    nil
+                                 ;    (dom/span nil "by ")
+                                 ;    (dom/a {:href (routes/url :store {:store-id (:db/id store)})}
+                                 ;           (dom/span nil (:store.profile/name (:store/profile store))))))
+
+                                 (dom/div
+                                   (css/add-class :text)
+                                   (dom/strong nil (two-decimal-price price)))
+                                 (menu/horizontal
+                                   (css/add-class :edit-item-menu)
+                                   (menu/item
+                                     nil
+                                     (dom/a {:href (routes/url :store-dashboard/product {:product-id (:db/id p)
+                                                                                         :store-id store-id})}
+                                            (dom/i {:classes ["fa fa-pencil fa-fw"]}))))))))))))))
 
 (def ->EditStore (om/factory EditStore))
