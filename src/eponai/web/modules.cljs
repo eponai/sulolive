@@ -4,12 +4,13 @@
     [goog.module.ModuleManager :as module-manager]
     [goog.module.ModuleLoader]
     [medley.core :as medley]
-    [taoensso.timbre :refer [debug error]])
+    [taoensso.timbre :refer [debug error warn]])
   (:import goog.module.ModuleManager))
 
 (defprotocol IModuleLoader
   (loaded-route? [this route])
-  (require-route! [this route callback]))
+  (require-route! [this route callback])
+  (prefetch-route [this route]))
 
 (defn dev-modules []
   ;; Modules are always loaded in dev, because modules only work in advanced and simple compilation.
@@ -17,7 +18,9 @@
     (loaded-route? [this route]
       true)
     (require-route! [this route callback]
-      (callback route))))
+      (callback route))
+    (prefetch-route [this route]
+      nil)))
 
 (defn- route->module [route]
   (or (namespace route)
@@ -45,7 +48,13 @@
                                (debug "Error after calling callback: " e)))))
            (debug "CALLED .execOnLoad with module: " (route->module route))
            (catch :default e
-             (error "Exception calling execOnLoad: " e " route: " route))))))
+             (error "Exception calling execOnLoad: " e " route: " route)))))
+  (prefetch-route [this route]
+    (when-not (loaded-route? this route)
+      (try
+        (.prefetchModule manager (route->module route))
+        (catch :default e
+          (error "Got error prefetching route: " route " error:" e))))))
 
 (def manager (module-manager/getInstance))
 (def loader (goog.module.ModuleLoader.))

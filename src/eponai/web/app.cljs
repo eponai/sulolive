@@ -141,7 +141,9 @@
       (utils/init-state! reconciler send-fn router/Router)
       (async/<! initial-merge-chan)
       (debug "Adding reconciler to root.")
-      (add-root! reconciler))))
+      (add-root! reconciler)
+      ;; Pre fetch a few routes that the user is likely to go to (or all of them?)
+      (run! #(modules/prefetch-route modules %) [:index :store :browse]))))
 
 (defn run-prod []
   (run {}))
