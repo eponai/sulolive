@@ -78,6 +78,12 @@
   (if target
     {:remote true}))
 
+(defmethod client-mutate 'store/update-sections
+  [{:keys [target]} _ p]
+  (debug "store/update-sections with params: " p)
+  (if target
+    {:remote true}))
+
 ;; ########### STRIPE ###############
 
 (defmethod client-mutate 'stripe/create-account

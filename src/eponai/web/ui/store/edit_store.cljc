@@ -182,8 +182,8 @@
 
 (defn products-section [component]
   (let [{:keys [store]} (om/get-computed component)
-        {:products/keys                [selected-section search-input edit-sections?]
-         :products.edit-sections?/keys [add-section]} (om/get-state component)
+        {:products/keys                [selected-section search-input edit-sections]
+         :products.edit-sections?/keys [new-section-count]} (om/get-state component)
         {:store/keys [items]} store
         items (cond->> items
                        (not= selected-section :all)
@@ -193,42 +193,52 @@
                                                           (.toLowerCase search-input))))]
     (dom/div
       nil
-      (when edit-sections?
+      (when (some? edit-sections)
         (common/modal
-          {:on-close #(om/update-state! component assoc :products/edit-sections? false)}
+          {:on-close #(om/update-state! component dissoc :products/edit-sections)}
           (let [items-by-section (group-by #(get-in % [:store.item/section :db/id]) items)]
             (dom/div
               nil
               (dom/p (css/add-class :header) "Edit sections")
               (menu/vertical
                 (css/add-class :edit-sections-menu)
-                (map (fn [s]
-                       (let [no-items (count (get items-by-section (:db/id s)))]
-                         (menu/item (css/add-class :edit-sections-item)
-                                    ;(dom/a nil (dom/i {:classes ["fa "]}))
-                                    (dom/input {:type         "text"
-                                                :defaultValue (:store.section/label s)})
-                                    (if (= 1 no-items)
-                                      (dom/small nil (str no-items " item"))
-                                      (dom/small nil (str no-items " items")))
-                                    (dom/a nil (dom/i {:classes ["fa fa-trash-o fa-fw"]})))))
-                     (:store/sections store))
-                (map (fn [_]
-                       (menu/item (css/add-class :edit-sections-item)
-                                  ;(dom/a nil (dom/i {:classes ["fa "]}))
-                                  (dom/input {:type        "text"
-                                              :placeholder "New section"})
-                                  (dom/a nil (dom/i {:classes ["fa fa-trash-o fa-fw"]}))))
-                     (range add-section)))
+                (map-indexed
+                  (fn [i s]
+                    (let [no-items (count (get items-by-section (:db/id s)))]
+                      (menu/item (css/add-class :edit-sections-item)
+                                 ;(dom/a nil (dom/i {:classes ["fa "]}))
+                                 (dom/input
+                                   {:type        "text"
+                                    :id          (str "input.section-" i)
+                                    :placeholder "New section"
+                                    :value       (:store.section/label s "")
+                                    :onChange    #(om/update-state! component update :products/edit-sections
+                                                                    (fn [sections]
+                                                                      (let [old (get sections i)
+                                                                            new (assoc old :store.section/label (.-value (.-target %)))]
+                                                                        (assoc sections i new))))})
+                                 (if (= 1 no-items)
+                                   (dom/small nil (str no-items " item"))
+                                   (dom/small nil (str no-items " items")))
+                                 (dom/a nil (dom/i {:classes ["fa fa-trash-o fa-fw"]})))))
+                  edit-sections)
+                ;(map (fn [_]
+                ;       (menu/item (css/add-class :edit-sections-item)
+                ;                  ;(dom/a nil (dom/i {:classes ["fa "]}))
+                ;                  (dom/input {:type        "text"
+                ;                              :placeholder "New section"})
+                ;                  (dom/a nil (dom/i {:classes ["fa fa-trash-o fa-fw"]}))))
+                ;     (range new-section-count))
+                )
 
-              (dom/a (css/button-hollow {:onClick #(om/update-state! component update :products.edit-sections?/add-section inc)})
+              (dom/a (css/button-hollow {:onClick #(om/update-state! component update :products/edit-sections conj {})})
                      (dom/i {:classes ["fa fa-plus-circle fa-fw"]})
                      (dom/span nil "Add section"))
               (dom/hr nil)
               (dom/div
                 (css/text-align :right)
                 (cancel-button nil)
-                (save-button nil))))))
+                (save-button {:onClick #(.save-sections component)}))))))
       (callout/callout-small
         nil
 
@@ -253,7 +263,7 @@
                          (css/add-class :is-active))
                        (dom/a {:onClick #(om/update-state! component assoc :products/selected-section (:store.section/label s))}
                               (dom/span nil (string/capitalize (:store.section/label s))))))
-                   (concat (:store/sections store) (:store/sections store) (:store/sections store) (:store/sections store)))
+                   (:store/sections store))
               ;(menu/item
               ;  nil
               ;  (dom/a {:onClick #(om/update-state! component assoc :products/edit-sections? true)}
@@ -263,7 +273,7 @@
           (grid/column
             (->> (grid/column-size {:small 12 :medium 2})
                  (css/text-align :right))
-            (dom/a (css/button-hollow {:onClick #(om/update-state! component assoc :products/edit-sections? true)})
+            (dom/a (css/button-hollow {:onClick #(om/update-state! component assoc :products/edit-sections (into [] (:store/sections store)))})
                    (dom/i {:classes ["fa fa-pencil fa-fw"]})
                    (dom/span nil "Edit sections"))))
 
@@ -320,6 +330,16 @@
      :query/current-route
      :query/messages])
   Object
+  (save-sections [this]
+    (let [{:products/keys [edit-sections]} (om/get-state this)
+          {:query/keys [current-route]} (om/props this)
+          new-sections (filter #(not-empty (string/trim (:store.section/label % ""))) edit-sections)]
+      (debug "Saving new sections: " new-sections)
+      (msg/om-transact! this [(list 'store/update-sections {:sections new-sections
+                                                            :store-id (get-in current-route [:route-params :store-id])})
+                              :query/store])
+      (om/update-state! this dissoc :products/edit-sections)))
+
   (save-store [this]
     #?(:cljs
        (let [{uploaded-photo :profile/upload
@@ -367,38 +387,37 @@
            (om/update-state! this assoc :error/return-policy "Sorry, your return policy is too long.")))))
 
   (initLocalState [this]
-    {:edit/info                           false
-     :edit/return-policy                  false
-     :edit/shipping-policy                false
+    {:edit/info                                false
+     :edit/return-policy                       false
+     :edit/shipping-policy                     false
 
-     :about/on-editor-change-desc         #(om/update-state! this assoc :text-length/about (.getLength %))
-     :about/on-editor-create-desc         #(om/update-state! this assoc
-                                                             :editor/about %
-                                                             :text-length/about (.getLength %))
+     :about/on-editor-change-desc              #(om/update-state! this assoc :text-length/about (.getLength %))
+     :about/on-editor-create-desc              #(om/update-state! this assoc
+                                                                  :editor/about %
+                                                                  :text-length/about (.getLength %))
 
-     :return-policy/on-editor-create      #(om/update-state! this assoc
-                                                             :editor/return-policy %
-                                                             :text-length/return-policy (.getLength %))
-     :return-policy/on-editor-change      #(om/update-state! this assoc :text-length/return-policy (.getLength %))
+     :return-policy/on-editor-create           #(om/update-state! this assoc
+                                                                  :editor/return-policy %
+                                                                  :text-length/return-policy (.getLength %))
+     :return-policy/on-editor-change           #(om/update-state! this assoc :text-length/return-policy (.getLength %))
 
-     :shipping-policy/on-editor-create    #(om/update-state! this assoc
-                                                             :editor/shipping-policy %
-                                                             :text-length/shipping-policy (.getLength %))
-     :shipping-policy/on-editor-change    #(om/update-state! this assoc :text-length/shipping-policy (.getLength %))
+     :shipping-policy/on-editor-create         #(om/update-state! this assoc
+                                                                  :editor/shipping-policy %
+                                                                  :text-length/shipping-policy (.getLength %))
+     :shipping-policy/on-editor-change         #(om/update-state! this assoc :text-length/shipping-policy (.getLength %))
 
-     :products.edit-sections?/add-section 0
+     :products.edit-sections/new-section-count 0
+     :text-max/store-name                      100
+     :text-max/tagline                         140
+     :text-max/about                           500
+     :text-max/return-policy                   500
+     :text-max/shipping-policy                 500
 
-     :text-max/store-name                 100
-     :text-max/tagline                    140
-     :text-max/about                      500
-     :text-max/return-policy              500
-     :text-max/shipping-policy            500
+     :text-length/about                        0
+     :text-length/return-policy                0
+     :text-length/shipping-policy              0
 
-     :text-length/about                   0
-     :text-length/return-policy           0
-     :text-length/shipping-policy         0
-
-     :products/selected-section           :all})
+     :products/selected-section                :all})
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
           {{:store.profile/keys [return-policy]} :store/profile

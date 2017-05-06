@@ -91,6 +91,14 @@
     ;; Transact updates into datomic
     (db/transact state product-sku-photo-txs)))
 
+(defn update-sections [{:keys [state]} store-id {:keys [sections]}]
+  (let [old-store (db/pull (db/db state) [:db/id :store/sections] store-id)
+        old-sections (:store/sections old-store)
+        new-sections (map cf/add-tempid sections)
+        section-txs (into [] (edit-many-txs store-id :store/sections old-sections new-sections))]
+    (when (not-empty section-txs)
+      (db/transact state section-txs))))
+
 (defn delete-product [{:keys [state]} product-id]
   (db/transact state [[:db.fn/retractEntity product-id]]))
 
