@@ -270,9 +270,11 @@
                                      {:store.profile/photo [:photo/path :photo/id]}]}
                     {:store/owners [{:store.owner/user [:user/email]}]}
                     :store/stripe
+                    {:store/sections [:store.section/label]}
                     {:store/items [:store.item/name
                                    :store.item/description
                                    :store.item/price
+                                   {:store.item/section [:store.section/label]}
                                    {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                         :store.item.photo/index]}
                                    {:store.item/skus [:db/id

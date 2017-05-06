@@ -94,9 +94,30 @@
 			}
 		}
 
+		.product-section-menu {
+			// border-bottom: $global-border;
+			flex-wrap: wrap;
+			li {
+				border-right: $global-border;
+				border-bottom: $global-border;
+				a {
+					color: $dark-gray;
+					&:hover {
+						color: $black;
+					}
+				}
+				&.is-active {
+					a {
+						color: $black;
+						font-weight: $global-weight-bold;
+					}
+				}
+			}
+		}
+
 		.content-item {
 			padding-top: 0;
-			// padding-bottom: 1rem;
+			padding-bottom: 0.5rem;
 			border: $global-border;
 			.text {
 				padding: 0 0.5rem;

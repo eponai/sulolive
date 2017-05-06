@@ -19,7 +19,8 @@
     [eponai.common.ui.product-item :as pi]
     ;[eponai.common.ui.elements.photo :as old-photo]
     [eponai.common.ui.elements.callout :as callout]
-    [eponai.client.parser.message :as msg]))
+    [eponai.client.parser.message :as msg]
+    [clojure.string :as string]))
 
 (def form-inputs
   {:field.general/store-name    "general.store-name"
@@ -59,9 +60,11 @@
 
 (defn edit-about-section [component]
   (let [{:keys [store]} (om/get-computed component)
-        state (om/get-state component)
+        {:about/keys [on-editor-change-desc
+                      on-editor-create-desc] :as state} (om/get-state component)
         {{:store.profile/keys [cover tagline description]
-          store-name          :store.profile/name} :store/profile} store]
+          store-name          :store.profile/name} :store/profile} store
+        ]
     (dom/div
       (css/add-class :sl-store-about-section)
       (dom/div
@@ -173,12 +176,72 @@
                                                     :enable?     (:edit/info state)
                                                     :id          "about"
                                                     :placeholder "No description"}
-                                                   {:on-editor-created #(om/update-state! component assoc
-                                                                                          :editor/about %
-                                                                                          :text-length/about (.getLength %))
-                                                    :on-text-change    #(.update-text-counter component "text-length.about"
-                                                                                              (- (:text-max/about state)
-                                                                                                 (.getLength %)))})))))))
+                                                   {:on-editor-created on-editor-create-desc
+                                                    :on-text-change on-editor-change-desc}))
+                 )))))
+
+(defn products-section [component]
+  (let [{:keys [store]} (om/get-computed component)
+        {:products/keys [selected-section search-input]} (om/get-state component)
+        {:store/keys [items]} store
+        items (cond->> items
+                       (not= selected-section :all)
+                       (filter #(= selected-section (get-in % [:store.item/section :store.section/label])))
+                       (not-empty search-input)
+                       (filter #(clojure.string/includes? (.toLowerCase (:store.item/name %))
+                                                          (.toLowerCase search-input))))]
+    (callout/callout-small
+      nil
+      (dom/input
+        {:key         "profile.products.search"
+         :value       (or search-input "")
+         :onChange    #(om/update-state! component assoc :products/search-input (.. % -target -value))
+         :placeholder "Search Products..."
+         :type        "text"})
+      (menu/horizontal
+        (css/add-class :product-section-menu)
+        (menu/item
+          (when (= selected-section :all)
+            (css/add-class :is-active))
+          (dom/a
+            {:onClick #(om/update-state! component assoc :products/selected-section :all)}
+            (dom/span nil "All items")))
+        (map (fn [s]
+               (menu/item
+                 (when (= selected-section (:store.section/label s))
+                   (css/add-class :is-active))
+                 (dom/a {:onClick #(om/update-state! component assoc :products/selected-section (:store.section/label s))}
+                        (dom/span nil (string/capitalize (:store.section/label s))))))
+             (concat (:store/sections store) (:store/sections store) (:store/sections store) (:store/sections store))))
+      (grid/products items
+                     (fn [p]
+                       (let [{:store.item/keys [price]
+                              item-name        :store.item/name} p]
+                         (dom/div
+                           (->> (css/add-class :content-item)
+                                (css/add-class :product-item))
+                           (dom/div
+                             (->>
+                               (css/add-class :primary-photo))
+                             (photo/product-preview p))
+
+                           (dom/div
+                             (->> (css/add-class :header)
+                                  (css/add-class :text))
+                             (dom/div
+                               nil
+                               (dom/span nil item-name)))
+                           ;(dom/div
+                           ;  (css/add-class :text)
+                           ;  (dom/small
+                           ;    nil
+                           ;    (dom/span nil "by ")
+                           ;    (dom/a {:href (routes/url :store {:store-id (:db/id store)})}
+                           ;           (dom/span nil (:store.profile/name (:store/profile store))))))
+
+                           (dom/div
+                             (css/add-class :text)
+                             (dom/strong nil (two-decimal-price price))))))))))
 
 (defui EditStore
   static om/IQuery
@@ -248,6 +311,27 @@
      :edit/return-policy          false
      :edit/shipping-policy        false
 
+     :about/on-editor-change-desc #(.update-text-counter this "text-length.about"
+                                                         (- (:text-max/about (om/get-state this))
+                                                            (.getLength %)))
+     :about/on-editor-create-desc #(om/update-state! this assoc
+                                                     :editor/about %
+                                                     :text-length/about (.getLength %))
+
+     :return-policy/on-editor-create #(om/update-state! this assoc
+                                                        :editor/return-policy %
+                                                        :text-length/return-policy (.getLength %))
+     :return-policy/on-editor-change #(.update-text-counter this "text-length.return-policy"
+                                                            (- (:text-max/return-policy (om/get-state this))
+                                                               (.getLength %)))
+
+     :shipping-policy/on-editor-create #(om/update-state! this assoc
+                                                          :editor/shipping-policy %
+                                                          :text-length/shipping-policy (.getLength %))
+     :shipping-policy/on-editor-change #(.update-text-counter this "text-length.shipping-policy"
+                                                              (- (:text-max/shipping-policy (om/get-state this))
+                                                                 (.getLength %)))
+
      :text-max/store-name         100
      :text-max/tagline            140
      :text-max/about              500
@@ -256,7 +340,9 @@
 
      :text-length/about           0
      :text-length/return-policy   0
-     :text-length/shipping-policy 0})
+     :text-length/shipping-policy 0
+
+     :products/selected-section   :all})
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
           {{:store.profile/keys [return-policy]} :store/profile
@@ -264,7 +350,7 @@
           {:query/keys [current-route]} (om/props this)
           {:keys [store-id]} (:route-params current-route)
           shipping-policy nil
-          state (om/get-state this)]
+          {:return-policy/keys [on-editor-create on-editor-change] :as state} (om/get-state this)]
       (debug "Edit store: " store)
       (dom/div
         {:id "sulo-store-edit"}
@@ -304,14 +390,8 @@
                                                    :id          "return-policy"
                                                    :enable?     (:edit/return-policy state)
                                                    :placeholder "No return policy"}
-                                                  {:on-editor-created #(om/update-state! this assoc
-                                                                                         :editor/return-policy %
-                                                                                         :text-length/return-policy (.getLength %))
-                                                   :on-text-change    #(.update-text-counter this "text-length.return-policy"
-                                                                                             (- (:text-max/return-policy state)
-                                                                                                (.getLength %)))}))
-                ;(quill/->QuillRenderer {:html (f/bytes->str return-policy)})
-                ))
+                                                  {:on-editor-created on-editor-create
+                                                   :on-text-change    on-editor-change}))))
             (grid/column
               (grid/column-size {:small 12 :medium 6})
               (dom/div
@@ -337,12 +417,9 @@
                                                    :id          "shipping-policy"
                                                    :enable?     (:edit/shipping-policy state)
                                                    :placeholder "No shipping policy"}
-                                                  {:on-editor-created #(om/update-state! this assoc
-                                                                                         :editor/shipping-policy %
-                                                                                         :text-length/shipping-policy (.getLength %))
-                                                   :on-text-change    #(.update-text-counter this "text-length.shipping-policy"
-                                                                                             (- (:text-max/shipping-policy state)
-                                                                                                (.getLength %)))})))))
+                                                  {:on-editor-created (:shipping-policy/on-editor-create state)
+                                                   :on-text-change    (:shipping-policy/on-editor-change state)}))
+                )))
 
           (dom/div
             (css/add-class :section-title)
@@ -351,46 +428,6 @@
               (css/button-hollow {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
               (dom/span nil "Product list")))
 
-          (callout/callout-small
-            nil
-            (dom/input
-              {:type        "text"
-               :placeholder "Search products..."})
-            (grid/products store-items
-                           (fn [p]
-                             (let [{:store.item/keys [price]
-                                    item-name :store.item/name} p]
-                               (dom/div
-                                 (->> (css/add-class :content-item)
-                                      (css/add-class :product-item))
-                                 (dom/div
-                                   (->>
-                                     (css/add-class :primary-photo))
-                                   (photo/product-preview p))
-
-                                 (dom/div
-                                   (->> (css/add-class :header)
-                                        (css/add-class :text))
-                                   (dom/div
-                                     nil
-                                     (dom/span nil item-name)))
-                                 ;(dom/div
-                                 ;  (css/add-class :text)
-                                 ;  (dom/small
-                                 ;    nil
-                                 ;    (dom/span nil "by ")
-                                 ;    (dom/a {:href (routes/url :store {:store-id (:db/id store)})}
-                                 ;           (dom/span nil (:store.profile/name (:store/profile store))))))
-
-                                 (dom/div
-                                   (css/add-class :text)
-                                   (dom/strong nil (two-decimal-price price)))
-                                 (menu/horizontal
-                                   (css/add-class :edit-item-menu)
-                                   (menu/item
-                                     nil
-                                     (dom/a {:href (routes/url :store-dashboard/product {:product-id (:db/id p)
-                                                                                         :store-id store-id})}
-                                            (dom/i {:classes ["fa fa-pencil fa-fw"]}))))))))))))))
+          (products-section this))))))
 
 (def ->EditStore (om/factory EditStore))
