@@ -2,7 +2,6 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
     [eponai.web.modules :as modules]
-    [eponai.common.ui.components]
     [eponai.client.utils :as utils]
     [eponai.web.auth :as auth]
     [eponai.common.parser :as parser]
@@ -15,7 +14,6 @@
     [eponai.web.chat :as web.chat]
     [goog.dom :as gdom]
     [om.next :as om :refer [defui]]
-    [om.next.protocols :as om.protocols]
     [taoensso.timbre :refer [error debug warn info]]
     ;; Routing
     [bidi.bidi :as bidi]
@@ -54,7 +52,7 @@
                                                                 (debug "query after reindex: " (om/get-query (om/app-root reconciler)))
                                                                 (debug "Re indexed! Queuing reads...")
                                                                 (queue-cb))
-                                                            (do (debug "No root query, nothing to queue.."))))))))}))
+                                                            (debug "No root query, nothing to queue..")))))))}))
       (catch :default e
         (error "Error when transacting route: " e)))))
 
@@ -85,7 +83,7 @@
 
 (defn- run [{:keys [auth-lock modules]
              :or   {auth-lock (auth/auth0-lock)
-                    modules   (modules/advanced-compilation-modules @router/routes)}
+                    modules   (modules/advanced-compilation-modules router/routes)}
              :as   run-options}]
   (let [init? (atom false)
         _ (when-let [h @history-atom]
@@ -139,12 +137,11 @@
                               (debug "Initial module has loaded for route: " route)
                               (async/close! initial-module-loaded-chan)))
     (go
-      (async/<! initial-merge-chan)
       (async/<! initial-module-loaded-chan)
+      (utils/init-state! reconciler send-fn router/Router)
+      (async/<! initial-merge-chan)
       (debug "Adding reconciler to root.")
-      (add-root! reconciler))
-
-    (utils/init-state! reconciler send-fn router/Router)))
+      (add-root! reconciler))))
 
 (defn run-prod []
   (run {}))

@@ -38,16 +38,16 @@
    (let [reconciler (cond-> x (om/component? x) (om/get-reconciler))
          tx (when-not (nil? tx)
               (cond->> tx (not (vector? tx)) (vector)))
-         reads (-> (om/transform-reads reconciler [root-route-key])
-                   (conj :query/current-route))
+         reads-fn #(-> (om/transform-reads reconciler [root-route-key])
+                       (conj :query/current-route))
          tx (cond-> [(list 'routes/set-route! {:route route
                                                :route-params route-params})]
                     :always (into tx)
-                    queue? (into reads))]
+                    queue? (into (reads-fn)))]
      (debug "Transacting tx: " tx)
      (om/transact! reconciler tx)
      (when (fn? delayed-queue)
-       (delayed-queue #(om/transact! reconciler reads))))))
+       (delayed-queue #(om/transact! reconciler (reads-fn)))))))
 
 ;; "Takes a route and its route-params and returns an url"
 (def url routes/path)

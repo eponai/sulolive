@@ -1,6 +1,5 @@
 (ns eponai.server.ui
   (:require
-    [eponai.common.ui.components]
     [om.next :as om]
     [om.dom :as dom]
     [datascript.core :as datascript]
