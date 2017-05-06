@@ -187,7 +187,7 @@
         {:store/keys [items]} store
         items (cond->> items
                        (not= selected-section :all)
-                       (filter #(= selected-section (get-in % [:store.item/section :store.section/label])))
+                       (filter #(= selected-section (get-in % [:store.item/section :db/id])))
                        (not-empty search-input)
                        (filter #(clojure.string/includes? (.toLowerCase (:store.item/name %))
                                                           (.toLowerCase search-input))))]
@@ -220,7 +220,10 @@
                                  (if (= 1 no-items)
                                    (dom/small nil (str no-items " item"))
                                    (dom/small nil (str no-items " items")))
-                                 (dom/a nil (dom/i {:classes ["fa fa-trash-o fa-fw"]})))))
+                                 (dom/a {:onClick #(om/update-state! component update :products/edit-sections
+                                                                     (fn [sections]
+                                                                       (into [] (remove nil? (assoc sections i nil)))))}
+                                        (dom/i {:classes ["fa fa-trash-o fa-fw"]})))))
                   edit-sections)
                 ;(map (fn [_]
                 ;       (menu/item (css/add-class :edit-sections-item)
@@ -237,7 +240,7 @@
               (dom/hr nil)
               (dom/div
                 (css/text-align :right)
-                (cancel-button nil)
+                (cancel-button {:onClick #(om/update-state! component dissoc :products/edit-sections)})
                 (save-button {:onClick #(.save-sections component)}))))))
       (callout/callout-small
         nil
@@ -259,9 +262,9 @@
                   (dom/span nil "All items")))
               (map (fn [s]
                      (menu/item
-                       (when (= selected-section (:store.section/label s))
+                       (when (= selected-section (:db/id s))
                          (css/add-class :is-active))
-                       (dom/a {:onClick #(om/update-state! component assoc :products/selected-section (:store.section/label s))}
+                       (dom/a {:onClick #(om/update-state! component assoc :products/selected-section (:db/id s))}
                               (dom/span nil (string/capitalize (:store.section/label s))))))
                    (:store/sections store))
               ;(menu/item
