@@ -14,7 +14,10 @@
                      (update :entries set))])]
     (into {:cljs-base {:output-to (path :budget false)}}
       (map module)
-      `{:index           {:entries [eponai.common.ui.index]}
+      `{:react-select    {:entries [eponai.common.ui.components.select
+                                    cljsjs.react-select]}
+
+        :index           {:entries [eponai.common.ui.index]}
         :unauthorized    {:entries [eponai.web.ui.unauthorized]}
         :login           {:entries    [eponai.web.ui.login]
                           :depends-on [:index]}
@@ -39,7 +42,8 @@
                                     eponai.common.ui.user.order-receipt
                                     eponai.common.ui.user.profile
                                     eponai.common.ui.user.profile-edit]}
-        :store-dashboard {:entries [eponai.common.ui.store.dashboard
+        :store-dashboard {:depends-on [:react-select]
+                          :entries [eponai.common.ui.store.dashboard
                                     eponai.common.ui.store.account
                                     eponai.common.ui.store.order-edit-form
                                     eponai.common.ui.store.order-list
