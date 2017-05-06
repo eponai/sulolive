@@ -15,9 +15,12 @@
     (into `{:cljs-base {:entries   #{env.web.main}
                         :output-to ~(path :budget false)}}
       (map module)
-      `{:react-select    {:entries [eponai.common.ui.components.select
+      `{
+        ;; Extra groupings
+        :react-select    {:entries [eponai.common.ui.components.select
                                     cljsjs.react-select]}
 
+        ;; Routes
         :index           {:entries [eponai.common.ui.index]}
         :unauthorized    {:entries [eponai.web.ui.unauthorized]}
         :login           {:entries    [eponai.web.ui.login]

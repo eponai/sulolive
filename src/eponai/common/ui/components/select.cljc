@@ -2,6 +2,8 @@
   (:require
     #?(:cljs
        [cljsjs.react-select])
+    #?(:cljs
+       [eponai.web.modules :as modules])
     [om.dom :as dom]
     [om.next :as om :refer [defui]]))
 
@@ -34,3 +36,6 @@
                (assoc :tabIndex (str tab-index)))))))))
 
 (def ->SelectOne (om/factory SelectOne))
+
+#?(:cljs
+   (modules/set-loaded! :react-select))

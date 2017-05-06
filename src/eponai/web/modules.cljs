@@ -7,14 +7,56 @@
     [taoensso.timbre :refer [debug error warn]])
   (:import goog.module.ModuleManager))
 
+
 (defprotocol IModuleLoader
   (loaded-route? [this route])
   (require-route! [this route callback])
   (prefetch-route [this route]))
 
+(def extra-groupings [:react-select])
+(def dependencies {:login           [:index]
+                   :store-dashboard [:react-select]})
+
+(def loader (goog.module.ModuleLoader.))
+(def manager (doto (module-manager/getInstance)
+               (.setLoader loader)))
+
 (defn- route->module [route]
   (or (namespace route)
       (name route)))
+
+(defn init-manager [routes]
+  (let [routes (into (set routes) extra-groupings)
+        route->js-file (into {} (comp (map route->module)
+                                      (map (juxt identity #(vector (str "/js/out/closure-modules/" % ".js")))))
+                             routes)
+        module-infos (into {}
+                           (map (juxt route->module #(into [] (map route->module) (get dependencies % []))))
+                           routes)
+        modules (clj->js route->js-file)
+        module-info (clj->js module-infos)]
+
+    (debug "route->js-file: " route->js-file)
+    (debug "module-infos: " module-infos)
+
+    (doto manager
+      (.setAllModuleInfo module-info)
+      (.setModuleUris modules))))
+
+(def routes-loaded-pre-init (atom #{}))
+
+(defn set-loaded!
+  "Mark a module as loaded"
+  [route]
+  (let [manager (.getInstance goog.module.ModuleManager)
+        module (route->module route)
+        module-info (.getModuleInfo manager module)]
+    (if (= js/undefined module-info)
+      (swap! routes-loaded-pre-init conj route)
+      (try
+        (.setLoaded manager module)
+        (catch :default e
+          (error "Unable to mark module: " (route->module route) "as loaded: " e))))))
 
 (defrecord ModuleLoader [manager]
   IModuleLoader
@@ -45,38 +87,6 @@
         (.prefetchModule manager (route->module route))
         (catch :default e
           (error "Got error prefetching route: " route " error:" e))))))
-
-(def loader (goog.module.ModuleLoader.))
-(def manager (doto (module-manager/getInstance)
-               (.setLoader loader)))
-
-(defn init-manager [routes]
-  (let [route->js-file (into {} (comp (map route->module)
-                                      (map (juxt identity #(vector (str "/js/out/closure-modules/" % ".js")))))
-                             routes)
-        _ (debug "route->js-file: " route->js-file)
-        module-infos (medley/map-vals (constantly []) route->js-file)
-        _ (debug "module-infos: " module-infos)
-        modules (clj->js route->js-file)
-        module-info (clj->js module-infos)]
-    (doto manager
-      (.setAllModuleInfo module-info)
-      (.setModuleUris modules))))
-
-(def routes-loaded-pre-init (atom #{}))
-
-(defn set-loaded!
-  "Mark a module as loaded"
-  [route]
-  (let [manager (.getInstance goog.module.ModuleManager)
-        module (route->module route)
-        module-info (.getModuleInfo manager module)]
-    (if (= js/undefined module-info)
-      (swap! routes-loaded-pre-init conj route)
-      (try
-        (.setLoaded manager module)
-        (catch :default e
-          (error "Unable to mark module: " (route->module route) "as loaded: " e))))))
 
 (defn advanced-compilation-modules [routes]
   (when-let [routes (seq @routes-loaded-pre-init)]
