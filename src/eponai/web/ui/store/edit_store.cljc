@@ -45,10 +45,12 @@
 (defn edit-button [opts & content]
   (dom/a
     (->> (css/button-hollow opts)
-         (css/add-class :shrink))
+         (css/add-class :shrink)
+         (css/add-class :secondary))
     (dom/i {:classes ["fa fa-pencil fa-fw"]})
-    (dom/span nil "Edit")
-    ))
+    (if (not-empty content)
+      content
+      (dom/span nil "Edit"))))
 
 (defn save-button [opts & content]
   (dom/a (css/button opts)
@@ -63,8 +65,7 @@
         {:about/keys [on-editor-change-desc
                       on-editor-create-desc] :as state} (om/get-state component)
         {{:store.profile/keys [cover tagline description]
-          store-name          :store.profile/name} :store/profile} store
-        ]
+          store-name          :store.profile/name} :store/profile} store]
     (dom/div
       (css/add-class :sl-store-about-section)
       (dom/div
@@ -99,8 +100,6 @@
                            (photo/cover {:photo-id     (:photo/id cover)
                                          :placeholder? true}
                                         (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]}))))
-                         ;(dom/label
-                         ;  {:htmlFor (str "file-" (count photos))})
                          (photo-uploader component "cover"))))
           (photo/cover {:photo-id     (:photo/id cover)
                         :placeholder? true}))
@@ -177,8 +176,7 @@
                                                     :id          "about"
                                                     :placeholder "No description"}
                                                    {:on-editor-created on-editor-create-desc
-                                                    :on-text-change    on-editor-change-desc}))
-                 )))))
+                                                    :on-text-change    on-editor-change-desc})))))))
 
 (defn products-section [component]
   (let [{:keys [store]} (om/get-computed component)
@@ -220,19 +218,14 @@
                                  (if (= 1 no-items)
                                    (dom/small nil (str no-items " item"))
                                    (dom/small nil (str no-items " items")))
-                                 (dom/a {:onClick #(om/update-state! component update :products/edit-sections
+                                 (dom/a
+                                   (->> {:onClick #(om/update-state! component update :products/edit-sections
                                                                      (fn [sections]
                                                                        (into [] (remove nil? (assoc sections i nil)))))}
-                                        (dom/i {:classes ["fa fa-trash-o fa-fw"]})))))
-                  edit-sections)
-                ;(map (fn [_]
-                ;       (menu/item (css/add-class :edit-sections-item)
-                ;                  ;(dom/a nil (dom/i {:classes ["fa "]}))
-                ;                  (dom/input {:type        "text"
-                ;                              :placeholder "New section"})
-                ;                  (dom/a nil (dom/i {:classes ["fa fa-trash-o fa-fw"]}))))
-                ;     (range new-section-count))
-                )
+                                        (css/button-hollow)
+                                        (css/add-class ::css/color-secondary))
+                                   (dom/i {:classes ["fa fa-trash-o fa-fw"]})))))
+                  edit-sections))
 
               (dom/a (css/button-hollow {:onClick #(om/update-state! component update :products/edit-sections conj {})})
                      (dom/i {:classes ["fa fa-plus-circle fa-fw"]})
@@ -244,9 +237,6 @@
                 (save-button {:onClick #(.save-sections component)}))))))
       (callout/callout-small
         nil
-
-
-        ;(dom/label nil "Sections")
         (grid/row
           (->> (css/add-class :expanded)
                (css/add-class :collapse))
@@ -266,19 +256,12 @@
                          (css/add-class :is-active))
                        (dom/a {:onClick #(om/update-state! component assoc :products/selected-section (:db/id s))}
                               (dom/span nil (string/capitalize (:store.section/label s))))))
-                   (:store/sections store))
-              ;(menu/item
-              ;  nil
-              ;  (dom/a {:onClick #(om/update-state! component assoc :products/edit-sections? true)}
-              ;         (dom/i {:classes ["fa fa-pencil fa-fw"]})
-              ;         (dom/span nil "Edit sections")))
-              ))
+                   (:store/sections store))))
           (grid/column
             (->> (grid/column-size {:small 12 :medium 2})
                  (css/text-align :right))
-            (dom/a (css/button-hollow {:onClick #(om/update-state! component assoc :products/edit-sections (into [] (:store/sections store)))})
-                   (dom/i {:classes ["fa fa-pencil fa-fw"]})
-                   (dom/span nil "Edit sections"))))
+            (edit-button {:onClick #(om/update-state! component assoc :products/edit-sections (into [] (:store/sections store)))}
+                         (dom/span nil "Edit sections"))))
 
         ;(dom/label nil "Products")
         (dom/input
@@ -305,14 +288,6 @@
                                (dom/div
                                  nil
                                  (dom/span nil item-name)))
-                             ;(dom/div
-                             ;  (css/add-class :text)
-                             ;  (dom/small
-                             ;    nil
-                             ;    (dom/span nil "by ")
-                             ;    (dom/a {:href (routes/url :store {:store-id (:db/id store)})}
-                             ;           (dom/span nil (:store.profile/name (:store/profile store))))))
-
                              (dom/div
                                (css/add-class :text)
                                (dom/strong nil (two-decimal-price price)))
@@ -337,7 +312,6 @@
     (let [{:products/keys [edit-sections]} (om/get-state this)
           {:query/keys [current-route]} (om/props this)
           new-sections (filter #(not-empty (string/trim (:store.section/label % ""))) edit-sections)]
-      (debug "Saving new sections: " new-sections)
       (msg/om-transact! this [(list 'store/update-sections {:sections new-sections
                                                             :store-id (get-in current-route [:route-params :store-id])})
                               :query/store])
@@ -423,13 +397,11 @@
      :products/selected-section                :all})
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
-          {{:store.profile/keys [return-policy]} :store/profile
-           store-items                           :store/items} store
+          {{:store.profile/keys [return-policy]} :store/profile} store
           {:query/keys [current-route]} (om/props this)
           {:keys [store-id]} (:route-params current-route)
           shipping-policy nil
           {:return-policy/keys [on-editor-create on-editor-change] :as state} (om/get-state this)]
-      (debug "Edit store: " store)
       (dom/div
         {:id "sulo-store-edit"}
         (grid/row-column
@@ -461,9 +433,12 @@
                 (when (:edit/return-policy state)
                   (dom/div
                     (css/text-align :right)
-                    (dom/small
-                      nil (- (:text-max/return-policy state)
-                             (:text-length/return-policy state)))))
+                    (let [remaining (- (:text-max/return-policy state)
+                                       (:text-length/return-policy state))]
+                      (dom/small
+                        (when (neg? remaining)
+                          (css/add-class :text-alert))
+                        remaining))))
                 (quill/->QuillEditor (om/computed {:content     (f/bytes->str return-policy)
                                                    :id          "return-policy"
                                                    :enable?     (:edit/return-policy state)
@@ -488,9 +463,12 @@
                 (when (:edit/shipping-policy state)
                   (dom/div
                     (css/text-align :right)
-                    (dom/small
-                      nil (- (:text-max/shipping-policy state)
-                             (:text-length/shipping-policy state)))))
+                    (let [remaining (- (:text-max/shipping-policy state)
+                                       (:text-length/shipping-policy state))]
+                      (dom/small
+                        (when (neg? remaining)
+                          (css/add-class :text-alert))
+                        remaining))))
                 (quill/->QuillEditor (om/computed {:content     (f/bytes->str shipping-policy)
                                                    :id          "shipping-policy"
                                                    :enable?     (:edit/shipping-policy state)
@@ -503,8 +481,11 @@
             (css/add-class :section-title)
             (dom/h1 nil (dom/small nil "Products"))
             (dom/a
-              (css/button-hollow {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
-              (dom/span nil "Manage products")))
+              (->> (css/button {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
+                   (css/add-class :secondary)
+                   (css/add-class :see-products))
+              (dom/span nil "Go to products")
+              (dom/i {:classes ["fa fa-chevron-right"]})))
 
           (products-section this))))))
 

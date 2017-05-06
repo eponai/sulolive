@@ -337,7 +337,8 @@
                                 (css/add-class :shrink)
                                 (dom/a (->> {:onClick #(om/update-state! this update :sku-count dec)}
                                             (css/button-hollow)
-                                            (css/add-class ::css/color-secondary)) (dom/span nil "X"))))))))
+                                            (css/add-class ::css/color-secondary))
+                                       (dom/i {:classes ["fa fa-trash-o fa-fw"]}))))))))
                     (range sku-count)))
                 (dom/div
                   nil

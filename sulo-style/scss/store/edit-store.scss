@@ -21,6 +21,14 @@
 		// margin-top: -2.5rem;
 		// border: $global-border;
 
+		.button {
+			i:last-child {
+				margin-left: 0.5rem;
+			}
+			i:first-child {
+				margin-right: 0.5rem;
+			}
+		}
 		.section-title {
 			display: flex;
 			align-items: flex-end;
@@ -157,6 +165,10 @@
 						border-right: none;
 					}
 					a {
+						color: $dark-gray;
+						&:hover {
+							color: $black;
+						}
 						justify-content: center;
 					}
 				}
