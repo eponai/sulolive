@@ -39,6 +39,23 @@
                                                                                    (assoc (keyword id "upload") photo)))))
                               :id              id
                               :hide-label?     true})))))
+
+(defn edit-button [opts & content]
+  (dom/a
+    (->> (css/button-hollow opts)
+         (css/add-class :shrink))
+    (dom/i {:classes ["fa fa-pencil fa-fw"]})
+    ;(dom/span nil "Edit info")
+    ))
+
+(defn save-button [opts & content]
+  (dom/a (css/button opts)
+         (dom/span nil "Save")))
+
+(defn cancel-button [opts & content]
+  (dom/a (css/button-hollow opts)
+         (dom/span nil "Cancel")))
+
 (defn edit-about-section [component]
   (let [{:keys [store]} (om/get-computed component)
         state (om/get-state component)
@@ -52,16 +69,9 @@
         (if (:edit/info state)
           (dom/div
             nil
-            (dom/a (css/button-hollow {:onClick #(om/update-state! component assoc :edit/info false)})
-                   (dom/span nil "Cancel"))
-            (dom/a (css/button {:onClick #(.save-store component)})
-                   (dom/span nil "Save")))
-          (dom/a
-            (->> (css/button-hollow {:onClick #(om/update-state! component assoc :edit/info true)})
-                 (css/add-class :shrink))
-            (dom/i {:classes ["fa fa-pencil fa-fw"]})
-            ;(dom/span nil "Edit info")
-            )))
+            (cancel-button {:onClick #(om/update-state! component assoc :edit/info false)})
+            (save-button {:onClick #(.save-store component)}))
+          (edit-button {:onClick #(om/update-state! component assoc :edit/info true)})))
       (when (and (:edit/info state) (:error/about state))
         (dom/p (css/add-class :section-error) (dom/small (css/add-class :text-alert) (:error/about state))))
 
@@ -155,7 +165,7 @@
               (css/text-align :right)
               (dom/small
                 {:id "text-length.about"}
-                (- 500 (:text-length/about state))))))
+                (- (:text-max/about state) (:text-length/about state))))))
 
         (dom/div (css/add-class :about-container)
                  (quill/->QuillEditor (om/computed {:content     (f/bytes->str description)
@@ -211,11 +221,17 @@
            (om/update-state! this assoc :error/about "Sorry, your description is too long.")))))
   (save-return-policy [this]
     #?(:cljs
-       (let [{:editor/keys [return-policy]} (om/get-state this)
+       (let [{:editor/keys [return-policy] :as state} (om/get-state this)
              {:keys [store]} (om/get-computed this)
-             store-return-policy (when return-policy (quill/get-HTML return-policy))]
-         (msg/om-transact! this [(list 'store/update-info {:db/id         (:db/id store)
-                                                           :store/profile {:store/return-policy store-return-policy}})]))))
+             store-return-policy (when return-policy (quill/get-HTML return-policy))
+             text-lentgh (or (when return-policy (.getLength return-policy)) 0)]
+         (if (< text-lentgh (:text-max/return-policy state))
+           (do
+             (msg/om-transact! this [(list 'store/update-info {:db/id         (:db/id store)
+                                                               :store/profile {:store.profile/return-policy store-return-policy}})
+                                     :query/store])
+             (om/update-state! this assoc :edit/return-policy false))
+           (om/update-state! this assoc :error/return-policy "Sorry, your return policy is too long.")))))
 
   (update-text-counter [this id value]
     #?(:cljs
@@ -227,19 +243,25 @@
            (set! (.-className counter) "")))))
 
   (initLocalState [this]
-    {:edit/info            false
-     :edit/return-policy   false
-     :edit/shipping-policy false
+    {:edit/info                   false
+     :edit/return-policy          false
+     :edit/shipping-policy        false
 
-     :text-max/store-name  100
-     :text-max/tagline     140
-     :text-max/about       500
-     :text-length/about    0})
+     :text-max/store-name         100
+     :text-max/tagline            140
+     :text-max/about              500
+     :text-max/return-policy      500
+     :text-max/shipping-policy    500
+
+     :text-length/about           0
+     :text-length/return-policy   0
+     :text-length/shipping-policy 0})
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
           {{:store.profile/keys [return-policy]} :store/profile
-           store-items                               :store/items} store
+           store-items                           :store/items} store
           {:query/keys [current-route]} (om/props this)
+          shipping-policy nil
           state (om/get-state this)]
       (debug "Edit store: " store)
       (dom/div
@@ -254,60 +276,71 @@
                  (css/add-class :policies))
             (grid/column
               (grid/column-size {:small 12 :medium 6})
-              (grid/row
-                (->> (css/align :bottom)
-                     (css/add-class :expanded)
-                     (css/add-class :collapse))
-                (grid/column
-                  nil
-                  (dom/h1 nil (dom/small nil "Return policy")))
-                (grid/column
-                  (->> (css/text-align :right)
-                       (css/add-class :shrink))
+              (dom/div
+                (css/add-class :section-title)
+                (dom/h1 nil (dom/small nil "Return policy"))
+                (if (:edit/return-policy state)
+                  (dom/div
+                    nil
+                    (cancel-button {:onClick #(do
+                                               (om/update-state! this assoc :edit/return-policy false)
+                                               (quill/set-content (:editor/return-policy state) (f/bytes->str return-policy)))})
+                    (save-button {:onClick #(.save-return-policy this)}))
+                  (edit-button {:onClick #(om/update-state! this assoc :edit/return-policy true)})))
+              (when (and (:edit/return-policy state) (:error/return-policy state))
+                (dom/p (css/add-class :section-error) (dom/small (css/add-class :text-alert) (:error/return-policy state))))
 
-                  (if (:edit/return-policy state)
-                    (dom/div
-                      nil
-                      (dom/a (css/button-hollow {:onClick #(om/update-state! this assoc :edit/return-policy false)})
-                             (dom/span nil "Cancel"))
-                      (dom/a (css/button {:onClick #(do (.save-return-policy this)
-                                                        (om/update-state! this assoc :edit/return-policy false))})
-                             (dom/span nil "Save")))
-                    (dom/a
-                      (->> (css/button-hollow {:onClick #(om/update-state! this assoc :edit/return-policy true)})
-                           (css/add-class :shrink))
-                      (dom/i {:classes ["fa fa-pencil fa-fw"]})
-                      ;(dom/span nil "Edit info")
-                      ))))
               (callout/callout-small
                 nil
+                (when (:edit/return-policy state)
+                  (dom/div
+                    (css/text-align :right)
+                    (dom/small
+                      {:id "text-length.return-policy"} (- (:text-max/return-policy state)
+                                                           (:text-length/return-policy state)))))
                 (quill/->QuillEditor (om/computed {:content     (f/bytes->str return-policy)
                                                    :id          "return-policy"
                                                    :enable?     (:edit/return-policy state)
                                                    :placeholder "No return policy"}
-                                                  {:on-editor-created #(om/update-state! this assoc :editor/return-policy %)}))
+                                                  {:on-editor-created #(om/update-state! this assoc
+                                                                                         :editor/return-policy %
+                                                                                         :text-length/return-policy (.getLength %))
+                                                   :on-text-change    #(.update-text-counter this "text-length.return-policy"
+                                                                                             (- (:text-max/return-policy state)
+                                                                                                (.getLength %)))}))
                 ;(quill/->QuillRenderer {:html (f/bytes->str return-policy)})
                 ))
             (grid/column
               (grid/column-size {:small 12 :medium 6})
-              (grid/row
-                (->> (css/align :bottom)
-                     (css/add-class :expanded)
-                     (css/add-class :collapse))
-                (grid/column
-                  nil
-                  (dom/h1 nil (dom/small nil "Shipping policy")))
-                (grid/column
-                  (->> (css/text-align :right)
-                       (css/add-class :shrink))
-                  (dom/a (css/button-hollow)
-                         (dom/i {:classes ["fa fa-pencil fa-fw"]})
-                         ;(dom/span nil "Edit")
-                         )))
+              (dom/div
+                (css/add-class :section-title)
+                (dom/h1 nil (dom/small nil "Shipping policy"))
+                (if (:edit/shipping-policy state)
+                  (dom/div
+                    nil
+                    (cancel-button {:onClick #(do
+                                               (om/update-state! this assoc :edit/shipping-policy false)
+                                               (quill/set-content (:editor/shipping-policy state) (f/bytes->str shipping-policy)))})
+                    (save-button nil))
+                  (edit-button {:onClick #(om/update-state! this assoc :edit/shipping-policy true)})))
               (callout/callout-small
                 nil
-
-                (quill/->QuillRenderer {:html (f/bytes->str return-policy)}))))
+                (when (:edit/shipping-policy state)
+                  (dom/div
+                    (css/text-align :right)
+                    (dom/small
+                      {:id "text-length.shipping-policy"} (- (:text-max/shipping-policy state)
+                                                             (:text-length/shipping-policy state)))))
+                (quill/->QuillEditor (om/computed {:content     (f/bytes->str shipping-policy)
+                                                   :id          "shipping-policy"
+                                                   :enable?     (:edit/shipping-policy state)
+                                                   :placeholder "No shipping policy"}
+                                                  {:on-editor-created #(om/update-state! this assoc
+                                                                                         :editor/shipping-policy %
+                                                                                         :text-length/shipping-policy (.getLength %))
+                                                   :on-text-change    #(.update-text-counter this "text-length.shipping-policy"
+                                                                                             (- (:text-max/shipping-policy state)
+                                                                                                (.getLength %)))})))))
 
           (dom/h1 nil (dom/small nil "Products"))
           (callout/callout-small

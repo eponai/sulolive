@@ -49,6 +49,11 @@
                ;[{"color" []} {"background" []}]
                ["clean"]
                ])),)
+
+(defn set-content [editor content]
+  (when editor
+    (.. editor -clipboard (dangerouslyPasteHTML (sanitize-html content)))))
+
 (defui QuillEditor
   Object
   (componentDidMount [this]
