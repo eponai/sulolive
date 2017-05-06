@@ -16,4 +16,4 @@
 
 (def ->Unauthorized (om/factory Unauthorized))
 
-(defmethod router/route->component :login [_] {:component Unauthorized})
+(router/register-component :unauthorized Unauthorized)

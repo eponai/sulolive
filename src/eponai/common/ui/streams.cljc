@@ -89,4 +89,4 @@
 
 (def ->Streams (om/factory Streams))
 
-(defmethod router/route->component :live [_] {:component Streams})
+(router/register-component :live Streams)

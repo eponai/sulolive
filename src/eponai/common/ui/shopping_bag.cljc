@@ -153,4 +153,4 @@
 
 (def ->ShoppingBag (om/factory ShoppingBag))
 
-(defmethod router/route->component :shopping-bag [_] {:component ShoppingBag})
+(router/register-component :shopping-bag ShoppingBag)

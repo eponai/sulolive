@@ -122,4 +122,4 @@
 
 (def ->Checkout (om/factory Checkout))
 
-(defmethod router/route->component :checkout [_] {:component Checkout})
+(router/register-component :checkout Checkout)

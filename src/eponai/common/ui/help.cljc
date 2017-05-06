@@ -115,4 +115,4 @@
 
 (def ->Help (om/factory Help))
 
-(defmethod router/route->component :help [_] {:component Help})
+(router/register-component :help Help)

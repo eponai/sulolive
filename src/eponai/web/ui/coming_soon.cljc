@@ -243,4 +243,4 @@
 
 (def ->ComingSoon (om/factory ComingSoon))
 
-(defmethod router/route->component :coming-soon [_] {:component ComingSoon})
+(router/register-component :coming-soon ComingSoon)

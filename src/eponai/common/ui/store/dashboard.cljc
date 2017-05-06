@@ -375,4 +375,4 @@
 
 (def ->Dashboard (om/factory Dashboard))
 
-(defmethod router/route->component :store-dashboard [_] {:component Dashboard})
+(router/register-component :store-dashboard Dashboard)

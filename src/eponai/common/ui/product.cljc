@@ -243,4 +243,4 @@
 
 (def ->ProductPage (om/factory ProductPage))
 
-(defmethod router/route->component :product [_] {:component ProductPage})
+(router/register-component :product ProductPage)

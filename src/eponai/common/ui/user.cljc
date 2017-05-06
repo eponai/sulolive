@@ -46,4 +46,4 @@
 
 (def ->User (om/factory User))
 
-(defmethod router/route->component :user [_] {:component User})
+(router/register-component :user User)

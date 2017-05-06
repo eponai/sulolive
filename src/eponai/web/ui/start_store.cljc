@@ -132,4 +132,4 @@
 
 (def ->StartStore (om/factory StartStore))
 
-(defmethod router/route->component :sell [_] {:component StartStore})
+(router/register-component :sell StartStore)

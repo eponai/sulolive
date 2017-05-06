@@ -185,4 +185,4 @@
 
 (def ->Store (om/factory Store))
 
-(defmethod router/route->component :store [_] {:component Store})
+(router/register-component :store Store)
