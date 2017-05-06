@@ -7,7 +7,6 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.product :as product]
     [eponai.common.ui.product-filters :as pf]
@@ -16,8 +15,7 @@
     [eponai.common.api.products :as products]
     [clojure.string :as str]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [debug]]
-    #?(:cljs [eponai.web.modules :as modules])))
+    [taoensso.timbre :refer [debug]]))
 
 (def sorting-vals
   {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
@@ -191,6 +189,4 @@
 
 (def ->Goods (om/factory Goods))
 
-(defmethod router/route->component :browse [_] {:component Goods})
-#?(:cljs
-   (modules/set-loaded! :browse))
+(router/register-component :browse Goods)

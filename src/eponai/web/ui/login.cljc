@@ -3,8 +3,7 @@
     [eponai.common.ui.index :as index]
     [eponai.common.ui.router :as router]
     [eponai.client.auth :as auth]
-    [om.next :as om :refer [defui]]
-    #?(:cljs [eponai.web.modules :as modules])))
+    [om.next :as om :refer [defui]]))
 
 
 (defui Login
@@ -19,6 +18,4 @@
 
 (def ->Login (om/factory Login))
 
-(defmethod router/route->component :login [_] {:component Login})
-#?(:cljs
-   (modules/set-loaded! :login))
+(router/register-component :login Login)

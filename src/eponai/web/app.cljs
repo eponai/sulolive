@@ -25,6 +25,10 @@
     [eponai.common.ui.router :as router]
     [cljs.core.async :as async]))
 
+(defn add-root! [reconciler]
+  (binding [parser/*parser-allow-remote* false]
+    (om/add-root! reconciler router/Router (gdom/getElement router/dom-app-id))))
+
 (defn update-route-fn [reconciler-atom]
   (fn [{:keys [handler route-params] :as match}]
     (try
@@ -45,10 +49,10 @@
                                                         (binding [parser/*parser-allow-remote* allow-remotes?]
                                                           (debug "Allow remotes?: " allow-remotes?)
                                                           (debug "App root: " (om/app-root reconciler))
-                                                          (if-let [root-query (om/get-query (om/app-root reconciler))]
+                                                          (if-let [app-root (om/app-root reconciler)]
                                                             (do (info "Required route: " handler "! Reindexing...")
-                                                                (debug "query before reindex: " root-query)
-                                                                (om.protocols/reindex! reconciler)
+                                                                (debug "query before reindex: " (om/get-query app-root))
+                                                                (add-root! reconciler)
                                                                 (debug "query after reindex: " (om/get-query (om/app-root reconciler)))
                                                                 (info "Re indexed! Queuing reads...")
                                                                 (queue-cb)
@@ -123,9 +127,7 @@
                                        :shared/browser-history     history
                                        :shared/store-chat-listener (web.chat/store-chat-listener reconciler-atom)
                                        :shared/auth-lock           auth-lock
-                                       :instrument                 (::plomber run-options)})
-        add-root! #(binding [parser/*parser-allow-remote* false]
-                     (om/add-root! reconciler router/Router (gdom/getElement router/dom-app-id)))]
+                                       :instrument                 (::plomber run-options)})]
 
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
@@ -143,7 +145,7 @@
       (async/<! initial-merge-chan)
       (async/<! initial-module-loaded-chan)
       (debug "Adding reconciler to root.")
-      (add-root!))
+      (add-root! reconciler))
 
     (utils/init-state! reconciler send-fn router/Router)))
 

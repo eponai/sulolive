@@ -10,16 +10,11 @@
     [taoensso.timbre :refer [debug error]]
     [eponai.common.ui.dom :as my-dom :refer [div a]]
     [eponai.common.ui.elements.css :as css]
-    [eponai.client.parser.message :as msg]
     [eponai.client.routes :as routes]
-    [eponai.client.auth :as auth]
-    [eponai.client.utils :as utils]
     [eponai.common.ui.icons :as icons]
-    [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.callout :as callout]
-    [eponai.common.ui.router :as router]
-    #?(:cljs [eponai.web.modules :as modules])))
+    [eponai.common.ui.router :as router]))
 
 (defn top-feature [opts icon title text]
   (dom/div #js {:className "feature-item column"}
@@ -236,6 +231,4 @@
 
 (def ->Index (om/factory Index))
 
-(defmethod router/route->component :index [_] {:component Index})
-#?(:cljs
-   (modules/set-loaded! :index))
+(router/register-component :index Index)

@@ -19,6 +19,14 @@
 
 (defmulti route->component normalize-route)
 
+#?(:clj
+   (defmacro register-component [route component]
+     (let [in-cljs? (boolean (:ns &env))]
+       `(do
+          (defmethod route->component ~route [~'_] {:component ~component})
+          ~(when in-cljs? `(eponai.web.modules/set-loaded! ~route))))))
+
+
 ;; Routes set by eponai.common.ui.components
 (def routes (atom nil))
 
