@@ -1,5 +1,5 @@
 (ns eponai.common.ui.router
-  #?(:cljs (:require-macros [eponai.common.ui.router :refer [register-component]]))
+  #?(:cljs (:require-macros [eponai.common.ui.router :as router-macros]))
   (:require
     [om.next :as om :refer [defui]]
     [om.dom]
@@ -24,17 +24,12 @@
   [_]
   nil)
 
-#?(:clj
-   (defmacro register-component [route component]
-     (let [in-cljs? (boolean (:ns &env))]
-       `(do
-          (defmethod route->component ~route [~'_] {:component ~component})
-          ~(when in-cljs? `(eponai.web.modules/set-loaded! ~route))))))
-
-
-#?(:cljs
-   (def register-component register-component))
-
+(defn register-component [route component]
+  (defmethod route->component route
+    [_]
+    {:component component})
+  #?(:cljs
+     (modules/set-loaded! route)))
 
 (def routes [:unauthorized :index :store :checkout :browse
              :shopping-bag :login :sell :product :live :help

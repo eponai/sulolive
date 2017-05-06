@@ -50,7 +50,7 @@
                                                                 (debug "query before reindex: " (om/get-query app-root))
                                                                 (add-root! reconciler)
                                                                 (debug "query after reindex: " (om/get-query (om/app-root reconciler)))
-                                                                (debug "Re indexed! Queuing reads...")
+                                                                (debug "Re indexed! Queuing reads..")
                                                                 (queue-cb))
                                                             (debug "No root query, nothing to queue..")))))))}))
       (catch :default e
