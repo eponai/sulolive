@@ -31,10 +31,10 @@
              (render-while-loading-scripts component child-props))))
 
 (defn is-loading-scripts? [component]
-  (true? (some-> (om/get-computed component)
-                 ::js-loader
-                 (om/get-state)
-                 ::loaded?)))
+  (not (some-> (om/get-computed component)
+               ::js-loader
+               (om/get-state)
+               ::loaded?)))
 
 (defn- load-scripts [this scripts]
   #?(:cljs
