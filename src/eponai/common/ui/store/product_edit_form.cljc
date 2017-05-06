@@ -1,7 +1,6 @@
 (ns eponai.common.ui.store.product-edit-form
   (:require
     [eponai.common.ui.dom :as dom]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.om-quill :as quill]
     [eponai.common.format :as f]
@@ -337,7 +336,8 @@
                                 (css/add-class :shrink)
                                 (dom/a (->> {:onClick #(om/update-state! this update :sku-count dec)}
                                             (css/button-hollow)
-                                            (css/add-class ::css/color-secondary)) (dom/span nil "X"))))))))
+                                            (css/add-class ::css/color-secondary))
+                                       (dom/i {:classes ["fa fa-trash-o fa-fw"]}))))))))
                     (range sku-count)))
                 (dom/div
                   nil

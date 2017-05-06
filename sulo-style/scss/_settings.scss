@@ -48,9 +48,14 @@
 $global-font-size: 100%;
 $global-width: rem-calc(1024);
 $global-lineheight: 1.5;
+$light-gray: #e6e6e6;
+$medium-gray: #cacaca;
+$dark-gray: #8a8a8a;
+$black: #10091B;
+$white: #fefefe;
 $foundation-palette: (
   primary: #444444,//#240061, //#2199e8,
-  secondary: #D9D7D9, //#3A5288,
+  secondary: $dark-gray,//#D9D7D9, //#3A5288,
   success: green,//#3adb76,
   warning: #ffae00,
   alert: #ec5840,
@@ -62,11 +67,6 @@ $foundation-palette: (
   search: #9FCFC8,
   action: #513EBB,
 );
-$light-gray: #e6e6e6;
-$medium-gray: #cacaca;
-$dark-gray: #8a8a8a;
-$black: #10091B;
-$white: #fefefe;
 $body-background: $white;//#F0EDE3;
 $body-font-color: #2E2A31;
 $body-font-family: 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif;

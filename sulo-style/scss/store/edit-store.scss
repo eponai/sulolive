@@ -1,4 +1,29 @@
 #sulo-store-dashboard {
+	.section-title {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		margin-bottom: 0.5rem;
+		margin-top: 2rem;
+		h1 {
+			margin: 0;
+		}
+		.button {
+			margin-bottom: 0;
+		}
+
+		div:last-child {
+			display: flex;	
+		}
+	}
+	.button {
+		i:last-child {
+			margin-left: 0.5rem;
+		}
+		i:first-child {
+			margin-right: 0.5rem;
+		}
+	}
 	#sulo-store-edit {
 		label {
 			text-align: left;
@@ -21,22 +46,6 @@
 		// margin-top: -2.5rem;
 		// border: $global-border;
 
-		.section-title {
-			display: flex;
-			align-items: flex-end;
-			justify-content: space-between;
-			margin-bottom: 0.5rem;
-			margin-top: 2rem;
-			.button {
-				margin-bottom: 0;
-			}
-			h1 {
-
-			}
-			:last-child {
-				display: flex;	
-			}
-		}
 		.section-error {
 			text-align: center;
 		}
@@ -157,6 +166,10 @@
 						border-right: none;
 					}
 					a {
+						color: $dark-gray;
+						&:hover {
+							color: $black;
+						}
 						justify-content: center;
 					}
 				}

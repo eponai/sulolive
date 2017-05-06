@@ -8,10 +8,10 @@
     [eponai.common.ui.icons :as icons]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.css :as css]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.menu :as menu]
     [taoensso.timbre :refer [debug]]
-    [eponai.client.routes :as routes]))
+    [eponai.client.routes :as routes]
+    [eponai.web.ui.photo :as p]))
 
 (defui Profile
   Object
@@ -46,7 +46,7 @@
               (cond->> (css/add-class :profile-photo)
                        is-current-user?
                        (css/add-class :edit-enabled))
-              (photo/user-photo {:user user}))
+              (p/user-photo user {:transformation :transformation/thumbnail-large}))
 
             (grid/row-column
               (css/text-align :center)

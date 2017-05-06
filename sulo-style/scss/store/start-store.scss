@@ -32,10 +32,11 @@
 			// object-position: 50% 0%;
 		}
 	}
-	.photo.cover {
+	.photo.header {
 		display: flex;
 		flex-direction: column;
-		.overlay {
+		flex: 1;
+		.content {
 			padding: 4rem 0;
 			@include breakpoint(large) {
 				padding: 10rem 0;

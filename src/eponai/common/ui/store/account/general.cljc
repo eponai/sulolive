@@ -9,7 +9,6 @@
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.om-quill :as quill]
     [om.next :as om :refer [defui]]
     [eponai.client.parser.message :as msg]

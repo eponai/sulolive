@@ -4,7 +4,6 @@
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.elements.css :as css]
     ))

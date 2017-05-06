@@ -15,9 +15,9 @@
     [eponai.common.ui.dom :as dom]
     [om.next :as om #?(:clj :refer :cljs :refer-macros) [defui]]
     [taoensso.timbre :refer [debug]]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.elements.grid :as grid]))
+    [eponai.common.ui.elements.grid :as grid]
+    [eponai.web.ui.photo :as p]))
 
 
 (defn about-section [component]
@@ -102,7 +102,7 @@
                                                    :store          store
                                                    :show?          is-live?})))
                 (some? cover)
-                (photo/cover {:src (:photo/path cover)})))
+                (p/cover {:photo-id (:photo/id cover)})))
 
 
 
@@ -116,7 +116,7 @@
 
                 (grid/column
                   (grid/column-size {:small 12 :medium 2})
-                  (photo/store-photo store :transformation/thumbnail))
+                  (p/store-photo store {:transformation :transformation/thumbnail}))
 
                 (grid/column
                   (css/add-class :shrink)

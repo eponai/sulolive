@@ -1,4 +1,5 @@
 .upload-photo {
+	cursor: pointer;
 	.photo-container {
 		background: $white;
 		border: $global-border;
@@ -23,7 +24,7 @@
 			}
 		}
 	}
-	.circle {
+	.photo-container.circle {
 		max-width: 10rem;
 		margin: 0 auto;
 		.overlay {
@@ -33,6 +34,7 @@
 	&.loading .overlay {
 		background: rgba($white, 0.5);
 		align-items: center;
+
 		.content {
 			background: transparent;
 		}

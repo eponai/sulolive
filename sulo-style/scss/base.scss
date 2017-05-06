@@ -46,6 +46,9 @@ html, body {
 	}
 }
 
+p a {
+	text-decoration: underline;
+}
 @include label-hollow;
 
 .product-grid {

@@ -5,17 +5,15 @@
     #?(:cljs
        [eponai.web.utils :as utils])
     [eponai.common.ui.dom :as my-dom]
-    [eponai.common.ui.common :as common]
-    [eponai.common.ui.navbar :as nav]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.photo :as photo]
-    [eponai.common.ui.elements.menu :as menu]
     [taoensso.timbre :refer [debug]]
     [eponai.client.parser.message :as msg]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.elements.callout :as callout]))
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.web.ui.photo :as p]))
 
 (defui ProfileEdit
   static om/IQuery
@@ -27,29 +25,13 @@
   (componentDidUpdate [this _ _]
     (let [last-message (msg/last-message this 'photo/upload)]
       (when (msg/final? last-message)
-        (.close-photo-menu this)
         (msg/clear-messages! this 'photo/upload)
         (om/update-state! this dissoc :queue-photo))))
-
-  (open-photo-menu [this]
-    (let [{:keys [on-close-photo-menu]} (om/get-state this)]
-      (om/update-state! this assoc :photo-menu-open? true)
-      #?(:cljs
-         (.addEventListener js/document "click" on-close-photo-menu))))
-
-  (close-photo-menu [this]
-    (let [{:keys [on-close-photo-menu]} (om/get-state this)]
-      (om/update-state! this assoc :photo-menu-open? false)
-      #?(:cljs
-         (.removeEventListener js/document "click" on-close-photo-menu))))
-
-  (initLocalState [this]
-    {:on-close-photo-menu #(.close-photo-menu this)})
 
   (render [this]
     (let [{:proxy/keys [photo-upload]} (om/props this)
           {:keys [user]} (om/get-computed this)
-          {:keys [queue-photo photo-menu-open?]} (om/get-state this)]
+          {:keys [queue-photo]} (om/get-state this)]
       (my-dom/div {:id "sulo-profile-edit"}
 
         (grid/row-column
@@ -66,39 +48,26 @@
                 (css/align :center)
                 (grid/column
                   (grid/column-size {:small 6 :medium 4 :large 3})
-                  (photo/user-photo
-                    (cond-> {:id "user-profile-photo"
-                             :user user
-                             :onClick #(.open-photo-menu this)}
-                            (some? queue-photo)
-                            (assoc-in [:user :store/profile :store.profile/photo :photo/path] (:location queue-photo)))
-                    (photo/overlay
-                      (when (or (some? queue-photo) photo-menu-open?)
-                        (css/add-class :is-active))
-                      (if (some? queue-photo)
-                        (my-dom/i {:classes ["fa fa-spinner fa-spin"]})
-                        [
-                         #?(:cljs
-                            [
-                             (pu/->PhotoUploader
-                               (om/computed
-                                 photo-upload
-                                 {:hide-label?     true
-                                  :on-photo-queue  (fn [img-result]
-                                                     ;(debug "Got photo: " photo)
-                                                     (om/update-state! this assoc :queue-photo {:location  img-result
-                                                                                                :in-queue? true}))
-                                  :on-photo-upload (fn [photo]
-                                                     (debug "Received upload photo: " photo)
-                                                     (msg/om-transact! this [(list 'photo/upload {:photo photo})
-                                                                             :query/user]))}))
-                             (my-dom/label
-                               (css/button {:htmlFor "file-"})
-                               "Upload photo")])
-                         ;(my-dom/a
-                         ;  (css/button {:onClick #(om/update-state! this assoc :file-upload? true)})
-                         ;  (dom/span nil "Upload photo"))
-                         (my-dom/a (css/button) (dom/span nil "Remove photo"))]))))
+
+                  (if (some? queue-photo)
+                    (my-dom/div
+                      {:classes ["upload-photo circle loading user-profile-photo"]}
+                      (p/circle {:src (:src queue-photo)}
+                                (p/overlay nil (my-dom/i {:classes ["fa fa-spinner fa-spin"]}))))
+                    (my-dom/label {:htmlFor "file-profile"
+                                :classes ["upload-photo circle"]}
+                               (p/user-photo user {:transformation :transformation/thumbnail})
+                               #?(:cljs
+                                  (pu/->PhotoUploader
+                                    (om/computed
+                                      photo-upload
+                                      {:hide-label?     true
+                                       :id "profile"
+                                       :on-photo-queue  (fn [img-result]
+                                                          (om/update-state! this assoc :queue-photo {:src  img-result}))
+                                       :on-photo-upload (fn [photo]
+                                                          (msg/om-transact! this [(list 'photo/upload {:photo photo})
+                                                                                  :query/user]))}))))))
                 (grid/column
                   (grid/column-size {:small 12 :medium 8 :large 9})
                   (grid/row

@@ -6,7 +6,6 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.navbar :as nav]
     [taoensso.timbre :refer [debug]]
     [om.next :as om]

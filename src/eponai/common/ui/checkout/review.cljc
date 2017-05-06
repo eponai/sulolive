@@ -2,12 +2,12 @@
   (:require
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.utils :as utils]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.css :as css]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.elements.callout :as callout]))
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.web.ui.photo :as p]))
 
 (defn compute-item-price [items]
   (reduce + (map #(get-in % [:store.item/_skus :store.item/price]) items)))
@@ -23,7 +23,7 @@
            (css/align :center))
       (grid/column
         (grid/column-size {:small 3 :medium 2})
-        (photo/circle {:src (:photo/path photo)}))
+        (p/store-photo s {:transformation :transformation/thumbnail}))
       (grid/column
         (->> (grid/column-size {:small 12})
              (css/text-align :center))
@@ -48,7 +48,7 @@
               (debug "SKU: " sku)
               (let [{:store.item/keys [price photos]
                      product-id       :db/id
-                     item-name        :store.item/name} (get sku :store.item/_skus)
+                     item-name        :store.item/name :as product} (get sku :store.item/_skus)
                     sorted-photos (sort-by :store.item.photo/index photos)]
                 (dom/div
                   (css/add-class :sl-CheckoutItemlist-row)
@@ -56,8 +56,7 @@
                   (dom/div
                     (->> (css/add-class :sl-CheckoutItemlist-cell)
                          (css/add-class :sl-CheckoutItemlist-cell--photo))
-                    (photo/square
-                      {:src (get-in (first sorted-photos) [:store.item.photo/photo :photo/path])}))
+                    (p/product-preview product))
                   (dom/div
                     (css/add-class :sl-CheckoutItemlist-cell)
                     (grid/row

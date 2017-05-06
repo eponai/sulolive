@@ -39,6 +39,7 @@
 (defn a [opts & content]
   (element dom/a opts content))
 
+;; Lists
 (defn li [opts & content]
   (element dom/li opts content))
 
@@ -47,6 +48,15 @@
 
 (defn ol [opts & content]
   (element dom/ol opts content))
+
+(defn dl [opts & content]
+  (element dom/dl opts content))
+
+(defn dt [opts & content]
+  (element dom/dt opts content))
+
+(defn dd [opts & content]
+  (element dom/dd opts content))
 
 (defn strong [opts & content]
   (element dom/strong opts content))

@@ -10,8 +10,13 @@
 		.user-profile-photo {
 			margin: 1.75rem auto;
 			.photo-container {
-				max-width: 15rem;
-				min-width: 15rem;
+				max-width: 10rem;
+				transition: width .25s ease-in-out;
+				@include breakpoint(large) {
+					max-width: 15rem;
+				}
+				// max-width: 15rem;
+				// min-width: 15rem;
 			}
 		}
 	}

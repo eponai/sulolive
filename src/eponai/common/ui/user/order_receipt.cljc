@@ -1,7 +1,6 @@
 (ns eponai.common.ui.user.order-receipt
   (:require
     [eponai.common.ui.dom :as dom]
-    [eponai.common.ui.elements.photo :as photo]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.css :as css]
     [taoensso.timbre :refer [debug]]
@@ -12,14 +11,15 @@
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.elements.table :as table]
     [eponai.common.format.date :as date]
-    [eponai.common.ui.elements.menu :as menu]))
+    [eponai.common.ui.elements.menu :as menu]
+    [eponai.web.ui.photo :as p]))
 
 (defn store-element [s]
   (let [{:store/keys  [photo]
          {store-name :store.profile/name} :store.profile} s]
     (dom/div
       nil
-      (photo/store-photo s :transformation/thumbnail-tiny)
+      (p/store-photo s {:transformation :transformation/thumbnail-tiny})
       (dom/div
         (css/text-align :center)
         (dom/p nil (dom/strong
@@ -41,7 +41,7 @@
           (dom/div nil
                    (dom/a
                      {:href (routes/url :store {:store-id (:db/id store)})}
-                     (photo/store-photo store :transformation/thumbnail-tiny))
+                     (p/store-photo store {:transformation :transformation/thumbnail-tiny}))
                    (dom/p nil
                           (dom/span nil "Purchased from ")
                           (dom/a {:href (routes/url :store {:store-id (:db/id store)})} (:store.profile/name (:store/profile store)))))
@@ -66,7 +66,7 @@
                         (table/td
                           (->> (css/add-class :sl-OrderItemlist-cell)
                                (css/add-class :sl-OrderItemlist-cell--photo))
-                          (photo/product-photo (:store.item.photo/photo (first sorted-photos))))
+                          (p/product-preview item))
                         (table/td
                           (->> (css/add-class :sl-OrderItemlist-cell)
                                (css/add-class :sl-OrderItemlist-cell--photo)) (:store.item/name item)))))

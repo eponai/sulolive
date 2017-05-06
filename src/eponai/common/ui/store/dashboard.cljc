@@ -13,11 +13,12 @@
     [eponai.common.ui.store.product-list :as pl]
     [eponai.common.ui.store.stream-settings :as ss]
     [eponai.common.ui.router :as router]
+    [eponai.web.ui.store.common :refer [edit-button cancel-button save-button]]
+    [eponai.common.ui.utils :refer [two-decimal-price]]
     [eponai.common.ui.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
     [eponai.common.format :as f]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.web.ui.store.edit-store :as es]
     [medley.core :as medley]
     [eponai.common.ui.elements.callout :as callout]
@@ -252,10 +253,12 @@
     (cond->> (css/add-class :getting-started-item)
              done?
              (css/add-class :done))
-    (dom/i {:classes ["fa fa-check fa-fw"]})
-    (dom/a
-      (css/button-hollow {:href (when-not done? href)})
-      content)))
+
+    (dom/p nil
+           (dom/i {:classes ["fa fa-check fa-fw"]})
+           (dom/a
+             {:href (when-not done? href)}
+             content))))
 
 (defui Dashboard
   static om/IQuery
@@ -272,6 +275,7 @@
                     {:store/owners [{:store.owner/user [:user/email]}]}
                     :store/stripe
                     {:store/sections [:store.section/label]}
+                    {:order/_store [:order/items]}
                     {:store/items [:store.item/name
                                    :store.item/description
                                    :store.item/price
@@ -304,7 +308,8 @@
            :query/keys [store current-route stripe-account]
            :as         props} (om/props this)
           {:keys [route route-params]} current-route
-          store-id (get-in current-route [:route-params :store-id])]
+          store-id (get-in current-route [:route-params :store-id])
+          stream-state (or (-> store :stream/_store first :stream/state) :stream.state/offline)]
 
       (common/page-container
         {:navbar navbar
@@ -320,58 +325,165 @@
           ;; Render the store's dashboard:
           (dom/div
             {:id "sulo-main-dashboard"}
-            (grid/row
-              (css/align :center)
-              (grid/column
-                (grid/column-size {:small 12 :medium 4 :large 3})
-                (store-info-element this))
-              (grid/column
-                (grid/column-size {:small 12 :medium 8 :large 9})
-                (callout/callout
+
+            (dom/div
+              (css/add-class :section-title)
+              (dom/h1 nil (dom/small nil "Your store"))
+              (dom/a
+                (->> {:href (routes/url :store-dashboard/profile {:store-id store-id})}
+                     (css/button-hollow)
+                     (css/add-class :secondary))
+                (dom/span nil "Manage profile")))
+            (callout/callout-small
+              (css/add-class :section-info)
+              (grid/row
+                (->> (css/align :center)
+                     (css/align :middle))
+
+                (grid/column
+                  (->> (grid/column-size {:small 6 :medium 4})
+                       (css/text-align :center))
+                  (dom/h2 nil (dom/small nil (get-in store [:store/profile :store.profile/name])))
+                  (p/store-photo store {:transformation :transformation/thumbnail}))
+
+                (grid/column
                   nil
-                  (callout/header nil "Getting started")
-                  (menu/vertical
+                  (grid/row
+                    (grid/columns-in-row {:small 1 :medium 2})
+                    (grid/column
+                      (css/text-align :center)
+                      (dom/h2 nil (dom/small nil "Products"))
+                      (dom/p (css/add-class :stat) (count (:store/items store)))
+                      (dom/a
+                        (->> {:href (routes/url :store-dashboard/order-list {:store-id store-id})}
+                             (css/button-hollow)
+                             (css/add-class :secondary))
+                        (dom/span nil "Manage products")))
+                    (grid/column
+                      (css/text-align :center)
+                      (dom/h2 nil (dom/small nil "Orders"))
+                      (dom/p (css/add-class :stat) (count (:order/_store store)))
+                      (dom/a
+                        (->> {:href (routes/url :store-dashboard/product-list {:store-id store-id})}
+                             (css/button-hollow)
+                             (css/add-class :secondary))
+                             (dom/span nil "Manage orders")))))))
+
+            (callout/callout-small
+              nil
+              (grid/row
+                (grid/columns-in-row {:small 3})
+                (grid/column
+                  (css/text-align :center)
+                  (dom/h2 nil (dom/small nil "Balance"))
+                  (dom/p (css/add-class :stat) (two-decimal-price 0)))
+                (grid/column
+                  (css/text-align :center)
+                  (dom/h2 nil (dom/small nil "Customers"))
+                  (dom/p (css/add-class :stat) 0))
+                (grid/column
+                  (css/text-align :center)
+                  (dom/h2 nil (dom/small nil "Payments"))
+                  (dom/p (css/add-class :stat) 0))))
+
+            (dom/div
+              (css/add-class :section-title)
+              (dom/h1 nil (dom/small nil "Getting started")))
+
+            (callout/callout-small
+              nil
+              (menu/vertical
+                nil
+
+                (check-list-item
+                  (some? (:store.profile/description (:store/profile store)))
+                  (routes/url :store-dashboard/settings {:store-id store-id})
+                  (dom/span nil "Describe your store. People love to hear your story."))
+
+                (check-list-item
+                  (boolean (not-empty (:store/items store)))
+                  (routes/url :store-dashboard/create-product {:store-id store-id})
+                  (dom/span nil "Add your first product to attract those customers."))
+
+                (check-list-item
+                  false
+                  (routes/url :store-dashboard/stream {:store-id store-id})
+                  (dom/span nil "Setup your first stream and hangout with your customers whenever you feel like it."))
+
+                (check-list-item
+                  (:stripe/details-submitted? stripe-account)
+                  (routes/url :store-dashboard/settings#activate {:store-id store-id})
+                  (dom/span nil "Activate your account. You know that boring stuff needed to so you can accept payments."))))
+
+            (dom/div
+              (css/add-class :section-title)
+              (dom/h1 nil (dom/small nil "Notifications")))
+            (if (:stripe/details-submitted? stripe-account)
+              (verification-status-element this)
+              (callout/callout
+                (->> (css/add-class :notification)
+                     (css/add-class :action))
+                (grid/row
+                  nil
+                  (grid/column
+                    (css/add-class :shrink)
+                    (dom/i {:classes ["fa fa-info fa-fw"]}))
+                  (grid/column
                     nil
+                    (callout/header nil "Activate your account")))
+                (dom/p nil
+                       (dom/span nil "Before ")
+                       (dom/a {:href (routes/url :store-dashboard/settings#activate {:store-id store-id})} (dom/span nil "activating your account"))
+                       (dom/span nil ", you can only use SULO Live in test mode. You can manage your store, but it'll not be visible to the public."))
+                (dom/p nil
+                       "Once you've activated you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our terms of service. If there is a problem, we'll get in touch right away to resolve it as quickly as possible.")))
 
-                    (check-list-item
-                      (some? (:store.profile/description (:store/profile store)))
-                      (routes/url :store-dashboard/settings {:store-id store-id})
-                      (dom/span nil "Describe your store"))
+            (dom/div
+              (css/add-class :section-title)
+              (dom/h1 nil (dom/small nil "Questions?")))
+            (callout/callout
+              nil
+              (dom/p nil
+                     (dom/span nil "We love to hear from you! If you want to give us feedback, report problems, or even just say hi, shoot us an email at ")
+                     (dom/a {:href "mailto:hello@sulo.live"} "hello@sulo.live")
+                     (dom/span nil " and Miriam, Diana or Petter will help you out.")))
 
-                    (check-list-item
-                      (boolean (not-empty (:store/items store)))
-                      (routes/url :store-dashboard/create-product {:store-id store-id})
-                      (dom/span nil "Add your first product"))
 
-                    (check-list-item
-                      false
-                      (routes/url :store-dashboard/stream {:store-id store-id})
-                      (dom/span nil "Setup your first stream"))
 
-                    (check-list-item
-                      (:stripe/details-submitted? stripe-account)
-                      (routes/url :store-dashboard/settings#activate {:store-id store-id})
-                      (dom/span nil "Activate your account"))))
 
-                (if (:stripe/details-submitted? stripe-account)
-                  (verification-status-element this)
-                  (callout/callout
-                    (->> (css/add-class :notification)
-                         (css/add-class :action))
-                    (grid/row
-                      nil
-                      (grid/column
-                        (css/add-class :shrink)
-                        (dom/i {:classes ["fa fa-info fa-fw"]}))
-                      (grid/column
-                        nil
-                        (callout/header nil "Activate your account")))
-                    (dom/p nil
-                           (dom/span nil "Before ")
-                           (dom/a {:href (routes/url :store-dashboard/settings#activate {:store-id store-id})} (dom/span nil "activating your account"))
-                           (dom/span nil ", you can only use SULO Live in test mode. You can manage your store, but it'll not be visible to the public."))
-                    (dom/p nil
-                           "Once you've activated you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our terms of service. If there is a problem, we'll get in touch right away to resolve it as quickly as possible.")))))))))))
+
+
+            ;(grid/row
+            ;  (->> (css/align :center)
+            ;       (css/add-class :expanded)
+            ;       (css/add-class :collapse)
+            ;       (grid/columns-in-row {:small 1 :medium 2}))
+            ;  (grid/column
+            ;    nil
+            ;    (store-info-element this))
+            ;  (grid/column
+            ;    nil
+            ;
+            ;    (if (:stripe/details-submitted? stripe-account)
+            ;      (verification-status-element this)
+            ;      (callout/callout
+            ;        (->> (css/add-class :notification)
+            ;             (css/add-class :action))
+            ;        (grid/row
+            ;          nil
+            ;          (grid/column
+            ;            (css/add-class :shrink)
+            ;            (dom/i {:classes ["fa fa-info fa-fw"]}))
+            ;          (grid/column
+            ;            nil
+            ;            (callout/header nil "Activate your account")))
+            ;        (dom/p nil
+            ;               (dom/span nil "Before ")
+            ;               (dom/a {:href (routes/url :store-dashboard/settings#activate {:store-id store-id})} (dom/span nil "activating your account"))
+            ;               (dom/span nil ", you can only use SULO Live in test mode. You can manage your store, but it'll not be visible to the public."))
+            ;        (dom/p nil
+            ;               "Once you've activated you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our terms of service. If there is a problem, we'll get in touch right away to resolve it as quickly as possible.")))))
+            ))))))
 
 (def ->Dashboard (om/factory Dashboard))
 

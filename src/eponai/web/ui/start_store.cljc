@@ -11,7 +11,7 @@
     [eponai.common.ui.router :as router]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.navbar :as nav]
-    [eponai.common.ui.elements.photo :as photo]
+
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.callout :as callout]
@@ -19,7 +19,8 @@
     [eponai.common.ui.elements.input-validate :as validate]
     [eponai.client.parser.message :as msg]
     [taoensso.timbre :refer [debug]]
-    [eponai.client.routes :as routes]))
+    [eponai.client.routes :as routes]
+    [eponai.web.ui.photo :as p]))
 
 (def form-inputs
   {:field.store/name    "store.name"
@@ -79,9 +80,9 @@
         {:navbar navbar :id "sulo-start-store"}
         (when (msg/pending? message)
           (common/loading-spinner))
-        (photo/cover
-          {:src "/assets/img/coming-soon-sell-bg.jpg"}
-          (photo/overlay
+        (p/header
+          {:photo-id "static/coming-soon-sell-bg"}
+          (dom/div
             nil
             ;(grid/row-column
             ;  nil
