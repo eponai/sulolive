@@ -3,7 +3,8 @@
     [eponai.server.external.aws-s3 :as s3]
     [eponai.common.database :as db]
     [clojure.core.async :as async]
-    [eponai.server.external.stripe :as stripe]))
+    [eponai.server.external.stripe :as stripe]
+    [eponai.server.external.cloudinary :as cloudinary]))
 
 (defn s3-test [chan]
   (reify s3/IAWSS3Photo
@@ -13,6 +14,15 @@
       (let [{:keys [location]} params]
         (async/put! chan location)
         location))))
+
+(defn cloudinary-test [chan]
+  (reify cloudinary/ICloudinary
+    (real-photo-id [this tempid]
+      tempid)
+    (upload-dynamic-photo [this {:keys [public_id]}]
+      (async/put! chan public_id)
+      {:photo/path public_id
+       :photo/id   public_id})))
 
 (defn stripe-test-payment-succeeded [chan]
   (reify stripe/IStripeConnect
