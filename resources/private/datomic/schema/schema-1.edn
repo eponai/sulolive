@@ -1,0 +1,42 @@
+[
+
+ ;; User
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :user/created-at
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Timestamp of when the user was created."
+  :db.install/_attribute :db.part/db}
+
+
+ ;; Store
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store/status
+  :db/valueType          :db.type/keyword
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Status of the store (e.g. if they are 'closed' 'active' etc."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store/created-at
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Timestamp of when the store was created."
+  :db.install/_attribute :db.part/db}
+
+
+ ;; Store item
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store.item/created-at
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Timestamp of when the store item was created."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store.item/index
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Index position of store item."
+  :db.install/_attribute :db.part/db}
+ ]

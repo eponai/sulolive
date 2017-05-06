@@ -6,21 +6,23 @@
     [eponai.server.external.stripe :as stripe]
     [taoensso.timbre :refer [debug info]]
     [eponai.common.format :as cf]
-    [eponai.server.external.cloudinary :as cloudinary])
+    [eponai.server.external.cloudinary :as cloudinary]
+    [eponai.common.format.date :as date])
   (:import (com.stripe.exception CardException)))
 
 
 (defn create [{:keys [state auth system]} {:keys [country name]}]
   (let [stripe-account (stripe/create-account (:system/stripe system) {:country country})
-        new-store {:db/id         (db/tempid :db.part/user)
-                   :store/uuid    (db/squuid)
-                   :store/profile {:store.profile/name name}
-                   :store/stripe  {:db/id         (db/tempid :db.part/user)
-                                   :stripe/id     (:id stripe-account)
-                                   :stripe/secret (:secret stripe-account)
-                                   :stripe/publ   (:publ stripe-account)}
-                   :store/owners  {:store.owner/role :store.owner.role/admin
-                                   :store.owner/user (:user-id auth)}}
+        new-store {:db/id            (db/tempid :db.part/user)
+                   :store/uuid       (db/squuid)
+                   :store/profile    {:store.profile/name name}
+                   :store/stripe     {:db/id         (db/tempid :db.part/user)
+                                      :stripe/id     (:id stripe-account)
+                                      :stripe/secret (:secret stripe-account)
+                                      :stripe/publ   (:publ stripe-account)}
+                   :store/owners     {:store.owner/role :store.owner.role/admin
+                                      :store.owner/user (:user-id auth)}
+                   :store/created-at (date/current-millis)}
         stream {:db/id        (db/tempid :db.part/user)
                 :stream/store (:db/id new-store)
                 :stream/state :stream.state/offline}]
