@@ -30,7 +30,8 @@
     (try
       (let [reconciler @reconciler-atom
             modules (get-in reconciler [:config :shared :shared/modules])
-            loaded-route? (modules/loaded-route? modules handler)]
+            loaded-route? (modules/loaded-route? modules handler)
+            allow-remotes? parser/*parser-allow-remote*]
         (routes/transact-route! reconciler handler
                                 {:route-params  route-params
                                  :queue?        (and loaded-route?
@@ -41,16 +42,18 @@
                                                     (modules/require-route!
                                                       modules handler
                                                       (fn []
-                                                        (debug "App root: " (om/app-root reconciler))
-                                                        (if-let [root-query (om/get-query (om/app-root reconciler))]
-                                                          (do (info "Required route: " handler "! Reindexing...")
-                                                              (debug "query before reindex: " root-query)
-                                                              (om.protocols/reindex! reconciler)
-                                                              (debug "query after reindex: " (om/get-query (om/app-root reconciler)))
-                                                              (info "Re indexed! Queuing reads...")
-                                                              (queue-cb)
-                                                              (info "Queued reads!"))
-                                                          (do (debug "No root query, nothing to queue..")))))))}))
+                                                        (binding [parser/*parser-allow-remote* allow-remotes?]
+                                                          (debug "Allow remotes?: " allow-remotes?)
+                                                          (debug "App root: " (om/app-root reconciler))
+                                                          (if-let [root-query (om/get-query (om/app-root reconciler))]
+                                                            (do (info "Required route: " handler "! Reindexing...")
+                                                                (debug "query before reindex: " root-query)
+                                                                (om.protocols/reindex! reconciler)
+                                                                (debug "query after reindex: " (om/get-query (om/app-root reconciler)))
+                                                                (info "Re indexed! Queuing reads...")
+                                                                (queue-cb)
+                                                                (info "Queued reads!"))
+                                                            (do (debug "No root query, nothing to queue.."))))))))}))
       (catch :default e
         (error "Error when transacting route: " e)))))
 
@@ -81,7 +84,7 @@
 
 (defn- run [{:keys [auth-lock modules]
              :or   {auth-lock (auth/auth0-lock)
-                    modules (modules/advanced-compilation-modules @router/routes)}
+                    modules   (modules/advanced-compilation-modules @router/routes)}
              :as   run-options}]
   (let [init? (atom false)
         _ (when-let [h @history-atom]
@@ -122,14 +125,15 @@
                                        :shared/auth-lock           auth-lock
                                        :instrument                 (::plomber run-options)})
         add-root! #(binding [parser/*parser-allow-remote* false]
-                   (om/add-root! reconciler router/Router (gdom/getElement router/dom-app-id)))]
+                     (om/add-root! reconciler router/Router (gdom/getElement router/dom-app-id)))]
 
     (reset! reconciler-atom reconciler)
-    (pushy/start! history)
-    ;; Pushy is configured to not work with all routes.
-    ;; We ensure that routes has been inited
-    (when-not (:route (routes/current-route reconciler))
-      (set-current-route! history update-route!))
+    (binding [parser/*parser-allow-remote* false]
+      (pushy/start! history)
+      ;; Pushy is configured to not work with all routes.
+      ;; We ensure that routes has been inited
+      (when-not (:route (routes/current-route reconciler))
+        (set-current-route! history update-route!)))
     (modules/require-route! modules
                             (:route (routes/current-route reconciler))
                             (fn [route]
@@ -140,6 +144,7 @@
       (async/<! initial-module-loaded-chan)
       (debug "Adding reconciler to root.")
       (add-root!))
+
     (utils/init-state! reconciler send-fn router/Router)))
 
 (defn run-prod []
