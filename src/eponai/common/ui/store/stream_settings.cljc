@@ -179,12 +179,16 @@
                         (grid/column-size {:small 12 :medium 8})
                         (dom/label nil "Server URL")
                         (dom/input {:type  "text"
+                                    :id "input.stream-url"
                                     :value (or (:ui.singleton.stream-config/publisher-url stream-config) "")}))
-                      (grid/column
-                        nil
-                        (dom/a
-                          (css/button-hollow)
-                          (dom/span nil "Copy URL"))))
+                      ;(grid/column
+                      ;  nil
+                      ;  (dom/button
+                      ;    (css/button-hollow {:data-clipboard-action "copy"
+                      ;                        :data-clipboard-target "input.stream-url"
+                      ;                        })
+                      ;    (dom/span nil "Copy URL")))
+                      )
                     (grid/row
                       (css/align :bottom)
                       (grid/column
@@ -202,7 +206,7 @@
                         nil
                         (dom/a
                           (css/button-hollow {:onClick #(msg/om-transact! this `[(stream-token/generate ~{:store-id (:db/id store)})])})
-                          (dom/span nil "Generate Key")))))))
+                          (dom/span nil "Create new key")))))))
               (grid/row
                 nil
                 (grid/column

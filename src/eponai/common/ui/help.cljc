@@ -43,11 +43,9 @@
                                               ::live-stream "Live streaming guide"
                                               ::general "General"))))
         (menu/item nil (dom/span nil anchor-text)))
-      (grid/row-column
+      (callout/callout
         nil
-        (callout/callout
-          (css/add-class :large)
-          (factory))))))
+        (factory)))))
 
 (defui Help
   static om/IQuery
@@ -70,48 +68,46 @@
               (dom/span nil "SULO Live help")))
           (if (contains? #{:help/first-stream :help/mobile-stream :help/faq :help/quality} route)
             (render-guide route)
-            (grid/row-column
+            (callout/callout
               nil
-              (callout/callout
-                (css/add-class :large)
-                ;(dom/article
-                ;  nil
-                ;  (dom/section
-                ;    nil))
-                (dom/h1 nil "SULO Live help")
-                (dom/h2 nil "Guides")
-                (menu/vertical
-                  nil
-                  (menu/item nil
-                             (dom/strong nil "Live streaming")
-                             (dom/ul
-                               (css/add-class :nested)
-                               (map (fn [route]
-                                      (dom/li nil
-                                              (dom/p nil
-                                                     (dom/a {:href (routes/url route)}
-                                                            (dom/span nil (get-in guides [route :anchor-text]))))))
-                                    [:help/first-stream
-                                     :help/mobile-stream
-                                     :help/quality])))
-                  (menu/item nil
-                             (dom/strong nil "General")
-                             (dom/ul
-                               (css/add-class :nested)
-                               (map (fn [route]
-                                      (let [{:keys [factory anchor-text]} (get guides route)]
-                                        (dom/li
-                                          nil
-                                          (dom/p nil
-                                                 (dom/a {:href (when factory (routes/url route))}
-                                                        ((if factory dom/span dom/s) nil anchor-text))))))
-                                    [:help/fees
-                                     :help/faq]))))
+              ;(dom/article
+              ;  nil
+              ;  (dom/section
+              ;    nil))
+              (dom/h1 nil "SULO Live help")
+              (dom/h2 nil "Guides")
+              (menu/vertical
+                nil
+                (menu/item nil
+                           (dom/strong nil "Live streaming")
+                           (dom/ul
+                             (css/add-class :nested)
+                             (map (fn [route]
+                                    (dom/li nil
+                                            (dom/p nil
+                                                   (dom/a {:href (routes/url route)}
+                                                          (dom/span nil (get-in guides [route :anchor-text]))))))
+                                  [:help/first-stream
+                                   :help/mobile-stream
+                                   :help/quality])))
+                (menu/item nil
+                           (dom/strong nil "General")
+                           (dom/ul
+                             (css/add-class :nested)
+                             (map (fn [route]
+                                    (let [{:keys [factory anchor-text]} (get guides route)]
+                                      (dom/li
+                                        nil
+                                        (dom/p nil
+                                               (dom/a {:href (when factory (routes/url route))}
+                                                      ((if factory dom/span dom/s) nil anchor-text))))))
+                                  [:help/fees
+                                   :help/faq]))))
 
-                (dom/h2 nil "Contact us")
-                (dom/p nil (dom/span nil "Do you still have questions? Contact us on ")
-                       (dom/a {:href "mailto:help@sulo.live"} "help@sulo.live")
-                       (dom/span nil ". We're happy to help!"))))))))))
+              (dom/h2 nil "Contact us")
+              (dom/p nil (dom/span nil "Do you still have questions? Contact us on ")
+                     (dom/a {:href "mailto:help@sulo.live"} "help@sulo.live")
+                     (dom/span nil ". We're happy to help!")))))))))
 
 (def ->Help (om/factory Help))
 

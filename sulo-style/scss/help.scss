@@ -35,6 +35,11 @@
 	h2 {
 		margin-top: 2rem;
 	}
+	.callout {
+		@include breakpoint(large) {
+			padding: 2.5rem;
+		}
+	}
 
 	.callout a {
 		color: map-get($foundation-palette, action);

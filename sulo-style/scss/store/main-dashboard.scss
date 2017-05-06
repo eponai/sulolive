@@ -2,6 +2,10 @@
 	#sulo-main-dashboard {
 		max-width: $global-width;
 		margin: 0 auto;
+		.photo-container {
+			max-width: 15rem;
+			margin: 0 auto;
+		}
 
 		.section-info {
 			.store-info-menu {
@@ -33,9 +37,18 @@
 		li.getting-started-item {
 			display: flex;
 			align-items: center;
-			margin-bottom: 0.25rem;
+			margin-top: 0.25rem;
+			padding: 1rem 0;
+			p {
+				margin: 0;
+			}
 			i {
 				color: $light-gray;
+				margin-right: 0.5rem;
+			}
+			border-top: $global-border;
+			&:first-child {
+				border: none;
 			}
 			a {
 				border: none;
@@ -45,6 +58,7 @@
 					$color: map-get($foundation-palette, action);
 					color: rgba($color, 0.3);
 					cursor: default;
+					text-decoration: none;
 				}
 				span {
 					text-decoration: line-through;

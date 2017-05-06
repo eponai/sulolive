@@ -32,9 +32,10 @@
             (photo/square {:src "/assets/img/obs-logo.png"}))
           (grid/column
             nil
-            (dom/a {:href   "https://obsproject.com/"
-                    :target "_blank"}
-                   (dom/span nil "Download Open Broadcaster Software"))))
+            (dom/p nil
+                   (dom/a {:href   "https://obsproject.com/"
+                           :target "_blank"}
+                          (dom/span nil "Download Open Broadcaster Software")))))
 
         (dom/h2 nil "Configure Open Broadcaster Software")
         (dom/ol
