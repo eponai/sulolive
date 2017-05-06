@@ -7,7 +7,6 @@
     #?(:cljs [eponai.web.utils :as web-utils])
     [om.next :as om :refer [defui]]
     [eponai.common.ui.common :as common]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.router :as router]
     [taoensso.timbre :refer [debug]]

@@ -31,11 +31,11 @@
                        :store.item.sku/inventory
                        {:store.item/_skus [:store.item/price
                                            {:store.item/photos [:store.item.photo/index
-                                                                {:store.item.photo/photo [:photo/path]}]}
+                                                                {:store.item.photo/photo [:photo/id]}]}
                                            :store.item/name
                                            {:store/_items [:db/id
                                                            {:store/profile [:store.profile/name
-                                                                            {:store.profile/photo [:photo/path]}]}]}]}
+                                                                            {:store.profile/photo [:photo/id]}]}]}]}
                        ]}
      :query/current-route
      {:query/auth [:db/id

@@ -5,13 +5,10 @@
     #?(:cljs
        [eponai.web.utils :as utils])
     [eponai.common.ui.dom :as my-dom]
-    [eponai.common.ui.common :as common]
-    [eponai.common.ui.navbar :as nav]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.photo :as photo]
-    [eponai.common.ui.elements.menu :as menu]
     [taoensso.timbre :refer [debug]]
     [eponai.client.parser.message :as msg]
     [eponai.common.ui.elements.grid :as grid]

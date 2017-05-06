@@ -1,7 +1,6 @@
 (ns eponai.common.ui.store.product-edit-form
   (:require
     [eponai.common.ui.dom :as dom]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.om-quill :as quill]
     [eponai.common.format :as f]

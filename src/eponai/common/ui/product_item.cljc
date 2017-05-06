@@ -8,7 +8,6 @@
     #?(:cljs
        [eponai.web.utils :as utils])
     [taoensso.timbre :refer [debug]]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.client.routes :as routes]
     [eponai.common.ui.elements.css :as css]
     [eponai.web.ui.photo :as p]))

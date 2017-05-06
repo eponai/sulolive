@@ -1,7 +1,6 @@
 (ns eponai.common.ui.user.order-list
   (:require
     [eponai.common.ui.dom :as dom]
-    [eponai.common.ui.elements.photo :as photo]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.css :as css]
     [taoensso.timbre :refer [debug]]
@@ -11,7 +10,8 @@
     [eponai.common.ui.utils :refer [two-decimal-price]]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.format.date :as date]))
+    [eponai.common.format.date :as date]
+    [eponai.web.ui.photo :as p]))
 
 (defn order-element [component order]
   (let [{:query/keys [current-route]} (om/props component)
@@ -28,7 +28,7 @@
         (dom/div nil
                  (dom/a
                    {:href (routes/url :store {:store-id (:db/id store)})}
-                   (photo/store-photo store))
+                   (p/store-photo store {:transformation :transformation/thumbnail-tiny}))
                  (dom/p nil
                         (dom/span nil "Order ")
                         (dom/a {:href (routes/url :user/order (assoc route-params :order-id (:db/id order)))} (dom/strong nil (str "#" (:db/id order))))
@@ -59,7 +59,7 @@
                         (table/td
                           (->> (css/add-class :sl-OrderItemlist-cell)
                                (css/add-class :sl-OrderItemlist-cell--photo))
-                          (photo/product-photo (:store.item.photo/photo (first sorted-photos))))
+                          (p/product-preview item))
                         (table/td
                           (->> (css/add-class :sl-OrderItemlist-cell)
                                (css/add-class :sl-OrderItemlist-cell--description))

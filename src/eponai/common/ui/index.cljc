@@ -2,7 +2,6 @@
   (:require
     [eponai.common.ui.common :as common]
     [eponai.common.ui.navbar :as nav]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.web.ui.photo :as p]
     [eponai.common.ui.product-item :as pi]
     [om.dom :as dom]

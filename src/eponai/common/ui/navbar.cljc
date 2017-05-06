@@ -7,13 +7,13 @@
        [eponai.web.utils :as utils])
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.client.auth :as auth]
     [taoensso.timbre :refer [debug error]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.icons :as icons]
     [eponai.client.routes :as routes]
-    [clojure.string :as s]))
+    [clojure.string :as s]
+    [eponai.web.ui.photo :as p]))
 
 (def dropdown-elements
   {:dropdown/user       "sl-user-dropdown"
@@ -208,7 +208,7 @@
                               :classes  [:user-photo-item]
                               :href     "#"
                               :onClick  #(.open-dropdown component :dropdown/user)}
-                             (photo/user-photo-tiny {:user auth}))
+                             (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))
                            (my-dom/a
                              (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
                                   (css/button-hollow))
@@ -275,7 +275,7 @@
                               :classes  [:user-photo-item]
                               :href     "#"
                               :onClick  #(.open-dropdown component :dropdown/user)}
-                             (photo/user-photo-tiny {:user auth}))))))))
+                             (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))))))))
 
 (defn sidebar-category [component href title]
   (menu/item
@@ -450,7 +450,7 @@
                     :href     "#"
                     :onClick  #(.open-dropdown component :dropdown/user)}
                    (css/show-for :large))
-              (photo/user-photo-tiny {:user auth}))
+              (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))
             (menu/item
               (css/show-for :large)
               (my-dom/a
@@ -464,7 +464,7 @@
                    (css/add-class :user-photo-item))
               (my-dom/a
                 {:href (routes/url :user {:user-id (:db/id auth)})}
-                (photo/user-photo-tiny {:user auth}))))
+                (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))))
           (menu/item
             nil
             (my-dom/a {:classes ["shopping-bag-icon"]

@@ -123,6 +123,14 @@
                  (css/add-class :store-photo))
             content)))
 
+(defn user-photo [user {:keys [transformation]}]
+  (let [photo (get-in user [:user/profile :user.profile/photo])
+        photo-id (:photo/id photo "static/storefront")]
+    (circle
+      (->> {:photo-id       photo-id
+            :transformation transformation}
+           (css/add-class :user-photo)))))
+
 (defn stream-photo [store]
   (let [photo (get-in store [:store/profile :store.profile/photo])
         photo-id (:photo/id photo "static/storefront")]

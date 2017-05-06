@@ -4,7 +4,6 @@
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.common :as common]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.utils :as utils]
     [eponai.common.ui.navbar :as nav]
@@ -12,7 +11,8 @@
     [taoensso.timbre :refer [debug]]
     [eponai.client.routes :as routes]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.icons :as icons]))
+    [eponai.common.ui.icons :as icons]
+    [eponai.web.ui.photo :as p]))
 
 (defn items-by-store [items]
   (group-by #(get-in % [:store.item/_skus :store/_items]) items))
@@ -28,7 +28,7 @@
 
       (grid/column
         (grid/column-size {:small 3 :medium 2 :large 1})
-        (photo/store-photo s :transformation/thumbnail))
+        (p/store-photo s {:transformation :transformation/thumbnail}))
 
       (grid/column
         (->> (grid/column-size {:small 12})
@@ -40,7 +40,7 @@
 (defn sku-menu-item [sku]
   (let [{:store.item/keys [price photos]
          product-id       :db/id
-         item-name        :store.item/name} (get sku :store.item/_skus)
+         item-name        :store.item/name :as product} (get sku :store.item/_skus)
         {:store.item.photo/keys [photo]} (first (sort-by :store.item.photo/index photos))]
     (menu/item
       nil
@@ -49,7 +49,7 @@
              (css/add-class :item))
         (grid/column
           (grid/column-size {:small 3 :medium 2 :large 1})
-          (photo/product-photo photo))
+          (p/product-preview product {:transformation :transformation/thumbnail}))
 
         (grid/column
           (grid/column-size {:small 8})
@@ -114,11 +114,11 @@
      {:query/cart [{:user.cart/items [:db/id
                                  :store.item.sku/variation
                                  {:store.item/_skus [:store.item/price
-                                                     {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+                                                     {:store.item/photos [{:store.item.photo/photo [:photo/id]}
                                                                           :store.item.photo/index]}
                                                      :store.item/name
                                                      {:store/_items [{:store/profile [:store.profile/name
-                                                                                      {:store.profile/photo [:photo/path]}]}]}]}]}]}
+                                                                                      {:store.profile/photo [:photo/id]}]}]}]}]}]}
      {:query/auth [:user/email]}])
   Object
   (componentWillReceiveProps [this p]
