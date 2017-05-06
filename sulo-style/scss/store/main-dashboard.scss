@@ -1,0 +1,58 @@
+#sulo-store-dashboard {
+	#sulo-main-dashboard {
+		max-width: $global-width;
+		margin: 0 auto;
+
+		.section-info {
+			.store-info-menu {
+				a {
+					display: flex; 
+					justify-content: space-between;
+				}
+			}
+			li {
+				border-top: $global-border;
+				&:last-child {
+					border-bottom: $global-border;
+				}
+			}
+		}
+		.stream-status {
+			@include label-hollow;
+			a {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 0;
+				.label {
+					cursor: pointer;
+					text-transform: uppercase;
+				}
+			}
+		}
+		li.getting-started-item {
+			display: flex;
+			align-items: center;
+			margin-bottom: 0.25rem;
+			i {
+				color: $light-gray;
+			}
+			a {
+				border: none;
+			}
+			&.done {
+				a {
+					$color: map-get($foundation-palette, action);
+					color: rgba($color, 0.3);
+					cursor: default;
+				}
+				span {
+					text-decoration: line-through;
+				}
+				i {
+					color: $success-color;
+				}
+			}
+		}
+	}
+}

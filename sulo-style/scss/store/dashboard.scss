@@ -34,6 +34,8 @@
 $dashboard-max-width: 100%;
 $dashboard-primary-color: map-get($foundation-palette, action);
 
+$dashboard-content-width: 54rem;
+
 #sulo-store-dashboard {
 	.page-container {
 		background: rgba($light-gray, 0.5);
@@ -194,62 +196,6 @@ $dashboard-primary-color: map-get($foundation-palette, action);
 				top: 0;
 				left: 0;
 				position: absolute;
-			}
-		}
-
-		#sulo-main-dashboard {
-			.button {
-				margin: 0;
-			}
-			.profile-photo-container {
-				.photo-container.circle {
-					max-width: 20rem;
-					// min-width: 20rem;
-					margin: 0 auto;
-				}
-				.button {
-					margin: 0.5rem;
-				}
-			}
-			.stream-status {
-				@include label-hollow;
-				a {
-					display: flex;
-					justify-content: space-between;
-					align-items: center;
-					padding: 0;
-					.label {
-						cursor: pointer;
-						text-transform: uppercase;
-					}
-				}
-			}
-			li.getting-started-item {
-				display: flex;
-				align-items: center;
-				margin-bottom: 0.25rem;
-				i {
-					color: $light-gray;
-				}
-				a {
-					border: none;
-				}
-				&.done {
-					a {
-						$color: map-get($foundation-palette, action);
-						color: rgba($color, 0.3);
-						cursor: default;
-					}
-					span {
-						text-decoration: line-through;
-					}
-					i {
-						color: $success-color;
-					}
-				}
-			}
-			.photo-container {
-				margin-bottom: 1rem;
 			}
 		}
 	}

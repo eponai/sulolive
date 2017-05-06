@@ -19,6 +19,7 @@
     [eponai.common.ui.product-item :as pi]
     ;[eponai.common.ui.elements.photo :as old-photo]
     [eponai.common.ui.elements.callout :as callout]
+    [eponai.web.ui.store.common :refer [edit-button save-button cancel-button]]
     [eponai.client.parser.message :as msg]
     [clojure.string :as string]))
 
@@ -41,24 +42,6 @@
                                                                                    (assoc (keyword id "upload") photo)))))
                               :id              id
                               :hide-label?     true})))))
-
-(defn edit-button [opts & content]
-  (dom/a
-    (->> (css/button-hollow opts)
-         (css/add-class :shrink)
-         (css/add-class :secondary))
-    (dom/i {:classes ["fa fa-pencil fa-fw"]})
-    (if (not-empty content)
-      content
-      (dom/span nil "Edit"))))
-
-(defn save-button [opts & content]
-  (dom/a (css/button opts)
-         (dom/span nil "Save")))
-
-(defn cancel-button [opts & content]
-  (dom/a (css/button-hollow opts)
-         (dom/span nil "Cancel")))
 
 (defn edit-about-section [component]
   (let [{:keys [store]} (om/get-computed component)
