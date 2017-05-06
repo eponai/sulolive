@@ -33,8 +33,8 @@ $editor-font-family: $header-font-family-sans-serif;//$header-font-family-serif;
 	.ql-container {
 		font-size: $global-font-size;
 		// min-height: 20rem;
-		height: 20rem;
-		transition: height .25s ease-in-out, padding-top .25 ease-in-out;
+		min-height: 20rem;
+		transition: min-height .25s ease-in-out;
 		border: none;
 		padding-top: 3rem;
 		position: relative;
@@ -50,7 +50,7 @@ $editor-font-family: $header-font-family-sans-serif;//$header-font-family-serif;
 		// min-height: 3rem;
 		// height: 3rem;
 		visibility: visible;
-		transition: opacity .25s ease-in-out, visibility 0s linear .25s;
+		transition: opacity .25s ease-in-out, visibility 0s linear;
 		border: none;
 		border-bottom: $global-border;
 		font-family: $editor-font-family;
@@ -64,7 +64,7 @@ $editor-font-family: $header-font-family-sans-serif;//$header-font-family-serif;
 		.ql-toolbar {
 			opacity: 0;
 			visibility: hidden;
-			transition-delay: 0;
+			transition: opacity .25s ease-in-out, visibility 0s linear .25s;
 			// overflow: hidden; 
 			// min-height: 0;
 			// height: 0;
@@ -72,7 +72,7 @@ $editor-font-family: $header-font-family-sans-serif;//$header-font-family-serif;
 		}
 		.ql-container {
 			padding-top: 0;
-			height: 10rem;
+			min-height: 10rem;
 		}
 	}
 }

@@ -52,7 +52,7 @@
 (defui QuillEditor
   Object
   (componentDidMount [this]
-    (let [{:keys [on-editor-created]} (om/get-computed this)
+    (let [{:keys [on-editor-created on-text-change]} (om/get-computed this)
           {:keys [content placeholder theme id enable?]} (om/props this)
           read-only (if (some? enable?) (not enable?) false)]
       #?(:cljs
@@ -70,6 +70,9 @@
            (.. editor -clipboard (dangerouslyPasteHTML (sanitize-html content)))
            (when on-editor-created
              (on-editor-created editor))
+           (when on-text-change
+             (.on editor "text-change" (fn [_ _ _]
+                                         (on-text-change editor))))
            (om/update-state! this assoc :editor editor)))))
   (componentDidUpdate [this prev-state prev-props]
     (let [{:keys [editor]} (om/get-state this)

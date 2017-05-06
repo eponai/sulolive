@@ -111,24 +111,25 @@
                      :auth     auth}))))
 
 (defmutation store.photo/upload
-  [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ {:keys [photo photo-key store-id]}]
+  [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ {:keys [photo photo-key store-id] :as p}]
   {:auth {::auth/store-owner store-id}
    :resp {:success "Photo uploaded"
           :error   "Could not upload photo :("}}
   {:action (fn []
+             (debug "Photo upload Store with params: " p)
              (when (keyword? photo-key)
-               (let [{old-profile :store/profile} (db/pull (db/db state) [{:store/profile [:db/id {photo-key [:photo/id]}]}] store-id)
+               (let [{old-profile :store/profile} (db/pull (db/db state) [{:store/profile [:db/id {photo-key [:db/id :photo/id]}]}] store-id)
                      old-photo (get old-profile photo-key)]
                  (if (some? photo)
-                   (when-not (= (:photo/id old-photo) (:public_id photo))
-                     (let [cl-photo (f/add-tempid (cloudinary/upload-dynamic-photo (:system/cloudinary system) photo))
-                           new-photo (cond-> cl-photo
+                   (when-not (= (:photo/id old-photo)
+                                (cloudinary/real-photo-id (:system/cloudinary system) (:public_id photo)))
+                     (let [cl-photo (cloudinary/upload-dynamic-photo (:system/cloudinary system) photo)
+                           new-photo (cond-> (f/add-tempid cl-photo)
                                              (some? (:db/id old-photo))
                                              (assoc :db/id (:db/id old-photo)))
-                           dbtxs (cond-> [new-photo
-                                          [:db/add (:db/id old-profile) photo-key (:db/id new-photo)]]
-                                         (some? old-photo)
-                                         [:db.fn/retractEntity (:db/id old-photo)])]
+                           dbtxs (cond-> [new-photo]
+                                         (nil? old-photo)
+                                         (conj [:db/add (:db/id old-profile) photo-key (:db/id new-photo)]))]
                        (db/transact state dbtxs)))
                    (when (some? (:db/id old-photo))
                      (db/transact state [:db.fn/retractEntity (:db/id old-photo)]))))))})

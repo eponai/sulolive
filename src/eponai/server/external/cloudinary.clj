@@ -9,6 +9,7 @@
     (org.apache.commons.codec.digest DigestUtils)))
 
 (defprotocol ICloudinary
+  (real-photo-id [this temp-id])
   (upload-dynamic-photo [this {:keys [public_id resource_type url]}]))
 
 (defn rename-url [resource-type]
@@ -29,8 +30,10 @@
 
 (defrecord Cloudinary [api-key api-secret]
   ICloudinary
-  (upload-dynamic-photo [_ {:keys [public_id resource_type url]}]
-    (let [real-public-id (string/replace public_id #"temp" "real")
+  (real-photo-id [_ tempid]
+    (string/replace tempid #"temp" "real"))
+  (upload-dynamic-photo [this {:keys [public_id resource_type url]}]
+    (let [real-public-id (real-photo-id this public_id)     ;(string/replace public_id #"temp" "real")
           ;url (rename-url resource_type)
           params {:from_public_id public_id
                   :to_public_id   real-public-id

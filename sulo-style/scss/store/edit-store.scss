@@ -21,6 +21,23 @@
 		// margin-top: -2.5rem;
 		// border: $global-border;
 
+		.section-title {
+			display: flex;
+			align-items: flex-end;
+			justify-content: space-between;
+			> *:nth-child(2) {
+				margin-right: 1rem;
+				margin-left: 1rem;
+			}
+		}
+		.section-error {
+			text-align: center;
+		}
+		// .section-title {
+		// 	p {
+		// 		display: inline-block;
+		// 	}
+		// }
 		.callout {
 			@include breakpoint(large) {
 				padding: 1rem;
