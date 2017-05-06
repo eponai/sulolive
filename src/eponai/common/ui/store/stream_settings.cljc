@@ -70,39 +70,76 @@
           message (msg/last-message this 'stream-token/generate)]
       (dom/div
         {:id "sulo-stream-settings"}
-        (grid/row-column
+        ;(grid/row
+        ;  (css/align :center)
+        ;  (grid/column
+        ;    (grid/column-size {:small 12 :medium 6})
+        ;    (dom/div
+        ;      (css/add-class :stream-status)
+        ;      (dom/div
+        ;        nil
+        ;        (cond (or (nil? stream-state)
+        ;                  (= :stream.state/offline stream-state))
+        ;              (dom/i {:classes ["status offline fa fa-circle fa-fw"]})
+        ;              (= stream-state :stream.state/online)
+        ;              (dom/i {:classes ["status online fa fa-check-circle fa-fw"]})
+        ;              (= stream-state :stream.state/live)
+        ;              (dom/i {:classes ["status live fa fa-wifi fa-fw"]})))
+        ;      (dom/div nil
+        ;               (dom/span nil "Your stream is ")
+        ;               (if (or (nil? stream-state)
+        ;                       (= :stream.state/offline stream-state))
+        ;                 (dom/span {:classes ["status" "offline"]} "Offline")
+        ;                 (dom/span
+        ;                   (cond->> {:classes ["status"]}
+        ;                            (= stream-state :stream.state/online)
+        ;                            (css/add-class :online)
+        ;                            (= stream-state :stream.state/live)
+        ;                            (css/add-class :live))
+        ;                   (condp = stream-state
+        ;                     :stream.state/online "Online"
+        ;                     :stream.state/live "Live"
+        ;                     (warn "Unknown stream-state: " stream-state)))))
+        ;      (dom/div
+        ;        nil
+        ;        (cond
+        ;          (= stream-state :stream.state/online)
+        ;          (dom/a
+        ;            (->> (css/button {:onClick #(om/transact! this [(list 'stream/go-live {:store-id (:db/id store)}) :query/stream])})
+        ;                 (css/add-class :highlight))
+        ;            (dom/strong nil "Go live!"))
+        ;          (or (nil? stream-state) (= stream-state :stream.state/offline))
+        ;          (dom/a
+        ;            (css/button-hollow {:onClick #(binding [parser/*parser-allow-local-read* false]
+        ;                                           (om/transact! this [{:query/stream [:stream/state]}]))})
+        ;            (dom/i {:classes ["fa fa-refresh fa-fw"]})
+        ;            (dom/strong nil "Refresh"))
+        ;          (= stream-state :stream.state/live)
+        ;          (dom/a
+        ;            (css/button-hollow {:onClick #(om/transact! this [(list 'stream/go-offline {:store-id (:db/id store)}) :query/stream])})
+        ;            (dom/strong nil "Stop streaming"))
+        ;          :else
+        ;          (warn "Unknown stream-state: " stream-state))))))
+
+
+        (grid/row
           nil
-          (callout/callout
-            (css/add-class :stream-status)
-            (grid/row
-              (css/align :middle)
-              (grid/column
-                (css/add-class :shrink)
-                (cond (or (nil? stream-state)
-                          (= :stream.state/offline stream-state))
-                      (dom/i {:classes ["status offline fa fa-circle fa-fw"]})
-                      (= stream-state :stream.state/online)
-                      (dom/i {:classes ["status online fa fa-check-circle fa-fw"]})
-                      (= stream-state :stream.state/live)
-                      (dom/i {:classes ["status live fa fa-wifi fa-fw"]})))
-              (grid/column
-                nil
-                (dom/span nil "Your stream is ")
-                (if (or (nil? stream-state)
-                        (= :stream.state/offline stream-state))
-                  (dom/span {:classes ["status" "offline"]} "Offline")
-                  (dom/span
-                    (cond->> {:classes ["status"]}
-                             (= stream-state :stream.state/online)
-                             (css/add-class :online)
-                             (= stream-state :stream.state/live)
-                             (css/add-class :live))
-                    (condp = stream-state
-                      :stream.state/online "Online"
-                      :stream.state/live "Live"
-                      (warn "Unknown stream-state: " stream-state)))))
-              (grid/column
-                (css/text-align :right)
+          (grid/column
+            (grid/column-size {:small 12 :large 6})
+            (dom/div
+              (css/add-class :dashboard-section)
+              (dom/div
+                (css/add-class :section-title)
+                (dom/h1 nil (dom/small nil "Stream ")
+                        (dom/span
+                          (cond->> (css/add-class :label)
+                                   (= stream-state :stream.state/offline)
+                                   (css/add-class :primary)
+                                   (= stream-state :stream.state/online)
+                                   (css/add-class :success)
+                                   (= stream-state :stream.state/live)
+                                   (css/add-class :highlight))
+                          (name stream-state)))
                 (cond
                   (= stream-state :stream.state/online)
                   (dom/a
@@ -120,21 +157,22 @@
                     (css/button-hollow {:onClick #(om/transact! this [(list 'stream/go-offline {:store-id (:db/id store)}) :query/stream])})
                     (dom/strong nil "Stop streaming"))
                   :else
-                  (warn "Unknown stream-state: " stream-state)))))
-
-          (callout/callout
-            nil
-            (grid/row
-              (css/align :center)
-              (grid/column
-                (->> (grid/column-size {:small 12 :large 8}))
+                  (warn "Unknown stream-state: " stream-state)))
+              (callout/callout-small
+                nil
                 (stream/->Stream (om/computed (:proxy/stream props)
                                               {:hide-chat? true
-                                               :store      store})))
-              (grid/column
-                (->> (grid/column-size {:small 12 :medium 8 :large 4})
-                     (css/add-class :chat-container))
-                (callout/header nil "Live Chat")
+                                               :store      store})))))
+          (grid/column
+            (grid/column-size {:small 12 :large 6})
+
+            (dom/div
+              (css/add-class :dashboard-section)
+              (dom/div
+                (css/add-class :section-title)
+                (dom/h1 nil (dom/small nil "Live chat")))
+              (callout/callout-small
+                (css/add-class :chat-container)
                 (dom/div
                   (css/add-class :chat-content)
                   (dom/div
@@ -161,100 +199,103 @@
                           (->> {:onClick #(chat/send-message this)}
                                (css/button-hollow)
                                (css/add-class :primary))
-                          (dom/i {:classes ["fa fa-send-o fa-fw"]})))))))))
-          (grid/row
-            nil
-            (grid/column
-              (grid/column-size {:small 12 :large 8})
-              (grid/row
-                nil
-                (grid/column
-                  nil
-                  (callout/callout
-                    nil
-                    (callout/header nil "Encoder Setup")
-                    (grid/row
-                      (css/align :bottom)
-                      (grid/column
-                        (grid/column-size {:small 12 :medium 8})
-                        (dom/label nil "Server URL")
-                        (dom/input {:type  "text"
-                                    :id "input.stream-url"
-                                    :value (or (:ui.singleton.stream-config/publisher-url stream-config) "")}))
-                      ;(grid/column
-                      ;  nil
-                      ;  (dom/button
-                      ;    (css/button-hollow {:data-clipboard-action "copy"
-                      ;                        :data-clipboard-target "input.stream-url"
-                      ;                        })
-                      ;    (dom/span nil "Copy URL")))
-                      )
-                    (grid/row
-                      (css/align :bottom)
-                      (grid/column
-                        (grid/column-size {:small 12 :medium 8})
-                        (dom/label nil "Stream Key")
-                        (dom/input {:type        "text"
-                                    :value       (if (msg/final? message)
-                                                   (:token (msg/message message))
-                                                   "")
-                                    ;:defaultValue (if (msg/final? message)
-                                    ;                (:token (msg/message message))
-                                    ;                "")
-                                    :placeholder "Click below to generate new token"}))
-                      (grid/column
-                        nil
-                        (dom/a
-                          (css/button-hollow {:onClick #(msg/om-transact! this `[(stream-token/generate ~{:store-id (:db/id store)})])})
-                          (dom/span nil "Create new key")))))))
-              (grid/row
-                nil
-                (grid/column
-                  nil
-                  (callout/callout
-                    nil
-                    (callout/header nil "Analytics")
-                    (dom/table nil
-                               (dom/thead nil
-                                          (dom/tr nil
-                                                  (dom/th nil (dom/span nil "Viewers"))
-                                                  (dom/th nil (dom/span nil "Messages/min"))))
-                               (dom/tbody nil
-                                          (dom/tr nil
-                                                  (dom/td nil (dom/span
-                                                                (css/add-class :stat) "0"))
-                                                  (dom/td nil (dom/span (css/add-class :stat) "0")))))))))
-
-            (grid/column
+                          (dom/i {:classes ["fa fa-send-o fa-fw"]}))))))))))
+        (grid/row-column
+          nil
+          (dom/div
+            (css/add-class :dashboard-section)
+            (callout/callout-small
               nil
+              (grid/row
+                (grid/columns-in-row {:small 3})
+                (grid/column
+                  (css/text-align :center)
+                  (dom/h2 nil (dom/small nil "Viewers"))
+                  (dom/p (css/add-class :stat) 0))
+                (grid/column
+                  (css/text-align :center)
+                  (dom/h2 nil (dom/small nil "Messages/min"))
+                  (dom/p (css/add-class :stat) 0))
+                (grid/column
+                  (css/text-align :center)
+                  (dom/h2 nil (dom/small nil "Payments"))
+                  (dom/p (css/add-class :stat) 0))))))
+
+        (grid/row
+          nil
+          (grid/column
+            (grid/column-size {:small 12 :large 6})
+            (dom/div
+              (css/add-class :dashboard-section)
+              (dom/div
+                (css/add-class :section-title)
+                (dom/h1 nil (dom/small nil "Encoder setup")))
+              (callout/callout-small
+                nil
+                (grid/row
+                  (css/align :bottom)
+                  (grid/column
+                    (grid/column-size {:small 12 :medium 8})
+                    (dom/label nil "Server URL")
+                    (dom/input {:type  "text"
+                                :id    "input.stream-url"
+                                :value (or (:ui.singleton.stream-config/publisher-url stream-config) "")})))
+                (grid/row
+                  (css/align :bottom)
+                  (grid/column
+                    (grid/column-size {:small 12 :medium 8})
+                    (dom/label nil "Stream Key")
+                    (dom/input {:type        "text"
+                                :value       (if (msg/final? message)
+                                               (:token (msg/message message))
+                                               "")
+                                ;:defaultValue (if (msg/final? message)
+                                ;                (:token (msg/message message))
+                                ;                "")
+                                :placeholder ""}))
+                  (grid/column
+                    nil
+                    (dom/a
+                      (css/button-hollow {:onClick #(msg/om-transact! this `[(stream-token/generate ~{:store-id (:db/id store)})])})
+                      (dom/span nil "Create new key")))))))
+          (grid/column
+            nil
+            (dom/div
+              (css/add-class :dashboard-section)
+              (dom/div
+                (css/add-class :section-title)
+                (dom/h1 nil (dom/small nil "Setup checklist")))
               (callout/callout
                 (css/add-class :setup-checklist)
-                (callout/header nil "Setup checklist")
-                (dom/ul
+                (dom/dl
                   nil
-                  ;; TODO write up some real checklist points and link to relevante resources @diana
-                  (menu/item
+                  (dom/dt
                     nil
-                    (dom/p nil "Setup encoding software")
+                    (dom/h2 nil (dom/small nil "Setup encoding software")))
+                  (dom/dd
+                    nil
                     (dom/p nil
-                           (dom/small nil "Before you can start streaming on SULO Live, you need to download encoding software, and then set it up. Learn more about setting up encoders in our ")
-                           (dom/a {:href (routes/url :help/first-stream)
+                           (dom/span nil "Before you can start streaming on SULO Live, you need to download encoding software, and then set it up.
+                         Learn more about setting up encoders in our ")
+                           (dom/a {:href   (routes/url :help/first-stream)
                                    :target "_blank"}
-                                  (dom/small nil "First Stream Guide"))
-                           (dom/small nil ". You'll need to use the Server URL and Stream key to configure the encoding software.")))
-
-                  ;"Before you can start streaming on YouTube, you need to download encoding software, and then set it up. Learn about Live Verified encoders in our Guide to Encoding.\nYou may need to use the server URL and stream name / key below to configure the encoding software."
-                  ;(menu/item
-                  ;  nil
-                  ;  (dom/p nil "Add stream info")
-                  ;  (dom/p nil (dom/small nil "Enter an interesting title and description, and then upload a thumbnail image.\nIf you're live streaming a video game, include the game title to help new fans find you.")))
-                  (menu/item
+                                  (dom/span nil "First Stream Guide"))
+                           (dom/span nil ". You'll need to use the Server URL and Stream key to configure the encoding software.")))
+                  (dom/dt
                     nil
-                    (dom/p nil "Publish stream")
-                    (dom/p nil (dom/small nil "To start streaming, start your encoder. Hit Refresh and the status bar will indicate when your streaming content is being published to our servers. At this point you'll be able to see a preview of your stream, but you're not yet visible to others on SULO Live.")))
-                  (menu/item
+                    (dom/h2 nil (dom/small nil "Publish stream")))
+                  (dom/dd
                     nil
-                    (dom/p nil "Go live")
-                    (dom/p nil (dom/small nil "To go live and hangout with your crowd, click 'Go live' and your stream will be visible on your store page. To stop streaming, stop your encoder. Ready to go live again? Any time you send content, hit 'Go live' and you're live!"))))))))))))
+                    (dom/p nil (dom/span nil "To start streaming, start your encoder.
+                  Hit Refresh and the status bar will indicate when your streaming content is being published to our servers.
+                  At this point you'll be able to see a preview of your stream, but you're not yet visible to others on SULO Live.")))
+                  (dom/dt
+                    nil
+                    (dom/h2 nil (dom/small nil "Go live")))
+                  (dom/dd
+                    nil
+                    (dom/p nil (dom/span nil "To go live and hangout with your crowd, click 'Go live' and your stream will be visible on your store page.
+                  To stop streaming, stop your encoder. Ready to go live again? Any time you send content, hit 'Go live' and you're live!"))))))))
+        ))))
 
 (def ->StreamSettings (om/factory StreamSettings))
