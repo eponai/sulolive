@@ -4,17 +4,21 @@
 (def closure-warns {:non-standard-jsdoc :off})
 
 (defn modules [output-dir]
-  (letfn [(module [[route namespaces]]
+  (letfn [(path [route module?]
+            (str output-dir "/" (when module? "closure-modules/") (name route) ".js"))
+          (module [[route namespaces]]
             [route (if (map? namespaces)
                      namespaces
-                     {:output-to (str output-dir "/closure-modules/" (name route) ".js")
+                     {:output-to (path route true)
                       :entries   (into #{} (map str) namespaces)})])]
     (into {}
       (map module)
-      `{:cljs-base       {:output-to ~(str output-dir "/budget.js")}
+      `{:cljs-base       {:output-to ~(path :budget false)}
         :index           [eponai.common.ui.index]
         :unauthorized    [eponai.web.ui.unauthorized]
-        :login           [eponai.web.ui.login]
+        :login           {:output-to  ~(path :login true)
+                          :entries    #{eponai.web.ui.login}
+                          :depends-on #{:index}}
         :coming-soon     [eponai.web.ui.coming-soon]
         :sell            [eponai.web.ui.start-store]
         :store           [eponai.common.ui.store]
@@ -158,6 +162,12 @@
                                       ["with-profile" "web-prod" "cljsbuild" "once" "release"]]
             "prod-build-server"      ^{:doc "Recompile server code with release build."}
                                      ["do" "uberjar"]
+            "simple-build-web"       ^{:doc "Recompile web code with release build."}
+                                     ["do"
+                                      ["with-profile" "+web" "cljsbuild" "once" "simple"]]
+            "simple-build-web-auto"  ^{:doc "Recompile web code with release build."}
+                                     ["do"
+                                      ["with-profile" "+web" "cljsbuild" "auto" "simple"]]
             "dev-build-ios"          ^{:doc "Compile mobile code in development mode."}
                                      ["do"
                                       ["with-profile" "+mobile" "cljsbuild" "once" "ios"]]
@@ -300,6 +310,7 @@
                                                                                "src-hacks/js/externs/red5pro.js"
                                                                                "src-hacks/js/externs/hls.js"]
                                                              :infer-externs true
+                                                             ;; :preloads [env.web.preloads]
                                                              ;; :language-in     :ecmascript5
                                                              ;; :parallel-build  true
                                                              ;; :pseudo-names true
@@ -359,6 +370,24 @@
                                                                 :source-map     true
                                                                 :closure-warnings ~closure-warns
                                                                 :npm-deps       ~npm-deps
+                                                                }}
+                                                {:id           "simple"
+                                                 :source-paths ["src/" "src-hacks/web/" "env/client/simple"]
+                                                 :compiler     {:closure-defines {"goog.DEBUG" true}
+                                                                :main            "env.web.main"
+                                                                :asset-path      "/simple/js/out"
+                                                                :output-to       "resources/public/simple/js/out/budget.js"
+                                                                :output-dir      "resources/public/simple/js/out/"
+                                                                :optimizations   :simple
+                                                                :externs         ["src-hacks/js/externs/stripe-checkout.js"]
+                                                                :infer-externs true
+                                                                ;; :language-in     :ecmascript5
+                                                                :parallel-build  true
+                                                                :pretty-print true
+                                                                ;; :source-map   true
+                                                                ;; :verbose         true
+                                                                :npm-deps        ~npm-deps
+                                                                :modules ~(modules "resources/public/simple/js/out/")
                                                                 }}]}}}
 
    ;;;;;;;;;;;;;

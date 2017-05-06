@@ -1,7 +1,7 @@
 (ns env.web.main
   (:require [eponai.web.app :as app]
             [eponai.client.devtools :as devtools]
-            [plomber.core :as plomber]
+    ;;[plomber.core :as plomber]
             [eponai.common.ui.help :as help]
             [eponai.common.ui.checkout :as checkout]
             [eponai.common.ui.shopping-bag :as bag]

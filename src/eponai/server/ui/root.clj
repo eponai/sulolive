@@ -42,7 +42,7 @@
              (when release?
                (dom/script {:src "https://kickoffpages-kickofflabs.netdna-ssl.com/w/89256/144137.js"}))])
 
-          (dom/script {:src  (common/budget-js-path cljs-build-id)
+          (dom/script {:src  (common/budget-js-path)
                        :type common/text-javascript})
 
           (when-not (= cljs-build-id "devcards")

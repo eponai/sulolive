@@ -1,29 +1,25 @@
 (ns eponai.web.app
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
+    [eponai.web.modules :as modules]
     [eponai.common.ui.components]
     [eponai.client.utils :as utils]
     [eponai.web.auth :as auth]
-    [eponai.web.modules :as modules]
     [eponai.common.parser :as parser]
     [eponai.client.parser.read]
     [eponai.client.parser.mutate]
-    [eponai.client.parser.merge :as merge]
     [eponai.client.backend :as backend]
     [eponai.client.remotes :as remotes]
     [eponai.client.reconciler :as reconciler]
     [eponai.client.chat :as client.chat]
     [eponai.web.chat :as web.chat]
-    [medley.core :as medley]
     [goog.dom :as gdom]
     [om.next :as om :refer [defui]]
     [om.next.protocols :as om.protocols]
     [taoensso.timbre :refer [error debug warn info]]
     ;; Routing
-    [cemerick.url :as url]
     [bidi.bidi :as bidi]
     [pushy.core :as pushy]
-    [eponai.client.local-storage :as local-storage]
     [eponai.client.routes :as routes]
     [eponai.common.routes :as common.routes]
     [eponai.common.ui.router :as router]
@@ -31,18 +27,32 @@
 
 (defn update-route-fn [reconciler-atom]
   (fn [{:keys [handler route-params] :as match}]
-    (let [reconciler @reconciler-atom
-          modules (get-in reconciler [:config :shared :shared/modules])]
-      (try (routes/transact-route! reconciler handler {:route-params route-params
-                                                       :queue?       (some? (om/app-root reconciler))})
-           (when-not (modules/loaded-route? modules handler)
-             (info "Hadn't required route: " handler "will do so.")
-             (modules/require-route! modules handler (fn []
-                                                       (info "Required route: " handler)
-                                                       (om.protocols/reindex! reconciler)
-                                                       (om/force-root-render! reconciler))))
-           (catch :default e
-             (debug "Tried to set route: " match ", got error: " e))))))
+    (try
+      (let [reconciler @reconciler-atom
+            modules (get-in reconciler [:config :shared :shared/modules])
+            loaded-route? (modules/loaded-route? modules handler)]
+        (routes/transact-route! reconciler handler
+                                {:route-params  route-params
+                                 :queue?        (and loaded-route?
+                                                     (some? (om/app-root reconciler)))
+                                 :delayed-queue (when-not loaded-route?
+                                                  (fn [queue-cb]
+                                                    (debug "Delaying queue to require route: " handler)
+                                                    (modules/require-route!
+                                                      modules handler
+                                                      (fn []
+                                                        (debug "App root: " (om/app-root reconciler))
+                                                        (if-let [root-query (om/get-query (om/app-root reconciler))]
+                                                          (do (info "Required route: " handler "! Reindexing...")
+                                                              (debug "query before reindex: " root-query)
+                                                              (om.protocols/reindex! reconciler)
+                                                              (debug "query after reindex: " (om/get-query (om/app-root reconciler)))
+                                                              (info "Re indexed! Queuing reads...")
+                                                              (queue-cb)
+                                                              (info "Queued reads!"))
+                                                          (do (debug "No root query, nothing to queue..")))))))}))
+      (catch :default e
+        (error "Error when transacting route: " e)))))
 
 (defn apply-once [f]
   (let [appliced? (atom false)]
@@ -110,15 +120,16 @@
                                        :shared/browser-history     history
                                        :shared/store-chat-listener (web.chat/store-chat-listener reconciler-atom)
                                        :shared/auth-lock           auth-lock
-                                       :instrument                 (::plomber run-options)})]
+                                       :instrument                 (::plomber run-options)})
+        add-root! #(binding [parser/*parser-allow-remote* false]
+                   (om/add-root! reconciler router/Router (gdom/getElement router/dom-app-id)))]
 
     (reset! reconciler-atom reconciler)
-    (binding [parser/*parser-allow-remote* false]
-      (pushy/start! history)
-      ;; Pushy is configured to not work with all routes.
-      ;; We ensure that routes has been inited
-      (when-not (:route (routes/current-route reconciler))
-        (set-current-route! history update-route!)))
+    (pushy/start! history)
+    ;; Pushy is configured to not work with all routes.
+    ;; We ensure that routes has been inited
+    (when-not (:route (routes/current-route reconciler))
+      (set-current-route! history update-route!))
     (modules/require-route! modules
                             (:route (routes/current-route reconciler))
                             (fn [route]
@@ -128,12 +139,15 @@
       (async/<! initial-merge-chan)
       (async/<! initial-module-loaded-chan)
       (debug "Adding reconciler to root.")
-      (binding [parser/*parser-allow-remote* false]
-        (om/add-root! reconciler router/Router (gdom/getElement router/dom-app-id))))
+      (add-root!))
     (utils/init-state! reconciler send-fn router/Router)))
 
 (defn run-prod []
   (run {}))
+
+(defn run-simple [& [deps]]
+  (run (merge {:auth-lock (auth/fake-lock)}
+              deps)))
 
 (defn run-dev [& [deps]]
   (run (merge {:auth-lock (auth/fake-lock)

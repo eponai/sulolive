@@ -47,6 +47,9 @@
            (catch :default e
              (info "Exception calling execOnLoad: " e " route: " route))))))
 
+(def manager (module-manager/getInstance))
+(def loader (goog.module.ModuleLoader.))
+
 (defn advanced-compilation-modules [routes]
   (let [route->js-file (into {} (comp (map route->module)
                                       (map (juxt identity #(vector (str "/js/out/closure-modules/" % ".js")))))
@@ -56,8 +59,7 @@
         _ (info "module-infos: " module-infos)
         modules (clj->js route->js-file)
         module-info (clj->js module-infos)
-        manager (module-manager/getInstance)
-        loader (goog.module.ModuleLoader.)]
+        ]
     ;;(when js/goog.DEBUG)
     ;;(.setDebugMode loader true)
     (.setLoader manager loader)
@@ -73,5 +75,6 @@
          (.getInstance goog.module.ModuleManager)
          (.setLoaded (route->module route)))
        (debug "DID mark module" (route->module route) "loaded!")
+       (debug "Could probably load it if it already hasn't been loaded?, then set it? Weird.")
        (catch :default e
-         (info "Unable to mark module: " (route->module route) "as loaded."))))
+         (info "Unable to mark module: " (route->module route) "as loaded: " e))))

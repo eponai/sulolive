@@ -394,7 +394,7 @@
 ;;############# Debugging ############################
 
 #?(:cljs
-   (defn shouldComponentUpdate [this next-props next-state]
+   (defn shouldComponentUpdate-debug [this next-props next-state]
      (let [next-children (. next-props -children)
            next-children (if (undefined? next-children) nil next-children)
            next-props (goog.object/get next-props "omcljs$value")
@@ -424,6 +424,54 @@
        (prn-diff "children diff" cdiff)
        (or pe se ce))))
 
+(comment
+  ;; Om's implementation as of 6 May 2017
+  ;; To compare our own, to make sure we're doing the right thing.
+  ([this# next-props# next-state#]
+    (let [next-children# (. next-props# -children)
+          next-props# (goog.object/get next-props# "omcljs$value")
+          next-props# (cond-> next-props#
+                              (instance? om.next/OmProps next-props#) om.next/unwrap)]
+      (or (not= (om.next/props this#)
+                next-props#)
+          (and (.. this# ~'-state)
+               (not= (goog.object/get (. this# ~'-state) "omcljs$state")
+                     (goog.object/get next-state# "omcljs$state")))
+          (not= (.. this# -props -children)
+                next-children#))))
+
+  ([this# next-props# next-state#]
+    (let [next-children# (. next-props# -children)
+          next-props# (goog.object/get next-props# "omcljs$value")
+          next-props# (cond-> next-props#
+                              (instance? om.next/OmProps next-props#) om.next/unwrap)]
+      (or (not= (om.next/props this#)
+                next-props#)
+          (and (.. this# ~'-state)
+               (not= (goog.object/get (. this# ~'-state) "omcljs$state")
+                     (goog.object/get next-state# "omcljs$state")))
+          (not= (.. this# -props -children)
+                next-children#))))
+  )
+#?(:cljs
+   (defn shouldComponentUpdate-om [this next-props next-state]
+     (let [next-children (. next-props -children)
+           next-props (goog.object/get next-props "omcljs$value")
+           next-props (cond-> next-props
+                              (instance? om/OmProps next-props) om.next/unwrap)]
+       (or (not= (om.next/props this)
+                 next-props)
+           (and (.. this -state)
+                (not= (goog.object/get (. this -state) "omcljs$state")
+                      (goog.object/get next-state "omcljs$state")))
+           (not= (.. this -props -children)
+                 next-children)))))
+
+#?(:cljs
+   (defn shouldComponentUpdate-next-props [next-props]
+     (let [next-props (goog.object/get next-props "omcljs$value")]
+       (cond-> next-props
+               (instance? om/OmProps next-props) om.next/unwrap))))
 
 ;; ------ App initialization -----------
 
