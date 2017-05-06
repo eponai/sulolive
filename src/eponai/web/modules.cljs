@@ -74,7 +74,6 @@
     (if (= js/undefined module-info)
       (swap! routes-loaded-pre-init conj route)
       (try
-        (debug "Setting route loaded: " route)
         (.setLoaded manager module)
         (catch :default e
           (error "Unable to mark module: " (route->module route) "as loaded: " e))))))
