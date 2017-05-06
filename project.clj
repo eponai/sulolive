@@ -331,7 +331,7 @@
              :web-prod {:jvm-opts     ^:replace ["-Xmx3g" "-server"]
                         :cljsbuild {:builds [{:id           "release"
                                               :source-paths ["src/" "src-hacks/web/" "env/client/prod"]
-                                              :compiler     {:closure-defines {"goog.DEBUG" true}
+                                              :compiler     {:closure-defines {"goog.DEBUG" false}
                                                              :main            "env.web.main"
                                                              :asset-path      "/release/js/out"
                                                              :output-to       "resources/public/release/js/out/budget.js"
