@@ -21,14 +21,38 @@
         :coming-soon     {:entries [eponai.web.ui.coming-soon]}
         :sell            {:entries [eponai.web.ui.start-store]}
         :store           {:entries [eponai.common.ui.store]}
-        :checkout        {:entries [eponai.common.ui.checkout]}
+        :checkout        {:entries [eponai.common.ui.checkout
+                                    eponai.common.ui.checkout.shipping
+                                    eponai.common.ui.checkout.payment
+                                    eponai.common.ui.checkout.review]}
         :browse          {:entries [eponai.common.ui.goods]}
         :shopping-bag    {:entries [eponai.common.ui.shopping-bag]}
         :product         {:entries [eponai.common.ui.product-page]}
         :live            {:entries [eponai.common.ui.streams]}
-        :help            {:entries [eponai.common.ui.help]}
-        :user            {:entries [eponai.common.ui.user]}
-        :store-dashboard {:entries [eponai.common.ui.store.dashboard]}})))
+        :help            {:entries [eponai.common.ui.help
+                                    eponai.common.ui.help.faq
+                                    eponai.common.ui.help.first-stream
+                                    eponai.common.ui.help.mobile-stream
+                                    eponai.common.ui.help.quality]}
+        :user            {:entries [eponai.common.ui.user
+                                    eponai.common.ui.user.order-list
+                                    eponai.common.ui.user.order-receipt
+                                    eponai.common.ui.user.profile
+                                    eponai.common.ui.user.profile-edit]}
+        :store-dashboard {:entries [eponai.common.ui.store.dashboard
+                                    eponai.common.ui.store.account
+                                    eponai.common.ui.store.order-edit-form
+                                    eponai.common.ui.store.order-list
+                                    eponai.common.ui.store.product-edit-form
+                                    eponai.common.ui.store.product-list
+                                    eponai.common.ui.store.stream-settings
+                                    eponai.common.ui.store.account.activate
+                                    eponai.common.ui.store.account.business
+                                    eponai.common.ui.store.account.general
+                                    eponai.common.ui.store.account.payments
+                                    eponai.common.ui.store.account.payouts
+                                    eponai.common.ui.store.account.shipping
+                                    ]}})))
 
 (defproject budget "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
