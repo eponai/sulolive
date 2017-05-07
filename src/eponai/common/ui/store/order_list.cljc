@@ -6,16 +6,26 @@
     [eponai.common.ui.elements.table :as table]
     [eponai.common.ui.utils :refer [two-decimal-price]]
     [eponai.common.ui.common :as common]
+    [eponai.web.ui.store.common :as store-common]
     [om.next :as om :refer [defui]]
     [eponai.common.format.date :as date]
     [taoensso.timbre :refer [debug]]
-    [eponai.common.ui.elements.grid :as grid]))
+    [eponai.common.ui.elements.grid :as grid]
+    [eponai.common.ui.elements.callout :as callout]))
 
 
 (defui OrderList
   static om/IQuery
   (query [_]
     [{:query/orders [:order/store :order/uuid :order/status {:order/items [:order.item/amount]} :order/amount]}])
+
+  static store-common/IDashboardNavbarContent
+  (render-subnav [_ _]
+    (dom/div nil))
+
+  (subnav-title [_ _]
+    "Orders")
+
   Object
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
@@ -28,15 +38,17 @@
                    orders)]
       (dom/div
         {:id "sl-order-list"}
-        (grid/row-column
+        (dom/h1 (css/show-for-sr) "Orders")
+
+        (dom/div
+          (css/add-class :section-title)
+          (dom/h2 nil "Orders"))
+        (callout/callout
           nil
           (dom/input {:value       (or search-input "")
                       :placeholder "Search Orders..."
                       :type        "text"
-                      :onChange    #(om/update-state! this assoc :search-input (.. % -target -value))}))
-
-        (grid/row-column
-          nil
+                      :onChange    #(om/update-state! this assoc :search-input (.. % -target -value))})
           (table/table
             (css/add-class :hover (css/add-class :sl-orderlist))
             (table/thead

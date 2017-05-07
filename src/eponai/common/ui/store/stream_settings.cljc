@@ -14,6 +14,7 @@
        [eponai.web.utils :as utils])
     [eponai.common.parser :as parser]
     [eponai.common.ui.elements.callout :as callout]
+    [eponai.web.ui.store.common :as store-common]
     [eponai.client.routes :as routes]
     [eponai.common.ui.elements.grid :as grid]))
 
@@ -34,6 +35,14 @@
      {:query/stream-config [:ui.singleton.stream-config/publisher-url]}
      {:proxy/chat (om/get-query chat/StreamChat)}
      {:query/auth [:db/id]}])
+
+  static store-common/IDashboardNavbarContent
+  (render-subnav [_ _]
+    (dom/div nil))
+
+  (subnav-title [_ _]
+    "Stream")
+
   Object
   (render [this]
     (let [{:keys [store]} (om/get-computed this)

@@ -162,11 +162,12 @@
                                                     :on-text-change    on-editor-change-desc})))))))
 
 (defn products-section [component]
-  (let [{:keys [store]} (om/get-computed component)
+  (let [{:query/keys [current-route]} (om/props component)
+        {:keys [store]} (om/get-computed component)
         {:products/keys                [selected-section search-input edit-sections]
          :products.edit-sections?/keys [new-section-count]} (om/get-state component)
         {:store/keys [items]} store
-        items (cond->> items
+        items (cond->> (sort-by :store.item/index items)
                        (not= selected-section :all)
                        (filter #(= selected-section (get-in % [:store.item/section :db/id])))
                        (not-empty search-input)
@@ -248,8 +249,9 @@
                        (fn [p]
                          (let [{:store.item/keys [price]
                                 item-name        :store.item/name} p]
-                           (dom/div
-                             (->> (css/add-class :content-item)
+                           (dom/a
+                             (->> {:href (routes/url :store-dashboard/product (assoc (:route-params current-route) :product-id (:db/id p)))}
+                               (css/add-class :content-item)
                                   (css/add-class :product-item))
                              (dom/div
                                (->>
@@ -434,10 +436,15 @@
                     (cancel-button {:onClick #(do
                                                (om/update-state! this assoc :edit/shipping-policy false)
                                                (quill/set-content (:editor/shipping-policy state) (f/bytes->str shipping-policy)))})
-                    (save-button nil))
+                    (save-button (css/add-class :disabled)))
                   (edit-button {:onClick #(om/update-state! this assoc :edit/shipping-policy true)})))
               (callout/callout-small
                 nil
+                (when (:edit/shipping-policy state)
+                  (callout/callout-small
+                    (css/add-class :warning)
+                    (dom/small nil
+                               "We're not quite there yet with shipping settings, so this info cannot be saved for now. We're working on it, hang in there!")))
                 (grid/row
                   (->> (css/add-class :expanded)
                        (css/add-class :collapse))

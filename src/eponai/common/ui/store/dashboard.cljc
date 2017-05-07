@@ -172,6 +172,7 @@
                     {:store/items [:store.item/name
                                    :store.item/description
                                    :store.item/price
+                                   :store.item/index
                                    {:store.item/section [:store.section/label]}
                                    {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                         :store.item.photo/index]}

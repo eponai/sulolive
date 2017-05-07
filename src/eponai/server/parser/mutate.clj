@@ -221,6 +221,16 @@
                (debug "store/update-info with params: " s)
                (db/transact-one state s)))})
 
+(defmutation store/update-product-order
+  [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [items store-id]}]
+  {:auth {::auth/store-owner store-id}
+   :resp {:success "Your store info was updated"
+          :error   "Could not update store info"}}
+  {:action (fn []
+             (db/transact state (map (fn [p]
+                                       [:db/add (:db/id p) :store.item/index (:store.item/index p)])
+                                     items)))})
+
 (defmutation store/update-sections
   [env _ {:keys [store-id] :as p}]
   {:auth {::auth/store-owner store-id}

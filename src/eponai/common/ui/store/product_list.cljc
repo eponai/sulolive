@@ -22,7 +22,8 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.web.ui.photo :as photo]
     [eponai.common :as c]
-    [clojure.string :as string]))
+    [clojure.string :as string]
+    [eponai.client.parser.message :as msg]))
 
 (defn products->grid-layout [component products]
   (let [num-cols 3
@@ -37,10 +38,13 @@
 (defn grid-layout->products [component layout]
   (let [{:keys [query/inventory]} (om/props component)
         grouped-by-id (group-by #(str (:db/id %)) inventory)
+        _ (debug "Items by id; " grouped-by-id)
         items-by-position (reduce (fn [m grid-item]
-                                    (let [product (first (get grouped-by-id (.-i grid-item)))]
-                                      (debug "Grid item: " (:store.item/name product) ": " grid-item)
-                                      (assoc m (str (.-x grid-item) (.-y grid-item)) product)))
+                                    (if (map? grid-item)
+                                      (let [product (first (get grouped-by-id (:i grid-item)))]
+                                        (assoc m (str (:x grid-item) (:y grid-item)) product))
+                                      (let [product (first (get grouped-by-id (.-i grid-item)))]
+                                        (assoc m (str (.-x grid-item) (.-y grid-item)) product))))
                                   (sorted-map)
                                   layout)]
     (debug "Sorted items: " (sort-by #(string/reverse (key %)) items-by-position))
@@ -108,33 +112,30 @@
              WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))
              grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))
              size js/window.innerWidth
-             breakpoint (if (> 460 size) :tiny (web-utils/breakpoint size))]
+             breakpoint (if (> 460 size) :tiny (web-utils/breakpoint size))
+
+             sorted-products (sort-by :store.item/index inventory)]
          (debug "State update in did mount size: ")
          (om/update-state! this assoc
                            :grid-element grid-element
                            :breakpoint breakpoint
-                           :layout (clj->js (products->grid-layout this inventory))))))
+                           :layout (clj->js (products->grid-layout this sorted-products))))))
 
   (save-product-order [this]
-    (let [{:keys [layout]} (om/get-state this)]
+    (let [{:keys [layout]} (om/get-state this)
+          {:keys [query/current-route]} (om/props this)
+          products (grid-layout->products this layout)]
       (debug "Save products: " (into [] (grid-layout->products this layout)))
+      (msg/om-transact! this [(list 'store/update-product-order {:items products
+                                                                 :store-id (get-in current-route [:route-params :store-id])})
+                              :query/inventory])
       (om/update-state! this assoc :grid-editable? false)))
 
   (componentDidMount [this]
     (debug "State component did mount")
     (.update-layout this))
-  ;(edit-start [this]
-  ;  (om/update-state! this assoc :is-editing? true))
-  ;(edit-stop [this widgets layout]
-  ;  (om/update-state! this assoc :is-editing? false))
   (on-drag-stop [this layout]
     (om/update-state! this assoc :layout (products->grid-layout this (grid-layout->products this layout))))
-  ;(on-item-drag [this new-layout]
-  ;  #?(:cljs
-  ;     (let [{:keys [query/inventory]} (om/props this)]
-  ;       (om/update-state! this assoc :layout (clj->js (products->grid-layout this inventory)))))
-  ;  (debug "New layout: " new-layout))
-
   (on-breakpoint-change [this bp]
     #?(:cljs
        (let [size js/window.innerWidth
@@ -151,10 +152,11 @@
           {:keys          [search-input cols layout grid-element grid-editable? breakpoint]
            :products/keys [selected-section edit-sections listing-layout]} (om/get-state this)
           {:keys [route-params store]} (om/get-computed this)
-          products (if (not-empty search-input)
-                     (filter #(clojure.string/includes? (.toLowerCase (:store.item/name %))
-                                                        (.toLowerCase search-input)) inventory)
-                     inventory)]
+          products (sort-by :store.item/index
+                            (if (not-empty search-input)
+                              (filter #(clojure.string/includes? (.toLowerCase (:store.item/name %))
+                                                                 (.toLowerCase search-input)) inventory)
+                              inventory))]
       (dom/div
         {:id "sulo-product-list"}
         (dom/h1
@@ -234,7 +236,9 @@
                    (dom/div
                      nil
                      (store-common/save-button {:onClick #(.save-product-order this)})
-                     (store-common/cancel-button {:onClick #(om/update-state! this assoc :grid-editable? false)}))
+                     (store-common/cancel-button {:onClick #(do
+                                                             (.update-layout this)
+                                                             (om/update-state! this assoc :grid-editable? false))}))
                    (store-common/edit-button
                      {:onClick #(om/update-state! this assoc :grid-editable? true)}
                      (dom/span nil "Edit layout")))
