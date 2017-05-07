@@ -7,7 +7,7 @@
 
 (def breakpoints
   {:small   0
-   :medium  640
+   :medium  750
    :large   1024
    :xlarge  1200
    :xxlarge 1440})
@@ -20,7 +20,7 @@
   (cond (> size 1440) :xxlarge
         (> size 1200) :xlarge
         (> size 1024) :large
-        (> size 640) :medium
+        (> size 750) :medium
         :else :small))
 
 (defn add-class-to-element [el class]

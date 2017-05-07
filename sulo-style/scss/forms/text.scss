@@ -135,11 +135,20 @@ $button-radius: $global-radius !default;
     }
 
     // Disabled/readonly state
-    &:disabled,
     &[readonly] {
-      background-color: $input-background-disabled;
       cursor: $input-cursor-disabled;
+      background: $input-background;
+      // border: none;
+      &:focus {
+        box-shadow: none;
+        border: $input-border;
+      }
     }
+    &:disabled {
+      cursor: $input-cursor-disabled;
+      background-color: $input-background-disabled;
+    }
+
   }
 
   // Reset styles on button-like inputs

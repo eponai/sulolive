@@ -84,6 +84,16 @@
   (if target
     {:remote true}))
 
+(defmethod client-mutate 'store/update-product-order
+  [{:keys [state target]} _ {:keys [items] :as p}]
+  (debug "store/update-sections with params: " p)
+  (if target
+    {:remote true}
+    {:action (fn []
+               (db/transact state (map (fn [p]
+                                         [:db/add (:db/id p) :store.item/index (:store.item/index p)])
+                                       items)))}))
+
 ;; ########### STRIPE ###############
 
 (defmethod client-mutate 'stripe/create-account

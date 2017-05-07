@@ -101,16 +101,17 @@
       (css/add-class ::css/photo-overlay-content)
       content)))
 
-(defn product-photo [product & [{:keys [index transformation classes]}]]
+(defn product-photo [product & [{:keys [index transformation classes]} & content]]
   (let [{:store.item/keys [photos]} product
         {item-photo :store.item.photo/photo} (get (into [] (sort-by :store.item.photo/index photos)) (or index 0))
         photo-id (:photo/id item-photo "static/storefront")]
     (photo {:photo-id       photo-id
             :transformation transformation
-            :classes        classes})))
+            :classes        classes}
+           content)))
 
-(defn product-preview [product & [opts]]
-  (product-photo product (css/add-class :square opts)))
+(defn product-preview [product & [opts & content]]
+  (product-photo product (css/add-class :square opts) content))
 
 (defn product-thumbnail [product & [opts]]
   (product-preview product (css/add-class :thumbnail opts)))

@@ -42,7 +42,7 @@
 (defn default-account [id]
   {:id      id
    :country "ca"
-   :transfer_schedule {:delay_days 7
+   :payout_schedule {:delay_days 7
                        :interval "daily"}})
 
 (defn add-account-verifications [account]

@@ -82,6 +82,7 @@
               (dom/span nil "View Order"))))))))
 
 (defui OrderList
+
   static om/IQuery
   (query [_]
     [:query/current-route
@@ -100,6 +101,7 @@
                      :order/user
                      {:order/store [{:store/profile [{:store.profile/photo [:photo/path]}
                                                      :store.profile/name]}]}]}])
+
   Object
   (render [this]
     (let [{:query/keys [orders current-route]} (om/props this)]

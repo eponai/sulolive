@@ -1,6 +1,12 @@
 #sulo-stream-settings {
+	max-width: 100rem;
+	margin: 0 auto;
 	.callout label {
 		text-align: left;
+	}
+
+	#sulo-video-container {
+		width: 100%;
 	}
 
 	.section-title {
@@ -10,9 +16,6 @@
 			}
 		}
 	}
-	.stream-chat-container {
-		position: relative;
-	}
 	>.row .column {
 		display: flex;
 		flex-direction: column;
@@ -21,28 +24,9 @@
 		display: flex;
 		flex-direction: column;
 		flex: 1 0 auto;
-	}
-
-	.chat-container {
-		display: flex;
-		min-height: 25rem;
-		flex-direction: column;
-		flex: 1 0 auto;
-		// padding: 0;
-		// .callout {
-		// 	display: flex;
-		// 	flex: 1 0 auto;
-		// }
-		.chat-messages {
-			flex: 1 0 auto;
-		}
-		.chat-content {
-
+		.callout.flex {
 			flex: 1 0 auto;
 			display: flex;
-			flex-direction: column;
-			padding: 0.5rem;
-			border: 1px solid $light-gray;
 		}
 	}
 

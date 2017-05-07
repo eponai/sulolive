@@ -85,6 +85,9 @@
 (defn add-class [class & [opts]]
   (update opts :classes conj class))
 
+(defn add-classes [classes & [opts]]
+  (update opts :classes into classes))
+
 ;; ----------- Basic ----------------------------------------------
 
 (defn text-align [alignment & [opts]]
@@ -122,6 +125,9 @@
         (warn "Ignoring column visibility CSS class for invalid breakpoint: " size
               ". Available are: " (keys breakpoints))
         opts))))
+
+(defn show-for-sr [& [opts]]
+  (add-class :show-for-sr opts))
 
 (defn callout [& [opts]]
   (add-class ::callout opts))

@@ -128,6 +128,7 @@
                  [cljsjs/stripe "2.0-0"]
                  [cljsjs/quill "1.1.0-3"]
                  [cljsjs/react-select "1.0.0-rc.1"]
+                 [cljsjs/react-grid-layout "0.13.7-0"]
                  [bidi "2.0.10"]
                  [kibu/pushy "0.3.6"]
 		 [prone "1.1.4"]

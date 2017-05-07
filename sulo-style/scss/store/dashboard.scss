@@ -50,10 +50,25 @@ $dashboard-content-width: 54rem;
 	}
 	.page-content .callout .callout {
 		border: none;
-		padding: 0;
+		// padding: 0;
+	}
+	h2 {
+		font-family: $header-font-family-serif;
+		color: $dark-gray;
+		text-transform: uppercase;
+		margin-bottom: 0.5rem;
 	}
 	h3 {
-		font-family: $header-font-family-serif;
+		text-transform: none;
+		margin-top: 0.5rem;
+		color: $dark-gray;
+		font-size: 120%;
+		@include breakpoint(medium) {
+			font-size: 130%;
+		}	
+	}
+	.section-title {
+		margin-left: 0.5rem;
 	}
 	#sulo-navbar .navbar-container {
 		box-shadow: none;
@@ -105,19 +120,6 @@ $dashboard-content-width: 54rem;
 			top: $navbar-height;
 			z-index: $subnavbar-zindex;
 		}
-		.menu-dropdown {
-			position:relative;
-			width: 100%;
-			margin: 0;
-			// background: $dashboard-primary-color;
-			border-bottom: 3px solid $dashboard-primary-color;
-			.dropdown-pane {
-				// border: none;
-				position: absolute;
-				top: 100%;
-				// background: $dashboard-primary-color;
-			}
-		}
 		.navbar {
 			max-width: $dashboard-max-width;
 			margin: 0 auto;
@@ -128,33 +130,33 @@ $dashboard-content-width: 54rem;
 			display: flex;
 			align-items: center;
 		}
-		// li {
-		// 	border-bottom: 3px solid transparent;
-		// 	margin-right: 1rem;
-		// 	transition: border-color .25s ease-in-out;
-		// }
-		// li {
-			// &:hover, &.is-active {
-			// 	$border-color: map-get($foundation-palette, action);
-			// 	border-bottom: 3px solid $border-color;
-			// 	a {
-			// 		color: $black;
-			// 	}
-			// }
-			// &.is-active {
-			// 	a {
-			// 		font-weight: $global-weight-bold;
-			// 	}
-			// }
-		// }
+		li {
+			border-bottom: 3px solid transparent;
+			margin-right: 1rem;
+			transition: border-color .25s ease-in-out;
+		}
+		li:not(.menu-text) {
+			&:hover, &.is-active {
+				$border-color: map-get($foundation-palette, primary);
+				border-bottom: 3px solid $border-color;
+				a {
+					color: $black;
+				}
+			}
+			&.is-active {
+				a {
+					font-weight: $global-weight-bold;
+				}
+			}
+		}
 	}
 
 	.page-content {
 		// @include sulo-action-buttons;
 
-		h3 {
-			margin-top: 0;
-		}
+		// h3 {
+		// 	margin-top: 0;
+		// }
 		padding-top: 5rem;
 		@include breakpoint(large) {
 			padding-top: 5rem;

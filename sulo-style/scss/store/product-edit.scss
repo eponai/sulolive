@@ -54,9 +54,45 @@
 }
 
 #sulo-product-list {
+	max-width: $global-width;
+	margin: 0 auto;
+	.row {
+		max-width: $dashboard-content-width;
+		&.expanded {
+			max-width: $dashboard-max-width;
+		}
+	}
 	.td:first-child {
 		$width: 4rem;
 		max-width: $width;
 		width: $width;
+	}
+	.react-grid-layout {
+		.react-grid-item {
+			background: $white;
+		}
+		&.editable {
+			.react-grid-item {
+				padding-top: 0.5rem;
+				box-shadow: 0 1px 4px 0 rgba($black, 0.2);
+			}
+
+			.content-item {
+				cursor: move;
+			}
+		}
+		.content-item {
+			padding-top: 0;
+			max-width: rem-calc(250);
+			@include breakpoint(medium) {
+				max-width: rem-calc(250);
+			}
+			.button {
+				// background: rgba($light-gray, 0.9);
+				cursor: move;
+				box-shadow: 0 1px 3px 0 rgba($black, 0.2);
+			}
+
+		}
 	}
 }

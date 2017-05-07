@@ -1,17 +1,15 @@
 (ns eponai.common.ui.chat
   (:require
     [eponai.common.ui.dom :as my-dom]
-    [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements :as elements]
     #?(:cljs
        [eponai.web.utils :as utils])
     [eponai.client.chat :as client.chat]
     [clojure.string :as str]
-    [om.dom :as dom]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.common.ui.elements.menu :as menu]))
 
 (defn get-messages [component]
   (let [messages (get-in (om/props component) [:query/chat :chat/messages])
@@ -36,6 +34,10 @@
                                   ~{:store (select-keys (get-store component) [:db/id])
                                     :text  chat-message})
                                 :query/chat])))
+  #?(:cljs
+     (let [chat-content (utils/element-by-id "sl-chat-content")]
+       (when chat-content
+         (set! (.-scrollTop chat-content) (.-scrollHeight chat-content)))))
   (reset-chat-message! component))
 
 (defui StreamChat
@@ -45,7 +47,7 @@
                    ;; ex chat modes: :chat.mode/public :chat.mode/sub-only :chat.mode/fb-authed :chat.mode/owner-only
                    :chat/modes
                    {:chat/messages [:chat.message/client-side-message?
-                                    {:chat.message/user [:user/email {:user/profile [{:user.profile/photo [:photo/path]}]}]}
+                                    {:chat.message/user [:user/email {:user/profile [{:user.profile/photo [:photo/id]}]}]}
                                     :chat.message/text
                                     :chat.message/timestamp]}]}])
   client.chat/IStoreChatListener
@@ -80,42 +82,48 @@
       {:show-chat? show?}))
   (render [this]
     (let [{:keys [show-chat? chat-message]} (om/get-state this)
-          messages (get-messages this)]
+          messages (get-messages this)
+          {:keys [stream-overlay?]} (om/get-computed this)]
       (my-dom/div
-        (cond->> (css/add-class ::css/stream-chat-container (css/add-class :chat-container))
+        (cond->> (css/add-class :chat-container)
                  show-chat?
-                 (css/add-class :show))
-        (dom/a #js {:className "button show-button"
-                    :onClick   #(.toggle-chat this true)}
-               (dom/i #js {:className "fa fa-comments fa-fw"}))
-        (my-dom/div
+                 (css/add-class :show)
+                 stream-overlay?
+                 (css/add-class :stream-chat-container))
+        (menu/horizontal
           nil
-          (dom/a #js {:className "button hollow secondary hide-button"
-                      :onClick   #(.toggle-chat this false)}
-                 (dom/i #js {:className "fa fa-chevron-right fa-fw"})))
+          (menu/item
+            nil
+            (my-dom/a
+              (->> (css/button {:onClick   #(.toggle-chat this true)})
+                   (css/add-classes [:toggle-button :show-button]))
+              (my-dom/i {:classes ["fa fa-comments fa-fw"]})))
+          (menu/item
+            nil
+            (my-dom/a
+              (->> (css/button-hollow {:onClick #(.toggle-chat this false)})
+                   (css/add-classes [:secondary :toggle-button :hide-button]))
+              (my-dom/i
+                (css/add-class "fa fa-chevron-right fa-fw")))))
 
-        ;(menu/horizontal nil
-        ;                 (menu/item nil
-        ;                            (dom/a nil "Chat")))
-        (dom/div #js {:className "content"}
-          (elements/message-list messages)
-          (dom/div #js {:className "input-container"}
-            (my-dom/div
-              (css/grid-row)
-              (my-dom/div (css/grid-column)
-                          (dom/input #js {:className   ""
-                                          :type        "text"
-                                          :placeholder "Say something..."
-                                          :value       (or chat-message "")
-                                          :onKeyDown   #?(:cljs #(when (utils/enter-pressed? %)
-                                                                   (send-message this))
-                                                          :clj  identity)
-                                          :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))}))
-              (my-dom/div (->> (css/grid-column)
-                               (css/add-class :shrink))
-                          (dom/a #js {:className "button hollow secondary"
-                                      :onClick   #(send-message this)}
-                                 (dom/i #js {:className "fa fa-send-o fa-fw"}))))))
+        (my-dom/div
+          (css/add-class :chat-content {:id "sl-chat-content"})
+          (elements/message-list messages))
+        (my-dom/div
+          (css/add-class :message-input-container)
+          (my-dom/input {:className   ""
+                         :type        "text"
+                         :placeholder "Say something..."
+                         :value       (or chat-message "")
+                         :onKeyDown   #?(:cljs #(when (utils/enter-pressed? %)
+                                                 (send-message this))
+                                         :clj  identity)
+                         :maxLength   150
+                         :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))})
+          (my-dom/a
+            (->> (css/button-hollow {:onClick #(send-message this)})
+                 (css/add-class :secondary))
+            (my-dom/i {:classes ["fa fa-send-o fa-fw"]})))
         ))))
 
 (def ->StreamChat (om/factory StreamChat))

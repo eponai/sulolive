@@ -28,11 +28,7 @@
 		label {
 			text-align: left;
 		}
-		.reveal {
-			// padding-top: 3rem;
-		}
 		h1 {
-			// margin-top: 2rem;
 			margin-left: 0.5rem;
 		}
 		> h1:first-child {
@@ -60,7 +56,7 @@
 			}
 		}
 		.row {
-			max-width: 54rem;
+			max-width: $dashboard-content-width;
 			margin-left: auto;
 			margin-right: auto;
 			&.expanded {
@@ -93,6 +89,30 @@
 		}
 
 		.policies {
+			.column {
+				display: flex;
+				flex-direction: column;
+				&:first-child {
+					.sl-quill-editor-container {
+						// height: 100%;
+						min-height: 23.5rem;
+						transition: min-height .25s ease-in-out;
+						justify-content: flex-start;
+
+						&.disabled {
+							min-height: 13.5rem;
+						}
+					}
+				}
+			}
+			input {
+				color: $dark-gray;
+			}
+			.editable {
+				input {
+					color: $black;
+				}
+			}
 			@include breakpoint(medium) {
 				.column:first-child {
 					padding-right: 1rem;
@@ -149,7 +169,7 @@
 		.content-item {
 			padding-top: 0;
 			// padding-bottom: 0.5rem;
-			border: $global-border;
+			// border: $global-border;
 			.text {
 				padding: 0 0.5rem;
 				justify-content: flex-start;

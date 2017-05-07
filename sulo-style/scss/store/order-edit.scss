@@ -47,6 +47,11 @@
 	}
 }
 
+#sl-order-list, #sulo-edit-order {
+	max-width: $global-width;
+	margin: 0 auto;
+}
+
 #sulo-edit-order {
 	.shipping-address {
 		border: $global-border;
@@ -54,6 +59,14 @@
 		label {
 			text-align: left;
 		}
+	}
+	h2 {
+		small {
+			font-family: $header-font-family-sans-serif;
+		}
+	}
+	.callout > .row:first-child {
+		margin-bottom: 1rem;
 	}
 	.breadcrumbs {
 		margin-top: -1rem;

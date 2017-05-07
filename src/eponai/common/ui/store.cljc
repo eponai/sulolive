@@ -71,7 +71,6 @@
           is-live? (= :stream.state/live (:stream/state stream))
           show-chat? (:show-chat? st is-live?)
           {:keys [route route-params]} current-route]
-      (debug "Store: " store)
       (common/page-container
         {:navbar navbar
          :id     "sulo-store"}
@@ -97,12 +96,22 @@
                                                  :store                store
                                                  :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
                   (chat/->StreamChat (om/computed (:proxy/chat props)
-                                                  {:on-toggle-chat (fn [show?]
-                                                                     (om/update-state! this assoc :show-chat? show?))
-                                                   :store          store
-                                                   :show?          is-live?})))
+                                                  {:on-toggle-chat  (fn [show?]
+                                                                      (om/update-state! this assoc :show-chat? show?))
+                                                   :store           store
+                                                   :stream-overlay? true
+                                                   :show?           is-live?})))
                 (some? cover)
-                (p/cover {:photo-id (:photo/id cover)})))
+                (dom/div
+                  (css/add-class :stream-container)
+                  (p/cover {:photo-id (:photo/id cover)})
+
+                  (chat/->StreamChat (om/computed (:proxy/chat props)
+                                                  {:on-toggle-chat  (fn [show?]
+                                                                      (om/update-state! this assoc :show-chat? show?))
+                                                   :store           store
+                                                   :stream-overlay? true
+                                                   :show?           is-live?})))))
 
 
 
@@ -121,22 +130,15 @@
                 (grid/column
                   (css/add-class :shrink)
                   (dom/div (css/add-class :store-name) (dom/strong nil store-name))
-                  (dom/p nil
-                         ;(dom/i
-                         ;     (css/add-class "fa fa-map-marker fa-fw"))
-                         (dom/small nil "North Vancouver, BC")))
+                  (dom/p (css/add-class :tagline)
+                         (dom/span nil (or tagline "This is my tagline"))))
                 (grid/column
                   (->> (grid/column-size {:small 12 :medium 4 :large 3})
                        (css/text-align :center)
                        (css/add-class :follow-section))
                   (dom/div nil
                            (common/follow-button nil)
-                           (common/contact-button nil)))))
-            (grid/column
-              (->> (grid/column-order {:small 3 :medium 3})
-                   (css/add-class :quote-section)
-                   (css/text-align :center))
-              (dom/span nil tagline))))
+                           (common/contact-button nil)))))))
 
         (dom/div
           {:id "shop"}

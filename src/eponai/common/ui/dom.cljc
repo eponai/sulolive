@@ -39,6 +39,9 @@
 (defn a [opts & content]
   (element dom/a opts content))
 
+(defn header [opts & content]
+  (element dom/header opts content))
+
 ;; Lists
 (defn li [opts & content]
   (element dom/li opts content))

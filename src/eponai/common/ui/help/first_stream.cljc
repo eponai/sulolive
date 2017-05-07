@@ -3,9 +3,9 @@
     [om.next :as om :refer [defui]]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.elements.photo :as photo]
     [eponai.common.ui.elements.css :as css]
-    [eponai.common.routes :as routes]))
+    [eponai.common.routes :as routes]
+    [eponai.web.ui.photo :as p]))
 
 (defui FirstStream
   Object
@@ -29,7 +29,7 @@
           (css/align :middle)
           (grid/column
             (grid/column-size {:small 3 :medium 2 :large 1})
-            (photo/square {:src "/assets/img/obs-logo.png"}))
+            (p/square {:src "/assets/img/obs-logo.png"}))
           (grid/column
             nil
             (dom/p nil

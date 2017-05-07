@@ -153,11 +153,11 @@
                   (msg/message message)))
               (msg/pending? message)
               (common/loading-spinner nil))
-        (callout/callout-small
-          (css/add-class :warning)
-          (dom/p nil (dom/small nil "Settings are under development and this info cannot be saved. Excuse the mess, thank you for understanding.")))
         (dom/div
           (css/callout)
+          (callout/callout-small
+            (css/add-class :warning)
+            (dom/p nil (dom/small nil "We still have work to do on the integration with Stripe, and have disabled the functionality to verity the account. Don't worry, we're getting there!")))
           (dom/p (css/add-class :header) "What's this?")
           (dom/p nil
                  (dom/span nil "SULO Live is using Stripe under the hood to handle orders, payments and transfers for you.
@@ -407,8 +407,8 @@
             (->> {:onClick #(.activate-account this)}
                  (css/button)
                  (css/add-class :disabled))
-            (dom/span nil "Activate account"))
-          (dom/p nil (dom/small nil "By activating your account, you agree to our Services Agreement."))
+            (dom/span nil "Submit"))
+          (dom/p nil (dom/small nil "By submitting, you agree to our Services Agreement."))
           )))))
 
 (def Activate (script-loader/stripe-loader Activate-no-loader))

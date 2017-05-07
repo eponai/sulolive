@@ -19,7 +19,7 @@
     [eponai.common.ui.product-item :as pi]
     ;[eponai.common.ui.elements.photo :as old-photo]
     [eponai.common.ui.elements.callout :as callout]
-    [eponai.web.ui.store.common :refer [edit-button save-button cancel-button]]
+    [eponai.web.ui.store.common :as store-common :refer [edit-button save-button cancel-button]]
     [eponai.client.parser.message :as msg]
     [clojure.string :as string]))
 
@@ -53,7 +53,7 @@
       (css/add-class :sl-store-about-section)
       (dom/div
         (css/add-class :section-title)
-        (dom/h1 nil (dom/small nil "About"))
+        (dom/h2 nil "About")
         (if (:edit/info state)
           (dom/div
             nil
@@ -162,11 +162,12 @@
                                                     :on-text-change    on-editor-change-desc})))))))
 
 (defn products-section [component]
-  (let [{:keys [store]} (om/get-computed component)
+  (let [{:query/keys [current-route]} (om/props component)
+        {:keys [store]} (om/get-computed component)
         {:products/keys                [selected-section search-input edit-sections]
          :products.edit-sections?/keys [new-section-count]} (om/get-state component)
         {:store/keys [items]} store
-        items (cond->> items
+        items (cond->> (sort-by :store.item/index items)
                        (not= selected-section :all)
                        (filter #(= selected-section (get-in % [:store.item/section :db/id])))
                        (not-empty search-input)
@@ -220,33 +221,24 @@
                 (save-button {:onClick #(.save-sections component)}))))))
       (callout/callout-small
         nil
-        (grid/row
-          (->> (css/add-class :expanded)
-               (css/add-class :collapse))
-          (grid/column
-            (grid/column-size {:small 12 :medium 10})
-            (menu/horizontal
-              (css/add-class :product-section-menu)
-              (menu/item
-                (when (= selected-section :all)
-                  (css/add-class :is-active))
-                (dom/a
-                  {:onClick #(om/update-state! component assoc :products/selected-section :all)}
-                  (dom/span nil "All items")))
-              (map (fn [s]
-                     (menu/item
-                       (when (= selected-section (:db/id s))
-                         (css/add-class :is-active))
-                       (dom/a {:onClick #(om/update-state! component assoc :products/selected-section (:db/id s))}
-                              (dom/span nil (string/capitalize (:store.section/label s))))))
-                   (:store/sections store))))
-          (grid/column
-            (->> (grid/column-size {:small 12 :medium 2})
-                 (css/text-align :right))
-            (edit-button {:onClick #(om/update-state! component assoc :products/edit-sections (into [] (:store/sections store)))}
-                         (dom/span nil "Edit sections"))))
+        (edit-button {:onClick #(om/update-state! component assoc :products/edit-sections (into [] (:store/sections store)))}
+                     (dom/span nil "Edit sections"))
+        (menu/horizontal
+          (css/add-class :product-section-menu)
+          (menu/item
+            (when (= selected-section :all)
+              (css/add-class :is-active))
+            (dom/a
+              {:onClick #(om/update-state! component assoc :products/selected-section :all)}
+              (dom/span nil "All items")))
+          (map (fn [s]
+                 (menu/item
+                   (when (= selected-section (:db/id s))
+                     (css/add-class :is-active))
+                   (dom/a {:onClick #(om/update-state! component assoc :products/selected-section (:db/id s))}
+                          (dom/span nil (string/capitalize (:store.section/label s))))))
+               (:store/sections store)))
 
-        ;(dom/label nil "Products")
         (dom/input
           {:key         "profile.products.search"
            :value       (or search-input "")
@@ -257,8 +249,9 @@
                        (fn [p]
                          (let [{:store.item/keys [price]
                                 item-name        :store.item/name} p]
-                           (dom/div
-                             (->> (css/add-class :content-item)
+                           (dom/a
+                             (->> {:href (routes/url :store-dashboard/product (assoc (:route-params current-route) :product-id (:db/id p)))}
+                               (css/add-class :content-item)
                                   (css/add-class :product-item))
                              (dom/div
                                (->>
@@ -274,14 +267,15 @@
                              (dom/div
                                (css/add-class :text)
                                (dom/strong nil (two-decimal-price price)))
-                             (menu/horizontal
-                               (css/add-class :edit-item-menu)
-                               (menu/item nil
-                                          (dom/a {:href (routes/url :store-dashboard/product
-                                                                    {:product-id (:db/id p)
-                                                                     :store-id   (:db/id store)})}
-                                                 (dom/i {:classes ["fa fa-pencil fa-fw"]})
-                                                 (dom/span nil "Go to edit"))))))))))))
+                             ;(menu/horizontal
+                             ;  (css/add-class :edit-item-menu)
+                             ;  (menu/item nil
+                             ;             (dom/a {:href (routes/url :store-dashboard/product
+                             ;                                       {:product-id (:db/id p)
+                             ;                                        :store-id   (:db/id store)})}
+                             ;                    (dom/i {:classes ["fa fa-pencil fa-fw"]})
+                             ;                    (dom/span nil "Go to edit"))))
+                             ))))))))
 
 (defui EditStore
   static om/IQuery
@@ -290,6 +284,12 @@
         {:proxy/photo-upload (om/get-query pu/PhotoUploader)})
      :query/current-route
      :query/messages])
+  static store-common/IDashboardNavbarContent
+  (render-subnav [_ _]
+    (dom/div nil))
+
+  (subnav-title [_ _]
+    "Store profile")
   Object
   (save-sections [this]
     (let [{:products/keys [edit-sections]} (om/get-state this)
@@ -389,6 +389,7 @@
         {:id "sulo-store-edit"}
         (grid/row-column
           {:id "sulo-store" :classes ["edit-store"]}
+          (dom/h1 (css/show-for-sr) "Edit store")
           (edit-about-section this)
 
           (grid/row
@@ -399,7 +400,7 @@
               (grid/column-size {:small 12 :medium 6})
               (dom/div
                 (css/add-class :section-title)
-                (dom/h1 nil (dom/small nil "Return policy"))
+                (dom/h2 nil "Return policy")
                 (if (:edit/return-policy state)
                   (dom/div
                     nil
@@ -429,21 +430,42 @@
                                                   {:on-editor-created on-editor-create
                                                    :on-text-change    on-editor-change}))))
             (grid/column
-              (grid/column-size {:small 12 :medium 6})
+              (cond->> (grid/column-size {:small 12 :medium 6})
+                       (:edit/shipping-policy state)
+                       (css/add-class :editable))
               (dom/div
                 (css/add-class :section-title)
-                (dom/h1 nil (dom/small nil "Shipping policy"))
+                (dom/h2 nil "Shipping policy")
                 (if (:edit/shipping-policy state)
                   (dom/div
                     nil
                     (cancel-button {:onClick #(do
                                                (om/update-state! this assoc :edit/shipping-policy false)
                                                (quill/set-content (:editor/shipping-policy state) (f/bytes->str shipping-policy)))})
-                    (save-button nil))
+                    (save-button (css/add-class :disabled)))
                   (edit-button {:onClick #(om/update-state! this assoc :edit/shipping-policy true)})))
               (callout/callout-small
                 nil
                 (when (:edit/shipping-policy state)
+                  (callout/callout-small
+                    (css/add-class :warning)
+                    (dom/small nil
+                               "We're not quite there yet with shipping settings, so this info cannot be saved for now. We're working on it, hang in there!")))
+                (grid/row
+                  (->> (css/add-class :expanded)
+                       (css/add-class :collapse))
+                  (grid/column
+                    (css/add-class :shrink)
+                    (dom/label nil "Fee"))
+                  (grid/column
+                    nil
+                    (dom/input
+                      (cond-> {:type         "number"
+                               :defaultValue "0.00"
+                               :step 0.01}
+                              (not (:edit/shipping-policy state))
+                              (assoc :readOnly true)))))
+                (if (:edit/shipping-policy state)
                   (dom/div
                     (css/text-align :right)
                     (let [remaining (- (:text-max/shipping-policy state)
@@ -462,12 +484,12 @@
 
           (dom/div
             (css/add-class :section-title)
-            (dom/h1 nil (dom/small nil "Products"))
+            (dom/h2 nil "Products")
             (dom/a
-              (->> (css/button {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
+              (->> (css/button-hollow {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
                    (css/add-class :secondary)
                    (css/add-class :see-products))
-              (dom/span nil "Go to products")
+              (dom/span nil "Manage products")
               (dom/i {:classes ["fa fa-chevron-right"]})))
 
           (products-section this))))))

@@ -165,9 +165,7 @@
                                                                      :default_for_currency true
                                                                      :bank_name            "Wells Fargo"
                                                                      :last4                "1234"
-                                                                     :country              "CA"}]})
-                                  (some? (:payout_schedule params))
-                                  (assoc :transfer_schedule (:payout_schedule params)))
+                                                                     :country              "CA"}]}))
               stripe-account (stub/add-account-verifications new-account)]
           (debug "Updated fake Stripe account: " stripe-account)
           (swap! state update :accounts assoc account-id stripe-account)

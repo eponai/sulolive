@@ -13,7 +13,7 @@
     [eponai.common.ui.store.product-list :as pl]
     [eponai.common.ui.store.stream-settings :as ss]
     [eponai.common.ui.router :as router]
-    [eponai.web.ui.store.common :refer [edit-button cancel-button save-button]]
+    [eponai.web.ui.store.common :as store-common :refer [edit-button cancel-button save-button]]
     [eponai.common.ui.utils :refer [two-decimal-price]]
     [eponai.common.ui.dom :as dom]
     [om.next :as om :refer [defui]]
@@ -73,6 +73,7 @@
 (defn sub-navbar [component]
   (let [{:query/keys [current-route]} (om/props component)
         {:keys [route route-params]} current-route
+        {:keys [component computed-fn factory]} (get route-map (parse-route route))
         store-id (:store-id route-params)
         nav-breakpoint :medium]
     (dom/div
@@ -83,122 +84,16 @@
              (css/add-class :top-bar))
         (menu/horizontal
           (css/add-class :top-bar-left)
-          (menu/item-text (css/show-for :large) (dom/span nil (get nav/routes->titles (:route current-route)))))
-        ;(menu/horizontal
-        ;  (css/add-class :top-bar-left)
-        ;  (menu/item-text nil (dom/span nil (routes->titles (:route current-route))))
-        ;  (menu/item (when (= route :store-dashboard)
-        ;               (css/add-class ::css/is-active))
-        ;             (dom/a
-        ;               (css/add-class :category {:href (routes/url :store-dashboard {:store-id store-id})})
-        ;               (dom/span (css/show-for nav-breakpoint) "Dashboard")
-        ;               (dom/i
-        ;                 (css/hide-for nav-breakpoint {:classes [:fa :fa-dashboard :fa-fw]}))))
-        ;  (menu/item (when (= route :store-dashboard/stream)
-        ;               (css/add-class ::css/is-active))
-        ;             (dom/a
-        ;               (css/add-class :category {:href (routes/url :store-dashboard/stream {:store-id store-id})})
-        ;               (dom/span (css/show-for nav-breakpoint) "Stream")
-        ;               (dom/i
-        ;                 (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]}))))
-        ;  (menu/item
-        ;    (when (or (= route :store-dashboard/product-list)
-        ;              (= route :store-dashboard/product)
-        ;              (= route :store-dashboard/create-product))
-        ;      (css/add-class ::css/is-active))
-        ;    (dom/a
-        ;      (css/add-class :category {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
-        ;      (dom/span (css/show-for nav-breakpoint) "Products")
-        ;      (dom/i
-        ;        (css/hide-for nav-breakpoint {:classes [:fa :fa-gift :fa-fw]}))))
-        ;  (menu/item
-        ;    (when (or (= route :store-dashboard/order-list)
-        ;              (= route :store-dashboard/order))
-        ;      (css/add-class ::css/is-active))
-        ;    (dom/a
-        ;      (css/add-class :category {:href (routes/url :store-dashboard/order-list {:store-id store-id})})
-        ;      (dom/span (css/show-for nav-breakpoint) "Orders")
-        ;      (dom/i
-        ;        (css/hide-for nav-breakpoint {:classes [:fa :fa-file-text-o :fa-fw]}))))
-        ;  (menu/item
-        ;    (when (= (parse-route route) :store-dashboard/settings)
-        ;      (css/add-class ::css/is-active))
-        ;    (dom/a
-        ;      (css/add-class :category {:href (routes/url :store-dashboard/settings {:store-id store-id})})
-        ;      (dom/span (css/show-for nav-breakpoint) "Settings")
-        ;      (dom/i
-        ;        (css/hide-for nav-breakpoint {:classes [:fa :fa-video-camera :fa-fw]})))))
-        ;(menu/horizontal
-        ;  (->> (css/add-class :top-bar-right)
-        ;       (css/align :right))
-        ;  (menu/item
-        ;    nil
-        ;    (dom/a
-        ;      {:href (routes/url :store {:store-id store-id})}
-        ;      (dom/i (css/show-for nav-breakpoint {:classes ["fa fa-home fa-fw"]}))
-        ;      (dom/span (css/show-for nav-breakpoint) "Go to store")
-        ;      (dom/i
-        ;        (css/hide-for nav-breakpoint {:classes [:fa :fa-home :fa-fw]})))))
-        ))))
+          (menu/item-text
+            (css/show-for :large)
+            (if (= route :store-dashboard)
+              (dom/span nil "Dashboard")
+              (when (satisfies? store-common/IDashboardNavbarContent component)
+                (dom/span nil (store-common/subnav-title component current-route))))))
 
-(defn store-info-element [component]
-  (let [{:query/keys [store stripe-account current-route]} (om/props component)
-        {:store/keys [profile]} store
-        {store-name :store.profile/name} profile
-        store-id (get-in current-route [:route-params :store-id])
-        ;; Implement a :query/stream-by-store-id ?
-        stream-state (or (-> store :stream/_store first :stream/state) :stream.state/offline)]
-
-    (dom/div
-      nil
-      (callout/callout
-        (css/add-class :profile-photo-container)
-        (callout/header nil store-name)
-        (grid/row
-          (css/align :center)
-          (grid/column
-            (grid/column-size {:small 12 :medium 10})
-            (p/store-photo store {:transformation :transformation/thumbnail})))
-        (grid/row
-          (css/align :center)
-          (grid/column
-            (css/add-class :shrink)
-            (dom/a
-              (css/button-hollow {:href (routes/url :store {:store-id store-id})}) "View store"))
-          (grid/column
-            (css/add-class :shrink)
-            (dom/a
-              (css/button-hollow {:href (routes/url :store-dashboard/settings {:store-id store-id})}) "Edit store"))))
-      (callout/callout
-        (css/add-class :stream-status)
-        (dom/a
-          (->> (css/button-hollow {:href (routes/url :store-dashboard/stream {:store-id store-id})})
-               (css/add-class :primary))
-          (dom/span nil "Stream status")
-          (dom/span
-            (cond->> (css/add-class :label)
-                     (= stream-state :stream.state/offline)
-                     (css/add-class :primary)
-                     (= stream-state :stream.state/online)
-                     (css/add-class :success)
-                     (= stream-state :stream.state/live)
-                     (css/add-class :highlight))
-            (name stream-state))))
-      (callout/callout
-        (css/add-class :stream-status)
-        (let [disabled-reason (get-in stripe-account [:stripe/verification :stripe.verification/disabled-reason])
-              status (if (some? disabled-reason) :alert :green)]
-          (dom/a
-            (->> (css/button-hollow {:href (when (= status :unverified)
-                                             (routes/url :store-dashboard/settings#activate {:store-id store-id}))})
-                 (css/add-class :primary))
-            (dom/span nil "Account status")
-            (if (some? status)
-              (dom/span
-                (->> (css/add-class :hollow (css/add-class :label))
-                     (css/add-class status))
-                (if (some? disabled-reason) "Disabled" "Enabled"))
-              (dom/i {:classes ["fa fa-spinner fa-spin"]}))))))))
+        (when (satisfies? store-common/IDashboardNavbarContent component)
+          (store-common/render-subnav component current-route))
+        (menu/horizontal nil)))))
 
 (defn verification-status-element [component]
   (let [{:query/keys [stripe-account current-route]} (om/props component)
@@ -279,6 +174,7 @@
                     {:store/items [:store.item/name
                                    :store.item/description
                                    :store.item/price
+                                   :store.item/index
                                    {:store.item/section [:store.section/label]}
                                    {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                         :store.item.photo/index]}
@@ -295,6 +191,7 @@
                              :stripe/details-submitted?
                              :stripe/charges-enabled?
                              :stripe/payouts-enabled?]}])
+
   Object
   (initLocalState [_]
     {:selected-tab :products
@@ -326,14 +223,16 @@
           (dom/div
             {:id "sulo-main-dashboard"}
 
+            (dom/h1 (css/show-for-sr) "Dashboard")
             (dom/div
               (css/add-class :section-title)
-              (dom/h1 nil (dom/small nil "Your store"))
+              (dom/h2 nil "Your store")
               (dom/a
                 (->> {:href (routes/url :store-dashboard/profile {:store-id store-id})}
                      (css/button-hollow)
                      (css/add-class :secondary))
-                (dom/span nil "Manage profile")))
+                (dom/span nil "Manage profile")
+                (dom/i {:classes ["fa fa-chevron-right"]})))
             (callout/callout-small
               (css/add-class :section-info)
               (grid/row
@@ -343,7 +242,7 @@
                 (grid/column
                   (->> (grid/column-size {:small 6 :medium 4})
                        (css/text-align :center))
-                  (dom/h2 nil (dom/small nil (get-in store [:store/profile :store.profile/name])))
+                  (dom/h3 nil (get-in store [:store/profile :store.profile/name]))
                   (p/store-photo store {:transformation :transformation/thumbnail}))
 
                 (grid/column
@@ -352,45 +251,47 @@
                     (grid/columns-in-row {:small 1 :medium 2})
                     (grid/column
                       (css/text-align :center)
-                      (dom/h2 nil (dom/small nil "Products"))
+                      (dom/h3 nil "Products")
                       (dom/p (css/add-class :stat) (count (:store/items store)))
                       (dom/a
                         (->> {:href (routes/url :store-dashboard/order-list {:store-id store-id})}
                              (css/button-hollow)
                              (css/add-class :secondary))
-                        (dom/span nil "Manage products")))
+                        (dom/span nil "Manage products")
+                        (dom/i {:classes ["fa fa-chevron-right"]})))
                     (grid/column
                       (css/text-align :center)
-                      (dom/h2 nil (dom/small nil "Orders"))
+                      (dom/h3 nil "Orders")
                       (dom/p (css/add-class :stat) (count (:order/_store store)))
                       (dom/a
                         (->> {:href (routes/url :store-dashboard/product-list {:store-id store-id})}
                              (css/button-hollow)
                              (css/add-class :secondary))
-                             (dom/span nil "Manage orders")))))))
+                        (dom/span nil "Manage orders")
+                        (dom/i {:classes ["fa fa-chevron-right"]})))))))
 
-            (callout/callout-small
+            (callout/callout
               nil
               (grid/row
                 (grid/columns-in-row {:small 3})
                 (grid/column
                   (css/text-align :center)
-                  (dom/h2 nil (dom/small nil "Balance"))
+                  (dom/h3 nil "Balance")
                   (dom/p (css/add-class :stat) (two-decimal-price 0)))
                 (grid/column
                   (css/text-align :center)
-                  (dom/h2 nil (dom/small nil "Customers"))
+                  (dom/h3 nil "Customers")
                   (dom/p (css/add-class :stat) 0))
                 (grid/column
                   (css/text-align :center)
-                  (dom/h2 nil (dom/small nil "Payments"))
+                  (dom/h3 nil "Payments")
                   (dom/p (css/add-class :stat) 0))))
 
             (dom/div
               (css/add-class :section-title)
-              (dom/h1 nil (dom/small nil "Getting started")))
+              (dom/h2 nil "Getting started"))
 
-            (callout/callout-small
+            (callout/callout
               nil
               (menu/vertical
                 nil
@@ -417,7 +318,7 @@
 
             (dom/div
               (css/add-class :section-title)
-              (dom/h1 nil (dom/small nil "Notifications")))
+              (dom/h2 nil "Notifications"))
             (if (:stripe/details-submitted? stripe-account)
               (verification-status-element this)
               (callout/callout
