@@ -29,7 +29,8 @@
   (query [_]
     [:query/messages
      {:proxy/stream (om/get-query stream/Stream)}
-     {:query/stream [:stream/state]}
+     {:query/stream [:stream/state
+                     :stream/token]}
      {:query/stream-config [:ui.singleton.stream-config/publisher-url]}
      {:query/chat [:chat/store
                    ;; ex chat modes: :chat.mode/public :chat.mode/sub-only :chat.mode/fb-authed :chat.mode/owner-only
@@ -66,6 +67,7 @@
           {:query/keys [stream chat stream-config]
            :as         props} (om/props this)
           stream-state (:stream/state stream)
+          stream-token (:stream/token stream)
           chat-message (:chat-message (om/get-state this))
           message (msg/last-message this 'stream-token/generate)]
       (dom/div
@@ -161,8 +163,9 @@
               (callout/callout-small
                 nil
                 (stream/->Stream (om/computed (:proxy/stream props)
-                                              {:hide-chat? true
-                                               :store      store})))))
+                                              {:hide-chat?            true
+                                               :store                 store
+                                               :allowed-stream-states #{:stream.state/live :stream.state/online}})))))
           (grid/column
             (grid/column-size {:small 12 :large 6})
 
@@ -246,13 +249,11 @@
                     (grid/column-size {:small 12 :medium 8})
                     (dom/label nil "Stream Key")
                     (dom/input {:type        "text"
-                                :value       (if (msg/final? message)
-                                               (:token (msg/message message))
-                                               "")
+                                :value       (or stream-token "")
                                 ;:defaultValue (if (msg/final? message)
                                 ;                (:token (msg/message message))
                                 ;                "")
-                                :placeholder ""}))
+                                :placeholder "Create a stream key..."}))
                   (grid/column
                     nil
                     (dom/a

@@ -11,8 +11,7 @@
   (let [state (atom {})]
     (reify IWowzaPlayer
       (init! [this element-id config]
-        (swap! state assoc ::element-id element-id ::config config)
-        (js/WowzaPlayer.create element-id (clj->js config)))
+        (swap! state assoc ::element-id element-id ::config config))
       (play [this source-url]
         (let [{::keys [element-id config]} @state]
           (js/WowzaPlayer.create element-id (clj->js (assoc config :sourceURL source-url)))))
@@ -28,13 +27,12 @@
 (defn fake-player
   "Calls the real player on everything except play, which is a no-op."
   []
-  (let [player (real-player)]
-    (reify IWowzaPlayer
-      (init! [_ id config]
-        (init! player id config))
-      (play [_ _]
-        nil)
-      (get-player [_]
-        (get-player player))
-      (destroy [_]
-        (destroy player)))))
+  (reify IWowzaPlayer
+    (init! [_ id config]
+      nil)
+    (play [_ _]
+      nil)
+    (get-player [_]
+      nil)
+    (destroy [_]
+      nil)))
