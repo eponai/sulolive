@@ -89,6 +89,25 @@
 		}
 
 		.policies {
+			.column {
+				display: flex;
+				flex-direction: column;
+				&:first-child {
+					.sl-quill-editor-container {
+						// height: 100%;
+						min-height: 13.5rem;
+						justify-content: flex-start;
+					}
+				}
+			}
+			input {
+				color: $dark-gray;
+			}
+			.editable {
+				input {
+					color: $black;
+				}
+			}
 			@include breakpoint(medium) {
 				.column:first-child {
 					padding-right: 1rem;

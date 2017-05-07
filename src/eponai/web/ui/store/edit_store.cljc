@@ -237,7 +237,7 @@
                    (dom/a {:onClick #(om/update-state! component assoc :products/selected-section (:db/id s))}
                           (dom/span nil (string/capitalize (:store.section/label s))))))
                (concat (:store/sections store) (:store/sections store) (:store/sections store))))
-        
+
         (dom/input
           {:key         "profile.products.search"
            :value       (or search-input "")
@@ -421,7 +421,9 @@
                                                   {:on-editor-created on-editor-create
                                                    :on-text-change    on-editor-change}))))
             (grid/column
-              (grid/column-size {:small 12 :medium 6})
+              (cond->> (grid/column-size {:small 12 :medium 6})
+                       (:edit/shipping-policy state)
+                       (css/add-class :editable))
               (dom/div
                 (css/add-class :section-title)
                 (dom/h2 nil "Shipping policy")
@@ -435,7 +437,21 @@
                   (edit-button {:onClick #(om/update-state! this assoc :edit/shipping-policy true)})))
               (callout/callout-small
                 nil
-                (when (:edit/shipping-policy state)
+                (grid/row
+                  (->> (css/add-class :expanded)
+                       (css/add-class :collapse))
+                  (grid/column
+                    (css/add-class :shrink)
+                    (dom/label nil "Fee"))
+                  (grid/column
+                    nil
+                    (dom/input
+                      (cond-> {:type         "number"
+                               :defaultValue "0.00"
+                               :step 0.01}
+                              (not (:edit/shipping-policy state))
+                              (assoc :readOnly true)))))
+                (if (:edit/shipping-policy state)
                   (dom/div
                     (css/text-align :right)
                     (let [remaining (- (:text-max/shipping-policy state)
