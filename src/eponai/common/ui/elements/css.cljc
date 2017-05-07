@@ -123,6 +123,9 @@
               ". Available are: " (keys breakpoints))
         opts))))
 
+(defn show-for-sr [& [opts]]
+  (add-class :show-for-sr opts))
+
 (defn callout [& [opts]]
   (add-class ::callout opts))
 

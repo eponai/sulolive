@@ -326,14 +326,16 @@
           (dom/div
             {:id "sulo-main-dashboard"}
 
+            (dom/h1 (css/show-for-sr) "Dashboard")
             (dom/div
               (css/add-class :section-title)
-              (dom/h1 nil (dom/small nil "Your store"))
+              (dom/h2 nil "Your store")
               (dom/a
                 (->> {:href (routes/url :store-dashboard/profile {:store-id store-id})}
                      (css/button-hollow)
                      (css/add-class :secondary))
-                (dom/span nil "Manage profile")))
+                (dom/span nil "Manage profile")
+                (dom/i {:classes ["fa fa-chevron-right"]})))
             (callout/callout-small
               (css/add-class :section-info)
               (grid/row
@@ -343,7 +345,7 @@
                 (grid/column
                   (->> (grid/column-size {:small 6 :medium 4})
                        (css/text-align :center))
-                  (dom/h2 nil (dom/small nil (get-in store [:store/profile :store.profile/name])))
+                  (dom/h3 nil (dom/small nil (get-in store [:store/profile :store.profile/name])))
                   (p/store-photo store {:transformation :transformation/thumbnail}))
 
                 (grid/column
@@ -352,45 +354,47 @@
                     (grid/columns-in-row {:small 1 :medium 2})
                     (grid/column
                       (css/text-align :center)
-                      (dom/h2 nil (dom/small nil "Products"))
+                      (dom/h3 nil (dom/small nil "Products"))
                       (dom/p (css/add-class :stat) (count (:store/items store)))
                       (dom/a
                         (->> {:href (routes/url :store-dashboard/order-list {:store-id store-id})}
                              (css/button-hollow)
                              (css/add-class :secondary))
-                        (dom/span nil "Manage products")))
+                        (dom/span nil "Manage products")
+                        (dom/i {:classes ["fa fa-chevron-right"]})))
                     (grid/column
                       (css/text-align :center)
-                      (dom/h2 nil (dom/small nil "Orders"))
+                      (dom/h3 nil (dom/small nil "Orders"))
                       (dom/p (css/add-class :stat) (count (:order/_store store)))
                       (dom/a
                         (->> {:href (routes/url :store-dashboard/product-list {:store-id store-id})}
                              (css/button-hollow)
                              (css/add-class :secondary))
-                             (dom/span nil "Manage orders")))))))
+                        (dom/span nil "Manage orders")
+                        (dom/i {:classes ["fa fa-chevron-right"]})))))))
 
-            (callout/callout-small
+            (callout/callout
               nil
               (grid/row
                 (grid/columns-in-row {:small 3})
                 (grid/column
                   (css/text-align :center)
-                  (dom/h2 nil (dom/small nil "Balance"))
+                  (dom/h3 nil (dom/small nil "Balance"))
                   (dom/p (css/add-class :stat) (two-decimal-price 0)))
                 (grid/column
                   (css/text-align :center)
-                  (dom/h2 nil (dom/small nil "Customers"))
+                  (dom/h3 nil (dom/small nil "Customers"))
                   (dom/p (css/add-class :stat) 0))
                 (grid/column
                   (css/text-align :center)
-                  (dom/h2 nil (dom/small nil "Payments"))
+                  (dom/h3 nil (dom/small nil "Payments"))
                   (dom/p (css/add-class :stat) 0))))
 
             (dom/div
               (css/add-class :section-title)
-              (dom/h1 nil (dom/small nil "Getting started")))
+              (dom/h2 nil "Getting started"))
 
-            (callout/callout-small
+            (callout/callout
               nil
               (menu/vertical
                 nil
@@ -417,7 +421,7 @@
 
             (dom/div
               (css/add-class :section-title)
-              (dom/h1 nil (dom/small nil "Notifications")))
+              (dom/h2 nil "Notifications"))
             (if (:stripe/details-submitted? stripe-account)
               (verification-status-element this)
               (callout/callout

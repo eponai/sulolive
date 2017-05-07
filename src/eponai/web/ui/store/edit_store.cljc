@@ -53,7 +53,7 @@
       (css/add-class :sl-store-about-section)
       (dom/div
         (css/add-class :section-title)
-        (dom/h1 nil (dom/small nil "About"))
+        (dom/h2 nil "About")
         (if (:edit/info state)
           (dom/div
             nil
@@ -220,33 +220,24 @@
                 (save-button {:onClick #(.save-sections component)}))))))
       (callout/callout-small
         nil
-        (grid/row
-          (->> (css/add-class :expanded)
-               (css/add-class :collapse))
-          (grid/column
-            (grid/column-size {:small 12 :medium 10})
-            (menu/horizontal
-              (css/add-class :product-section-menu)
-              (menu/item
-                (when (= selected-section :all)
-                  (css/add-class :is-active))
-                (dom/a
-                  {:onClick #(om/update-state! component assoc :products/selected-section :all)}
-                  (dom/span nil "All items")))
-              (map (fn [s]
-                     (menu/item
-                       (when (= selected-section (:db/id s))
-                         (css/add-class :is-active))
-                       (dom/a {:onClick #(om/update-state! component assoc :products/selected-section (:db/id s))}
-                              (dom/span nil (string/capitalize (:store.section/label s))))))
-                   (:store/sections store))))
-          (grid/column
-            (->> (grid/column-size {:small 12 :medium 2})
-                 (css/text-align :right))
-            (edit-button {:onClick #(om/update-state! component assoc :products/edit-sections (into [] (:store/sections store)))}
-                         (dom/span nil "Edit sections"))))
-
-        ;(dom/label nil "Products")
+        (edit-button {:onClick #(om/update-state! component assoc :products/edit-sections (into [] (:store/sections store)))}
+                     (dom/span nil "Edit sections"))
+        (menu/horizontal
+          (css/add-class :product-section-menu)
+          (menu/item
+            (when (= selected-section :all)
+              (css/add-class :is-active))
+            (dom/a
+              {:onClick #(om/update-state! component assoc :products/selected-section :all)}
+              (dom/span nil "All items")))
+          (map (fn [s]
+                 (menu/item
+                   (when (= selected-section (:db/id s))
+                     (css/add-class :is-active))
+                   (dom/a {:onClick #(om/update-state! component assoc :products/selected-section (:db/id s))}
+                          (dom/span nil (string/capitalize (:store.section/label s))))))
+               (concat (:store/sections store) (:store/sections store) (:store/sections store))))
+        
         (dom/input
           {:key         "profile.products.search"
            :value       (or search-input "")
@@ -389,6 +380,7 @@
         {:id "sulo-store-edit"}
         (grid/row-column
           {:id "sulo-store" :classes ["edit-store"]}
+          (dom/h1 (css/show-for-sr) "Edit store")
           (edit-about-section this)
 
           (grid/row
@@ -399,7 +391,7 @@
               (grid/column-size {:small 12 :medium 6})
               (dom/div
                 (css/add-class :section-title)
-                (dom/h1 nil (dom/small nil "Return policy"))
+                (dom/h2 nil "Return policy")
                 (if (:edit/return-policy state)
                   (dom/div
                     nil
@@ -432,7 +424,7 @@
               (grid/column-size {:small 12 :medium 6})
               (dom/div
                 (css/add-class :section-title)
-                (dom/h1 nil (dom/small nil "Shipping policy"))
+                (dom/h2 nil "Shipping policy")
                 (if (:edit/shipping-policy state)
                   (dom/div
                     nil
@@ -462,12 +454,12 @@
 
           (dom/div
             (css/add-class :section-title)
-            (dom/h1 nil (dom/small nil "Products"))
+            (dom/h2 nil "Products")
             (dom/a
-              (->> (css/button {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
+              (->> (css/button-hollow {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
                    (css/add-class :secondary)
                    (css/add-class :see-products))
-              (dom/span nil "Go to products")
+              (dom/span nil "Manage products")
               (dom/i {:classes ["fa fa-chevron-right"]})))
 
           (products-section this))))))

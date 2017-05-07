@@ -1,11 +1,10 @@
 (ns eponai.common.ui.navbar
   (:require
-    [eponai.common.ui.dom :as my-dom]
+    [eponai.common.ui.dom :as dom]
     [eponai.common.ui.utils :as ui-utils]
     [eponai.common.ui.elements.css :as css]
     #?(:cljs
        [eponai.web.utils :as utils])
-    [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [eponai.client.auth :as auth]
     [taoensso.timbre :refer [debug error]]
@@ -20,60 +19,9 @@
    :dropdown/bag        "sl-shopping-bag-dropdown"
    :dropdown/collection "sl-collection-dropdown"})
 
-;(defn compute-item-price [items]
-;  (reduce + (map :store.item/price items)))
-
-;(defn cart-dropdown [component {:keys [cart/items cart/price]}]
-;  (let [{:keys [dropdown-key]} (om/get-state component)]
-;    (my-dom/div
-;      (cond->> {:classes [:dropdown-pane :cart-dropdown]}
-;               (= dropdown-key :dropdown/bag)
-;               (css/add-class :is-open))
-;      (menu/vertical
-;        {:classes [::css/cart]}
-;        (menu/item nil
-;                   (menu/vertical
-;                     (css/add-class :nested)
-;                     (map (fn [i]
-;                            (let [{:store.item/keys [price photos] p-name :store.item/name :as item} (:store.item/_skus i)]
-;                              (menu/item-link
-;                                {:href    (routes/url :product {:product-id (:db/id item)})
-;                                 :classes [:cart-link]}
-;                                (photo/square
-;                                  {:src (:photo/path (first photos))})
-;                                (dom/div #js {:className ""}
-;                                  (dom/div #js {:className "content-item-title-section"}
-;                                    (dom/p nil (dom/span #js {:className "name"} p-name)))
-;                                  (dom/div #js {:className "content-item-subtitle-section"}
-;                                    (dom/strong #js {:className "price"}
-;                                                (ui-utils/two-decimal-price price)))))))
-;                          (take 3 items))))
-;        (menu/item nil (dom/div #js {:className "callout transparent"}
-;                         (if (< 3 (count items))
-;                           (dom/small nil (str "You have " (- (count items) 3) " more item(s) in your bag"))
-;                           (dom/small nil (str "You have " (count items) " item(s) in your bag")))
-;                         (dom/h5 nil "Total: " (dom/strong nil (ui-utils/two-decimal-price (compute-item-price (map #(get % :store.item/_skus) items)))))))
-;        (menu/item (css/text-align :center)
-;                   (dom/a #js {:className "button expanded gray"
-;                               :href      (routes/url :shopping-bag nil)} "View My Bag"))))))
-
-(defn category-dropdown [component]
-  (let [{:keys [dropdown-key]} (om/get-state component)
-        {:query/keys [navigation]} (om/props component)]
-    (my-dom/div
-      (cond->> {:classes [:dropdown-pane :collection-dropdown]}
-               (= dropdown-key :dropdown/collection)
-               (css/add-class :is-open))
-      (menu/vertical
-        {:classes [::css/categories]}
-        (map
-          (fn [{:category/keys [label href]}]
-            (menu/item-link {:href href} (dom/span nil label)))
-          navigation)))))
-
 (defn user-dropdown [component user owned-store]
   (let [{:keys [dropdown-key]} (om/get-state component)]
-    (my-dom/div
+    (dom/div
       (cond->> (->> (css/add-class :dropdown-pane)
                     (css/add-class :user-dropdown))
                (= dropdown-key :dropdown/user)
@@ -96,7 +44,7 @@
               (css/add-class :nested)
               (menu/item-link
                 {:href (routes/url :sell)}
-                (my-dom/small nil "Start a store")))))
+                (dom/small nil "Start a store")))))
         (when user
           (menu/item
             (css/add-class :user-info)
@@ -114,7 +62,7 @@
                                      (dom/small nil "Sign out"))))))))
 
 (defn navbar-content [opts & content]
-  (my-dom/div
+  (dom/div
     (->> (css/add-class :navbar opts)
          (css/add-class :top-bar))
     content))
@@ -142,7 +90,7 @@
            (css/add-class ::css/highlight)
            (css/add-class :navbar-live)
            (css/show-for :large))
-      (my-dom/strong
+      (dom/strong
         nil
         ;(css/show-for :medium)
         ;; Wrap in span for server and client to render the same html
@@ -153,25 +101,27 @@
       )))
 
 (defn navbar-brand [& [href title subtitle]]
-  (menu/item-link {:href (or href "/")
-                   :id   "navbar-brand"}
-                  (or title
-                      (dom/span nil "Sulo"))
-                  (or subtitle
-                      (dom/small nil "Preview"))))
+  (menu/item-link
+    {:href (or href "/")
+     :id   "navbar-brand"}
+    (or title
+        (dom/span nil "Sulo"))
+    (or subtitle
+        (dom/small nil "Preview"))))
 
 (defn coming-soon-navbar [component]
   (let [{:keys [coming-soon? right-menu on-live-click]} (om/get-computed component)]
     (navbar-content
       nil
-      (dom/div #js {:className "top-bar-left"}
+      (dom/div
+        {:classes ["top-bar-left"]}
         (menu/horizontal
           nil
           (menu/item
             nil
-            (my-dom/a
+            (dom/a
               (css/hide-for :large {:onClick #(.open-sidebar component)})
-              (my-dom/i {:classes ["fa fa-bars fa-fw"]})))
+              (dom/i {:classes ["fa fa-bars fa-fw"]})))
           (navbar-brand (routes/url :coming-soon))
 
           (live-link on-live-click)
@@ -184,39 +134,43 @@
 
           (collection-links component true)))
 
-      (dom/div #js {:className "top-bar-right"}
+      (dom/div
+        {:classes ["top-bar-right"]}
         right-menu))))
 
 (defn help-navbar [component]
   (let [{:query/keys [auth owned-store]} (om/props component)]
     (navbar-content
       nil
-      (dom/div #js {:className "top-bar-left"}
+      (dom/div
+        {:classes ["top-bar-left"]}
         (menu/horizontal
           nil
           (navbar-brand)
           (live-link)
           (menu/item nil
-                     (my-dom/input {:type        "text"
+                     (dom/input {:type           "text"
                                     :placeholder "Search on SULO Live Help..."}))))
 
-      (dom/div #js {:className "top-bar-right"}
-        (menu/horizontal nil
-                         (if (some? auth)
-                           (menu/item-dropdown
-                             {:dropdown (user-dropdown component auth owned-store)
-                              :classes  [:user-photo-item]
-                              :href     "#"
-                              :onClick  #(.open-dropdown component :dropdown/user)}
-                             (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))
-                           (my-dom/a
-                             (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
-                                  (css/button-hollow))
-                             (dom/span nil "Sign in"))))))))
+      (dom/div
+        {:classes ["top-bar-right"]}
+        (menu/horizontal
+          nil
+          (if (some? auth)
+            (menu/item-dropdown
+              {:dropdown (user-dropdown component auth owned-store)
+               :classes  [:user-photo-item]
+               :href     "#"
+               :onClick  #(.open-dropdown component :dropdown/user)}
+              (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))
+            (dom/a
+              (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
+                   (css/button-hollow))
+              (dom/span nil "Sign in"))))))))
 
 (def routes->titles
   {:store-dashboard                   "Dashboard"
-   :store-dashboard/profile "Profile"
+   :store-dashboard/profile           "Profile"
    :store-dashboard/stream            "Stream"
    :store-dashboard/product-list      "Products"
    :store-dashboard/product           "Products"
@@ -230,20 +184,45 @@
    :store-dashboard/settings#activate "Settings"
    :store-dashboard/settings#business "Settings"})
 
+(defn user-menu-item [component]
+  (let [{:query/keys [auth owned-store]} (om/props component)]
+    (if (some? auth)
+      (menu/item-dropdown
+        (->> {:dropdown (user-dropdown component auth owned-store)
+              :classes  [:user-photo-item]
+              :href     "#"
+              :onClick  #(.open-dropdown component :dropdown/user)}
+             (css/show-for :large))
+        (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))
+      (menu/item
+        (css/show-for :large)
+        (dom/a
+          (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
+               (css/button-hollow))
+          (dom/span nil "Sign in")))
+      )
+    (when (some? auth)
+      (menu/item
+        (->> (css/hide-for :large)
+             (css/add-class :user-photo-item))
+        (dom/a
+          {:href (routes/url :user {:user-id (:db/id auth)})}
+          (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))))))
+
 (defn manage-store-navbar [component]
   (let [{:query/keys [auth owned-store current-route]} (om/props component)]
 
     (navbar-content
       {:classes ["store-dashboard"]}
-      (my-dom/div
+      (dom/div
         {:classes ["top-bar-left"]}
         (menu/horizontal
           nil
           (menu/item
             nil
-            (my-dom/a
+            (dom/a
               {:onClick #(.open-sidebar component)}
-              (my-dom/i {:classes ["fa fa-bars fa-fw"]})))
+              (dom/i {:classes ["fa fa-bars fa-fw"]})))
           (menu/item-link
             (css/show-for :large {:href "/"
                                   :id   "navbar-brand"})
@@ -251,45 +230,29 @@
             (dom/small nil "Store preview"))
           (menu/item-link
             (->> {:href    (routes/url :store {:store-id (:db/id owned-store)})
-                  :classes ["store-name"]}
-                 ;(css/add-class ::css/highlight)
-                 ;(css/add-class :navbar-live)
-                 )
-            ;(my-dom/strong
-            ;  nil)
-            ;(css/show-for :medium)
-            ;; Wrap in span for server and client to render the same html
-            (dom/span nil (get-in owned-store [:store/profile :store.profile/name]))
-            ;(my-dom/div
-            ;  (css/hide-for :medium)
-            ;  (dom/i #js {:className "fa fa-video-camera fa-fw"}))
-            )
-          (menu/item-text (css/hide-for :large) (dom/span nil (get routes->titles (:route current-route))))
-          ))
+                  :classes ["store-name"]})
+            (dom/span nil (get-in owned-store [:store/profile :store.profile/name])))
+          (menu/item-text (css/hide-for :large) (dom/span nil (get routes->titles (:route current-route))))))
 
-      (dom/div #js {:className "top-bar-right"}
-        (menu/horizontal nil
-                         (when (some? auth)
-                           (menu/item-dropdown
-                             {:dropdown (user-dropdown component auth owned-store)
-                              :classes  [:user-photo-item]
-                              :href     "#"
-                              :onClick  #(.open-dropdown component :dropdown/user)}
-                             (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))))))))
+      (dom/div
+        (css/add-class :top-bar-right)
+        (menu/horizontal
+          nil
+          (user-menu-item component))))))
 
 (defn sidebar-category [component href title]
   (menu/item
     (css/add-class :category)
-    (my-dom/a {:onClick #(do (.close-sidebar component)
-                             (routes/set-url! component href))}
-              (my-dom/span nil title))))
+    (dom/a {:onClick #(do (.close-sidebar component)
+                          (routes/set-url! component href))}
+           (dom/span nil title))))
 
 (defn sidebar-highlight [component route route-params title]
   (let [{:query/keys [current-route]} (om/props component)
         {:keys [on-live-click]} (om/get-computed component)]
     (menu/item
       (css/add-class :category)
-      (my-dom/a
+      (dom/a
         (->> {:onClick #(do (.close-sidebar component)
                             (if (or (= (:route current-route route) :coming-soon)
                                     (= (:route current-route route) :coming-soon/sell))
@@ -297,24 +260,23 @@
                                 (on-live-click))
                               (routes/set-url! component route route-params)))}
              (css/add-class ::css/highlight))
-        (my-dom/span nil title)))))
+        (dom/span nil title)))))
 
 (defn sidebar-link [component route route-params & content]
   (menu/item
     nil
-    (my-dom/a {:onClick #(do (.close-sidebar component)
-                             (routes/set-url! component route route-params))}
-              content)))
+    (dom/a {:onClick #(do (.close-sidebar component)
+                          (routes/set-url! component route route-params))}
+           content)))
 
 
 (defn sidebar [component]
   (let [{:query/keys [auth owned-store navigation current-route]} (om/props component)
         {:keys [route]} current-route]
-    (debug "SIDEBAR CURRENT ROUTE: " current-route)
-    (my-dom/div
+    (dom/div
       (css/add-class :sidebar-container {:onClick #(.close-sidebar component)})
-      (my-dom/div {:classes [:sidebar-overlay]})
-      (my-dom/div
+      (dom/div {:classes [:sidebar-overlay]})
+      (dom/div
         {:id      "sulo-sidebar"
          :classes [:sidebar]}
         (if (and (some? route)
@@ -329,48 +291,48 @@
                 nil
                 (menu/item
                   (css/add-class :back)
-                  (my-dom/a {:onClick #(do (.close-sidebar component)
-                                           (routes/set-url! component :index nil))}
-                            (my-dom/i {:classes ["fa fa-chevron-left fa-fw"]})
-                            (my-dom/span nil "Back to SULO Live")))))
+                  (dom/a {:onClick #(do (.close-sidebar component)
+                                        (routes/set-url! component :index nil))}
+                         (dom/i {:classes ["fa fa-chevron-left fa-fw"]})
+                         (dom/span nil "Back to SULO Live")))))
             (when (some? owned-store)
               (menu/item
                 nil
-                (my-dom/label nil (str "Manage " (get-in owned-store [:store/profile :store.profile/name])))
+                (dom/label nil (str "Manage " (get-in owned-store [:store/profile :store.profile/name])))
                 (menu/vertical
                   nil
                   (sidebar-link component :store-dashboard {:store-id (:db/id owned-store)}
-                                (my-dom/span nil "Dashboard"))
+                                (dom/span nil "Dashboard"))
                   (sidebar-link component :store-dashboard/profile {:store-id (:db/id owned-store)}
-                                (my-dom/span nil "Profile"))
+                                (dom/span nil "Profile"))
                   (sidebar-link component :store-dashboard/stream {:store-id (:db/id owned-store)}
-                                (my-dom/span nil "Stream"))
+                                (dom/span nil "Stream"))
                   (sidebar-link component :store-dashboard/product-list {:store-id (:db/id owned-store)}
-                                (my-dom/span nil "Products"))
+                                (dom/span nil "Products"))
                   (sidebar-link component :store-dashboard/order-list {:store-id (:db/id owned-store)}
-                                (my-dom/span nil "Orders"))
+                                (dom/span nil "Orders"))
                   (sidebar-link component :store-dashboard/settings {:store-id (:db/id owned-store)}
-                                (my-dom/i {:classes ["fa fa-gear fa-fw"]})
-                                (my-dom/span nil "Settings")))))
+                                (dom/i {:classes ["fa fa-gear fa-fw"]})
+                                (dom/span nil "Settings")))))
             (if (some? auth)
-              (menu/item nil (my-dom/a
+              (menu/item nil (dom/a
                                (->> {:href "/logout"}
-                                    (css/button-hollow)) (my-dom/span nil "Sign out")))
-              (menu/item nil (my-dom/a
+                                    (css/button-hollow)) (dom/span nil "Sign out")))
+              (menu/item nil (dom/a
                                (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
-                                    (css/button)) (my-dom/span nil "Sign in")))))
+                                    (css/button)) (dom/span nil "Sign in")))))
 
           ;; Consumer side menu.
           (menu/vertical
             nil
             (menu/item
               nil
-              (my-dom/label nil "Explore")
+              (dom/label nil "Explore")
               (menu/vertical
                 nil
                 (sidebar-highlight component :live nil "LIVE")))
             (menu/item
-              nil (my-dom/label nil "Shop by category")
+              nil (dom/label nil "Shop by category")
               (menu/vertical
                 nil
                 (map
@@ -379,99 +341,73 @@
                   navigation)))
             (when (some? auth)
               (menu/item nil
-                         (my-dom/label nil "Your account")
+                         (dom/label nil "Your account")
                          (menu/vertical
                            nil
                            (sidebar-link component :user {:user-id (:db/id auth)}
-                                         (my-dom/span nil "Profile"))
+                                         (dom/span nil "Profile"))
                            (sidebar-link component :user/order-list {:user-id (:db/id auth)}
-                                         (my-dom/span nil "Purchases"))))
-              )
+                                         (dom/span nil "Purchases")))))
             (when (some? owned-store)
               (menu/item
                 nil
-                (my-dom/label nil "Manage store")
+                (dom/label nil "Manage store")
                 (menu/vertical
                   nil
                   (sidebar-link component :store-dashboard {:store-id (:db/id owned-store)}
-                                (my-dom/span nil (get-in owned-store [:store/profile :store.profile/name]))))))
+                                (dom/span nil (get-in owned-store [:store/profile :store.profile/name]))))))
             (when (and (some? auth)
                        (nil? owned-store))
-              (menu/item nil (my-dom/a
+              (menu/item nil (dom/a
                                (->> {:href (routes/url :sell)}
-                                    (css/button)) (my-dom/span nil "Start a store"))))
+                                    (css/button)) (dom/span nil "Start a store"))))
             (if (some? auth)
-              (menu/item nil (my-dom/a
+              (menu/item nil (dom/a
                                (->> {:href "/logout"}
-                                    (css/button-hollow)) (my-dom/span nil "Sign out")))
-              (menu/item nil (my-dom/a
+                                    (css/button-hollow)) (dom/span nil "Sign out")))
+              (menu/item nil (dom/a
                                (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
-                                    (css/button)) (my-dom/span nil "Sign in"))))))))))
+                                    (css/button)) (dom/span nil "Sign in"))))))))))
 
 (defn standard-navbar [component]
-  (let [{:keys [did-mount?]} (om/get-state component)
-        {:keys [coming-soon?]} (om/get-computed component)
-        {:query/keys [cart auth owned-store]} (om/props component)]
+  (let [{:query/keys [cart]} (om/props component)]
     (navbar-content
       nil
-      (dom/div #js {:className "top-bar-left"}
+      (dom/div
+        {:classes ["top-bar-left"]}
         (menu/horizontal
           nil
           (menu/item
             nil
-            (my-dom/a
+            (dom/a
               (css/hide-for :large {:onClick #(.open-sidebar component)})
-              (my-dom/i {:classes ["fa fa-bars fa-fw"]})))
+              (dom/i {:classes ["fa fa-bars fa-fw"]})))
           (navbar-brand)
           (live-link)
 
           (collection-links component false)))
-      (dom/div #js {:className "top-bar-right"}
+      (dom/div
+        {:classes ["top-bar-right"]}
         (menu/horizontal
           nil
           (menu/item nil
-                     ;(my-dom/a
-                     ;  (->> {:id "search-icon"}
-                     ;       (css/hide-for :medium))
-                     ;  (dom/i #js {:className "fa fa-search fa-fw"}))
-                     (my-dom/div
+                     (dom/div
                        (css/show-for :medium)
-                       (dom/input #js {:type        "text"
-                                       :placeholder "Search on SULO..."
-                                       :onKeyDown   (fn [e]
-                                                      #?(:cljs
-                                                         (when (= 13 (.. e -keyCode))
-                                                           (let [search-string (.. e -target -value)]
-                                                             (set! js/window.location (str "/goods?search=" search-string))))))})))
-          (if (some? auth)
-            (menu/item-dropdown
-              (->> {:dropdown (user-dropdown component auth owned-store)
-                    :classes  [:user-photo-item]
-                    :href     "#"
-                    :onClick  #(.open-dropdown component :dropdown/user)}
-                   (css/show-for :large))
-              (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))
-            (menu/item
-              (css/show-for :large)
-              (my-dom/a
-                (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
-                     (css/button-hollow))
-                (dom/span nil "Sign in")))
-            )
-          (when (some? auth)
-            (menu/item
-              (->> (css/hide-for :large)
-                   (css/add-class :user-photo-item))
-              (my-dom/a
-                {:href (routes/url :user {:user-id (:db/id auth)})}
-                (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))))
+                       (dom/input {:type           "text"
+                                      :placeholder "Search on SULO..."
+                                      :onKeyDown   (fn [e]
+                                                     #?(:cljs
+                                                        (when (= 13 (.. e -keyCode))
+                                                          (let [search-string (.. e -target -value)]
+                                                            (set! js/window.location (str "/goods?search=" search-string))))))})))
+          (user-menu-item component)
           (menu/item
             nil
-            (my-dom/a {:classes ["shopping-bag-icon"]
-                       :href    (routes/url :shopping-bag)}
-                      (icons/shopping-bag)
-                      (when (< 0 (count (:user.cart/items cart)))
-                        (my-dom/span (css/add-class :badge) (count (:user.cart/items cart)))))))))))
+            (dom/a {:classes ["shopping-bag-icon"]
+                       :href (routes/url :shopping-bag)}
+                   (icons/shopping-bag)
+                   (when (< 0 (count (:user.cart/items cart)))
+                     (dom/span (css/add-class :badge) (count (:user.cart/items cart)))))))))))
 
 (defui Navbar
   static om/IQuery
@@ -561,43 +497,39 @@
 
   (render [this]
     (let [
-          {:query/keys [cart auth current-route]} (om/props this)
-          {:keys [route route-params]} current-route
-          {:keys [sidebar-open?]} (om/get-state this)
-          #?@(:cljs [screen-width (.-innerWidth js/window)]
-              :clj  [screen-width 0])
-          sidebar-width (* 0.75 screen-width)]
+          {:query/keys [current-route]} (om/props this)
+          {:keys [route]} current-route]
 
-      (dom/div nil
-        (dom/header #js {:id "sulo-navbar"}
-                    (dom/div #js {:className "navbar-container"}
-                      (dom/div #js {:className "top-bar navbar"}
-                        (cond
-                          ;; When the user is going through the checkout flow, don't let them navigate anywhere else.
-                          (= route :checkout)
-                          (navbar-content
-                            nil
-                            (dom/div #js {:className "top-bar-left"}
-                              (menu/horizontal
-                                nil
-                                (navbar-brand)
-                                ;(menu/item-link {:href "/"
-                                ;(menu/item-link {:href "/"
-                                ;                 :id   "navbar-brand"}
-                                ;                (dom/span nil "Sulo"))
-                                )))
-                          (and (some? route)
-                               (or (= route :store-dashboard) (= (name :store-dashboard) (namespace route))))
-                          (manage-store-navbar this)
+      (dom/div
+        nil
+        (dom/header
+          {:id "sulo-navbar"}
+          (dom/div
+            {:classes ["navbar-container"]}
+            (dom/div
+              {:classes ["top-bar navbar"]}
+              (cond
+                ;; When the user is going through the checkout flow, don't let them navigate anywhere else.
+                (= route :checkout)
+                (navbar-content
+                  nil
+                  (dom/div
+                    {:classes ["top-bar-left"]}
+                    (menu/horizontal
+                      nil
+                      (navbar-brand))))
+                (and (some? route)
+                     (or (= route :store-dashboard) (= (name :store-dashboard) (namespace route))))
+                (manage-store-navbar this)
 
-                          (or (= route :coming-soon) (= route :coming-soon/sell))
-                          (coming-soon-navbar this)
+                (or (= route :coming-soon) (= route :coming-soon/sell))
+                (coming-soon-navbar this)
 
-                          (and (some? route) (= (namespace route) "help"))
-                          (help-navbar this)
+                (and (some? route) (= (namespace route) "help"))
+                (help-navbar this)
 
-                          :else
-                          (standard-navbar this)))))
+                :else
+                (standard-navbar this)))))
 
         (sidebar this)))))
 (def ->Navbar (om/factory Navbar))
