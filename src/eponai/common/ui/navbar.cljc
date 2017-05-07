@@ -304,7 +304,7 @@
                   (sidebar-link component :store-dashboard {:store-id (:db/id owned-store)}
                                 (dom/span nil "Dashboard"))
                   (sidebar-link component :store-dashboard/profile {:store-id (:db/id owned-store)}
-                                (dom/span nil "Profile"))
+                                (dom/span nil "Store profile"))
                   (sidebar-link component :store-dashboard/stream {:store-id (:db/id owned-store)}
                                 (dom/span nil "Stream"))
                   (sidebar-link component :store-dashboard/product-list {:store-id (:db/id owned-store)}

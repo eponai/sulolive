@@ -117,19 +117,6 @@ $dashboard-content-width: 54rem;
 			top: $navbar-height;
 			z-index: $subnavbar-zindex;
 		}
-		// .menu-dropdown {
-		// 	position:relative;
-		// 	width: 100%;
-		// 	margin: 0;
-		// 	// background: $dashboard-primary-color;
-		// 	border-bottom: 3px solid $dashboard-primary-color;
-		// 	.dropdown-pane {
-		// 		// border: none;
-		// 		position: absolute;
-		// 		top: 100%;
-		// 		// background: $dashboard-primary-color;
-		// 	}
-		// }
 		.navbar {
 			max-width: $dashboard-max-width;
 			margin: 0 auto;
@@ -140,25 +127,25 @@ $dashboard-content-width: 54rem;
 			display: flex;
 			align-items: center;
 		}
-		// li {
-		// 	border-bottom: 3px solid transparent;
-		// 	margin-right: 1rem;
-		// 	transition: border-color .25s ease-in-out;
-		// }
-		// li {
-			// &:hover, &.is-active {
-			// 	$border-color: map-get($foundation-palette, action);
-			// 	border-bottom: 3px solid $border-color;
-			// 	a {
-			// 		color: $black;
-			// 	}
-			// }
-			// &.is-active {
-			// 	a {
-			// 		font-weight: $global-weight-bold;
-			// 	}
-			// }
-		// }
+		li {
+			border-bottom: 3px solid transparent;
+			margin-right: 1rem;
+			transition: border-color .25s ease-in-out;
+		}
+		li:not(.menu-text) {
+			&:hover, &.is-active {
+				$border-color: map-get($foundation-palette, primary);
+				border-bottom: 3px solid $border-color;
+				a {
+					color: $black;
+				}
+			}
+			&.is-active {
+				a {
+					font-weight: $global-weight-bold;
+				}
+			}
+		}
 	}
 
 	.page-content {

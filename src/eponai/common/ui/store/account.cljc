@@ -4,28 +4,30 @@
        [cljs.spec :as s]
        :clj
         [clojure.spec :as s])
-        [eponai.common.ui.dom :as dom]
-        [eponai.common.ui.elements.css :as css]
-        [eponai.common.format :as f]
-        [eponai.common.ui.om-quill :as quill]
-        [eponai.common.ui.store.account.activate :as activate]
-        [eponai.common.ui.store.account.business :as business]
-        [eponai.common.ui.store.account.general :as general]
-        [eponai.common.ui.store.account.payments :as payments]
-        [eponai.common.ui.store.account.payouts :as payouts]
-        [eponai.common.ui.store.account.shipping :as shipping]
+    [eponai.common.ui.dom :as dom]
+    [eponai.common.ui.elements.css :as css]
+    [eponai.common.ui.utils :refer [two-decimal-price]]
+    [eponai.common.format :as f]
+    [eponai.common.ui.om-quill :as quill]
+    [eponai.common.ui.store.account.activate :as activate]
+    [eponai.common.ui.store.account.business :as business]
+    [eponai.common.ui.store.account.general :as general]
+    [eponai.common.ui.store.account.payments :as payments]
+    [eponai.common.ui.store.account.payouts :as payouts]
+    [eponai.common.ui.store.account.shipping :as shipping]
     #?(:cljs
        [eponai.web.utils :as utils])
-        [om.next :as om :refer [defui]]
-        [taoensso.timbre :refer [debug]]
-        [eponai.common.ui.elements.menu :as menu]
-        [eponai.common :as c]
-        [eponai.common.ui.elements.grid :as grid]
-        [eponai.common.ui.store.account.validate :as v]
-        [eponai.client.routes :as routes]
-        [eponai.common.ui.common :as common]
-        [eponai.client.parser.message :as msg]
-        [eponai.common.ui.elements.callout :as callout]))
+    [om.next :as om :refer [defui]]
+    [taoensso.timbre :refer [debug]]
+    [eponai.common.ui.elements.menu :as menu]
+    [eponai.common :as c]
+    [eponai.common.ui.elements.grid :as grid]
+    [eponai.common.ui.store.account.validate :as v]
+    [eponai.client.routes :as routes]
+    [eponai.common.ui.common :as common]
+    [eponai.client.parser.message :as msg]
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.web.ui.store.common :as store-common]))
 
 (defn tabs-panel [is-active? & content]
   (dom/div
@@ -61,6 +63,24 @@
      :query/current-route
      :query/messages])
 
+  static store-common/IDashboardNavbarContent
+  (render-subnav [_ current-route]
+    (let [{:keys [route-params route]} current-route]
+      (menu/horizontal
+        (css/align :center)
+        (menu/item
+          (when (= route :store-dashboard/settings#payouts)
+            (css/add-class :is-active))
+          (dom/a {:href (routes/url :store-dashboard/settings#payouts route-params)}
+                 (dom/span nil "Finances")))
+        (menu/item
+          (when (= route :store-dashboard/settings#business)
+            (css/add-class :is-active))
+          (dom/a {:href (routes/url :store-dashboard/settings#business route-params)}
+                 (dom/span nil "Business"))))))
+  (subnav-title [_]
+    "Account")
+
   Object
 
   (save-legal-entity [this le]
@@ -84,33 +104,40 @@
         {:id "sulo-account-settings"}
 
         (dom/h1 (css/show-for-sr) "Account settings")
-        (menu/horizontal
-          nil
-          ;(menu/item nil
-          ;           (dom/a {:href (routes/url :store-dashboard/settings#payments route-params)}
-          ;                  (dom/span nil "Payments")))
-          (menu/item nil (dom/a {:href (routes/url :store-dashboard/settings#payouts route-params)}
-                                (dom/span nil "Finances")))
-          (menu/item nil (dom/a {:href (routes/url :store-dashboard/settings#business route-params)}
-                                (dom/span nil "Business"))))
 
-        (cond (= route :store-dashboard/settings#payments)
-              (dom/div
-                nil
-                (dom/div
-                  (css/add-class :section-title)
-                  (dom/h2 nil "Payments"))
-                (callout/callout
-                  nil
-                  (payments/payment-methods this)))
+        (cond
 
               (= route :store-dashboard/settings#payouts)
 
               (dom/div
                 nil
+                (callout/callout-small
+                  (css/add-class :warning)
+                  (dom/p nil (dom/small nil "Excuse the mess, settings are under development and this section cannot be managed yet. Thank you for understanding.")))
+
                 (dom/div
                   (css/add-class :section-title)
-                  (dom/h2 nil "Payouts"))
+                  (dom/h2 nil "Summary"))
+
+                (callout/callout
+                  nil
+                  (grid/row
+                    (css/text-align :center)
+                    (grid/column
+                      nil
+                      (dom/h3 nil "Current balance")
+                      (dom/span (css/add-class :stat)
+                                (two-decimal-price 0)))
+                    (grid/column
+                      nil
+                      (dom/h3 nil "Next deposit")
+                      (dom/div
+                        (css/add-class :empty-container)
+                        (dom/span (css/add-class :shoutout) "No planned")))))
+
+                (dom/div
+                  (css/add-class :section-title)
+                  (dom/h2 nil "Deposits"))
 
                 (callout/callout
                   nil
@@ -123,6 +150,9 @@
               (dom/div
                 nil
 
+                (callout/callout-small
+                  (css/add-class :warning)
+                  (dom/p nil (dom/small nil "Excuse the mess, settings are under development and this section cannot be managed yet. Thank you for understanding.")))
                 (let [needs-verification? (or (not (:stripe/details-submitted? stripe-account))
                                               (not-empty (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed])))]
                   (when needs-verification?

@@ -153,9 +153,6 @@
                   (msg/message message)))
               (msg/pending? message)
               (common/loading-spinner nil))
-        (callout/callout-small
-          (css/add-class :warning)
-          (dom/p nil (dom/small nil "Settings are under development and this info cannot be saved. Excuse the mess, thank you for understanding.")))
         (dom/div
           (css/callout)
           (dom/p (css/add-class :header) "What's this?")
@@ -407,8 +404,8 @@
             (->> {:onClick #(.activate-account this)}
                  (css/button)
                  (css/add-class :disabled))
-            (dom/span nil "Activate account"))
-          (dom/p nil (dom/small nil "By activating your account, you agree to our Services Agreement."))
+            (dom/span nil "Submit"))
+          (dom/p nil (dom/small nil "By submitting, you agree to our Services Agreement."))
           )))))
 
 (def Activate (script-loader/stripe-loader Activate-no-loader))

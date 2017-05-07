@@ -20,3 +20,7 @@
 (defn cancel-button [opts & content]
   (dom/a (css/button-hollow opts)
          (dom/span nil "Cancel")))
+
+(defprotocol IDashboardNavbarContent
+  (render-subnav [this current-route] "Return the component's content for the sub navbar in store dashboard")
+  (subnav-title [this] "Title of the subnav path"))
