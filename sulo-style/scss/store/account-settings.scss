@@ -2,12 +2,10 @@
 a.disabled {
 	pointer-events: none !important;
 }
-#external_account.currency {
-	option {
-		text-transform: uppercase;
-	}
-}
+
 #sulo-account-settings {
+	max-width: $dashboard-content-width;
+	margin: 0 auto;
 	label.text-left {
 		text-align: left;
 	}
@@ -27,6 +25,15 @@ a.disabled {
 	.payment-methods {
 		display: flex;
 		flex-direction: row;
+	}
+
+	.callout {
+		.header {
+			font-weight: $global-weight-bold;
+			border-bottom: $global-border;
+			padding-bottom: 0.1rem;
+			margin-bottom: 1.5rem;
+		}
 	}
 	// .row .row {
 	// 	margin-bottom: 1rem;

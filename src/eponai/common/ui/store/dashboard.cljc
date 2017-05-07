@@ -345,7 +345,7 @@
                 (grid/column
                   (->> (grid/column-size {:small 6 :medium 4})
                        (css/text-align :center))
-                  (dom/h3 nil (dom/small nil (get-in store [:store/profile :store.profile/name])))
+                  (dom/h3 nil (get-in store [:store/profile :store.profile/name]))
                   (p/store-photo store {:transformation :transformation/thumbnail}))
 
                 (grid/column
@@ -354,7 +354,7 @@
                     (grid/columns-in-row {:small 1 :medium 2})
                     (grid/column
                       (css/text-align :center)
-                      (dom/h3 nil (dom/small nil "Products"))
+                      (dom/h3 nil "Products")
                       (dom/p (css/add-class :stat) (count (:store/items store)))
                       (dom/a
                         (->> {:href (routes/url :store-dashboard/order-list {:store-id store-id})}
@@ -364,7 +364,7 @@
                         (dom/i {:classes ["fa fa-chevron-right"]})))
                     (grid/column
                       (css/text-align :center)
-                      (dom/h3 nil (dom/small nil "Orders"))
+                      (dom/h3 nil "Orders")
                       (dom/p (css/add-class :stat) (count (:order/_store store)))
                       (dom/a
                         (->> {:href (routes/url :store-dashboard/product-list {:store-id store-id})}
@@ -379,15 +379,15 @@
                 (grid/columns-in-row {:small 3})
                 (grid/column
                   (css/text-align :center)
-                  (dom/h3 nil (dom/small nil "Balance"))
+                  (dom/h3 nil "Balance")
                   (dom/p (css/add-class :stat) (two-decimal-price 0)))
                 (grid/column
                   (css/text-align :center)
-                  (dom/h3 nil (dom/small nil "Customers"))
+                  (dom/h3 nil "Customers")
                   (dom/p (css/add-class :stat) 0))
                 (grid/column
                   (css/text-align :center)
-                  (dom/h3 nil (dom/small nil "Payments"))
+                  (dom/h3 nil "Payments")
                   (dom/p (css/add-class :stat) 0))))
 
             (dom/div

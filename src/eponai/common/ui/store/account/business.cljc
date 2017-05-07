@@ -57,8 +57,8 @@
         (css/add-class :warning)
         (dom/p nil (dom/small nil "Settings are under development and this info cannot be saved. Excuse the mess, thank you for understanding.")))
       (dom/div
-        (css/callout)
-        (dom/p (css/add-class :header) "Business details")
+        nil
+        (callout/header nil "Business details")
         (grid/row
           nil
           (label-column
@@ -143,13 +143,11 @@
                    :defaultValue state
                    :placeholder  "Province"}
                   input-validation))))))
+      (dom/hr nil)
       (dom/div
-        (css/callout)
-        (dom/p (css/add-class :header))
-        (dom/div
-          (css/text-align :right)
-          (dom/a
-            (->> {:onClick #(save-legal-entity component)
-                  :aria-disabled true}
-                 (css/add-class :disabled)
-                 (css/button))(dom/span nil "Save")))))))
+        (css/text-align :right)
+        (dom/a
+          (->> {:onClick       #(save-legal-entity component)
+                :aria-disabled true}
+               (css/add-class :disabled)
+               (css/button)) (dom/span nil "Save"))))))

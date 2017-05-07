@@ -17,23 +17,18 @@
     (callout/callout-small
       (css/add-class :warning)
       (dom/p nil (dom/small nil "Settings are under development and received payments cannot be shown yet. Excuse the mess, thank you for understanding.")))
-    (callout/callout-small
-      nil
-      (callout/header nil "Supported payment methods")
-      (dom/div
-        (css/add-class :payment-methods)
-        (icons/visa-card)
-        ;(icons/mastercard)
-        (dom/div (css/add-class :icon)
-                 (dom/img {:src "/assets/img/mc_vrt_opt_pos_45_3x.png"}))
-        (icons/american-express)))
+    (dom/h3 nil "Supported payment methods")
+    (dom/div
+      (css/add-class :payment-methods)
+      (icons/visa-card)
+      ;(icons/mastercard)
+      (dom/div (css/add-class :icon)
+               (dom/img {:src "/assets/img/mc_vrt_opt_pos_45_3x.png"}))
+      (icons/american-express))
 
-    (callout/callout-small
-      nil
-      (callout/header
-        nil "Received payments")
-      (dom/div
-        (css/add-class :empty-container)
-        (dom/span (css/add-class :shoutout) "No received payments")))
+    (dom/h3 nil "Received payments")
+    (dom/div
+      (css/add-class :empty-container)
+      (dom/span (css/add-class :shoutout) "No received payments"))
     ))
 

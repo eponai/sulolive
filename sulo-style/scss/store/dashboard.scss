@@ -61,8 +61,10 @@ $dashboard-content-width: 54rem;
 	h3 {
 		text-transform: none;
 		margin-top: 0.5rem;
+		color: $dark-gray;
+		font-size: 120%;
 		@include breakpoint(medium) {
-			font-size: 150%;
+			font-size: 130%;
 		}	
 	}
 	#sulo-navbar .navbar-container {

@@ -310,7 +310,7 @@
           (dom/p nil (dom/small nil "Settings are under development and this info cannot be saved. Excuse the mess, thank you for understanding.")))
         (dom/div
           (css/callout)
-          (dom/p (css/add-class :header) "Payouts")
+          (callout/header nil "Payouts")
           (payout-schedule this))
 
         (when (< 1 (count external-accounts))

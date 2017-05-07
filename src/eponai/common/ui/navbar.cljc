@@ -312,8 +312,7 @@
                   (sidebar-link component :store-dashboard/order-list {:store-id (:db/id owned-store)}
                                 (dom/span nil "Orders"))
                   (sidebar-link component :store-dashboard/settings {:store-id (:db/id owned-store)}
-                                (dom/i {:classes ["fa fa-gear fa-fw"]})
-                                (dom/span nil "Settings")))))
+                                (dom/span nil "Account")))))
             (if (some? auth)
               (menu/item nil (dom/a
                                (->> {:href "/logout"}
