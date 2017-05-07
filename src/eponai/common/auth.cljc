@@ -1,7 +1,7 @@
 (ns eponai.common.auth
   (:require [eponai.common :as c]
             [eponai.common.database :as db]
-            [taoensso.timbre :refer [debug]])
+            [taoensso.timbre :as timbre :refer [debug]])
   #?(:clj
      (:import [clojure.lang ExceptionInfo])))
 
@@ -47,17 +47,6 @@
   [_ _ _]
   {:where '[[?owner :store.owner/user ?user]
             [?store :store/owners ?owner]]})
-
-(defmethod auth-role-query ::latest-stream-token
-  [role _ params]
-  (let [{:keys [store-id stream/token store]} (cond-> params
-                                                      (contains? params role)
-                                                      (get role))
-        store-id (or store-id (:db/id store))]
-    {:where   '[[?stream :stream/store ?store]
-                [?stream :stream/token ?token]]
-     :symbols {'?store store-id
-               '?token token}}))
 
 (defn auth-query [roles {:keys [email] :as auth} params]
   (let [roles (cond-> roles

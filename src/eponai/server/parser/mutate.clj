@@ -139,25 +139,29 @@
 
 (defn- wowza-token-store-owner [{:keys [system state]} token]
   (let [{:keys [user-id store-id]} (jwt/unsign token (wowza/jwt-secret (:system/wowza system)))]
-    (db/one-with (db/db state)
-                 (db/merge-query (auth/auth-role-query ::auth/store-owner nil {:store-id store-id})
-                                 {:symbols {'?user user-id}}))))
+    (db/find-with (db/db state)
+                  (->> (auth/auth-role-query ::auth/store-owner nil {:store-id store-id})
+                       (db/merge-query {:find    '[?store .]
+                                        :where   '[[?stream :stream/store ?store]
+                                                   [?stream :stream/token ?token]]
+                                        :symbols {'?store store-id
+                                                  '?token token
+                                                  '?user  user-id}})))))
 
 (defmutation stream/go-online
-  [{:keys [state] :as env} k {:keys [store-id stream/token]}]
+  [{:keys [state] :as env} k {:keys [stream/token]}]
   ;; We do some custom authing with the stream token.
-  {:auth {::auth/latest-stream-token {:store-id store-id :stream/token token}}
+  {:auth ::auth/public
    :resp {:success "Stream went online"
           :error   "Could not go online"}}
   {:action (fn []
              (if-let [store-id (wowza-token-store-owner env token)]
-               (let [stream-id (db/tempid :db.part/user)]
-                 (try
-                   (db/transact state [{:db/id stream-id :stream/store store-id}
-                                       [:db.fn/cas stream-id :stream/state :stream.state/offline :stream.state/online]])
-                   (catch Exception e
-                     ;; We don't care if this fails.
-                     (debug "Ignoring cas exception : " e))))
+               (try
+                 (debug "Was store owner of store-id: " store-id)
+                 (db/transact state [[:db.fn/cas [:stream/store store-id] :stream/state :stream.state/offline :stream.state/online]])
+                 (catch Exception e
+                   ;; We don't care if this fails.
+                   (debug "Ignoring cas exception : " e)))
                (throw (ex-info "User was was not a store owner" {:stream/token token}))))})
 
 (defmutation stream/go-live
@@ -179,9 +183,9 @@
                                   :stream/state :stream.state/offline}]))})
 
 (defmutation stream/go-offline-with-token
-  [{:keys [state] :as env} k {:keys [store-id stream/token] :as p}]
+  [{:keys [state] :as env} k {:keys [stream/token] :as p}]
   ;; We do some custom authing with the stream token.
-  {:auth {::auth/latest-stream-token {:store-id store-id :stream/token token}}
+  {:auth ::auth/public
    :resp {:success "Went offline!"
           :error   "Could not go offline"}}
   {:action (fn []
