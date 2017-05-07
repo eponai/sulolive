@@ -48,6 +48,17 @@
   {:where '[[?owner :store.owner/user ?user]
             [?store :store/owners ?owner]]})
 
+(defmethod auth-role-query ::latest-stream-token
+  [role _ params]
+  (let [{:keys [store-id stream/token store]} (cond-> params
+                                                      (contains? params role)
+                                                      (get role))
+        store-id (or store-id (:db/id store))]
+    {:where   '[[?stream :stream/store ?store]
+                [?stream :stream/token ?token]]
+     :symbols {'?store store-id
+               '?token token}}))
+
 (defn auth-query [roles {:keys [email] :as auth} params]
   (let [roles (cond-> roles
                       (keyword? roles) (hash-set))]
