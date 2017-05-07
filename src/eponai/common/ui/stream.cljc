@@ -44,7 +44,7 @@
 
   (subscribe-wowza [this]
     (let [{:keys [on-fullscreen-change]} (om/get-state this)
-          {:keys [store allowed-stream-states]
+          {:keys [store allowed-stream-states wowza-player-opts]
            :or {allowed-stream-states #{:stream.state/live}}} (om/get-computed this)
           {:query/keys [stream]} (om/props this)]
       #?(:cljs
@@ -73,7 +73,7 @@
                                     :uiShowQuickRewind             false
                                     :uiShowBitrateSelector         false
                                     ;"uiQuickRewindSeconds" "30"
-                                    })
+                                    :wowza-player-opts             wowza-player-opts})
                (wowza-player/play player stream-url)
                (add-fullscreen-listener on-fullscreen-change)))
            (debug "Hasn't received server-url yet. Needs server-url to start stream.")))))

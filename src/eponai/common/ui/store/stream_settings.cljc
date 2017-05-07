@@ -151,7 +151,7 @@
                   (or (nil? stream-state) (= stream-state :stream.state/offline))
                   (dom/a
                     (css/button-hollow {:onClick #(binding [parser/*parser-allow-local-read* false]
-                                                   (om/transact! this [{:query/stream [:stream/state]}]))})
+                                                   (om/transact! this [:query/stream]))})
                     (dom/i {:classes ["fa fa-refresh fa-fw"]})
                     (dom/strong nil "Refresh"))
                   (= stream-state :stream.state/live)
@@ -162,10 +162,21 @@
                   (warn "Unknown stream-state: " stream-state)))
               (callout/callout-small
                 nil
-                (stream/->Stream (om/computed (:proxy/stream props)
-                                              {:hide-chat?            true
-                                               :store                 store
-                                               :allowed-stream-states #{:stream.state/live :stream.state/online}})))))
+                (stream/->Stream
+                  (om/computed
+                    (:proxy/stream props)
+                    {:hide-chat?            true
+                     :store                 store
+                     :wowza-player-opts     {:on-error-retry-forever? true
+                                             :on-started-playing      #(when (= stream-state :stream.state/offline)
+                                                                         (om/transact! this `[(~'stream/ensure-online
+                                                                                                ~{:store-id (:db/id store)})
+                                                                                              :query/stream]))}
+                     ;; Allow all states, as there might be something wrong with the
+                     ;; state change communication.
+                     :allowed-stream-states #{:stream.state/offline
+                                              :stream.state/live
+                                              :stream.state/online}})))))
           (grid/column
             (grid/column-size {:small 12 :large 6})
 
@@ -257,7 +268,8 @@
                   (grid/column
                     nil
                     (dom/a
-                      (css/button-hollow {:onClick #(msg/om-transact! this `[(stream-token/generate ~{:store-id (:db/id store)})])})
+                      (css/button-hollow {:onClick #(msg/om-transact! this `[(stream-token/generate ~{:store-id (:db/id store)})
+                                                                             {:query/stream [:stream/token]}])})
                       (dom/span nil "Create new key")))))))
           (grid/column
             nil

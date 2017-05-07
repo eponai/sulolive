@@ -148,6 +148,13 @@
                                                   '?token token
                                                   '?user  user-id}})))))
 
+(defn- ensure-stream-is-atleast-online [conn store-id]
+  (try
+    (db/transact conn [[:db.fn/cas [:stream/store store-id] :stream/state :stream.state/offline :stream.state/online]])
+    (catch Exception e
+      ;; We don't care if this fails.
+      (debug "Ignoring cas exception : " e))))
+
 (defmutation stream/go-online
   [{:keys [state] :as env} k {:keys [stream/token]}]
   ;; We do some custom authing with the stream token.
@@ -156,13 +163,17 @@
           :error   "Could not go online"}}
   {:action (fn []
              (if-let [store-id (wowza-token-store-owner env token)]
-               (try
-                 (debug "Was store owner of store-id: " store-id)
-                 (db/transact state [[:db.fn/cas [:stream/store store-id] :stream/state :stream.state/offline :stream.state/online]])
-                 (catch Exception e
-                   ;; We don't care if this fails.
-                   (debug "Ignoring cas exception : " e)))
+               (do (debug "Was store owner of store-id: " store-id " setting stream to atleast online.")
+                   (ensure-stream-is-atleast-online state store-id))
                (throw (ex-info "User was was not a store owner" {:stream/token token}))))})
+
+(defmutation stream/ensure-online
+  [{:keys [state auth] :as env} k {:keys [store-id] :as p}]
+  {:auth {::auth/store-owner store-id}
+   :resp {:success "Stream is online"
+          :error "Could not ensure stream was online"}}
+  {:action (fn []
+             (ensure-stream-is-atleast-online state store-id))})
 
 (defmutation stream/go-live
   [{:keys [state auth] :as env} k {:keys [store-id] :as p}]
