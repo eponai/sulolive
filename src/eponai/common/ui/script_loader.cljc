@@ -86,9 +86,10 @@
    {:scripts [[#(exists? js/Stripe) \"https://js.stripe.com/v2/\"]]
     :component eponai.common.ui.stripe/Stripe}"
   [{:keys [component] :as args}]
-  (if (om/iquery? component)
-    (loader-with-query args)
-    (loader-without-query args)))
+  #?(:cljs (if (om/iquery? component)
+             (loader-with-query args)
+             (loader-without-query args))
+     :clj  component))
 
 
 (defn stripe-loader [component]
