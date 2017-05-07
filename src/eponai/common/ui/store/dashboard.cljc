@@ -86,8 +86,10 @@
           (css/add-class :top-bar-left)
           (menu/item-text
             (css/show-for :large)
-            (when (satisfies? store-common/IDashboardNavbarContent component)
-              (dom/span nil (store-common/subnav-title component current-route)))))
+            (if (= route :store-dashboard)
+              (dom/span nil "Dashboard")
+              (when (satisfies? store-common/IDashboardNavbarContent component)
+                (dom/span nil (store-common/subnav-title component current-route))))))
 
         (when (satisfies? store-common/IDashboardNavbarContent component)
           (store-common/render-subnav component current-route))
@@ -189,6 +191,7 @@
                              :stripe/details-submitted?
                              :stripe/charges-enabled?
                              :stripe/payouts-enabled?]}])
+
   Object
   (initLocalState [_]
     {:selected-tab :products

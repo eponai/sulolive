@@ -46,20 +46,22 @@
         interval (or interval (:stripe.payout-schedule/interval payout-schedule) "daily")
         week-anchor (or week-anchor (:stripe.payout-schedule/week-anchor payout-schedule) "monday")
         month-anchor (or month-anchor (:stripe.payout-schedule/month-anchor payout-schedule) "1")]
-    (dom/div
-      nil
-      (grid/row
-        (->> (css/align :top))
-        (grid/column
-          (grid/column-size {:small 12 :large 2})
-          (dom/label nil "Deposit schedule"))
 
-        (grid/column
+    (grid/row
+      (->> (css/align :top))
+      (grid/column
+        (grid/column-size {:small 12 :large 2})
+        (dom/label nil "Deposit schedule"))
+
+      (grid/column
+        nil
+        (grid/row
           nil
-          (grid/row-column
+          (grid/column
+
             (css/add-class :payout-schedule-container)
             (grid/row
-              (css/align :middle)
+              (->> (css/align :middle))
               (grid/column
                 (grid/column-size {:small 9})
                 (dom/div
@@ -85,79 +87,79 @@
                        (css/add-class :small))
 
                   (dom/span nil "Change schedule"))
-                ))))
-        (when (= modal :payout-schedule)
-          (common/modal
-            {:on-close #(om/update-state! component dissoc :modal)}
+                )))))
+      (when (= modal :payout-schedule)
+        (common/modal
+          {:on-close #(om/update-state! component dissoc :modal)}
+          (dom/div
+            nil
+            (dom/h4 (css/add-class :header) "Change deposit schedule")
+            (dom/p nil (dom/small nil (payout-schedule-info interval week-anchor month-anchor delay-days)))
             (dom/div
+              (css/callout)
+              (dom/p (css/add-class :header)))
+            (grid/row
               nil
-              (dom/h4 (css/add-class :header) "Change deposit schedule")
-              (dom/p nil (dom/small nil (payout-schedule-info interval week-anchor month-anchor delay-days)))
-              (dom/div
-                (css/callout)
-                (dom/p (css/add-class :header)))
-              (grid/row
+              (label-column
                 nil
-                (label-column
-                  nil
-                  (dom/label nil "Deposit interval"))
-                (grid/column
-                  nil
-                  (dom/select {:defaultValue interval
-                               :onChange     #(om/update-state! component (fn [s]
-                                                                            (let [{:payout-schedule/keys [month-anchor week-anchor]} s
-                                                                                  interval (.. % -target -value)]
-                                                                              (cond-> (assoc s :payout-schedule/interval interval)
-                                                                                      (and (= interval "weekly")
-                                                                                           (nil? week-anchor))
-                                                                                      (assoc :payout-schedule/week-anchor "monday")
-                                                                                      (and (= interval "monthly")
-                                                                                           (nil? month-anchor))
-                                                                                      (assoc :payout-schedule/month-anchor "1")))))}
-                              (dom/option {:value "daily"} "Daily")
-                              (dom/option {:value "weekly"} "Weekly")
-                              (dom/option {:value "monthly"} "Monthly"))))
-              (cond (= interval "weekly")
-                    (grid/row
+                (dom/label nil "Deposit interval"))
+              (grid/column
+                nil
+                (dom/select {:defaultValue interval
+                             :onChange     #(om/update-state! component (fn [s]
+                                                                          (let [{:payout-schedule/keys [month-anchor week-anchor]} s
+                                                                                interval (.. % -target -value)]
+                                                                            (cond-> (assoc s :payout-schedule/interval interval)
+                                                                                    (and (= interval "weekly")
+                                                                                         (nil? week-anchor))
+                                                                                    (assoc :payout-schedule/week-anchor "monday")
+                                                                                    (and (= interval "monthly")
+                                                                                         (nil? month-anchor))
+                                                                                    (assoc :payout-schedule/month-anchor "1")))))}
+                            (dom/option {:value "daily"} "Daily")
+                            (dom/option {:value "weekly"} "Weekly")
+                            (dom/option {:value "monthly"} "Monthly"))))
+            (cond (= interval "weekly")
+                  (grid/row
+                    nil
+                    (label-column
                       nil
-                      (label-column
-                        nil
-                        (dom/label nil "Deposit day"))
-                      (grid/column
-                        nil
-                        (dom/select {:defaultValue week-anchor
-                                     :onChange     #(om/update-state! component assoc :payout-schedule/week-anchor (.. % -target -value))}
-                                    (dom/option {:value "monday"} "Monday")
-                                    (dom/option {:value "tuesday"} "Tuesday")
-                                    (dom/option {:value "wednesday"} "Wednesday")
-                                    (dom/option {:value "thursday"} "Thursday")
-                                    (dom/option {:value "friday"} "Friday")
-                                    (dom/option {:value "saturday"} "Saturday")
-                                    (dom/option {:value "sunday"} "Sunday"))))
-                    (= interval "monthly")
-                    (grid/row
+                      (dom/label nil "Deposit day"))
+                    (grid/column
                       nil
-                      (label-column
-                        nil
-                        (dom/label nil "Deposit day"))
-                      (grid/column
-                        nil
-                        (dom/select {:defaultValue month-anchor
-                                     :onChange     #(om/update-state! component assoc :payout-schedule/month-anchor (.. % -target -value))}
-                                    (map (fn [i]
-                                           (let [day (str (inc i))]
-                                             (dom/option {:value day} day)))
-                                         (range 31))))))
-              (dom/div
-                (css/callout (css/text-align :right))
-                (dom/p (css/add-class :header))
-                (dom/a (->> {:onClick #(om/update-state! component dissoc :modal)}
-                            (css/button-hollow)) (dom/span nil "Cancel"))
-                (dom/a
-                  (->> {:onClick #(do
-                                   (.update-payout-schedule component interval week-anchor month-anchor)
-                                   (om/update-state! component dissoc :modal))}
-                       (css/button)) (dom/span nil "Save"))))))))))
+                      (dom/select {:defaultValue week-anchor
+                                   :onChange     #(om/update-state! component assoc :payout-schedule/week-anchor (.. % -target -value))}
+                                  (dom/option {:value "monday"} "Monday")
+                                  (dom/option {:value "tuesday"} "Tuesday")
+                                  (dom/option {:value "wednesday"} "Wednesday")
+                                  (dom/option {:value "thursday"} "Thursday")
+                                  (dom/option {:value "friday"} "Friday")
+                                  (dom/option {:value "saturday"} "Saturday")
+                                  (dom/option {:value "sunday"} "Sunday"))))
+                  (= interval "monthly")
+                  (grid/row
+                    nil
+                    (label-column
+                      nil
+                      (dom/label nil "Deposit day"))
+                    (grid/column
+                      nil
+                      (dom/select {:defaultValue month-anchor
+                                   :onChange     #(om/update-state! component assoc :payout-schedule/month-anchor (.. % -target -value))}
+                                  (map (fn [i]
+                                         (let [day (str (inc i))]
+                                           (dom/option {:value day} day)))
+                                       (range 31))))))
+            (dom/div
+              (css/callout (css/text-align :right))
+              (dom/p (css/add-class :header))
+              (dom/a (->> {:onClick #(om/update-state! component dissoc :modal)}
+                          (css/button-hollow)) (dom/span nil "Cancel"))
+              (dom/a
+                (->> {:onClick #(do
+                                 (.update-payout-schedule component interval week-anchor month-anchor)
+                                 (om/update-state! component dissoc :modal))}
+                     (css/button)) (dom/span nil "Save")))))))))
 
 (defn default-currency-section [component]
   (let [{:keys [modal]} (om/get-state component)
@@ -305,165 +307,166 @@
                        (css/add-class :notification)
                        (css/add-class ::css/color-alert))
                   (dom/p nil (msg/message message)))))
-        (dom/div
-          (css/callout)
-          (callout/header nil "Deposit settings")
-          (payout-schedule this))
+
+        (callout/callout-small
+          (css/add-class :warning)
+          (dom/p nil (dom/small nil "Deposit settings are disabled until we finish our Stripe integration. Soon, just sooon!")))
+        (callout/header nil "Deposit settings")
+        (payout-schedule this)
 
         (when (< 1 (count external-accounts))
           (default-currency-section this))
-        (dom/div
-          nil
-          (grid/row
-            (css/add-class :external-account-list)
-            (grid/column
-              (grid/column-size {:small 12 :large 2})
-              (dom/label nil "Bank Account"))
-            (grid/column
-              nil
-              (if (not-empty external-accounts)
-                (map
-                  (fn [bank-acc]
-                    (let [{:stripe.external-account/keys [bank-name currency last4 country default-for-currency?]} bank-acc]
-                      (grid/row-column
-                        {:classes [:bank-account-container]}
-                        (grid/row
-                          (css/align :middle)
-                          (grid/column
-                            (grid/column-size {:small 9})
-                            (dom/div
-                              {:classes [:bank-account]}
-                              (dom/div {:classes ["bank-detail icon"]}
-                                       (dom/i {:classes ["fa fa-bank -fa-fw"]}))
-                              (dom/div {:classes ["bank-detail bank-name"]}
-                                       (dom/span nil bank-name))
-                              (dom/div {:classes ["bank-detail account"]}
-                                       (dom/small nil (str "•••• " last4)))
-                              (dom/div {:classes ["bank-detail currency"]}
-                                       (dom/span (->> (css/add-class :label) (css/add-class ::css/color-secondary)) currency))
-                              ;(dom/div {:classes ["bank-detail"]}
-                              ;         (dom/span nil "/"))
-                              ;(dom/div {:classes ["bank-detail routing"]}
-                              ;         (dom/span nil routing-number))
 
-                              (dom/div {:classes ["bank-detail country"]}
-                                       (dom/span nil country))))
-                          (grid/column
-                            (->> (grid/column-size {:small 3})
-                                 (css/text-align :right))
-                            (when-not (and default-for-currency?
-                                           (= currency default-currency))
-                              (dom/a
-                                (->> {:onClick #(om/update-state! this assoc :modal :delete-account)}
-                                     (css/button-hollow)
-                                     (css/add-class :small)
-                                     (css/add-class ::css/color-alert)) (dom/span nil "Delete")))
+        (grid/row
+          (css/add-class :external-account-list)
+          (grid/column
+            (grid/column-size {:small 12 :large 2})
+            (dom/label nil "Bank Account"))
+          (grid/column
+            nil
+            (if (not-empty external-accounts)
+              (map
+                (fn [bank-acc]
+                  (let [{:stripe.external-account/keys [bank-name currency last4 country default-for-currency?]} bank-acc]
+                    (grid/row-column
+                      {:classes [:bank-account-container]}
+                      (grid/row
+                        (css/align :middle)
+                        (grid/column
+                          (grid/column-size {:small 9})
+                          (dom/div
+                            {:classes [:bank-account]}
+                            (dom/div {:classes ["bank-detail icon"]}
+                                     (dom/i {:classes ["fa fa-bank -fa-fw"]}))
+                            (dom/div {:classes ["bank-detail bank-name"]}
+                                     (dom/span nil bank-name))
+                            (dom/div {:classes ["bank-detail account"]}
+                                     (dom/small nil (str "•••• " last4)))
+                            (dom/div {:classes ["bank-detail currency"]}
+                                     (dom/span (->> (css/add-class :label) (css/add-class ::css/color-secondary)) currency))
+                            ;(dom/div {:classes ["bank-detail"]}
+                            ;         (dom/span nil "/"))
+                            ;(dom/div {:classes ["bank-detail routing"]}
+                            ;         (dom/span nil routing-number))
+
+                            (dom/div {:classes ["bank-detail country"]}
+                                     (dom/span nil country))))
+                        (grid/column
+                          (->> (grid/column-size {:small 3})
+                               (css/text-align :right))
+                          (when-not (and default-for-currency?
+                                         (= currency default-currency))
                             (dom/a
-                              (->> {:onClick       #(om/update-state! this assoc :modal :bank-account :modal-object bank-acc)
-                                    :aria-disabled true}
-                                   (css/add-class :disabled)
+                              (->> {:onClick #(om/update-state! this assoc :modal :delete-account)}
                                    (css/button-hollow)
-                                   (css/add-class :small)) (dom/span nil "Edit"))
-                            )))))
-                  external-accounts)
-                (dom/a
-                  (->> (css/button-hollow {:aria-disabled true})
-                       (css/add-class :disabled))
-                  (dom/span nil "Add bank account..."))))
-            (when (= modal :bank-account)
-              (let [on-close #(om/update-state! this dissoc :modal :modal-object :stripe-validation)
-                    {:stripe.external-account/keys [bank-name currency last4 country default-for-currency?]} modal-object]
-                (common/modal
-                  {:on-close on-close}
+                                   (css/add-class :small)
+                                   (css/add-class ::css/color-alert)) (dom/span nil "Delete")))
+                          (dom/a
+                            (->> {:onClick       #(om/update-state! this assoc :modal :bank-account :modal-object bank-acc)
+                                  :aria-disabled true}
+                                 (css/add-class :disabled)
+                                 (css/button-hollow)
+                                 (css/add-class :small)) (dom/span nil "Edit"))
+                          )))))
+                external-accounts)
+              (dom/a
+                (->> (css/button-hollow {:aria-disabled true})
+                     (css/add-class :disabled))
+                (dom/span nil "Add bank account..."))))
+          (when (= modal :bank-account)
+            (let [on-close #(om/update-state! this dissoc :modal :modal-object :stripe-validation)
+                  {:stripe.external-account/keys [bank-name currency last4 country default-for-currency?]} modal-object]
+              (common/modal
+                {:on-close on-close}
+                (dom/div
+                  nil
+                  (dom/h4 (css/add-class :header) "Your bank account")
                   (dom/div
-                    nil
-                    (dom/h4 (css/add-class :header) "Your bank account")
-                    (dom/div
-                      (css/callout)
-                      (dom/p nil (dom/small nil "Your bank account must be a checking account."))
-                      (dom/p (css/add-class :header))
-                      (grid/row-column
+                    (css/callout)
+                    (dom/p nil (dom/small nil "Your bank account must be a checking account."))
+                    (dom/p (css/add-class :header))
+                    (grid/row-column
+                      nil
+                      (grid/row
                         nil
-                        (grid/row
+                        (grid/column
+                          (grid/column-size {:small 12 :large 3})
+                          (dom/label nil "Currency"))
+                        (grid/column
                           nil
-                          (grid/column
-                            (grid/column-size {:small 12 :large 3})
-                            (dom/label nil "Currency"))
-                          (grid/column
-                            nil
-                            (dom/select
-                              (->> {:value    currency
-                                    :disabled true
-                                    :id       (prefixed-id :field.external-account/currency)}
-                                   (css/add-class :currency))
-                              (dom/option {:value currency} currency))))
+                          (dom/select
+                            (->> {:value    currency
+                                  :disabled true
+                                  :id       (prefixed-id :field.external-account/currency)}
+                                 (css/add-class :currency))
+                            (dom/option {:value currency} currency))))
 
-                        (grid/row
-                          nil
-                          (grid/column
-                            (grid/column-size {:small 12 :large 3})
-                            (dom/label nil "Bank country"))
-                          (grid/column
-                            nil
-                            (dom/select {:value    country
-                                         :disabled true
-                                         :id       (prefixed-id :field.external-account/country)}
-                                        (dom/option {:value country} country)))))
-
-                      (grid/row-column
+                      (grid/row
                         nil
-                        (grid/row
+                        (grid/column
+                          (grid/column-size {:small 12 :large 3})
+                          (dom/label nil "Bank country"))
+                        (grid/column
                           nil
-                          (grid/column
-                            (grid/column-size {:small 12 :large 3})
-                            (dom/label nil "Transit number"))
-                          (grid/column
-                            nil
-                            (validate/input
-                              {:placeholder "12345"
-                               :type        "text"
-                               :id          (prefixed-id :field.external-account/transit-number)}
-                              input-validation)))
-                        (grid/row
+                          (dom/select {:value    country
+                                       :disabled true
+                                       :id       (prefixed-id :field.external-account/country)}
+                                      (dom/option {:value country} country)))))
+
+                    (grid/row-column
+                      nil
+                      (grid/row
+                        nil
+                        (grid/column
+                          (grid/column-size {:small 12 :large 3})
+                          (dom/label nil "Transit number"))
+                        (grid/column
                           nil
-                          (grid/column
-                            (grid/column-size {:small 12 :large 3})
-                            (dom/label nil "Institution number"))
-                          (grid/column
-                            nil
-                            (validate/input
-                              {:placeholder "000"
-                               :type        "text"
-                               :id          (prefixed-id :field.external-account/institution-number)}
-                              input-validation)))
-                        (grid/row
+                          (validate/input
+                            {:placeholder "12345"
+                             :type        "text"
+                             :id          (prefixed-id :field.external-account/transit-number)}
+                            input-validation)))
+                      (grid/row
+                        nil
+                        (grid/column
+                          (grid/column-size {:small 12 :large 3})
+                          (dom/label nil "Institution number"))
+                        (grid/column
                           nil
-                          (grid/column
-                            (grid/column-size {:small 12 :large 3})
-                            (dom/label nil "Account number"))
-                          (grid/column
-                            nil
-                            (validate/input
-                              {:type "text"
-                               :id   (prefixed-id :field.external-account/account-number)}
-                              input-validation)))))
+                          (validate/input
+                            {:placeholder "000"
+                             :type        "text"
+                             :id          (prefixed-id :field.external-account/institution-number)}
+                            input-validation)))
+                      (grid/row
+                        nil
+                        (grid/column
+                          (grid/column-size {:small 12 :large 3})
+                          (dom/label nil "Account number"))
+                        (grid/column
+                          nil
+                          (validate/input
+                            {:type "text"
+                             :id   (prefixed-id :field.external-account/account-number)}
+                            input-validation)))))
 
 
 
+                  (dom/div
+                    (css/callout)
+                    (dom/p (css/add-class :header))
                     (dom/div
-                      (css/callout)
-                      (dom/p (css/add-class :header))
-                      (dom/div
-                        (css/add-class :error-message)
-                        (dom/p nil (dom/small nil (when stripe-validation (.-message stripe-validation)))))
-                      (dom/div
-                        (css/text-align :right)
-                        (dom/a (->> {:onClick on-close}
-                                    (css/button-hollow)) (dom/span nil "Cancel"))
-                        (dom/a
-                          (->> {:onClick #(do
-                                           (.update-bank-account this on-close))}
-                               (css/button)) (dom/span nil "Save"))))))))))
+                      (css/add-class :error-message)
+                      (dom/p nil (dom/small nil (when stripe-validation (.-message stripe-validation)))))
+                    (dom/div
+                      (css/text-align :right)
+                      (dom/a (->> {:onClick on-close}
+                                  (css/button-hollow)) (dom/span nil "Cancel"))
+                      (dom/a
+                        (->> {:onClick #(do
+                                         (.update-bank-account this on-close))}
+                             (css/button)) (dom/span nil "Save")))))))))
 
         (callout/header nil "Deposits")
         (dom/div

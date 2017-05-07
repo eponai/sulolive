@@ -60,6 +60,11 @@
 			text-align: left;
 		}
 	}
+	h2 {
+		small {
+			font-family: $header-font-family-sans-serif;
+		}
+	}
 	.callout > .row:first-child {
 		margin-bottom: 1rem;
 	}

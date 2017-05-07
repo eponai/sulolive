@@ -155,6 +155,9 @@
               (common/loading-spinner nil))
         (dom/div
           (css/callout)
+          (callout/callout-small
+            (css/add-class :warning)
+            (dom/p nil (dom/small nil "We still have work to do on the integration with Stripe, and have disabled the functionality to verity the account. Don't worry, we're getting there!")))
           (dom/p (css/add-class :header) "What's this?")
           (dom/p nil
                  (dom/span nil "SULO Live is using Stripe under the hood to handle orders, payments and transfers for you.

@@ -311,7 +311,7 @@
                                 (dom/span nil "Products"))
                   (sidebar-link component :store-dashboard/order-list {:store-id (:db/id owned-store)}
                                 (dom/span nil "Orders"))
-                  (sidebar-link component :store-dashboard/settings {:store-id (:db/id owned-store)}
+                  (sidebar-link component :store-dashboard/settings#payouts {:store-id (:db/id owned-store)}
                                 (dom/span nil "Account")))))
             (if (some? auth)
               (menu/item nil (dom/a

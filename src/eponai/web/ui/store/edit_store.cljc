@@ -19,7 +19,7 @@
     [eponai.common.ui.product-item :as pi]
     ;[eponai.common.ui.elements.photo :as old-photo]
     [eponai.common.ui.elements.callout :as callout]
-    [eponai.web.ui.store.common :refer [edit-button save-button cancel-button]]
+    [eponai.web.ui.store.common :as store-common :refer [edit-button save-button cancel-button]]
     [eponai.client.parser.message :as msg]
     [clojure.string :as string]))
 
@@ -284,6 +284,12 @@
         {:proxy/photo-upload (om/get-query pu/PhotoUploader)})
      :query/current-route
      :query/messages])
+  static store-common/IDashboardNavbarContent
+  (render-subnav [_ _]
+    (dom/div nil))
+
+  (subnav-title [_ _]
+    "Store profile")
   Object
   (save-sections [this]
     (let [{:products/keys [edit-sections]} (om/get-state this)

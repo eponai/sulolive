@@ -39,12 +39,12 @@ a.disabled {
 	// 	margin-bottom: 1rem;
 	// }
 
-	input.tagline-input {
-		font-style: italic;
+	// input.tagline-input {
+	// 	font-style: italic;
 		// &::placeholder {
 			// font-style: italic;
 		// }
-	}
+	// }
 	.icon {
 		$size: 32px;
 		margin-right: 0.5rem;
@@ -56,9 +56,9 @@ a.disabled {
 		}
 		// max-width: 2rem;
 	}
-	.external-account-list {
+	// .external-account-list {
 		// margin-bottom: 1rem;
-	}
+	// }
 
 .bank-account-container {
 	// border: $global-border;
@@ -118,6 +118,9 @@ a.disabled {
 		// margin: 1rem 0;
 		font-size: 95%;
 		// font-weight: $global-weight-bold;
+		.button {
+			margin: 0;
+		}
 
 	}
 	.payout-schedule, .bank-account, .default-currency {
@@ -134,85 +137,7 @@ a.disabled {
 			max-width: 100%;
 			margin-bottom: 0;
 		}
-	}
-
-	.profile-photo-edit {
-		background: $light-gray;
-	}
-
-	.tabs {
-		border-right: none;
-		a {
-			color: $dark-gray;
-			background: transparent;
-		}
-		li {
-			margin-right: 0.5rem;
-			border-right: 2px solid transparent;
-			transition: border .25s ease-in-out;
-			&:last-child {
-				border: none;
-				border-right: 2px solid transparent;
-			}
-			a {
-				transition: all .25s ease-in-out;
-				&[disabled] {
-					cursor: not-allowed;
-				}
-			}
-			&.is-active, &:hover {
-				border-right: 2px solid $primary-color;
-				a {
-					color: $black;
-				}
-			}
-			&.is-active a {
-				font-weight: $global-weight-bold;
-			}
-			&.activate  {
-				border-bottom: $global-border;
-				a {
-					font-weight: $global-weight-bold;
-				}
-			}
-		}
-	}
-	.tabs-content {
-		margin-top: 1rem;
-		padding: 0.5rem;
-		@include breakpoint(medium) {
-			margin-top: 0;
-		}
-		border: $global-border;
-		.callout {
-			// padding: 0;
-			&.warning {
-				// padding: 0.25rem 0.5rem;
-			}
-			// margin-bottom: 2.5rem;
-			&:last-child {
-				// margin-bottom: 0;
-			}
-			.button {
-				margin-bottom: 0;
-			}
-			border: none !important;
-		}
-		.callout.notification {
-			background: $white;
-			margin: 0;
-			&.success {
-				color: map-get($foundation-palette, success);
-			} 
-			padding: 0.5rem 0;
-		}
-
-		.tabs-panel {
-			padding: 0;
-			@include breakpoint(medium) {
-				padding: 1rem;
-			}
-		}
+		// margin-bottom: 1rem;
 	}
 }
 

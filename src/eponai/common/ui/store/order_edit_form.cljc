@@ -102,6 +102,11 @@
       (order-status-modal component)
 
 
+      (dom/div
+        (css/add-class :section-title)
+        (dom/h2 nil
+                (dom/span nil "Order ")
+                (dom/small nil (str "#" (:db/id order)))))
       (callout/callout
         nil
         (grid/row
@@ -149,9 +154,9 @@
                                 (css/add-class :disabled))
                        (dom/span nil "Fulfill Items")))))))
 
-      (dom/div
-        (css/add-class :section-title)
-        (dom/h2 nil "Details"))
+      ;(dom/div
+      ;  (css/add-class :section-title)
+      ;  (dom/h2 nil "Details"))
 
       (callout/callout
         nil

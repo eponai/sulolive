@@ -111,9 +111,6 @@
 
               (dom/div
                 nil
-                (callout/callout-small
-                  (css/add-class :warning)
-                  (dom/p nil (dom/small nil "Excuse the mess, settings are under development and this section cannot be managed yet. Thank you for understanding.")))
 
                 (dom/div
                   (css/add-class :section-title)
@@ -149,10 +146,6 @@
 
               (dom/div
                 nil
-
-                (callout/callout-small
-                  (css/add-class :warning)
-                  (dom/p nil (dom/small nil "Excuse the mess, settings are under development and this section cannot be managed yet. Thank you for understanding.")))
                 (let [needs-verification? (or (not (:stripe/details-submitted? stripe-account))
                                               (not-empty (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed])))]
                   (when needs-verification?
