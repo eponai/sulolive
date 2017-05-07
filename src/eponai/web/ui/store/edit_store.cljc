@@ -265,14 +265,15 @@
                              (dom/div
                                (css/add-class :text)
                                (dom/strong nil (two-decimal-price price)))
-                             (menu/horizontal
-                               (css/add-class :edit-item-menu)
-                               (menu/item nil
-                                          (dom/a {:href (routes/url :store-dashboard/product
-                                                                    {:product-id (:db/id p)
-                                                                     :store-id   (:db/id store)})}
-                                                 (dom/i {:classes ["fa fa-pencil fa-fw"]})
-                                                 (dom/span nil "Go to edit"))))))))))))
+                             ;(menu/horizontal
+                             ;  (css/add-class :edit-item-menu)
+                             ;  (menu/item nil
+                             ;             (dom/a {:href (routes/url :store-dashboard/product
+                             ;                                       {:product-id (:db/id p)
+                             ;                                        :store-id   (:db/id store)})}
+                             ;                    (dom/i {:classes ["fa fa-pencil fa-fw"]})
+                             ;                    (dom/span nil "Go to edit"))))
+                             ))))))))
 
 (defui EditStore
   static om/IQuery
