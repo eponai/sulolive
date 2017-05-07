@@ -103,7 +103,7 @@
   {:auth    {::auth/store-owner store-id}
    :uniq-by [[:store-id store-id]]}
   {:value (let [items (db/pull-all-with db query {:where   '[[?s :store/items ?e]]
-                                                  :symbols {'s store-id}})]
+                                                  :symbols {'?s store-id}})]
             ;(debug "Found items: " (into [] items))
             items)})
 

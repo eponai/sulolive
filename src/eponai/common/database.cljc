@@ -164,6 +164,16 @@
         symbols (transduce (map :symbols) into symbols (vals fulltext-by-id))]
     [where symbols]))
 
+(defn- validate-symbols [symbols]
+  (letfn [(invalid-symbols [symbols]
+            (into []
+                  (remove #(or (= '... %) (#{\? \$} (first (or (namespace %) (name %))))))
+                  (flatten symbols)))]
+    (when-let [invalid-syms (seq (invalid-symbols (keys symbols)))]
+      (throw (ex-info (str "Found in valid symbols in query:" (vec invalid-syms))
+                      {:symbols symbols
+                       :invalid invalid-syms})))))
+
 (defn- x-with
   ([db entity-query] (x-with db entity-query nil))
   ([db {:keys [fulltext find where symbols rules] :as entity-query} find-pattern]
@@ -185,6 +195,7 @@
                   " with {:fulltext-id :your-id} in the where clauses. Where clauses where: " where)))
    (let [[where symbols] (add-fulltext-search db fulltext where symbols)
          find-pattern (or find find-pattern)
+         _ (validate-symbols symbols)
          symbol-seq (seq symbols)
          _ (trace "entity-query: " entity-query)
          query (where->query where
