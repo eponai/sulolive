@@ -1,5 +1,5 @@
 #sulo-edit-product {
-	max-width: $dashboard-content-width;
+	max-width: $global-width;
 	margin: 0 auto;
 	h3 {
 		@include wrap-text;
@@ -56,6 +56,12 @@
 #sulo-product-list {
 	max-width: $global-width;
 	margin: 0 auto;
+	.row {
+		max-width: $dashboard-content-width;
+		&.expanded {
+			max-width: $dashboard-max-width;
+		}
+	}
 	.td:first-child {
 		$width: 4rem;
 		max-width: $width;

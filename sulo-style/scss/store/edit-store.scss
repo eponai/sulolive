@@ -56,7 +56,7 @@
 			}
 		}
 		.row {
-			max-width: 54rem;
+			max-width: $dashboard-content-width;
 			margin-left: auto;
 			margin-right: auto;
 			&.expanded {

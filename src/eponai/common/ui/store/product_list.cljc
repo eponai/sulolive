@@ -5,8 +5,11 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.web.ui.store.common :as store-common]
     #?(:cljs
+       [cljsjs.react-grid-layout])
+    #?(:cljs
        [goog.crypt.base64 :as crypt])
     [om.next :as om :refer [defui]]
+    [om.dom :as om-dom]
     [taoensso.timbre :refer [debug]]
     [eponai.common.format.date :as date]
     [eponai.common.ui.utils :as utils]
@@ -16,6 +19,14 @@
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.web.ui.photo :as photo]))
+
+(defn products->grid-layout [products]
+  (let [layout-fn (fn [{:keys [widget/index] :as widget}]
+                    {:x (mod index num-cols)
+                     :y (int (/ index num-cols))
+                     :w (max 1 (.floor js/Math (/ (* (:widget/width widget) num-cols) 100)))
+                     :h (:widget/height widget)
+                     :i (str (:widget/uuid widget))})]))
 
 (defui ProductList
 
@@ -34,6 +45,11 @@
     "Products")
 
   Object
+  (componentDidMount [this]
+    #?(:cljs
+       (let [width-provider (.-WidthProvider (.-ReactGridLayout js/window))
+             grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))]
+         (om/update-state! this assoc ))))
   (render [this]
     (let [{:keys [query/inventory]} (om/props this)
           {:keys          [search-input]
@@ -137,6 +153,18 @@
                              (when (:store.item/updated p)
                                (date/date->string (* 1000 (:store.item/updated p)) "MMM dd yyyy HH:mm"))))))
                      products)))
+
+            ;(om-dom/create-element
+            ;  js/ReactGridLayout
+            ;  (clj->js {:className "layout" :cols 3 :rowHeight 40})
+            ;  (map-indexed
+            ;    (fn [i p]
+            ;      (dom/div
+            ;        {:key (str i)
+            ;         :data-grid {:x (mod 3 i) :y (/ 3 i)}}
+            ;        (:store.item/name p)))
+            ;    products))
+
             (grid/products
               products
               (fn [p]
