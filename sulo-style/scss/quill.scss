@@ -20,7 +20,7 @@ $editor-font-family: $header-font-family-sans-serif;//$header-font-family-serif;
 }
 
 .sl-quill-editor-container {
-	min-height: 10rem;
+	min-height: 20rem;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
@@ -61,6 +61,7 @@ $editor-font-family: $header-font-family-sans-serif;//$header-font-family-serif;
 	}
 
 	&.disabled {
+		min-height: 10rem;
 		.ql-toolbar {
 			opacity: 0;
 			visibility: hidden;

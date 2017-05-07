@@ -166,7 +166,7 @@
                                                 {:store-id (:store-id route-params)
                                                  :action   "create"})})
                  "Add product"))
-        (callout/callout-small
+        (callout/callout
           nil
           (grid/row
             (css/add-classes [:expanded :collapse])

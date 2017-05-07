@@ -95,8 +95,13 @@
 				&:first-child {
 					.sl-quill-editor-container {
 						// height: 100%;
-						min-height: 13.5rem;
+						min-height: 23.5rem;
+						transition: min-height .25s ease-in-out;
 						justify-content: flex-start;
+
+						&.disabled {
+							min-height: 13.5rem;
+						}
 					}
 				}
 			}
