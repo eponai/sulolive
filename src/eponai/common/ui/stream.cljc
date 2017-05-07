@@ -6,7 +6,8 @@
     [om.next :as om :refer [defui]]
     #?(:cljs [eponai.web.utils :as utils])
     [taoensso.timbre :refer [debug error info]]
-    [eponai.common.ui.script-loader :as script-loader]))
+    [eponai.common.ui.script-loader :as script-loader]
+    #?(:cljs [eponai.web.wowza-player :as wowza-player])))
 
 (defn add-fullscreen-listener [f]
   #?(:cljs
@@ -35,6 +36,7 @@
   static script-loader/IRenderLoadingScripts
   (render-while-loading-scripts [this props]
     (render-stream this (om/get-computed props)))
+
   Object
   (subscriber-host [this]
     (get-in (om/props this) [:query/stream-config :ui.singleton.stream-config/subscriber-url]))
@@ -48,40 +50,40 @@
                  photo-url (get-in store [:store/profile :store.profile/photo :photo/path] "/assets/img/storefront.jpg")
                  stream-url (stream/wowza-live-stream-url subscriber-host stream-id)
                  _ (debug "photo: url: " photo-url)
-                 player (js/WowzaPlayer.create
-                          wowza-element-id
-                          #js {:license                       "PLAY1-aaEJk-4mGcn-jW3Yr-Fxaab-PAYm4"
-                               :title                         ""
-                               :description                   "",
-                               :sourceURL                     stream-url
-                               :autoPlay                      true
-                               :volume                        75
-                               :uiShowDurationVsTimeRemaining true
-                               ;"mute"                 false,
-                               ;"loop"                 false,
-                               :audioOnly                     false
-                               ;:posterFrameURL                photo-url
-                               ;:endPosterFrameURL             photo-url
-                               ;:uiPosterFrameFillMode         "fill"
-                               :uiShowQuickRewind             false
-                               :uiShowBitrateSelector         false
-                               ;"uiQuickRewindSeconds" "30"
-                               })]
+                 player (om/shared this :shared/wowza-player)]
+             (wowza-player/init! player
+                                 wowza-element-id
+                                 {:license                       "PLAY1-aaEJk-4mGcn-jW3Yr-Fxaab-PAYm4"
+                                  :title                         ""
+                                  :description                   ""
+                                  :sourceURL                     ""
+                                  :autoPlay                      true
+                                  :volume                        75
+                                  :uiShowDurationVsTimeRemaining true
+                                  ;"mute"                 false,
+                                  ;"loop"                 false,
+                                  :audioOnly                     false
+                                  ;:posterFrameURL                photo-url
+                                  ;:endPosterFrameURL             photo-url
+                                  ;:uiPosterFrameFillMode         "fill"
+                                  :uiShowQuickRewind             false
+                                  :uiShowBitrateSelector         false
+                                  ;"uiQuickRewindSeconds" "30"
+                                  })
+             (wowza-player/play player stream-url)
              (add-fullscreen-listener on-fullscreen-change))
            (debug "Hasn't received server-url yet. Needs server-url to start stream.")))))
 
   (componentWillUnmount [this]
     #?(:cljs
-       (let [{:keys [on-fullscreen-change]} (om/get-state this)
-             player (js/WowzaPlayer.get wowza-element-id)]
+       (let [{:keys [on-fullscreen-change]} (om/get-state this)]
          (debug "Stream will unmount")
-         (when player
-           (.destroy player))
+         (wowza-player/destroy (om/shared this :shared/wowza-player))
          (remove-fullscreen-listener on-fullscreen-change))))
 
   (componentDidUpdate [this _ _]
     #?(:cljs
-       (when-not (js/WowzaPlayer.get wowza-element-id)
+       (when-not (wowza-player/get-player (om/shared this :shared/wowza-player))
          (.subscribe-wowza this))))
 
   (componentDidMount [this]
@@ -102,5 +104,5 @@
 
 (def Stream (script-loader/js-loader {:component Stream-no-loader
                                       #?@(:cljs [:scripts [[#(exists? js/WowzaPlayer)
-                                                            "//player.wowza.com/player/1.0.07.4414/wowzaplayer.min.js"]]])}))
+                                                            "//player.wowza.com/player/1.0.10.4565/wowzaplayer.min.js"]]])}))
 (def ->Stream (om/factory Stream))

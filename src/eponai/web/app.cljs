@@ -21,6 +21,7 @@
     [eponai.client.routes :as routes]
     [eponai.common.routes :as common.routes]
     [eponai.common.ui.router :as router]
+    [eponai.web.wowza-player :as wowza-player]
     [cljs.core.async :as async]))
 
 (defn add-root! [reconciler]
@@ -81,8 +82,9 @@
 (defonce history-atom (atom nil))
 (defonce reconciler-atom (atom nil))
 
-(defn- run [{:keys [auth-lock modules]
-             :or   {auth-lock (auth/auth0-lock)}
+(defn- run [{:keys [auth-lock modules wowza-player]
+             :or   {auth-lock    (auth/auth0-lock)
+                    wowza-player (wowza-player/real-player)}
              :as   run-options}]
   (let [modules (or modules (modules/advanced-compilation-modules router/routes))
         init? (atom false)
@@ -118,6 +120,7 @@
                                        :ui->props                  (utils/cached-ui->props-fn parser)
                                        :send-fn                    send-fn
                                        :remotes                    (:order remote-config)
+                                       :shared/wowza-player        wowza-player
                                        :shared/modules             modules
                                        :shared/browser-history     history
                                        :shared/store-chat-listener (web.chat/store-chat-listener reconciler-atom)
@@ -154,7 +157,9 @@
 
 (defn run-dev [& [deps]]
   (run (merge {:auth-lock (auth/fake-lock)
-               :modules   (modules/dev-modules router/routes)}
+               :modules   (modules/dev-modules router/routes)
+               :wowza-player     (wowza-player/fake-player)
+               }
               deps)))
 
 (defn on-reload! []

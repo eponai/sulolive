@@ -39,7 +39,8 @@
                       conn
                       remotes
                       merge]
-               :shared/keys [browser-history
+               :shared/keys [wowza-player
+                             browser-history
                              auth-lock
                              local-storage
                              store-chat-listener
@@ -57,7 +58,8 @@
                                          :remotes    remotes
                                          :send       send-fn
                                          :merge      merge
-                                         :shared     {:shared/modules             modules
+                                         :shared     {:shared/wowza-player        wowza-player
+                                                      :shared/modules             modules
                                                       :shared/browser-history     browser-history
                                                       :shared/local-storage       local-storage
                                                       :shared/auth-lock           auth-lock
