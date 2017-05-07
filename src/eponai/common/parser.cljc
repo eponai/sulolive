@@ -1,6 +1,6 @@
 (ns eponai.common.parser
   (:require [eponai.common.parser.util :as util #?(:clj :refer :cljs :refer-macros) [timeit]]
-            [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [debug error info warn trace]]
+            [taoensso.timbre :as timbre  :refer [debug error info warn trace]]
             [om.next :as om]
             [om.next.cache :as om.cache]
             [eponai.client.auth :as client.auth]
@@ -423,7 +423,7 @@
   (fn [env k p]
     (let [roles (auth-role-method env k p)]
       (if (auth/is-public-role? roles)
-        (read-or-mutate (dissoc env :auth) k p)
+        (read-or-mutate env k p)
         (let [roles (cond-> roles (keyword? roles) (hash-map true))]
           (if-some [user (auth/authed-user-for-params (:db env) (keys roles) (:auth env) roles)]
             (read-or-mutate (update env :auth #(-> (dissoc % :email) (assoc :user-id user)))

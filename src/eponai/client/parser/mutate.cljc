@@ -166,6 +166,11 @@
   (when target
     {:remote true}))
 
+(defmethod client-mutate 'stream/ensure-online
+  [{:keys [target]} _ _]
+  (when target
+    {:remote true}))
+
 (defmethod client-mutate 'user/checkout
   [{:keys [target]} k p]
   (if target

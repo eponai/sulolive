@@ -29,7 +29,8 @@
   (query [_]
     [:query/messages
      {:proxy/stream (om/get-query stream/Stream)}
-     {:query/stream [:stream/state]}
+     {:query/stream [:stream/state
+                     :stream/token]}
      {:query/stream-config [:ui.singleton.stream-config/publisher-url]}
      {:query/chat [:chat/store
                    ;; ex chat modes: :chat.mode/public :chat.mode/sub-only :chat.mode/fb-authed :chat.mode/owner-only
@@ -66,6 +67,7 @@
           {:query/keys [stream chat stream-config]
            :as         props} (om/props this)
           stream-state (:stream/state stream)
+          stream-token (:stream/token stream)
           chat-message (:chat-message (om/get-state this))
           message (msg/last-message this 'stream-token/generate)]
       (dom/div
@@ -149,7 +151,7 @@
                   (or (nil? stream-state) (= stream-state :stream.state/offline))
                   (dom/a
                     (css/button-hollow {:onClick #(binding [parser/*parser-allow-local-read* false]
-                                                   (om/transact! this [{:query/stream [:stream/state]}]))})
+                                                   (om/transact! this [:query/stream]))})
                     (dom/i {:classes ["fa fa-refresh fa-fw"]})
                     (dom/strong nil "Refresh"))
                   (= stream-state :stream.state/live)
@@ -160,9 +162,21 @@
                   (warn "Unknown stream-state: " stream-state)))
               (callout/callout-small
                 nil
-                (stream/->Stream (om/computed (:proxy/stream props)
-                                              {:hide-chat? true
-                                               :store      store})))))
+                (stream/->Stream
+                  (om/computed
+                    (:proxy/stream props)
+                    {:hide-chat?            true
+                     :store                 store
+                     :wowza-player-opts     {:on-error-retry-forever? true
+                                             :on-started-playing      #(when (= stream-state :stream.state/offline)
+                                                                         (om/transact! this `[(~'stream/ensure-online
+                                                                                                ~{:store-id (:db/id store)})
+                                                                                              :query/stream]))}
+                     ;; Allow all states, as there might be something wrong with the
+                     ;; state change communication.
+                     :allowed-stream-states #{:stream.state/offline
+                                              :stream.state/live
+                                              :stream.state/online}})))))
           (grid/column
             (grid/column-size {:small 12 :large 6})
 
@@ -246,17 +260,16 @@
                     (grid/column-size {:small 12 :medium 8})
                     (dom/label nil "Stream Key")
                     (dom/input {:type        "text"
-                                :value       (if (msg/final? message)
-                                               (:token (msg/message message))
-                                               "")
+                                :value       (or stream-token "")
                                 ;:defaultValue (if (msg/final? message)
                                 ;                (:token (msg/message message))
                                 ;                "")
-                                :placeholder ""}))
+                                :placeholder "Create a stream key..."}))
                   (grid/column
                     nil
                     (dom/a
-                      (css/button-hollow {:onClick #(msg/om-transact! this `[(stream-token/generate ~{:store-id (:db/id store)})])})
+                      (css/button-hollow {:onClick #(msg/om-transact! this `[(stream-token/generate ~{:store-id (:db/id store)})
+                                                                             {:query/stream [:stream/token]}])})
                       (dom/span nil "Create new key")))))))
           (grid/column
             nil

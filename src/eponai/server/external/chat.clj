@@ -56,6 +56,8 @@
 (def parse-chat-message-user-query
   (memoize parse-chat-message-user-query*))
 
+(defn chat-db [chat]
+  (d/db (:conn (:chat-datomic chat))))
 
 (defrecord DatomicChat [sulo-datomic chat-datomic]
   component/Lifecycle
@@ -101,18 +103,14 @@
       (async/close! (:store-id-chan this)))
     (dissoc this ::started? :tx-report-queue :control-chan :store-id-chan))
 
-  db/ConnectionApi
-  (db* [this]
-    (d/db (:conn chat-datomic)))
-
   IWriteStoreChat
   (write-message [this store user message]
-    (let [tx (format/chat-message (db/db this) store user message)]
+    (let [tx (format/chat-message (chat-db this) store user message)]
       (db/transact (:conn chat-datomic) tx)))
 
   IReadStoreChat
   (initial-read [this store query]
-    (let [chat-messages (db/pull-one-with (db/db this)
+    (let [chat-messages (db/pull-one-with (chat-db this)
                                           query
                                           (datomic-chat-entity-query store))
           users (into #{} (comp (mapcat :chat/messages)
@@ -126,7 +124,7 @@
                                   (seq users))]
       (conj (or user-data []) chat-messages)))
   (read-messages [this store query last-read]
-    (let [db (db/db this)
+    (let [db (chat-db this)
           db-history (d/since (d/history db) last-read)
           messages (query/all db db-history query (datomic-chat-entity-query store))
           user-data (->> (db/find-with db {:find    '[[?user ...]]
@@ -143,7 +141,7 @@
         (into messages user-data)
         (into user-data messages))))
   (last-read [this]
-    (d/basis-t (db/db this)))
+    (d/basis-t (chat-db this)))
   (chat-update-stream [this]
     (:store-id-chan this))
   (sync-up-to! [this basis-t]

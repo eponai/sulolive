@@ -98,18 +98,6 @@
                                                            :symbols {'?u (:user-id auth)}})]
                (db/transact state [[:db/add old-profile :user.profile/name name]])))})
 
-(defn- with-store [{:keys [state auth db]} k {:keys [store-id]} f]
-  (if-let [store (db/one-with db {:where   '[[?e :store/owners ?owner]
-                                             [?owner :store.owner/user ?u]
-                                             [?u :user/email ?email]]
-                                  :symbols {'?e     store-id
-                                            '?email (:email auth)}})]
-    (f (db/entity db store))
-    (throw (ex-info "Can only generate tokens for streams which you are owner for"
-                    {:store-id store-id
-                     :mutation k
-                     :auth     auth}))))
-
 (defmutation store.photo/upload
   [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ {:keys [photo photo-key store-id] :as p}]
   {:auth {::auth/store-owner store-id}
@@ -149,6 +137,44 @@
                                     :stream/token token}])
                {:token token}))})
 
+(defn- wowza-token-store-owner [{:keys [system state]} token]
+  (let [{:keys [user-id store-id]} (jwt/unsign token (wowza/jwt-secret (:system/wowza system)))]
+    (db/find-with (db/db state)
+                  (->> (auth/auth-role-query ::auth/store-owner nil {:store-id store-id})
+                       (db/merge-query {:find    '[?store .]
+                                        :where   '[[?stream :stream/store ?store]
+                                                   [?stream :stream/token ?token]]
+                                        :symbols {'?store store-id
+                                                  '?token token
+                                                  '?user  user-id}})))))
+
+(defn- ensure-stream-is-atleast-online [conn store-id]
+  (try
+    (db/transact conn [[:db.fn/cas [:stream/store store-id] :stream/state :stream.state/offline :stream.state/online]])
+    (catch Exception e
+      ;; We don't care if this fails.
+      (debug "Ignoring cas exception : " e))))
+
+(defmutation stream/go-online
+  [{:keys [state] :as env} k {:keys [stream/token]}]
+  ;; We do some custom authing with the stream token.
+  {:auth ::auth/public
+   :resp {:success "Stream went online"
+          :error   "Could not go online"}}
+  {:action (fn []
+             (if-let [store-id (wowza-token-store-owner env token)]
+               (do (debug "Was store owner of store-id: " store-id " setting stream to atleast online.")
+                   (ensure-stream-is-atleast-online state store-id))
+               (throw (ex-info "User was was not a store owner" {:stream/token token}))))})
+
+(defmutation stream/ensure-online
+  [{:keys [state auth] :as env} k {:keys [store-id] :as p}]
+  {:auth {::auth/store-owner store-id}
+   :resp {:success "Stream is online"
+          :error "Could not ensure stream was online"}}
+  {:action (fn []
+             (ensure-stream-is-atleast-online state store-id))})
+
 (defmutation stream/go-live
   [{:keys [state auth] :as env} k {:keys [store-id] :as p}]
   {:auth {::auth/store-owner store-id}
@@ -166,6 +192,18 @@
   {:action (fn []
              (db/transact state [{:stream/store store-id
                                   :stream/state :stream.state/offline}]))})
+
+(defmutation stream/go-offline-with-token
+  [{:keys [state] :as env} k {:keys [stream/token] :as p}]
+  ;; We do some custom authing with the stream token.
+  {:auth ::auth/public
+   :resp {:success "Went offline!"
+          :error   "Could not go offline"}}
+  {:action (fn []
+             (if-let [store-id (wowza-token-store-owner env token)]
+               (db/transact state [{:stream/store store-id
+                                    :stream/state :stream.state/offline}])
+               (throw (ex-info "User in stream token was not a store owner" {:stream/token token}))))})
 
 ;########### STORE @############
 (defmutation store/update-info

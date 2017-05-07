@@ -1,7 +1,7 @@
 (ns eponai.common.auth
   (:require [eponai.common :as c]
             [eponai.common.database :as db]
-            [taoensso.timbre :refer [debug]])
+            [taoensso.timbre :as timbre :refer [debug]])
   #?(:clj
      (:import [clojure.lang ExceptionInfo])))
 
