@@ -85,6 +85,9 @@
 (defn add-class [class & [opts]]
   (update opts :classes conj class))
 
+(defn add-classes [classes & [opts]]
+  (update opts :classes into classes))
+
 ;; ----------- Basic ----------------------------------------------
 
 (defn text-align [alignment & [opts]]

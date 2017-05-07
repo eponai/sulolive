@@ -3,8 +3,12 @@
 		border: none;
 	}
 	.store-container {
+		margin-bottom: 1rem;
 		a {
 			margin: 0;
+		}
+		.row {
+			margin: 0 auto;
 		}
 		.row:last-child {
 			margin-top: 1rem;
@@ -68,6 +72,7 @@
 		}
 		ul.menu.navigation {
 			font-weight: 500;
+			flex-wrap: wrap;
 		}
 		.about {
 			border-right: 1px solid $medium-gray;

@@ -60,6 +60,7 @@ $dashboard-content-width: 54rem;
 	}
 	h3 {
 		text-transform: none;
+		margin-top: 0.5rem;
 		@include breakpoint(medium) {
 			font-size: 150%;
 		}	

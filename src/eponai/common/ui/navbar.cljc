@@ -186,28 +186,28 @@
 
 (defn user-menu-item [component]
   (let [{:query/keys [auth owned-store]} (om/props component)]
-    (if (some? auth)
-      (menu/item-dropdown
-        (->> {:dropdown (user-dropdown component auth owned-store)
-              :classes  [:user-photo-item]
-              :href     "#"
-              :onClick  #(.open-dropdown component :dropdown/user)}
-             (css/show-for :large))
-        (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))
-      (menu/item
-        (css/show-for :large)
-        (dom/a
-          (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
-               (css/button-hollow))
-          (dom/span nil "Sign in")))
-      )
-    (when (some? auth)
-      (menu/item
-        (->> (css/hide-for :large)
-             (css/add-class :user-photo-item))
-        (dom/a
-          {:href (routes/url :user {:user-id (:db/id auth)})}
-          (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))))))
+    [
+     (if (some? auth)
+       (menu/item-dropdown
+         (->> {:dropdown (user-dropdown component auth owned-store)
+               :classes  [:user-photo-item]
+               :href     "#"
+               :onClick  #(.open-dropdown component :dropdown/user)}
+              (css/show-for :large))
+         (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))
+       (menu/item
+         (css/show-for :large)
+         (dom/a
+           (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
+                (css/button-hollow))
+           (dom/span nil "Sign in"))))
+     (when (some? auth)
+       (menu/item
+         (->> (css/hide-for :large)
+              (css/add-class :user-photo-item))
+         (dom/a
+           {:href (routes/url :user {:user-id (:db/id auth)})}
+           (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))))]))
 
 (defn manage-store-navbar [component]
   (let [{:query/keys [auth owned-store current-route]} (om/props component)]

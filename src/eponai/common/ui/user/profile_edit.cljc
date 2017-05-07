@@ -8,7 +8,6 @@
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.css :as css]
-    [eponai.common.ui.elements.photo :as photo]
     [taoensso.timbre :refer [debug]]
     [eponai.client.parser.message :as msg]
     [eponai.common.ui.elements.grid :as grid]
