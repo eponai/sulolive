@@ -18,7 +18,8 @@
     [eponai.common.database :as db]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.store.common :as store-common]))
 
 (def form-elements
   {:input-price          "input-price"
@@ -117,6 +118,14 @@
      :query/messages
      #?(:cljs
         {:proxy/photo-upload (om/get-query pu/PhotoUploader)})])
+  static store-common/IDashboardNavbarContent
+  (subnav-title [_ current-route]
+    (let [{:keys [product-id]} (:route=params current-route)]
+      (if product-id
+        "Edit product"
+        "New product")))
+  (render-subnav [_ _])
+
   Object
   (componentDidUpdate [this _ _]
     (when-let [action-finished (some #(when (msg/final? (msg/last-message this %)) %)
@@ -183,6 +192,7 @@
         {:id "sulo-edit-product"}
         (when (or (not did-mount?) is-loading?)
           (common/loading-spinner nil))
+        (dom/h1 (css/show-for-sr) (if product-id "Edit product" "New product"))
         (grid/row-column
           nil
           (menu/breadcrumbs
@@ -191,185 +201,186 @@
                                   "Products"))
             (menu/item nil (dom/span nil
                                      (if (is-new-product? this) "New" "Edit")))))
-        (grid/row
-          (->> (css/align :bottom)
-               (css/add-class :page-header))
-          (grid/column
-            (grid/column-size {:small 12 :medium 8})
-            (if (is-new-product? this)
-              (dom/h3 nil "New product")
-              (dom/div
-                nil
-                (dom/h3 nil (dom/span nil "Edit product - ") (dom/small nil item-name))))))
 
-        (grid/row
-          (css/add-class :collapse)
-          (grid/column
+        (dom/div
+          (css/add-class :section-title)
+          (dom/h2 nil "Details"))
+        ;(grid/row
+        ;  (->> (css/align :bottom)
+        ;       (css/add-class :page-header))
+        ;  (grid/column
+        ;    (grid/column-size {:small 12 :medium 8})
+        ;    (if (is-new-product? this)
+        ;      (dom/h3 nil "New product")
+        ;      (dom/div
+        ;        nil
+        ;        (dom/h3 nil (dom/span nil "Edit product - ") (dom/small nil item-name))))))
+        (callout/callout
+          nil
+          (grid/row
             nil
-            (callout/callout
+            (label-column
               nil
-              (callout/header nil "Details")
+              (dom/label nil "Title"))
+            (grid/column
+              nil
+              (dom/input {:id           (get form-elements :input-name)
+                          :type         "text"
+                          :defaultValue item-name})))
+          (grid/row
+            nil
+            (label-column
+              nil
+              (dom/label nil "Description"))
+            (grid/column
+              nil
+              (quill/->QuillEditor (om/computed {:content     (f/bytes->str description)
+                                                 :placeholder "What's your product like?"
+                                                 :id          "product-edit"
+                                                 :enable? true}
+                                                {:on-editor-created #(om/update-state! this assoc :quill-editor %)}))))
 
+          (grid/row
+            nil
+            (label-column
+              nil
+              (dom/label nil "Price in CAD"))
+            (grid/column
+              nil
               (grid/row
                 nil
-                (label-column
-                  nil
-                  (dom/label nil "Title"))
-                (grid/column
-                  nil
-                  (dom/input {:id           (get form-elements :input-name)
-                              :type         "text"
-                              :defaultValue item-name})))
 
-              (grid/row
-                nil
-                (label-column
-                  nil
-                  (dom/label nil "Description"))
                 (grid/column
                   nil
-                  (quill/->QuillEditor (om/computed {:content     (f/bytes->str description)
-                                                     :placeholder "What's your product like?"
-                                                     :id          "product-edit"}
-                                                    {:on-editor-created #(om/update-state! this assoc :quill-editor %)}))))
+                  (dom/input {:id           (get form-elements :input-price)
+                              :type         "number"
+                              :step         "0.01"
+                              :min          0
+                              :max          "99999999.99"
+                              :defaultValue (or price "")}))
 
-              (callout/header nil "Pricing")
-              (grid/row
-                nil
-                (label-column
-                  nil
-                  (dom/label nil "Price in CAD"))
-                (grid/column
-                  nil
-                  (grid/row
+                ;(grid/column
+                ;  nil
+                ;  (dom/select {:defaultValue "usd"}
+                ;              (dom/option {:value "usd"} "USD")))
+                ))))
+
+        (dom/div
+          (css/add-class :section-title)
+          (dom/h2 nil "Photos"))
+
+        (callout/callout
+          nil
+          (grid/row
+            (->> (css/add-class :photo-section)
+                 (grid/columns-in-row {:small 3 :medium 4 :large 5}))
+            (map-indexed
+              (fn [i p]
+                (let [{:store.item.photo/keys [photo]} p
+                      photo-key (or (:public_id p) (:photo/id photo) p)]
+                  (grid/column
                     nil
+                    ;(dom/label
+                    ;  {:htmlFor file-id})
+                    (when (some? photo-key)
+                      (dom/div
+                        nil
+                        (p/square {:photo-id       photo-key
+                                   :transformation :transformation/thumbnail})
+                        (dom/a
+                          (->>
+                            {:onClick #(.remove-uploaded-photo this i)}
+                            (css/button-hollow)) (dom/span nil "Remove")))))))
+              uploaded-photos)
+            (when (some? queue-photo)
+              (grid/column
+                nil
+                (p/square {:src (:src queue-photo)}
+                          (p/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]})))))
+            (when (and (nil? queue-photo) (> 5 (count (conj uploaded-photos))))
+              (grid/column
+                nil
+                (dom/label
+                  {:htmlFor (str "file-" (count photos))}
+                  (empty-photo-button)
+                  (photo-uploader this (count photos)))))))
 
-                    (grid/column
-                      nil
-                      (dom/input {:id           (get form-elements :input-price)
-                                  :type         "number"
-                                  :step         "0.01"
-                                  :min          0
-                                  :max          "99999999.99"
-                                  :defaultValue (or price "")}))
+        (dom/div
+          (css/add-class :section-title)
+          (dom/h2 nil "Inventory"))
 
-                    ;(grid/column
-                    ;  nil
-                    ;  (dom/select {:defaultValue "usd"}
-                    ;              (dom/option {:value "usd"} "USD")))
-                    ))))
-
-            (callout/callout
+        (callout/callout
+          nil
+          (if (< 1 sku-count)
+            (dom/div
               nil
-              (callout/header nil "Photos")
-
-              (grid/row
-                (->> (css/add-class :photo-section)
-                     (grid/columns-in-row {:small 3 :medium 4 :large 5}))
-                (map-indexed
-                  (fn [i p]
-                    (let [{:store.item.photo/keys [photo]} p
-                          photo-key (or (:public_id p) (:photo/id photo) p)]
+              (map
+                (fn [index]
+                  (let [sku (get skus index)
+                        {:store.item.sku/keys [inventory variation]} sku
+                        {:store.item.sku.inventory/keys [type value]} inventory
+                        inventory-value (when value (name value))]
+                    (grid/row
+                      (css/add-class :input-sku-group)
+                      (label-column
+                        nil
+                        (dom/label nil "Variation"))
                       (grid/column
                         nil
-                        ;(dom/label
-                        ;  {:htmlFor file-id})
-                        (when (some? photo-key)
-                          (dom/div
-                            nil
-                            (p/square {:photo-id       photo-key
-                                       :transformation :transformation/thumbnail})
-                            (dom/a
-                              (->>
-                                {:onClick #(.remove-uploaded-photo this i)}
-                                (css/button-hollow)) (dom/span nil "Remove")))))))
-                  uploaded-photos)
-                (when (some? queue-photo)
-                  (grid/column
-                    nil
-                    (p/square {:src (:src queue-photo)}
-                              (p/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]})))))
-                (when (and (nil? queue-photo) (> 5 (count (conj uploaded-photos))))
-                  (grid/column
-                    nil
-                    (dom/label
-                      {:htmlFor (str "file-" (count photos))}
-                      (empty-photo-button)
-                      (photo-uploader this (count photos)))))))
-
-
-            (callout/callout
-              nil
-              (callout/header nil "Inventory")
-              (if (< 1 sku-count)
-                (dom/div
-                  nil
-                  (map
-                    (fn [index]
-                      (let [sku (get skus index)
-                            {:store.item.sku/keys [inventory variation]} sku
-                            {:store.item.sku.inventory/keys [type value]} inventory
-                            inventory-value (when value (name value))]
                         (grid/row
-                          (css/add-class :input-sku-group)
-                          (label-column
-                            nil
-                            (dom/label nil "Variation"))
+                          nil
                           (grid/column
                             nil
-                            (grid/row
-                              nil
-                              (grid/column
-                                nil
-                                (dom/input
-                                  {:type         "text"
-                                   :id           (str (:input-sku-value form-elements) index)
-                                   :defaultValue (or variation "")}))
-                              (grid/column
-                                (css/add-class :shrink)
-                                (dom/select {:defaultValue (or inventory-value "in-stock")
-                                             :id           (str (:input-sku-inventory form-elements) index)}
-                                            (dom/option {:value "in-stock"} "In stock")
-                                            (dom/option {:value "out-of-stock"} "Out of stock")
-                                            (dom/option {:value "limited"} "Limited")))
-                              (grid/column
-                                (css/add-class :shrink)
-                                (dom/a (->> {:onClick #(om/update-state! this update :sku-count dec)}
-                                            (css/button-hollow)
-                                            (css/add-class ::css/color-secondary))
-                                       (dom/i {:classes ["fa fa-trash-o fa-fw"]}))))))))
-                    (range sku-count)))
-                (dom/div
-                  nil
-                  (grid/row
-                    nil
-                    (label-column nil
-                                  (dom/label nil "Availability"))
-                    (grid/column
-                      nil
-                      (let [value (get-in (first skus) [:store.item.sku/inventory :store.item.sku.inventory/value])
-                            inventory-value (if value (name value) "in-stock")]
-                        (dom/select {:defaultValue inventory-value
-                                     :id           (:input-main-inventory form-elements)}
-                                    (dom/option {:value "in-stock"} "In stock")
-                                    (dom/option {:value "out-of-stock"} "Out of stock")
-                                    (dom/option {:value "limited"} "Limited")))))))
+                            (dom/input
+                              {:type         "text"
+                               :id           (str (:input-sku-value form-elements) index)
+                               :defaultValue (or variation "")}))
+                          (grid/column
+                            (css/add-class :shrink)
+                            (dom/select {:defaultValue (or inventory-value "in-stock")
+                                         :id           (str (:input-sku-inventory form-elements) index)}
+                                        (dom/option {:value "in-stock"} "In stock")
+                                        (dom/option {:value "out-of-stock"} "Out of stock")
+                                        (dom/option {:value "limited"} "Limited")))
+                          (grid/column
+                            (css/add-class :shrink)
+                            (dom/a (->> {:onClick #(om/update-state! this update :sku-count dec)}
+                                        (css/button-hollow)
+                                        (css/add-class ::css/color-secondary))
+                                   (dom/i {:classes ["fa fa-trash-o fa-fw"]}))))))))
+                (range sku-count)))
+            (dom/div
+              nil
               (grid/row
                 nil
-                (label-column nil)
+                (label-column nil
+                              (dom/label nil "Availability"))
                 (grid/column
                   nil
-                  (dom/a
-                    (->> {:onClick #(om/update-state! this update :sku-count inc)}
-                         (css/button-hollow)) (dom/span nil "Add variation...")))))))
+                  (let [value (get-in (first skus) [:store.item.sku/inventory :store.item.sku.inventory/value])
+                        inventory-value (if value (name value) "in-stock")]
+                    (dom/select {:defaultValue inventory-value
+                                 :id           (:input-main-inventory form-elements)}
+                                (dom/option {:value "in-stock"} "In stock")
+                                (dom/option {:value "out-of-stock"} "Out of stock")
+                                (dom/option {:value "limited"} "Limited")))))))
+          (grid/row
+            nil
+            (label-column nil)
+            (grid/column
+              nil
+              (dom/a
+                (->> {:onClick #(om/update-state! this update :sku-count inc)}
+                     (css/button-hollow)) (dom/span nil "Add variation...")))))
+
         (grid/row
-          nil
+          (css/add-classes [:expanded :collapse])
           (grid/column
             nil
             (when-not (is-new-product? this)
               (dom/a {:classes ["button hollow alert"]
                       :onClick #(.delete-product this)}
-                     (dom/span nil "Delete"))))
+                     (dom/span nil "Delete product"))))
           (grid/column
             (css/text-align :right)
             (dom/a
@@ -384,6 +395,6 @@
                    (css/button))
               (if is-loading?
                 (dom/i {:classes ["fa fa-spinner fa-spin"]})
-                (dom/span nil "Save")))))))))
+                (dom/span nil "Save product")))))))))
 
 (def ->ProductEditForm (om/factory ProductEditForm))

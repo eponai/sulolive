@@ -236,7 +236,7 @@
                      (css/add-class :is-active))
                    (dom/a {:onClick #(om/update-state! component assoc :products/selected-section (:db/id s))}
                           (dom/span nil (string/capitalize (:store.section/label s))))))
-               (concat (:store/sections store) (:store/sections store) (:store/sections store))))
+               (:store/sections store)))
 
         (dom/input
           {:key         "profile.products.search"

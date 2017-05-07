@@ -87,7 +87,8 @@
           (menu/item-text
             (css/show-for :large)
             (when (satisfies? store-common/IDashboardNavbarContent component)
-              (dom/span nil (store-common/subnav-title component)))))
+              (dom/span nil (store-common/subnav-title component current-route)))))
+
         (when (satisfies? store-common/IDashboardNavbarContent component)
           (store-common/render-subnav component current-route))
         (menu/horizontal nil)))))
