@@ -70,10 +70,16 @@
                               :store/featured-img-src
                               {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                                          :store.item.photo/index]}]}]}
-     {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id {:store/profile [:store.profile/name {:store.profile/photo [:photo/path :photo/id]}]}]}]}])
+     {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id {:store/profile [:store.profile/name {:store.profile/photo [:photo/path :photo/id]}]}]}]}
+     {:query/auth [:db/id]}
+     {:query/owned-store [:db/id
+                          {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
+                          ;; to be able to query the store on the client side.
+                          {:store/owners [{:store.owner/user [:db/id]}]}]}])
   Object
   (render [this]
-    (let [{:keys [proxy/navbar query/featured-items query/featured-streams]} (om/props this)
+    (let [{:keys [proxy/navbar query/featured-items query/featured-streams]
+           :query/keys [owned-store]} (om/props this)
           {:keys [input-search]} (om/get-state this)]
       (debug "Featured items: " featured-items)
       (dom/div #js {:id "sulo-index" :className "sulo-page"}
@@ -210,20 +216,22 @@
                                               (pi/product-element {:open-url? true} p)))
                                           (take 4 featured-items))))
                                     "See More")
+            ;(when-not (some? auth))
 
             (banner {:color :default}
                     (dom/div nil
                       (dom/h2 nil "Watch, shop and chat with your favorite vendors and artisans.")
                       (dom/p nil "Follow and stay up-to-date on when they're online to meet you!")
-                      (dom/a #js {:className "button"} "Join"))
+                      (dom/a #js {:className "button"} "Join")
+                      )
                     (icons/heart-drawing))
 
             (banner {:color :white
                      :align :right}
                     (dom/div nil
-                      (dom/h2 nil "Open your own shop on SULO and tell your story to Vancouver.")
+                      (dom/h2 nil "Open your own store on SULO and tell your story to Vancouver.")
                       (dom/p nil "Enjoy a community that lives for local.")
-                      (dom/a #js {:className "button gray hollow"} "Contact Us"))
+                      (my-dom/a (css/button-hollow {:href (routes/url :sell)}) "Start a store"))
                     nil)))))))
 
 

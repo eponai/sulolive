@@ -12,7 +12,8 @@
     [eponai.client.routes :as routes]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.icons :as icons]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as p]
+    [eponai.common.ui.elements.callout :as callout]))
 
 (defn items-by-store [items]
   (group-by #(get-in % [:store.item/_skus :store/_items]) items))
@@ -104,7 +105,9 @@
                        (dom/strong nil (utils/two-decimal-price (+ item-price shipping-price))))
                 (dom/a
                   (->> {:href (routes/url :checkout {:store-id (:db/id s)})}
-                       (css/button)) "Checkout"))))))
+                       (css/button)
+                       (css/add-class :disabled)) "Checkout"))))
+          ))
       skus-by-store)))
 
 (defui ShoppingBag
@@ -136,6 +139,9 @@
         (grid/row-column
           nil
           (dom/h1 nil "Shopping bag")
+          (callout/callout-small
+            (css/add-class :warning)
+            (dom/small nil "Purchases are disabled until we finish work on the payment integration. Hang tight, we're almost there!"))
           (if (not-empty items)
             (dom/div nil
                      (store-items-element this skus-by-store))

@@ -68,7 +68,7 @@
   @include breakpoint(large) {
     position: fixed;
   }
-  height: 2px;
+  height: 1px;
   background: map-get($foundation-palette, highlight);
   // opacity: 0;
   transition: all .25s linear;

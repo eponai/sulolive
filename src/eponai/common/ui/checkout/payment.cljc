@@ -45,14 +45,18 @@
         (dom/small nil (or error payment-error)))
       (dom/div (css/text-align :right)
                (dom/a
-                 (css/button (when-not (script-loader/is-loading-scripts? this)
-                               {:onClick #(.save-payment this)}))
+                 (->> (css/button (when-not (script-loader/is-loading-scripts? this)
+                                    {:onClick #(.save-payment this)}))
+                      (css/add-class :disabled))
                  (dom/span nil "Complete purchase"))
                (dom/p nil
                       (dom/small nil "This sale will be processed as ")
                       (dom/small nil (two-decimal-price amount))
                       (dom/small nil " US dollars."))
-               ))))
+               )
+      (callout/callout-small
+        (css/add-class :warning)
+        (dom/small nil "Purchases are disabled until we finish work on the payment integration. Hang tight, we're almost there!")))))
 
 (defui CheckoutPayment-no-loader
   static script-loader/IRenderLoadingScripts
