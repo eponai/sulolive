@@ -53,12 +53,17 @@
                    (-> new-photo (assoc :store.item.photo/index i) cf/add-tempid)))
                ps))
 
-(defn create-product [{:keys [state system]} store-id {:store.item/keys [photos skus] :as params}]
-  (let [product (f/product params)
+(defn create-product [{:keys [state system]} store-id {:store.item/keys [photos skus section] :as params}]
+  (let [new-section (cf/add-tempid section)
+        product (cond-> (f/product params)
+                        (some? new-section)
+                        (assoc :store.item/section new-section))
 
         ;; Craete product transactions
-        product-txs [product
-                     [:db/add store-id :store/items (:db/id product)]]
+        product-txs (cond-> [product
+                             [:db/add store-id :store/items (:db/id product)]]
+                            (db/tempid? new-section)
+                            (conj new-section [:db/add store-id :store/sections (:db/id new-section)]))
 
         ;; Create SKU transactions
         new-skus (map (fn [s] (f/sku s)) skus)
@@ -71,14 +76,20 @@
     ;; Transact all updates to Datomic once
     (db/transact state product-sku-photo-txs)))
 
-(defn update-product [{:keys [state system]} product-id {:store.item/keys [photos skus] :as params}]
-  (let [old-item (db/pull (db/db state) [:db/id :store.item/photos :store.item/skus] product-id)
+(defn update-product [{:keys [state system]} product-id {:store.item/keys [photos skus section] :as params}]
+  (let [old-item (db/pull (db/db state) [:db/id :store.item/photos :store.item/skus :store/_items] product-id)
         old-skus (:store.item/skus old-item)
         old-photos (:store.item/photos old-item)
 
+        store (get :store/_items old-item)
         ;; Update product with new info, name/description, etc. Collections are updated below.
-        new-product (f/product (assoc params :db/id product-id))
-        product-txs [new-product]
+        new-section (cf/add-tempid section)
+        new-product (cond-> (f/product (assoc params :db/id product-id))
+                            (some? new-section)
+                            (assoc :store.item/section new-section))
+        product-txs (cond-> [new-product]
+                            (db/tempid? (:db/id new-section))
+                            (conj new-section [:db/add (:db/id store) :store/sections (:db/id new-section)]))
 
         ;; Update SKUs, remove SKUs not included in the skus collection from the client.
         new-skus (map (fn [s] (f/sku s)) skus)

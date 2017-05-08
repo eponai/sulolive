@@ -11,13 +11,6 @@
 
  ;; Store
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store/status
-  :db/valueType          :db.type/keyword
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Status of the store (e.g. if they are 'closed' 'active' etc."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
   :db/ident              :store/created-at
   :db/valueType          :db.type/long
   :db/cardinality        :db.cardinality/one

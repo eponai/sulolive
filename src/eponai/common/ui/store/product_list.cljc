@@ -61,7 +61,7 @@
     (dom/a
       (cond->> (->> (when-not grid-editable?
                       {:href (routes/url :store-dashboard/product (assoc (:route-params current-route) :product-id (:db/id p)))})
-                 (css/add-class :content-item)
+                    (css/add-class :content-item)
                     (css/add-class :product-item))
                grid-editable?
                (css/add-class :product-move))
@@ -126,7 +126,7 @@
           {:keys [query/current-route]} (om/props this)
           products (grid-layout->products this layout)]
       (debug "Save products: " (into [] (grid-layout->products this layout)))
-      (msg/om-transact! this [(list 'store/update-product-order {:items products
+      (msg/om-transact! this [(list 'store/update-product-order {:items    products
                                                                  :store-id (get-in current-route [:route-params :store-id])})
                               :query/inventory])
       (om/update-state! this assoc :grid-editable? false)))
@@ -146,7 +146,8 @@
            (.update-layout this))
          )))
   (initLocalState [this]
-    {:cols {:xxlarge 3 :xlarge 3 :large 3 :medium 3 :small 2 :tiny 2}})
+    {:cols                    {:xxlarge 3 :xlarge 3 :large 3 :medium 3 :small 2 :tiny 2}
+     :products/listing-layout :products/grid})
   (render [this]
     (let [{:keys [query/inventory]} (om/props this)
           {:keys          [search-input cols layout grid-element grid-editable? breakpoint]
@@ -182,13 +183,16 @@
               (->> (css/add-class :shrink)
                    (css/text-align :right))
               (dom/a
-                (->> (css/button-hollow {:onClick #(om/update-state! this assoc :products/listing-layout :products/list)})
-                     (css/add-class :secondary))
+                (cond->> (->> (css/button {:onClick #(om/update-state! this assoc :products/listing-layout :products/list)})
+                              (css/add-class :secondary))
+                         (not= listing-layout :products/list)
+                         (css/add-class :hollow))
                 (dom/i {:classes ["fa fa-list"]}))
               (dom/a
-                (->> (css/button-hollow
-                       {:onClick #(om/update-state! this assoc :products/listing-layout :products/grid)})
-                     (css/add-class :secondary))
+                (cond->> (->> (css/button {:onClick #(om/update-state! this assoc :products/listing-layout :products/grid)})
+                              (css/add-class :secondary))
+                         (not= listing-layout :products/grid)
+                         (css/add-class :hollow))
                 (dom/i {:classes ["fa fa-th"]})))
             )
           (if (= listing-layout :products/list)

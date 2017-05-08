@@ -8,6 +8,7 @@
   {""           :store
    "/dashboard" {""          :store-dashboard
                  "/profile"     :store-dashboard/profile
+                 "/policies" :store-dashboard/policies
                  "/settings" {""          :store-dashboard/settings
                               "/shipping" :store-dashboard/settings#shipping
                               "/payments" :store-dashboard/settings#payments

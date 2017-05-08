@@ -103,6 +103,13 @@
   (when price
     (bigdec price)))
 
+(defn store-section [{:keys [value label]}]
+  (if (number? value)
+    {:db/id               value
+     :store.section/label label}
+    {:db/id               (db/tempid :db.part/user)
+     :store.section/label label}))
+
 (defn product [params]
   (-> (select-keys params [:db/id :store.item/name :store.item/description :store.item/price :store.item/uuid])
       (assoc :store.item/created-at (date/current-millis))

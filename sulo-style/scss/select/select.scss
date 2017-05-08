@@ -13,8 +13,8 @@
 $select-input-bg:                   #fff !default;
 $select-input-bg-disabled:          #f9f9f9 !default;
 $select-input-border-color:         #ccc !default;
-$select-input-border-radius:        4px !default;
-$select-input-border-focus:         #08c !default; // blue
+$select-input-border-radius:        2px !default;
+$select-input-border-focus:         $primary-color !default;//#08c !default; // blue
 $select-input-border-width:         1px !default;
 $select-input-height:               36px !default;
 $select-input-internal-height:      ($select-input-height - ($select-input-border-width * 2)) !default;
@@ -26,15 +26,15 @@ $select-padding-vertical:           8px !default;
 $select-padding-horizontal:         10px !default;
 
 // menu options
-$select-menu-zindex:                1000 !default;
+$select-menu-zindex:                2 !default;
 $select-menu-max-height:            200px !default;
 
 $select-option-color:               lighten($select-text-color, 20%) !default;
 $select-option-bg:                  $select-input-bg !default;
 $select-option-focused-color:       $select-text-color !default;
-$select-option-focused-bg:          #f2f9fc !default; // pale blue
+$select-option-focused-bg:          rgba($light-gray, 0.5);//#f2f9fc !default; // pale blue
 $select-option-selected-color:      $select-text-color !default;
-$select-option-selected-bg:         #f5faff !default; // lightest blue
+$select-option-selected-bg:         $select-option-focused-bg;//#f5faff !default; // lightest blue
 $select-option-disabled-color:      lighten($select-text-color, 60%) !default;
 
 $select-noresults-color:            lighten($select-text-color, 40%) !default;

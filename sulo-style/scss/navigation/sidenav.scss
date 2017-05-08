@@ -23,19 +23,19 @@ $sidenav-width: 75%;
 	li.back {
 		font-weight: $global-weight-bold;
 	}
+	
 	> ul {
 		> li {
-			padding: 1rem;
-			padding-bottom: 0;
-			border-bottom: $global-border-secondary;
+			padding: 0.5rem 1rem;
+			border-bottom: $global-border;
 			&:last-child {
 				border-bottom: none;
-				padding-bottom: 1rem;
+				// padding-bottom: 1rem;
 			}
 			> ul {
 				padding: 0;
 				> li {
-					padding: 0.5rem 0;
+					padding: 0.25rem 0;
 					border-bottom: $global-border-secondary;
 					&:last-child {
 						border: none;

@@ -44,6 +44,8 @@
                                                                  :products     (:store/items store)})}
                 :store-dashboard/profile        {:component   es/EditStore
                                                  :computed-fn compute-store}
+                :store-dashboard/policies       {:component   es/EditStore
+                                                 :computed-fn compute-store}
                 :store-dashboard/stream         {:component   ss/StreamSettings
                                                  :computed-fn compute-store}
                 :store-dashboard/settings       {:component   as/AccountSettings
@@ -51,10 +53,13 @@
                 :store-dashboard/product-list   {:component   pl/ProductList
                                                  :computed-fn compute-route-params}
                 :store-dashboard/create-product {:component   pef/ProductEditForm
-                                                 :computed-fn compute-route-params}
+                                                 :computed-fn (fn [{:keys [store route-params]}]
+                                                                {:route-params route-params
+                                                                 :store        store})}
                 :store-dashboard/product        {:component   pef/ProductEditForm
                                                  :computed-fn (fn [{:keys [store route-params]}]
                                                                 {:route-params route-params
+                                                                 :store        store
                                                                  :product      (find-product store (:product-id route-params))})}})
 
 ;(defn str->json [s]
@@ -169,13 +174,13 @@
                                      {:store.profile/photo [:photo/path :photo/id]}]}
                     {:store/owners [{:store.owner/user [:user/email]}]}
                     :store/stripe
-                    {:store/sections [:store.section/label]}
+                    {:store/sections [:db/id :store.section/label]}
                     {:order/_store [:order/items]}
                     {:store/items [:store.item/name
                                    :store.item/description
                                    :store.item/price
                                    :store.item/index
-                                   {:store.item/section [:store.section/label]}
+                                   {:store.item/section [:db/id :store.section/label]}
                                    {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                         :store.item.photo/index]}
                                    {:store.item/skus [:db/id
