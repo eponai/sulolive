@@ -45,3 +45,39 @@
   // margin-right: auto; 
   z-index: 5;
 }
+
+@keyframes loading-slider {
+  0% {
+    left: 0;
+    width: 0;
+  }
+
+  50% {
+    left: 0;
+    width: 100%;
+  }
+  100% {
+    left: 100%;
+    width: 0;
+  }
+}
+.sl-global-spinner {
+  position: absolute;
+  z-index: $navbar-zindex;
+  top: $navbar-height;
+  @include breakpoint(large) {
+    position: fixed;
+  }
+  height: 2px;
+  background: map-get($foundation-palette, highlight);
+  // opacity: 0;
+  transition: all .25s linear;
+  animation: loading-slider 1s 0.5s 1 forwards;
+  // animation-iteration-count: 1;
+  // animation-fill-mode: forwards;
+  &.is-active {
+      // opacity: 1;
+      animation-iteration-count: infinite;
+      // animation: loading-slider 2s 2s infinite forwards;
+  }
+}
