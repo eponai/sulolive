@@ -32,4 +32,12 @@
   :db/cardinality        :db.cardinality/one
   :db/doc                "Index position of store item."
   :db.install/_attribute :db.part/db}
+
+ ;; Photo
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :photo/id
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Photo identifier"
+  :db.install/_attribute :db.part/db}
  ]

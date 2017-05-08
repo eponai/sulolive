@@ -323,15 +323,6 @@
   :db/doc                "Photo URL"
   :db.install/_attribute :db.part/db}
 
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :photo/id
-  :db/valueType          :db.type/string
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Photo identifier"
-  :db.install/_attribute :db.part/db}
-
-
-
  ;; ############### Stream
 
  {:db/id                 #db/id[:db.part/db]
