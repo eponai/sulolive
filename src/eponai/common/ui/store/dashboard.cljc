@@ -258,7 +258,7 @@
                       (dom/h3 nil "Products")
                       (dom/p (css/add-class :stat) (count (:store/items store)))
                       (dom/a
-                        (->> {:href (routes/url :store-dashboard/order-list {:store-id store-id})}
+                        (->> {:href (routes/url :store-dashboard/product-list {:store-id store-id})}
                              (css/button-hollow)
                              (css/add-class :secondary))
                         (dom/span nil "Manage products")
@@ -268,7 +268,7 @@
                       (dom/h3 nil "Orders")
                       (dom/p (css/add-class :stat) (count (:order/_store store)))
                       (dom/a
-                        (->> {:href (routes/url :store-dashboard/product-list {:store-id store-id})}
+                        (->> {:href (routes/url :store-dashboard/order-list {:store-id store-id})}
                              (css/button-hollow)
                              (css/add-class :secondary))
                         (dom/span nil "Manage orders")

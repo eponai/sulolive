@@ -93,6 +93,7 @@
                         :store.item/description
                         {:store.item/photos [{:store.item.photo/photo [:photo/path]}
                                              :store.item.photo/index]}]}
+     :query/messages
      :query/current-route])
 
   static store-common/IDashboardNavbarContent

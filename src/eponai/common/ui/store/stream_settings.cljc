@@ -31,7 +31,7 @@
                      :stream/token]}
      {:query/stream-config [:ui.singleton.stream-config/publisher-url]}
      {:proxy/chat (om/get-query chat/StreamChat)}
-     {:query/auth [:db/id]}])
+     {:query/auth [:db/id :user/email]}])
 
   static store-common/IDashboardNavbarContent
   (render-subnav [_ _]

@@ -20,7 +20,7 @@
                    {:user/profile [{:user.profile/photo [:photo/path
                                                          :photo/id]}
                                    :user.profile/name]}]}
-     {:query/auth [:db/id]}
+     {:query/auth [:db/id :user/email]}
      {:proxy/profile-edit (om/get-query pe/ProfileEdit)}
      {:proxy/order (om/get-query o/Order)}
      {:proxy/order-list (om/get-query uo/OrderList)}
