@@ -51,7 +51,7 @@
     ))
 
 (defn cloudinary-endpoint [endpoint]
-  (let [api "http://api.cloudinary.com/v1_1"
+  (let [api "https://api.cloudinary.com/v1_1"
         cloud-name "sulolive"
         resource-type "image"]
     (clojure.string/join "/" [api cloud-name resource-type endpoint])))

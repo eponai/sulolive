@@ -10,7 +10,7 @@
    :transformation/thumbnail-large "thumbnail-large"
    :transformation/preview         "preview"})
 
-(def storage-host "http://res.cloudinary.com/sulolive")
+(def storage-host "https://res.cloudinary.com/sulolive")
 
 (def transformation-path)
 (defn transformation-param
