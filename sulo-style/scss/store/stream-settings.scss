@@ -10,9 +10,11 @@
 	}
 
 	.section-title {
-		h1 {
+		h3 {
+			margin-bottom: 0.5rem;
 			.label {
-				font-size: 50%;
+				font-size: 80%;
+				text-transform: uppercase;
 			}
 		}
 	}

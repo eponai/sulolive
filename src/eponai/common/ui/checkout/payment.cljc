@@ -7,7 +7,8 @@
        [eponai.web.utils :as utils])
     [eponai.common.ui.utils :refer [two-decimal-price]]
     [eponai.common.ui.script-loader :as script-loader]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.common.ui.elements.callout :as callout]))
 
 (def stripe-key "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")
 (def stripe-card-element "sulo-card-element")

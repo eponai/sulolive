@@ -64,16 +64,20 @@
               (dom/div
                 (css/add-class :section-title)
                 (dom/h2 nil
-                        (dom/span nil "Stream ")
+                        (dom/span nil "Stream"))
+                (dom/h3 (css/add-class :sl-tooltip)
                         (dom/span
-                          (cond->> (css/add-class :label)
+                          (cond->> (css/add-classes [:label ])
                                    (= stream-state :stream.state/offline)
                                    (css/add-class :primary)
                                    (= stream-state :stream.state/online)
                                    (css/add-class :success)
                                    (= stream-state :stream.state/live)
                                    (css/add-class :highlight))
-                          (name stream-state)))
+                          (name stream-state))
+                        (when (= stream-state :stream.state/offline)
+                          (dom/span (css/add-class :sl-tooltip-text)
+                                    "See the help checklist below to get started streaming")))
                 (dom/div
                   nil
                   (cond
@@ -131,15 +135,15 @@
                 (grid/columns-in-row {:small 3})
                 (grid/column
                   (css/text-align :center)
-                  (dom/h3 nil (dom/small nil "Viewers"))
+                  (dom/h3 nil "Viewers")
                   (dom/p (css/add-class :stat) 0))
                 (grid/column
                   (css/text-align :center)
-                  (dom/h3 nil (dom/small nil "Messages/min"))
+                  (dom/h3 nil "Messages/min")
                   (dom/p (css/add-class :stat) 0))
                 (grid/column
                   (css/text-align :center)
-                  (dom/h3 nil (dom/small nil "Payments"))
+                  (dom/h3 nil "Payments")
                   (dom/p (css/add-class :stat) 0))))))
 
         (grid/row
