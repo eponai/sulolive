@@ -369,7 +369,7 @@
                                     (css/button)) (dom/span nil "Sign in"))))))))))
 
 (defn standard-navbar [component]
-  (let [{:query/keys [cart]} (om/props component)]
+  (let [{:query/keys [cart loading-bar]} (om/props component)]
     (navbar-content
       nil
       (dom/div
@@ -384,7 +384,11 @@
           (navbar-brand)
           (live-link)
 
-          (collection-links component false)))
+          (collection-links component false)
+          (when (:ui.singleton.loading-bar/show loading-bar)
+            ;; TODO: Do a pretty loading bar somwhere in this navbar.
+            ;; (menu/item nil "Loading...")
+            )))
       (dom/div
         {:classes ["top-bar-right"]}
         (menu/horizontal
@@ -423,6 +427,7 @@
                           ;; to be able to query the store on the client side.
                           {:store/owners [{:store.owner/user [:db/id]}]}]}
      {:query/navigation [:category/name :category/label :category/path :category/href]}
+     {:query/loading-bar [:ui.singleton.loading-bar/show]}
      :query/current-route])
   Object
   #?(:cljs

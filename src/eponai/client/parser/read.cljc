@@ -384,3 +384,8 @@
       {:remote/chat (assoc-in ast [:params :store :db/id] store-id)}
       {:value (db/pull-one-with db query {:where   '[[?e :chat/store ?store-id]]
                                           :symbols {'?store-id store-id}})})))
+
+(defmethod client-read :query/loading-bar
+  [{:keys [db query target]} _ _]
+  (when-not target
+    {:value (db/pull-one-with db query {:where '[[?e :ui/singleton :ui.singleton/loading-bar]]})}))

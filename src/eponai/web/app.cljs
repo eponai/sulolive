@@ -21,6 +21,7 @@
     [eponai.client.routes :as routes]
     [eponai.common.routes :as common.routes]
     [eponai.common.ui.router :as router]
+    [eponai.common.ui.loading-bar :as loading-bar]
     [eponai.web.wowza-player :as wowza-player]
     [cljs.core.async :as async]))
 
@@ -82,9 +83,10 @@
 (defonce history-atom (atom nil))
 (defonce reconciler-atom (atom nil))
 
-(defn- run [{:keys [auth-lock modules wowza-player]
+(defn- run [{:keys [auth-lock modules wowza-player loading-bar]
              :or   {auth-lock    (auth/auth0-lock)
-                    wowza-player (wowza-player/real-player)}
+                    wowza-player (wowza-player/real-player)
+                    loading-bar  (loading-bar/loading-bar)}
              :as   run-options}]
   (let [modules (or modules (modules/advanced-compilation-modules router/routes))
         init? (atom false)
@@ -120,11 +122,15 @@
                                        :ui->props                  (utils/cached-ui->props-fn parser)
                                        :send-fn                    send-fn
                                        :remotes                    (:order remote-config)
+                                       :shared/loading-bar         loading-bar
                                        :shared/wowza-player        wowza-player
                                        :shared/modules             modules
                                        :shared/browser-history     history
                                        :shared/store-chat-listener (web.chat/store-chat-listener reconciler-atom)
                                        :shared/auth-lock           auth-lock
+                                       :tx-listen                  (fn [env+state {:keys [tx ret sends]}]
+                                                                     (when-not (empty? sends)
+                                                                       (loading-bar/start-loading! loading-bar (:reconciler env+state))))
                                        :instrument                 (::plomber run-options)})]
 
     (reset! reconciler-atom reconciler)

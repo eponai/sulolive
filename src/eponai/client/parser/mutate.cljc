@@ -185,3 +185,17 @@
   [{:keys [target]} k p]
   (if target
     {:remote true}))
+
+(defmethod client-mutate 'loading-bar/show
+  [{:keys [state target]} _ _]
+  (when-not target
+    {:action (fn []
+               (db/transact state [{:ui/singleton :ui.singleton/loading-bar
+                                    :ui.singleton.loading-bar/show true}]))}))
+
+(defmethod client-mutate 'loading-bar/hide
+  [{:keys [state target]} _ _]
+  (when-not target
+    {:action (fn []
+               (db/transact state [{:ui/singleton :ui.singleton/loading-bar
+                                    :ui.singleton.loading-bar/show false}]))}))

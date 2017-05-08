@@ -4,6 +4,7 @@
     ;; Routes should be a configuration.
             [eponai.client.routes :as routes]
             [eponai.common.parser.util :as p.util]
+            [eponai.common.ui.loading-bar :as loading-bar]
             [datascript.impl.entity :as e]
             [om.next :as om]
             [cognitect.transit :as transit]
@@ -389,6 +390,14 @@
                         mutation-queue (d/db app-state)]
                     (recur new-stable-db mutation-queue tail)))))))))))
 
+(defn- hide-loading-bar [reconciler]
+  (try
+    (some-> (get-in reconciler [:config :shared :shared/loading-bar])
+            (loading-bar/stop-loading! reconciler))
+    (catch #?@(:cljs [:default e]
+               :clj  [Throwable e])
+      (error "Error hiding the loading bar: " e))))
+
 (defn leeb
   "Takes a channel with remote queries and handles the resetting of
   optimistic mutations, merging of real responses and replays
@@ -490,15 +499,18 @@
                        remote-key
                        (query-history-id query)))))
 
-          ;; Outside the loop. No more remote queries right now. Flatten the db
+          ;; Outside the loop.
+          ;; No more remote queries right now. Flatten the db
           ;; making all queued mutations permanent.
           (cb {:db (flatten-db (d/db app-state))}))
-        ;; TODO: Add more try catches.
 
-        (catch :default e
-          (debug "Error in query loop: " e ". Will recur with the next query.")
+
+        (catch #?@(:cljs [:default e]
+                   :clj  [Throwable e])
+               (debug "Error in query loop: " e ". Will recur with the next query.")
           (error e))
         (finally
+          (hide-loading-bar @reconciler-atom)
           (when did-merge-fn
             (did-merge-fn @reconciler-atom)))))))
 

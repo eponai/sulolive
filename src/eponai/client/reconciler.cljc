@@ -35,11 +35,13 @@
                       route
                       route-params
                       instrument
+                      tx-listen
                       ;; With defaults:
                       conn
                       remotes
                       merge]
-               :shared/keys [wowza-player
+               :shared/keys [loading-bar
+                             wowza-player
                              browser-history
                              auth-lock
                              local-storage
@@ -58,12 +60,14 @@
                                          :remotes    remotes
                                          :send       send-fn
                                          :merge      merge
-                                         :shared     {:shared/wowza-player        wowza-player
+                                         :shared     {:shared/loading-bar         loading-bar
+                                                      :shared/wowza-player        wowza-player
                                                       :shared/modules             modules
                                                       :shared/browser-history     browser-history
                                                       :shared/local-storage       local-storage
                                                       :shared/auth-lock           auth-lock
                                                       :shared/store-chat-listener store-chat-listener}
+                                         :tx-listen  tx-listen
                                          :history    history
                                          :migrate    nil
                                          :instrument instrument}))]
