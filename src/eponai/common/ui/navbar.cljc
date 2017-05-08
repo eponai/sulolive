@@ -35,8 +35,7 @@
             (menu/vertical
               (css/add-class :nested)
               (menu/item-link
-                {:href (routes/url :store-dashboard {:store-id (:db/id owned-store)})
-                 :target "_blank"}
+                {:href (routes/url :store-dashboard {:store-id (:db/id owned-store)})}
                 (get-in owned-store [:store/profile :store.profile/name]))))
           (menu/item
             (css/add-class :my-stores)
@@ -355,8 +354,7 @@
                   (menu/item
                     nil
                     (dom/a {:href (routes/url :store-dashboard {:store-id (:db/id owned-store)})
-                            :onClick #(.close-sidebar component)
-                            :target "_blank"}
+                            :onClick #(.close-sidebar component)}
                            (dom/span nil (get-in owned-store [:store/profile :store.profile/name])))))))
             (when (and (some? auth)
                        (nil? owned-store))
