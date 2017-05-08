@@ -27,7 +27,7 @@ $sidenav-width: 75%;
 	> ul {
 		> li {
 			padding: 0.5rem 1rem;
-			border-bottom: $global-border;
+			border-bottom: $global-border-secondary;
 			&:last-child {
 				border-bottom: none;
 				// padding-bottom: 1rem;

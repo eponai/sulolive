@@ -46,7 +46,7 @@
      {:proxy/stream (om/get-query stream/Stream)}
      {:proxy/chat (om/get-query chat/StreamChat)}
      {:query/store [:db/id
-                    {:store/sections [:store.section/label :store.section/path]}
+                    {:store/sections [:store.section/label :store.section/path :db/id]}
                     ;{:store/items (om/get-query item/Product)}
                     {:stream/_store [:stream/state :stream/title]}
                     {:store/profile [:store.profile/name
@@ -58,8 +58,10 @@
      {:query/store-items (om/get-query item/Product)}
      :query/current-route])
   Object
+  (initLocalState [this]
+    {:selected-navigation :all-items})
   (render [this]
-    (let [{:keys [fullscreen?] :as st} (om/get-state this)
+    (let [{:keys [fullscreen? selected-navigation] :as st} (om/get-state this)
           {:query/keys [store store-items current-route]
            :proxy/keys [navbar] :as props} (om/props this)
           {:store/keys [profile]
@@ -150,29 +152,29 @@
                 (css/add-class :navigation)
 
                 (menu/item (cond->> (css/add-class :about)
-                                    (= route :store/about)
+                                    (= selected-navigation :about)
                                     (css/add-class ::css/is-active))
-                           (dom/a {:href (routes/url :store/about {:store-id (:db/id store)})}
+                           (dom/a {:onClick #(om/update-state! this assoc :selected-navigation :about)}
                                   (dom/span nil "About")))
                 (menu/item (cond->> (css/add-class :about)
-                                    (= route :store/policies)
+                                    (= selected-navigation :policies)
                                     (css/add-class ::css/is-active))
-                           (dom/a {:href (routes/url :store/policies {:store-id (:db/id store)})}
+                           (dom/a {:onClick #(om/update-state! this assoc :selected-navigation :policies)}
                                   (dom/span nil "Policies")))
-                (menu/item (when (= :store route)
+                (menu/item (when (= selected-navigation :all-items)
                              (css/add-class ::css/is-active))
-                           (dom/a {:href (routes/url :store {:store-id (:db/id store)})}
+                           (dom/a {:onClick #(om/update-state! this assoc :selected-navigation :all-items)}
                                   (dom/span nil "All Items")))
                 (map-indexed
-                  (fn [i n]
-                    (let [{:store.section/keys [path label]} n
-                          is-active? (= path (:navigation route-params))]
+                  (fn [i s]
+                    (let [{:store.section/keys [label]} s
+                          is-active? (and (= route :store) (= selected-navigation (:db/id s)))]
                       (menu/item
                         (cond->> {:key (+ 10 i)}
                                  is-active?
                                  (css/add-class ::css/is-active))
                         (dom/a
-                          {:href (routes/url :store/navigation {:navigation path :store-id (:db/id store)})}
+                          {:onClick #(om/update-state! this assoc :selected-navigation (:db/id s))}
                           (dom/span nil label)))))
                   (:store/sections store)))))
           (cond (= route :store/about)
@@ -180,9 +182,12 @@
                 (= route :store/policies)
                 (policies-section this)
                 :else
-                (grid/products store-items
-                               (fn [p]
-                                 (pi/->ProductItem {:product p})))))))))
+                (let [products (if (and (= route :store) (number? selected-navigation))
+                                 (filter #(= (get-in % [:store.item/section :db/id]) selected-navigation) store-items)
+                                 store-items)]
+                  (grid/products products
+                                 (fn [p]
+                                   (pi/->ProductItem {:product p}))))))))))
 
 (def ->Store (om/factory Store))
 

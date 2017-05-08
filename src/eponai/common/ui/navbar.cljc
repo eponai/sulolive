@@ -302,11 +302,11 @@
                (sidebar-link component :store-dashboard/stream {:store-id (:db/id owned-store)}
                              (dom/span nil "Live stream"))
                (sidebar-link component :store-dashboard/profile {:store-id (:db/id owned-store)}
-                             (dom/span nil "Store settings"))
-               (sidebar-link component :store-dashboard/order-list {:store-id (:db/id owned-store)}
-                             (dom/span nil "Orders"))
+                             (dom/span nil "Store info"))
                (sidebar-link component :store-dashboard/product-list {:store-id (:db/id owned-store)}
                              (dom/span nil "Products"))
+               (sidebar-link component :store-dashboard/order-list {:store-id (:db/id owned-store)}
+                             (dom/span nil "Orders"))
                (sidebar-link component :store-dashboard/settings#payouts {:store-id (:db/id owned-store)}
                              (dom/span nil "Account"))])
 
