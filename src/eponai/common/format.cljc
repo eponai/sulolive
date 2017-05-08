@@ -4,7 +4,7 @@
   (:require
     [clojure.data :as diff]
     [eponai.common.database :as db :refer [tempid squuid]]
-    [eponai.common.database.functions :as dbfn]
+    ;; [eponai.common.database.functions :as dbfn]
     [eponai.common.format.date :as date]
     #?(:cljs
        [goog.crypt :as crypt])
@@ -118,54 +118,58 @@
 (defn category [category-name]
   (category* {:category/name category-name}))
 
-(defn edit-txs [{:keys [old new]} conform-fn created-at]
-  {:pre [(some? (:db/id old))
-         (= (:db/id old) (:db/id new))
-         (or (number? created-at)
-             (= ::dbfn/client-edit created-at))]}
-  (let [edits-by-attr (->> (diff/diff old new)
-                           (take 2)
-                           (mapv conform-fn)
-                           (zipmap [:old-by-attr :new-by-attr])
-                           (mapcat (fn [[id m]]
-                                     (map #(hash-map :id id :kv %) m)))
-                           (group-by (comp first :kv)))]
-    (->> edits-by-attr
-         (remove (fn [[attr]] (= :db/id attr)))
-         (mapv (fn [[attr changes]]
-                 (let [{:keys [old-by-attr new-by-attr]} (reduce (fn [m {:keys [id kv]}]
-                                                                   (assert (= (first kv) attr))
-                                                                   (assoc m id (second kv)))
-                                                                 {}
-                                                                 changes)]
-                   [:db.fn/edit-attr created-at (:db/id old) attr {:old-value old-by-attr
-                                                                   :new-value new-by-attr}]))))))
+;; TODO: Uncomment?
+;; Commented until we use eponai.common.database.functions again
+;; for our jourmoney-generic-edit
 
-(defn client-edit [env k params conform-fn]
-  (->> (edit-txs params conform-fn ::dbfn/client-edit)
-       (mapcat (fn [[_ created-at eid attr old-new]]
-                 (assert (number? eid) (str "entity id was not number for client edit: " [k eid attr old-new]))
-                 (binding [dbfn/cardinality-many? dbfn/cardinality-many?-datascript
-                           dbfn/ref? dbfn/ref?-datascript
-                           dbfn/unique-datom dbfn/unique-datom-datascript
-                           dbfn/tempid? dbfn/tempid?-datascript
-                           dbfn/update-edit dbfn/update-edit-datascript]
-                   (debug [:eid eid :attr attr :old-new old-new])
-                   (dbfn/edit-attr (db/db (:state env)) created-at eid attr old-new))))
-       (vec)))
+;(defn edit-txs [{:keys [old new]} conform-fn created-at]
+;  {:pre [(some? (:db/id old))
+;         (= (:db/id old) (:db/id new))
+;         (or (number? created-at)
+;             (= ::dbfn/client-edit created-at))]}
+;  (let [edits-by-attr (->> (diff/diff old new)
+;                           (take 2)
+;                           (mapv conform-fn)
+;                           (zipmap [:old-by-attr :new-by-attr])
+;                           (mapcat (fn [[id m]]
+;                                     (map #(hash-map :id id :kv %) m)))
+;                           (group-by (comp first :kv)))]
+;    (->> edits-by-attr
+;         (remove (fn [[attr]] (= :db/id attr)))
+;         (mapv (fn [[attr changes]]
+;                 (let [{:keys [old-by-attr new-by-attr]} (reduce (fn [m {:keys [id kv]}]
+;                                                                   (assert (= (first kv) attr))
+;                                                                   (assoc m id (second kv)))
+;                                                                 {}
+;                                                                 changes)]
+;                   [:db.fn/edit-attr created-at (:db/id old) attr {:old-value old-by-attr
+;                                                                   :new-value new-by-attr}]))))))
 
-(defn server-edit [env k params conform-fn]
-  (let [created-at (some :eponai.common.parser/created-at [params env])]
-    (assert (some? created-at)
-            (str "No created-at found in either params or env for edit: " k " params: " params))
-    (edit-txs params conform-fn created-at)))
+;(defn client-edit [env k params conform-fn]
+;  (->> (edit-txs params conform-fn ::dbfn/client-edit)
+;       (mapcat (fn [[_ created-at eid attr old-new]]
+;                 (assert (number? eid) (str "entity id was not number for client edit: " [k eid attr old-new]))
+;                 (binding [dbfn/cardinality-many? dbfn/cardinality-many?-datascript
+;                           dbfn/ref? dbfn/ref?-datascript
+;                           dbfn/unique-datom dbfn/unique-datom-datascript
+;                           dbfn/tempid? dbfn/tempid?-datascript
+;                           dbfn/update-edit dbfn/update-edit-datascript]
+;                   (debug [:eid eid :attr attr :old-new old-new])
+;                   (dbfn/edit-attr (db/db (:state env)) created-at eid attr old-new))))
+;       (vec)))
 
-(defn edit
-  [env k p conform-fn]
-  {:pre [(some? (:eponai.common.parser/server? env))]}
-  (if (:eponai.common.parser/server? env)
-    (server-edit env k p conform-fn)
-    (client-edit env k p conform-fn)))
+;(defn server-edit [env k params conform-fn]
+;  (let [created-at (some :eponai.common.parser/created-at [params env])]
+;    (assert (some? created-at)
+;            (str "No created-at found in either params or env for edit: " k " params: " params))
+;    (edit-txs params conform-fn created-at)))
+
+;(defn edit
+;  [env k p conform-fn]
+;  {:pre [(some? (:eponai.common.parser/server? env))]}
+;  (if (:eponai.common.parser/server? env)
+;    (server-edit env k p conform-fn)
+;    (client-edit env k p conform-fn)))
 
 (defn chat-message [db store user text]
   (when-not (db/dbid? (:db/id user))

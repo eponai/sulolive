@@ -1,8 +1,6 @@
 (ns eponai.client.backend
   (:require [eponai.common.database :as db]
             [eponai.client.utils :as client.utils]
-    ;; Routes should be a configuration.
-            [eponai.client.routes :as routes]
             [eponai.common.parser.util :as p.util]
             [eponai.common.ui.loading-bar :as loading-bar]
             [datascript.impl.entity :as e]

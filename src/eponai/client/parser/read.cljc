@@ -1,23 +1,18 @@
 (ns eponai.client.parser.read
   (:require
-    [clojure.set :as set]
     [clojure.string :as str]
-    [om.next.impl.parser :as parser.impl]
     [eponai.common.parser :as parser :refer [client-read]]
     [eponai.common.parser.util :as parser.util]
     [eponai.common.database :as db]
     [eponai.common.parser.read :as common.read]
     [eponai.common.datascript :as datascript]
-    [om.next.impl.parser :as om.parser]
     [eponai.client.routes :as client.routes]
-    [eponai.common.routes :as common.routes]
     [eponai.common.ui.router :as router]
     [eponai.common :as c]
     [taoensso.timbre :as timbre :refer [debug warn]]
     [eponai.client.auth :as auth]
     [eponai.common.api.products :as products]
-    [medley.core :as medley]
-    [eponai.common.routes :as routes]))
+    [medley.core :as medley]))
 
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.

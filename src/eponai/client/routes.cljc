@@ -1,6 +1,5 @@
 (ns eponai.client.routes
   (:require
-    [bidi.bidi :as bidi]
     #?(:cljs [pushy.core :as pushy])
     [eponai.common.routes :as routes]
     [clojure.set :as set]

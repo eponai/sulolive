@@ -1,7 +1,6 @@
 (ns eponai.client.remotes
   (:require [datascript.core :as d]
             [eponai.common.parser :as parser]
-            [eponai.common.parser.util :as p.util]
             [eponai.common.database :as db]
             [eponai.client.backend :as backend]
             [eponai.client.auth :as auth]

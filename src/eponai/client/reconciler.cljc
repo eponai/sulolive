@@ -1,11 +1,8 @@
 (ns eponai.client.reconciler
   (:require [om.next :as om]
             [eponai.client.parser.merge :as merge]
-            [eponai.common.parser :as parser]
             [eponai.client.remotes :as remotes]
             [eponai.client.routes :as routes]
-            [eponai.client.backend :as backend]
-            [eponai.client.auth :as auth]
             [eponai.client.utils :as utils]
             [eponai.client.local-storage :as local-storage]))
 

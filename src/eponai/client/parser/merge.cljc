@@ -1,15 +1,11 @@
 (ns eponai.client.parser.merge
   (:require [datascript.core :as d]
             [datascript.db :as db]
-            [eponai.common.routes :as routes]
             [eponai.common.parser :as parser]
             [eponai.common.parser.util :as p.util]
-            [eponai.client.parser.message :as message]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug error trace warn]]
-            [eponai.client.utils :as utils]
             [eponai.client.auth :as auth]
-            [cemerick.url :as url]
-            [om.next :as om]))
+            [cemerick.url :as url]))
 
 (defn transact [db tx]
   (if (empty? tx)
