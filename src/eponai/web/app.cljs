@@ -128,9 +128,6 @@
                                        :shared/browser-history     history
                                        :shared/store-chat-listener (web.chat/store-chat-listener reconciler-atom)
                                        :shared/auth-lock           auth-lock
-                                       :tx-listen                  (fn [env+state {:keys [tx ret sends]}]
-                                                                     (when-not (empty? sends)
-                                                                       (loading-bar/start-loading! loading-bar (:reconciler env+state))))
                                        :instrument                 (::plomber run-options)})]
 
     (reset! reconciler-atom reconciler)
