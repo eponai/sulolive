@@ -239,12 +239,12 @@
                           (dom/span nil (string/capitalize (:store.section/label s))))))
                (:store/sections store)))
 
-        (dom/input
-          {:key         "profile.products.search"
-           :value       (or search-input "")
-           :onChange    #(om/update-state! component assoc :products/search-input (.. % -target -value))
-           :placeholder "Search Products..."
-           :type        "text"})
+        ;(dom/input
+        ;  {:key         "profile.products.search"
+        ;   :value       (or search-input "")
+        ;   :onChange    #(om/update-state! component assoc :products/search-input (.. % -target -value))
+        ;   :placeholder "Search Products..."
+        ;   :type        "text"})
         (grid/products items
                        (fn [p]
                          (let [{:store.item/keys [price]
@@ -289,7 +289,7 @@
     (dom/div nil))
 
   (subnav-title [_ _]
-    "Store profile")
+    "Store settings")
   Object
   (save-sections [this]
     (let [{:products/keys [edit-sections]} (om/get-state this)
@@ -484,7 +484,7 @@
 
           (dom/div
             (css/add-class :section-title)
-            (dom/h2 nil "Products")
+            (dom/h2 nil "Product sections")
             (dom/a
               (->> (css/button-hollow {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
                    (css/add-class :secondary)

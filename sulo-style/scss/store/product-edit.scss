@@ -62,6 +62,16 @@
 			max-width: $dashboard-max-width;
 		}
 	}
+	.row:first-child {
+		.column:first-child {
+			display: flex;
+		}
+	}
+	input {
+		margin-right: 1rem;
+		width: auto;
+		flex: 1; 
+	}
 	.td:first-child {
 		$width: 4rem;
 		max-width: $width;

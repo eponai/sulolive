@@ -41,7 +41,7 @@
     (dom/div nil))
 
   (subnav-title [_ _]
-    "Stream")
+    "Live stream")
 
   Object
   (render [this]

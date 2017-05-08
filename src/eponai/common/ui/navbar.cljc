@@ -35,7 +35,8 @@
             (menu/vertical
               (css/add-class :nested)
               (menu/item-link
-                {:href (routes/url :store-dashboard {:store-id (:db/id owned-store)})}
+                {:href (routes/url :store-dashboard {:store-id (:db/id owned-store)})
+                 :target "_blank"}
                 (get-in owned-store [:store/profile :store.profile/name]))))
           (menu/item
             (css/add-class :my-stores)
@@ -296,23 +297,21 @@
                          (dom/i {:classes ["fa fa-chevron-left fa-fw"]})
                          (dom/span nil "Back to SULO Live")))))
             (when (some? owned-store)
-              (menu/item
-                nil
-                (dom/label nil (str "Manage " (get-in owned-store [:store/profile :store.profile/name])))
-                (menu/vertical
-                  nil
-                  (sidebar-link component :store-dashboard {:store-id (:db/id owned-store)}
-                                (dom/span nil "Dashboard"))
-                  (sidebar-link component :store-dashboard/profile {:store-id (:db/id owned-store)}
-                                (dom/span nil "Store profile"))
-                  (sidebar-link component :store-dashboard/stream {:store-id (:db/id owned-store)}
-                                (dom/span nil "Stream"))
-                  (sidebar-link component :store-dashboard/product-list {:store-id (:db/id owned-store)}
-                                (dom/span nil "Products"))
-                  (sidebar-link component :store-dashboard/order-list {:store-id (:db/id owned-store)}
-                                (dom/span nil "Orders"))
-                  (sidebar-link component :store-dashboard/settings#payouts {:store-id (:db/id owned-store)}
-                                (dom/span nil "Account")))))
+              [
+               (sidebar-link component :store-dashboard {:store-id (:db/id owned-store)}
+                             (dom/span nil "Dashboard"))
+               (sidebar-link component :store-dashboard/stream {:store-id (:db/id owned-store)}
+                             (dom/span nil "Live stream"))
+               (sidebar-link component :store-dashboard/profile {:store-id (:db/id owned-store)}
+                             (dom/span nil "Store settings"))
+               (sidebar-link component :store-dashboard/order-list {:store-id (:db/id owned-store)}
+                             (dom/span nil "Orders"))
+               (sidebar-link component :store-dashboard/product-list {:store-id (:db/id owned-store)}
+                             (dom/span nil "Products"))
+               (sidebar-link component :store-dashboard/settings#payouts {:store-id (:db/id owned-store)}
+                             (dom/span nil "Account"))])
+
+
             (if (some? auth)
               (menu/item nil (dom/a
                                (->> {:href "/logout"}
@@ -353,8 +352,12 @@
                 (dom/label nil "Manage store")
                 (menu/vertical
                   nil
-                  (sidebar-link component :store-dashboard {:store-id (:db/id owned-store)}
-                                (dom/span nil (get-in owned-store [:store/profile :store.profile/name]))))))
+                  (menu/item
+                    nil
+                    (dom/a {:href (routes/url :store-dashboard {:store-id (:db/id owned-store)})
+                            :onClick #(.close-sidebar component)
+                            :target "_blank"}
+                           (dom/span nil (get-in owned-store [:store/profile :store.profile/name])))))))
             (when (and (some? auth)
                        (nil? owned-store))
               (menu/item nil (dom/a

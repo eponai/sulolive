@@ -19,7 +19,8 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.web.ui.photo :as p]
-    [eponai.web.ui.store.common :as store-common]))
+    [eponai.web.ui.store.common :as store-common]
+    [eponai.common.ui.components.select :as sel]))
 
 (def form-elements
   {:input-price          "input-price"
@@ -111,6 +112,12 @@
       nil
       (dom/i {:classes ["fa fa-plus fa-2x"]}))))
 
+(defn selected-section-entity [component]
+  (let [{:keys [selected-section]} (om/get-state component)]
+    (cond-> {:store.section/label (:label selected-section)}
+            (number? (:value selected-section))
+            (assoc :db/id (:value selected-section)))))
+
 (defui ProductEditForm
   static om/IQuery
   (query [_]
@@ -120,7 +127,7 @@
         {:proxy/photo-upload (om/get-query pu/PhotoUploader)})])
   static store-common/IDashboardNavbarContent
   (subnav-title [_ current-route]
-    (let [{:keys [product-id]} (:route=params current-route)]
+    (let [{:keys [product-id]} (:route-params current-route)]
       (if product-id
         "Edit product"
         "New product")))
@@ -143,10 +150,13 @@
   (update-product [this]
     (let [{:keys [product-id store-id]} (get-route-params this)
           product (input-product this)
-          skus (input-skus this product)]
+          skus (input-skus this product)
+          selected-section (selected-section-entity this)]
       (msg/om-transact! this `[(store/update-product ~{:product    (cond-> product
                                                                            (not-empty skus)
-                                                                           (assoc :store.item/skus skus))
+                                                                           (assoc :store.item/skus skus)
+                                                                           (some? selected-section)
+                                                                           (assoc :store.item/section selected-section))
                                                        :product-id product-id
                                                        :store-id   store-id})
                                :query/store])
@@ -154,10 +164,13 @@
   (create-product [this]
     (let [{:keys [store-id]} (get-route-params this)
           product (input-product this)
-          skus (input-skus this product)]
+          skus (input-skus this product)
+          selected-section (selected-section-entity this)]
       (msg/om-transact! this `[(store/create-product ~{:product  (cond-> product
                                                                          (not-empty skus)
-                                                                         (assoc :store.item/skus skus))
+                                                                         (assoc :store.item/skus skus)
+                                                                         (some? selected-section)
+                                                                         (assoc :store.item/section selected-section))
                                                        :store-id store-id})
                                :query/store])
       (om/update-state! this dissoc :uploaded-photo)))
@@ -165,20 +178,24 @@
     (om/update-state! this update :uploaded-photos (fn [ps]
                                                      (into [] (remove nil? (assoc ps index nil))))))
   (componentDidMount [this]
-    (let [{:keys [product]} (om/get-computed this)
+    (let [{:keys [product store]} (om/get-computed this)
           {:store.item/keys [photos skus]} product
           sku-count (if (< 0 (count skus)) (count skus) 1)]
       (om/update-state! this assoc
                         :did-mount? true
                         :uploaded-photos (into [] (sort-by :store.item.photo/index photos))
-                        :sku-count sku-count)))
+                        :sku-count sku-count
+                        :store-sections (mapv (fn [s]
+                                                {:label (:store.section/label s)
+                                                 :value (:db/id s)})
+                                              (:store/sections store)))))
   (initLocalState [_]
     {:sku-count 1})
 
   (render [this]
-    (let [{:keys [uploaded-photos queue-photo did-mount? sku-count]} (om/get-state this)
+    (let [{:keys [uploaded-photos queue-photo did-mount? sku-count selected-section store-sections]} (om/get-state this)
           {:keys [product-id store-id]} (get-route-params this)
-          {:keys [product]} (om/get-computed this)
+          {:keys [product store]} (om/get-computed this)
           {:store.item/keys [price photos skus description]
            item-name        :store.item/name} product
           message-pending-fn (fn [m] (when m (msg/pending? m)))
@@ -237,8 +254,26 @@
               (quill/->QuillEditor (om/computed {:content     (f/bytes->str description)
                                                  :placeholder "What's your product like?"
                                                  :id          "product-edit"
-                                                 :enable? true}
+                                                 :enable?     true}
                                                 {:on-editor-created #(om/update-state! this assoc :quill-editor %)}))))
+          (grid/row
+            nil
+            (label-column
+              nil
+              (dom/label nil "Section in store"))
+            (grid/column
+              nil
+              (sel/->SelectOne (om/computed {:value       (or selected-section {:value (get-in product [:store.item/section :db/id])
+                                                                                :label (get-in product [:store.item/section :store.section/label])})
+                                             :options     store-sections
+                                             :creatable?  true
+                                             :placeholder "Select section..."}
+                                            {:on-change (fn [p]
+                                                          (om/update-state! this (fn [st]
+                                                                                   (-> st
+                                                                                       (assoc :selected-section p)
+                                                                                       (update :store-sections conj p))))
+                                                          (debug "P: " p))}))))
 
           (grid/row
             nil
