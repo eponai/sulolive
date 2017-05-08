@@ -52,10 +52,9 @@
                       remotes       (remote-order)
                       merge         (merge/merge!)}
                :as reconciler-config}]
-  (let [overwrites (select-keys reconciler-config [:logger :root-render :root-unmount])
+  (let [overwrites (select-keys reconciler-config [:ui->props :history :logger :root-render :root-unmount])
         reconciler (om/reconciler (into overwrites
                                         {:state      conn
-                                         :ui->props  ui->props
                                          :parser     parser
                                          :remotes    remotes
                                          :send       send-fn
@@ -68,7 +67,6 @@
                                                       :shared/auth-lock           auth-lock
                                                       :shared/store-chat-listener store-chat-listener}
                                          :tx-listen  tx-listen
-                                         :history    history
                                          :migrate    nil
                                          :instrument instrument}))]
     (when (some? route)
