@@ -9,8 +9,15 @@
 		}
 	}
 
-	input[type="number"], select {
+	input[type="number"], select, .Select {
 		max-width: 20rem;
+	}
+	.Select, select {
+		margin-bottom: 0;
+		&#input-main-inventory {
+			margin-bottom: 1rem;
+		}
+
 	}
 	.breadcrumbs {
 		margin-top: -1rem;
