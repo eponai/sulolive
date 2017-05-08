@@ -351,8 +351,7 @@
 
 (defmutation chat/send-message
   [{::parser/keys [exception] :keys [state system] :as env} k {:keys [store text user]}]
-  {:auth {::auth/exact-user  (:db/id user)
-          ::auth/exact-store (:db/id store)}
+  {:auth {::auth/exact-user  (:db/id user)}
    :resp {:success "Message sent"
           :error   (if (some? exception)
                      (.getMessage exception)
