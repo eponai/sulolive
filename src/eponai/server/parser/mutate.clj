@@ -83,10 +83,16 @@
   {:action (fn []
              (let [old-profile (db/one-with (db/db state) {:where   '[[?u :user/profile ?e]]
                                                            :symbols {'?u (:user-id auth)}})
-                   photo (f/add-tempid (cloudinary/upload-dynamic-photo (:system/cloudinary system) (:photo params)))]
-               (debug "UPloaded photo: " photo)
-               (db/transact state [photo
-                                   [:db/add old-profile :user.profile/photo (:db/id photo)]])))})
+                   photo (f/add-tempid (cloudinary/upload-dynamic-photo (:system/cloudinary system) (:photo params)))
+                   photo-txs [photo]
+                   profile-txs (if (some? old-profile)
+                                 (conj photo-txs [:db/add old-profile :user.profile/photo (:db/id photo)])
+                                 (let [new-profile (f/add-tempid {:user.profile/photo (:db/id photo)})]
+                                   (into photo-txs [new-profile
+                                                    [:db/add (:user-id auth) :user/profile (:db/id new-profile)]])))]
+
+                   (debug "UPloaded photo: " photo)
+                   (db/transact state profile-txs)))})
 
 (defmutation user.info/update
   [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ {:keys [:user/name]}]
@@ -95,8 +101,13 @@
           :error   "Could not upload photo :("}}
   {:action (fn []
              (let [old-profile (db/one-with (db/db state) {:where   '[[?u :user/profile ?e]]
-                                                           :symbols {'?u (:user-id auth)}})]
-               (db/transact state [[:db/add old-profile :user.profile/name name]])))})
+                                                           :symbols {'?u (:user-id auth)}})
+                   profile-txs (if (some? old-profile)
+                                 [[:db/add old-profile :user.profile/name name]]
+                                 (let [new-profile (f/add-tempid {:user.profile/name name})]
+                                   [new-profile
+                                    [:db/add (:user-id auth) :user/profile (:db/id new-profile)]]))]
+               (db/transact state profile-txs)))})
 
 (defmutation store.photo/upload
   [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ {:keys [photo photo-key store-id] :as p}]
@@ -295,6 +306,7 @@
           :error   "Could not create Stripe account"}}
   {:action (fn []
              (let [{store-owner :store.owner/_user} (db/pull (db/db state) [:store.owner/_user] (:user-id auth))]
+               (debug "Store owner: " store-owner)
                (if (some? store-owner)
                  (throw (ex-info "Cannot create multiple stores for one user."
                                  {:user-id (:user-id auth)}))

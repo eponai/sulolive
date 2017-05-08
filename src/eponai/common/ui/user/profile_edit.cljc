@@ -14,6 +14,8 @@
     [eponai.common.ui.elements.callout :as callout]
     [eponai.web.ui.photo :as p]))
 
+(def form-inputs
+  {:user.info/name "user.info.name"})
 (defui ProfileEdit
   static om/IQuery
   (query [_]
@@ -26,6 +28,12 @@
       (when (msg/final? last-message)
         (msg/clear-messages! this 'photo/upload)
         (om/update-state! this dissoc :queue-photo))))
+
+  (save-info [this]
+    #?(:cljs
+       (let [input-name (utils/input-value-by-id (:user.info/name form-inputs))]
+         (when (not-empty input-name)
+           (msg/om-transact! this [(list 'user.info/update {:user/name input-name})])))))
 
   (render [this]
     (let [{:proxy/keys [photo-upload]} (om/props this)
@@ -69,38 +77,44 @@
                                                                                   :query/user]))}))))))
                 (grid/column
                   (grid/column-size {:small 12 :medium 8 :large 9})
-                  (grid/row
+                  (dom/div
                     nil
-                    (grid/column
-                      (->> (grid/column-size {:small 12 :medium 3 :large 2})
-                           (css/text-align :right))
-                      (dom/label nil "Name"))
-                    (grid/column
+                    (grid/row
                       nil
-                      (my-dom/input  {:type         "text"
-                                      :defaultValue (get-in user [:user/profile :user.profile/name])})))
+                      (grid/column
+                        (->> (grid/column-size {:small 12 :medium 3 :large 2})
+                             (css/text-align :right))
+                        (dom/label nil "Name"))
+                      (grid/column
+                        nil
+                        (my-dom/input {:id           (:user.info/name form-inputs)
+                                       :type         "text"
+                                       :defaultValue (get-in user [:user/profile :user.profile/name])})))
 
-                  ;(my-dom/div
-                  ;  (css/grid-row)
-                  ;  (my-dom/div
-                  ;    (->> (css/grid-column)
-                  ;         (css/grid-column-size {:small 3 :medium 3 :large 2})
-                  ;         (css/text-align :right))
-                  ;    (dom/label nil "Username"))
-                  ;  (my-dom/div
-                  ;    (css/grid-column)
-                  ;    (dom/input #js {:type "text"})))
+                    ;(my-dom/div
+                    ;  (css/grid-row)
+                    ;  (my-dom/div
+                    ;    (->> (css/grid-column)
+                    ;         (css/grid-column-size {:small 3 :medium 3 :large 2})
+                    ;         (css/text-align :right))
+                    ;    (dom/label nil "Username"))
+                    ;  (my-dom/div
+                    ;    (css/grid-column)
+                    ;    (dom/input #js {:type "text"})))
 
-                  (grid/row
-                    nil
-                    (grid/column
-                      (->> (grid/column-size {:small 12 :medium 3 :large 2})
-                           (css/text-align :right))
-                      (dom/label nil "Email"))
-                    (grid/column
+                    (grid/row
                       nil
-                      (my-dom/input {:type         "email"
-                                     :disabled     true
-                                     :defaultValue (:user/email user)}))))))))))))
+                      (grid/column
+                        (->> (grid/column-size {:small 12 :medium 3 :large 2})
+                             (css/text-align :right))
+                        (dom/label nil "Email"))
+                      (grid/column
+                        nil
+                        (my-dom/input {:type         "email"
+                                       :disabled     true
+                                       :defaultValue (:user/email user)}))))
+                  (my-dom/div
+                    (css/text-align :right)
+                    (my-dom/a (css/button {:onClick #(.save-info this)}) (my-dom/span nil "Save"))))))))))))
 
 (def ->ProfileEdit (om/factory ProfileEdit))

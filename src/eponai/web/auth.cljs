@@ -29,7 +29,8 @@
                  :languageDictionary {:title "SULO"}
                  :theme              {:primaryColor        "#39AC97"
                                       :logo                "/assets/img/auth0-icon.png"
-                                      :labeledSubmitButton false}})))
+                                      :labeledSubmitButton false}
+                 :allowForgotPassword false})))
 (defn fake-lock []
   (reify auth/IAuthLock
     (show-lock [this]

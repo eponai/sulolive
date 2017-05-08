@@ -113,9 +113,10 @@
 
 (defn selected-section-entity [component]
   (let [{:keys [selected-section]} (om/get-state component)]
-    (cond-> {:store.section/label (:label selected-section)}
-            (number? (:value selected-section))
-            (assoc :db/id (:value selected-section)))))
+    (when (:label selected-section)
+      (cond-> {:store.section/label (:label selected-section)}
+              (number? (:value selected-section))
+              (assoc :db/id (:value selected-section))))))
 
 (defui ProductEditForm
   static om/IQuery
@@ -206,6 +207,9 @@
           is-loading? (or (message-pending-fn update-resp) (message-pending-fn create-resp) (message-pending-fn delete-resp))
           ]
 
+      (debug "Messages: " {:update update-resp
+                           :create create-resp
+                           :delete delete-resp})
       (dom/div
         {:id "sulo-edit-product"}
         (when (or (not did-mount?) is-loading?)

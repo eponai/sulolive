@@ -31,7 +31,7 @@
         (if owned-store
           (menu/item
             (css/add-class :my-stores)
-            (dom/label nil (dom/small nil "Manage Store"))
+            (dom/label nil (dom/span nil "Manage Store"))
             (menu/vertical
               (css/add-class :nested)
               (menu/item-link
@@ -39,22 +39,22 @@
                 (get-in owned-store [:store/profile :store.profile/name]))))
           (menu/item
             (css/add-class :my-stores)
-            (dom/label nil (dom/small nil "Manage store"))
+            (dom/label nil (dom/span nil "Manage store"))
             (menu/vertical
               (css/add-class :nested)
               (menu/item-link
                 {:href (routes/url :sell)}
-                (dom/small nil "Start a store")))))
+                (dom/span nil "Start a store")))))
         (when user
           (menu/item
             (css/add-class :user-info)
             (menu/vertical
               (css/add-class :nested)
-              (dom/label nil (dom/small nil "Your Account"))
+              (dom/label nil (dom/span nil "Your Account"))
               (menu/item-link {:href (routes/url :user {:user-id (:db/id user)})}
-                              (dom/small nil "Profile"))
+                              (dom/span nil "Profile"))
               (menu/item-link {:href (routes/url :user/order-list {:user-id (:db/id user)})}
-                              (dom/small nil "Purchases")))))
+                              (dom/span nil "Purchases")))))
         (menu/item nil
                    (menu/vertical
                      (css/add-class :nested)

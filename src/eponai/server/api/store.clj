@@ -77,11 +77,12 @@
     (db/transact state product-sku-photo-txs)))
 
 (defn update-product [{:keys [state system]} product-id {:store.item/keys [photos skus section] :as params}]
-  (let [old-item (db/pull (db/db state) [:db/id :store.item/photos :store.item/skus :store/_items] product-id)
+  (let [old-item (db/pull (db/db state) [:db/id :store.item/photos :store.item/skus {:store/_items [:db/id]}] product-id)
         old-skus (:store.item/skus old-item)
         old-photos (:store.item/photos old-item)
 
-        store (get :store/_items old-item)
+        ;_ (debug "GETTING OLD ITEM: " old-item)
+        store  (:store/_items old-item)
         ;; Update product with new info, name/description, etc. Collections are updated below.
         new-section (cf/add-tempid section)
         new-product (cond-> (f/product (assoc params :db/id product-id))
