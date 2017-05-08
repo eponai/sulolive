@@ -148,12 +148,16 @@
                                                   '?token token
                                                   '?user  user-id}})))))
 
-(defn- ensure-stream-is-atleast-online [conn store-id]
+(defn- quiet-cas [conn cas-tx]
   (try
-    (db/transact conn [[:db.fn/cas [:stream/store store-id] :stream/state :stream.state/offline :stream.state/online]])
+    (db/transact conn cas-tx)
     (catch Exception e
       ;; We don't care if this fails.
-      (debug "Ignoring cas exception : " e))))
+      (debug "Ignoring cas exception : " (.getMessage e))
+      nil)))
+
+(defn- ensure-stream-is-atleast-online [conn store-id]
+  (quiet-cas conn [[:db.fn/cas [:stream/store store-id] :stream/state :stream.state/offline :stream.state/online]]))
 
 (defmutation stream/go-online
   [{:keys [state] :as env} k {:keys [stream/token]}]
@@ -183,6 +187,14 @@
   {:action (fn []
              (db/transact state [{:stream/store store-id
                                   :stream/state :stream.state/live}]))})
+
+(defmutation stream/end-live
+  [{:keys [state auth] :as env} k {:keys [store-id] :as p}]
+  {:auth {::auth/store-owner store-id}
+   :resp {:success "Ended live stream!"
+          :error   "Could not end live stream."}}
+  {:action (fn []
+             (quiet-cas state [[:db.fn/cas [:stream/store store-id] :stream/state :stream.state/live :stream.state/online]]))})
 
 (defmutation stream/go-offline
   [{:keys [state auth] :as env} k {:keys [store-id] :as p}]

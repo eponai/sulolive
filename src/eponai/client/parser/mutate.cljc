@@ -171,6 +171,11 @@
   (when target
     {:remote true}))
 
+(defmethod client-mutate 'stream/end-live
+  [{:keys [state target]} _ {:keys [store-id]}]
+  (when target
+    {:remote true}))
+
 (defmethod client-mutate 'stream/go-offline
   [{:keys [state target]} _ {:keys [store-id]}]
   (when target

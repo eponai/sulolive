@@ -74,24 +74,24 @@
                                    (= stream-state :stream.state/live)
                                    (css/add-class :highlight))
                           (name stream-state)))
-                (cond
-                  (= stream-state :stream.state/online)
-                  (dom/a
-                    (->> (css/button {:onClick #(om/transact! this [(list 'stream/go-live {:store-id (:db/id store)}) :query/stream])})
-                         (css/add-class :highlight))
-                    (dom/strong nil "Go live!"))
-                  (or (nil? stream-state) (= stream-state :stream.state/offline))
+                (dom/div
+                  nil
+                  (cond
+                    (= stream-state :stream.state/online)
+                    (dom/a
+                      (->> (css/button {:onClick #(om/transact! this [(list 'stream/go-live {:store-id (:db/id store)}) :query/stream])})
+                           (css/add-class :highlight))
+                      (dom/strong nil "Go live!"))
+                    (= stream-state :stream.state/live)
+                    (dom/a
+                      (css/button-hollow {:onClick #(om/transact! this [(list 'stream/end-live {:store-id (:db/id store)}) :query/stream])})
+                      (dom/strong nil "End live")))
                   (dom/a
                     (css/button-hollow {:onClick #(binding [parser/*parser-allow-local-read* false]
-                                                   (om/transact! this [:query/stream]))})
+                                                    (om/transact! this [:query/stream]))})
                     (dom/i {:classes ["fa fa-refresh fa-fw"]})
-                    (dom/strong nil "Refresh"))
-                  (= stream-state :stream.state/live)
-                  (dom/a
-                    (css/button-hollow {:onClick #(om/transact! this [(list 'stream/go-offline {:store-id (:db/id store)}) :query/stream])})
-                    (dom/strong nil "Stop streaming"))
-                  :else
-                  (warn "Unknown stream-state: " stream-state)))
+                    (when (or (nil? stream-state) (= stream-state :stream.state/offline))
+                      (dom/strong nil "Refresh")))))
               (callout/callout-small
                 nil
                 (stream/->Stream
