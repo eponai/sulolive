@@ -45,12 +45,10 @@
 (defn message-list [messages & [opts]]
   (let [{:keys [editable?]} opts
         id "sl-chat-message-list"]
-    (my-dom/div
-      (css/add-class :message-list-container)
-      (my-dom/ul
-        #?(:cljs
-                (css/add-class :messages-list {:onMouseOver #(set! (.. (utils/element-by-id "the-sulo-app") -style -overflow-y) "hidden")
-                                               :onMouseOut  #(set! (.. (utils/element-by-id "the-sulo-app") -style -overflow-y) "scroll")
-                                               :id          id})
-           :clj (css/add-class :messages-list {:id id}))
-        (map message-item messages)))))
+    (my-dom/ul
+      #?(:cljs
+              (css/add-class :messages-list {:onMouseOver #(set! (.. (utils/element-by-id "the-sulo-app") -style -overflow-y) "hidden")
+                                             :onMouseOut  #(set! (.. (utils/element-by-id "the-sulo-app") -style -overflow-y) "scroll")
+                                             :id          id})
+         :clj (css/add-class :messages-list {:id id}))
+      (map message-item messages))))

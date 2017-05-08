@@ -34,10 +34,6 @@
                                   ~{:store (select-keys (get-store component) [:db/id])
                                     :text  chat-message})
                                 :query/chat])))
-  #?(:cljs
-     (let [chat-content (utils/element-by-id "sl-chat-content")]
-       (when chat-content
-         (set! (.-scrollTop chat-content) (.-scrollHeight chat-content)))))
   (reset-chat-message! component))
 
 (defui StreamChat
@@ -69,9 +65,18 @@
           new-store (get-store-id (om/props this))]
       (when (not= old-store new-store)
         (client.chat/stop-listening! this old-store)
-        (client.chat/start-listening! this new-store))))
+        (client.chat/start-listening! this new-store))
+      (when (not= (:query/chat prev-props) (:query/chat (om/props this)))
+        #?(:cljs
+           (let [chat-content (utils/element-by-id "sl-chat-message-list")]
+             (when chat-content
+               (set! (.-scrollTop chat-content) (.-scrollHeight chat-content))))))))
   (componentDidMount [this]
-    (client.chat/start-listening! this (get-store-id this)))
+    (client.chat/start-listening! this (get-store-id this))
+    #?(:cljs
+       (let [chat-content (utils/element-by-id "sl-chat-message-list")]
+         (when chat-content
+           (set! (.-scrollTop chat-content) (.-scrollHeight chat-content))))))
   (toggle-chat [this show?]
     (let [{:keys [on-toggle-chat]} (om/get-computed this)]
       (when on-toggle-chat
