@@ -137,7 +137,7 @@
                  [cljs-http "0.1.39"]
                  [org.clojure/tools.reader "1.0.0-beta4"]
                  [garden "1.3.2"]
-                 [datascript "0.16.1"]
+                 [datascript "0.15.4"]
                  [cljsjs/stripe "2.0-0"]
                  [cljsjs/quill "1.1.0-3"]
                  [cljsjs/react-select "1.0.0-rc.1"]
