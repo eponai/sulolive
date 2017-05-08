@@ -11,9 +11,8 @@
     [eponai.common.ui.router :as router]
     [eponai.common.format :as f]
     [eponai.client.routes :as routes]
-    #?(:cljs [eponai.web.utils :as utils])
     [eponai.common.ui.dom :as dom]
-    [om.next :as om #?(:clj :refer :cljs :refer-macros) [defui]]
+    [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.grid :as grid]

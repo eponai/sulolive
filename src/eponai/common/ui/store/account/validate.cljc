@@ -5,9 +5,6 @@
        :clj
         [clojure.spec :as s])
         [eponai.common :as c]
-        [eponai.common.format :as f]
-    #?(:cljs
-       [eponai.web.utils :as utils])
         [taoensso.timbre :refer [debug]]))
 
 (def stripe-verifications

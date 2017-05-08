@@ -1,7 +1,6 @@
 (ns eponai.common.ui.navbar
   (:require
     [eponai.common.ui.dom :as dom]
-    [eponai.common.ui.utils :as ui-utils]
     [eponai.common.ui.elements.css :as css]
     #?(:cljs
        [eponai.web.utils :as utils])

@@ -15,7 +15,6 @@
     [eponai.client.parser.message :as msg]
     [eponai.common :as c]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.callout :as callout]))
 
 (defn get-route-params [component]

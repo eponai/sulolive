@@ -15,7 +15,6 @@
        [eponai.web.utils :as utils])
     [eponai.client.routes :as routes]
     [eponai.common :as c]
-    [eponai.common.database :as db]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.web.ui.photo :as p]

@@ -12,7 +12,6 @@
     [eponai.common.ui.om-quill :as quill]
     [om.next :as om :refer [defui]]
     [eponai.client.parser.message :as msg]
-    [eponai.common.ui.common :as common]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.web.ui.photo :as p]
     [taoensso.timbre :refer [debug]]))

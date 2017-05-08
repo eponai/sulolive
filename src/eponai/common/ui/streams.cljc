@@ -10,8 +10,7 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.router :as router]
     [eponai.client.routes :as routes]
-    [eponai.web.ui.photo :as p]
-    [eponai.common.ui.elements.callout :as callout]))
+    [eponai.web.ui.photo :as p]))
 
 (defui Streams
   static om/IQuery

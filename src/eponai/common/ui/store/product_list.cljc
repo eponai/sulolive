@@ -11,7 +11,6 @@
     #?(:cljs
        [eponai.web.utils :as web-utils])
     [om.next :as om :refer [defui]]
-    [om.dom :as om-dom]
     [taoensso.timbre :refer [debug]]
     [eponai.common.format.date :as date]
     [eponai.common.ui.utils :as utils]
@@ -19,9 +18,7 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.web.ui.photo :as p]
     [eponai.common.ui.elements.callout :as callout]
-    [eponai.common.ui.elements.menu :as menu]
     [eponai.web.ui.photo :as photo]
-    [eponai.common :as c]
     [clojure.string :as string]
     [eponai.client.parser.message :as msg]))
 

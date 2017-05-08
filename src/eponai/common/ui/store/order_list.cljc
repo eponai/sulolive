@@ -10,7 +10,6 @@
     [om.next :as om :refer [defui]]
     [eponai.common.format.date :as date]
     [taoensso.timbre :refer [debug]]
-    [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.callout :as callout]))
 
 

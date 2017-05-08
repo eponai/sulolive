@@ -14,8 +14,7 @@
     [eponai.common.ui.script-loader :as script-loader]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.elements.callout :as callout]
-    [eponai.common.format :as f]))
+    [eponai.common.ui.elements.callout :as callout]))
 
 (def form-inputs
   {:shipping/name             "sulo-shipping-full-name"

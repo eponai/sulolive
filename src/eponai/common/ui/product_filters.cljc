@@ -1,12 +1,9 @@
 (ns eponai.common.ui.product-filters
   (:require
     [eponai.common.ui.dom :as dom]
-    [eponai.client.routes :as routes]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.api.products :as products]
-    [eponai.common.database :as db]
     [taoensso.timbre :refer [debug]]))
 
 (defn submenu [component {:category/keys [name children]}]

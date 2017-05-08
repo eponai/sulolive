@@ -19,6 +19,10 @@
         ;; Extra groupings
         :react-select    {:entries [eponai.common.ui.components.select
                                     cljsjs.react-select]}
+        :stream+chat     {:entries [eponai.common.ui.stream
+                                    eponai.common.stream
+                                    eponai.common.ui.chat]}
+        :photo-uploader  {:entries [eponai.client.ui.photo-uploader]}
 
         ;; Routes
         :index           {:entries [eponai.common.ui.index]}
@@ -27,12 +31,15 @@
                           :depends-on [:index]}
         :coming-soon     {:entries [eponai.web.ui.coming-soon]}
         :sell            {:entries [eponai.web.ui.start-store]}
-        :store           {:entries [eponai.common.ui.store]}
+        :store           {:entries    [eponai.common.ui.store]
+                          :depends-on [:stream+chat]}
         :checkout        {:entries [eponai.common.ui.checkout
                                     eponai.common.ui.checkout.shipping
                                     eponai.common.ui.checkout.payment
-                                    eponai.common.ui.checkout.review]}
-        :browse          {:entries [eponai.common.ui.goods]}
+                                    eponai.common.ui.checkout.review
+                                    eponai.common.ui.checkout.google-places]}
+        :browse          {:entries [eponai.common.ui.goods
+                                    eponai.common.ui.product-filters]}
         :shopping-bag    {:entries [eponai.common.ui.shopping-bag]}
         :product         {:entries [eponai.common.ui.product-page]}
         :live            {:entries [eponai.common.ui.streams]}
@@ -45,8 +52,11 @@
                                     eponai.common.ui.user.order-list
                                     eponai.common.ui.user.order-receipt
                                     eponai.common.ui.user.profile
-                                    eponai.common.ui.user.profile-edit]}
-        :store-dashboard {:depends-on [:react-select]
+                                    eponai.common.ui.user.profile-edit]
+                          :depends-on [:photo-uploader]}
+        :store-dashboard {:depends-on [:react-select
+                                       :stream+chat
+                                       :photo-uploader]
                           :entries    [eponai.common.ui.store.dashboard
                                        eponai.common.ui.store.account
                                        eponai.common.ui.store.order-edit-form
@@ -60,7 +70,10 @@
                                        eponai.common.ui.store.account.payments
                                        eponai.common.ui.store.account.payouts
                                        eponai.common.ui.store.account.shipping
-                                       ]}})))
+                                       eponai.common.ui.store.account.validate
+                                       eponai.web.ui.store.common
+                                       eponai.web.ui.store.edit-store
+                                       cljsjs.react-grid-layout]}})))
 
 (defproject budget "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
@@ -347,7 +360,7 @@
                                                              ;; :parallel-build  true
                                                              ;; :pseudo-names true
                                                              ;; :pretty-print true
-                                                             ;; :verbose         true
+                                                             :verbose         true
                                                              :npm-deps        ~npm-deps
                                                              :modules ~(modules "resources/public/release/js/out/")
                                                              }}]}}

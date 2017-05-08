@@ -1,14 +1,11 @@
 (ns eponai.common.ui.product
   (:require
     [eponai.common.ui.dom :as dom]
-    [eponai.common.ui.common :as c]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.utils :as utils]
     #?(:cljs [eponai.web.utils :as web-utils])
     [om.next :as om :refer [defui]]
     [eponai.common.ui.common :as common]
-    [eponai.common.ui.navbar :as nav]
-    [eponai.common.ui.router :as router]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.om-quill :as quill]

@@ -3,13 +3,10 @@
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.stream :as stream]
     [eponai.client.parser.message :as msg]
-    [eponai.client.chat :as client.chat]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug warn]]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.chat :as chat]
-    [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.elements :as elements]
     #?(:cljs
        [eponai.web.utils :as utils])
     [eponai.common.parser :as parser]

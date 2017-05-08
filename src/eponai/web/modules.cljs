@@ -13,9 +13,11 @@
   (require-route! [this route callback])
   (prefetch-route [this route]))
 
-(def extra-groupings [:react-select])
+(def extra-groupings [:react-select :stream+chat :photo-uploader])
 (def dependencies {:login           [:index]
-                   :store-dashboard [:react-select]})
+                   :user            [:photo-uploader]
+                   :store           [:stream+chat]
+                   :store-dashboard [:photo-uploader :react-select :stream+chat]})
 
 (def loader (goog.module.ModuleLoader.))
 (def manager (doto (module-manager/getInstance)

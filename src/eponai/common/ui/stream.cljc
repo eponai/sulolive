@@ -1,13 +1,12 @@
 (ns eponai.common.ui.stream
   (:require
     [eponai.common.stream :as stream]
-    [eponai.common.ui.dom :as my-dom]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
-    #?(:cljs [eponai.web.utils :as utils])
     [taoensso.timbre :refer [debug error info]]
     [eponai.common.ui.script-loader :as script-loader]
-    #?(:cljs [eponai.web.wowza-player :as wowza-player])))
+    #?(:cljs [eponai.web.wowza-player :as wowza-player])
+    #?(:cljs [eponai.web.modules :as modules])))
 
 (defn add-fullscreen-listener [f]
   #?(:cljs
@@ -110,3 +109,6 @@
                                       #?@(:cljs [:scripts [[#(exists? js/WowzaPlayer)
                                                             "//player.wowza.com/player/1.0.10.4565/wowzaplayer.min.js"]]])}))
 (def ->Stream (om/factory Stream))
+
+#?(:cljs
+   (modules/set-loaded! :stream+chat))

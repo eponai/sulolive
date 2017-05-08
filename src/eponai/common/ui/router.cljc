@@ -4,7 +4,6 @@
     [om.next :as om :refer [defui]]
     [om.dom]
     [taoensso.timbre :refer [error debug info]]
-    [clojure.walk :as walk]
     #?(:cljs [eponai.web.modules :as modules])
     [eponai.client.utils :as utils]))
 

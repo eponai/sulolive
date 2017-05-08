@@ -18,7 +18,6 @@
     [eponai.common.ui.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
-    [eponai.common.format :as f]
     [eponai.web.ui.store.edit-store :as es]
     [medley.core :as medley]
     [eponai.common.ui.elements.callout :as callout]

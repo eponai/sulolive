@@ -1,12 +1,7 @@
 (ns eponai.common.ui.help.faq
   (:require
     [om.next :as om :refer [defui]]
-    [eponai.common.ui.dom :as dom]
-    [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.elements.callout :as callout]
-    [eponai.common.ui.elements.css :as css]
-    ))
+    [eponai.common.ui.dom :as dom]))
 
 (defui FAQ
   Object

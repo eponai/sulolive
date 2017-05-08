@@ -3,7 +3,6 @@
     #?(:cljs [cljs.spec :as s]
        :clj [clojure.spec :as s])
             [eponai.common.ui.dom :as my-dom]
-            [om.dom :as dom]
             [eponai.common.ui.elements.css :as css]
             [taoensso.timbre :refer [debug]]))
 

@@ -12,7 +12,6 @@
     [eponai.client.routes :as routes]
     [eponai.common.ui.icons :as icons]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.router :as router]))
 
 (defn top-feature [opts icon title text]

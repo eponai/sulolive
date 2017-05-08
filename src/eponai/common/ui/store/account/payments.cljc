@@ -1,11 +1,8 @@
 (ns eponai.common.ui.store.account.payments
   (:require
-    [eponai.common.ui.common :as common]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
-    [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.icons :as icons]
-    [om.next :as om]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.callout :as callout]))
 

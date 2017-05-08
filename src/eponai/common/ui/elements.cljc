@@ -2,11 +2,8 @@
   (:require
     [eponai.common.ui.dom :as my-dom]
     [eponai.common.ui.elements.css :as css]
-    [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.elements.photo :as photo]
     #?(:cljs
        [eponai.web.utils :as utils])
-    [om.dom :as dom]
     [taoensso.timbre :refer [debug]]
     [eponai.web.ui.photo :as p]))
 

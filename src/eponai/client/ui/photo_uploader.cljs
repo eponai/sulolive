@@ -4,18 +4,15 @@
   (:require
     [cljs.core.async :refer [chan alts! put!]]
     [cljs.core]
-    [cljs.spec :as s]
-    [goog.events :as events]
     [goog.crypt]
     [goog.crypt.Sha256]
-    [s3-beam.client :as s3]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
-    [eponai.client.auth :as auth]
     ;[clojure.core.async :as async]
     [cljs.core.async :as async]
-    [cljs-http.client :as http])
+    [cljs-http.client :as http]
+    [eponai.web.modules :as modules])
   (:import [goog.events EventType]))
 
 ;(defn hashed [eid]
@@ -166,3 +163,5 @@
                         :className "show-for-sr"})))))
 
 (def ->PhotoUploader (om/factory PhotoUploader {:key-fn #(str "photo-uploader")}))
+
+(modules/set-loaded! :photo-uploader)

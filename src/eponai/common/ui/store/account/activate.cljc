@@ -12,7 +12,6 @@
        [eponai.web.utils :as utils])
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
-    [eponai.common :as c]
     [eponai.common.format.date :as date]
     [eponai.client.routes :as routes]
     [eponai.common.format :as format]
