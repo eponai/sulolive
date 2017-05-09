@@ -90,8 +90,10 @@
                  [org.clojure/clojure "1.9.0-alpha14"]
                  [org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"]
                  ;;[org.omcljs/om "1.0.0-alpha46"]
-                 [clj-http "3.3.0"]
-                 [clj-time "0.11.0"]
+                 [aleph "0.4.3"]
+                 [aleph-middleware "0.1.2" :exclusions [aleph]]
+                 [clj-http "3.3.0" :exclusions [riddley]]
+                 [clj-time "0.13.0"]
                  [compojure "1.5.1"]
                  [alxlit/autoclave "0.2.0"
                   :exclusions [com.google.guava/guava]]
@@ -101,24 +103,22 @@
                   :exclusions [joda-time]]
                  [com.amazonaws/aws-java-sdk-dynamodb "1.11.77"
                   :exclusions [joda-time org.clojure/test.check]]
-                 [amazonica "0.3.85"]
+                 [amazonica "0.3.85"
+                  :exclusions [com.google.protobuf/protobuf-java]]
                  [com.taoensso/timbre "4.8.0"]
                  [com.taoensso/sente "1.11.0"]
                  [com.draines/postal "2.0.1"]
-                 [com.stripe/stripe-java "3.11.0"]
                  [environ "1.1.0"]
                  [hiccup "1.0.5"]
                  [org.clojure/data.generators "0.1.2"]
                  [org.clojure/core.async "0.3.442"]
-                 [org.clojure/core.memoize "0.5.8"]         ; needed to work around lein+core.async dependency issue.
+                 [org.clojure/core.memoize "0.5.9"]
                  [org.clojure/data.json "0.2.6"]
                  [com.stuartsierra/component "0.3.2"]
 		 [suspendable "0.1.1"]
                  ;; Depending on transit-clj for faster cljs builds
                  [com.cognitect/transit-clj "0.8.300"]
                  ; ring helpers
-                 [aleph "0.4.3"]
-                 [aleph-middleware "0.1.2" :exclusions [aleph]]
                  [ring/ring-core "1.5.0"]
                  [ring/ring-devel "1.5.0"]
                  [ring/ring-defaults "0.2.1"]
@@ -126,7 +126,8 @@
                  [ring/ring-anti-forgery "1.0.1"]
                  [ring-transit "0.1.6"]
                  [ring/ring-json "0.4.0" :exclusions [cheshire]]
-                 [cheshire "5.6.3"]  ;; For ring-json
+                 ;; For ring-json
+                 [cheshire "5.7.1" :exclusions [com.fasterxml.jackson.core/jackson-core]]
                  [medley "0.8.3"]
                  [org.martinklepsch/s3-beam "0.6.0-alpha1"]
 
@@ -161,7 +162,8 @@
 
   :exclusions [org.clojure/test.check
                org.clojure/clojure
-               org.clojure/clojurescript]
+               org.clojure/clojurescript
+               org.clojure/core.memoize]
 
   :jvm-opts ^:replace ["-Xms512m" "-Xmx2048m" "-server"
                        "-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1"
@@ -348,7 +350,8 @@
                                                              :optimizations :simple}}]}}
 
              :web-prod {:dependencies [[amazonica "0.3.85"
-                                        :exclusions [com.taoensso/encore]]
+                                        :exclusions [com.taoensso/encore
+                                                     com.google.protobuf/protobuf-java]]
                                        [com.taoensso/timbre "4.8.0"
                                         :exclusions [com.taoensso/encore]]
                                        [com.taoensso/sente "1.11.0"
