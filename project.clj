@@ -89,9 +89,6 @@
   :dependencies [
                  [org.clojure/clojure "1.9.0-alpha14"]
                  [org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"]
-                 ;; Using our own encore to exclude cljs.test and cljs.pprint
-                 ;; from advanced mode compilation.
-                 [org.clojars.petterik/encore "2.91.1-SNAPSHOT"]
                  ;;[org.omcljs/om "1.0.0-alpha46"]
                  [clj-http "3.3.0"]
                  [clj-time "0.11.0"]
@@ -104,14 +101,11 @@
                   :exclusions [joda-time]]
                  [com.amazonaws/aws-java-sdk-dynamodb "1.11.77"
                   :exclusions [joda-time org.clojure/test.check]]
-                 [amazonica "0.3.85"
-                  :exclusions [com.taoensso/encore]]
+                 [amazonica "0.3.85"]
+                 [com.taoensso/timbre "4.8.0"]
+                 [com.taoensso/sente "1.11.0"]
                  [com.draines/postal "2.0.1"]
                  [com.stripe/stripe-java "3.11.0"]
-                 [com.taoensso/timbre "4.8.0"
-                  :exclusions [com.taoensso/encore]]
-                 [com.taoensso/sente "1.11.0"
-                  :exclusions [com.taoensso/encore]]
                  [environ "1.1.0"]
                  [hiccup "1.0.5"]
                  [org.clojure/data.generators "0.1.2"]
@@ -180,7 +174,6 @@
             [lein-doo "0.1.7" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
             [lein-cljsbuild "1.1.5" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
             [lein-figwheel "0.5.7" :exclusions [org.clojure/clojure]]
-            [lein-test-out "0.3.1"]
             [lein-environ "1.1.0"]]
 
   :min-lein-version "2.0.0"
@@ -354,43 +347,53 @@
                                                              :output-dir    "target/android"
                                                              :optimizations :simple}}]}}
 
-             :web-prod {:jvm-opts     ^:replace ["-Xmx3g" "-server"]
-                        :cljsbuild {:builds [{:id           "release"
-                                              :source-paths ["src/" "src-hacks/web/" "env/client/prod"]
-                                              :compiler     {:closure-defines {"goog.DEBUG" false}
-                                                             :main            "env.web.main"
-                                                             :asset-path      "/release/js/out"
-                                                             :output-to       "resources/public/release/js/out/budget.js"
-                                                             :output-dir      "resources/public/release/js/out/"
-                                                             :optimizations   :advanced
-                                                             :externs         ["src-hacks/js/externs/stripe-checkout.js"
-                                                                               "src-hacks/js/externs/red5pro.js"
-                                                                               "src-hacks/js/externs/hls.js"]
-                                                             :infer-externs true
-                                                             ;; :preloads [env.web.preloads]
-                                                             ;; :language-in     :ecmascript5
-                                                             ;; :parallel-build  true
-                                                             ;; :pseudo-names true
-                                                             ;; :pretty-print true
-                                                             :verbose         true
-                                                             :npm-deps        ~npm-deps
-                                                             :modules ~(modules "resources/public/release/js/out/")
-                                                             }}]}}
+             :web-prod {:dependencies [[amazonica "0.3.85"
+                                        :exclusions [com.taoensso/encore]]
+                                       [com.taoensso/timbre "4.8.0"
+                                        :exclusions [com.taoensso/encore]]
+                                       [com.taoensso/sente "1.11.0"
+                                        :exclusions [com.taoensso/encore]]
+                                       ;; Using our own encore to exclude cljs.test and cljs.pprint
+                                       ;; from advanced mode compilation.
+                                       [org.clojars.petterik/encore "2.91.1-SNAPSHOT"]
+                                       ]
+                        :jvm-opts     ^:replace ["-Xmx3g" "-server"]
+                        :cljsbuild    {:builds [{:id           "release"
+                                                 :source-paths ["src/" "src-hacks/web/" "env/client/prod"]
+                                                 :compiler     {:closure-defines {"goog.DEBUG" false}
+                                                                :main            "env.web.main"
+                                                                :asset-path      "/release/js/out"
+                                                                :output-to       "resources/public/release/js/out/budget.js"
+                                                                :output-dir      "resources/public/release/js/out/"
+                                                                :optimizations   :advanced
+                                                                :externs         ["src-hacks/js/externs/stripe-checkout.js"
+                                                                                  "src-hacks/js/externs/red5pro.js"
+                                                                                  "src-hacks/js/externs/hls.js"]
+                                                                :infer-externs   true
+                                                                ;; :preloads [env.web.preloads]
+                                                                ;; :language-in     :ecmascript5
+                                                                ;; :parallel-build  true
+                                                                ;; :pseudo-names true
+                                                                ;; :pretty-print true
+                                                                :verbose         true
+                                                                :npm-deps        ~npm-deps
+                                                                :modules         ~(modules "resources/public/release/js/out/")
+                                                                }}]}}
              :web      {:jvm-opts     ^:replace ["-Xmx3g" "-server"]
                         :exclusions   [org.clojure/clojure org.clojure/clojurescript]
                         :dependencies [[figwheel-sidecar "0.5.7"]]
                         :cljsbuild    {:builds [{:id           "dev"
                                                  :figwheel     {:on-jsload "eponai.web.figwheel/reload!"}
                                                  :source-paths ["src/" "src-hacks/web/" "env/client/dev"]
-                                                 :compiler     {:main           "env.web.main"
-                                                                :asset-path     "/dev/js/out"
-                                                                :output-to      "resources/public/dev/js/out/budget.js"
+                                                 :compiler     {:main             "env.web.main"
+                                                                :asset-path       "/dev/js/out"
+                                                                :output-to        "resources/public/dev/js/out/budget.js"
                                                                 ;; :modules ~(modules "/dev/js/out")
-                                                                :output-dir     "resources/public/dev/js/out/"
-                                                                :optimizations  :none
-                                                                :parallel-build true
-                                                                :source-map     true
-                                                                :npm-deps       ~npm-deps
+                                                                :output-dir       "resources/public/dev/js/out/"
+                                                                :optimizations    :none
+                                                                :parallel-build   true
+                                                                :source-map       true
+                                                                :npm-deps         ~npm-deps
                                                                 :closure-warnings ~closure-warns
                                                                 }}
                                                 {:id           "devcards"
@@ -402,31 +405,31 @@
                                                                 :output-to            "resources/public/devcards/js/out/budget.js"
                                                                 :output-dir           "resources/public/devcards/js/out"
                                                                 :source-map-timestamp true
-                                                                :closure-warnings ~closure-warns
+                                                                :closure-warnings     ~closure-warns
                                                                 :npm-deps             ~npm-deps}}
                                                 {:id           "test"
                                                  :source-paths ["src/" "src-hacks/web/" "test/"]
                                                  :figwheel     {:on-jsload "eponai.client.figwheel.test-main/reload-figwheel!"}
-                                                 :compiler     {:output-to      "resources/public/test/js/out/budget.js"
-                                                                :output-dir     "resources/public/test/js/out"
-                                                                :asset-path     "/test/js/out"
-                                                                :main           "eponai.client.figwheel.test-main"
-                                                                :parallel-build true
-                                                                :optimizations  :none
-                                                                :source-map     true
+                                                 :compiler     {:output-to        "resources/public/test/js/out/budget.js"
+                                                                :output-dir       "resources/public/test/js/out"
+                                                                :asset-path       "/test/js/out"
+                                                                :main             "eponai.client.figwheel.test-main"
+                                                                :parallel-build   true
+                                                                :optimizations    :none
+                                                                :source-map       true
                                                                 :closure-warnings ~closure-warns
-                                                                :npm-deps       ~npm-deps
+                                                                :npm-deps         ~npm-deps
                                                                 }}
                                                 {:id           "doo-test"
                                                  :source-paths ["src/" "src-hacks/web/" "test/"]
-                                                 :compiler     {:output-to      "resources/public/doo-test/js/out/budget.js"
-                                                                :output-dir     "resources/public/doo-test/js/out"
-                                                                :main           "eponai.client.tests"
-                                                                :parallel-build true
-                                                                :optimizations  :none
-                                                                :source-map     true
+                                                 :compiler     {:output-to        "resources/public/doo-test/js/out/budget.js"
+                                                                :output-dir       "resources/public/doo-test/js/out"
+                                                                :main             "eponai.client.tests"
+                                                                :parallel-build   true
+                                                                :optimizations    :none
+                                                                :source-map       true
                                                                 :closure-warnings ~closure-warns
-                                                                :npm-deps       ~npm-deps
+                                                                :npm-deps         ~npm-deps
                                                                 }}
                                                 {:id           "simple"
                                                  :source-paths ["src/" "src-hacks/web/" "env/client/simple"]
@@ -437,14 +440,14 @@
                                                                 :output-dir      "resources/public/simple/js/out/"
                                                                 :optimizations   :simple
                                                                 :externs         ["src-hacks/js/externs/stripe-checkout.js"]
-                                                                :infer-externs true
+                                                                :infer-externs   true
                                                                 ;; :language-in     :ecmascript5
                                                                 :parallel-build  true
-                                                                :pretty-print true
+                                                                :pretty-print    true
                                                                 ;; :source-map   true
                                                                 ;; :verbose         true
                                                                 :npm-deps        ~npm-deps
-                                                                :modules ~(modules "resources/public/simple/js/out/")
+                                                                :modules         ~(modules "resources/public/simple/js/out/")
                                                                 }}]}}}
 
    ;;;;;;;;;;;;;
