@@ -28,26 +28,22 @@
   {:field.general/store-name    "general.store-name"
    :field.general/store-tagline "general.store-tagline"})
 
-(defn photo-uploader [component id]
-  (let [{:proxy/keys [photo-upload]} (om/props component)
-        preset (when (= id "cover") "cover-photo")]
-
-    #?(:cljs
+(defn photo-uploader [component id k]
+  #?(:cljs
+     (let [preset (when (= k "cover") :preset/cover-photo)]
        (pu/->PhotoUploader (om/computed
-                             photo-upload
+                             {:id id}
                              {:on-photo-queue  (fn [img-result]
-                                                 (om/update-state! component assoc (keyword id "queue") {:src img-result}))
+                                                 (om/update-state! component assoc (keyword k "queue") {:src img-result}))
+                              :preset          preset
                               :on-photo-upload (fn [photo]
                                                  (if (= id "cover")
                                                    (mixpanel/track-key ::mixpanel/upload-photo (assoc photo :type "Store cover photo"))
                                                    (mixpanel/track-key ::mixpanel/upload-photo (assoc photo :type "Store profile photo")))
                                                  (om/update-state! component (fn [st]
                                                                                (-> st
-                                                                                   (dissoc (keyword id "queue"))
-                                                                                   (assoc (keyword id "upload") photo)))))
-                              :preset          preset
-                              :id              id
-                              :hide-label?     true})))))
+                                                                                   (dissoc (keyword k "queue"))
+                                                                                   (assoc (keyword k "upload") photo)))))})))))
 
 (defn edit-about-section [component]
   (let [{:keys [store]} (om/get-computed component)
@@ -85,7 +81,7 @@
                 {:classes "upload-photo cover loading"}
                 (photo/cover {:src (:src queue)}
                              (photo/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))))
-              (dom/label {:htmlFor "file-cover"
+              (dom/label {:htmlFor "cover-photo-upload"
                           :classes ["upload-photo cover"]}
                          (if (some? upload)
                            (photo/cover {:photo-id       (:public_id upload)
@@ -94,7 +90,7 @@
                            (photo/cover {:photo-id     (:photo/id cover)
                                          :placeholder? true}
                                         (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]}))))
-                         (photo-uploader component "cover"))))
+                         (photo-uploader component "cover-photo-upload" "cover"))))
           (photo/cover {:photo-id     (:photo/id cover)
                         :placeholder? true}))
 
@@ -118,7 +114,7 @@
                       {:classes ["upload-photo circle loading"]}
                       (photo/circle {:src (:src queue)}
                                     (photo/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))))
-                    (dom/label {:htmlFor "file-profile"
+                    (dom/label {:htmlFor "store-profile-photo-upload"
                                 :classes ["upload-photo circle"]}
                                (if (some? upload)
                                  (photo/circle {:photo-id       (:public_id upload)
@@ -126,7 +122,7 @@
                                                (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]})))
                                  (photo/store-photo store {:transformation :transformation/thumbnail}
                                                     (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]}))))
-                               (photo-uploader component "profile"))))
+                               (photo-uploader component "store-profile-photo-upload" "profile"))))
                 (photo/store-photo store {:transformation :transformation/thumbnail})))
 
             (if (:edit/info state)
@@ -289,9 +285,7 @@
 (defui EditStore
   static om/IQuery
   (query [_]
-    [#?(:cljs
-        {:proxy/photo-upload (om/get-query pu/PhotoUploader)})
-     :query/current-route
+    [:query/current-route
      :query/messages])
 
   Object

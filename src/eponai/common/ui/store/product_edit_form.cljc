@@ -87,13 +87,12 @@
     content))
 
 (defn photo-uploader [component index]
-  (let [{:keys [did-mount?]} (om/get-state component)
-        {:proxy/keys [photo-upload]} (om/props component)]
+  (let [{:keys [did-mount?]} (om/get-state component)]
 
     (when did-mount?
       #?(:cljs
          (pu/->PhotoUploader (om/computed
-                               photo-upload
+                               {:id (str "product-photo-" index)}
                                {:on-photo-queue  (fn [img-result]
                                                    (debug "Got photo: " img-result)
                                                    (om/update-state! component assoc :queue-photo {:src img-result}))
@@ -102,9 +101,7 @@
                                                    (om/update-state! component (fn [st]
                                                                                  (-> st
                                                                                      (dissoc :queue-photo)
-                                                                                     (update :uploaded-photos conj photo)))))
-                                :id              (str index)
-                                :hide-label?     true}))))))
+                                                                                     (update :uploaded-photos conj photo)))))}))))))
 
 (defn empty-photo-button []
   (dom/div
@@ -125,8 +122,6 @@
   (query [_]
     [:query/current-route
      :query/messages
-     #?(:cljs
-        {:proxy/photo-upload (om/get-query pu/PhotoUploader)})
      {:query/navigation [:category/name :category/label :category/path :category/href]}])
   static store-common/IDashboardNavbarContent
 
@@ -269,7 +264,7 @@
                 (grid/column
                   nil
                   (dom/label
-                    {:htmlFor (str "file-" (count photos))
+                    {:htmlFor (str "product-photo-" (count photos))
                      :onClick #(mixpanel/track "Store: Open product photo upload")}
                     (empty-photo-button)
                     (photo-uploader this (count photos))))))))

@@ -1,7 +1,9 @@
 (ns eponai.common.photos
   (:require
-    [clojure.string :as string]
-    [taoensso.timbre :refer [debug]]))
+    #?(:clj [clj-http.client :as http]
+       :cljs [cljs-http.client :as http])
+            [clojure.string :as string]
+            [taoensso.timbre :refer [debug]]))
 
 (def transformations
   {:transformation/micro           "micro"
@@ -10,7 +12,14 @@
    :transformation/thumbnail-large "thumbnail-large"
    :transformation/preview         "preview"})
 
+(def presets
+  {:preset/product-photo "product-photo"
+   :preset/cover-photo "cover-photo"})
+
 (def storage-host "https://res.cloudinary.com/sulolive")
+
+(def api-host "https://api.cloudinary.com/v1_1")
+(def cloud-name "sulolive")
 
 (def transformation-path)
 (defn transformation-param
@@ -25,3 +34,13 @@
             (transformation-param transformation))
         url (string/join "/" (into [] (remove nil? [storage-host "image/upload" t (str public-id "." ext)])))]
     url))
+
+(defn upload-photo [file preset]
+  (let [resource-type "image"
+        endpoint "upload"
+        url (clojure.string/join "/" [api-host cloud-name resource-type endpoint])
+        selected-preset (or preset :preset/product-photo)]
+    (http/post url {:form-params       {:file          file
+                                        :upload_preset (get presets selected-preset)}
+                    :headers           {"X-Requested-With" "XMLHttpRequest"}
+                    :with-credentials? false})))
