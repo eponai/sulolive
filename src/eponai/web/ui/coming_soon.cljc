@@ -6,6 +6,7 @@
        [eponai.web.utils :as web-utils])
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
+    [eponai.common.shared :as shared]
     [taoensso.timbre :refer [debug error]]
     [eponai.common.ui.dom :as my-dom :refer [div a]]
     [eponai.common.ui.elements.css :as css]
@@ -21,7 +22,7 @@
 (defui ComingSoonContent
   Object
   (show-login [this]
-    (auth/show-lock (:shared/auth-lock (om/shared this))))
+    (auth/show-lock (shared/by-key this :shared/auth-lock)))
   (do-login [this auth-res]
     (debug "Auth-result: " auth-res))
   (initLocalState [this]

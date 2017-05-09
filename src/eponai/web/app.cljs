@@ -10,8 +10,6 @@
     [eponai.client.backend :as backend]
     [eponai.client.remotes :as remotes]
     [eponai.client.reconciler :as reconciler]
-    [eponai.client.chat :as client.chat]
-    [eponai.web.chat :as web.chat]
     [goog.dom :as gdom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [error debug warn info]]
@@ -23,8 +21,9 @@
     [eponai.common.ui.loading-bar :as loading-bar]
     ;; TODO: Fix the scroll bar FFFFS!
     ;; [eponai.web.scroll-helper :as scroll-helper]
-    [eponai.web.wowza-player :as wowza-player]
-    [cljs.core.async :as async]))
+    [cljs.core.async :as async]
+    [eponai.common.shared :as shared]
+    [eponai.client.chat :as client.chat]))
 
 (defn add-root! [reconciler]
   (binding [parser/*parser-allow-remote* false]
@@ -86,7 +85,7 @@
 
 (defn- run [{:keys [auth-lock modules wowza-player loading-bar]
              :or   {auth-lock    (auth/auth0-lock)
-                    wowza-player (wowza-player/real-player)
+                    wowza-player ::shared/prod
                     loading-bar  (loading-bar/loading-bar)}
              :as   run-options}]
   (let [modules (or modules (modules/advanced-compilation-modules router/routes))
@@ -131,7 +130,7 @@
                                        :shared/wowza-player        wowza-player
                                        :shared/modules             modules
                                        :shared/browser-history     history
-                                       :shared/store-chat-listener (web.chat/store-chat-listener reconciler-atom)
+                                       :shared/store-chat-listener ::shared/prod
                                        :shared/auth-lock           auth-lock
                                        :instrument                 (::plomber run-options)})]
 
@@ -166,11 +165,11 @@
 (defn run-dev [& [deps]]
   (run (merge {:auth-lock (auth/fake-lock)
                :modules   (modules/dev-modules router/routes)
-               :wowza-player     (wowza-player/fake-player)
+               :wowza-player ::shared/dev
                }
               deps)))
 
 (defn on-reload! []
-  (when-let [chat-listener (some-> reconciler-atom (deref) :config :shared :shared/store-chat-listener)]
+  (when-let [chat-listener (some-> reconciler-atom (deref) (shared/by-key :shared/store-chat-listener))]
     (client.chat/shutdown! chat-listener))
   (run-dev))

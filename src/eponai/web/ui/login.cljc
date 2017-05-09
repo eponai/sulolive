@@ -2,6 +2,7 @@
   (:require
     [eponai.common.ui.index :as index]
     [eponai.common.ui.router :as router]
+    [eponai.common.shared :as shared]
     [eponai.client.auth :as auth]
     [om.next :as om :refer [defui]]))
 
@@ -12,7 +13,7 @@
     [{:proxy/index (om/get-query index/Index)}])
   Object
   (componentDidMount [this]
-    (auth/show-lock (:shared/auth-lock (om/shared this))))
+    (auth/show-lock (shared/by-key this :shared/auth-lock)))
   (render [this]
     (index/->Index (:proxy/index (om/props this)))))
 

@@ -21,7 +21,13 @@
                                     cljsjs.react-select]}
         :stream+chat     {:entries [eponai.common.ui.stream
                                     eponai.common.stream
-                                    eponai.common.ui.chat]}
+                                    eponai.common.ui.chat
+                                    eponai.web.wowza-player
+                                    eponai.web.chat
+                                    eponai.web.sente
+                                    taoensso.sente
+                                    taoensso.sente.interfaces
+                                    taoensso.sente.packers.transit]}
         :photo-uploader  {:entries [eponai.client.ui.photo-uploader]}
 
         ;; Routes

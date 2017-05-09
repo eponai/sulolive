@@ -3,6 +3,7 @@
     [eponai.common.stream :as stream]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
+    [eponai.common.shared :as shared]
     [taoensso.timbre :refer [debug error info]]
     [eponai.common.ui.script-loader :as script-loader]
     #?(:cljs [eponai.web.wowza-player :as wowza-player])
@@ -53,7 +54,7 @@
                    photo-url (get-in store [:store/profile :store.profile/photo :photo/path] "/assets/img/storefront.jpg")
                    stream-url (stream/wowza-live-stream-url subscriber-host stream-id)
                    _ (debug "photo: url: " photo-url)
-                   player (om/shared this :shared/wowza-player)]
+                   player (shared/by-key this :shared/wowza-player)]
                (wowza-player/init! player
                                    wowza-element-id
                                    {:license                       "PLAY1-aaEJk-4mGcn-jW3Yr-Fxaab-PAYm4"
@@ -86,7 +87,7 @@
 
   (componentDidUpdate [this _ _]
     #?(:cljs
-       (when-not (wowza-player/get-player (om/shared this :shared/wowza-player))
+       (when-not (wowza-player/get-player (shared/by-key this :shared/wowza-player))
          (.subscribe-wowza this))))
 
   (componentDidMount [this]
