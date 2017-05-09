@@ -5,6 +5,8 @@
     [om.dom]
     [taoensso.timbre :refer [error debug info]]
     #?(:cljs [eponai.web.modules :as modules])
+    #?(:cljs [eponai.web.scroll-helper :as scroll-helper])
+    #?(:cljs [goog.object :as gobj])
     [eponai.client.utils :as utils]))
 
 (def dom-app-id "the-sulo-app")
@@ -57,6 +59,21 @@
                                         (utils/shouldComponentUpdate-om this props state))]
                               (debug "should component update: " ret)
                               ret)))
+  (componentDidUpdate [this _ _]
+    #?(:cljs
+       (do
+         (debug "router-state: " (.-state js/history) " get-state: " (clj->js (om/get-state this)))
+         (when-let [state (.-state js/history)]
+           (let [id (gobj/get state "__uuid")]
+             ;; Set the flag that we've gone back. If we go forward to the same route, we'll trigger the scroll.
+             (when (not= id (:history-state-id (om/get-state this)))
+               (om/update-state! this assoc :history-state-id id)
+               (let [x (gobj/get state "__scrollX")
+                     y (gobj/get state "__scrollY")]
+                 (when (and (.isFinite js/Number x)
+                            (.isFinite js/Number y))
+                   (debug "Will scroll: " x y)
+                   (scroll-helper/try-to-scroll-to {:x x :y y :latest-time-to-try (+ (.now js/Date) scroll-helper/scroll-restoration-timeout-ms)})))))))))
   (render [this]
     (let [{:keys [routing/app-root query/current-route]} (om/props this)
           route (normalize-route (:route current-route))

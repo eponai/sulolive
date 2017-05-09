@@ -15,13 +15,13 @@
     [goog.dom :as gdom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [error debug warn info]]
-    ;; Routing
     [bidi.bidi :as bidi]
     [pushy.core :as pushy]
     [eponai.client.routes :as routes]
     [eponai.common.routes :as common.routes]
     [eponai.common.ui.router :as router]
     [eponai.common.ui.loading-bar :as loading-bar]
+    [eponai.web.scroll-helper :as scroll-helper]
     [eponai.web.wowza-player :as wowza-player]
     [cljs.core.async :as async]))
 
@@ -29,7 +29,7 @@
   (binding [parser/*parser-allow-remote* false]
     (om/add-root! reconciler router/Router (gdom/getElement router/dom-app-id))))
 
-(defn update-route-fn [reconciler-atom]
+(defn update-route-fn [reconciler-atom ]
   (fn [{:keys [handler route-params] :as match}]
     (try
       (let [reconciler @reconciler-atom
@@ -88,10 +88,12 @@
                     wowza-player (wowza-player/real-player)
                     loading-bar  (loading-bar/loading-bar)}
              :as   run-options}]
+  (scroll-helper/init-scroll!)
   (let [modules (or modules (modules/advanced-compilation-modules router/routes))
         init? (atom false)
         _ (when-let [h @history-atom]
             (pushy/stop! h))
+
         match-route (partial bidi/match-route (common.routes/without-coming-soon-route common.routes/routes))
         update-route! (update-route-fn reconciler-atom)
         history (pushy/pushy update-route! (wrap-route-logging match-route))

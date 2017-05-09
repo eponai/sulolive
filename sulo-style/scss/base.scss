@@ -39,11 +39,22 @@ $chat-width-small: rem-calc(200);
 		background: map-get($foundation-palette,primary);
 }
 html, body {
-	overflow: hidden;
+
 	// font-size: 90%;
 	@include breakpoint(medium) {
 		font-size: $global-font-size;
 	}
+}
+
+body {
+  position: relative;
+  overflow-x: hidden;
+ 	width: 100%;
+ 	overflow-y: scroll; /* has to be scroll, not auto */
+ 	-webkit-overflow-scrolling: touch;
+  @include breakpoint(large) {
+  		overflow-y: auto;
+  }
 }
 
 p a {
@@ -92,14 +103,6 @@ p a {
 }
 
 #the-sulo-app {
-	overflow-x: hidden;
-	min-height: 100%;
-	width: 100%;
-	overflow-y: scroll; /* has to be scroll, not auto */
-  	-webkit-overflow-scrolling: touch;
-  	@include breakpoint(large) {
-  		overflow-y: auto;
-  	}
 }
     .is-invalid-input {
       @include form-input-error($background-alpha: 0.025);
@@ -181,7 +184,7 @@ a {
 }
 
 .sulo-page {
-	height: 100vh;
+//	height: 100vh;
 }
 
 .page-container {
