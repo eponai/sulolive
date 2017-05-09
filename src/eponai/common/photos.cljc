@@ -2,8 +2,8 @@
   (:require
     #?(:clj [clj-http.client :as http]
        :cljs [cljs-http.client :as http])
-            [clojure.string :as string]
-            [taoensso.timbre :refer [debug]]))
+    [clojure.string :as string]
+    [taoensso.timbre :refer [debug]]))
 
 (def transformations
   {:transformation/micro           "micro"
