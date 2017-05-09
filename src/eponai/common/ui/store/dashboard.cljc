@@ -317,8 +317,8 @@
 
                 (check-list-item
                   (:stripe/details-submitted? stripe-account)
-                  (routes/url :store-dashboard/settings#activate {:store-id store-id})
-                  (dom/span nil "Activate your account. You know that boring stuff needed to so you can accept payments."))))
+                  (routes/url :store-dashboard/settings#business {:store-id store-id})
+                  (dom/span nil "Verify your account. You know that boring stuff needed to so you can accept payments."))))
 
             (dom/div
               (css/add-class :section-title)
@@ -335,13 +335,13 @@
                     (dom/i {:classes ["fa fa-info fa-fw"]}))
                   (grid/column
                     nil
-                    (callout/header nil "Activate your account")))
+                    (callout/header nil "Verify your account")))
                 (dom/p nil
                        (dom/span nil "Before ")
-                       (dom/a {:href (routes/url :store-dashboard/settings#activate {:store-id store-id})} (dom/span nil "activating your account"))
+                       (dom/a {:href (routes/url :store-dashboard/settings#business {:store-id store-id})} (dom/span nil "verifying your account"))
                        (dom/span nil ", you can only use SULO Live in test mode. You can manage your store, but it'll not be visible to the public."))
                 (dom/p nil
-                       "Once you've activated you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our terms of service. If there is a problem, we'll get in touch right away to resolve it as quickly as possible.")))
+                       "Once you've verified your account you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our terms of service. If there is a problem, we'll get in touch right away to resolve it as quickly as possible.")))
 
             (dom/div
               (css/add-class :section-title)
@@ -349,9 +349,9 @@
             (callout/callout
               nil
               (dom/p nil
-                     (dom/span nil "We love to hear from you! If you want to give us feedback, report problems, or even just say hi, shoot us an email at ")
+                     (dom/span nil "We love to hear from you! Give us feedback, report problems, or just say hi, at ")
                      (dom/a {:href "mailto:hello@sulo.live"} "hello@sulo.live")
-                     (dom/span nil " and Miriam, Diana or Petter will help you out.")))
+                     (dom/span nil ". Miriam, Diana or Petter will help you out.")))
 
 
 
