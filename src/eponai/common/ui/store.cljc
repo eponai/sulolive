@@ -152,18 +152,19 @@
                 (css/add-class :navigation)
 
                 (menu/item (cond->> (css/add-class :about)
-                                    (= selected-navigation :about)
+                                    (= route :store/about)
                                     (css/add-class ::css/is-active))
-                           (dom/a {:onClick #(om/update-state! this assoc :selected-navigation :about)}
+                           (dom/a {:href (routes/url :store/about route-params)}
                                   (dom/span nil "About")))
                 (menu/item (cond->> (css/add-class :about)
-                                    (= selected-navigation :policies)
+                                    (= route :store/policies)
                                     (css/add-class ::css/is-active))
-                           (dom/a {:onClick #(om/update-state! this assoc :selected-navigation :policies)}
+                           (dom/a {:href (routes/url :store/policies route-params)}
                                   (dom/span nil "Policies")))
-                (menu/item (when (= selected-navigation :all-items)
+                (menu/item (when (and (= route :store) (= selected-navigation :all-items))
                              (css/add-class ::css/is-active))
-                           (dom/a {:onClick #(om/update-state! this assoc :selected-navigation :all-items)}
+                           (dom/a {:onClick #(om/update-state! this assoc :selected-navigation :all-items)
+                                   :href (routes/url :store route-params)}
                                   (dom/span nil "All Items")))
                 (map-indexed
                   (fn [i s]
@@ -174,7 +175,8 @@
                                  is-active?
                                  (css/add-class ::css/is-active))
                         (dom/a
-                          {:onClick #(om/update-state! this assoc :selected-navigation (:db/id s))}
+                          {:onClick #(om/update-state! this assoc :selected-navigation (:db/id s))
+                           :href (routes/url :store route-params)}
                           (dom/span nil label)))))
                   (:store/sections store)))))
           (cond (= route :store/about)
@@ -182,9 +184,10 @@
                 (= route :store/policies)
                 (policies-section this)
                 :else
-                (let [products (if (and (= route :store) (number? selected-navigation))
-                                 (filter #(= (get-in % [:store.item/section :db/id]) selected-navigation) store-items)
-                                 store-items)]
+                (let [products (sort-by :store.item/index
+                                        (if (and (= route :store) (number? selected-navigation))
+                                          (filter #(= (get-in % [:store.item/section :db/id]) selected-navigation) store-items)
+                                          store-items))]
                   (grid/products products
                                  (fn [p]
                                    (pi/->ProductItem {:product p}))))))))))
