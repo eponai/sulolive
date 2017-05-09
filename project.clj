@@ -89,6 +89,9 @@
   :dependencies [
                  [org.clojure/clojure "1.9.0-alpha14"]
                  [org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"]
+                 ;; Using our own encore to exclude cljs.test and cljs.pprint
+                 ;; from advanced mode compilation.
+                 [org.clojars.petterik/encore "2.91.1-SNAPSHOT"]
                  ;;[org.omcljs/om "1.0.0-alpha46"]
                  [clj-http "3.3.0"]
                  [clj-time "0.11.0"]
@@ -101,10 +104,14 @@
                   :exclusions [joda-time]]
                  [com.amazonaws/aws-java-sdk-dynamodb "1.11.77"
                   :exclusions [joda-time org.clojure/test.check]]
-                 [amazonica "0.3.85"]
+                 [amazonica "0.3.85"
+                  :exclusions [com.taoensso/encore]]
                  [com.draines/postal "2.0.1"]
                  [com.stripe/stripe-java "3.11.0"]
-                 [com.taoensso/timbre "4.8.0"]
+                 [com.taoensso/timbre "4.8.0"
+                  :exclusions [com.taoensso/encore]]
+                 [com.taoensso/sente "1.11.0"
+                  :exclusions [com.taoensso/encore]]
                  [environ "1.1.0"]
                  [hiccup "1.0.5"]
                  [org.clojure/data.generators "0.1.2"]
@@ -128,7 +135,6 @@
                  [cheshire "5.6.3"]  ;; For ring-json
                  [medley "0.8.3"]
                  [org.martinklepsch/s3-beam "0.6.0-alpha1"]
-                 [com.taoensso/sente "1.11.0"]
 
                  ;; CLJS
                  [cljsjs/react "15.4.2-2"]
