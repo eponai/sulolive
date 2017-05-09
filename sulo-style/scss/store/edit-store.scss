@@ -123,6 +123,19 @@
 			}
 		}
 
+		.product-sections-container {
+			.section-title {
+				div {
+					display: flex;
+					flex-wrap: wrap;
+					justify-content: flex-end;
+					.button:first-child {
+						margin-right: 0.5rem;
+					}
+				}
+			}
+		}
+
 		.product-section-menu {
 			// border-bottom: $global-border;
 			margin-bottom: 2rem;
