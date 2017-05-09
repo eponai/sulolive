@@ -77,26 +77,42 @@
 
 (def ->Photo (om/factory Photo))
 
-(defn photo [props & content]
+(defn overlay [opts & content]
   (dom/div
-    (css/add-class ::css/photo-container)
+    (css/add-class ::css/overlay opts)
+    (dom/div
+      (css/add-class ::css/photo-overlay-content)
+      content)))
+
+(defn photo [{:keys [status] :as props} & content]
+  (dom/div
+    (css/add-classes [::css/photo-container status])
     (->Photo props)
-    content))
+    (cond (= status :edit)
+          (overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]}))
+
+          (= status :loading)
+          (overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))
+          :else
+          content)))
 
 (defn square [props & content]
   (photo (css/add-class :square props) content))
 
-(defn circle [props & content]
+(defn circle [{:keys [status] :as props} & content]
   (dom/div
-    (->> (css/add-class ::css/photo-container)
-         (css/add-class :circle))
+    (css/add-classes [::css/photo-container :circle status])
     (->Photo (css/add-class :circle props))
-    content))
+    (cond (= status :edit)
+          (overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]}))
 
-(defn cover [{:keys [placeholder? photo-id] :as props} & content]
-  (let [photo-key (if placeholder?
-                    (or photo-id "static/storefront")
-                    photo-id)]
+          (= status :loading)
+          (overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))
+          :else
+          content)))
+
+(defn cover [{:keys [photo-id src] :as props} & content]
+  (let [photo-key (when-not src (or photo-id "static/storefront"))]
     (photo (-> (css/add-class :cover props)
                (assoc :style :style/cover)
                (assoc :background? true)
@@ -109,12 +125,10 @@
         (assoc :content content)
         (assoc :background? true))))
 
-(defn overlay [opts & content]
-  (dom/div
-    (css/add-class ::css/overlay opts)
-    (dom/div
-      (css/add-class ::css/photo-overlay-content)
-      content)))
+;(defn edit-cover [{:keys [photo-id] :as props} & content]
+;  (cover (merge props {:placeholder? true
+;                       :transformation :transformation/preview})
+;         (overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]}))))
 
 (defn product-photo [product & [{:keys [index transformation classes]} & content]]
   (let [{:store.item/keys [photos]} product
@@ -131,11 +145,10 @@
 (defn product-thumbnail [product & [opts]]
   (product-preview product (css/add-class :thumbnail opts)))
 
-(defn store-photo [store {:keys [transformation]} & content]
+(defn store-photo [store props & content]
   (let [photo (get-in store [:store/profile :store.profile/photo])
         photo-id (:photo/id photo "static/storefront")]
-    (circle (->> {:photo-id       photo-id
-                  :transformation transformation}
+    (circle (->> (assoc props :photo-id photo-id)
                  (css/add-class :store-photo))
             content)))
 

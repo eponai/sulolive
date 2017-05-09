@@ -62,11 +62,15 @@
             (button/cancel {:onClick #(do
                                        (mixpanel/track "Store: Cancel edit about info")
                                        (om/update-state! component assoc :edit/info false))})
-            (button/save {:onClick #(.save-store component)}))
+            (button/save (cond->> {:onClick #(.save-store component)}
+                                  (or (some? (:cover/queue state))
+                                      (some? (:profile/queue state)))
+                                  (css/add-class :disabled))))
           (button/edit
             {:onClick #(do
                         (mixpanel/track "Store: Edit about info")
                         (om/update-state! component assoc :edit/info true))})))
+
       (when (and (:edit/info state) (:error/about state))
         (dom/p (css/add-class :section-error) (dom/small (css/add-class :text-alert) (:error/about state))))
 
@@ -77,27 +81,23 @@
         (let [{:cover/keys [upload queue]} state]
           (if (:edit/info state)
             (if (some? queue)
-              (dom/div
-                {:classes "upload-photo cover loading"}
-                (photo/cover {:src (:src queue)}
-                             (photo/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))))
-              (dom/label {:htmlFor "cover-photo-upload"
-                          :classes ["upload-photo cover"]}
-                         (if (some? upload)
-                           (photo/cover {:photo-id       (:public_id upload)
-                                         :transformation :transformation/preview}
-                                        (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]})))
-                           (photo/cover {:photo-id     (:photo/id cover)
-                                         :placeholder? true}
-                                        (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]}))))
-                         (photo-uploader component "cover-photo-upload" "cover")))
-            (let [photo-status-msg (msg/last-message component 'store.photo/upload)]
-              (if (and (some? photo-status-msg)
-                       (msg/pending? photo-status-msg))
-                (photo/cover {:photo-id       (:public_id upload)
-                              :transformation :transformation/preview})
-                (photo/cover {:photo-id     (:photo/id cover)
-                              :placeholder? true})))))
+              ;; If there's a photo in queue, show the image data
+              (photo/cover {:src    (:src queue)
+                            :status :loading})
+              (dom/label
+                {:htmlFor "cover-photo-upload"}
+
+                ;; Use the recently uploaded photo if one exists, otherwise use our saved photo.
+                (photo/cover {:photo-id (or (:public_id upload) (:photo/id cover))
+                              :status   :edit})
+                (photo-uploader component "cover-photo-upload" "cover")))
+
+            (let [photo-status-msg (msg/last-message component 'store.photo/upload)
+                  ;; If we're waiting for response from the upload request to our server, show the uploaded url while waiting
+                  photo-key (if (and (some? photo-status-msg) (msg/pending? photo-status-msg))
+                              (:public_id upload)
+                              (:photo/id cover))]
+              (photo/cover {:photo-id photo-key}))))
 
 
         (dom/div
@@ -114,19 +114,17 @@
               (let [{:profile/keys [upload queue]} state]
                 (if (:edit/info state)
                   (if (some? queue)
-                    (dom/div
-                      {:classes ["upload-photo circle loading"]}
-                      (photo/circle {:src (:src queue)}
-                                    (photo/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))))
-                    (dom/label {:htmlFor "store-profile-photo-upload"
-                                :classes ["upload-photo circle"]}
-                               (if (some? upload)
-                                 (photo/circle {:photo-id       (:public_id upload)
-                                                :transformation :transformation/thumbnail}
-                                               (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]})))
-                                 (photo/store-photo store {:transformation :transformation/thumbnail}
-                                                    (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]}))))
-                               (photo-uploader component "store-profile-photo-upload" "profile")))
+                    (photo/circle {:src    (:src queue)
+                                   :status :loading})
+                    (dom/label
+                      {:htmlFor "store-profile-photo-upload"}
+                      (if (some? upload)
+                        (photo/circle {:photo-id       (:public_id upload)
+                                       :transformation :transformation/thumbnail
+                                       :status         :edit})
+                        (photo/store-photo store {:transformation :transformation/thumbnail
+                                                  :status         :edit}))
+                      (photo-uploader component "store-profile-photo-upload" "profile")))
                   (let [photo-status-msg (msg/last-message component 'store.photo/upload)]
                     (if (and (some? photo-status-msg)
                              (msg/pending? photo-status-msg))
@@ -265,7 +263,7 @@
                                 item-name        :store.item/name} p]
                            (dom/a
                              (->> {:href (routes/url :store-dashboard/product (assoc (:route-params current-route) :product-id (:db/id p)))}
-                               (css/add-class :content-item)
+                                  (css/add-class :content-item)
                                   (css/add-class :product-item))
                              (dom/div
                                (->>

@@ -243,8 +243,6 @@
                         photo-key (or (:public_id p) (:photo/id photo) p)]
                     (grid/column
                       nil
-                      ;(dom/label
-                      ;  {:htmlFor file-id})
                       (when (some? photo-key)
                         (dom/div
                           nil
@@ -260,8 +258,8 @@
               (when (some? queue-photo)
                 (grid/column
                   nil
-                  (photo/square {:src (:src queue-photo)}
-                                (photo/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]})))))
+                  (photo/square {:src (:src queue-photo)
+                                 :status :loading})))
               (when (and (nil? queue-photo) (> 5 (count (conj uploaded-photos))))
                 (grid/column
                   nil

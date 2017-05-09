@@ -36,7 +36,8 @@
   (render [this]
     (let [{:keys [user]} (om/get-computed this)
           {:keys [queue-photo]} (om/get-state this)]
-      (my-dom/div {:id "sulo-profile-edit"}
+      (my-dom/div
+        {:id "sulo-profile-edit"}
 
         (grid/row-column
           nil
@@ -55,21 +56,22 @@
 
                   (if (some? queue-photo)
                     (my-dom/div
-                      {:classes ["upload-photo circle loading user-profile-photo"]}
-                      (photo/circle {:src (:src queue-photo)}
-                                    (photo/overlay nil (my-dom/i {:classes ["fa fa-spinner fa-spin"]}))))
-                    (my-dom/label {:htmlFor "profile-photo-upload"
-                                :classes ["upload-photo circle"]}
-                               (photo/user-photo user {:transformation :transformation/thumbnail})
-                               #?(:cljs
-                                  (pu/->PhotoUploader
-                                    (om/computed
-                                      {:id "profile-photo-upload"}
-                                      {:on-photo-queue  (fn [img-result]
-                                                          (om/update-state! this assoc :queue-photo {:src  img-result}))
-                                       :on-photo-upload (fn [photo]
-                                                          (msg/om-transact! this [(list 'photo/upload {:photo photo})
-                                                                                  :query/user]))}))))))
+                      {:classes ["user-profile-photo"]}
+                      (photo/circle {:src    (:src queue-photo)
+                                 :status :loading}))
+                    (my-dom/label
+                      {:htmlFor "profile-photo-upload"}
+                      (photo/user-photo user {:transformation :transformation/thumbnail
+                                          :status         :edit})
+                      #?(:cljs
+                         (pu/->PhotoUploader
+                           (om/computed
+                             {:id "profile-photo-upload"}
+                             {:on-photo-queue  (fn [img-result]
+                                                 (om/update-state! this assoc :queue-photo {:src img-result}))
+                              :on-photo-upload (fn [photo]
+                                                 (msg/om-transact! this [(list 'photo/upload {:photo photo})
+                                                                         :query/user]))}))))))
                 (grid/column
                   (grid/column-size {:small 12 :medium 8 :large 9})
                   (dom/div

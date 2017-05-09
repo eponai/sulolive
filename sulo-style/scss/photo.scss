@@ -45,23 +45,29 @@ $primary-color: map-get($foundation-palette, primary);
 		justify-content: center;
 		align-items: center;
 	}
-}
-
-.overlay-container {
-	position: relative;
-	display: flex;
-	.overlay {
-		display: flex;	
-		flex-direction: column;
-		justify-content: center;	
-		position: absolute;
-		flex: 1;
-		width: 100%;
-		height: 100%;
-		top: 0;
-		left: 0;
+	&.loading {
+		.overlay {
+			background: rgba($white, 0.5);
+			font-size: 1rem;
+		}
 	}
 }
+
+// .overlay-container {
+// 	position: relative;
+// 	display: flex;
+// 	.overlay {
+// 		display: flex;	
+// 		flex-direction: column;
+// 		justify-content: center;	
+// 		position: absolute;
+// 		flex: 1;
+// 		width: 100%;
+// 		height: 100%;
+// 		top: 0;
+// 		left: 0;
+// 	}
+// }
 
 .multi-photos-container {
 	display: flex;
@@ -177,6 +183,44 @@ $primary-color: map-get($foundation-palette, primary);
 		@include breakpoint(medium) {
 			padding: 0;
 			flex: 1;
+		}
+	}
+}
+
+/// Photo uploader element 
+label .photo-container {
+	cursor: pointer;
+	background: $white;
+	border: $global-border;
+
+	.overlay {
+		transition: opacity .25s ease-in-out, 
+		background .25s ease-in-out;
+		justify-content: flex-start;
+		align-items: flex-start;
+		.content {
+			padding: 0.5rem 1rem;
+			background: rgba($white, 0.5);
+			border-radius: $global-radius;
+		}
+		&:hover {
+			background: rgba($white, 0.2);
+		}
+	}
+
+	&.edit, &.loading {
+		.overlay {
+			opacity: 1;
+			.content {
+				font-size: 1.5rem;
+			}
+		}
+	}
+
+	&.circle {
+		max-width: 10rem;
+		.overlay {
+			justify-content: center;
 		}
 	}
 }
