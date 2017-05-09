@@ -253,7 +253,9 @@
                           (dom/a
                             (->>
                               {:onClick #(.remove-uploaded-photo this i)}
-                              (css/button-hollow)) (dom/span nil "Remove")))))))
+                              (css/button-hollow)
+                              (css/add-classes [:secondary :expanded]))
+                            (dom/i {:classes ["fa fa-trash-o"]})))))))
                 uploaded-photos)
               (when (some? queue-photo)
                 (grid/column

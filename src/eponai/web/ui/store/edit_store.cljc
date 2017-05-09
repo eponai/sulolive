@@ -74,8 +74,8 @@
         (css/add-class :section-content)
 
         ;; Enable Cover upload when in edit mode for the info section
-        (if (:edit/info state)
-          (let [{:cover/keys [upload queue]} state]
+        (let [{:cover/keys [upload queue]} state]
+          (if (:edit/info state)
             (if (some? queue)
               (dom/div
                 {:classes "upload-photo cover loading"}
@@ -90,9 +90,14 @@
                            (photo/cover {:photo-id     (:photo/id cover)
                                          :placeholder? true}
                                         (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]}))))
-                         (photo-uploader component "cover-photo-upload" "cover"))))
-          (photo/cover {:photo-id     (:photo/id cover)
-                        :placeholder? true}))
+                         (photo-uploader component "cover-photo-upload" "cover")))
+            (let [photo-status-msg (msg/last-message component 'store.photo/upload)]
+              (if (and (some? photo-status-msg)
+                       (msg/pending? photo-status-msg))
+                (photo/cover {:photo-id       (:public_id upload)
+                              :transformation :transformation/preview})
+                (photo/cover {:photo-id     (:photo/id cover)
+                              :placeholder? true})))))
 
 
         (dom/div
@@ -106,9 +111,8 @@
               (grid/column-size {:small 12 :medium 2})
 
               ;; Enable photo upload when in edit mode for the info section
-              (if (:edit/info state)
-                (let [{:profile/keys [upload queue]} state]
-
+              (let [{:profile/keys [upload queue]} state]
+                (if (:edit/info state)
                   (if (some? queue)
                     (dom/div
                       {:classes ["upload-photo circle loading"]}
@@ -122,8 +126,13 @@
                                                (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]})))
                                  (photo/store-photo store {:transformation :transformation/thumbnail}
                                                     (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]}))))
-                               (photo-uploader component "store-profile-photo-upload" "profile"))))
-                (photo/store-photo store {:transformation :transformation/thumbnail})))
+                               (photo-uploader component "store-profile-photo-upload" "profile")))
+                  (let [photo-status-msg (msg/last-message component 'store.photo/upload)]
+                    (if (and (some? photo-status-msg)
+                             (msg/pending? photo-status-msg))
+                      (photo/circle {:photo-id       (:public_id upload)
+                                     :transformation :transformation/thumbnail})
+                      (photo/store-photo store {:transformation :transformation/thumbnail}))))))
 
             (if (:edit/info state)
               (grid/column
