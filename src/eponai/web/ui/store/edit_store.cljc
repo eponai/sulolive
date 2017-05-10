@@ -286,7 +286,7 @@
     (dom/div nil))
 
   (subnav-title [_ _]
-    "Store settings")
+    "Store info")
   Object
   (save-sections [this]
     (let [{:products/keys [edit-sections]} (om/get-state this)

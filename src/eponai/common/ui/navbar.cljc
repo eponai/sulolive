@@ -210,7 +210,17 @@
            (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))))]))
 
 (defn manage-store-navbar [component]
-  (let [{:query/keys [auth owned-store current-route]} (om/props component)]
+  (let [{:query/keys [auth owned-store current-route]} (om/props component)
+        {:keys [inline-sidebar-hidden?]} (om/get-state component)
+        toggle-inline-sidebar (fn []
+                                #?(:cljs
+                                   (let [body (first (utils/elements-by-class "page-container"))]
+                                     (if inline-sidebar-hidden?
+                                       (utils/remove-class-to-element body "inline-sidebar-hidden")
+                                       (utils/add-class-to-element body "inline-sidebar-hidden"))
+                                     ;(.addEventListener js/document "touchstart" on-close-sidebar-fn)
+                                     (om/update-state! component assoc :inline-sidebar-hidden? (not inline-sidebar-hidden?))
+                                     )))]
 
     (navbar-content
       {:classes ["store-dashboard"]}
@@ -221,7 +231,10 @@
           (menu/item
             nil
             (dom/a
-              {:onClick #(.open-sidebar component)}
+              (css/hide-for :large {:onClick #(.open-sidebar component)})
+              (dom/i {:classes ["fa fa-bars fa-fw"]}))
+            (dom/a
+              (css/show-for :large {:onClick toggle-inline-sidebar})
               (dom/i {:classes ["fa fa-bars fa-fw"]})))
           (menu/item-link
             (css/show-for :large {:href "/"
@@ -263,111 +276,13 @@
         (dom/span nil title)))))
 
 (defn sidebar-link [component route route-params & content]
-  (menu/item
-    nil
-    (dom/a {:onClick #(do (.close-sidebar component)
-                          (routes/set-url! component route route-params))}
-           content)))
-
-
-(defn sidebar [component]
-  (let [{:query/keys [auth owned-store navigation current-route]} (om/props component)
-        {:keys [route]} current-route]
-    (dom/div
-      (css/add-class :sidebar-container {:onClick #(.close-sidebar component)})
-      (dom/div {:classes [:sidebar-overlay]})
-      (dom/div
-        {:id      "sulo-sidebar"
-         :classes [:sidebar]}
-        (if (and (some? route)
-                 (or (= route :store-dashboard)
-                     (= (namespace route) (name :store-dashboard))))
-          ;; Store owner side menu
-          (menu/vertical
-            nil
-            (menu/item
-              nil
-              (menu/vertical
-                nil
-                (menu/item
-                  (css/add-class :back)
-                  (dom/a {:onClick #(do (.close-sidebar component)
-                                        (routes/set-url! component :index nil))}
-                         (dom/i {:classes ["fa fa-chevron-left fa-fw"]})
-                         (dom/span nil "Back to SULO Live")))))
-            (when (some? owned-store)
-              [
-               (sidebar-link component :store-dashboard {:store-id (:db/id owned-store)}
-                             (dom/span nil "Dashboard"))
-               (sidebar-link component :store-dashboard/stream {:store-id (:db/id owned-store)}
-                             (dom/span nil "Live stream"))
-               (sidebar-link component :store-dashboard/profile {:store-id (:db/id owned-store)}
-                             (dom/span nil "Store info"))
-               (sidebar-link component :store-dashboard/product-list {:store-id (:db/id owned-store)}
-                             (dom/span nil "Products"))
-               (sidebar-link component :store-dashboard/order-list {:store-id (:db/id owned-store)}
-                             (dom/span nil "Orders"))
-               (sidebar-link component :store-dashboard/settings#payouts {:store-id (:db/id owned-store)}
-                             (dom/span nil "Account"))])
-
-
-            (if (some? auth)
-              (menu/item nil (dom/a
-                               (->> {:href "/logout"}
-                                    (css/button-hollow)) (dom/span nil "Sign out")))
-              (menu/item nil (dom/a
-                               (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
-                                    (css/button)) (dom/span nil "Sign in")))))
-
-          ;; Consumer side menu.
-          (menu/vertical
-            nil
-            (menu/item
-              nil
-              (dom/label nil "Explore")
-              (menu/vertical
-                nil
-                (sidebar-highlight component :live nil "LIVE")))
-            (menu/item
-              nil (dom/label nil "Shop by category")
-              (menu/vertical
-                nil
-                (map
-                  (fn [{:category/keys [name href]}]
-                    (sidebar-category component href (s/capitalize name)))
-                  navigation)))
-            (when (some? auth)
-              (menu/item nil
-                         (dom/label nil "Your account")
-                         (menu/vertical
-                           nil
-                           (sidebar-link component :user {:user-id (:db/id auth)}
-                                         (dom/span nil "Profile"))
-                           (sidebar-link component :user/order-list {:user-id (:db/id auth)}
-                                         (dom/span nil "Purchases")))))
-            (when (some? owned-store)
-              (menu/item
-                nil
-                (dom/label nil "Manage store")
-                (menu/vertical
-                  nil
-                  (menu/item
-                    nil
-                    (dom/a {:href (routes/url :store-dashboard {:store-id (:db/id owned-store)})
-                            :onClick #(.close-sidebar component)}
-                           (dom/span nil (get-in owned-store [:store/profile :store.profile/name])))))))
-            (when (and (some? auth)
-                       (nil? owned-store))
-              (menu/item nil (dom/a
-                               (->> {:href (routes/url :sell)}
-                                    (css/button)) (dom/span nil "Start a store"))))
-            (if (some? auth)
-              (menu/item nil (dom/a
-                               (->> {:href "/logout"}
-                                    (css/button-hollow)) (dom/span nil "Sign out")))
-              (menu/item nil (dom/a
-                               (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
-                                    (css/button)) (dom/span nil "Sign in"))))))))))
+  (let [{:query/keys [current-route]} (om/props component)]
+    (menu/item
+      (when (= route (:route current-route))
+        (css/add-class :is-active))
+      (dom/a {:onClick #(do (.close-sidebar component)
+                            (routes/set-url! component route route-params))}
+             content))))
 
 (defn standard-navbar [component]
   (let [{:query/keys [cart loading-bar]} (om/props component)]
@@ -471,7 +386,7 @@
                (utils/add-class-to-element body "sidebar-open")
                (.addEventListener js/document "click" on-close-sidebar-fn)
                ;(.addEventListener js/document "touchstart" on-close-sidebar-fn)
-               ;(om/update-state! this assoc :sidebar-open? true)
+               (om/update-state! this assoc :sidebar-open? true)
                )))
 
   (close-sidebar [this]
@@ -480,11 +395,12 @@
                (utils/remove-class-to-element body "sidebar-open")
                (.removeEventListener js/document "click" on-close-sidebar-fn)
                ;(.removeEventListener js/document "touchstart" on-close-sidebar-fn)
-               ;(om/update-state! this assoc :sidebar-open? false)
+               (om/update-state! this assoc :sidebar-open? false)
                )))
   (initLocalState [this]
     {:cart-open?    false
      :sidebar-open? false
+     :inline-sidebar-hidden? false
      #?@(:cljs [:on-click-event-fn #(.close-dropdown this %)
                 :on-close-sidebar-fn #(.close-sidebar this)
                 :on-transition-iteration-fn (fn []
@@ -575,10 +491,133 @@
              (css/add-class :sl-global-spinner {:id "sl-global-spinner"}))
            :clj
            (dom/div
-             (css/add-classes [:sl-global-spinner :is-active] {:id "sl-global-spinner"})))
-
-        (sidebar this)))))
+             (css/add-classes [:sl-global-spinner :is-active] {:id "sl-global-spinner"})))))))
 (def ->Navbar (om/factory Navbar))
 
 (defn navbar [props]
   (->Navbar props))
+
+
+
+(defui Sidebar
+  static om/IQuery
+  (query [_]
+    (om/get-query Navbar)
+    ;[{:query/auth [:db/id]}
+    ; {:query/owned-store [:db/id
+    ;                      {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
+    ;                      ;; to be able to query the store on the client side.
+    ;                      {:store/owners [{:store.owner/user [:db/id]}]}]}
+    ; {:query/navigation [:category/name :category/label :category/path :category/href]}
+    ; :query/current-route]
+    )
+  Object
+  (close-sidebar [this])
+  (render [this]
+    (let [{:query/keys [auth owned-store navigation current-route]} (om/props this)
+          {:keys [route]} current-route]
+      (dom/div
+        (css/add-class :sidebar-container)
+        (dom/div {:classes [:sidebar-overlay]})
+        (dom/div
+          {:id      "sulo-sidebar"
+           :classes [:sidebar]}
+          (if (and (some? route)
+                   (or (= route :store-dashboard)
+                       (= (namespace route) (name :store-dashboard))))
+            ;; Store owner side menu
+            [
+             (menu/vertical
+               nil
+               (menu/item
+                 nil
+                 (menu/vertical
+                   nil
+                   (menu/item
+                     (css/add-class :back)
+                     (dom/a {:onClick #(routes/set-url! this :index nil)}
+                            (dom/i {:classes ["fa fa-chevron-left fa-fw"]})
+                            (dom/span nil "SULO Live")))))
+               (when (some? owned-store)
+                 [
+                  (sidebar-link this :store-dashboard {:store-id (:db/id owned-store)}
+                                (dom/span nil "Dashboard"))
+                  (sidebar-link this :store-dashboard/stream {:store-id (:db/id owned-store)}
+                                (dom/span nil "Live stream"))
+                  (sidebar-link this :store-dashboard/profile {:store-id (:db/id owned-store)}
+                                (dom/span nil "Store info"))
+                  (sidebar-link this :store-dashboard/product-list {:store-id (:db/id owned-store)}
+                                (dom/span nil "Products"))
+                  (sidebar-link this :store-dashboard/order-list {:store-id (:db/id owned-store)}
+                                (dom/span nil "Orders"))
+                  (sidebar-link this :store-dashboard/settings#payouts {:store-id (:db/id owned-store)}
+                                (dom/span nil "Account"))])
+               )
+             (menu/vertical
+               (css/add-class :footer-menu)
+               (menu/item
+                 (css/hide-for :large)
+                 (menu/vertical (css/add-class :signout-menu)
+                                (if (some? auth)
+                                  (menu/item nil (dom/a {:href "/logout"} (dom/small nil "Sign out")))
+                                  (menu/item nil (dom/a (css/button {:onClick #(auth/show-lock (:shared/auth-lock (om/shared this)))}) (dom/span nil "Sign in"))))))
+               (menu/item
+                 nil
+                 (menu/horizontal
+                   {:key "social"}
+                   (menu/item-link {:href "https://www.facebook.com/live.sulo"} (dom/i {:classes ["fa fa-instagram fa-fw"]}))
+                   ;(menu/item-link nil (dom/i {:classes ["fa fa-twitter fa-fw"]}))
+                   (menu/item-link {:href "https://www.instagram.com/sulolive"} (dom/i {:classes ["fa fa-facebook fa-fw"]}))))
+               (menu/item-text nil (dom/small {:classes ["copyright"]} "© eponai hb 2017")))
+
+             ]
+
+            ;; Consumer side menu.
+            (menu/vertical
+              nil
+              (menu/item
+                nil
+                (dom/label nil "Explore")
+                (menu/vertical
+                  nil
+                  (sidebar-highlight this :live nil "LIVE")))
+              (menu/item
+                nil (dom/label nil "Shop by category")
+                (menu/vertical
+                  nil
+                  (map
+                    (fn [{:category/keys [name href]}]
+                      (sidebar-category this href (s/capitalize name)))
+                    navigation)))
+              (when (some? auth)
+                (menu/item nil
+                           (dom/label nil "Your account")
+                           (menu/vertical
+                             nil
+                             (sidebar-link this :user {:user-id (:db/id auth)}
+                                           (dom/span nil "Profile"))
+                             (sidebar-link this :user/order-list {:user-id (:db/id auth)}
+                                           (dom/span nil "Purchases")))))
+              (when (some? owned-store)
+                (menu/item
+                  nil
+                  (dom/label nil "Manage store")
+                  (menu/vertical
+                    nil
+                    (menu/item
+                      nil
+                      (dom/a {:href (routes/url :store-dashboard {:store-id (:db/id owned-store)})}
+                             (dom/span nil (get-in owned-store [:store/profile :store.profile/name])))))))
+              (when (and (some? auth)
+                         (nil? owned-store))
+                (menu/item nil (dom/a
+                                 (->> {:href (routes/url :sell)}
+                                      (css/button)) (dom/span nil "Start a store"))))
+              (if (some? auth)
+                (menu/item nil (dom/a
+                                 (->> {:href "/logout"}
+                                      (css/button-hollow)) (dom/span nil "Sign out")))
+                (menu/item nil (dom/a
+                                 (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared this)))}
+                                      (css/button)) (dom/span nil "Sign in")))))))))))
+(def ->Sidebar (om/factory Sidebar))
