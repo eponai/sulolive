@@ -62,8 +62,8 @@
 (defui ComingSoonBiz
   static om/IQuery
   (query [this]
-    [:query/messages])
-
+    [{:proxy/navbar (om/get-query nav/Navbar)}
+     :query/messages])
   Object
   (open-live-popup [this]
     (om/update-state! this assoc :live-open? true))
@@ -90,7 +90,7 @@
          (when live-open?
            (.setTimeout js/window (fn [] (om/update-state! this assoc :live-open? false)) 5000)))))
   (render [this]
-    (let [{:keys [proxy/navbar]} (om/get-computed this)
+    (let [{:keys [proxy/navbar]} (om/props this)
           {:keys [on-login-fn live-open? client-msg]} (om/get-state this)
           message (msg/last-message this 'beta/vendor)]
       (common/page-container
@@ -207,9 +207,8 @@
                    (om/update-state! this assoc :client-msg message))))))
   (render [this]
     (if (= :coming-soon/sell (get-in (om/props this) [:query/current-route :route]))
-      (let [{:proxy/keys [navbar sell-soon]} (om/props this)]
-        (->ComingSoonBiz (om/computed sell-soon
-                                      {:proxy/navbar navbar})))
+      (let [{:proxy/keys [sell-soon]} (om/props this)]
+        (->ComingSoonBiz sell-soon))
       (let [{:keys [proxy/navbar]} (om/props this)
             {:keys [on-login-fn live-open? client-msg]} (om/get-state this)
             message (msg/last-message this 'beta/customer)]
