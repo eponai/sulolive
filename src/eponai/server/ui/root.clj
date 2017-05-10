@@ -18,7 +18,7 @@
                                           :cljs-build-id cljs-build-id}))
         (dom/body
           nil
-          (dom/div #js {:min-height "100%" :id router/dom-app-id}
+          (dom/div #js {:height "100%" :id router/dom-app-id}
             app-html)
 
           ;; (common/auth0-lock-passwordless release?)
