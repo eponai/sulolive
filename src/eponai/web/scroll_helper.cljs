@@ -3,36 +3,38 @@
             [taoensso.timbre :refer [debug]]
             [datascript.core :as datascript]))
 
-(def try-to-scroll-interval-ms 50)
-(def scroll-restoration-timeout-ms 3000)
+(def scroll-restoration-timeout-ms 500)
 
 (defprotocol IScrollOnPushState
   (scroll-on-push-state [this]))
 
 (let [timeout-handle (atom nil)]
-  (defn try-to-scroll-to [{:keys [x y latest-time-to-try] :as scroll-target}]
-    ;; Stop any previous calls to "try-to-scroll-to".
-    (when-let [timeout-handle @timeout-handle]
-      (js/clearTimeout timeout-handle))
-    (let [body js/document.body
-          html js/document.documentElement
-          ;; Taken from http://stackoverflow.com/a/1147768
-          document-width (max (.-scrollWidth body)
-                              (.-offsetWidth body)
-                              (.-clientWidth html)
-                              (.-scrollWidth html)
-                              (.-offsetWidth html))
-          document-height (max (.-scrollHeight body)
-                               (.-offsetHeight body)
-                               (.-clientHeight html)
-                               (.-scrollHeight html)
-                               (.-offsetHeight html))
-          should-scroll-to? (or (and (>= (- document-width (.-innerWidth js/window) x))
-                                     (>= (- document-height (.-innerHeight js/window) y)))
-                                (> (.now js/Date) latest-time-to-try))]
-      (if should-scroll-to?
-        (.scrollTo js/window x y)
-        (reset! timeout-handle (js/setTimeout #(try-to-scroll-to scroll-target) try-to-scroll-interval-ms))))))
+  (defn try-to-scroll-to
+    ([scroll-target] (try-to-scroll-to scroll-target (iterate #(min 30 (+ 5 %)) 0)))
+    ([{:keys [x y latest-time-to-try] :as scroll-target} timeouts]
+      ;; Stop any previous calls to "try-to-scroll-to".
+     (when-let [timeout-handle @timeout-handle]
+       (js/clearTimeout timeout-handle))
+     (let [body js/document.body
+           html js/document.documentElement
+           ;; Taken from http://stackoverflow.com/a/1147768
+           document-width (max (.-scrollWidth body)
+                               (.-offsetWidth body)
+                               (.-clientWidth html)
+                               (.-scrollWidth html)
+                               (.-offsetWidth html))
+           document-height (max (.-scrollHeight body)
+                                (.-offsetHeight body)
+                                (.-clientHeight html)
+                                (.-scrollHeight html)
+                                (.-offsetHeight html))
+           should-scroll-to? (or (and (>= (- document-width (.-innerWidth js/window) x))
+                                      (>= (- document-height (.-innerHeight js/window) y)))
+                                 (> (.now js/Date) latest-time-to-try))]
+       (if should-scroll-to?
+         (.scrollTo js/window x y)
+         (reset! timeout-handle (js/setTimeout #(try-to-scroll-to scroll-target (rest timeouts))
+                                               (first timeouts))))))))
 
 ;; Inspired by
 ;; https://github.com/brigade/delayed-scroll-restoration-polyfill/blob/1aa90ef6ff9c3b295da4574532e073e057fc6c0a/index.es6.js#L57-L72
