@@ -28,14 +28,14 @@ $chat-width-small: rem-calc(200);
     }
 }
 
-#the-sulo-app::-webkit-scrollbar {
+body::-webkit-scrollbar {
 		width: 5px;
 		// background: $black;
 }
-#the-sulo-app::-webkit-scrollbar-track {
+body::-webkit-scrollbar-track {
 		background: $white;
 }
-#the-sulo-app::-webkit-scrollbar-thumb {
+body::-webkit-scrollbar-thumb {
 		background: map-get($foundation-palette,primary);
 }
 html, body {
@@ -47,13 +47,12 @@ html, body {
 }
 
 body {
-  position: relative;
   overflow-x: hidden;
- 	width: 100%;
- 	overflow-y: scroll; /* has to be scroll, not auto */
- 	-webkit-overflow-scrolling: touch;
+  width: 100%;
+  overflow-y: scroll; /* has to be scroll, not auto */
+  -webkit-overflow-scrolling: touch;
   @include breakpoint(large) {
-  		overflow-y: auto;
+    overflow-y: auto;
   }
 }
 
@@ -181,10 +180,6 @@ h3 {
 }
 a {
 	@include sulo-colors;
-}
-
-.sulo-page {
-//	height: 100vh;
 }
 
 .page-container {
