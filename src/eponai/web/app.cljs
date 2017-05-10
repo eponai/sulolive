@@ -21,7 +21,8 @@
     [eponai.common.routes :as common.routes]
     [eponai.common.ui.router :as router]
     [eponai.common.ui.loading-bar :as loading-bar]
-    [eponai.web.scroll-helper :as scroll-helper]
+    ;; TODO: Fix the scroll bar FFFFS!
+    ;; [eponai.web.scroll-helper :as scroll-helper]
     [eponai.web.wowza-player :as wowza-player]
     [cljs.core.async :as async]))
 
@@ -105,7 +106,8 @@
         _ (when-let [h @history-atom]
             (pushy/stop! h))
 
-        scroll-helper (scroll-helper/init-scroll!)
+        scroll-helper nil
+        ;; (scroll-helper/init-scroll!)
         match-route (partial bidi/match-route (common.routes/without-coming-soon-route common.routes/routes))
         update-route! (update-route-fn reconciler-atom)
         history (pushy/pushy update-route! (wrap-route-logging match-route))

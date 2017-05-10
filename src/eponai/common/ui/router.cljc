@@ -60,9 +60,10 @@
                               (debug "should component update: " ret)
                               ret)))
   (componentDidUpdate [this _ _]
-    #?(:cljs
+
        ;; TODO: Change this to shared/by-key when merged with other branch.
-       (scroll-helper/scroll-on-did-render (om/shared this :shared/scroll-helper))))
+       ;; (scroll-helper/scroll-on-did-render (om/shared this :shared/scroll-helper))
+       )
   (render [this]
     (let [{:keys [routing/app-root query/current-route]} (om/props this)
           route (normalize-route (:route current-route))
