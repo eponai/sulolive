@@ -5,8 +5,8 @@
 
 (def scroll-restoration-timeout-ms 500)
 
-(defprotocol IScrollOnPushState
-  (scroll-on-push-state [this]))
+(defprotocol IScrollHelper
+  (scroll-on-did-render [this]))
 
 (let [timeout-handle (atom nil)]
   (defn try-to-scroll-to
@@ -86,13 +86,33 @@
     (set-history-functions! old))
   (set! (.-scrollRestoration js/history) "auto")
 
-  (let [on-push-state (atom false)
-        {:keys [new] :as functions} (create-functions (fn [] (reset! on-push-state true)))]
+  (let [helper-state (atom {})
+        {:keys [new] :as functions} (create-functions
+                                      (fn [] (swap! helper-state assoc :on-push-state true)))]
     (reset! scroll-functions functions)
     (set-history-functions! new)
 
-    (reify IScrollOnPushState
-      (scroll-on-push-state [this]
-        (when @on-push-state
-          (reset! on-push-state false)
-          (try-to-scroll-to {:x 0 :y 0 :latest-time-to-try (+ (.now js/Date) scroll-restoration-timeout-ms)}))))))
+    (reify IScrollHelper
+      (scroll-on-did-render [this]
+        (let [{:keys [on-push-state current-id]} @helper-state]
+          (if on-push-state
+            ;; If we just pushed state, we want to scroll to 0 0.
+            ;; We also reset the current-id, because if we go back (or forward) we want to
+            ;; adjust the scroll.
+            (do (swap! helper-state assoc :on-push-state false :current-id nil)
+                (try-to-scroll-to {:x 0 :y 0 :latest-time-to-try (+ (.now js/Date) scroll-restoration-timeout-ms)}))
+            ;; If we didn't push state, we want to get the state if there is one (more on this later), mark
+            ;; this state as the current id (so we don't scroll multiple times), then try to scroll.
+            ;; If there's no (.-state js/history) the browsers will adjust the scroll position
+            ;; when having (set! (.-scrollRestoration js/history) "auto").
+            (when-let [state (.-state js/history)]
+              (let [id (gobj/get state "__uuid")]
+                (when (not= id current-id)
+                  (swap! helper-state assoc :current-id id)
+                  (when-let [state (.-state js/history)]
+                    (let [x (gobj/get state "__scrollX")
+                          y (gobj/get state "__scrollY")]
+                      (when (and (.isFinite js/Number x)
+                                 (.isFinite js/Number y))
+                        (try-to-scroll-to
+                          {:x x :y y :latest-time-to-try (+ (.now js/Date) scroll-restoration-timeout-ms)})))))))))))))

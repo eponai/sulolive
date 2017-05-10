@@ -61,22 +61,8 @@
                               ret)))
   (componentDidUpdate [this _ _]
     #?(:cljs
-       (do
-         (debug "router-state: " (.-state js/history) " get-state: " (clj->js (om/get-state this)))
-         ;; TODO: Change this to shared/by-key when merged with other branch.
-         (scroll-helper/scroll-on-push-state (om/shared this :shared/scroll-helper))
-         (when-let [state (.-state js/history)]
-           (let [id (gobj/get state "__uuid")]
-             ;; Set the flag that we've gone back. If we go forward to the same route, we'll trigger the scroll.
-             (when (not= id (:history-state-id (om/get-state this)))
-               (om/update-state! this assoc :history-state-id id)
-               (let [x (gobj/get state "__scrollX")
-                     y (gobj/get state "__scrollY")]
-                 (when (and (.isFinite js/Number x)
-                            (.isFinite js/Number y))
-                   (debug "Will scroll: " x y)
-                   (scroll-helper/try-to-scroll-to
-                     {:x x :y y :latest-time-to-try (+ (.now js/Date) scroll-helper/scroll-restoration-timeout-ms)})))))))))
+       ;; TODO: Change this to shared/by-key when merged with other branch.
+       (scroll-helper/scroll-on-did-render (om/shared this :shared/scroll-helper))))
   (render [this]
     (let [{:keys [routing/app-root query/current-route]} (om/props this)
           route (normalize-route (:route current-route))
