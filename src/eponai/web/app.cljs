@@ -83,6 +83,18 @@
 (defonce history-atom (atom nil))
 (defonce reconciler-atom (atom nil))
 
+(defn require-all-routes! [modules routes]
+  (let [required-chan (async/chan 1)
+        routes-chan (async/to-chan routes)]
+    (go
+      (loop []
+        (when-let [route (async/<! routes-chan)]
+          (modules/require-route! modules route
+                                  (fn []
+                                    (async/>! required-chan route)))
+          (async/<! required-chan)
+          (recur))))))
+
 (defn- run [{:keys [auth-lock modules wowza-player loading-bar]
              :or   {auth-lock    (auth/auth0-lock)
                     wowza-player (wowza-player/real-player)
@@ -151,8 +163,9 @@
       (async/<! initial-merge-chan)
       (debug "Adding reconciler to root.")
       (add-root! reconciler)
-      ;; Pre fetch a few routes that the user is likely to go to (or all of them?)
-      (run! #(modules/prefetch-route modules %) [:index :store :browse]))))
+      ;; Pre fetch all routes so the scroll doesn't freak out as much.
+      (require-all-routes! modules router/routes)
+      )))
 
 (defn run-prod []
   (run {}))

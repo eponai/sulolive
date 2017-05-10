@@ -32,9 +32,9 @@
   #?(:cljs
      (modules/set-loaded! route)))
 
-(def routes [:unauthorized :index :store :checkout :browse
+(def routes [:index :store :browse :checkout :store-dashboard
              :shopping-bag :login :sell :product :live :help
-             :user :store-dashboard :coming-soon])
+             :user :coming-soon :unauthorized])
 
 (defui Router
   static om/IQuery
