@@ -21,9 +21,7 @@
                  "/orders"   {""                        :store-dashboard/order-list
                               ["/" [#"create" :action]] :store-dashboard/create-order
                               ["/" [#"\w+" :order-id]]  :store-dashboard/order}
-                 "/stream"   :store-dashboard/stream}
-   "/about"     :store/about
-   "/policies"  :store/policies})
+                 "/stream"   :store-dashboard/stream}})
 
 (def user-routes
   {""         :user

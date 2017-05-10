@@ -152,19 +152,18 @@
                 (css/add-class :navigation)
 
                 (menu/item (cond->> (css/add-class :about)
-                                    (= route :store/about)
+                                    (= selected-navigation :about)
                                     (css/add-class ::css/is-active))
-                           (dom/a {:href (routes/url :store/about route-params)}
+                           (dom/a {:onClick #(om/update-state! this assoc :selected-navigation :about)}
                                   (dom/span nil "About")))
                 (menu/item (cond->> (css/add-class :about)
-                                    (= route :store/policies)
+                                    (= selected-navigation :policies)
                                     (css/add-class ::css/is-active))
-                           (dom/a {:href (routes/url :store/policies route-params)}
+                           (dom/a {:onClick #(om/update-state! this assoc :selected-navigation :policies)}
                                   (dom/span nil "Policies")))
                 (menu/item (when (and (= route :store) (= selected-navigation :all-items))
                              (css/add-class ::css/is-active))
-                           (dom/a {:onClick #(om/update-state! this assoc :selected-navigation :all-items)
-                                   :href (routes/url :store route-params)}
+                           (dom/a {:onClick #(om/update-state! this assoc :selected-navigation :all-items)}
                                   (dom/span nil "All Items")))
                 (map-indexed
                   (fn [i s]
@@ -179,9 +178,9 @@
                            :href (routes/url :store route-params)}
                           (dom/span nil label)))))
                   (:store/sections store)))))
-          (cond (= route :store/about)
+          (cond (= selected-navigation :about)
                 (about-section this)
-                (= route :store/policies)
+                (= selected-navigation :policies)
                 (policies-section this)
                 :else
                 (let [products (sort-by :store.item/index
