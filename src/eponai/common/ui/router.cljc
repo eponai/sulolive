@@ -5,6 +5,8 @@
     [om.dom]
     [taoensso.timbre :refer [error debug info]]
     #?(:cljs [eponai.web.modules :as modules])
+    #?(:cljs [eponai.web.scroll-helper :as scroll-helper])
+    #?(:cljs [goog.object :as gobj])
     [eponai.client.utils :as utils]))
 
 (def dom-app-id "the-sulo-app")
@@ -57,6 +59,10 @@
                                         (utils/shouldComponentUpdate-om this props state))]
                               (debug "should component update: " ret)
                               ret)))
+  (componentDidUpdate [this _ _]
+    #?(:cljs
+       ;; TODO: Change this to shared/by-key when merged with other branch.
+       (scroll-helper/scroll-on-did-render (om/shared this :shared/scroll-helper))))
   (render [this]
     (let [{:keys [routing/app-root query/current-route]} (om/props this)
           route (normalize-route (:route current-route))
