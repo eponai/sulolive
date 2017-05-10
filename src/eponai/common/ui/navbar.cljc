@@ -256,8 +256,7 @@
 (defn sidebar-category [component href title]
   (menu/item
     (css/add-class :category)
-    (dom/a {:onClick #(do (.close-sidebar component)
-                          (routes/set-url! component href))}
+    (dom/a {:onClick #(routes/set-url! component href)}
            (dom/span nil title))))
 
 (defn sidebar-highlight [component route route-params title]
@@ -266,12 +265,11 @@
     (menu/item
       (css/add-class :category)
       (dom/a
-        (->> {:onClick #(do (.close-sidebar component)
-                            (if (or (= (:route current-route route) :coming-soon)
-                                    (= (:route current-route route) :coming-soon/sell))
-                              (when on-live-click
-                                (on-live-click))
-                              (routes/set-url! component route route-params)))}
+        (->> {:onClick #(if (or (= (:route current-route route) :coming-soon)
+                                (= (:route current-route route) :coming-soon/sell))
+                         (when on-live-click
+                           (on-live-click))
+                         (routes/set-url! component route route-params))}
              (css/add-class ::css/highlight))
         (dom/span nil title)))))
 
@@ -280,8 +278,7 @@
     (menu/item
       (when (= route (:route current-route))
         (css/add-class :is-active))
-      (dom/a {:onClick #(do (.close-sidebar component)
-                            (routes/set-url! component route route-params))}
+      (dom/a {:onClick #(routes/set-url! component route route-params)}
              content))))
 
 (defn standard-navbar [component]
@@ -512,7 +509,6 @@
     ; :query/current-route]
     )
   Object
-  (close-sidebar [this])
   (render [this]
     (let [{:query/keys [auth owned-store navigation current-route]} (om/props this)
           {:keys [route]} current-route]

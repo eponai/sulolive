@@ -192,7 +192,7 @@
                                                            :live-open? false
                                                            :live-timer-started? false)) 5000)
            (om/update-state! this assoc :live-timer-started? true)))))
-  (subscribe [this]
+  (subscribe-customer [this]
     #?(:cljs (let [email (web-utils/input-value-by-id "coming-soon-email-input")]
                (if (and (not-empty email)
                         (utils/valid-email? email))
@@ -252,7 +252,7 @@
                                                                       :onClick   #(do
                                                                                    (.preventDefault %)
                                                                                    (when-not (msg/pending? message)
-                                                                                     (.subscribe this)))
+                                                                                     (.subscribe-customer this)))
 
                                                                       :type      "submit"}
                                                                  (if (msg/pending? message)
