@@ -6,6 +6,9 @@
 (def try-to-scroll-interval-ms 50)
 (def scroll-restoration-timeout-ms 3000)
 
+(defprotocol IScrollOnPushState
+  (scroll-on-push-state [this]))
+
 (let [timeout-handle (atom nil)]
   (defn try-to-scroll-to [{:keys [x y latest-time-to-try] :as scroll-target}]
     ;; Stop any previous calls to "try-to-scroll-to".
@@ -34,7 +37,7 @@
 ;; Inspired by
 ;; https://github.com/brigade/delayed-scroll-restoration-polyfill/blob/1aa90ef6ff9c3b295da4574532e073e057fc6c0a/index.es6.js#L57-L72
 
-(defn create-functions []
+(defn create-functions [on-push-state]
   (when (.-pushState js/history)
     (let [original-push-state (.-pushState js/history)
           original-replace-state (.-replaceState js/history)
@@ -47,14 +50,9 @@
                                                    :__scrollX (.-scrollX js/window)
                                                    :__scrollY (.-scrollY js/window)})]
               (debug "push-state: " new-state-of-current-page)
+              (on-push-state)
               (.call original-replace-state js/history new-state-of-current-page "")
-              (.apply original-push-state js/history (js-arguments))
-              (js/setTimeout
-                #(try-to-scroll-to
-                   {:x                  0
-                    :y                  0
-                    :latest-time-to-try (+ (.now js/Date)
-                                           scroll-restoration-timeout-ms)}))))
+              (.apply original-push-state js/history (js-arguments))))
           new-replace-state
           (fn [state & other-args]
             (let [old-state (.-state js/history)
@@ -85,7 +83,14 @@
   (when-let [{:keys [old]} @scroll-functions]
     (set-history-functions! old))
   (set! (.-scrollRestoration js/history) "auto")
-  (let [{:keys [new] :as functions} (create-functions)]
+
+  (let [on-push-state (atom false)
+        {:keys [new] :as functions} (create-functions (fn [] (reset! on-push-state true)))]
     (reset! scroll-functions functions)
     (set-history-functions! new)
-    ))
+
+    (reify IScrollOnPushState
+      (scroll-on-push-state [this]
+        (when @on-push-state
+          (reset! on-push-state false)
+          (try-to-scroll-to {:x 0 :y 0 :latest-time-to-try (+ (.now js/Date) scroll-restoration-timeout-ms)}))))))

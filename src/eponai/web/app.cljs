@@ -88,12 +88,12 @@
                     wowza-player (wowza-player/real-player)
                     loading-bar  (loading-bar/loading-bar)}
              :as   run-options}]
-  (scroll-helper/init-scroll!)
   (let [modules (or modules (modules/advanced-compilation-modules router/routes))
         init? (atom false)
         _ (when-let [h @history-atom]
             (pushy/stop! h))
 
+        scroll-helper (scroll-helper/init-scroll!)
         match-route (partial bidi/match-route (common.routes/without-coming-soon-route common.routes/routes))
         update-route! (update-route-fn reconciler-atom)
         history (pushy/pushy update-route! (wrap-route-logging match-route))
@@ -124,6 +124,7 @@
                                        :ui->props                  (utils/cached-ui->props-fn parser)
                                        :send-fn                    send-fn
                                        :remotes                    (:order remote-config)
+                                       :shared/scroll-helper       scroll-helper
                                        :shared/loading-bar         loading-bar
                                        :shared/wowza-player        wowza-player
                                        :shared/modules             modules

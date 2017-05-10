@@ -37,7 +37,8 @@
                       conn
                       remotes
                       merge]
-               :shared/keys [loading-bar
+               :shared/keys [scroll-helper
+                             loading-bar
                              wowza-player
                              browser-history
                              auth-lock
@@ -56,7 +57,8 @@
                                          :remotes    remotes
                                          :send       send-fn
                                          :merge      merge
-                                         :shared     {:shared/loading-bar         loading-bar
+                                         :shared     {:shared/scroll-helper       scroll-helper
+                                                      :shared/loading-bar         loading-bar
                                                       :shared/wowza-player        wowza-player
                                                       :shared/modules             modules
                                                       :shared/browser-history     browser-history
