@@ -92,7 +92,7 @@
         (when-let [route (async/<! routes-chan)]
           (modules/require-route! modules route
                                   (fn []
-                                    (async/>! required-chan route)))
+                                    (async/put! required-chan route)))
           (async/<! required-chan)
           (recur))))))
 
