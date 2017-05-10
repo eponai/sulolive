@@ -65,6 +65,9 @@
   position: absolute;
   z-index: $navbar-zindex;
   top: $navbar-height;
+  @include breakpoint(large) {
+    position: fixed;
+  }
   height: 1px;
   background: map-get($foundation-palette, highlight);
   // opacity: 0;
