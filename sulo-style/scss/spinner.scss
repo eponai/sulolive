@@ -81,3 +81,9 @@
       // animation: loading-slider 2s 2s infinite forwards;
   }
 }
+
+#sulo-coming-soon, #sulo-sell-coming-soon {
+  .sl-global-spinner {
+    height: 2px;
+  }
+}

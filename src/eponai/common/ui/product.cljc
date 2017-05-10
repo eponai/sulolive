@@ -34,6 +34,7 @@
     [:db/id
      :store.item/name
      :store.item/price
+     :store.item/index
      {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                           :store.item.photo/index]}
      {:store.item/skus [:db/id :store.item.sku/variation :store.item.sku/inventory]}

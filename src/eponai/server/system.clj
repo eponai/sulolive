@@ -108,7 +108,7 @@
                                        {:db-url           (:db-url env)
                                         :provided-conn    (::provided-conn config)
                                         :add-mocked-data? true})
-                     :system/mailchimp (mailchimp/mail-chimp (:mail-chimp-api-key env))
+                     :system/mailchimp (mailchimp/mail-chimp (:mailchimp-api-key env))
                      :system/server-address (c/using (server-address/map->ServerAddress {:schema (:server-url-schema env)
                                                                                          :host   (:server-url-host env)})
                                                      {:aws-elb :system/aws-elb})
@@ -158,7 +158,8 @@
               :system/aws-elb (elb/aws-elastic-beanstalk-stub)
               :system/aws-ec2 (ec2/aws-ec2-stub)
               ;:system/aws-s3 (s3/aws-s3-stub)
-              :system/mailchimp (mailchimp/mail-chimp-stub))
+              :system/mailchimp (mailchimp/mail-chimp-stub)
+              )
             ;; Conditionals for common ones to try real implementation of:
             (nil? (env :use-real-stripe))
             (assoc :system/stripe (stripe/stripe-stub (:stripe-secret-key env)))

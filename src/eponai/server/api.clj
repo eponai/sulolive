@@ -12,7 +12,8 @@
     [taoensso.timbre :refer [debug error info]]
     [clojure.data.json :as json]
     [amazonica.core :refer [defcredential]]
-    [eponai.server.datomic.format :as f])
+    [eponai.server.datomic.format :as f]
+    [clojure.string :as string])
   (:import (datomic Connection)
            (clojure.lang ExceptionInfo)
            (com.amazonaws.services.s3.model CannedAccessControlList AmazonS3Exception)))

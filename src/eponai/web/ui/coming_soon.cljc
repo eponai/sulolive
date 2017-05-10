@@ -2,6 +2,8 @@
   (:require
     [eponai.common.ui.common :as common]
     [eponai.common.ui.navbar :as nav]
+    #?(:cljs
+       [eponai.web.utils :as web-utils])
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug error]]
@@ -60,8 +62,7 @@
 (defui ComingSoonBiz
   static om/IQuery
   (query [this]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     :query/messages])
+    [:query/messages])
 
   Object
   (open-live-popup [this]
@@ -92,79 +93,86 @@
     (let [{:keys [proxy/navbar]} (om/get-computed this)
           {:keys [on-login-fn live-open? client-msg]} (om/get-state this)
           message (msg/last-message this 'beta/vendor)]
-      (dom/div #js {:id "sulo-sell-coming-soon" :className "sulo-page"}
-        (common/page-container
-          {:navbar (om/computed navbar {:coming-soon?  true
-                                        :on-live-click #(om/update-state! this assoc :live-open? true)
-                                        :right-menu    (menu/horizontal
-                                                         nil
-                                                         (menu/item-link
-                                                           (css/add-class :contact {:href "/coming-soon"})
-                                                           (my-dom/span nil (dom/span nil "Shop on SULO?"))
-                                                           (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
-          (debug "Live opene: " live-open?)
-          (p/header
-            {:photo-id "static/coming-soon-sell-bg"}
+      (common/page-container
+        {:id     "sulo-sell-coming-soon"
+         :navbar (om/computed navbar
+                              {:on-live-click #(om/update-state! this assoc :live-open? true)
+                               :right-menu    (menu/horizontal
+                                                nil
+                                                (menu/item-link
+                                                  (css/add-class :contact {:href "/coming-soon"})
+                                                  (my-dom/span nil (dom/span nil "Shop on SULO?"))
+                                                  (my-dom/i {:classes ["fa fa-caret-right fa-fw"]})))})}
+        (debug "Live opene: " live-open?)
+        (p/header
+          {:photo-id "static/coming-soon-sell-bg"}
 
-            (callout-banner live-open?)
-            (->ComingSoonContent
-              (om/computed {}
-                           {:content-form (div nil
-                                               (dom/hr nil)
-                                               (dom/p nil "Are you a maker or artisan in Vancouver? Get in touch with us and sign up for our Beta invite list!")
-                                               (dom/form #js {:id "beta-vendor-subscribe-form"}
-                                                         (div (->> (css/grid-row)
-                                                                   (css/align :middle))
-                                                              (div (->> (css/grid-column)
-                                                                        (css/grid-column-size {:small 12 :medium 2}))
-                                                                   (dom/label nil "Name"))
-                                                              (div (->> (css/grid-column))
-                                                                   (dom/input #js {:type "email" :placeholder "Your Brand" :id "beta-NAME"})))
-                                                         (div (->> (css/grid-row)
-                                                                   (css/align :middle))
-                                                              (div (->> (css/grid-column)
-                                                                        (css/grid-column-size {:small 12 :medium 2}))
-                                                                   (dom/label nil "Email"))
-                                                              (div (->> (css/grid-column))
-                                                                   (dom/input #js {:type "email" :placeholder "youremail@example.com" :id "beta-EMAIL"})))
-                                                         (div (->> (css/grid-row)
-                                                                   (css/align :middle))
-                                                              (div (->> (css/grid-column)
-                                                                        (css/grid-column-size {:small 12 :medium 2}))
-                                                                   (dom/label nil "Website"))
-                                                              (div (->> (css/grid-column))
-                                                                   (dom/input #js {:type "text" :placeholder "yourwebsite.com (optional)" :id "beta-SITE"})))
-                                                         (div (->> (css/grid-row)
-                                                                   (css/align :center))
-                                                              (dom/p nil (dom/small nil "By signing up you accept our "
-                                                                                    (dom/a #js {:href      "//www.iubenda.com/privacy-policy/8010910"
-                                                                                                :className "iubenda-nostyle no-brand iubenda-embed"
-                                                                                                :title     "Privacy Policy"}
-                                                                                           "Privacy Policy"))))
-                                                         (div (->> (css/grid-row)
-                                                                   (css/align :center))
-                                                              (dom/button #js {:className "button green"
-                                                                               :onClick   #(do (.preventDefault %)
-                                                                                               (.subscribe this))}
-                                                                          (if (msg/pending? message)
-                                                                            (dom/i #js {:className "fa fa-spinner fa-spin fa-fw"})
-                                                                            "Invite Me")))
-                                                         (div (->> (css/grid-row)
-                                                                   (css/align :center))
-                                                              (dom/p #js {:className (cond
-                                                                                       (some? client-msg)
-                                                                                       "alert"
-                                                                                       (msg/final? message)
-                                                                                       (if (msg/success? message)
-                                                                                         "success"
-                                                                                         "alert"))}
-                                                                     (cond
-                                                                       (not-empty client-msg)
-                                                                       client-msg
-                                                                       (msg/final? message)
-                                                                       (msg/message message)
-                                                                       :else
-                                                                       "")))))}))))))))
+          (callout-banner live-open?)
+          (->ComingSoonContent
+            (om/computed
+              {}
+              {:content-form (div nil
+                                  (my-dom/hr nil)
+                                  (my-dom/p nil "Are you a maker or artisan in Vancouver? Get in touch with us and sign up for our Beta invite list!")
+                                  (dom/form #js {:id "beta-vendor-subscribe-form"}
+                                            (grid/row
+                                              (css/align :middle)
+                                              (grid/column
+                                                (grid/column-size {:small 12 :medium 2})
+                                                (dom/label nil "Name"))
+                                              (grid/column
+                                                nil
+                                                (my-dom/input {:type "email" :placeholder "Your Brand" :id "beta-NAME"})))
+                                            (grid/row
+                                              (css/align :middle)
+                                              (grid/column
+                                                (grid/column-size {:small 12 :medium 2})
+                                                (my-dom/label nil "Email"))
+                                              (grid/column
+                                                nil
+                                                (my-dom/input {:type "email" :placeholder "youremail@example.com" :id "beta-EMAIL"})))
+                                            (grid/row
+                                              (css/align :middle)
+                                              (grid/column
+                                                (grid/column-size {:small 12 :medium 2})
+                                                (dom/label nil "Website"))
+                                              (grid/column
+                                                nil
+                                                (my-dom/input {:type "text" :placeholder "yourwebsite.com (optional)" :id "beta-SITE"})))
+                                            (grid/row
+                                              (css/align :center)
+                                              (my-dom/p nil
+                                                        (my-dom/small nil
+                                                                      (my-dom/span nil "By signing up you accept our ")
+                                                                      (my-dom/a {:href    "//www.iubenda.com/privacy-policy/8010910"
+                                                                                 :classes ["iubenda-nostyle no-brand iubenda-embed"]
+                                                                                 :title   "Privacy Policy"}
+                                                                                (my-dom/span nil "Privacy Policy")))))
+                                            (grid/row
+                                              (css/align :center)
+                                              (my-dom/button {:classes ["button search"]
+                                                              :onClick #(do (.preventDefault %)
+                                                                            (when-not (msg/pending? message)
+                                                                              (.subscribe this)))}
+                                                             (if (msg/pending? message)
+                                                               (my-dom/i {:classes ["fa fa-spinner fa-spin fa-fw"]})
+                                                               "Invite me")))
+                                            (grid/row
+                                              (css/align :center)
+                                              (my-dom/p {:classes [(cond
+                                                                     (some? client-msg)
+                                                                     "text-alert"
+                                                                     (msg/final? message)
+                                                                     (if (msg/success? message)
+                                                                       "text-success"
+                                                                       "text-alert"))]}
+                                                        (cond
+                                                          (not-empty client-msg)
+                                                          client-msg
+                                                          (msg/final? message)
+                                                          (msg/message message)
+                                                          :else
+                                                          "")))))})))))))
 
 (def ->ComingSoonBiz (om/factory ComingSoonBiz))
 
@@ -173,7 +181,8 @@
   (query [this]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:proxy/sell-soon (om/get-query ComingSoonBiz)}
-     :query/current-route])
+     :query/current-route
+     :query/messages])
   Object
   (componentDidUpdate [this _ _]
     #?(:cljs
@@ -183,13 +192,27 @@
                                                            :live-open? false
                                                            :live-timer-started? false)) 5000)
            (om/update-state! this assoc :live-timer-started? true)))))
+  (subscribe [this]
+    #?(:cljs (let [email (web-utils/input-value-by-id "coming-soon-email-input")]
+               (if (and (not-empty email)
+                        (utils/valid-email? email))
+                 (do (msg/om-transact! this `[(beta/customer ~{:email email})])
+                     (om/update-state! this assoc :client-msg nil))
+                 (let [message (cond (empty? email)
+                                     "Please provide an email."
+                                     (not (utils/valid-email? email))
+                                     "Please provide a valid email."
+                                     (empty? email)
+                                     "Please provide the name of your brand.")]
+                   (om/update-state! this assoc :client-msg message))))))
   (render [this]
     (if (= :coming-soon/sell (get-in (om/props this) [:query/current-route :route]))
       (let [{:proxy/keys [navbar sell-soon]} (om/props this)]
         (->ComingSoonBiz (om/computed sell-soon
                                       {:proxy/navbar navbar})))
       (let [{:keys [proxy/navbar]} (om/props this)
-            {:keys [on-login-fn live-open? client-msg]} (om/get-state this)]
+            {:keys [on-login-fn live-open? client-msg]} (om/get-state this)
+            message (msg/last-message this 'beta/customer)]
         (dom/div #js {:id "sulo-coming-soon" :className "sulo-page"}
           (common/page-container
             {:navbar (om/computed navbar {:coming-soon?  true
@@ -210,7 +233,7 @@
                              {:content-form (dom/div
                                               nil
                                               (dom/hr nil)
-                                              (dom/p nil "Do you love to shop local in Vancouver? Get early access and be part of creating an interactive community with makers online! Invitations will be sent out this spring.")
+                                              (dom/p nil "Do you love to shop local in Vancouver? Get early access and be part of creating an interactive community with makers online! Invitations will be sent out this summer.")
                                               (dom/form
                                                 nil
                                                 (div (->> (css/grid-row)
@@ -226,20 +249,32 @@
                                                                                   "Privacy Policy"))))
                                                 (div (->> (css/grid-row)
                                                           (css/align :center))
-                                                     (dom/button #js {:className "button green"
-                                                                      :onClick   #?(:clj  identity
-                                                                                    :cljs (fn [e]
-                                                                                            (let [input (.-value (.getElementById js/document "coming-soon-email-input"))
-                                                                                                  valid-email? (utils/valid-email? input)]
-                                                                                              (when-not valid-email?
-                                                                                                (om/update-state! this assoc :client-msg
-                                                                                                                  "Please enter a valid email.")
-                                                                                                (.preventDefault e)))))
+                                                     (dom/button #js {:className "button search"
+                                                                      :onClick   #(do
+                                                                                   (.preventDefault %)
+                                                                                   (when-not (msg/pending? message)
+                                                                                     (.subscribe this)))
+
                                                                       :type      "submit"}
-                                                                 "Get Early Access"))
-                                                (div (->> (css/grid-row)
-                                                          (css/align :center))
-                                                     (dom/p #js {:className "alert"} client-msg))))})))))))))
+                                                                 (if (msg/pending? message)
+                                                                   (my-dom/i {:classes ["fa fa-spinner fa-spin fa-fw"]})
+                                                                   "Get early access")))
+                                                (grid/row
+                                                  (css/align :center)
+                                                  (my-dom/p {:classes [(cond
+                                                                      (some? client-msg)
+                                                                      "text-alert"
+                                                                      (msg/final? message)
+                                                                      (if (msg/success? message)
+                                                                        "text-success"
+                                                                        "text-alert"))]}
+                                                         (cond
+                                                           (not-empty client-msg)
+                                                           client-msg
+                                                           (msg/final? message)
+                                                           (msg/message message)
+                                                           :else
+                                                           "")))))})))))))))
 
 (def ->ComingSoon (om/factory ComingSoon))
 

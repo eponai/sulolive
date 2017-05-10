@@ -220,8 +220,6 @@
                 (save-button {:onClick #(.save-sections component)}))))))
       (callout/callout-small
         nil
-        (edit-button {:onClick #(om/update-state! component assoc :products/edit-sections (into [] (:store/sections store)))}
-                     (dom/span nil "Edit sections"))
         (menu/horizontal
           (css/add-class :product-section-menu)
           (menu/item
@@ -482,15 +480,22 @@
                 )))
 
           (dom/div
-            (css/add-class :section-title)
-            (dom/h2 nil "Product sections")
-            (dom/a
-              (->> (css/button-hollow {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
-                   (css/add-class :secondary)
-                   (css/add-class :see-products))
-              (dom/span nil "Manage products")
-              (dom/i {:classes ["fa fa-chevron-right"]})))
+            (css/add-class :product-sections-container)
+            (dom/div
+              (css/add-class :section-title)
+              (dom/h2 nil "Product sections")
+              (dom/div
+                nil
+                (edit-button {:onClick #(om/update-state! this assoc :products/edit-sections (into [] (:store/sections store)))})
+                (dom/div
+                  (css/text-align :right)
+                  (dom/a
+                    (->> (css/button-hollow {:href (routes/url :store-dashboard/product-list {:store-id (:db/id store)})})
+                         (css/add-class :secondary)
+                         (css/add-class :see-products))
+                    (dom/span nil "Products")
+                    (dom/i {:classes ["fa fa-chevron-right"]})))))
 
-          (products-section this))))))
+            (products-section this)))))))
 
 (def ->EditStore (om/factory EditStore))

@@ -7,7 +7,7 @@
 (def store-routes
   {""           :store
    "/dashboard" {""          :store-dashboard
-                 "/profile"     :store-dashboard/profile
+                 "/profile"  :store-dashboard/profile
                  "/policies" :store-dashboard/policies
                  "/settings" {""          :store-dashboard/settings
                               "/shipping" :store-dashboard/settings#shipping
@@ -22,9 +22,8 @@
                               ["/" [#"create" :action]] :store-dashboard/create-order
                               ["/" [#"\w+" :order-id]]  :store-dashboard/order}
                  "/stream"   :store-dashboard/stream}
-   "/nav"       {"/about"                          :store/about
-                 "/policies"                       :store/policies
-                 ["/" [#"(\d|\w|-)+" :navigation]] :store/navigation}})
+   "/about"     :store/about
+   "/policies"  :store/policies})
 
 (def user-routes
   {""         :user

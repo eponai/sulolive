@@ -24,9 +24,10 @@
   (subscribe [_ {:keys [list-id email merge-fields]}]
     (let [hashed-email (hash-MD5 (.toLowerCase email))
           url (str "https://us14.api.mailchimp.com/3.0/lists/" list-id "/members/" hashed-email)
-          data {:email_address email
-                :status        "pending"
-                :merge_fields  merge-fields}
+          data (cond-> {:email_address email
+                        :status        "pending"}
+                       (not-empty merge-fields)
+                       (assoc :merge_fields  merge-fields))
           req (client/put url {:body       (json/write-str data)
                                :basic-auth ["user" api-key]})]
       (let [response (json/read-str (:body req) :key-fn keyword)]

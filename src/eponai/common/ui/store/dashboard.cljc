@@ -230,13 +230,7 @@
             (dom/h1 (css/show-for-sr) "Dashboard")
             (dom/div
               (css/add-class :section-title)
-              (dom/h2 nil "Your store")
-              (dom/a
-                (->> {:href (routes/url :store-dashboard/profile {:store-id store-id})}
-                     (css/button-hollow)
-                     (css/add-class :secondary))
-                (dom/span nil "Manage profile")
-                (dom/i {:classes ["fa fa-chevron-right"]})))
+              (dom/h2 nil "Your store"))
             (callout/callout-small
               (css/add-class :section-info)
               (grid/row
@@ -244,15 +238,21 @@
                      (css/align :middle))
 
                 (grid/column
-                  (->> (grid/column-size {:small 6 :medium 4})
+                  (->> (grid/column-size {:small 12 :medium 4})
                        (css/text-align :center))
                   (dom/h3 nil (get-in store [:store/profile :store.profile/name]))
-                  (p/store-photo store {:transformation :transformation/thumbnail}))
+                  (p/store-photo store {:transformation :transformation/thumbnail})
+                  (dom/a
+                    (->> {:href (routes/url :store-dashboard/profile {:store-id store-id})}
+                         (css/button-hollow)
+                         (css/add-class :secondary))
+                    (dom/span nil "Store info")
+                    (dom/i {:classes ["fa fa-chevron-right"]})))
 
                 (grid/column
                   nil
                   (grid/row
-                    (grid/columns-in-row {:small 1 :medium 2})
+                    (grid/columns-in-row {:small 2})
                     (grid/column
                       (css/text-align :center)
                       (dom/h3 nil "Products")
@@ -261,7 +261,7 @@
                         (->> {:href (routes/url :store-dashboard/product-list {:store-id store-id})}
                              (css/button-hollow)
                              (css/add-class :secondary))
-                        (dom/span nil "Manage products")
+                        (dom/span nil "Products")
                         (dom/i {:classes ["fa fa-chevron-right"]})))
                     (grid/column
                       (css/text-align :center)
@@ -271,7 +271,7 @@
                         (->> {:href (routes/url :store-dashboard/order-list {:store-id store-id})}
                              (css/button-hollow)
                              (css/add-class :secondary))
-                        (dom/span nil "Manage orders")
+                        (dom/span nil "Orders")
                         (dom/i {:classes ["fa fa-chevron-right"]})))))))
 
             (callout/callout
@@ -308,17 +308,17 @@
                 (check-list-item
                   (boolean (not-empty (:store/items store)))
                   (routes/url :store-dashboard/create-product {:store-id store-id})
-                  (dom/span nil "Add your first product to attract those customers."))
+                  (dom/span nil "Show off your amazing goods, add your first product."))
 
                 (check-list-item
                   false
                   (routes/url :store-dashboard/stream {:store-id store-id})
-                  (dom/span nil "Setup your first stream and hangout with your customers whenever you feel like it."))
+                  (dom/span nil "Setup your first stream and hangout with your customers when you feel like it."))
 
                 (check-list-item
                   (:stripe/details-submitted? stripe-account)
-                  (routes/url :store-dashboard/settings#activate {:store-id store-id})
-                  (dom/span nil "Activate your account. You know that boring stuff needed to so you can accept payments."))))
+                  (routes/url :store-dashboard/settings#business {:store-id store-id})
+                  (dom/span nil "Verify your account. You know, so we know you're real."))))
 
             (dom/div
               (css/add-class :section-title)
@@ -335,13 +335,13 @@
                     (dom/i {:classes ["fa fa-info fa-fw"]}))
                   (grid/column
                     nil
-                    (callout/header nil "Activate your account")))
+                    (callout/header nil "Verify your account")))
                 (dom/p nil
                        (dom/span nil "Before ")
-                       (dom/a {:href (routes/url :store-dashboard/settings#activate {:store-id store-id})} (dom/span nil "activating your account"))
+                       (dom/a {:href (routes/url :store-dashboard/settings#business {:store-id store-id})} (dom/span nil "verifying your account"))
                        (dom/span nil ", you can only use SULO Live in test mode. You can manage your store, but it'll not be visible to the public."))
                 (dom/p nil
-                       "Once you've activated you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our terms of service. If there is a problem, we'll get in touch right away to resolve it as quickly as possible.")))
+                       "Once you've verified your account you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our terms of service. If there is a problem, we'll get in touch right away to resolve it as quickly as possible.")))
 
             (dom/div
               (css/add-class :section-title)
@@ -349,9 +349,9 @@
             (callout/callout
               nil
               (dom/p nil
-                     (dom/span nil "We love to hear from you! If you want to give us feedback, report problems, or even just say hi, shoot us an email at ")
+                     (dom/span nil "We love to hear from you! Give us feedback, report problems, or just say hi, at ")
                      (dom/a {:href "mailto:hello@sulo.live"} "hello@sulo.live")
-                     (dom/span nil " and Miriam, Diana or Petter will help you out.")))
+                     (dom/span nil ". Miriam, Diana or Petter will help you out.")))
 
 
 

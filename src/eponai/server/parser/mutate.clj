@@ -65,14 +65,26 @@
 (defmutation beta/vendor
   [{:keys [state auth system] ::parser/keys [return exception]} _ {:keys [name site email]}]
   {:auth ::auth/public
-   :resp {:success "Cool! Check your inbox for a confirmation email"
+   :resp {:success "Thank you! Check your inbox for a confirmation email"
           :error   (if exception (:detail (json/read-str (:body (ex-data exception)) :key-fn keyword) "") "")}}
   {:action (fn []
              (let [ret (mailchimp/subscribe (:system/mailchimp system)
                                             {:email        email
-                                             :list-id      (env/env :mail-chimp-list-beta-id)
+                                             :list-id      (env/env :mailchimp-vendor-beta-id)
                                              :merge-fields {"NAME" name
                                                             "SITE" site}})]
+               ret))})
+
+(defmutation beta/customer
+  [{:keys [state auth system] ::parser/keys [return exception]} _ {:keys [name site email]}]
+  {:auth ::auth/public
+   :resp {:success "Thank you! You'll hear from us soon. Check your inbox for a confirmation email."
+          :error   (if exception (:detail (json/read-str (:body (ex-data exception)) :key-fn keyword) "") "")}}
+  {:action (fn []
+             (debug "beta/customer with email " email)
+             (let [ret (mailchimp/subscribe (:system/mailchimp system)
+                                            {:email        email
+                                             :list-id      (env/env :mailchimp-customer-beta-id)})]
                ret))})
 
 (defmutation photo/upload

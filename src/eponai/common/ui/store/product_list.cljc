@@ -235,12 +235,15 @@
                (dom/div
                  nil
                  (if grid-editable?
-                   (dom/div
-                     nil
-                     (store-common/save-button {:onClick #(.save-product-order this)})
-                     (store-common/cancel-button {:onClick #(do
-                                                             (.update-layout this)
-                                                             (om/update-state! this assoc :grid-editable? false))}))
+                   [(dom/div
+                      nil
+                      (store-common/save-button {:onClick #(.save-product-order this)})
+                      (store-common/cancel-button {:onClick #(do
+                                                              (.update-layout this)
+                                                              (om/update-state! this assoc :grid-editable? false))}))
+                    (callout/callout-small
+                      (css/add-class :warning)
+                      (dom/small nil "This is how your products will appear in your store. Try moving them around and find a layout you like. Don't forget to save when you're done!"))]
                    (store-common/edit-button
                      {:onClick #(om/update-state! this assoc :grid-editable? true)}
                      (dom/span nil "Edit layout")))
