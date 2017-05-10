@@ -27,7 +27,7 @@
        "sulo.auth0.com"
        (clj->js {:auth               {:redirectUrl (str js/window.location.origin (routes/url :auth))}
                  :languageDictionary {:title "SULO"}
-                 :theme              {:primaryColor        "#39AC97"
+                 :theme              {:primaryColor        "#9FCFC8"
                                       :logo                "/assets/img/auth0-icon.png"
                                       :labeledSubmitButton false}
                  :allowForgotPassword false})))

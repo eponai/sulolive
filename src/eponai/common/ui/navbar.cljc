@@ -110,7 +110,7 @@
         (dom/small nil "Preview"))))
 
 (defn coming-soon-navbar [component]
-  (let [{:keys [coming-soon? right-menu on-live-click]} (om/get-computed component)]
+  (let [{:keys [right-menu on-live-click]} (om/get-computed component)]
     (navbar-content
       nil
       (dom/div

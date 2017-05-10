@@ -53,6 +53,12 @@
   (if target
     {:remote true}))
 
+(defmethod client-mutate 'beta/customer
+  [{:keys [target]} _ p]
+  (debug "beta/customer with params: " p)
+  (if target
+    {:remote true}))
+
 (defmethod client-mutate 'photo/upload
   [{:keys [target]} _ p]
   (debug "photo/upload with params: " p)
