@@ -12,11 +12,11 @@ ASSET_VERSION=$(echo "$SHA1" | cut -c1-10)
 docker push $DOCKER_IMAGE 
 
 function env_name_of_current_staging {
-  staging_url="sulo-staging.us-east-1.elasticbeanstalk.com"
+  staging_url="sulo-stage.us-east-1.elasticbeanstalk.com"
 
   aws --output text elasticbeanstalk describe-environments | \
     grep "$staging_url" | \
-    grep -o 'sulo-blue\s\|sulo-green\s' | \
+    grep -o 'sulo-blue\s\|sulo-green\s\|sulo-purple\s' | \
     tr -d '[[:blank:]]'
 }
 
