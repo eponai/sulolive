@@ -1,4 +1,4 @@
-{"AWSEBDockerrunVersion": "2",
+{"AWSEBDockerrunVersion": 2,
  "volumes": [
    {
      "name": "sulo-live-webserver",
