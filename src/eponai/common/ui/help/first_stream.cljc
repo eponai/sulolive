@@ -5,7 +5,8 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.routes :as routes]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as p]
+    [eponai.common.ui.elements.callout :as callout]))
 
 (defui FirstStream
   Object
@@ -52,7 +53,7 @@
           (dom/li nil
                   (dom/p nil
                          (dom/span nil "Go to ")
-                         (dom/em nil "Preferences > Stream")
+                         (dom/strong nil "Preferences > Stream")
                          (dom/span nil " and cofigure with the following setup:"))
                   (dom/div
                     nil
@@ -95,29 +96,89 @@
                   ;                (dom/span nil "Stream key: <your Stream key>")))
                   ))
 
+        (dom/h2 nil "Organize your window")
+        (dom/p nil
+               (dom/span nil "Before publishing your stream, you need to setup the content that should be published in the stream. You arrange what content your audience will see using ")
+               (dom/em nil "Scenes")
+               (dom/span nil "."))
+        (dom/h3 nil "Add a scene")
+        (dom/p nil
+               (dom/span nil "Scenes contain the content you want your audience to see."))
+        (dom/ol
+          nil
+          (dom/li nil
+                  (dom/p nil (dom/span nil "To add a new scene, click the ")
+                         (dom/strong nil "+")
+                         (dom/span nil " in the bottom left corner.")))
+          (dom/li nil
+                  (dom/p nil (dom/span nil "Name your scene describing its content and click ")
+                         (dom/strong nil "OK")
+                         (dom/span nil "."))))
+        (dom/p nil (dom/span nil "You'll see the content of your scene in the preview window, but it's probably looking a little empty. With no ")
+               (dom/em nil " Sources ")
+               (dom/span nil " setup yet, your content is only a black screen."))
+
+        (dom/p nil
+               (dom/strong nil "Tip: ")
+               (dom/span nil "You can have multiple scenes setup and toggle between them as you are live streaming."))
+
+        (dom/h3 nil "Add a source")
+        (dom/p nil (dom/span nil "Sources are the places your content is captured from, this can be a window on your computer, your webcam, or an external device like a video camera."))
+        (dom/ol nil
+                (dom/li nil
+                        (dom/p nil (dom/span nil "To add a new source to your scene, click the ")
+                               (dom/strong nil "+")
+                               (dom/span nil " in the bottom left corner.")))
+                (dom/li nil
+                        (dom/p nil (dom/span nil "You'll see a list of available sources to setup, for this example select ")
+                               (dom/strong nil "Video Capture Device")
+                               (dom/span nil ". We will setup our webcam to capture video for the stream.")))
+                (dom/li nil
+                        (dom/p nil
+                               (dom/span nil "Check ") (dom/strong nil "Create new")
+                               (dom/span nil " and name your source to something descriptive. Check ")
+                               (dom/strong nil "Make source visible")
+                               (dom/span nil " and click ")
+                               (dom/strong nil "OK")))
+                (dom/li nil
+                        (dom/p nil
+                               (dom/span nil "In the Window menu, select your web camera and check ")
+                               (dom/strong nil "Use preset")
+                               (dom/span nil ". You should see the captured video in the preview window. Click ")
+                               (dom/strong nil "OK")
+                               (dom/span nil " when you're ready."))))
+        (dom/p nil (dom/span nil "We now have video being captured from our web camera. You should be able to see your video in the scene preview."))
+        ;(callout/callout-small
+        ;  (css/add-class :action))
+        ;(dom/h4 nil (dom/div {:classes ["icon icon-idea"]})
+        ;        (dom/span nil "Tip"))
+        (dom/p nil
+               (dom/strong nil "Tip: ")
+               (dom/span nil "Try moving and resizing the source in the preview window. You can add more sources to the same scene and arrange them with the move and resize tools."))
+
+
+
         (dom/h2 nil "Publish stream")
         (dom/p nil
-               (dom/span nil "When you've organized your window to how you like it, just click the ")
-               (dom/em nil "Start Streaming")
-               (dom/span nil " button in the bottom right corner of Open Broadcaster Software to publish your stream!"))
+               (dom/span nil " When you like how your stream looks, just click ")
+               (dom/strong nil "Start Streaming")
+               (dom/span nil " in the bottom right corner of Open Broadcaster Software to publish your stream. We are now receiving your stream on SULO Live!"))
         (dom/h2 nil "Going live")
         (dom/p nil
-               (dom/span nil (str "Before your customers can see you on SULO Live you'll have to \"Go live\"."
-                                  " You can go live once you've published your stream by navigating to your "))
-               (dom/em nil "Store Dashboard")
-               (dom/span nil " click the ")
-               (dom/em nil "Stream")
-               (dom/span nil " tab and press ")
-               (dom/em nil "Go Live")
-               (dom/span nil (str " button to the right on the page.")))
-        (dom/p nil
-               (dom/span nil (str "If you can't see the Go Live button, it's probably because the stream"
-                                  " hasn't been succesfully published yet. Try pressing the ")
-                         )
-               (dom/em nil "Refresh")
-               (dom/span nil (str " button, to see if the Go Live button appears. If it still doesn't work try"
-                                  " stopping then starting the stream again, hit refresh and the Go Live button"
-                                  " should appear. When you see it, click it!")))
+               (dom/span nil "Once you've published your stream, only you will be able to see it in your stream preview on SULO Live. Click ")
+               (dom/strong nil "Go live")
+               (dom/span nil " to make your stream public and show up on your store page."))
+        (dom/p nil (dom/strong nil "I can't see my stream preview"))
+        (dom/ul nil
+                (dom/li nil
+                        (dom/p nil (dom/span nil "There's a time delay in the video delivery from our servers. Try clicking ")
+                               (dom/em nil "Refresh")
+                               (dom/span nil " to reload the video preview.")))
+                (dom/li nil
+                        (dom/p nil (dom/span nil "Try stopping the stream in OBS, wait a few moments and start again. Click ")
+                               (dom/em nil  "Refresh")
+                               (dom/span nil " in your stream settings."))))
+
         (dom/h2 nil "What now?")
         (dom/p nil
                (dom/span nil (str "Congratulations! You've gone live for the first of many times!"

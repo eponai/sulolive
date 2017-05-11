@@ -5,11 +5,26 @@
 }
 
 #sulo-help {
+	h2 {
+		margin-top: 2rem;
+	}
 	h3 {
 		text-transform: none;
 	}
+	h4 {
+		font-weight: $global-weight-bold;
+		.icon {
+			margin-right: 0.5rem;
+		}
+	}
+	ol {
+		margin-left: 3rem;
+	}
 	ul.nested {
 		margin-left: 2rem;
+	}
+	strong {
+		font-weight: bold;
 	}
 	#sulo-navbar {
 		// position: absolute;
@@ -32,12 +47,13 @@
 			}
 		}
 	}
-	h2 {
-		margin-top: 2rem;
-	}
+
 	.callout {
 		@include breakpoint(large) {
 			padding: 2.5rem;
+		}
+		.callout {
+			padding: 1rem;
 		}
 	}
 
