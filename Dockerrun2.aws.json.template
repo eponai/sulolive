@@ -15,6 +15,7 @@
    {
      "name": "sulo-live-webserver",
      "image": "<DOCKER_IMAGE>",
+     "memory": "1500",
      "environment": [
        {
          "name": "ASSET_VERSION",
