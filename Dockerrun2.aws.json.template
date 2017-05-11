@@ -1,0 +1,33 @@
+{"AWSEBDockerrunVersion": "2",
+ "volumes": [
+   {
+     "name": "sulo-live-webserver",
+     "host": {
+       "sourcePath": "/var/app/current"
+     }
+   }
+ ],
+ "authentication": {
+    "bucket": "sulo-elb",
+    "key": "docker/.dockercfg"
+ },
+ "containerDefinitions": [
+   {
+     "name": "sulo-live-webserver",
+     "image": "<DOCKER_IMAGE>",
+     "environment": [
+       {
+         "name": "ASSET_VERSION",
+         "value": "<ASSET_VERSION>"
+       }
+     ],
+     "portMappings": [
+       {
+         "hostPort": 8080,
+         "containerPort": 8080
+       }
+     ],
+     "essential": true
+   }
+ ]
+}

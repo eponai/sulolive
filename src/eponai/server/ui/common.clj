@@ -3,9 +3,14 @@
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [clojure.string :as string]
+    [environ.core :as env]
     [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]))
 
 ;; Utils
+
+(def asset-version (env/env :asset-version "unset_asset_version"))
+(defn versionize [url]
+  (str url "?v=" asset-version))
 
 (def text-javascript "text/javascript")
 
@@ -80,6 +85,8 @@
    (dom/meta {:name    "viewport"
               :content "width=device-width, initial-scale=1 maximum-scale=1 user-scalable=0"})
    (dom/meta {:name "author" :content "SULO Live"})
+   ;; Asset version is needed in our module urls.
+   (dom/meta {:id "asset-version-meta" :name "asset-version" :content asset-version})
    (dom/meta {:name    "description"
               :content "Watch and interact with your favorite local makers and artisans on Vancouver's online marketplace."})
    (comment (dom/meta {:http-equiv "Content-Type"
@@ -93,7 +100,7 @@
    (dom/link {:href "//cdn.quilljs.com/1.2.0/quill.snow.css"
               :rel  "stylesheet"})
 
-   (dom/link {:href "/assets/css/app.css"
+   (dom/link {:href (versionize "/assets/css/app.css")
               :rel  "stylesheet"})
    ;; Custom fonts
    (dom/link {:href (if release?
@@ -110,15 +117,16 @@
    (when (not exclude-icons?)
      (icons))
 
-   (dom/link {:rel "manifest" :href "/assets/img/favicon/manifest.json"})
+   (dom/link {:rel "manifest"
+              :href (versionize "/assets/img/favicon/manifest.json")})
    (dom/meta {:name "msapplication-TileColor" :content "#ffffff"})
    (dom/meta {:name    "msapplication-TileImage"
-              :content "/assets/img/favicon/ms-icon-144x144.png"})
+              :content (versionize "/assets/img/favicon/ms-icon-144x144.png")})
    (dom/meta {:name "theme-color" :content "#ffffff"})
    ])
 
 (defn budget-js-path []
-  "/js/out/budget.js")
+  (versionize "/js/out/budget.js"))
 
 
 (defn auth0-lock-passwordless [release?]

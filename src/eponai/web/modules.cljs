@@ -1,9 +1,8 @@
 (ns eponai.web.modules
   (:require
-    [goog.module :as module]
+    [goog.module]
     [goog.module.ModuleManager :as module-manager]
     [goog.module.ModuleLoader]
-    [medley.core :as medley]
     [taoensso.timbre :refer [debug error warn]])
   (:import goog.module.ModuleManager))
 
@@ -23,14 +22,20 @@
 (def manager (doto (module-manager/getInstance)
                (.setLoader loader)))
 
+(defn- get-asset-version []
+  (or (some-> (.getElementById js/document "asset-version-meta")
+           (.-content))
+      "unset_asset_version"))
+
 (defn- route->module [route]
   (or (namespace route)
       (name route)))
 
 (defn init-manager [routes]
-  (let [routes (into (set routes) extra-groupings)
+  (let [asset-version (get-asset-version)
+        routes (into (set routes) extra-groupings)
         route->js-file (into {} (comp (map route->module)
-                                      (map (juxt identity #(vector (str "/js/out/closure-modules/" % ".js")))))
+                                      (map (juxt identity #(vector (str "/js/out/closure-modules/" % ".js?v=" asset-version)))))
                              routes)
         module-infos (into {}
                            (map (juxt route->module #(into [] (map route->module) (get dependencies % []))))
