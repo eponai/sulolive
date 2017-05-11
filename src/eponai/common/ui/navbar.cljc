@@ -594,11 +594,16 @@
                  nil
                  (menu/horizontal
                    {:key "social"}
-                   (menu/item-link {:href "https://www.facebook.com/live.sulo"} (dom/i {:classes ["fa fa-instagram fa-fw"]}))
+                   (menu/item-link {:href "https://www.facebook.com/live.sulo"
+                                    :target "_blank"}
+                                   (dom/span {:classes ["icon icon-instagram"]}))
                    ;(menu/item-link nil (dom/i {:classes ["fa fa-twitter fa-fw"]}))
-                   (menu/item-link {:href "https://www.instagram.com/sulolive"} (dom/i {:classes ["fa fa-facebook fa-fw"]}))))
+                   (menu/item-link {:href "https://www.instagram.com/sulolive"
+                                    :target "_blank"}
+                                   (dom/span {:classes ["icon icon-facebook"]}))))
                ;<a href="https://icons8.com">Icon pack by Icons8</a>
-               (menu/item-text nil (dom/a {:href "https://icons8.com"} (dom/small {:classes ["copyright"]} "Icons by Icons8")))
+               (menu/item-text nil (dom/a {:href "https://icons8.com"
+                                           :target "_blank"} (dom/small {:classes ["copyright"]} "Icons by Icons8")))
                (menu/item-text nil (dom/small {:classes ["copyright"]} "© eponai hb 2017")))
 
              ]
