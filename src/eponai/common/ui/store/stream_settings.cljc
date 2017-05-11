@@ -33,13 +33,6 @@
      {:proxy/chat (om/get-query chat/StreamChat)}
      {:query/auth [:db/id :user/email]}])
 
-  static store-common/IDashboardNavbarContent
-  (render-subnav [_ _]
-    (dom/div nil))
-
-  (subnav-title [_ _]
-    "Live stream")
-
   Object
   (render [this]
     (let [{:keys [store]} (om/get-computed this)

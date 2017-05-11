@@ -381,13 +381,6 @@
                     {:order/store [{:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}]}]}
      :query/current-route])
 
-  static store-common/IDashboardNavbarContent
-  (render-subnav [_ _]
-    (dom/div nil))
-
-  (subnav-title [_ _]
-    "Order details")
-
   Object
   #?(:cljs
      (open-dropdown

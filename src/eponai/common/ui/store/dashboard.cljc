@@ -86,18 +86,9 @@
       (dom/nav
         (->> (css/add-class :navbar)
              (css/add-class :top-bar))
-        (menu/horizontal
-          (css/add-class :top-bar-left)
-          (menu/item-text
-            (css/show-for :large)
-            (if (= route :store-dashboard)
-              (dom/span nil "Dashboard")
-              (when (satisfies? store-common/IDashboardNavbarContent component)
-                (dom/span nil (store-common/subnav-title component current-route))))))
-
         (when (satisfies? store-common/IDashboardNavbarContent component)
           (store-common/render-subnav component current-route))
-        (menu/horizontal nil)))))
+        ))))
 
 (defn verification-status-element [component]
   (let [{:query/keys [stripe-account current-route]} (om/props component)

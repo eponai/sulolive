@@ -71,8 +71,6 @@
             (css/add-class :is-active))
           (dom/a {:href (routes/url :store-dashboard/settings#business route-params)}
                  (dom/span nil "Business"))))))
-  (subnav-title [_ _]
-    "Account")
 
   Object
 

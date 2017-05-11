@@ -281,12 +281,7 @@
         {:proxy/photo-upload (om/get-query pu/PhotoUploader)})
      :query/current-route
      :query/messages])
-  static store-common/IDashboardNavbarContent
-  (render-subnav [_ _]
-    (dom/div nil))
 
-  (subnav-title [_ _]
-    "Store info")
   Object
   (save-sections [this]
     (let [{:products/keys [edit-sections]} (om/get-state this)
@@ -366,7 +361,7 @@
      :products.edit-sections/new-section-count 0
      :text-max/store-name                      100
      :text-max/tagline                         140
-     :text-max/about                           500
+     :text-max/about                           2000
      :text-max/return-policy                   500
      :text-max/shipping-policy                 500
 

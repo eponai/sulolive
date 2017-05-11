@@ -96,13 +96,6 @@
      :query/messages
      :query/current-route])
 
-  static store-common/IDashboardNavbarContent
-  (render-subnav [_ _]
-    (dom/div nil))
-
-  (subnav-title [_ _]
-    "Products")
-
   Object
   (update-layout [this]
     #?(:cljs

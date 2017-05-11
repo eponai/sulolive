@@ -99,7 +99,7 @@
 	display: flex;
 	align-items: center;
 	height: $navbar-height;
-	font-size: 0.9rem;
+	// font-size: 0.9rem;
 	@include breakpoint(medium) {
 		font-size: 1rem;
 	}

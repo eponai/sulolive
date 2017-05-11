@@ -60,6 +60,19 @@ $sidenav-width: 75%;
 			color: $dark-gray;
 		}
 	}
+	.footer-menu {
+		li.menu-text a {
+			padding: 0;
+			color: $dark-gray;
+			font-weight: $global-weight-normal;
+		}
+		li {
+			border: none;
+		}
+		> li:first-child {
+			border-bottom: $global-border-secondary;
+		}
+	}
 }
 
 .sidebar-overlay {
@@ -134,6 +147,9 @@ $sidenav-width: 75%;
 				
 				li {
 					transition: background .25s linear;
+					a {
+						font-weight: $global-weight-bold;
+					}
 				}
 				li.is-active, li:hover {
 					background: rgba($light-gray, 0.8);
@@ -146,13 +162,14 @@ $sidenav-width: 75%;
 				// > ul > li:last-child {
 				// 	display: none;
 				// }
+				
+				.signout-menu {
+					display: none;
+				}
 				.footer-menu {
 					li:hover {
 						background: transparent;
 					}
-				}
-				.signout-menu {
-					display: none;
 				}
 			}
 		}

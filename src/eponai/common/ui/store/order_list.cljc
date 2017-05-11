@@ -18,13 +18,6 @@
   (query [_]
     [{:query/orders [:order/store :order/uuid :order/status {:order/items [:order.item/amount]} :order/amount]}])
 
-  static store-common/IDashboardNavbarContent
-  (render-subnav [_ _]
-    (dom/div nil))
-
-  (subnav-title [_ _]
-    "Orders")
-
   Object
   (render [this]
     (let [{:keys [store]} (om/get-computed this)

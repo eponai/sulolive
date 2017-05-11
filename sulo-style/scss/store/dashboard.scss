@@ -82,6 +82,7 @@ $dashboard-content-width: 54rem;
 		li.menu-text {
 			color: $dark-gray;
 			font-weight: normal;
+			font-size: 90%;
 			@include breakpoint(medium) {
 				font-size: 120%;
 			}
@@ -89,18 +90,31 @@ $dashboard-content-width: 54rem;
 	}
 
 	#sulo-navbar {
-		// position: absolute;
-		.top-bar-left {
+		.top-bar {
 			ul {
-				font-size: 120%;
-				li {
-					border: none;
-					&.store-name {
+				font-size: 100%;
+			}
+			.top-bar-right {
+					@include breakpoint(large) {
 						font-size: 120%;
 					}
 				}
-				li:first-child, li:nth-child(2) {
+		}
+		// position: absolute;
+		.top-bar-left {
+			ul {
+				// font-size: 120%;
+				li {
+					border: none;
+					.store-name {
+						// font-size: 120%;
+					}
+				}
+				li:first-child {
 					border-right: $global-border;
+				}
+				li:last-child {
+					border-left: $global-border;
 				}
 			}
 		}

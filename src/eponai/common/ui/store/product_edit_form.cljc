@@ -126,13 +126,6 @@
      #?(:cljs
         {:proxy/photo-upload (om/get-query pu/PhotoUploader)})
      {:query/navigation [:category/name :category/label :category/path :category/href]}])
-  static store-common/IDashboardNavbarContent
-  (subnav-title [_ current-route]
-    (let [{:keys [product-id]} (:route-params current-route)]
-      (if product-id
-        "Edit product"
-        "New product")))
-  (render-subnav [_ _])
 
   Object
   (componentDidUpdate [this _ _]

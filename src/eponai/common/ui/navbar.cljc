@@ -237,20 +237,21 @@
               (css/show-for :large {:onClick toggle-inline-sidebar})
               (dom/i {:classes ["fa fa-bars fa-fw"]})))
           (menu/item-link
-            (css/show-for :large {:href "/"
+            (css/show-for :large {:href (routes/url :store-dashboard (:route-params current-route))
                                   :id   "navbar-brand"})
             (dom/span nil "SULO")
             (dom/small nil "Store preview"))
-          (menu/item-link
-            (->> {:href    (routes/url :store {:store-id (:db/id owned-store)})
-                  :classes ["store-name"]})
-            (dom/span nil (get-in owned-store [:store/profile :store.profile/name])))
-          (menu/item-text (css/hide-for :large) (dom/span nil (get routes->titles (:route current-route))))))
+
+          (menu/item-text nil (dom/span nil (get routes->titles (:route current-route))))))
 
       (dom/div
         (css/add-class :top-bar-right)
         (menu/horizontal
           nil
+          (menu/item-link
+            (->> {:href    (routes/url :store {:store-id (:db/id owned-store)})
+                  :classes ["store-name"]})
+            (dom/span nil (get-in owned-store [:store/profile :store.profile/name])))
           (user-menu-item component))))))
 
 (defn sidebar-category [component href title]
@@ -536,18 +537,53 @@
                             (dom/span nil "SULO Live")))))
                (when (some? owned-store)
                  [
-                  (sidebar-link this :store-dashboard {:store-id (:db/id owned-store)}
-                                (dom/span nil "Dashboard"))
-                  (sidebar-link this :store-dashboard/stream {:store-id (:db/id owned-store)}
-                                (dom/span nil "Live stream"))
-                  (sidebar-link this :store-dashboard/profile {:store-id (:db/id owned-store)}
-                                (dom/span nil "Store info"))
-                  (sidebar-link this :store-dashboard/product-list {:store-id (:db/id owned-store)}
-                                (dom/span nil "Products"))
-                  (sidebar-link this :store-dashboard/order-list {:store-id (:db/id owned-store)}
-                                (dom/span nil "Orders"))
-                  (sidebar-link this :store-dashboard/settings#payouts {:store-id (:db/id owned-store)}
-                                (dom/span nil "Account"))])
+                  ;(sidebar-link this :store-dashboard {:store-id (:db/id owned-store)}
+                  ;              (dom/span nil "Dashboard"))
+                  ;(sidebar-link this :store-dashboard/stream {:store-id (:db/id owned-store)}
+                  ;              (dom/span nil "Live stream"))
+                  ;(sidebar-link this :store-dashboard/profile {:store-id (:db/id owned-store)}
+                  ;              (dom/span nil "Store info"))
+                  ;(sidebar-link this :store-dashboard/product-list {:store-id (:db/id owned-store)}
+                  ;              (dom/span nil "Products"))
+                  ;(sidebar-link this :store-dashboard/order-list {:store-id (:db/id owned-store)}
+                  ;              (dom/span nil "Orders"))
+                  (menu/item
+                    (when (= :store-dashboard (:route current-route))
+                      (css/add-class :is-active))
+                    (dom/a {:onClick #(routes/set-url! this :store-dashboard {:store-id (:db/id owned-store)})}
+                           (dom/div {:classes ["icon icon-home"]})
+                           (dom/span nil "Home")))
+                  (menu/item
+                    (when (= :store-dashboard/stream (:route current-route))
+                      (css/add-class :is-active))
+                    (dom/a {:onClick #(routes/set-url! this :store-dashboard/stream {:store-id (:db/id owned-store)})}
+                           (dom/div {:classes ["icon icon-stream"]})
+                           (dom/span nil "Live stream")))
+                  (menu/item
+                    (when (= :store-dashboard/profile (:route current-route))
+                      (css/add-class :is-active))
+                    (dom/a {:onClick #(routes/set-url! this :store-dashboard/profile {:store-id (:db/id owned-store)})}
+                           (dom/div {:classes ["icon icon-shop"]})
+                           (dom/span nil "Store info")))
+                  (menu/item
+                    (when (= :store-dashboard/product-list (:route current-route))
+                      (css/add-class :is-active))
+                    (dom/a {:onClick #(routes/set-url! this :store-dashboard/product-list {:store-id (:db/id owned-store)})}
+                           (dom/div {:classes ["icon icon-product"]})
+                           (dom/span nil "Products")))
+                  (menu/item
+                    (when (= :store-dashboard/order-list (:route current-route))
+                      (css/add-class :is-active))
+                    (dom/a {:onClick #(routes/set-url! this :store-dashboard/order-list {:store-id (:db/id owned-store)})}
+                           (dom/div {:classes ["icon icon-order"]})
+                           (dom/span nil "Orders")))
+                  (menu/item
+                    (when (or (= :store-dashboard/settings#payouts (:route current-route))
+                              (= :store-dashboard/settings#business (:route current-route)))
+                      (css/add-class :is-active))
+                    (dom/a {:onClick #(routes/set-url! this :store-dashboard/settings#payouts {:store-id (:db/id owned-store)})}
+                           (dom/div {:classes ["icon icon-business"]})
+                           (dom/span nil "Business")))])
                )
              (menu/vertical
                (css/add-class :footer-menu)
@@ -564,6 +600,8 @@
                    (menu/item-link {:href "https://www.facebook.com/live.sulo"} (dom/i {:classes ["fa fa-instagram fa-fw"]}))
                    ;(menu/item-link nil (dom/i {:classes ["fa fa-twitter fa-fw"]}))
                    (menu/item-link {:href "https://www.instagram.com/sulolive"} (dom/i {:classes ["fa fa-facebook fa-fw"]}))))
+               ;<a href="https://icons8.com">Icon pack by Icons8</a>
+               (menu/item-text nil (dom/a {:href "https://icons8.com"} (dom/small {:classes ["copyright"]} "Icons by Icons8")))
                (menu/item-text nil (dom/small {:classes ["copyright"]} "© eponai hb 2017")))
 
              ]
