@@ -28,19 +28,19 @@
     [:query/messages
      {:proxy/stream (om/get-query stream/Stream)}
      {:query/stream [:stream/state
-                     :stream/token]}
+                     :stream/token
+                     :stream/store]}
      {:query/stream-config [:ui.singleton.stream-config/publisher-url]}
      {:proxy/chat (om/get-query chat/StreamChat)}
      {:query/auth [:db/id :user/email]}])
 
   Object
   (render [this]
-    (let [{:keys [store]} (om/get-computed this)
-          {:query/keys [stream stream-config]
-           :as         props
-           :proxy/keys [chat]} (om/props this)
+    (let [{:query/keys [stream stream-config ]
+           :proxy/keys [chat] :as props} (om/props this)
           stream-state (:stream/state stream)
           stream-token (:stream/token stream)
+          store (:stream/store stream)
           chat-message (:chat-message (om/get-state this))
           message (msg/last-message this 'stream-token/generate)]
       (dom/div
@@ -60,7 +60,7 @@
                         (dom/span nil "Stream"))
                 (dom/h3 (css/add-class :sl-tooltip)
                         (dom/span
-                          (cond->> (css/add-classes [:label ])
+                          (cond->> (css/add-classes [:label])
                                    (= stream-state :stream.state/offline)
                                    (css/add-class :primary)
                                    (= stream-state :stream.state/online)
@@ -85,7 +85,7 @@
                       (dom/strong nil "End live")))
                   (dom/a
                     (css/button-hollow {:onClick #(binding [parser/*parser-allow-local-read* false]
-                                                    (om/transact! this [:query/stream]))})
+                                                   (om/transact! this [:query/stream]))})
                     (dom/i {:classes ["fa fa-refresh fa-fw"]})
                     (when (or (nil? stream-state) (= stream-state :stream.state/offline))
                       (dom/strong nil "Refresh")))))
@@ -95,12 +95,11 @@
                   (om/computed
                     (:proxy/stream props)
                     {:hide-chat?            true
-                     :store                 store
                      :wowza-player-opts     {:on-error-retry-forever? true
                                              :on-started-playing      #(when (= stream-state :stream.state/offline)
-                                                                         (om/transact! this `[(~'stream/ensure-online
-                                                                                                ~{:store-id (:db/id store)})
-                                                                                              :query/stream]))}
+                                                                        (om/transact! this `[(~'stream/ensure-online
+                                                                                               ~{:store-id (:db/id store)})
+                                                                                             :query/stream]))}
                      ;; Allow all states, as there might be something wrong with the
                      ;; state change communication.
                      :allowed-stream-states #{:stream.state/offline
@@ -116,8 +115,7 @@
                 (dom/h2 nil "Live chat"))
               (callout/callout-small
                 (css/add-class :flex)
-                (chat/->StreamChat (om/computed chat
-                                                {:store store}))))))
+                (chat/->StreamChat chat)))))
         (grid/row-column
           nil
           (dom/div

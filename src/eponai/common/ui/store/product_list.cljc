@@ -91,8 +91,10 @@
   (query [_]
     [{:query/inventory [:store.item/name
                         :store.item/description
-                        {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+                        :store.item/index
+                        {:store.item/photos [{:store.item.photo/photo [:photo/id]}
                                              :store.item.photo/index]}]}
+     {:query/store [:store/items]}
      :query/messages
      :query/current-route])
 
@@ -114,7 +116,7 @@
 
   (save-product-order [this]
     (let [{:keys [layout]} (om/get-state this)
-          {:keys [query/current-route]} (om/props this)
+          {:query/keys [current-route]} (om/props this)
           products (grid-layout->products this layout)]
       (debug "Save products: " (into [] (grid-layout->products this layout)))
       (msg/om-transact! this [(list 'store/update-product-order {:items    products
@@ -140,15 +142,17 @@
     {:cols                    {:xxlarge 3 :xlarge 3 :large 3 :medium 3 :small 2 :tiny 2}
      :products/listing-layout :products/grid})
   (render [this]
-    (let [{:keys [query/inventory]} (om/props this)
+    (let [{:query/keys [inventory current-route]} (om/props this)
           {:keys          [search-input cols layout grid-element grid-editable? breakpoint]
            :products/keys [selected-section edit-sections listing-layout]} (om/get-state this)
-          {:keys [route-params store]} (om/get-computed this)
+          {:keys [route-params]} current-route
           products (sort-by :store.item/index
                             (if (not-empty search-input)
                               (filter #(clojure.string/includes? (.toLowerCase (:store.item/name %))
                                                                  (.toLowerCase search-input)) inventory)
                               inventory))]
+      (debug "Inventory: " inventory)
+      (debug "Sorted products: " products)
       (dom/div
         {:id "sulo-product-list"}
         (dom/h1

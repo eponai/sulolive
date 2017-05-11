@@ -17,7 +17,10 @@
     (concat server-side client-side)))
 
 (defn- get-store [component-or-props]
-  (get-in (om/get-computed component-or-props) [:store]))
+  (let [props (if (om/component? component-or-props)
+                (om/props component-or-props)
+                component-or-props)]
+    (get-in props [:query/chat :chat/store])))
 
 (defn- get-store-id [component-or-props]
   (:db/id (get-store component-or-props)))

@@ -81,10 +81,13 @@
 (defmethod client-read :query/inventory
   [{:keys [db query target ast route-params] :as env} _ _]
   (let [store-id (c/parse-long (:store-id route-params))]
+    (debug "Read inventory with store-id: " store-id)
     (if target
       {:remote (assoc-in ast [:params :store-id] store-id)}
-      {:value (db/pull-all-with db '[*] {:where '[[?store :store/items ?e]]
-                                         :symbols {'?store store-id}})})))
+      {:value (let [items (db/pull-all-with db query {:where   '[[?store :store/items ?e]]
+                                                      :symbols {'?s store-id}})]
+                (debug "Inventory items: " items)
+                items)})))
 
 (defmethod client-read :query/order
   [{:keys [db query target ast route-params] :as env} _ _]

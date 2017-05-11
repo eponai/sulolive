@@ -31,7 +31,8 @@
 (defui Stream-no-loader
   static om/IQuery
   (query [this]
-    [{:query/stream [:stream/store :stream/state]}
+    [{:query/stream [{:stream/store [:db/id]}
+                     :stream/state]}
      {:query/stream-config [:ui.singleton.stream-config/subscriber-url]}])
   static script-loader/IRenderLoadingScripts
   (render-while-loading-scripts [this props]
@@ -43,16 +44,14 @@
 
   (subscribe-wowza [this]
     (let [{:keys [on-fullscreen-change]} (om/get-state this)
-          {:keys [store allowed-stream-states wowza-player-opts]
+          {:keys [allowed-stream-states wowza-player-opts]
            :or {allowed-stream-states #{:stream.state/live}}} (om/get-computed this)
           {:query/keys [stream]} (om/props this)]
       #?(:cljs
          (if-let [subscriber-host (.subscriber-host this)]
            (when (contains? (set allowed-stream-states) (:stream/state stream))
-             (let [stream-id (stream/stream-id store)
-                   photo-url (get-in store [:store/profile :store.profile/photo :photo/path] "/assets/img/storefront.jpg")
+             (let [stream-id (stream/stream-id (:stream/store stream))
                    stream-url (stream/wowza-live-stream-url subscriber-host stream-id)
-                   _ (debug "photo: url: " photo-url)
                    player (om/shared this :shared/wowza-player)]
                (wowza-player/init! player
                                    wowza-element-id

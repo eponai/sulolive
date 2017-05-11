@@ -43,11 +43,12 @@
                               :hide-label?     true})))))
 
 (defn edit-about-section [component]
-  (let [{:keys [store]} (om/get-computed component)
+  (let [{:query/keys [store]} (om/props component)
         {:about/keys [on-editor-change-desc
                       on-editor-create-desc] :as state} (om/get-state component)
         {{:store.profile/keys [cover tagline description]
           store-name          :store.profile/name} :store/profile} store]
+
     (dom/div
       (css/add-class :sl-store-about-section)
       (dom/div
@@ -161,8 +162,7 @@
                                                     :on-text-change    on-editor-change-desc})))))))
 
 (defn products-section [component]
-  (let [{:query/keys [current-route]} (om/props component)
-        {:keys [store]} (om/get-computed component)
+  (let [{:query/keys [current-route store]} (om/props component)
         {:products/keys                [selected-section search-input edit-sections]
          :products.edit-sections?/keys [new-section-count]} (om/get-state component)
         {:store/keys [items]} store
@@ -280,7 +280,14 @@
     [#?(:cljs
         {:proxy/photo-upload (om/get-query pu/PhotoUploader)})
      :query/current-route
-     :query/messages])
+     :query/messages
+     {:query/store [{:store/profile [:store.profile/name
+                                     :store.profile/tagline
+                                     :store.profile/description
+                                     :store.profile/return-policy
+                                     {:store.profile/photo [:photo/id]}
+                                     {:store.profile/cover [:photo/id]}]}
+                    {:store/sections [:store.section/label]}]}])
 
   Object
   (save-sections [this]
@@ -297,7 +304,7 @@
        (let [{uploaded-photo :profile/upload
               uploaded-cover :cover/upload
               :editor/keys   [about] :as state} (om/get-state this)
-             {:keys [store]} (om/get-computed this)
+             {:query/keys [store]} (om/props this)
 
              store-name (utils/input-value-by-id (:field.general/store-name form-inputs))
              store-tagline (utils/input-value-by-id (:field.general/store-tagline form-inputs))
@@ -327,7 +334,7 @@
   (save-return-policy [this]
     #?(:cljs
        (let [{:editor/keys [return-policy] :as state} (om/get-state this)
-             {:keys [store]} (om/get-computed this)
+             {:query/keys [store]} (om/props this)
              store-return-policy (when return-policy (quill/get-HTML return-policy))
              text-lentgh (or (when return-policy (.getLength return-policy)) 0)]
          (if (< text-lentgh (:text-max/return-policy state))
@@ -371,12 +378,12 @@
 
      :products/selected-section                :all})
   (render [this]
-    (let [{:keys [store]} (om/get-computed this)
+    (let [{:query/keys [current-route store]} (om/props this)
           {{:store.profile/keys [return-policy]} :store/profile} store
-          {:query/keys [current-route]} (om/props this)
           {:keys [store-id]} (:route-params current-route)
           shipping-policy nil
           {:return-policy/keys [on-editor-create on-editor-change] :as state} (om/get-state this)]
+
       (dom/div
         {:id "sulo-store-edit"}
         (grid/row-column
