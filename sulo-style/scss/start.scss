@@ -35,6 +35,10 @@ $section-footer-color: $primary-color;
 		padding: 0.5rem;
 		.feature-item {
 			padding: 2%;
+			.icon {
+				width: auto;
+				height: auto;
+			}
 			i {
 				padding: 10% 0;
 				font-size: 2rem;

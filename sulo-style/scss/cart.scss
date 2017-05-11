@@ -4,6 +4,9 @@
 		margin-top: 2rem;
 	}
 	.cart-empty .icon {
+		height: auto;
+		width: auto;
+		display: block;
 		svg {
 			height: 200px;
 		}
