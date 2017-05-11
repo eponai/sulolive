@@ -102,6 +102,17 @@ p a {
 }
 
 #the-sulo-app {
+	min-height: 100%;
+	display: flex;
+	flex-direction: column;
+	.sulo-page {
+		flex: 1 0;
+		display: flex;
+		flex-direction: column;
+		.page-container {
+			flex: 1 0;
+		}
+	}
 }
     .is-invalid-input {
       @include form-input-error($background-alpha: 0.025);

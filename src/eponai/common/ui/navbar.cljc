@@ -149,8 +149,8 @@
           (navbar-brand)
           (live-link)
           (menu/item nil
-                     (dom/input {:type           "text"
-                                    :placeholder "Search on SULO Live Help..."}))))
+                     (dom/input {:type        "text"
+                                 :placeholder "Search on SULO Live Help..."}))))
 
       (dom/div
         {:classes ["top-bar-right"]}
@@ -169,20 +169,22 @@
               (dom/span nil "Sign in"))))))))
 
 (def routes->titles
-  {:store-dashboard                   "Dashboard"
-   :store-dashboard/profile           "Profile"
-   :store-dashboard/stream            "Stream"
-   :store-dashboard/product-list      "Products"
-   :store-dashboard/product           "Products"
-   :store-dashboard/create-product    "Products"
-   :store-dashboard/order-list        "Orders"
-   :store-dashboard/order             "Orders"
-   :store-dashboard/settings          "Settings"
-   :store-dashboard/settings#payments "Settings"
-   :store-dashboard/settings#general  "Settings"
-   :store-dashboard/settings#shipping "Settings"
-   :store-dashboard/settings#activate "Settings"
-   :store-dashboard/settings#business "Settings"})
+  {:store-dashboard                      "Dashboard"
+   :store-dashboard/profile              "Store info"
+   :store-dashboard/stream               "Live stream"
+   :store-dashboard/product-list         "Products"
+   :store-dashboard/product              "Products"
+   :store-dashboard/create-product       "Products"
+   :store-dashboard/order-list           "Orders"
+   :store-dashboard/order-list-new       "Orders"
+   :store-dashboard/order-list-fulfilled "Orders"
+   :store-dashboard/order                "Order"
+   :store-dashboard/settings             "Business"
+   :store-dashboard/settings#payments    "Business"
+   :store-dashboard/settings#general     "Business"
+   :store-dashboard/settings#shipping    "Business"
+   :store-dashboard/settings#activate    "Business"
+   :store-dashboard/settings#business    "Business"})
 
 (defn user-menu-item [component]
   (let [{:query/keys [auth owned-store]} (om/props component)]
@@ -310,18 +312,18 @@
           (menu/item nil
                      (dom/div
                        (css/show-for :medium)
-                       (dom/input {:type           "text"
-                                      :placeholder "Search on SULO..."
-                                      :onKeyDown   (fn [e]
-                                                     #?(:cljs
-                                                        (when (= 13 (.. e -keyCode))
-                                                          (let [search-string (.. e -target -value)]
-                                                            (set! js/window.location (str "/goods?search=" search-string))))))})))
+                       (dom/input {:type        "text"
+                                   :placeholder "Search on SULO..."
+                                   :onKeyDown   (fn [e]
+                                                  #?(:cljs
+                                                     (when (= 13 (.. e -keyCode))
+                                                       (let [search-string (.. e -target -value)]
+                                                         (set! js/window.location (str "/goods?search=" search-string))))))})))
           (user-menu-item component)
           (menu/item
             nil
             (dom/a {:classes ["shopping-bag-icon"]
-                       :href (routes/url :shopping-bag)}
+                    :href    (routes/url :shopping-bag)}
                    (icons/shopping-bag)
                    (when (< 0 (count (:user.cart/items cart)))
                      (dom/span (css/add-class :badge) (count (:user.cart/items cart)))))))))))
@@ -396,8 +398,8 @@
                (om/update-state! this assoc :sidebar-open? false)
                )))
   (initLocalState [this]
-    {:cart-open?    false
-     :sidebar-open? false
+    {:cart-open?             false
+     :sidebar-open?          false
      :inline-sidebar-hidden? false
      #?@(:cljs [:on-click-event-fn #(.close-dropdown this %)
                 :on-close-sidebar-fn #(.close-sidebar this)
@@ -537,16 +539,6 @@
                             (dom/span nil "SULO Live")))))
                (when (some? owned-store)
                  [
-                  ;(sidebar-link this :store-dashboard {:store-id (:db/id owned-store)}
-                  ;              (dom/span nil "Dashboard"))
-                  ;(sidebar-link this :store-dashboard/stream {:store-id (:db/id owned-store)}
-                  ;              (dom/span nil "Live stream"))
-                  ;(sidebar-link this :store-dashboard/profile {:store-id (:db/id owned-store)}
-                  ;              (dom/span nil "Store info"))
-                  ;(sidebar-link this :store-dashboard/product-list {:store-id (:db/id owned-store)}
-                  ;              (dom/span nil "Products"))
-                  ;(sidebar-link this :store-dashboard/order-list {:store-id (:db/id owned-store)}
-                  ;              (dom/span nil "Orders"))
                   (menu/item
                     (when (= :store-dashboard (:route current-route))
                       (css/add-class :is-active))
@@ -566,13 +558,18 @@
                            (dom/div {:classes ["icon icon-shop"]})
                            (dom/span nil "Store info")))
                   (menu/item
-                    (when (= :store-dashboard/product-list (:route current-route))
+                    (when (contains? #{:store-dashboard/product-list
+                                       :store-dashboard/create-product
+                                       :store-dashboard/product} (:route current-route))
                       (css/add-class :is-active))
                     (dom/a {:onClick #(routes/set-url! this :store-dashboard/product-list {:store-id (:db/id owned-store)})}
                            (dom/div {:classes ["icon icon-product"]})
                            (dom/span nil "Products")))
                   (menu/item
-                    (when (= :store-dashboard/order-list (:route current-route))
+                    (when (contains? #{:store-dashboard/order-list
+                                       :store-dashboard/order-list-new
+                                       :store-dashboard/order-list-fulfilled
+                                       :store-dashboard/order} (:route current-route))
                       (css/add-class :is-active))
                     (dom/a {:onClick #(routes/set-url! this :store-dashboard/order-list {:store-id (:db/id owned-store)})}
                            (dom/div {:classes ["icon icon-order"]})

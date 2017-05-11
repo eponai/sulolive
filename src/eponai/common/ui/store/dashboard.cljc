@@ -35,6 +35,10 @@
 
 (def route-map {:store-dashboard/order-list     {:component   ol/OrderList
                                                  :computed-fn compute-store}
+                :store-dashboard/order-list-new {:component   ol/OrderList
+                                                 :computed-fn compute-store}
+                :store-dashboard/order-list-fulfilled {:component   ol/OrderList
+                                                       :computed-fn compute-store}
                 :store-dashboard/order          {:component   oef/OrderEditForm
                                                  :computed-fn compute-route-params}
                 :store-dashboard/create-order   {:component   oef/OrderEditForm

@@ -19,6 +19,8 @@
                               "/create"                         :store-dashboard/create-product
                               ["/" [#"(\d|\w|-)+" :product-id]] :store-dashboard/product}
                  "/orders"   {""                        :store-dashboard/order-list
+                              "/inbox"                  :store-dashboard/order-list-new
+                              "/fulfilled"              :store-dashboard/order-list-fulfilled
                               ["/" [#"create" :action]] :store-dashboard/create-order
                               ["/" [#"\w+" :order-id]]  :store-dashboard/order}
                  "/stream"   :store-dashboard/stream}})

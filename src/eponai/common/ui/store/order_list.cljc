@@ -10,18 +10,41 @@
     [om.next :as om :refer [defui]]
     [eponai.common.format.date :as date]
     [taoensso.timbre :refer [debug]]
-    [eponai.common.ui.elements.callout :as callout]))
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.common.ui.elements.menu :as menu]))
 
 
 (defui OrderList
   static om/IQuery
   (query [_]
-    [{:query/orders [:order/store :order/uuid :order/status {:order/items [:order.item/amount]} :order/amount]}])
+    [{:query/orders [:order/store :order/uuid :order/status {:order/items [:order.item/amount]} :order/amount]}
+     :query/current-route])
+
+  static store-common/IDashboardNavbarContent
+  (render-subnav [_ current-route]
+    (let [{:keys [route-params route]} current-route]
+      (menu/horizontal
+        (css/align :center)
+        (menu/item
+          (when (= route :store-dashboard/order-list)
+            (css/add-class :is-active))
+          (dom/a {:href (routes/url :store-dashboard/order-list route-params)}
+                 (dom/span nil "All")))
+        (menu/item
+          (when (= route :store-dashboard/order-list-new)
+            (css/add-class :is-active))
+          (dom/a {:href (routes/url :store-dashboard/order-list-new route-params)}
+                 (dom/span nil "Inbox")))
+        (menu/item
+          (when (= route :store-dashboard/order-list-fulfilled)
+            (css/add-class :is-active))
+          (dom/a {:href (routes/url :store-dashboard/order-list-fulfilled route-params)}
+                 (dom/span nil "Fulfilled"))))))
 
   Object
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
-          {:keys [query/orders]} (om/props this)
+          {:keys [query/orders query/current-route]} (om/props this)
           {:keys [search-input]} (om/get-state this)
 
           orders (if (not-empty search-input)
@@ -34,7 +57,12 @@
 
         (dom/div
           (css/add-class :section-title)
-          (dom/h2 nil "Orders"))
+          (cond (= (:route current-route) :store-dashboard/order-list)
+                (dom/h2 nil "All orders")
+                (= (:route current-route) :store-dashboard/order-list-new)
+                (dom/h2 nil "Inbox")
+                (= (:route current-route) :store-dashboard/order-list-fulfilled)
+                (dom/h2 nil "Fulfilled")))
         (callout/callout
           nil
           (dom/input {:value       (or search-input "")

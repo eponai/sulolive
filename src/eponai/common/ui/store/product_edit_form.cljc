@@ -126,6 +126,18 @@
      #?(:cljs
         {:proxy/photo-upload (om/get-query pu/PhotoUploader)})
      {:query/navigation [:category/name :category/label :category/path :category/href]}])
+  static store-common/IDashboardNavbarContent
+
+  (render-subnav [_ current-route]
+    (menu/breadcrumbs
+      nil
+      (menu/item nil (dom/a {:href (routes/url :store-dashboard/product-list (:route-params current-route))}
+                            "Products"))
+      (menu/item nil (dom/span nil
+                               (cond (= (:route current-route) :store-dashboard/create-product)
+                                     "New"
+                                     (= (:route current-route) :store-dashboard/product)
+                                     "Edit")))))
 
   Object
   (componentDidUpdate [this _ _]
@@ -207,15 +219,13 @@
         {:id "sulo-edit-product"}
         (when (or (not did-mount?) is-loading?)
           (common/loading-spinner nil))
+        ;(menu/breadcrumbs
+        ;  nil
+        ;  (menu/item nil (dom/a {:href (routes/url :store-dashboard/product-list (get-route-params this))}
+        ;                        "Products"))
+        ;  (menu/item nil (dom/span nil
+        ;                           (if (is-new-product? this) "New" "Edit"))))
         (dom/h1 (css/show-for-sr) (if product-id "Edit product" "New product"))
-        (grid/row-column
-          nil
-          (menu/breadcrumbs
-            nil
-            (menu/item nil (dom/a {:href (routes/url :store-dashboard/product-list {:store-id store-id})}
-                                  "Products"))
-            (menu/item nil (dom/span nil
-                                     (if (is-new-product? this) "New" "Edit")))))
 
         (dom/div
           nil

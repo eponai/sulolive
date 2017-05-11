@@ -345,17 +345,19 @@
 (defn order-not-found [component]
   (let [{:query/keys [current-route]} (om/props component)
         {:keys [order-id store-id]} (:route-params current-route)]
-    (grid/row-column
-      nil
-      (dom/h3 nil "Order not found")
-      (callout/callout
-        (->> (css/text-align :center)
-             (css/add-class :not-found))
-        (dom/p nil (dom/i {:classes ["fa fa-times-circle fa-2x"]}))
-        (dom/p nil
-               (dom/strong nil (str "Order #" order-id " was not found in "))
-               (dom/a {:href (routes/url :store-dashboard/order-list {:store-id store-id})}
-                      (dom/strong nil "your orders")))))))
+    (dom/div nil
+             (dom/div
+               (css/add-class :section-title)
+               (dom/h2 nil
+                       (dom/span nil "Order not found")))
+             (callout/callout
+               (->> (css/text-align :center)
+                    (css/add-class :not-found))
+               (dom/p nil (dom/i {:classes ["fa fa-times-circle fa-2x"]}))
+               (dom/p nil
+                      (dom/strong nil (str "Order #" order-id " was not found in "))
+                      (dom/strong nil (dom/a {:href (routes/url :store-dashboard/order-list {:store-id store-id})}
+                                             (dom/span nil "your orders"))))))))
 
 (defui OrderEditForm
   static om/IQuery
@@ -380,6 +382,14 @@
                                                           :shipping.address/region]}]}
                     {:order/store [{:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}]}]}
      :query/current-route])
+
+  static store-common/IDashboardNavbarContent
+  (render-subnav [_ current-route]
+    (menu/breadcrumbs
+      nil
+      (menu/item nil (dom/a {:href (routes/url :store-dashboard/order-list (:route-params current-route))}
+                            "Orders"))
+      (menu/item nil (dom/span nil "Order details"))))
 
   Object
   #?(:cljs
@@ -424,15 +434,15 @@
         ;(when-not did-mount?
         ;  (common/loading-spinner nil))
         (dom/h1 (css/show-for-sr) "Edit order")
-        (grid/row-column
-          nil
-          (menu/breadcrumbs
-            nil
-            (menu/item nil (dom/a {:href (routes/url :store-dashboard/order-list {:store-id store-id})}
-                                  "Orders"))
-            (menu/item nil (dom/span nil "Order details"))))
+        ;(grid/row-column
+        ;  nil
+        ;  (menu/breadcrumbs
+        ;    nil
+        ;    (menu/item nil (dom/a {:href (routes/url :store-dashboard/order-list {:store-id store-id})}
+        ;                          "Orders"))
+        ;    (menu/item nil (dom/span nil "Order details"))))
         (if (common/is-order-not-found? this)
-          (common/order-not-found this (routes/url :store-dashboard/order-list {:store-id store-id}))
+          (order-not-found this)
           (if (common/is-new-order? this)
             (create-order this)
             (edit-order this)))

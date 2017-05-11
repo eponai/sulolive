@@ -147,24 +147,29 @@ $dashboard-content-width: 54rem;
 			display: flex;
 			align-items: center;
 		}
-		li {
-			border-bottom: 3px solid transparent;
-			margin-right: 1rem;
-			transition: border-color .25s ease-in-out;
+		ul:not(.breadcrumbs) {
+			li {
+				border-bottom: 3px solid transparent;
+				margin-right: 1rem;
+				transition: border-color .25s ease-in-out;
+			}
+			li:not(.menu-text) {
+				&:hover, &.is-active {
+					$border-color: map-get($foundation-palette, primary);
+					border-bottom: 3px solid $border-color;
+					a {
+						color: $black;
+					}
+				}
+				&.is-active {
+					a {
+						font-weight: $global-weight-bold;
+					}
+				}
+			}
 		}
-		li:not(.menu-text) {
-			&:hover, &.is-active {
-				$border-color: map-get($foundation-palette, primary);
-				border-bottom: 3px solid $border-color;
-				a {
-					color: $black;
-				}
-			}
-			&.is-active {
-				a {
-					font-weight: $global-weight-bold;
-				}
-			}
+		ul.breadcrumbs {
+			margin: 0 1rem;
 		}
 	}
 
