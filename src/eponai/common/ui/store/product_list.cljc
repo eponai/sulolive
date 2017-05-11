@@ -20,7 +20,10 @@
     [eponai.common.ui.elements.callout :as callout]
     [eponai.web.ui.photo :as photo]
     [clojure.string :as string]
-    [eponai.client.parser.message :as msg]))
+    [eponai.client.parser.message :as msg]
+    [eponai.common.ui.store.product-edit-form :as pef]
+    [eponai.common :as c]
+    [eponai.common.ui.elements.menu :as menu]))
 
 (defn products->grid-layout [component products]
   (let [num-cols 3
@@ -85,6 +88,11 @@
                   :medium  350
                   :small   350
                   :tiny    250})
+
+(defn find-product [inventory product-id]
+  (let [product-id (c/parse-long-safe product-id)]
+    (some #(when (= (:db/id %) product-id) %) inventory)))
+
 (defui ProductList
 
   static om/IQuery
@@ -94,14 +102,31 @@
                         :store.item/index
                         {:store.item/photos [{:store.item.photo/photo [:photo/id]}
                                              :store.item.photo/index]}]}
-     {:query/store [:store/items]}
+     {:query/store [:store/items
+                    {:store/sections [:store.section/label]}]}
      :query/messages
-     :query/current-route])
+     :query/current-route
+     {:proxy/edit-form (om/get-query pef/ProductEditForm)}])
+
+  static store-common/IDashboardNavbarContent
+
+  (render-subnav [_ current-route]
+    (when (contains? #{:store-dashboard/product
+                       :store-dashboard/create-product} (:route current-route))
+      (menu/breadcrumbs
+        nil
+        (menu/item nil (dom/a {:href (routes/url :store-dashboard/product-list (:route-params current-route))}
+                              "Products"))
+        (menu/item nil (dom/span nil
+                                 (cond (= (:route current-route) :store-dashboard/create-product)
+                                       "New"
+                                       (= (:route current-route) :store-dashboard/product)
+                                       "Edit"))))))
 
   Object
-  (update-layout [this]
+  (update-layout [this props]
     #?(:cljs
-       (let [{:keys [query/inventory]} (om/props this)
+       (let [{:keys [query/inventory]} props
              WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))
              grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))
              size js/window.innerWidth
@@ -124,9 +149,15 @@
                               :query/inventory])
       (om/update-state! this assoc :grid-editable? false)))
 
+  (componentWillReceiveProps [this next-props]
+    (let [{new-inventory :query/inventory} next-props
+          {old-inventory :query/inventory} (om/props this)]
+      (when (not= old-inventory new-inventory)
+        (.update-layout this next-props))))
+
   (componentDidMount [this]
     (debug "State component did mount")
-    (.update-layout this))
+    (.update-layout this (om/props this)))
   (on-drag-stop [this layout]
     (om/update-state! this assoc :layout (products->grid-layout this (grid-layout->products this layout))))
   (on-breakpoint-change [this bp]
@@ -136,13 +167,14 @@
          (debug "Updating breakpoint: " breakpoint)
          ;(om/update-state! this assoc :breakpoint bp-key)
          (when-not (= breakpoint (:breakpoint (om/get-state this)))
-           (.update-layout this))
+           (.update-layout this (om/props this)))
          )))
   (initLocalState [this]
     {:cols                    {:xxlarge 3 :xlarge 3 :large 3 :medium 3 :small 2 :tiny 2}
      :products/listing-layout :products/grid})
   (render [this]
-    (let [{:query/keys [inventory current-route]} (om/props this)
+    (let [{:query/keys [inventory store current-route]
+           :proxy/keys [edit-form]} (om/props this)
           {:keys          [search-input cols layout grid-element grid-editable? breakpoint]
            :products/keys [selected-section edit-sections listing-layout]} (om/get-state this)
           {:keys [route-params]} current-route
@@ -153,135 +185,142 @@
                               inventory))]
       (debug "Inventory: " inventory)
       (debug "Sorted products: " products)
-      (dom/div
-        {:id "sulo-product-list"}
-        (dom/h1
-          (css/show-for-sr) "Products")
-        (dom/div
-          (css/add-class :section-title)
-          (dom/h2 nil "Products")
-          (dom/a (css/button {:href (routes/url :store-dashboard/create-product
-                                                {:store-id (:store-id route-params)
-                                                 :action   "create"})})
-                 "Add product"))
-        (callout/callout
-          nil
-          (grid/row
-            (css/add-classes [:expanded :collapse])
-            (grid/column
-              nil
-              (dom/input {:value       (or search-input "")
-                          :onChange    #(om/update-state! this assoc :search-input (.. % -target -value))
-                          :placeholder "Search Products..."
-                          :type        "text"}))
-            (grid/column
-              (->> (css/add-class :shrink)
-                   (css/text-align :right))
-              (dom/a
-                (cond->> (->> (css/button {:onClick #(om/update-state! this assoc :products/listing-layout :products/list)})
-                              (css/add-class :secondary))
-                         (not= listing-layout :products/list)
-                         (css/add-class :hollow))
-                (dom/i {:classes ["fa fa-list"]}))
-              (dom/a
-                (cond->> (->> (css/button {:onClick #(om/update-state! this assoc :products/listing-layout :products/grid)})
-                              (css/add-class :secondary))
-                         (not= listing-layout :products/grid)
-                         (css/add-class :hollow))
-                (dom/i {:classes ["fa fa-th"]})))
-            )
-          (if (= listing-layout :products/list)
-            (table/table
-              (css/add-class :hover)
-              (dom/div
-                (css/add-class :thead)
-                (dom/div
-                  (css/add-class :tr)
-                  (dom/span (css/add-class :th) (dom/span nil ""))
-                  (dom/span (css/add-class :th) "Product Name")
-                  (dom/span
-                    (->> (css/add-class :th)
-                         (css/text-align :right)) "Price")
-                  (dom/span
-                    (->> (css/add-class :th)
-                         (css/show-for :medium)) "Last Updated")))
-              (dom/div
-                (css/add-class :tbody)
-                (map (fn [p]
-                       (let [product-link (routes/url :store-dashboard/product
-                                                      {:store-id   (:store-id route-params)
-                                                       :product-id (:db/id p)})]
-                         (dom/a
-                           (css/add-class :tr {:href product-link})
-                           (dom/span (css/add-class :td)
-                                     (p/product-preview p {:transformation :transformation/thumbnail-tiny}))
-                           (dom/span (css/add-class :td)
-                                     (:store.item/name p))
-                           (dom/span
-                             (->> (css/add-class :td)
-                                  (css/text-align :right))
-                             (utils/two-decimal-price (:store.item/price p)))
-                           (dom/span
-                             (->> (css/add-class :td)
-                                  (css/show-for :medium))
-                             (when (:store.item/updated p)
-                               (date/date->string (* 1000 (:store.item/updated p)) "MMM dd yyyy HH:mm"))))))
-                     products)))
 
-            #?(:cljs
-               (dom/div
-                 nil
-                 (if grid-editable?
-                   [(dom/div
-                      nil
-                      (store-common/save-button {:onClick #(.save-product-order this)})
-                      (store-common/cancel-button {:onClick #(do
-                                                              (.update-layout this)
-                                                              (om/update-state! this assoc :grid-editable? false))}))
-                    (callout/callout-small
-                      (css/add-class :warning)
-                      (dom/small nil "This is how your products will appear in your store. Try moving them around and find a layout you like. Don't forget to save when you're done!"))]
-                   (store-common/edit-button
-                     {:onClick #(om/update-state! this assoc :grid-editable? true)}
-                     (dom/span nil "Edit layout")))
-                 (grid/row
-                   (css/add-class :collapse)
-                   (grid/column
-                     nil
-                     (when (and (some? layout) (some? grid-element) (not-empty products))
-                       (do
-                         (debug "Creating grid layout with row-hweight: " (get row-heights breakpoint) " breakpoint " breakpoint)
-                         (.createElement
-                           (.-React js/window)
-                           grid-element
-                           (clj->js {:className          (if grid-editable? "layout editable animate" "layout"),
-                                     :draggableHandle    ".product-move"
-                                     :layouts            {:xxlarge layout :xlarge layout :large layout :medium layout :small layout :tiny layout}
-                                     :breakpoints        {:xxlarge 1440, :xlarge 1200, :large 1024, :medium 750, :small 460 :tiny 0}
-                                     :rowHeight          (get row-heights breakpoint)
-                                     :cols               cols
-                                     :useCSSTransforms   true
-                                     :isDraggable        grid-editable?
-                                     :isResizable        false
-                                     :verticalCompact    true
-                                     :onBreakpointChange #(.on-breakpoint-change this %)
-                                     ;:onResizeStart    #(.edit-start this)
-                                     ;:onResizeStop     #(.edit-stop this nil %)
-                                     ;:onDragStart        #(.edit-start this)
-                                     ;:onDrag           #(.on-item-drag this %)
-                                     :onDragStop         #(.on-drag-stop this %)
-                                     })
-                           (into-array
-                             (map (fn [p]
-                                    (dom/div
-                                      {:key (str (:db/id p))}
-                                      (product-element this p)))
-                                  products))))))))
-               :clj
+      (if (contains? #{:store-dashboard/create-product
+                       :store-dashboard/product} (:route current-route))
+            (pef/->ProductEditForm (om/computed edit-form
+                                                {:product (find-product inventory (:product-id route-params))
+                                                 :store   store}))
 
-               (grid/products
-                 products
-                 (fn [p]
-                   (product-element this p))))))))))
+            (dom/div
+              {:id "sulo-product-list"}
+              (dom/h1
+                (css/show-for-sr) "Products")
+              (dom/div
+                (css/add-class :section-title)
+                (dom/h2 nil "Products")
+                (dom/a (css/button {:href (routes/url :store-dashboard/create-product
+                                                      {:store-id (:store-id route-params)
+                                                       :action   "create"})})
+                       "Add product"))
+              (callout/callout
+                nil
+                (grid/row
+                  (css/add-classes [:expanded :collapse])
+                  (grid/column
+                    nil
+                    (dom/input {:value       (or search-input "")
+                                :onChange    #(om/update-state! this assoc :search-input (.. % -target -value))
+                                :placeholder "Search Products..."
+                                :type        "text"}))
+                  (grid/column
+                    (->> (css/add-class :shrink)
+                         (css/text-align :right))
+                    (dom/a
+                      (cond->> (->> (css/button {:onClick #(om/update-state! this assoc :products/listing-layout :products/list)})
+                                    (css/add-class :secondary))
+                               (not= listing-layout :products/list)
+                               (css/add-class :hollow))
+                      (dom/i {:classes ["fa fa-list"]}))
+                    (dom/a
+                      (cond->> (->> (css/button {:onClick #(om/update-state! this assoc :products/listing-layout :products/grid)})
+                                    (css/add-class :secondary))
+                               (not= listing-layout :products/grid)
+                               (css/add-class :hollow))
+                      (dom/i {:classes ["fa fa-th"]})))
+                  )
+                (if (= listing-layout :products/list)
+                  (table/table
+                    (css/add-class :hover)
+                    (dom/div
+                      (css/add-class :thead)
+                      (dom/div
+                        (css/add-class :tr)
+                        (dom/span (css/add-class :th) (dom/span nil ""))
+                        (dom/span (css/add-class :th) "Product Name")
+                        (dom/span
+                          (->> (css/add-class :th)
+                               (css/text-align :right)) "Price")
+                        (dom/span
+                          (->> (css/add-class :th)
+                               (css/show-for :medium)) "Last Updated")))
+                    (dom/div
+                      (css/add-class :tbody)
+                      (map (fn [p]
+                             (let [product-link (routes/url :store-dashboard/product
+                                                            {:store-id   (:store-id route-params)
+                                                             :product-id (:db/id p)})]
+                               (dom/a
+                                 (css/add-class :tr {:href product-link})
+                                 (dom/span (css/add-class :td)
+                                           (p/product-preview p {:transformation :transformation/thumbnail-tiny}))
+                                 (dom/span (css/add-class :td)
+                                           (:store.item/name p))
+                                 (dom/span
+                                   (->> (css/add-class :td)
+                                        (css/text-align :right))
+                                   (utils/two-decimal-price (:store.item/price p)))
+                                 (dom/span
+                                   (->> (css/add-class :td)
+                                        (css/show-for :medium))
+                                   (when (:store.item/updated p)
+                                     (date/date->string (* 1000 (:store.item/updated p)) "MMM dd yyyy HH:mm"))))))
+                           products)))
+
+                  #?(:cljs
+                     (dom/div
+                       nil
+                       (if grid-editable?
+                         [(dom/div
+                            nil
+                            (store-common/save-button {:onClick #(.save-product-order this)})
+                            (store-common/cancel-button {:onClick #(do
+                                                                    (.update-layout this)
+                                                                    (om/update-state! this assoc :grid-editable? false))}))
+                          (callout/callout-small
+                            (css/add-class :warning)
+                            (dom/small nil "This is how your products will appear in your store. Try moving them around and find a layout you like. Don't forget to save when you're done!"))]
+                         (store-common/edit-button
+                           {:onClick #(om/update-state! this assoc :grid-editable? true)}
+                           (dom/span nil "Edit layout")))
+                       (grid/row
+                         (css/add-class :collapse)
+                         (grid/column
+                           nil
+                           (when (and (some? layout) (some? grid-element) (not-empty products))
+                             (do
+                               (debug "Creating grid layout with row-hweight: " (get row-heights breakpoint) " breakpoint " breakpoint)
+                               (.createElement
+                                 (.-React js/window)
+                                 grid-element
+                                 (clj->js {:className          (if grid-editable? "layout editable animate" "layout"),
+                                           :draggableHandle    ".product-move"
+                                           :layouts            {:xxlarge layout :xlarge layout :large layout :medium layout :small layout :tiny layout}
+                                           :breakpoints        {:xxlarge 1440, :xlarge 1200, :large 1024, :medium 750, :small 460 :tiny 0}
+                                           :rowHeight          (get row-heights breakpoint)
+                                           :cols               cols
+                                           :useCSSTransforms   true
+                                           :isDraggable        grid-editable?
+                                           :isResizable        false
+                                           :verticalCompact    true
+                                           :onBreakpointChange #(.on-breakpoint-change this %)
+                                           ;:onResizeStart    #(.edit-start this)
+                                           ;:onResizeStop     #(.edit-stop this nil %)
+                                           ;:onDragStart        #(.edit-start this)
+                                           ;:onDrag           #(.on-item-drag this %)
+                                           :onDragStop         #(.on-drag-stop this %)
+                                           })
+                                 (into-array
+                                   (map (fn [p]
+                                          (dom/div
+                                            {:key (str (:db/id p))}
+                                            (product-element this p)))
+                                        products))))))))
+                     :clj
+
+                     (grid/products
+                       products
+                       (fn [p]
+                         (product-element this p)))))))))))
 
 (def ->ProductList (om/factory ProductList))

@@ -111,7 +111,7 @@
      :store.section/label label}))
 
 (defn product [params]
-  (-> (select-keys params [:db/id :store.item/name :store.item/description :store.item/price :store.item/uuid])
+  (-> (select-keys params [:db/id :store.item/name :store.item/description :store.item/price :store.item/uuid :store.item/index])
       (assoc :store.item/created-at (date/current-millis))
       ;(update :store.item/skus #(map sku %))
       (update :store.item/description #(when (some? %) (.getBytes %)))

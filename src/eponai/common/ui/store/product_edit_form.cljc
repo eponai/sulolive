@@ -52,9 +52,13 @@
 (defn input-product [component]
   #?(:cljs
      (let [{:keys [uploaded-photos quill-editor]} (om/get-state component)
-           {:keys [input-price input-name input-sku-price input-sku-value input-sku-quantity]} form-elements]
+           {:keys [input-price input-name input-sku-price input-sku-value input-sku-quantity]} form-elements
+           {:query/keys [store]} (om/props component)
+           ;index (inc (apply max (map :store.item/index (:store/items store))))
+           ]
        {:store.item/name        (utils/input-value-or-nil-by-id input-name)
         :store.item/price       (utils/input-value-or-nil-by-id input-price)
+        ;:store.item/index index
         :store.item/currency    "CAD"
         :store.item/photos      uploaded-photos
         :store.item/description (quill/get-HTML quill-editor)})))
@@ -126,18 +130,6 @@
      #?(:cljs
         {:proxy/photo-upload (om/get-query pu/PhotoUploader)})
      {:query/navigation [:category/name :category/label :category/path :category/href]}])
-  static store-common/IDashboardNavbarContent
-
-  (render-subnav [_ current-route]
-    (menu/breadcrumbs
-      nil
-      (menu/item nil (dom/a {:href (routes/url :store-dashboard/product-list (:route-params current-route))}
-                            "Products"))
-      (menu/item nil (dom/span nil
-                               (cond (= (:route current-route) :store-dashboard/create-product)
-                                     "New"
-                                     (= (:route current-route) :store-dashboard/product)
-                                     "Edit")))))
 
   Object
   (componentDidUpdate [this _ _]
@@ -151,7 +143,8 @@
   (delete-product [this]
     (let [{:keys [product-id store-id]} (get-route-params this)]
       (msg/om-transact! this `[(store/delete-product ~{:store-id store-id
-                                                       :product  {:db/id (c/parse-long product-id)}})])))
+                                                       :product  {:db/id (c/parse-long product-id)}})
+                               :query/inventory])))
 
   (update-product [this]
     (let [{:keys [product-id store-id]} (get-route-params this)
@@ -165,7 +158,8 @@
                                                                            (assoc :store.item/section selected-section))
                                                        :product-id product-id
                                                        :store-id   store-id})
-                               :query/store])
+                               :query/store
+                               :query/inventory])
       (om/update-state! this dissoc :uploaded-photo)))
   (create-product [this]
     (let [{:keys [store-id]} (get-route-params this)
@@ -178,7 +172,8 @@
                                                                          (some? selected-section)
                                                                          (assoc :store.item/section selected-section))
                                                        :store-id store-id})
-                               :query/store])
+                               :query/store
+                               :query/inventory])
       (om/update-state! this dissoc :uploaded-photo)))
   (remove-uploaded-photo [this index]
     (om/update-state! this update :uploaded-photos (fn [ps]
@@ -202,7 +197,7 @@
     (let [{:keys [uploaded-photos queue-photo did-mount? sku-count selected-section store-sections]} (om/get-state this)
           {:query/keys [navigation]} (om/props this)
           {:keys [product-id store-id]} (get-route-params this)
-          {:keys [product store]} (om/get-computed this)
+          {:keys [product]} (om/get-computed this)
           {:store.item/keys [price photos skus description]
            item-name        :store.item/name} product
           message-pending-fn (fn [m] (when m (msg/pending? m)))

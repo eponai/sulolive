@@ -19,11 +19,6 @@
     [eponai.web.ui.store.edit-store :as es]
     [medley.core :as medley]))
 
-(defn find-product [store product-id]
-  (let [product-id (c/parse-long product-id)]
-    (some #(when (= (:db/id %) product-id) %)
-          (:store/items store))))
-
 (def compute-route-params #(select-keys % [:route-params]))
 (def compute-store #(select-keys % [:store]))
 
@@ -49,15 +44,8 @@
                                                        :computed-fn compute-store}
                 :store-dashboard/product-list         {:component   pl/ProductList
                                                        :computed-fn compute-route-params}
-                :store-dashboard/create-product       {:component   pef/ProductEditForm
-                                                       :computed-fn (fn [{:keys [store route-params]}]
-                                                                      {:route-params route-params
-                                                                       :store        store})}
-                :store-dashboard/product              {:component   pef/ProductEditForm
-                                                       :computed-fn (fn [{:keys [store route-params]}]
-                                                                      {:route-params route-params
-                                                                       :store        store
-                                                                       :product      (find-product store (:product-id route-params))})}
+                :store-dashboard/create-product       {:component pl/ProductList}
+                :store-dashboard/product              {:component pl/ProductList}
                 :store-dashboard                      {:component   dashboard/StoreDashboard}})
 
 ;(defn str->json [s]
