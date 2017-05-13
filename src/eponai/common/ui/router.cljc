@@ -54,9 +54,7 @@
   (query [this]
     [:query/current-route
      {:routing/app-root (into {}
-                              (map (fn [route]
-                                     (let [{:keys [component]} (route->component route)]
-                                       [route (if component (om/get-query component) [])])))
+                              (map (juxt identity (comp (fnil om/get-query []) :component route->component)))
                               routes)}])
   Object
   #?(:cljs
