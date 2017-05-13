@@ -30,7 +30,8 @@
   [route component]
   (defmethod route->component route
     [_]
-    {:component component})
+    {:component component
+     :factory   (om/factory component)})
   #?(:cljs
      (modules/set-loaded! route)))
 
@@ -55,9 +56,7 @@
      {:routing/app-root (into {}
                               (map (fn [route]
                                      (let [{:keys [component]} (route->component route)]
-                                       [route (if component
-                                                (om/get-query component)
-                                                [])])))
+                                       [route (if component (om/get-query component) [])])))
                               routes)}])
   Object
   #?(:cljs
@@ -72,11 +71,10 @@
   (render [this]
     (let [{:keys [routing/app-root query/current-route]} (om/props this)
           route (normalize-route (:route current-route))
-          {:keys [factory component]} (route->component route)
-          _ (when (nil? component)
-              (error "Sorry. No component found for route: " route
-                     ". You have to call (router/register-component <route> <component>) at the end of your component"
-                     ". You also have to require your component's namespace in eponai.common.ui_namespaces.cljc"
-                     ". We're making it this complicated because we want module code splitting."))
-          factory (or factory (om/factory component))]
+          {:keys [factory component]} (route->component route)]
+      (when (nil? component)
+        (error "Sorry. No component found for route: " route
+               ". You have to call (router/register-component <route> <component>) at the end of your component"
+               ". You also have to require your component's namespace in eponai.common.ui_namespaces.cljc"
+               ". We're making it this complicated because we want module code splitting."))
       (factory app-root))))
