@@ -55,7 +55,8 @@
   (query [this]
     [:query/current-route
      {:routing/app-root (into {}
-                              (map (juxt identity (comp (fnil om/get-query []) :component route->component)))
+                              (map (juxt identity #(or (some-> (route->component %) :component om/get-query)
+                                                       [])))
                               routes)}])
   Object
   #?(:cljs
@@ -77,3 +78,4 @@
                ". You also have to require your component's namespace in eponai.common.ui_namespaces.cljc"
                ". We're making it this complicated because we want module code splitting."))
       (factory app-root))))
+
