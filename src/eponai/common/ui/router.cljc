@@ -20,12 +20,14 @@
     route))
 
 (defmulti route->component normalize-route)
+(defmethod route->component :default [_] nil)
 
-(defmethod route->component :default
-  [_]
-  nil)
+(defn register-component
+  "Registers a component to a route for the router.
 
-(defn register-component [route component]
+  Call on the last line of your component's namespace with the route
+  the component is associated with."
+  [route component]
   (defmethod route->component route
     [_]
     {:component component})
@@ -35,6 +37,16 @@
 (def routes [:index :store :browse :checkout :store-dashboard
              :shopping-bag :login :sell :product :live :help
              :user :coming-soon :unauthorized])
+
+(defn should-update-when-route-is-loaded
+  "Returns true when route is loaded and the default om shouldComponentUpdate returns true."
+  [this props state]
+  (let [next-route (some-> (utils/shouldComponentUpdate-next-props props)
+                           (get-in [:query/current-route :route]))]
+
+    (and (or (nil? next-route)
+             (modules/loaded-route? (om/shared this :shared/modules) next-route))
+         (utils/shouldComponentUpdate-om this props state))))
 
 (defui Router
   static om/IQuery
@@ -49,16 +61,9 @@
                               routes)}])
   Object
   #?(:cljs
-     (shouldComponentUpdate [this props state]
-                            (let [next-route (some-> (utils/shouldComponentUpdate-next-props props)
-                                                     (get-in [:query/current-route :route])
-                                                     (normalize-route))
-                                  ret (and
-                                        (or (nil? next-route)
-                                            (modules/loaded-route? (om/shared this :shared/modules) next-route))
-                                        (utils/shouldComponentUpdate-om this props state))]
-                              (debug "should component update: " ret)
-                              ret)))
+     (shouldComponentUpdate
+       [this props state]
+       (should-update-when-route-is-loaded this props state)))
   (componentDidUpdate [this _ _]
 
        ;; TODO: Change this to shared/by-key when merged with other branch.

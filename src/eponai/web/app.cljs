@@ -30,7 +30,7 @@
   (binding [parser/*parser-allow-remote* false]
     (om/add-root! reconciler router/Router (gdom/getElement router/dom-app-id))))
 
-(defn update-route-fn [reconciler-atom ]
+(defn update-route-fn [reconciler-atom]
   (fn [{:keys [handler route-params] :as match}]
     (try
       (let [reconciler @reconciler-atom

@@ -6,50 +6,55 @@
     [taoensso.timbre :refer [debug error warn]])
   (:import goog.module.ModuleManager))
 
-
-(defprotocol IModuleLoader
-  (loaded-route? [this route])
-  (require-route! [this route callback])
-  (prefetch-route [this route]))
-
-(def extra-groupings [:react-select :stream+chat :photo-uploader])
+(def non-route-modules [:react-select :stream+chat :photo-uploader])
 (def dependencies {:login           [:index]
                    :user            [:photo-uploader]
                    :store           [:stream+chat]
                    :store-dashboard [:photo-uploader :react-select :stream+chat]})
 
+(defprotocol IRouteModuleLoader
+  (loaded-route? [this route] "Returns true if route has been loaded.")
+  (require-route! [this route callback]
+                  "Requires a route. Calls callback when it has been loaded. Immediatley if route was already loaded.")
+  (prefetch-route [this route]
+                  "Downloads the module but doesn't evaluate the javascript, thus not setting it to loaded."))
+
 (def loader (goog.module.ModuleLoader.))
 (def manager (doto (module-manager/getInstance)
                (.setLoader loader)))
 
-(defn- get-asset-version []
+(defn- get-asset-version
+  "Returns the version of our assets. One way to avoid browser cache issues between releases."
+  []
   (or (some-> (.getElementById js/document "asset-version-meta")
-           (.-content))
+              (.-content))
       "unset_asset_version"))
 
-(defn- route->module [route]
+(defn- route->module
+  "Turns a route into a module name."
+  [route]
   (or (namespace route)
       (name route)))
 
 (defn init-manager [routes]
   (let [asset-version (get-asset-version)
-        routes (into (set routes) extra-groupings)
+        routes (into (set routes) non-route-modules)
         route->js-file (into {} (comp (map route->module)
                                       (map (juxt identity #(vector (str "/js/out/closure-modules/" % ".js?v=" asset-version)))))
                              routes)
         module-infos (into {}
                            (map (juxt route->module #(into [] (map route->module) (get dependencies % []))))
-                           routes)
-        modules (clj->js route->js-file)
-        module-info (clj->js module-infos)]
-
-    (debug "route->js-file: " route->js-file)
-    (debug "module-infos: " module-infos)
-
+                           routes)]
     (doto manager
-      (.setAllModuleInfo module-info)
-      (.setModuleUris modules))))
+      (.setAllModuleInfo (clj->js module-infos))
+      (.setModuleUris (clj->js route->js-file)))))
 
+;; Adding all routes loaded before we've initialized the module manager
+;; here. This is useful for both dev and release (advanced) builds.
+;; Release: Finds modules which are included by require instead of by
+;;          included by loading a module.
+;; Dev: All modules should end up here. So here we can find modules which
+;;      aren't included by require but should be.
 (def routes-loaded-pre-init (atom #{}))
 
 (defn set-loaded!
@@ -66,28 +71,22 @@
           (error "Unable to mark module: " (route->module route) "as loaded: " e))))))
 
 (defrecord ModuleLoader [manager]
-  IModuleLoader
+  IRouteModuleLoader
   (loaded-route? [this route]
     (let [module-id (route->module route)
-          module (.getModuleInfo manager module-id)
-          ret (some-> module (.isLoaded))]
-      (debug "Loaded-route: " route " id: " module-id " module:" module " loaded?: " ret)
-      ret))
+          module (.getModuleInfo manager module-id)]
+      (some-> module (.isLoaded))))
   (require-route! [this route callback]
-    (debug "Requiring route: " route)
     (if (loaded-route? this route)
-      (do (debug "ALREADY Required route: " route)
-          (callback route))
-      (try (.execOnLoad manager (route->module route)
-                        #(do
-                           (debug "Required route!!!!!: " route)
-                           (try
-                             (callback route)
-                             (catch :default e
-                               (debug "Error after calling callback: " e)))))
-           (debug "CALLED .execOnLoad with module: " (route->module route))
-           (catch :default e
-             (error "Exception calling execOnLoad: " e " route: " route)))))
+      (callback route)
+      (try
+        (.execOnLoad manager (route->module route)
+                     #(try
+                        (callback route)
+                        (catch :default e
+                          (error "Error after calling callback: " e))))
+        (catch :default e
+          (error "Exception calling execOnLoad: " e " route: " route)))))
   (prefetch-route [this route]
     (when-not (loaded-route? this route)
       (try
@@ -95,19 +94,27 @@
         (catch :default e
           (error "Got error prefetching route: " route " error:" e))))))
 
-(defn advanced-compilation-modules [routes]
-  (when-let [routes (seq @routes-loaded-pre-init)]
-    (throw (ex-info "Some routes were loaded before initializing modules: " routes
-                    {:routes routes
+(defn advanced-compilation-modules
+  "Module loader for advanced compilation.
+  Assumes none of the modules have been loaded by :require. Throws exception when a module has."
+  [routes]
+  (when-let [routes-pre-init (seq @routes-loaded-pre-init)]
+    (throw (ex-info "Some routes were loaded before initializing modules: " routes-pre-init
+                    {:routes routes-pre-init
                      :cause  :loaded-pre-init})))
   (ModuleLoader. (init-manager routes)))
 
-(defn dev-modules [routes]
+(defn dev-modules
+  "Module loader for development. In dev every module should be loaded by :require
+  because optimizations :none doesn't support closure modules."
+  [routes]
   (init-manager routes)
-  (when-let [routes (seq @routes-loaded-pre-init)]
-    (run! set-loaded! routes))
-  ;; Modules are always loaded in dev, because modules only work in advanced and simple compilation.
-  (reify IModuleLoader
+  (when-let [routes-pre-init (seq @routes-loaded-pre-init)]
+    ;; Now that we've initialized the manager, we can set routes loaded.
+    ;; Not because it should make a difference, but it makes the dev fake
+    ;; implementation closer to the real implementaiton.
+    (run! set-loaded! routes-pre-init))
+  (reify IRouteModuleLoader
     (loaded-route? [this route]
       true)
     (require-route! [this route callback]
