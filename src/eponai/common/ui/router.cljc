@@ -39,15 +39,16 @@
              :shopping-bag :login :sell :product :live :help
              :user :coming-soon :unauthorized])
 
-(defn should-update-when-route-is-loaded
-  "Returns true when route is loaded and the default om shouldComponentUpdate returns true."
-  [this props state]
-  (let [next-route (some-> (utils/shouldComponentUpdate-next-props props)
-                           (get-in [:query/current-route :route]))]
+#?(:cljs
+   (defn should-update-when-route-is-loaded
+     "Returns true when route is loaded and the default om shouldComponentUpdate returns true."
+     [this props state]
+     (let [next-route (some-> (utils/shouldComponentUpdate-next-props props)
+                              (get-in [:query/current-route :route]))]
 
-    (and (or (nil? next-route)
-             (modules/loaded-route? (om/shared this :shared/modules) next-route))
-         (utils/shouldComponentUpdate-om this props state))))
+       (and (or (nil? next-route)
+                (modules/loaded-route? (om/shared this :shared/modules) next-route))
+            (utils/shouldComponentUpdate-om this props state)))))
 
 (defui Router
   static om/IQuery

@@ -12,7 +12,8 @@
     [eponai.client.routes :as routes]
     [clojure.string :as s]
     [eponai.web.ui.photo :as p]
-    [clojure.string :as string]))
+    [clojure.string :as string]
+    [eponai.common.ui.router :as router]))
 
 (def dropdown-elements
   {:dropdown/user       "sl-user-dropdown"
@@ -397,6 +398,9 @@
                ;(.removeEventListener js/document "touchstart" on-close-sidebar-fn)
                (om/update-state! this assoc :sidebar-open? false)
                )))
+  #?(:cljs
+     (shouldComponentUpdate [this props state]
+                            (router/should-update-when-route-is-loaded this props state)))
   (initLocalState [this]
     {:cart-open?             false
      :sidebar-open?          false
