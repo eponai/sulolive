@@ -693,3 +693,88 @@
 (defn mutation? [x]
   (and (sequential? x)
        (symbol? (first x))))
+
+
+;; Dedupe parser
+(defn- join-ast-queries [ast-key asts]
+  (letfn [(map-pattern [query]
+            (into {} (map (fn [x]
+                            (cond (keyword? x)
+                                  [x nil]
+                                  (and (map? x) (= 1 (count x)))
+                                  (first x)
+                                  :else
+                                  (throw (ex-info "Unknown query item" {:query query :item x})))))
+                  query))
+          (merge-fn [a b]
+            (if (and a b)
+              (if (and (vector? a) (vector? b))
+                (merge-queries (into a b))
+                (throw (ex-info "Unknown merge conflict" {:a a :b b})))
+              (or a b)))
+          (merge-queries [queries]
+            (apply merge-with merge-fn (into [] (map map-pattern) queries)))]
+    (if-let [query (->> (merge-queries (map :query asts))
+                        (map (fn [[k v]] (cond-> k (some? v) (hash-map v))))
+                        (seq))]
+      {ast-key query}
+      ast-key)))
+
+(defn- flatten-reads [env parser-read query]
+  (let [target nil
+        flattened (atom [])
+        read (fn [env k p]
+               (cond (is-routing? k)
+                     (parser-read env k p)
+                     (is-proxy? k)
+                     (util/read-join env k p)
+                     :else
+                     (swap! flattened conj (:ast env)))
+               ;; Return nil so the parser doesn't have to do anything with the return.
+               nil)
+        parser (om/parser {:read        read
+                           :mutate      (constantly nil)
+                           :elide-paths true})]
+    (debug "q: " query)
+    (parser env query target)
+    @flattened))
+
+(defn dedupe-parser [parser read]
+  (fn [env query & [target]]
+    (let [{mutations true reads false} (group-by mutation? query)
+          flattened (flatten-reads env read reads)
+          _ (debug "flattened: " flattened)
+          grouped (group-by (juxt :key :params) flattened)
+          _ (debug "grouped: " grouped)
+          joined (into [] (map (fn [[[key params] asts]]
+                                 {:key    key
+                                  :params params
+                                  :query  (cond-> (join-ast-queries key asts)
+                                                  (some? params)
+                                                  (list params))}))
+                       grouped)
+          _ (debug "joined: " joined)
+          by-key (group-by :key joined)
+          _ (debug "by-key: " by-key)
+          deduped-query (into (vec mutations)
+                              (mapcat (fn [[k vs]]
+                                        (if (= 1 (count vs))
+                                          [(with-meta
+                                             (:query (first vs))
+                                             {:params (:params (first vs))})]
+                                          ;; More than one query per key requires
+                                          ;; multiple proxies... hmm?
+                                          (into []
+                                                (map-indexed
+                                                  (fn [i v]
+                                                    (with-meta
+                                                      {(keyword "proxy"
+                                                                (str (namespace k) "-" (name k) "-" i))
+                                                       (:query v)}
+                                                      {:params (:params v)})))
+                                                vs))))
+                             by-key)]
+      (debug "Query: " query)
+      (debug "Deduped: " deduped-query)
+      deduped-query
+      )))
