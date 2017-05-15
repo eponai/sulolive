@@ -749,6 +749,9 @@
 (defn- flatten-reads [env parser-read query]
   (let [target nil
         flattened (atom [])
+        ;; TODO: Flatten reads without calling parser.
+        ;; Calling parser will create an ast of everything.
+        ;; Which takes like ~20+ ms in dev.
         read (fn [env k p]
                (cond (is-routing? k)
                      (parser-read env k p)
