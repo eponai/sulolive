@@ -3,6 +3,7 @@
             [taoensso.timbre :as timbre  :refer [debug error info warn trace]]
             [om.next :as om]
             [om.next.cache :as om.cache]
+            [om.next.impl.parser :as om.parser]
             [eponai.client.auth :as client.auth]
             [eponai.client.utils :as client.utils]
             [eponai.client.routes :as client.routes]
@@ -10,6 +11,7 @@
             [eponai.common.auth :as auth]
             [eponai.common.database :as db]
             [eponai.common.format.date :as date]
+            [clojure.data :as diff]
             [datascript.core :as datascript]
     #?(:cljs [pushy.core :as pushy])
     #?(:clj
@@ -113,13 +115,13 @@
 
 ;; -------- No matching dispatch
 
-(defn- is-proxy? [k]
+(defn is-proxy? [k]
   (= "proxy" (namespace k)))
 
-(defn- is-routing? [k]
+(defn is-routing? [k]
   (= "routing" (namespace k)))
 
-(defn- is-special-key? [k]
+(defn is-special-key? [k]
   (or (is-proxy? k)
       (is-routing? k)))
 
@@ -151,6 +153,11 @@
     (let [ret (read-or-mutate env k params)]
       (debug "parsed key:" k "returned:" ret)
       ret)))
+
+(defn wrap-debug-parser [parser]
+  (fn [env query & [target]]
+    (debug "parser query: " query " target: " target)
+    (parser env query target)))
 
 (defn with-times [read-or-mutate]
   (fn [env k p]
@@ -567,21 +574,24 @@
 
 (defn- make-parser [{:keys [read mutate] :as state} parser-mw read-mw mutate-mw]
   (let [read (-> read
-                 with-remote-guard
-                 with-local-read-guard
-                 read-with-dbid-in-query
-                 (read-mw state))
-        mutate (-> mutate
                    with-remote-guard
-                   mutate-with-error-logging
-                   (mutate-mw state))]
-    (-> (om/parser {:read read :mutate mutate :elide-paths (:elide-paths state)})
-        (parser-mw state))))
+                   with-local-read-guard
+                   read-with-dbid-in-query
+                   (read-mw state))
+        mutate (-> mutate
+            with-remote-guard
+            mutate-with-error-logging
+            (mutate-mw state))]
+    (-> (om/parser {:read read
+                    :mutate mutate
+                    :elide-paths (:elide-paths state)})
+        (parser-mw (assoc state ::read read)))))
 
 (defn client-parser-state [& [custom-state]]
   (merge {:read              client-read
           :mutate            client-mutate
-          :elide-paths       false
+          ;; We do it manually now.
+          :elide-paths       true
           :txs-by-project    (atom {})
           ::db-state         (atom {})}
          custom-state))
@@ -625,31 +635,34 @@
                                       #?(:cljs (js/alert "You're unauthorized to do that action"))
                                       ))})))))
 
+(declare dedupe-parser)
+
+(defn db-state-parser [parser state]
+  (fn [env query & [target]]
+    (parser (into env (-> (client-db-state env state)
+                          (assoc ::server? false)))
+            query target)))
+
 (defn client-parser
   ([] (client-parser (client-parser-state)))
   ([state]
    {:pre [(every? #(contains? state %) (keys (client-parser-state)))]}
    (make-parser state
                 (fn [parser state]
-                  (fn [env query & [target]]
-                    (parser (into env (-> (client-db-state env state)
-                                          (assoc ::server? false)))
-                            query target)))
-                (fn [read {:keys [elide-paths txs-by-project] :as state}]
+                  (-> parser
+                      (db-state-parser state)
+                      (cond-> (not (::skip-dedupe state)) (dedupe-parser (::read state)))))
+                (fn [read {:keys [txs-by-project]}]
                   (-> read
                       wrap-datascript-db
-                      (with-txs-by-project-atom txs-by-project)
-                      (cond-> (not elide-paths)
-                              (with-elided-paths (delay (client-parser (assoc state :elide-paths true)))))))
-                (fn [mutate {:keys [elide-paths] :as state}]
+                      (with-txs-by-project-atom txs-by-project)))
+                (fn [mutate state]
                   (-> mutate
                       with-pending-message
                       client-mutate-creation-time
                       mutate-with-db-before-mutation
                       wrap-client-mutate-auth
-                      wrap-datascript-db
-                      (cond-> (not elide-paths)
-                              (with-elided-paths (delay (client-parser (assoc state :elide-paths true))))))))))
+                      wrap-datascript-db)))))
 
 (defn server-parser-state [& [custom-state]]
   (merge {:read        server-read
@@ -693,3 +706,136 @@
 (defn mutation? [x]
   (and (sequential? x)
        (symbol? (first x))))
+
+;; Dedupe parser
+(defn- join-ast-queries [ast-key asts]
+  (letfn [(map-pattern [query]
+            (into {} (map (fn [x]
+                            (cond (keyword? x)
+                                  [x nil]
+                                  (and (map? x) (= 1 (count x)))
+                                  (first x)
+                                  :else
+                                  (throw (ex-info "Unknown query item" {:query query :item x})))))
+                  query))
+          (merge-fn [a b]
+            (if (and a b)
+              (if (and (vector? a) (vector? b))
+                (merge-queries [a b])
+                (throw (ex-info "Unknown merge conflict" {:a a :b b})))
+              (or a b)))
+          (merge-queries [queries]
+            (apply merge-with merge-fn (into [] (map map-pattern) queries)))
+          (unwrap-query [query]
+            (into []
+                  (if (map? query)
+                    (map (fn [[k v]]
+                           ;; Unwraps the map around a query {:key nil}
+                           ;; where the pattern is nil after joining patterns.
+                           (cond-> k (some? v) (hash-map (unwrap-query v)))))
+                    (mapcat (fn [x] (cond
+                                      (map? x) (unwrap-query x)
+                                      (keyword? x) (vector x)
+                                      :else
+                                      (throw (ex-info "Unable to unwrap query" {:query query
+                                                                                :x     x}))))))
+                  query))]
+    (if-let [query (->> (merge-queries (map :query asts))
+                        (unwrap-query)
+                        (seq))]
+      {ast-key (vec query)}
+      ast-key)))
+
+(defn- flatten-reads
+  "Returns map with #{:key :params :query}"
+  [env parser-read query]
+  (let [target nil
+        flattened (atom [])
+        ;; TODO: Flatten reads without calling parser.
+        ;; Calling parser will create an ast of everything.
+        ;; Which takes like ~20+ ms in dev.
+        read (fn [env k p]
+               (cond (is-routing? k)
+                     (parser-read env k p)
+                     (is-proxy? k)
+                     (util/read-join env k p)
+                     :else
+                     (swap! flattened conj (:ast env)))
+               ;; Return nil so the parser doesn't have to do anything with the return.
+               nil)
+        parser (om/parser {:read        read
+                           :mutate      (constantly nil)
+                           :elide-paths true})]
+    (parser env query target)
+    @flattened))
+
+(defn- key-params->dedupe-key [key params]
+  (keyword "proxy" (str (when-let [ns (namespace key)] (str ns "-"))
+                        (name key) "-" (hash params))))
+
+(defn- dedupe-reads [parser-read env reads]
+  (let [flattened (flatten-reads env parser-read reads)
+        grouped (group-by (juxt :key :params) flattened)
+        joined (into [] (map (fn [[[key params] asts]]
+                               {:key    key
+                                :params params
+                                :query  (cond-> (join-ast-queries key asts)
+                                                (seq params)
+                                                (list params))}))
+                     grouped)
+        by-key (group-by :key joined)
+        deduped-query (into []
+                            (mapcat (fn [[k vs]]
+                                      ;; More than one query per key requires
+                                      ;; multiple proxies... hmm?
+                                      (into []
+                                            (map (fn [{:keys [params query]}]
+                                                   {(key-params->dedupe-key k params)
+                                                    [query]}))
+                                            vs)))
+                            by-key)]
+    deduped-query))
+
+(defn dedupe-parser [parser parser-read]
+  (let [dedupe-cache (atom {})]
+    (fn [env query & [target]]
+      ;; assoc the passed parser instead of using this parser.
+      (let [env (assoc env :parser parser)
+            {mutations true reads false} (group-by mutation? query)
+            ;; Do mutations first.
+            mutate-ret (when (seq mutations)
+                         (parser env mutations target))
+            cache-path (delay [(hash reads)
+                               (hash (client.routes/current-route (:state env)))])
+            deduped-query (when (seq reads)
+                            (if-let [q (get-in @dedupe-cache @cache-path)]
+                              q
+                              (let [q (dedupe-reads parser-read env reads)]
+                                (swap! dedupe-cache assoc-in @cache-path q)
+                                q)))
+
+            deduped-parse (parser env deduped-query target)
+            deduped-result-parser
+            (om/parser
+              ;; Eliding paths and adding it in later.
+              {:elide-paths true
+               :mutate      (constantly nil)
+               :read        (fn [env k p]
+                              (cond (is-routing? k)
+                                    (parser-read env k p)
+                                    (is-proxy? k)
+                                    (util/read-join env k p)
+                                    :else
+                                    (when-let [v (get-in deduped-parse
+                                                         [(key-params->dedupe-key k p) k])]
+                                      {:value v})))})
+            ret (if (some? target)
+                  (cond-> mutate-ret
+                          (seq reads)
+                          ((fnil into []) deduped-parse))
+                  (cond->> mutate-ret
+                           (seq reads)
+                           (merge (-> (deduped-result-parser env query target)
+                                      (om.parser/path-meta (if (contains? env :path) (:path env) [])
+                                                           query)))))]
+        ret))))

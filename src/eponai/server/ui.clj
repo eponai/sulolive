@@ -23,7 +23,7 @@
     (run! (fn [[remote-key query]]
             ;; We don't need to query for datascript/schema since
             ;; we've already set up the datascript instance.
-            (let [query (remove #(= % :datascript/schema) query)
+            (let [query (into [] (remove #(= % :datascript/schema)) query)
                   res ((parser/server-parser) server-env query)]
               (cb {:db     (db/db (om/app-state @reconciler-atom))
                    :result res})))
