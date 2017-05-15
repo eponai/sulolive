@@ -115,7 +115,9 @@
                   (update :keys conj :query/messages)))
           (-> m
               (assoc :next (merge-read merge-fn next key value))
-              (update :keys conj key))))
+              (update :keys into (if (parser/is-special-key? key)
+                                   (map (fn [[k _]] k) value)
+                                   [key])))))
       {:keys [] :next db}
       ordered-novelty)))
 
