@@ -365,23 +365,6 @@
            (om/update-state! this dissoc :dropdown-key)
            (.removeEventListener js/document "click" on-click-event-fn)))))
 
-  (open-signin [this]
-    (debug "Open signin")
-    ;#?(:cljs (let [{:keys [lock]} (om/get-state this)
-    ;               current-url js/window.location.href
-    ;               options (clj->js {:connections  ["facebook"]
-    ;                                 :callbackURL  (str js/window.location.origin "/auth")
-    ;                                 :authParams   {:scope            "openid email user_friends"
-    ;                                                :connectionScopes {"facebook" ["email" "public_profile" "user_friends"]}
-    ;                                                :state            current-url}
-    ;                                 :primaryColor "#9A4B4F"
-    ;                                 :dict         {:title "SULO"}
-    ;                                 :icon         ""
-    ;                                 ;:container "modal"
-    ;                                 })]
-    ;           (.socialOrMagiclink lock options)))
-    )
-
   (open-sidebar [this]
     #?(:cljs (let [body (first (utils/elements-by-class "page-container"))
                    {:keys [on-close-sidebar-fn]} (om/get-state this)]
@@ -440,11 +423,6 @@
 
 
   (componentDidMount [this]
-    ;#?(:cljs (do
-    ;           (when js/Auth0LockPasswordless
-    ;             (let [lock (new js/Auth0LockPasswordless "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh" "sulo.auth0.com")]
-    ;               (om/update-state! this assoc :lock lock)))
-    ;           (om/update-state! this assoc :did-mount? true)))
     #?(:cljs
        (let [{:keys [on-transition-iteration-fn]} (om/get-state this)
              spinner (utils/element-by-id "sl-global-spinner")]

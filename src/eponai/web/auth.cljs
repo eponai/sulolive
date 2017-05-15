@@ -14,23 +14,40 @@
       (routes/url :index)
       current-url)))
 
-(extend-type js/Auth0Lock
+(extend-type js/Auth0LockPasswordless
   auth/IAuthLock
   (show-lock [this]
-    (.show this (clj->js {:allowedConnections ["Username-Password-Authentication"]
-                          :auth               {:params {:state (redirect-to-after-login)
-                                                        :scope "openid email"}}}))))
+    (let [options (clj->js {:connections  []
+                            :callbackURL  (str js/window.location.origin (routes/url :auth))
+                            :authParams   {:scope            "openid email user_friends"
+                                           :connectionScopes {"facebook" ["email" "public_profile" "user_friends"]}
+                                           :state            (redirect-to-after-login)}
+                            :primaryColor "#9FCFC8"
+                            :dict         {:title "SULO"}
+                            :icon         "/assets/img/auth0-icon.png"
+                            ;:container "modal"
+                            })]
+      (.emailcode this options))
+
+    ;(.show this (clj->js {:allowedConnections ["Username-Password-Authentication"]
+    ;                      :auth               {:params {:state (redirect-to-after-login)
+    ;                                                    :scope "openid email"}}}))
+    ))
 
 (defn auth0-lock []
-  (new js/Auth0Lock
+  (new js/Auth0LockPasswordless
        "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh"
-       "sulo.auth0.com"
-       (clj->js {:auth               {:redirectUrl (str js/window.location.origin (routes/url :auth))}
-                 :languageDictionary {:title "SULO"}
-                 :theme              {:primaryColor        "#9FCFC8"
-                                      :logo                "/assets/img/auth0-icon.png"
-                                      :labeledSubmitButton false}
-                 :allowForgotPassword false})))
+       "sulo.auth0.com")
+  ;(new js/Auth0Lock
+  ;     "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh"
+  ;     "sulo.auth0.com"
+  ;     (clj->js {:auth               {:redirectUrl (str js/window.location.origin (routes/url :auth))}
+  ;               :languageDictionary {:title "SULO"}
+  ;               :theme              {:primaryColor        "#9FCFC8"
+  ;                                    :logo                "/assets/img/auth0-icon.png"
+  ;                                    :labeledSubmitButton false}
+  ;               :allowForgotPassword false}))
+  )
 (defn fake-lock []
   (reify auth/IAuthLock
     (show-lock [this]
