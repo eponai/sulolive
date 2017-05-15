@@ -13,7 +13,8 @@
     [eponai.web.ui.coming-soon]
     [eponai.web.ui.start-store]
     [eponai.web.ui.login]
-    [eponai.web.ui.unauthorized]))
+    [eponai.web.ui.unauthorized]
+    #?(:cljs [eponai.web.chat])))
 
 ;; WARNING
 ;; This namespace should not be required by any

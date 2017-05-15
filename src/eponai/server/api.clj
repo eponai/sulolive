@@ -1,22 +1,11 @@
 (ns eponai.server.api
   (:require
     [compojure.core :refer :all]
-    [datomic.api :as d]
     [environ.core :refer [env]]
-    [eponai.common.database :as db]
-    [eponai.server.datomic.format :as datomic.format]
-    [eponai.server.external.stripe :as stripe]
-    [eponai.server.external.mailchimp :as mailchimp]
     [eponai.server.http :as http]
     [eponai.server.external.aws-s3 :as s3]
     [taoensso.timbre :refer [debug error info]]
-    [clojure.data.json :as json]
-    [amazonica.core :refer [defcredential]]
-    [eponai.server.datomic.format :as f]
-    [clojure.string :as string])
-  (:import (datomic Connection)
-           (clojure.lang ExceptionInfo)
-           (com.amazonaws.services.s3.model CannedAccessControlList AmazonS3Exception)))
+    [amazonica.core :refer [defcredential]]))
 
 (defcredential (env :aws-access-key-id) (env :aws-secret-access-key) (env :aws-s3-bucket-photos-zone))
 ; Actions

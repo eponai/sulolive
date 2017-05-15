@@ -2,14 +2,14 @@
   (:require
     [om.next :as om]
     [eponai.common.database :as db]
+    [eponai.common.shared :as shared]
     [eponai.client.chat :as chat]
     [eponai.web.sente :as sente]
     [taoensso.timbre :refer [debug]]))
 
-(defn chat-update-handler [reconciler-atom]
+(defn chat-update-handler [reconciler]
   (letfn [(has-update [store-id basis-t]
-            (let [reconciler @reconciler-atom
-                  curr-store-id (chat/current-store-id reconciler)]
+            (let [curr-store-id (chat/current-store-id reconciler)]
               (if-not (= store-id curr-store-id)
                 (debug "Message store-id and current route store id differ. Ignoring update. "
                        {:current-store-id curr-store-id
@@ -32,7 +32,7 @@
 (defn- start-listening-event [store-id]
   [:store-chat/start-listening! {:store-id store-id}])
 
-(defrecord StoreChatListener [reconciler-atom sente-sender]
+(defrecord StoreChatListener [sente-sender]
   chat/IStoreChatListener
   (start-listening! [this store-id]
     (sente/subscribe-event sente-sender (start-listening-event store-id)))
@@ -44,7 +44,7 @@
     (debug "Shutting down ChatStoreListener: " this)
     (sente/stop-sente! sente-sender)))
 
-(defn store-chat-listener [reconciler-atom]
-  (let [chat-event-handler (chat-update-handler reconciler-atom)
+(defmethod shared/shared-component [:shared/store-chat-listener ::shared/prod] [reconciler _ _]
+  (let [chat-event-handler (chat-update-handler reconciler)
         sente-sender (sente/delayed-start "/ws/chat" [chat-event-handler])]
-    (->StoreChatListener reconciler-atom sente-sender)))
+    (->StoreChatListener sente-sender)))

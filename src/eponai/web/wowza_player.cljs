@@ -1,7 +1,8 @@
 (ns eponai.web.wowza-player
   (:require
     [goog.object :as gobj]
-    [taoensso.timbre :refer [error debug]]))
+    [taoensso.timbre :refer [error debug]]
+    [eponai.common.shared :as shared]))
 
 (defprotocol IWowzaPlayer
   (init! [this element-id config] "Initializes a player. Will use the element-id and config for the rest of the calls")
@@ -58,3 +59,9 @@
       nil)
     (destroy [_]
       nil)))
+
+(defmethod shared/shared-component [:shared/wowza-player ::shared/dev] [_ _ _]
+  (real-player))
+
+(defmethod shared/shared-component [:shared/wowza-player ::shared/prod] [_ _ _]
+  (fake-player))

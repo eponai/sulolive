@@ -3,9 +3,12 @@
     [eponai.common.ui.dom :as my-dom]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements :as elements]
+    [eponai.common.shared :as shared]
     #?(:cljs
        [eponai.web.utils :as utils])
     [eponai.client.chat :as client.chat]
+    ;; Require eponai.web.chat so it's required somewhere.
+    #?(:cljs [eponai.web.chat])
     [clojure.string :as str]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
@@ -49,9 +52,9 @@
   client.chat/IStoreChatListener
   (start-listening! [this store-id]
     (debug "Will start listening to store-id: " store-id)
-    (client.chat/start-listening! (:shared/store-chat-listener (om/shared this)) store-id))
+    (client.chat/start-listening! (shared/by-key this :shared/store-chat-listener) store-id))
   (stop-listening! [this store-id]
-    (client.chat/stop-listening! (:shared/store-chat-listener (om/shared this)) store-id))
+    (client.chat/stop-listening! (shared/by-key this :shared/store-chat-listener) store-id))
   ISendChatMessage
   (get-chat-message [this]
     (:chat-message (om/get-state this)))

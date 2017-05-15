@@ -3,6 +3,7 @@
   (:require
     [om.next :as om :refer [defui]]
     [om.dom]
+    [eponai.common.shared :as shared]
     [taoensso.timbre :refer [error debug info]]
     #?(:cljs [eponai.web.modules :as modules])
     #?(:cljs [eponai.web.scroll-helper :as scroll-helper])
@@ -47,7 +48,7 @@
                               (get-in [:query/current-route :route]))]
 
        (and (or (nil? next-route)
-                (modules/loaded-route? (om/shared this :shared/modules) next-route))
+                (modules/loaded-route? (shared/by-key this :shared/modules) next-route))
             (utils/shouldComponentUpdate-om this props state)))))
 
 (defui Router
@@ -66,7 +67,7 @@
   (componentDidUpdate [this _ _]
 
        ;; TODO: Change this to shared/by-key when merged with other branch.
-       ;; (scroll-helper/scroll-on-did-render (om/shared this :shared/scroll-helper))
+       ;; (scroll-helper/scroll-on-did-render (shared/by-key this :shared/scroll-helper))
        )
   (render [this]
     (let [{:keys [routing/app-root query/current-route]} (om/props this)

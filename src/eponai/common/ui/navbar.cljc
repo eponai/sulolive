@@ -5,6 +5,7 @@
     #?(:cljs
        [eponai.web.utils :as utils])
     [om.next :as om :refer [defui]]
+    [eponai.common.shared :as shared]
     [eponai.client.auth :as auth]
     [taoensso.timbre :refer [debug error]]
     [eponai.common.ui.elements.menu :as menu]
@@ -165,7 +166,7 @@
                :onClick  #(.open-dropdown component :dropdown/user)}
               (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))
             (dom/a
-              (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
+              (->> {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
                    (css/button-hollow))
               (dom/span nil "Sign in"))))))))
 
@@ -201,7 +202,7 @@
        (menu/item
          (css/show-for :large)
          (dom/a
-           (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared component)))}
+           (->> {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
                 (css/button-hollow))
            (dom/span nil "Sign in"))))
      (when (some? auth)
@@ -593,7 +594,7 @@
                  (menu/vertical (css/add-class :signout-menu)
                                 (if (some? auth)
                                   (menu/item nil (dom/a {:href "/logout"} (dom/small nil "Sign out")))
-                                  (menu/item nil (dom/a (css/button {:onClick #(auth/show-lock (:shared/auth-lock (om/shared this)))}) (dom/span nil "Sign in"))))))
+                                  (menu/item nil (dom/a (css/button {:onClick #(auth/show-lock (shared/by-key this :shared/auth-lock))}) (dom/span nil "Sign in"))))))
                (menu/item
                  nil
                  (menu/horizontal
@@ -658,6 +659,6 @@
                                  (->> {:href "/logout"}
                                       (css/button-hollow)) (dom/span nil "Sign out")))
                 (menu/item nil (dom/a
-                                 (->> {:onClick #(auth/show-lock (:shared/auth-lock (om/shared this)))}
+                                 (->> {:onClick #(auth/show-lock (shared/by-key this :shared/auth-lock))}
                                       (css/button)) (dom/span nil "Sign in")))))))))))
 (def ->Sidebar (om/factory Sidebar))

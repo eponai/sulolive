@@ -5,7 +5,8 @@
     [clojure.set :as set]
     [om.next :as om]
     [eponai.common.database :as db]
-    [taoensso.timbre :as timbre :refer [error debug warn]]))
+    [taoensso.timbre :as timbre :refer [error debug warn]]
+    [eponai.common.shared :as shared]))
 
 (def root-route-key :routing/app-root)
 
@@ -60,7 +61,7 @@
    {:pre [(or (nil? url) (string? url))]}
    #?(;; There's no URL to set in clj land, so do nothing.
       :clj nil
-      :cljs (if-let [history (:shared/browser-history (om/shared component))]
+      :cljs (if-let [history (shared/by-key component :shared/browser-history)]
               (pushy/set-token! history url)
               (warn "No history found in shared for component: " component
                     ". Make sure :history was passed to the reconciler."))))

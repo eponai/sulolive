@@ -11,7 +11,8 @@
             [eponai.client.backend :as backend]
             [eponai.client.parser.merge :as merge]
             [eponai.client.reconciler :as reconciler]
-            [eponai.web.chat :as web.chat]))
+            [eponai.common.shared :as shared]
+            [eponai.web.chat]))
 
 (def app-registry (.-AppRegistry js/ReactNative))
 (def logo-img (js/require "./images/cljs.png"))
@@ -55,7 +56,7 @@
                                                                      remote-config)
                                        :remotes                    (:order remote-config)
                                        ;; We can use websockets in react-native?!
-                                       :shared/store-chat-listener (web.chat/store-chat-listener reconciler-atom)
+                                       :shared/store-chat-listener ::shared/prod
                                        :shared/local-storage       nil
                                        :logger                     nil
                                        :migrate                    nil

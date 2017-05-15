@@ -7,8 +7,7 @@
     [taoensso.timbre :refer [debug info]]
     [eponai.common.format :as cf]
     [eponai.server.external.cloudinary :as cloudinary]
-    [eponai.common.format.date :as date])
-  (:import (com.stripe.exception CardException)))
+    [eponai.common.format.date :as date]))
 
 
 (defn create [{:keys [state auth system]} {:keys [country name]}]
@@ -136,24 +135,21 @@
                   (update :order/items conj {:order.item/type   :order.item.type/shipping
                                              :order.item/amount (bigdec shipping-fee)}))]
     (when source
-      (let [charge (try
-                     (stripe/create-charge (:system/stripe system) {:amount      (int (* 100 total-amount)) ;Convert to cents for Stripe
-                                                                    ;:application_fee (int (+ application-fee transaction-fee))
-                                                                    :currency    "cad"
-                                                                    :source      source
-                                                                    :metadata    {:order_uuid (:order/uuid order)}
-                                                                    :shipping    {:name    (:shipping/name shipping)
-                                                                                  :address {:line1       (:shipping.address/street address)
-                                                                                            :line2       (:shipping.address/street2 address)
-                                                                                            :postal_code (:shipping.address/postal address)
-                                                                                            :city        (:shipping.address/locality address)
-                                                                                            :state       (:shipping.address/region address)
-                                                                                            :country     (:shipping.address/country address)}}
-                                                                    :destination {:account id
-                                                                                  :amount  (int (* 100 destination-amount))}}) ;Convert to cents for Stripe
-                     (catch CardException e
-                       (throw (ex-info (.getMessage e)
-                                       {:user-message (.getMessage e)}))))
+      (let [charge (stripe/create-charge (:system/stripe system) {:amount      (int (* 100 total-amount)) ;Convert to cents for Stripe
+                                                                  ;:application_fee (int (+ application-fee transaction-fee))
+                                                                  :currency    "cad"
+                                                                  :source      source
+                                                                  :metadata    {:order_uuid (:order/uuid order)}
+                                                                  :shipping    {:name    (:shipping/name shipping)
+                                                                                :address {:line1       (:shipping.address/street address)
+                                                                                          :line2       (:shipping.address/street2 address)
+                                                                                          :postal_code (:shipping.address/postal address)
+                                                                                          :city        (:shipping.address/locality address)
+                                                                                          :state       (:shipping.address/region address)
+                                                                                          :country     (:shipping.address/country address)}}
+                                                                  :destination {:account id
+                                                                                :amount  (int (* 100 destination-amount))}}) ;Convert to cents for Stripe
+
             charge-entity {:db/id     (db/tempid :db.part/user)
                            :charge/id (:charge/id charge)}
             is-paid? (:charge/paid? charge)
