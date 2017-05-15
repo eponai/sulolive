@@ -746,7 +746,9 @@
       {ast-key (vec query)}
       ast-key)))
 
-(defn- flatten-reads [env parser-read query]
+(defn- flatten-reads
+  "Returns map with #{:key :params :query}"
+  [env parser-read query]
   (let [target nil
         flattened (atom [])
         ;; TODO: Flatten reads without calling parser.
@@ -795,37 +797,45 @@
     deduped-query))
 
 (defn dedupe-parser [parser parser-read]
-  (fn [env query & [target]]
-    ;; assoc the passed parser instead of using this parser.
-    (let [env (assoc env :parser parser)
-          {mutations true reads false} (group-by mutation? query)
-          ;; Do mutations first.
-          mutate-ret (when (seq mutations)
-                       (parser env mutations target))
-          deduped-query (when (seq reads)
-                          (dedupe-reads parser-read env reads))
-          deduped-parse (parser env deduped-query target)
-          deduped-result-parser
-          (om/parser
-            ;; Eliding paths and adding it in later.
-            {:elide-paths true
-             :mutate      (constantly nil)
-             :read        (fn [env k p]
-                            (cond (is-routing? k)
-                                  (parser-read env k p)
-                                  (is-proxy? k)
-                                  (util/read-join env k p)
-                                  :else
-                                  (when-let [v (get-in deduped-parse
-                                                       [(key-params->dedupe-key k p) k])]
-                                    {:value v})))})
-          ret (if (some? target)
-                (cond-> mutate-ret
-                        (seq reads)
-                        ((fnil into []) deduped-parse))
-                (cond->> mutate-ret
-                         (seq reads)
-                         (merge (-> (deduped-result-parser env query target)
-                                    (om.parser/path-meta (if (contains? env :path) (:path env) [])
-                                                         query)))))]
-      ret)))
+  (let [dedupe-cache (atom {})]
+    (fn [env query & [target]]
+      ;; assoc the passed parser instead of using this parser.
+      (let [env (assoc env :parser parser)
+            {mutations true reads false} (group-by mutation? query)
+            ;; Do mutations first.
+            mutate-ret (when (seq mutations)
+                         (parser env mutations target))
+            cache-path (delay [(hash reads)
+                               (hash (client.routes/current-route (:state env)))])
+            deduped-query (when (seq reads)
+                            (if-let [q (get-in @dedupe-cache @cache-path)]
+                              q
+                              (let [q (dedupe-reads parser-read env reads)]
+                                (swap! dedupe-cache assoc-in @cache-path q)
+                                q)))
+
+            deduped-parse (parser env deduped-query target)
+            deduped-result-parser
+            (om/parser
+              ;; Eliding paths and adding it in later.
+              {:elide-paths true
+               :mutate      (constantly nil)
+               :read        (fn [env k p]
+                              (cond (is-routing? k)
+                                    (parser-read env k p)
+                                    (is-proxy? k)
+                                    (util/read-join env k p)
+                                    :else
+                                    (when-let [v (get-in deduped-parse
+                                                         [(key-params->dedupe-key k p) k])]
+                                      {:value v})))})
+            ret (if (some? target)
+                  (cond-> mutate-ret
+                          (seq reads)
+                          ((fnil into []) deduped-parse))
+                  (cond->> mutate-ret
+                           (seq reads)
+                           (merge (-> (deduped-result-parser env query target)
+                                      (om.parser/path-meta (if (contains? env :path) (:path env) [])
+                                                           query)))))]
+        ret))))
