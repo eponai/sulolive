@@ -386,3 +386,8 @@
   [{:keys [db query target]} _ _]
   (when-not target
     {:value (db/pull-one-with db query {:where '[[?e :ui/singleton :ui.singleton/loading-bar]]})}))
+
+(defmethod client-read :datascript/schema
+  [{:keys [target]} _ _]
+  (when target
+    {:remote true}))

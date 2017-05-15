@@ -651,7 +651,7 @@
                 (fn [parser state]
                   (-> parser
                       (db-state-parser state)
-                      (dedupe-parser (::read state))))
+                      (cond-> (not (::skip-dedupe state)) (dedupe-parser (::read state)))))
                 (fn [read {:keys [txs-by-project]}]
                   (-> read
                       wrap-datascript-db

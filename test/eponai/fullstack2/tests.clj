@@ -7,6 +7,9 @@
     [eponai.client.auth :as auth]
     [eponai.client.reconciler :as reconciler]
     [eponai.client.utils :as client.utils]
+    [eponai.client.parser.read]
+    [eponai.client.parser.mutate]
+    [eponai.common.ui-namespaces]
     [eponai.common.parser :as parser :refer [client-mutate server-mutate]]
     [datomock.core :as dato-mock]
     [taoensso.timbre :refer [info debug]]
@@ -19,7 +22,11 @@
     [eponai.server.test-util :as test-util]
     [eponai.server.datomic.mocked-data :as mocked-data]
     [aprint.dispatch :as adispatch]
-    [taoensso.timbre :as timbre])
+    [taoensso.timbre :as timbre]
+    [eponai.common.ui.router :as router]
+    [clojure.data :as diff]
+    [clojure.data :as data]
+    [eponai.common.database :as db])
   (:import (om.next Reconciler)))
 
 ;; Print method stuff
@@ -99,11 +106,12 @@
     (reset! reconciler-atom reconciler)
     reconciler))
 
-(defn- take-with-timeout [chan]
+(defn- take-with-timeout [chan timed-out]
   (let [timeout-ms 3000
         timeout (a/timeout timeout-ms)
         [v c] (a/alts!! [chan timeout])]
-    (when (not= c timeout)
+    (if (= c timeout)
+      timed-out
       v)))
 
 (defn action-messages [client history-id tx]
@@ -139,12 +147,14 @@
 (defn run-test [system client merge-chan test-fn]
   {:post [(map? system)]}
   (let [{::keys [label actions]} (unwrap test-fn)]
-    (reduce (fn [system {::keys [tx pre post] :as action}]
-              (let [pre-tx-parse (om/transact! client tx)
+    (reduce (fn [system {::keys [tx pre post post-fn] :as action}]
+              (let [system (assoc system :reconciler client)
+                    tx (if (fn? tx) (tx system) tx)
+                    pre-tx-parse (om/transact! client tx)
                     history-id (parser/reconciler->history-id client)
-                    response (take-with-timeout merge-chan)]
+                    response (take-with-timeout merge-chan :timed-out)]
                 (debug "Got response from transaction: " response)
-                (if (nil? response)
+                (if (= response :timed-out)
                   (do (test/report {:type     :error
                                     :expected "Transaction to get a response."
                                     :actual   (ex-info "Test timed out" {:test-label label
@@ -157,9 +167,11 @@
                         pre-compare (when pre (compare-paths pre pre-tx-parse))
                         post-compare (when post (compare-paths post post-tx-parse))
                         success-message? #(and (message/final? %) (message/success? %))
+                        post-result (when post-fn (post-fn system))
                         pass? (and (every? success-message? messages)
                                    (empty? pre-compare)
-                                   (empty? post-compare))]
+                                   (empty? post-compare)
+                                   (nil? post-result))]
                     (if pass?
                       (test/report {:type :pass})
                       (letfn [(report-message [fail-msg]
@@ -176,7 +188,8 @@
                                                                     (dissoc :expected))}))
                                       compared))]
                         (run! report-message (filter (complement success-message?) messages))
-                        (run! report-compare [[:pre pre-compare] [:post post-compare]])))
+                        (run! report-compare [[:pre pre-compare] [:post post-compare]])
+                        (when post-result (test/report post-result))))
                     system))))
             system
             actions)))
@@ -220,13 +233,61 @@
               ::pre  {[:query/auth :user/email] nil}
               ::post {[:query/auth :user/email] mocked-data/test-user-email}}]
     {::label   "Should be able to log in store"
-    ::actions [test
-               (assoc test ::pre (::post test))]}))
+     ::actions [test
+                (assoc test ::pre (::post test))]}))
+
+(defn route->route-data [conn route]
+  (letfn [(get-id [query]
+            (str (db/one-with (db/db conn) query)))]
+    (merge
+      {:route route}
+      (cond
+        (#{:checkout :store :store-dashboard} route)
+        {:route-params {:store-id (get-id {:where '[[?e :store/owners]]})}}
+        (#{:product} route)
+        {:route-params {:product-id (get-id {:where '[[?e :store.item/name]]})}}
+        (#{:user} route)
+        {:route-params {:user-id (get-id {:where '[[?e :user/email]]})}}))))
+
+(defn test-dedupe-parser-returns-super-set-of-original-parser []
+  (let [original (parser/client-parser (parser/client-parser-state {::parser/skip-dedupe true}))
+        orig-parse (fn [reconciler]
+                     (original (#'om/to-env reconciler) (om/get-query router/Router) nil))
+        dedupe (parser/client-parser (parser/client-parser-state {::parser/skip-dedupe false}))
+        dedupe-parse (fn [reconciler]
+                       (dedupe (#'om/to-env reconciler) (om/get-query router/Router) nil))
+        route->test-parser-returning-same-thing
+        (fn [route]
+          {::tx      (fn [system]
+                       `[(~'routes/set-route!
+                           ~(route->route-data
+                              (get-in system [:system/datomic :conn])
+                              route))
+                         ~@(om/get-query router/Router)])
+           ::post-fn (fn [{:keys [reconciler]}]
+                       (let [[orig dedup both]
+                             (data/diff (orig-parse reconciler)
+                                        (dedupe-parse reconciler))]
+                         (when (some? dedup)
+                           (info "Dedupe got something else: " dedupe))
+                         (when (some? orig)
+                           {:type     :fail
+                            :expected "dedupe parse to have at least everything that original parse had"
+                            :actual   orig})))})]
+    {::label   "Dedupe parser should return a superset of the original parser"
+     ::actions (into [{::tx [:datascript/schema]}]
+                     (comp
+                       ;; Removes unauthorized because its query doesn't send
+                       ;; anything remote, causing our tests to timeout.
+                       ;; TODO: Make it possible to create a tx that doesn't
+                       ;; send remote.
+                       (remove #{:unauthorized})
+                       (map route->test-parser-returning-same-thing))
+                     router/routes)}))
 
 
 (test/deftest full-stack-tests
   ;; Runs the test multiple times to make sure things are working
   ;; after setup and tear down.
   (run-tests [test-store-login-2
-              test-store-login-2
-              test-store-login-2]))
+              test-dedupe-parser-returns-super-set-of-original-parser]))
