@@ -82,7 +82,7 @@
     #?(:cljs
        (let [{:keys [on-fullscreen-change]} (om/get-state this)]
          (debug "Stream will unmount")
-         (wowza-player/destroy (om/shared this :shared/wowza-player))
+         (wowza-player/destroy (shared/by-key this :shared/wowza-player))
          (remove-fullscreen-listener on-fullscreen-change))))
 
   (componentDidUpdate [this _ _]

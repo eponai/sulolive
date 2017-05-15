@@ -67,7 +67,7 @@
   (componentDidUpdate [this _ _]
 
        ;; TODO: Change this to shared/by-key when merged with other branch.
-       ;; (scroll-helper/scroll-on-did-render (om/shared this :shared/scroll-helper))
+       ;; (scroll-helper/scroll-on-did-render (shared/by-key this :shared/scroll-helper))
        )
   (render [this]
     (let [{:keys [routing/app-root query/current-route]} (om/props this)
