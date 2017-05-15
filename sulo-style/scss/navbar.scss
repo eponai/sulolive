@@ -23,7 +23,7 @@
 	}
 	.top-bar-left {
 		ul {
-			li:first-child, li:nth-child(2), li:last-child {
+			li:last-child {
 				border-right: $global-border;
 			}
 		}
@@ -95,7 +95,8 @@
 
 .navbar-container {
 	background: $navbar-background-color;
-	box-shadow: 1px 1px 3px 0 rgba($black, 0.1);
+	// box-shadow: 0 0 1px 0 rgba($black, 0.05);
+	border-bottom: $global-border-secondary;
 	display: flex;
 	align-items: center;
 	height: $navbar-height;
@@ -136,6 +137,7 @@
 
 .navbar-live {
 	border-right: $global-border;
+	border-left: $global-border;
 	text-transform: uppercase;
 }
 #navbar-brand {

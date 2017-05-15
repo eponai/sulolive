@@ -75,7 +75,7 @@ $dashboard-content-width: 54rem;
 	}
 	#sulo-navbar .navbar-container {
 		box-shadow: none;
-		border-bottom: $global-border;
+		border-bottom: $global-border-secondary;
 		// background: map-get($foundation-palette, action);
 	}
 	#sulo-navbar, #store-navbar {
@@ -122,6 +122,7 @@ $dashboard-content-width: 54rem;
 	#store-navbar {
 		$background: map-get($foundation-palette, secondary);
 		background: $white;
+		border-bottom: $global-border-secondary;
 		a {
 			transition: color .25s ease-in-out;
 			color: $dark-gray;
