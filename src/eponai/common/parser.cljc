@@ -650,8 +650,8 @@
    (make-parser state
                 (fn [parser state]
                   (-> parser
-                      (dedupe-parser (::read state))
-                      (db-state-parser state)))
+                      (db-state-parser state)
+                      (dedupe-parser (::read state))))
                 (fn [read {:keys [txs-by-project]}]
                   (-> read
                       wrap-datascript-db
