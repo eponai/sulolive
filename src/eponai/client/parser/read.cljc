@@ -249,28 +249,30 @@
            (navigate-category db query "art")])))
 
 (def memoized-nav-categories
-  (let [cache (atom nil)]
-    (fn [db query]
-      (let [{:keys [last-db last-val last-query] :as c} @cache]
-        (assert (or (nil? last-query) (= query last-query))
-                (str "Query for :query/navigation must always be the same for us to be able to cache it."
-                     " Queries weren't: " query " and " (:query c)))
-        (if (and (some? last-val)
-                 (or (identical? db last-db)
-                     (and (datascript/attr-equal? db last-db :category/name)
-                          (datascript/attr-equal? db last-db :category/label)
-                          (datascript/attr-equal? db last-db :category/path)
-                          (datascript/attr-equal? db last-db :category/children))))
-          last-val
-          (let [ret (nav-categories db query)]
-            (reset! cache {:last-db db :last-val ret :last-query query})
-            ret))))))
+  ;; Don't memoize on jvm clients.
+  #?(:clj  nav-categories
+     :cljs (let [cache (atom nil)]
+             (fn [db query]
+               (let [{:keys [last-db last-val last-query] :as c} @cache]
+                 (assert (or (nil? last-query) (= query last-query))
+                         (str "Query for :query/navigation must always be the same for us to be able to cache it."
+                              " Queries weren't: " query " and " (:query c)))
+                 (if (and (some? last-val)
+                          (or (identical? db last-db)
+                              (and (datascript/attr-equal? db last-db :category/name)
+                                   (datascript/attr-equal? db last-db :category/label)
+                                   (datascript/attr-equal? db last-db :category/path)
+                                   (datascript/attr-equal? db last-db :category/children))))
+                   last-val
+                   (let [ret (nav-categories db query)]
+                     (reset! cache {:last-db db :last-val ret :last-query query})
+                     ret)))))))
 
 (defmethod client-read :query/navigation
   [{:keys [db target query route-params]} _ _]
   (if target
     {:remote true}
-    {:value (nav-categories db query)}))
+    {:value (memoized-nav-categories db query)}))
 
 (defmethod client-read :query/item
   [{:keys [db query target route-params ast]} _ _]
