@@ -62,6 +62,18 @@
                    (db/transact state [new-cart
                                        [:db/add user-id :user/cart (:db/id new-cart)]])))))})
 
+(defmutation shopping-bag/remove-item
+  [{:keys [state auth] :as env} _ {:keys [sku]}]
+  {:auth ::auth/any-user
+   :resp {:success "Item added to bag"
+          :error   "Did not add that item, sorry"}}
+  {:action (fn []
+             (let [{:keys [user-id]} auth
+                   cart (db/one-with (db/db state) {:where   '[[?u :user/cart ?e]]
+                                                    :symbols {'?u user-id}})]
+               (when (some? cart)
+                 (db/transact-one state [:db/retract cart :user.cart/items (c/parse-long sku)]))))})
+
 (defmutation beta/vendor
   [{:keys [state auth system] ::parser/keys [return exception]} _ {:keys [name site email]}]
   {:auth ::auth/public

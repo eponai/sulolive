@@ -46,9 +46,8 @@
         (dom/small nil (or error payment-error)))
       (dom/div (css/text-align :right)
                (dom/a
-                 (->> (css/button (when-not (script-loader/is-loading-scripts? this)
-                                    {:onClick #(.save-payment this)}))
-                      (css/add-class :disabled))
+                 (css/button (when-not (script-loader/is-loading-scripts? this)
+                               {:onClick #(.save-payment this)}))
                  (dom/span nil "Complete purchase"))
                (dom/p nil
                       (dom/small nil "This sale will be processed as ")
