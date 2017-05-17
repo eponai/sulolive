@@ -38,7 +38,7 @@
                (dom/strong
                  (css/add-class :store-name) store-name))))))
 
-(defn sku-menu-item [sku]
+(defn sku-menu-item [component sku]
   (let [{:store.item/keys [price photos]
          product-id       :db/id
          item-name        :store.item/name :as product} (get sku :store.item/_skus)
@@ -57,28 +57,35 @@
 
           (dom/div nil
                    (dom/a
-                     (->> {:href      (routes/url :product {:product-id product-id})}
-                   (css/add-class :name))
+                     (->> {:href (routes/url :product {:product-id product-id})}
+                          (css/add-class :name))
                      (dom/span nil item-name)))
           (dom/div nil
                    (dom/span (css/add-class :variation) (:store.item.sku/variation sku))))
 
-        (grid/column
-          (->> (grid/column-size {:small 3 :medium 2 :large 1})
-               (grid/column-offset {:small 3 :large 0})
-               (css/align :right))
-          (dom/input {:type             "number"
-                         ;; :defaultValue doesn't work for clj dom/input.
-                         ;; File om.next/dom bug?
-                          :defaultValue 1
-                          #?@(:clj [:value 1])}))
 
+
+        ;(grid/column
+        ;  (css/text-align :right)
+        ;  (dom/i {:classes ["fa fa-trash-o"]}))
         (grid/column
           (css/text-align :right)
           (dom/div nil
                    (dom/span
-              (css/add-class :price)
-              (utils/two-decimal-price price))))))))
+                     (css/add-class :price)
+                     (utils/two-decimal-price price))))
+        (grid/column
+          (->>
+            (css/add-class :shrink)
+            (css/align :right))
+          (dom/a {:onClick #(.remove-item component sku)} (dom/i {:classes ["fa fa-trash-o"]}))
+          ;(dom/input {:type             "number"
+          ;               ;; :defaultValue doesn't work for clj dom/input.
+          ;               ;; File om.next/dom bug?
+          ;                :defaultValue 1
+          ;                #?@(:clj [:value 1])})
+          )
+        ))))
 
 (defn store-items-element [component skus-by-store]
   (dom/div
@@ -91,7 +98,7 @@
           (store-element s)
           (menu/vertical
             nil
-            (map sku-menu-item skus))
+            (map #(sku-menu-item component %) skus))
           (grid/row
             (->> (css/align :middle)
                  (css/text-align :right)
@@ -105,8 +112,7 @@
                        (dom/strong nil (utils/two-decimal-price (+ item-price shipping-price))))
                 (dom/a
                   (->> {:href (routes/url :checkout {:store-id (:db/id s)})}
-                       (css/button)
-                       (css/add-class :disabled)) "Checkout"))))
+                       (css/button)) "Checkout"))))
           ))
       skus-by-store)))
 
@@ -114,16 +120,22 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:query/cart [{:user.cart/items [:db/id
-                                 :store.item.sku/variation
-                                 {:store.item/_skus [:store.item/price
-                                                     {:store.item/photos [{:store.item.photo/photo [:photo/id]}
-                                                                          :store.item.photo/index]}
-                                                     :store.item/name
-                                                     {:store/_items [{:store/profile [:store.profile/name
-                                                                                      {:store.profile/photo [:photo/id]}]}]}]}]}]}
+     {:query/cart [{:user.cart/items [:store.item.sku/variation
+                                      :db/id
+                                      :store.item.sku/inventory
+                                      {:store.item/_skus [:store.item/price
+                                                          {:store.item/photos [{:store.item.photo/photo [:photo/id]}
+                                                                               :store.item.photo/index]}
+                                                          :store.item/name
+                                                          {:store/_items [{:store/profile [:store.profile/name
+                                                                                           {:store.profile/photo [:photo/id]}]}]}]}]}]}
      {:query/auth [:user/email]}])
   Object
+  (remove-item [this sku]
+    (debug "SKU REMOVE: " sku)
+    (om/transact! this [(list 'shopping-bag/remove-item
+                              {:sku (:db/id sku)})
+                        :query/cart]))
   (componentWillReceiveProps [this p]
     (let [{:keys [did-mount?]} (om/get-state this)]
       (if-not did-mount?
