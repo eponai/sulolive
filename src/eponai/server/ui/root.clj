@@ -32,6 +32,10 @@
                        ;; which doesn't have CORS set up (for good reason).
                        ;:data-lazy "true"
                        })
+          (dom/script {:src "https://cdn.jsdelivr.net/hls.js/latest/hls.js"
+                       :type common/text-javascript})
+          (dom/script {:src "https://cdn.plyr.io/1.8.2/plyr.js"
+                       :type common/text-javascript})
           (dom/script {:src  (common/budget-js-path)
                        :type common/text-javascript})
 

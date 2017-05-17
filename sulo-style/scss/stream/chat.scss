@@ -71,7 +71,7 @@
 	position: relative;
 	z-index: $chat-zindex;
 	display: none;
-	background: linear-gradient(to right, rgba($chat-container-bg-color, 0.5), rgba($chat-container-bg-color, 0.9));
+	background: linear-gradient(to right, rgba($chat-container-bg-color, 0.6), rgba($chat-container-bg-color, 0.9));
 	box-shadow: -1px 0 10rem 0 rgba($chat-container-box-shadow-color, 0.35);
 	padding: 0;
 	position: absolute;

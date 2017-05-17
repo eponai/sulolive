@@ -130,6 +130,12 @@
 (defn button [opts & content]
   (element dom/button opts content))
 
+(defn video [opts & content]
+  (element dom/video opts content))
+
+(defn source [opts & content]
+  (element dom/source opts content))
+
 ;; TABLE
 
 (defn table [opts & content]
