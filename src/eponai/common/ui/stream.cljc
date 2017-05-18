@@ -52,7 +52,7 @@
           {:keys [widescreen? store]} (om/get-computed this)
           subscriber-url (:ui.singleton.stream-config/subscriber-url stream-config)
           stream-id (stream/stream-id store)
-          stream-url "http://content.jwplatform.com/manifests/vM7nH0Kl.m3u8" ;(stream/wowza-live-stream-url subscriber-url stream-id)
+          stream-url (stream/wowza-live-stream-url subscriber-url stream-id)
           {:stream/keys [title]} stream]
       (dom/div
         {:id "sulo-video-container" :classes [(str "flex-video"

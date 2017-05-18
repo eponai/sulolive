@@ -119,6 +119,16 @@
             (grid/column
               (->> (grid/column-order {:small 1 :medium 2})
                    (css/add-class :store-container))
+              ;<div
+              ;class="fb-like"
+              ;data-share="true"
+              ;data-width="450"
+              ;data-show-faces="true">
+              ;</div>
+              (dom/div
+                (css/add-class :fb-like {:data-share      true
+                                         :data-show-faces true
+                                         :data-width      450}))
 
               (grid/row
                 (->> (css/align :middle)
@@ -175,7 +185,7 @@
                                  (css/add-class ::css/is-active))
                         (dom/a
                           {:onClick #(om/update-state! this assoc :selected-navigation (:db/id s))
-                           :href (routes/url :store route-params)}
+                           :href    (routes/url :store route-params)}
                           (dom/span nil label)))))
                   (:store/sections store)))))
           (cond (= selected-navigation :about)

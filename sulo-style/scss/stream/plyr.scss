@@ -84,6 +84,8 @@ $video-control-highlight-color: map-get($foundation-palette, highlight);
 }
 
 .stream-container {
+	overflow:hidden;
+	margin-bottom: 0;
 	&.sulo-show-chat {
 		#sulo-video-container {
 			.plyr__controls {

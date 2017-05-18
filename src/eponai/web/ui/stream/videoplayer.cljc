@@ -1,9 +1,9 @@
 (ns eponai.web.ui.stream.videoplayer
-  #?(:cljs (:require-macros [hiccups.core :refer [html]]))
   (:require
     #?(:cljs
        [eponai.web.utils :as utils])
     [om.next :as om :refer [defui]]
+    [eponai.web.social :as social]
     [eponai.common.ui.dom :as dom]
     [taoensso.timbre :refer [debug info error]]
     [clojure.string :as string]
@@ -180,14 +180,15 @@
             (dom/p (css/add-class :title) "Share this stream")
             (menu/horizontal
               nil
-              (menu/item nil (dom/a (css/add-class :share-button)
-                                    (dom/img {:src "/assets/img/icons/FB-f-Logo__blue_1024.png"})
-                                    ;(dom/i {:classes ["fa fa-facebook fa-fw"]})
-                                    ))
-              (menu/item nil (dom/a (css/add-class :share-button)
-                                    (dom/img {:src "/assets/img/icons/Twitter_Logo_White_On_Blue.png"})))
-              (menu/item nil (dom/a (css/add-class :share-button)
-                                    (dom/img {:src "/assets/img/icons/Email-96.png"}))))
+              (menu/item
+                nil
+                (social/share-button nil {:platform :social/facebook}))
+              (menu/item
+                nil
+                (social/share-button nil {:platform :social/twitter}))
+              (menu/item
+                nil
+                (social/share-button nil {:platform :social/email})))
 
             (dom/div
               nil
