@@ -55,6 +55,14 @@ $chat-available-breakpoint: medium;
 }
 .fullscreen {
 	.stream-chat-container {
+		position: fixed;
+		top:0;
 		z-index: 2147483647;
+	}
+
+
+	.sulo-share-video-overlay {
+		position: fixed !important;
+		z-index: 2147483647 !important;
 	}
 }

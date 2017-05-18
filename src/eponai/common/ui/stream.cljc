@@ -51,18 +51,15 @@
     (let [{:query/keys [stream stream-config]} (om/props this)
           {:keys [widescreen? store]} (om/get-computed this)
           subscriber-url (:ui.singleton.stream-config/subscriber-url stream-config)
-          subscriber-url "http://192.168.1.12:1935"
           stream-id (stream/stream-id store)
-          stream-url (stream/wowza-live-stream-url subscriber-url stream-id)
+          stream-url "http://content.jwplatform.com/manifests/vM7nH0Kl.m3u8" ;(stream/wowza-live-stream-url subscriber-url stream-id)
           {:stream/keys [title]} stream]
       (dom/div
         {:id "sulo-video-container" :classes [(str "flex-video"
                                                    (when widescreen? " widescreen"))]}
         (dom/div {:classes ["sulo-spinner-container"]}
                  (dom/span {:classes ["sl-loading-signal"]}))
-        (dom/div
-          (css/add-class :video-player-container)
-          (video/->VideoPlayer {:source stream-url}))))))
+        (video/->VideoPlayer {:source stream-url})))))
 
 ;(def Stream (script-loader/js-loader {:component Stream-no-loader
 ;                                      #?@(:cljs [:scripts [[#(exists? js/WowzaPlayer)

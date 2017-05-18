@@ -69,7 +69,7 @@
           {:store.profile/keys [photo cover tagline description]
            store-name          :store.profile/name} profile
           stream (first stream)
-          is-live? (= :stream.state/live (:stream/state stream))
+          is-live? true                                     ;(= :stream.state/live (:stream/state stream))
           show-chat? (:show-chat? st is-live?)
           {:keys [route route-params]} current-route]
       (common/page-container
