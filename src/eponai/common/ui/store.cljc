@@ -40,6 +40,9 @@
         (dom/p nil (dom/strong nil "Returns"))
         (quill/->QuillRenderer {:html (f/bytes->str return-policy)})))))
 
+(defn store-url [store-id]
+  #?(:cljs (str js/window.location.origin (routes/url :store {:store-id store-id}))
+     :clj nil))
 (defui Store
   static om/IQuery
   (query [_]
@@ -131,7 +134,7 @@
                 (css/add-class :shrink)
                 (dom/div (css/add-class :store-name) (dom/strong nil store-name))
                 (dom/p (css/add-class :tagline)
-                       (dom/span nil (or tagline "This is my tagline"))))
+                       (dom/span nil tagline)))
               (grid/column
                 (->> (grid/column-size {:small 12 :medium 4 :large 3})
                      (css/text-align :center)
@@ -158,20 +161,23 @@
             ;        (when (= stream-state :stream.state/offline)
             ;          (dom/span (css/add-class :sl-tooltip-text)
             ;                    "See the help checklist below to get started streaming")))
-            (menu/horizontal
-              (->> (css/align :right)
-                   (css/add-class :share-menu))
-              (menu/item
-                nil
-                (social/share-button nil {:platform :social/facebook}))
-              (menu/item
-                nil
-                (social/share-button nil {:platform :social/twitter})
-                )
-              ;(menu/item
-              ;  {:title "Share on email"}
-              ;  (social/share-button nil {:platform :social/email}))
-              )))
+            (let [store-url (store-url (:store-id route-params))]
+              (menu/horizontal
+                (->> (css/align :right)
+                     (css/add-class :share-menu))
+                (menu/item
+                  nil
+                  (social/share-button {:platform :social/facebook
+                                        :href     store-url}))
+                (menu/item
+                  nil
+                  (social/share-button {:platform :social/twitter
+                                        :href     store-url})
+                  )
+                ;(menu/item
+                ;  {:title "Share on email"}
+                ;  (social/share-button nil {:platform :social/email}))
+                ))))
 
         (dom/div
           {:id "shop"}
