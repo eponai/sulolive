@@ -30,9 +30,9 @@
                   {:classes (conj classes ::css/photo)
                    :style   {:backgroundImage (str "url(" url-small ")")}}
                   (dom/div
-                    (cond-> (css/add-class :background)
-                            loaded-main?
-                            (assoc :style {:backgroundImage (str "url(" url ")")})
+                    (cond-> (css/add-class :background {:style {:backgroundImage (str "url(" url ")")}})
+                            ;loaded-main?
+                            ;(assoc :style {:backgroundImage (str "url(" url ")")})
                             loaded-main?
                             (update :classes conj :loaded)))
 
