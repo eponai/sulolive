@@ -62,16 +62,31 @@ p a {
 @include label-hollow;
 
 .menu.share-menu {
+	// overflow-x: hidden;
 	.share-button {
 		padding: 1rem 0.75rem;
 		img {
 			height: 1.5rem;
 			width: 1.5rem;
 		}
+		.sl-tooltip-text {
+			right: -50%;
+			transform: translateX(-0.75rem);
+			margin-top: -0.5rem;
+		}
 	}
 	:last-child {
 		.share-button {
-			padding-right:0;
+			padding-right:1.5rem;
+			.sl-tooltip-text {
+				transform: translateX(-1.5rem);
+			}
+			@include breakpoint(large) {
+				padding-right: 0;
+				.sl-tooltip-text {
+					transform: translateX(-0.75rem);
+				}
+			} 
 		}
 	}
 }
@@ -119,6 +134,7 @@ p a {
 	min-height: 100%;
 	display: flex;
 	flex-direction: column;
+	overflow: hidden;
 	.sulo-page {
 		flex: 1 0;
 		display: flex;
@@ -241,7 +257,7 @@ a {
 		height: 100%;
 	}
 	width: 100%;
-	position: absolute;
+	// position: absolute;
 	// margin-top: 100%;
 	// top: 100%;
 	// height: $footer-height-small;

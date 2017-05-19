@@ -32,15 +32,15 @@
                        ;; which doesn't have CORS set up (for good reason).
                        ;:data-lazy "true"
                        })
-          (common/inline-javascript ["window.fbAsyncInit = function()"
-                                     " {FB.init({ appId      : '1791653057760981', "
-                                     "xfbml      : true,   version    : 'v2.9'   });"
-                                     "FB.AppEvents.logPageView(); }; (function(d, s, id)"
-                                     "{var js, fjs = d.getElementsByTagName(s)[0];"
-                                     "if (d.getElementById(id)) {return;} js = d.createElement(s); "
-                                     "js.id = id;     js.src = \"//connect.facebook.net/en_US/sdk.js\";"
-                                     "fjs.parentNode.insertBefore(js, fjs);   }"
-                                     "(document, 'script', 'facebook-jssdk'));"])
+          ;(common/inline-javascript ["window.fbAsyncInit = function()"
+          ;                           " {FB.init({ appId      : '1791653057760981', "
+          ;                           "xfbml      : true,   version    : 'v2.9'   });"
+          ;                           "FB.AppEvents.logPageView(); }; (function(d, s, id)"
+          ;                           "{var js, fjs = d.getElementsByTagName(s)[0];"
+          ;                           "if (d.getElementById(id)) {return;} js = d.createElement(s); "
+          ;                           "js.id = id;     js.src = \"//connect.facebook.net/en_US/sdk.js\";"
+          ;                           "fjs.parentNode.insertBefore(js, fjs);   }"
+          ;                           "(document, 'script', 'facebook-jssdk'));"])
           (dom/script {:src "https://cdn.jsdelivr.net/hls.js/latest/hls.js"
                        :type common/text-javascript})
           (dom/script {:src "https://cdn.plyr.io/1.8.2/plyr.js"

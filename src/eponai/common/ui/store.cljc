@@ -162,15 +162,12 @@
               (->> (css/align :right)
                    (css/add-class :share-menu))
               (menu/item
-                (css/add-class :sl-tooltip)
-                (social/share-button nil {:platform :social/facebook})
-                (dom/span (css/add-class :sl-tooltip-text)
-                          "Share on Facebook"))
+                nil
+                (social/share-button nil {:platform :social/facebook}))
               (menu/item
-                (css/add-class :sl-tooltip)
+                nil
                 (social/share-button nil {:platform :social/twitter})
-                (dom/span (css/add-class :sl-tooltip-text)
-                          "Share on Twitter"))
+                )
               ;(menu/item
               ;  {:title "Share on email"}
               ;  (social/share-button nil {:platform :social/email}))

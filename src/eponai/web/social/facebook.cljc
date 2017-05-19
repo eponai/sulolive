@@ -19,7 +19,7 @@
      (js/FB.ui #js {:method  "share"
                     ;:action_type       "og.likes"
                     :href    "https://sulo.live/store/17592186045420"
-                    :display "popup"
+                    :display "page"
                     ;:action_properties (js/JSON.stringify #js{:object "834534123363063"})
                     }
                (fn [response]
