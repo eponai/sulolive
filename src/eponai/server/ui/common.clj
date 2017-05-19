@@ -75,11 +75,13 @@
       (map #(icon % "icon" "/assets/img/favicon/android-icon-")
            [36 48 72 96 144 192]))))
 
-(defn sharing-tags [social-sharing]
-  (map (fn [[k v]]
-         (dom/meta {:property (name k)
-                    :content v}))
-       social-sharing))
+(defn sharing-tags [{:keys [facebook twitter]}]
+  (let [tag-fn (fn [[k v]]
+                 (dom/meta {:property (name k)
+                            :content v}))
+        facebook-tags (mapv tag-fn facebook)
+        twitter-tags (mapv tag-fn twitter)]
+    (into facebook-tags twitter-tags)))
 
 (defn head [{:keys [release? exclude-icons? cljs-build-id social-sharing]}]
   (dom/head

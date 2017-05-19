@@ -16,7 +16,7 @@
                                                 {:store.profile/photo [:photo/id]}]}
                                {:stream/_store [:stream/state]}]
                               store-id)]
-      (let [{:keys [store/profile]
+      (let [{:keys  [store/profile]
              stream :stream/_store} store
             image (photos/transform (get-in profile [:store.profile/photo :photo/id]) :transformation/full)
             stream-url (when (= :stream.state/live
@@ -24,25 +24,53 @@
                          (stream/wowza-live-stream-url (wowza/subscriber-url (:system/wowza system))
                                                        (stream/stream-id store)))
             server-host (host/webserver-url (:system/server-address system))]
-        (cond-> {:fb:app_id           "936364773079066"
-                 :og:title            (:store.profile/name profile)
-                 :og:type             "video.other"
-                 :og:description      (:store.profile/tagline profile "")
-                 :og:image            image
-                 :og:url              (str server-host (routes/path :store {:store-id store-id}))
-
-                 :twitter:card        "summary_large_image"
-                 :twitter:site        "@sulolive"
-                 :twitter:title       (:store.profile/name profile)
-                 :twitter:description (:store.profile/tagline profile "")
-                 :twitter:image       image}
+        (cond->> {:facebook {:fb:app_id      "936364773079066"
+                             :og:title       (:store.profile/name profile)
+                             :og:type        "video.other"
+                             :og:description (or (:store.profile/tagline profile)
+                                                 (:store.profile/name profile))
+                             :og:image       image
+                             :og:url         (str server-host (routes/path :store {:store-id store-id}))
+                             }
+                  :twitter  {:twitter:card        "summary_large_image"
+                             :twitter:site        "@sulolive"
+                             :twitter:title       (:store.profile/name profile)
+                             :twitter:description (or (:store.profile/tagline profile)
+                                                      (:store.profile/name profile))
+                             :twitter:image       image}}
 
                 (some? stream-url)
-                (merge {:og:video            stream-url
-                        :og:video:secure_url stream-url
+                (merge-with merge {:facebook {:og:video            stream-url
+                                              :og:video:secure_url stream-url}
+                                   :twitter {:twitter:player:stream stream-url}}))))))
 
-                        :twitter:player:stream stream-url}))))))
+(defn- product [{:keys [state system]} product-id]
+  (when-let [product-id (c/parse-long-safe product-id)]
+    (when-let [product (db/pull (db/db state)
+                                [:store.item/name
+                                 :store.item/price
+                                 {:store.item/photos [:store.item.photo/index
+                                                      {:store.item.photo/photo [:photo/id]}]}]
+                                product-id)]
+      (let [photo (first (sort-by :store.item.photo/index (:store.item/photos product)))
+            image (photos/transform (get-in photo [:store.item.photo/photo :photo/id]) :transformation/full)
+            server-host (host/webserver-url (:system/server-address system))]
+        {:facebook {:fb:app_id              "936364773079066"
+                    :og:title               (:store.item/name product)
+                    :og:type                "product"
+                    :product:price:amount   (:store.item/price product)
+                    :product:price:currency "cad"
+                    :og:description         (:store.item/name product)
+                    :og:image               image
+                    :og:url                 (str server-host (routes/path :product {:product-id product-id}))}
+         :twitter {:twitter:card           "summary_large_image"
+                   :twitter:site           "@sulolive"
+                   :twitter:title          (:store.item/name product)
+                   :twitter:description    (:store.item/name product)
+                   :twitter:image          image}}))))
 
 (defn share-objects [{:keys [route state route-params system] :as env}]
   (cond (= route :store)
-        (store env (:store-id route-params))))
+        (store env (:store-id route-params))
+        (= route :product)
+        (product env (:product-id route-params))))

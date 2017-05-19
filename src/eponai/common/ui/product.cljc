@@ -11,7 +11,10 @@
     [eponai.common.ui.om-quill :as quill]
     [eponai.common.format :as f]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as p]
+    [eponai.web.social :as social]
+    [eponai.common.photos :as photos]
+    [eponai.client.routes :as routes]))
 
 ;(defn reviews-list [reviews]
 ;  (apply dom/div
@@ -27,6 +30,10 @@
 
 (def form-elements
   {:selected-sku "selected-sku"})
+
+(defn product-url [product-id]
+  #?(:cljs (str js/window.location.origin (routes/url :product {:product-id product-id}))
+     :clj  nil))
 
 (defui Product
   static om/IQuery
@@ -145,34 +152,65 @@
                 ;                                    :className "button expanded hollow"} "Save")))
                 ;(dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
                 ;            :className "button expanded hollow"} "Save")
+
                 (dom/a
                   (cond->> (->> {:onClick #(when (not-empty skus)
                                             (.add-to-bag this))}
                                 (css/button)
                                 (css/expanded))
                            (empty? skus)
-                           (css/add-class :disabled)) "Add to bag")
+                           (css/add-class :disabled))
+                  (dom/span nil "Add to bag"))
                 (dom/p
-                  (cond->> (css/add-class :text-success)
-                           added-to-bag?
-                           (css/add-class :show)) "Your shopping bag was updated")
-                (dom/p
-                  (cond->> (css/add-class :text-alert)
-                           (empty? skus)
-                           (css/add-class :show)) "Out of stock"))
+                  (when (or added-to-bag? (empty? skus))
+                    (css/add-class :show))
+                  (dom/small
+                    (cond added-to-bag?
+                          (css/add-class :text-success)
+                          (empty? skus)
+                          (css/add-class :text-alert))
+                    (if (empty? skus)
+                      "Out of stock"
+                      "Your shopping bag was updated")))
 
-              (dom/div
-                nil
-                (quill/->QuillRenderer {:html (f/bytes->str (:store.item/description item))}))))
+                (let [item-url (product-url (:db/id item))]
+                  (menu/horizontal
+                    (->> (css/align :right)
+                         (css/add-class :share-menu))
+                    (menu/item
+                      nil
+                      (social/share-button {:platform :social/facebook
+                                            :href     item-url}))
+                    (menu/item
+                      nil
+                      (social/share-button {:platform    :social/twitter
+                                            :description item-name
+                                            :href        item-url}))
+                    (menu/item
+                      nil
+                      (social/share-button {:platform    :social/pinterest
+                                            :href        item-url
+                                            :description item-name
+                                            :media       (photos/transform (get-in (first photos) [:store.item.photo/photo :photo/id])
+                                                                           :transformation/full)}))
+                    ;(menu/item
+                    ;  {:title "Share on email"}
+                    ;  (social/share-button nil {:platform :social/email}))
+                    )))
+              ))
+
+          (grid/row-column
+            (css/add-class :product-details)
+            (dom/p nil (dom/strong nil "Product details"))
+            (quill/->QuillRenderer {:html (f/bytes->str (:store.item/description item))}))
 
 
 
           (grid/row-column
-            nil
+            (css/add-class :store-info)
             (dom/hr nil)
             (grid/row
-              (->> (css/align :middle)
-                   (css/add-class :store-info))
+              (css/align :middle)
               (grid/column
                 (grid/column-size {:small 3 :medium 2})
                 (p/store-photo store {:transformation :transformation/thumbnail})

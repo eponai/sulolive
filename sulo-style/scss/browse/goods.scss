@@ -2,6 +2,9 @@
 .reveal {
 	#sulo-product {
 		padding: 0;
+		.store-info {
+			display: none;
+		}
 	}
 }
 
@@ -32,6 +35,15 @@
 		.price {
 			font-weight: $global-weight-bold;
 			font-size: 110%;
+		}
+	}
+	.product-details {
+		p {
+			// margin-bottom: 0;
+			// @extend h4;
+		}
+		.ql-editor {
+			padding: 0;
 		}
 	}
 	.orbit {
@@ -65,9 +77,13 @@
 	}
 
 	.product-action-container {
+		.button {
+			margin-bottom: 0.2rem;
+		}
 		> p {
 			// overflow-y: hidden;
 			text-align: center;
+			margin-bottom: 0;
 			// font-weight: bold;
 			// color: map-get($foundation-palette, success);
 			opacity: 0;
