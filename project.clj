@@ -163,10 +163,14 @@
   :exclusions [org.clojure/test.check
                org.clojure/clojure
                org.clojure/clojurescript
-               org.clojure/core.memoize]
+               org.clojure/core.memoize
+               cljsjs/react]
 
-  :jvm-opts ^:replace ["-Xms512m" "-Xmx2048m" "-server"
-                       "-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1"
+  :jvm-opts ^:replace ["-Xms512m"
+                       "-Xmx2048m"
+                       "-server"
+                       "-XX:+CMSClassUnloadingEnabled"
+                       "-Djava.awt.headless=true"
                       ]
   :resource-paths ["resources" "node_modules" "bower_components"]
 
@@ -175,7 +179,7 @@
             [lein-shell "0.5.0"]
             [lein-doo "0.1.7" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
             [lein-cljsbuild "1.1.5" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
-            [lein-figwheel "0.5.7" :exclusions [org.clojure/clojure]]
+            [lein-figwheel "0.5.10" :exclusions [org.clojure/clojure]]
             [lein-environ "1.1.0"]]
 
   :min-lein-version "2.0.0"
@@ -287,6 +291,8 @@
                                        [org.clojure/tools.namespace "0.2.11"]
                                        [aprint "0.1.3"]
                                        [cljsjs/nvd3 "1.8.2-1"]
+                                       [figwheel-sidecar "0.5.10"]
+                                       [com.cemerick/piggieback "0.2.1"]
                                        ]
                         :repl-options {:init-ns eponai.repl
                                        :init    (eponai.repl/init)}
@@ -300,13 +306,9 @@
                         :resource-paths ^:replace ["resources"]
                         :prep-tasks     ["compile" "prod-build-web" "css"]}
 
-             :mobile   {:dependencies
-                                      [[org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"
+             :mobile   {:dependencies [[org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
-                                       ;; [[org.omcljs/om "1.0.0-alpha46"
-                                       ;;   :exclusions [cljsjs/react cljsjs/react-dom]]
-                                       [figwheel-sidecar "0.5.7"]
-                                       [com.cemerick/piggieback "0.2.1"]]
+                                       ]
                         :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
                         :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
                         :cljsbuild    {:builds [{:id           "ios"
@@ -383,21 +385,21 @@
                                                                 :modules         ~(modules "resources/public/release/js/out/")
                                                                 }}]}}
              :web      {:jvm-opts     ^:replace ["-Xmx3g" "-server"]
-                        :exclusions   [org.clojure/clojure org.clojure/clojurescript]
-                        :dependencies [[figwheel-sidecar "0.5.7"]]
                         :cljsbuild    {:builds [{:id           "dev"
                                                  :figwheel     {:on-jsload "eponai.web.figwheel/reload!"}
                                                  :source-paths ["src/" "src-hacks/web/" "env/client/dev"]
-                                                 :compiler     {:main             "env.web.main"
-                                                                :asset-path       "/dev/js/out"
-                                                                :output-to        "resources/public/dev/js/out/budget.js"
+                                                 :compiler     {:main                 "env.web.main"
+                                                                :asset-path           "/dev/js/out"
+                                                                :output-to            "resources/public/dev/js/out/budget.js"
                                                                 ;; :modules ~(modules "/dev/js/out")
-                                                                :output-dir       "resources/public/dev/js/out/"
-                                                                :optimizations    :none
-                                                                :parallel-build   true
-                                                                :source-map       true
-                                                                :npm-deps         ~npm-deps
-                                                                :closure-warnings ~closure-warns
+                                                                :output-dir           "resources/public/dev/js/out/"
+                                                                :optimizations        :none
+                                                                :parallel-build       true
+                                                                :source-map           true
+                                                                :npm-deps             ~npm-deps
+                                                                :closure-warnings     ~closure-warns
+                                                                ;; Speeds up Figwheel cycle, at the risk of dependent namespaces getting out of sync.
+                                                                :recompile-dependents false
                                                                 }}
                                                 {:id           "devcards"
                                                  :source-paths ["src/" "src-hacks/web/" "test/"]
@@ -409,7 +411,8 @@
                                                                 :output-dir           "resources/public/devcards/js/out"
                                                                 :source-map-timestamp true
                                                                 :closure-warnings     ~closure-warns
-                                                                :npm-deps             ~npm-deps}}
+                                                                :npm-deps             ~npm-deps
+                                                                :recompile-dependents false}}
                                                 {:id           "test"
                                                  :source-paths ["src/" "src-hacks/web/" "test/"]
                                                  :figwheel     {:on-jsload "eponai.client.figwheel.test-main/reload-figwheel!"}
@@ -422,6 +425,7 @@
                                                                 :source-map       true
                                                                 :closure-warnings ~closure-warns
                                                                 :npm-deps         ~npm-deps
+                                                                :recompile-dependents false
                                                                 }}
                                                 {:id           "doo-test"
                                                  :source-paths ["src/" "src-hacks/web/" "test/"]
