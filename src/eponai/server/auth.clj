@@ -135,9 +135,9 @@
 (defn wrap-on-auth [handler middleware]
   (let [wrapped (middleware handler)]
     (fn [request]
-     (if (:identity request)
-       (wrapped request)
-       (handler request)))))
+      (if (:identity request)
+        (wrapped request)
+        (handler request)))))
 
 (defn wrap-auth [handler conn auth0]
   (let [auth-backend (jwt-cookie-backend conn auth0)]
@@ -156,6 +156,13 @@
       (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token})
       (prompt-login request))))
 
+(defn agent-whitelisted? [request]
+  (let [whitelist #{"facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"
+                    "facebookexternalhit/1.1"
+                    "Facebot"}
+        user-agent (get-in request [:headers "user-agent"])]
+    (contains? whitelist user-agent)))
+
 (defn bidi-route-restrictions
   "For each bidi route, we get the roles required for the route
   and check if the auth in the request is allowed to access this route.
@@ -164,16 +171,18 @@
   to login or respond with unauthorized."
   [route]
   (let [auth-roles (routes/auth-roles route)]
-    {:handler  (fn [{:keys [identity route-params] :as request}]
+    {:handler  (fn [{:keys [identity route-params headers] :as request}]
+                 (debug "AUTH REQUEST: " (into {} request))
                  (let [auth-val {:route        route
                                  :route-params route-params
                                  :auth-roles   auth-roles
                                  :auth         identity}]
-                   (if (auth/authed-for-roles?
-                         (db/db (:eponai.server.middleware/conn request))
-                         auth-roles
-                         identity
-                         route-params)
+                   (if (or (agent-whitelisted? request)
+                           (auth/authed-for-roles?
+                             (db/db (:eponai.server.middleware/conn request))
+                             auth-roles
+                             identity
+                             route-params))
                      (buddy/success auth-val)
                      (buddy/error auth-val))))
      :on-error (fn [request v]

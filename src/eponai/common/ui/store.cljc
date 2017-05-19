@@ -16,7 +16,8 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as p]
+    [eponai.web.social :as social]))
 
 
 (defn about-section [component]
@@ -39,6 +40,9 @@
         (dom/p nil (dom/strong nil "Returns"))
         (quill/->QuillRenderer {:html (f/bytes->str return-policy)})))))
 
+(defn store-url [store-id]
+  #?(:cljs (str js/window.location.origin (routes/url :store {:store-id store-id}))
+     :clj nil))
 (defui Store
   static om/IQuery
   (query [_]
@@ -69,77 +73,111 @@
           {:store.profile/keys [photo cover tagline description]
            store-name          :store.profile/name} profile
           stream (first stream)
-          is-live? (= :stream.state/live (:stream/state stream))
+          is-live? true                                     ;(= :stream.state/live (:stream/state stream))
           show-chat? (:show-chat? st is-live?)
           {:keys [route route-params]} current-route]
       (common/page-container
         {:navbar navbar
          :id     "sulo-store"}
-        (dom/div
-          nil
-          (grid/row
-            (->> (grid/columns-in-row {:small 1})
-                 (css/add-class :collapse)
-                 (css/add-class :expanded))
-            (grid/column
-              (grid/column-order {:small 2 :medium 1})
-              (cond
-                is-live?
-                (dom/div
-                  (cond->> (css/add-class :stream-container)
-                           show-chat?
-                           (css/add-class :sulo-show-chat)
-                           fullscreen?
-                           (css/add-class :fullscreen))
-                  (stream/->Stream (om/computed (:proxy/stream props)
-                                                {:stream-title         (:stream/title stream)
-                                                 :widescreen?          true
-                                                 :store                store
-                                                 :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
-                  (chat/->StreamChat (om/computed (:proxy/chat props)
-                                                  {:on-toggle-chat  (fn [show?]
-                                                                      (om/update-state! this assoc :show-chat? show?))
-                                                   :store           store
-                                                   :stream-overlay? true
-                                                   :show?           is-live?})))
-                (some? cover)
-                (dom/div
-                  (css/add-class :stream-container)
-                  (p/cover {:photo-id (:photo/id cover)})
 
-                  (chat/->StreamChat (om/computed (:proxy/chat props)
-                                                  {:on-toggle-chat  (fn [show?]
-                                                                      (om/update-state! this assoc :show-chat? show?))
-                                                   :store           store
-                                                   :stream-overlay? true
-                                                   :show?           is-live?})))))
+        (grid/row
+          (->> (grid/columns-in-row {:small 1})
+               (css/add-class :collapse)
+               (css/add-class :expanded))
+          (grid/column
+            (grid/column-order {:small 2 :medium 1})
+            (cond
+              is-live?
+              (dom/div
+                (cond->> (css/add-class :stream-container)
+                         show-chat?
+                         (css/add-class :sulo-show-chat)
+                         fullscreen?
+                         (css/add-class :fullscreen))
+                (stream/->Stream (om/computed (:proxy/stream props)
+                                              {:stream-title         (:stream/title stream)
+                                               :widescreen?          true
+                                               :store                store
+                                               :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
+                (chat/->StreamChat (om/computed (:proxy/chat props)
+                                                {:on-toggle-chat  (fn [show?]
+                                                                    (om/update-state! this assoc :show-chat? show?))
+                                                 :store           store
+                                                 :stream-overlay? true
+                                                 :show?           is-live?})))
+              (some? cover)
+              (dom/div
+                (css/add-class :stream-container)
+                (p/cover {:photo-id (:photo/id cover)})
 
+                (chat/->StreamChat (om/computed (:proxy/chat props)
+                                                {:on-toggle-chat  (fn [show?]
+                                                                    (om/update-state! this assoc :show-chat? show?))
+                                                 :store           store
+                                                 :stream-overlay? true
+                                                 :show?           is-live?})))))
 
 
-            (grid/column
-              (->> (grid/column-order {:small 1 :medium 2})
-                   (css/add-class :store-container))
+          (grid/column
+            (->> (grid/column-order {:small 1 :medium 2})
+                 (css/add-class :store-container))
 
-              (grid/row
-                (->> (css/align :middle)
-                     (css/align :center))
+            (grid/row
+              (->> (css/align :middle)
+                   (css/align :center))
 
-                (grid/column
-                  (grid/column-size {:small 12 :medium 2})
-                  (p/store-photo store {:transformation :transformation/thumbnail}))
+              (grid/column
+                (grid/column-size {:small 12 :medium 2})
+                (p/store-photo store {:transformation :transformation/thumbnail}))
 
-                (grid/column
-                  (css/add-class :shrink)
-                  (dom/div (css/add-class :store-name) (dom/strong nil store-name))
-                  (dom/p (css/add-class :tagline)
-                         (dom/span nil (or tagline "This is my tagline"))))
-                (grid/column
-                  (->> (grid/column-size {:small 12 :medium 4 :large 3})
-                       (css/text-align :center)
-                       (css/add-class :follow-section))
-                  (dom/div nil
-                           (common/follow-button nil)
-                           (common/contact-button nil)))))))
+              (grid/column
+                (css/add-class :shrink)
+                (dom/div (css/add-class :store-name) (dom/strong nil store-name))
+                (dom/p (css/add-class :tagline)
+                       (dom/span nil tagline)))
+              (grid/column
+                (->> (grid/column-size {:small 12 :medium 4 :large 3})
+                     (css/text-align :center)
+                     (css/add-class :follow-section))
+                (dom/div nil
+                         (common/follow-button nil)
+                         (common/contact-button nil))))
+            ))
+        (grid/row
+          (css/add-class :collapse)
+          (grid/column
+            nil
+
+            ;(dom/h3 (css/add-class :sl-tooltip)
+            ;        (dom/span
+            ;          (cond->> (css/add-classes [:label ])
+            ;                   (= stream-state :stream.state/offline)
+            ;                   (css/add-class :primary)
+            ;                   (= stream-state :stream.state/online)
+            ;                   (css/add-class :success)
+            ;                   (= stream-state :stream.state/live)
+            ;                   (css/add-class :highlight))
+            ;          (name stream-state))
+            ;        (when (= stream-state :stream.state/offline)
+            ;          (dom/span (css/add-class :sl-tooltip-text)
+            ;                    "See the help checklist below to get started streaming")))
+            (let [store-url (store-url (:store-id route-params))]
+              (menu/horizontal
+                (->> (css/align :right)
+                     (css/add-class :share-menu))
+                (menu/item
+                  nil
+                  (social/share-button {:platform :social/facebook
+                                        :href     store-url}))
+                (menu/item
+                  nil
+                  (social/share-button {:platform :social/twitter
+                                        :href     store-url})
+                  )
+                ;(menu/item
+                ;  {:title "Share on email"}
+                ;  (social/share-button nil {:platform :social/email}))
+                ))))
 
         (dom/div
           {:id "shop"}
@@ -175,7 +213,7 @@
                                  (css/add-class ::css/is-active))
                         (dom/a
                           {:onClick #(om/update-state! this assoc :selected-navigation (:db/id s))
-                           :href (routes/url :store route-params)}
+                           :href    (routes/url :store route-params)}
                           (dom/span nil label)))))
                   (:store/sections store)))))
           (cond (= selected-navigation :about)

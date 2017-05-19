@@ -21,8 +21,11 @@
     [eponai.server.external.stripe :as stripe]
     [eponai.server.websocket :as websocket]
     [eponai.server.ui.root :as root]
+    [eponai.server.social :as social]
     [eponai.common.routes :as routes]
-    [eponai.common.database :as db]))
+    [eponai.common.database :as db]
+    [eponai.common :as c]
+    [eponai.common.photos :as photos]))
 
 (defn html [& path]
   (-> (clj.string/join "/" path)
@@ -35,16 +38,25 @@
 (declare handle-parser-request)
 
 (defn request->props [request]
-  {:empty-datascript-db            (::m/empty-datascript-db request)
-   :state                          (::m/conn request)
-   :system                         (::m/system request)
-   :release?                       (release? request)
-   :cljs-build-id                  (::m/cljs-build-id request)
-   :route-params                   (merge (:params request)
-                                          (:route-params request))
-   :route                          (:handler request)
-   :query-params                   (:params request)
-   :auth                           (:identity request)})
+  (let [state (::m/conn request)
+        route (:handler request)
+        system (::m/system request)
+        route-params (merge (:params request)
+                            (:route-params request))
+        sharing-objects (social/share-objects {:route-params route-params
+                                               :state        state
+                                               :route        route
+                                               :system       system})]
+    {:empty-datascript-db (::m/empty-datascript-db request)
+     :state               state
+     :system              system
+     :release?            (release? request)
+     :cljs-build-id       (::m/cljs-build-id request)
+     :route-params        route-params
+     :route               route
+     :query-params        (:params request)
+     :auth                (:identity request)
+     :social-sharing      sharing-objects}))
 
 ;---------- Auth handlers
 

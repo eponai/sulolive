@@ -88,7 +88,8 @@
           (dom/div #js {:id "sulo-index-container" :onScroll #(debug "Did scroll page: " %)}
 
             (p/header
-              (css/add-class :center {:photo-id "static/home-header-bg"})
+              (css/add-class :center {:photo-id "static/home-header-bg"
+                                      :transformation :transformation/full})
               (div
                 (->> (css/grid-row)
                      (css/add-class :intro-header)

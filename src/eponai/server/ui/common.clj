@@ -75,55 +75,65 @@
       (map #(icon % "icon" "/assets/img/favicon/android-icon-")
            [36 48 72 96 144 192]))))
 
-(defn head [{:keys [release? exclude-icons? cljs-build-id]}]
-  [(dom/meta {:name    "google-site-verification"
-              :content "eWC2ZsxC6JcZzOWYczeVin6E0cvP4u6PE3insn9p76U"})
+(defn sharing-tags [social-sharing]
+  (map (fn [[k v]]
+         (dom/meta {:property (name k)
+                    :content v}))
+       social-sharing))
 
-   (dom/meta {:charset "utf-8"})
-   (dom/meta {:http-equiv "X-UA-Compatible"
-              :content    "IE=edge"})
-   (dom/meta {:name    "viewport"
-              :content "width=device-width, initial-scale=1 maximum-scale=1 user-scalable=0"})
-   (dom/meta {:name "author" :content "SULO Live"})
-   ;; Asset version is needed in our module urls.
-   (dom/meta {:id "asset-version-meta" :name "asset-version" :content asset-version})
-   (dom/meta {:name    "description"
-              :content "Watch and interact with your favorite local makers and artisans on Vancouver's online marketplace."})
-   (comment (dom/meta {:http-equiv "Content-Type"
-                       :content    "text/html; charset=utf-8"}))
-   (dom/title nil "Vancouver's local marketplace online - SULO Live")
-   (when (= cljs-build-id "devcards")
-     (dom/link {:href "/bower_components/nvd3/build/nv.d3.css"
-                :rel  "stylesheet"}))
+(defn head [{:keys [release? exclude-icons? cljs-build-id social-sharing]}]
+  (dom/head
+    nil
+    (dom/meta {:name    "google-site-verification"
+                  :content "eWC2ZsxC6JcZzOWYczeVin6E0cvP4u6PE3insn9p76U"})
 
-   ;;TODO: https://cdn.quilljs.com/1.0.0/quill.snow.css if want to save to local in dev mode
-   (dom/link {:href "//cdn.quilljs.com/1.2.0/quill.snow.css"
-              :rel  "stylesheet"})
+    (dom/meta {:charset "utf-8"})
+    (dom/meta {:http-equiv "X-UA-Compatible"
+               :content    "IE=edge"})
+    (dom/meta {:name    "viewport"
+               :content "width=device-width, initial-scale=1 maximum-scale=1 user-scalable=0"})
+    (dom/meta {:name "author" :content "SULO Live"})
+    ;; Asset version is needed in our module urls.
+    (dom/meta {:id "asset-version-meta" :name "asset-version" :content asset-version})
+    (dom/meta {:name    "description"
+               :content "Watch and interact with your favorite local makers and artisans on Vancouver's online marketplace."})
+    (comment (dom/meta {:http-equiv "Content-Type"
+                        :content    "text/html; charset=utf-8"}))
+    (dom/title nil "Vancouver's local marketplace online - SULO Live")
+    (when (= cljs-build-id "devcards")
+      (dom/link {:href "/bower_components/nvd3/build/nv.d3.css"
+                 :rel  "stylesheet"}))
 
-   (dom/link {:href (versionize "/assets/css/app.css")
-              :rel  "stylesheet"})
-   ;; Custom fonts
-   (dom/link {:href (if release?
-                      "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
-                      "/assets/font-awesome/css/font-awesome.min.css")
-              :rel  "stylesheet"
-              :type "text/css"})
+    ;;TODO: https://cdn.quilljs.com/1.0.0/quill.snow.css if want to save to local in dev mode
+    (dom/link {:href "//cdn.quilljs.com/1.2.0/quill.snow.css"
+               :rel  "stylesheet"})
 
-   (when release?
-     (mixpanel))
-   (iubenda-code)
+    (dom/link {:href (versionize "/assets/css/app.css")
+               :rel  "stylesheet"})
+    ;; Custom fonts
+    (dom/link {:href (if release?
+                       "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+                       "/assets/font-awesome/css/font-awesome.min.css")
+               :rel  "stylesheet"
+               :type "text/css"})
 
-   ;; Favicon
-   (when (not exclude-icons?)
-     (icons))
+    (sharing-tags social-sharing)
 
-   (dom/link {:rel "manifest"
-              :href (versionize "/assets/img/favicon/manifest.json")})
-   (dom/meta {:name "msapplication-TileColor" :content "#ffffff"})
-   (dom/meta {:name    "msapplication-TileImage"
-              :content (versionize "/assets/img/favicon/ms-icon-144x144.png")})
-   (dom/meta {:name "theme-color" :content "#ffffff"})
-   ])
+    (when release?
+      (mixpanel))
+    (iubenda-code)
+
+    ;; Favicon
+    (when (not exclude-icons?)
+      (icons))
+
+    (dom/link {:rel  "manifest"
+               :href (versionize "/assets/img/favicon/manifest.json")})
+    (dom/meta {:name "msapplication-TileColor" :content "#ffffff"})
+    (dom/meta {:name    "msapplication-TileImage"
+               :content (versionize "/assets/img/favicon/ms-icon-144x144.png")})
+    (dom/meta {:name "theme-color" :content "#ffffff"})
+    ))
 
 (defn budget-js-path []
   (versionize "/js/out/budget.js"))

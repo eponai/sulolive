@@ -106,7 +106,8 @@
                                                   (my-dom/i {:classes ["fa fa-caret-right fa-fw"]})))})}
         (debug "Live opene: " live-open?)
         (p/header
-          {:photo-id "static/coming-soon-sell-bg"}
+          {:photo-id "static/coming-soon-sell-bg"
+           :transformation :transformation/full}
 
           (callout-banner live-open?)
           (->ComingSoonContent
@@ -225,7 +226,8 @@
                                                              (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
 
             (p/header
-              {:photo-id "static/home-header-bg"}
+              {:photo-id "static/home-header-bg"
+               :transformation :transformation/full}
 
               (callout-banner live-open?)
               (->ComingSoonContent

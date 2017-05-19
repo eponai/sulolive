@@ -81,7 +81,8 @@
         (when (msg/pending? message)
           (common/loading-spinner))
         (p/header
-          {:photo-id "static/coming-soon-sell-bg"}
+          {:photo-id "static/coming-soon-sell-bg"
+           :transformation :transformation/full}
           (dom/div
             nil
             ;(grid/row-column

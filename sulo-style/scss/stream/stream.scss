@@ -1,15 +1,17 @@
 $chat-zindex: 2;
 
-$chat-container-bg-color: $black;
+$chat-container-bg-color: black;//$black;
 $chat-container-box-shadow-color: $chat-container-bg-color;
 
 $chat-available-breakpoint: medium;
 
 @import "wowza";
 @import "chat";
+@import "plyr";
 
 #sulo-video-container {
 	background: black;
+	margin-bottom: 0;
 	.sulo-spinner-container {
 		height: 100%;
 		width: 100%;
@@ -17,6 +19,12 @@ $chat-available-breakpoint: medium;
 		display: flex;
 		justify-content: center;
 		align-items: center;
+	}
+
+	.video-player-container {
+		position: absolute; 
+		height: 100%;
+		width: 100%;
 	}
 }
 
@@ -42,10 +50,20 @@ $chat-available-breakpoint: medium;
 				}
 			}
 		}
+
+
 	}
 }
 .fullscreen {
 	.stream-chat-container {
+		position: fixed;
+		top:0;
 		z-index: 2147483647;
+	}
+
+
+	.sulo-share-video-overlay {
+		position: fixed !important;
+		z-index: 2147483647 !important;
 	}
 }
