@@ -61,6 +61,20 @@ p a {
 }
 @include label-hollow;
 
+.menu.share-menu {
+	.share-button {
+		padding: 1rem 0.75rem;
+		img {
+			height: 1.5rem;
+			width: 1.5rem;
+		}
+	}
+	:last-child {
+		.share-button {
+			padding-right:0;
+		}
+	}
+}
 .product-grid {
 	> .column {
 		padding: 1rem;

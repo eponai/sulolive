@@ -185,20 +185,29 @@ $button-radius: $global-radius !default;
 
 .sl-tooltip {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   .sl-tooltip-text {
-    position: absolute;
+    @extend .tooltip;
+    text-align: center;
+    // position: absolute;
+    // flex-wrap: nowrap;
+    display: flex;
     z-index: 2;
-    top: 100%;
-    left: 0;
+    // top: 100%;
+    // right: -5rem;
     padding: 0.5rem;
-    font-size: 1rem;
+    font-size: 80%;
     visibility: hidden;
     opacity: 0;
-    background: $white;
-    color: $black;
+    // white-space: nowrap;
+    // background: $white;
+    // color: $black;
     border-radius: $global-radius;
     box-shadow: 1px 1px 3px 0 rgba($black, 0.2);
-    margin-top: 0.5rem;
+    // margin-top: 0.5rem;
     width: 10rem;
     // max-width: 100%;
     transition: visibility .25s linear 0s, opacity .25s ease-in-out;

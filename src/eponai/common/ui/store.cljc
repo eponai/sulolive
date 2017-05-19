@@ -16,7 +16,8 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as p]
+    [eponai.web.social :as social]))
 
 
 (defn about-section [component]
@@ -75,81 +76,105 @@
       (common/page-container
         {:navbar navbar
          :id     "sulo-store"}
-        (dom/div
-          nil
-          (grid/row
-            (->> (grid/columns-in-row {:small 1})
-                 (css/add-class :collapse)
-                 (css/add-class :expanded))
-            (grid/column
-              (grid/column-order {:small 2 :medium 1})
-              (cond
-                is-live?
-                (dom/div
-                  (cond->> (css/add-class :stream-container)
-                           show-chat?
-                           (css/add-class :sulo-show-chat)
-                           fullscreen?
-                           (css/add-class :fullscreen))
-                  (stream/->Stream (om/computed (:proxy/stream props)
-                                                {:stream-title         (:stream/title stream)
-                                                 :widescreen?          true
-                                                 :store                store
-                                                 :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
-                  (chat/->StreamChat (om/computed (:proxy/chat props)
-                                                  {:on-toggle-chat  (fn [show?]
-                                                                      (om/update-state! this assoc :show-chat? show?))
-                                                   :store           store
-                                                   :stream-overlay? true
-                                                   :show?           is-live?})))
-                (some? cover)
-                (dom/div
-                  (css/add-class :stream-container)
-                  (p/cover {:photo-id (:photo/id cover)})
 
-                  (chat/->StreamChat (om/computed (:proxy/chat props)
-                                                  {:on-toggle-chat  (fn [show?]
-                                                                      (om/update-state! this assoc :show-chat? show?))
-                                                   :store           store
-                                                   :stream-overlay? true
-                                                   :show?           is-live?})))))
-
-
-
-            (grid/column
-              (->> (grid/column-order {:small 1 :medium 2})
-                   (css/add-class :store-container))
-              ;<div
-              ;class="fb-like"
-              ;data-share="true"
-              ;data-width="450"
-              ;data-show-faces="true">
-              ;</div>
+        (grid/row
+          (->> (grid/columns-in-row {:small 1})
+               (css/add-class :collapse)
+               (css/add-class :expanded))
+          (grid/column
+            (grid/column-order {:small 2 :medium 1})
+            (cond
+              is-live?
               (dom/div
-                (css/add-class :fb-like {:data-share      true
-                                         :data-show-faces true
-                                         :data-width      450}))
+                (cond->> (css/add-class :stream-container)
+                         show-chat?
+                         (css/add-class :sulo-show-chat)
+                         fullscreen?
+                         (css/add-class :fullscreen))
+                (stream/->Stream (om/computed (:proxy/stream props)
+                                              {:stream-title         (:stream/title stream)
+                                               :widescreen?          true
+                                               :store                store
+                                               :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
+                (chat/->StreamChat (om/computed (:proxy/chat props)
+                                                {:on-toggle-chat  (fn [show?]
+                                                                    (om/update-state! this assoc :show-chat? show?))
+                                                 :store           store
+                                                 :stream-overlay? true
+                                                 :show?           is-live?})))
+              (some? cover)
+              (dom/div
+                (css/add-class :stream-container)
+                (p/cover {:photo-id (:photo/id cover)})
 
-              (grid/row
-                (->> (css/align :middle)
-                     (css/align :center))
+                (chat/->StreamChat (om/computed (:proxy/chat props)
+                                                {:on-toggle-chat  (fn [show?]
+                                                                    (om/update-state! this assoc :show-chat? show?))
+                                                 :store           store
+                                                 :stream-overlay? true
+                                                 :show?           is-live?})))))
 
-                (grid/column
-                  (grid/column-size {:small 12 :medium 2})
-                  (p/store-photo store {:transformation :transformation/thumbnail}))
 
-                (grid/column
-                  (css/add-class :shrink)
-                  (dom/div (css/add-class :store-name) (dom/strong nil store-name))
-                  (dom/p (css/add-class :tagline)
-                         (dom/span nil (or tagline "This is my tagline"))))
-                (grid/column
-                  (->> (grid/column-size {:small 12 :medium 4 :large 3})
-                       (css/text-align :center)
-                       (css/add-class :follow-section))
-                  (dom/div nil
-                           (common/follow-button nil)
-                           (common/contact-button nil)))))))
+          (grid/column
+            (->> (grid/column-order {:small 1 :medium 2})
+                 (css/add-class :store-container))
+
+            (grid/row
+              (->> (css/align :middle)
+                   (css/align :center))
+
+              (grid/column
+                (grid/column-size {:small 12 :medium 2})
+                (p/store-photo store {:transformation :transformation/thumbnail}))
+
+              (grid/column
+                (css/add-class :shrink)
+                (dom/div (css/add-class :store-name) (dom/strong nil store-name))
+                (dom/p (css/add-class :tagline)
+                       (dom/span nil (or tagline "This is my tagline"))))
+              (grid/column
+                (->> (grid/column-size {:small 12 :medium 4 :large 3})
+                     (css/text-align :center)
+                     (css/add-class :follow-section))
+                (dom/div nil
+                         (common/follow-button nil)
+                         (common/contact-button nil))))
+            ))
+        (grid/row
+          (css/add-class :collapse)
+          (grid/column
+            nil
+
+            ;(dom/h3 (css/add-class :sl-tooltip)
+            ;        (dom/span
+            ;          (cond->> (css/add-classes [:label ])
+            ;                   (= stream-state :stream.state/offline)
+            ;                   (css/add-class :primary)
+            ;                   (= stream-state :stream.state/online)
+            ;                   (css/add-class :success)
+            ;                   (= stream-state :stream.state/live)
+            ;                   (css/add-class :highlight))
+            ;          (name stream-state))
+            ;        (when (= stream-state :stream.state/offline)
+            ;          (dom/span (css/add-class :sl-tooltip-text)
+            ;                    "See the help checklist below to get started streaming")))
+            (menu/horizontal
+              (->> (css/align :right)
+                   (css/add-class :share-menu))
+              (menu/item
+                (css/add-class :sl-tooltip)
+                (social/share-button nil {:platform :social/facebook})
+                (dom/span (css/add-class :sl-tooltip-text)
+                          "Share on Facebook"))
+              (menu/item
+                (css/add-class :sl-tooltip)
+                (social/share-button nil {:platform :social/twitter})
+                (dom/span (css/add-class :sl-tooltip-text)
+                          "Share on Twitter"))
+              ;(menu/item
+              ;  {:title "Share on email"}
+              ;  (social/share-button nil {:platform :social/email}))
+              )))
 
         (dom/div
           {:id "shop"}
