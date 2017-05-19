@@ -16,7 +16,8 @@
     [eponai.common.auth :as auth]
     [eponai.common :as c]
     [clojure.spec :as s]
-    [medley.core :as medley]))
+    [medley.core :as medley]
+    [clojure.string :as string]))
 
 (def auth-token-cookie-name "sulo-auth-token")
 (def auth-token-remove-value "kill")
@@ -159,9 +160,10 @@
 (defn agent-whitelisted? [request]
   (let [whitelist #{"facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"
                     "facebookexternalhit/1.1"
-                    "Facebot"}
+                    "Facebot/"
+                    "Twitterbot/"}
         user-agent (get-in request [:headers "user-agent"])]
-    (contains? whitelist user-agent)))
+    (some #(string/includes? user-agent %) whitelist)))
 
 (defn bidi-route-restrictions
   "For each bidi route, we get the roles required for the route

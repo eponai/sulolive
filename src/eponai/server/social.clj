@@ -27,14 +27,14 @@
         (cond-> {:fb:app_id           "936364773079066"
                  :og:title            (:store.profile/name profile)
                  :og:type             "video.other"
-                 :og:description      (:store.profile/tagline profile)
+                 :og:description      (:store.profile/tagline profile "")
                  :og:image            image
                  :og:url              (str server-host (routes/path :store {:store-id store-id}))
 
                  :twitter:card        "summary_large_image"
                  :twitter:site        "@sulolive"
                  :twitter:title       (:store.profile/name profile)
-                 :twitter:description (:store.profile/tagline profile)
+                 :twitter:description (:store.profile/tagline profile "")
                  :twitter:image       image}
 
                 (some? stream-url)

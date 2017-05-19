@@ -17,7 +17,8 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.web.ui.photo :as p]
-    [eponai.web.social :as social]))
+    [eponai.web.social :as social]
+    [eponai.common.photos :as photos]))
 
 
 (defn about-section [component]
@@ -73,7 +74,7 @@
           {:store.profile/keys [photo cover tagline description]
            store-name          :store.profile/name} profile
           stream (first stream)
-          is-live? true                                     ;(= :stream.state/live (:stream/state stream))
+          is-live? (= :stream.state/live (:stream/state stream))
           show-chat? (:show-chat? st is-live?)
           {:keys [route route-params]} current-route]
       (common/page-container
@@ -172,8 +173,15 @@
                 (menu/item
                   nil
                   (social/share-button {:platform :social/twitter
-                                        :href     store-url})
-                  )
+                                        :description (:store.profile/name profile)
+                                        :href     store-url}))
+                (menu/item
+                  nil
+                  (social/share-button {:platform    :social/pinterest
+                                        :href        store-url
+                                        :description (:store.profile/name profile)
+                                        :media       (photos/transform (:photo/id (:store.profile/photo profile))
+                                                                       :transformation/full)}))
                 ;(menu/item
                 ;  {:title "Share on email"}
                 ;  (social/share-button nil {:platform :social/email}))

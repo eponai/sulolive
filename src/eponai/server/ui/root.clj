@@ -44,6 +44,13 @@
           ;                           "js.id = id;     js.src = \"//connect.facebook.net/en_US/sdk.js\";"
           ;                           "fjs.parentNode.insertBefore(js, fjs);   }"
           ;                           "(document, 'script', 'facebook-jssdk'));"])
+          ;type="text/javascript"
+          ;async defer
+          ;src="//assets.pinterest.com/js/pinit.js"
+          (dom/script {:src "//assets.pinterest.com/js/pinit.js"
+                       :async true
+                       :defer true
+                       :type common/text-javascript})
           (dom/script {:src  "https://cdn.jsdelivr.net/hls.js/latest/hls.js"
                        :type common/text-javascript})
           (dom/script {:src  "https://cdn.plyr.io/1.8.2/plyr.js"
