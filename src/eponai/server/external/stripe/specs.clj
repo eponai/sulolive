@@ -1,6 +1,6 @@
 (ns eponai.server.external.stripe.specs
   (:require
-    [clojure.spec :as s]
+    [clojure.spec.alpha :as s]
     [taoensso.timbre :refer [debug]]
     [eponai.common :as c]))
 

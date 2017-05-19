@@ -1,9 +1,9 @@
 (ns eponai.web.ui.start-store
   (:require
     #?(:cljs
-       [cljs.spec :as s]
+       [cljs.spec.alpha :as s]
        :clj
-        [clojure.spec :as s])
+        [clojure.spec.alpha :as s])
     #?(:cljs
        [eponai.web.utils :as utils])
     [eponai.common.ui.dom :as dom]
@@ -15,7 +15,6 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.callout :as callout]
-    [clojure.spec :as s]
     [eponai.common.ui.elements.input-validate :as validate]
     [eponai.client.parser.message :as msg]
     [taoensso.timbre :refer [debug]]

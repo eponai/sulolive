@@ -1,7 +1,7 @@
 (ns eponai.server.external.stripe
   (:require
     [clj-http.client :as client]
-    [clojure.spec :as s]
+    [clojure.spec.alpha :as s]
     [eponai.common.database :as db]
     [eponai.server.external.stripe.format :as f]
     [eponai.server.http :as h]

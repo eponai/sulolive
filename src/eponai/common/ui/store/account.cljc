@@ -1,9 +1,9 @@
 (ns eponai.common.ui.store.account
   (:require
     #?(:cljs
-       [cljs.spec :as s]
+       [cljs.spec.alpha :as s]
        :clj
-        [clojure.spec :as s])
+        [clojure.spec.alpha :as s])
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.utils :refer [two-decimal-price]]

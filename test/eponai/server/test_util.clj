@@ -1,6 +1,6 @@
 (ns eponai.server.test-util
   (:require
-    [clojure.spec :as s]
+    [clojure.spec.alpha :as s]
     [datomic.api :as d]
     [eponai.server.datomic-dev :as dev]
     [eponai.common.database :as db]

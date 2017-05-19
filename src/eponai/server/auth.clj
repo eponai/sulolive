@@ -15,7 +15,7 @@
     [eponai.common.routes :as routes]
     [eponai.common.auth :as auth]
     [eponai.common :as c]
-    [clojure.spec :as s]
+    [clojure.spec.alpha :as s]
     [medley.core :as medley]))
 
 (def auth-token-cookie-name "sulo-auth-token")

@@ -11,7 +11,7 @@
     [taoensso.timbre :refer [debug error info]]
     ;; Dev/debug require
     [eponai.server.system :as system]
-    [clojure.spec :as s]))
+    [clojure.spec.alpha :as s]))
 
 (defn- make-system [opts]
   (let [default-port 3000

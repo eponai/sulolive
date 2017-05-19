@@ -4,9 +4,9 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.input-validate :as validate]
     [om.next :as om :refer [defui]]
-    #?(:cljs [cljs.spec :as s]
+    #?(:cljs [cljs.spec.alpha :as s]
        :clj
-    [clojure.spec :as s])
+    [clojure.spec.alpha :as s])
     #?(:cljs
        [eponai.web.utils :as web-utils])
     #?(:cljs

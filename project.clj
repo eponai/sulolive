@@ -87,7 +87,7 @@
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [
-                 [org.clojure/clojure "1.9.0-alpha14"]
+                 [org.clojure/clojure "1.9.0-alpha16"]
                  [org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"]
                  ;;[org.omcljs/om "1.0.0-alpha46"]
                  [aleph "0.4.3"]
@@ -135,7 +135,7 @@
                  [cljsjs/react "15.4.2-2"]
                  [cljsjs/react-dom "15.4.2-2"]
                  [com.cognitect/transit-cljs "0.8.239"]
-                 [org.clojure/clojurescript "1.9.521"
+                 [org.clojure/clojurescript "1.9.542"
                   ;;  :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]

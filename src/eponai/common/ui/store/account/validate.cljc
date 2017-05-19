@@ -1,9 +1,9 @@
 (ns eponai.common.ui.store.account.validate
   (:require
     #?(:cljs
-       [cljs.spec :as s]
+       [cljs.spec.alpha :as s]
        :clj
-        [clojure.spec :as s])
+        [clojure.spec.alpha :as s])
         [eponai.common :as c]
         [taoensso.timbre :refer [debug]]))
 
