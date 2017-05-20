@@ -58,10 +58,10 @@ $user-dashboard-max-width: 44rem;
 			&:last-child {
 				border: none;
 			}
-			> .row > .column:last-child {
-				text-align: left;
+			> .row > .column:nth-child(2) {
+				text-align: right;
 				@include breakpoint(medium) {
-					text-align: right;
+					// text-align: right;
 				}
 			}
 		}
@@ -99,6 +99,9 @@ $user-dashboard-max-width: 44rem;
 			flex-direction: row;
 			align-items: center;
 			justify-content: flex-end;
+			@include breakpoint(medium) {
+				// justify-content: flex-end;
+			}
 			.photo-container {
 				max-width: 3rem;
 				width: 3rem;
@@ -113,17 +116,40 @@ $user-dashboard-max-width: 44rem;
 		}
 	}
 
+	.reveal-overlay {
+		overflow: hidden;
+	}
+
 	.reveal.full {
 		display: flex;
 		align-items: center;
 		// justify-content: center;
 		// flex-direction: column;
+
 		.user-profile-photo {
 			max-width: 10rem;
 			margin: 0 auto;
 		}
 		.section-list {
 			margin-bottom: 1rem;
+		}
+
+		.edit-profile-modal {
+			.upload-photo {
+				margin: 1rem auto;
+				max-width: 10rem;
+				width: 10rem;
+			}
+			.action-buttons {
+				display: flex;
+				flex-direction: column-reverse;
+				align-items: center;
+				.button {
+					// flex: 1 1 auto;
+					width: 5rem;
+					margin-bottom: 0.5rem !important;
+				}
+			}
 		}
 	}
 }
