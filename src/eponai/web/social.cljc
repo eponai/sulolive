@@ -2,7 +2,6 @@
   (:require
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
-    [eponai.web.social.facebook :as fb]
     [taoensso.timbre :refer [debug]]
     [clojure.string :as string]
     [cemerick.url :as url]))
@@ -70,3 +69,22 @@
     (dom/img {:src (get logos platform)})
     (dom/span (css/add-class :sl-tooltip-text)
               (str "Share on " (get socials platform)))))
+
+(defn sulo-social-link [platform]
+  (condp = platform
+    :social/instagram
+    (dom/a {:href   "https://www.instagram.com/sulolive"
+            :target "_blank"}
+           (dom/span {:classes ["icon icon-instagram"]}))
+    :social/facebook
+    (dom/a {:href   "https://www.facebook.com/live.sulo"
+            :target "_blank"}
+           (dom/span {:classes ["icon icon-facebook"]}))))
+
+(defn sulo-icon-attribution []
+  (dom/a {:href   "https://icons8.com"
+          :target "_blank"}
+         (dom/small {:classes ["copyright"]} "Icons by Icons8")))
+
+(defn sulo-copyright []
+  (dom/small {:classes ["copyright"]} "© eponai hb 2017"))

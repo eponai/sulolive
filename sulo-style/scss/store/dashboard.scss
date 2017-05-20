@@ -8,14 +8,12 @@
       @else {
         &.#{$name} {
           @include button-hollow-style($color);
-          // border: none;
         }
       }
     }
 }
 
 @mixin sulo-action-buttons {
-	$primary-color: map-get($foundation-palette, action);
 	@include foundation-button;
 	.button {
 		$color: map-get($foundation-palette, action);
@@ -31,14 +29,14 @@
 	}
 }
 
-$dashboard-max-width: 100%;
-$dashboard-primary-color: map-get($foundation-palette, action);
-
-$dashboard-content-width: 54rem;
+// $dashboard-max-width: 100%;
+// $dashboard-primary-color: map-get($foundation-palette, action);
+// $dashboard-background: rgba($light-gray, 0.5);
+// $dashboard-content-width: 54rem;
 
 #sulo-store-dashboard {
 	.page-container {
-		background: rgba($light-gray, 0.5);
+		background: $dashboard-background;
 	}
 	.navbar, footer, .footer .row, .row {
 		max-width: $dashboard-max-width;

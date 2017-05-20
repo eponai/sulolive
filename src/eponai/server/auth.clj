@@ -174,7 +174,6 @@
   [route]
   (let [auth-roles (routes/auth-roles route)]
     {:handler  (fn [{:keys [identity route-params headers] :as request}]
-                 (debug "AUTH REQUEST: " (into {} request))
                  (let [auth-val {:route        route
                                  :route-params route-params
                                  :auth-roles   auth-roles
