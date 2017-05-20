@@ -3,12 +3,13 @@
     [eponai.common.ui.elements.css :as css]
     [om.dom :as dom]
     [taoensso.timbre :refer [debug]]
+    #?(:cljs [react])
     #?(:cljs [goog.object :as gobj])))
 
 (defn add-keys-to-content [content]
   (letfn [(get-key [x] #?(:cljs (gobj/get x "key")
                           :clj (:react-key x)))
-          (set-key [x v] #?(:cljs (.cloneElement js/React x #js {:key v})
+          (set-key [x v] #?(:cljs (react/cloneElement  x #js {:key v})
                             :clj (assoc x :react-key v)))]
     (->> content
          (map-indexed (fn [i x]

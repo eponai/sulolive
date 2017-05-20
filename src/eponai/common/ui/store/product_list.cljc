@@ -4,8 +4,8 @@
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
     [eponai.web.ui.store.common :as store-common]
-    #?(:cljs
-       [cljsjs.react-grid-layout])
+    #?(:cljs react)
+    #?(:cljs [cljsjs.react-grid-layout])
     #?(:cljs
        [goog.crypt.base64 :as crypt])
     #?(:cljs
@@ -100,8 +100,8 @@
   (update-layout [this]
     #?(:cljs
        (let [{:keys [query/inventory]} (om/props this)
-             WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))
-             grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))
+             WidthProvider js/ReactGridLayout.WidthProvider
+             grid-element (WidthProvider js/ReactGridLayout.Responsive)
              size js/window.innerWidth
              breakpoint (if (> 460 size) :tiny (web-utils/breakpoint size))
 
@@ -247,8 +247,7 @@
                      (when (and (some? layout) (some? grid-element) (not-empty products))
                        (do
                          (debug "Creating grid layout with row-hweight: " (get row-heights breakpoint) " breakpoint " breakpoint)
-                         (.createElement
-                           (.-React js/window)
+                         (react/createElement
                            grid-element
                            (clj->js {:className          (if grid-editable? "layout editable animate" "layout"),
                                      :draggableHandle    ".product-move"

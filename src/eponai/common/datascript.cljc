@@ -92,7 +92,7 @@
   (or (identical? (.-keys a) (.-keys b))
       (let [achunk (btset/iter-chunk a)
             bchunk (btset/iter-chunk b)]
-        (and (= (count achunk) (count bchunk))
+        (and (== (count achunk) (count bchunk))
              (every? #(= (nth achunk %)
                          (nth bchunk %))
                      (range (count achunk)))))))

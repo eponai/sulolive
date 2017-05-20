@@ -1,6 +1,8 @@
 (def npm-deps {
                ;;:dompurify "0.8.6"
-              })
+               :react "15.5.4"
+               :react-dom "15.5.4"
+               })
 (def closure-warns {:non-standard-jsdoc :off})
 
 (defn modules [output-dir]
@@ -15,10 +17,11 @@
     (into `{:cljs-base {:entries   #{env.web.main}
                         :output-to ~(path :budget false)}}
       (map module)
-      `{
+      '{
         ;; Extra groupings
         :react-select    {:entries [eponai.common.ui.components.select
-                                    cljsjs.react-select]}
+                                    cljsjs.react-select
+                                    ]}
         :stream+chat     {:entries [eponai.common.ui.stream
                                     eponai.common.stream
                                     eponai.common.ui.chat
@@ -54,11 +57,11 @@
                                     eponai.common.ui.help.first-stream
                                     eponai.common.ui.help.mobile-stream
                                     eponai.common.ui.help.quality]}
-        :user            {:entries [eponai.common.ui.user
-                                    eponai.common.ui.user.order-list
-                                    eponai.common.ui.user.order-receipt
-                                    eponai.common.ui.user.profile
-                                    eponai.common.ui.user.profile-edit]
+        :user            {:entries    [eponai.common.ui.user
+                                       eponai.common.ui.user.order-list
+                                       eponai.common.ui.user.order-receipt
+                                       eponai.common.ui.user.profile
+                                       eponai.common.ui.user.profile-edit]
                           :depends-on [:photo-uploader]}
         :store-dashboard {:depends-on [:react-select
                                        :stream+chat
@@ -79,7 +82,8 @@
                                        eponai.common.ui.store.account.validate
                                        eponai.web.ui.store.common
                                        eponai.web.ui.store.edit-store
-                                       cljsjs.react-grid-layout]}})))
+                                       cljsjs.react-grid-layout
+                                       ]}})))
 
 (defproject budget "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
@@ -88,7 +92,7 @@
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [
                  [org.clojure/clojure "1.9.0-alpha16"]
-                 [org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"]
+                 [org.clojars.petterik/om "1.0.0-alpha49-npm-deps-1"]
                  ;;[org.omcljs/om "1.0.0-alpha46"]
                  [aleph "0.4.3"]
                  [aleph-middleware "0.1.2" :exclusions [aleph]]
@@ -132,8 +136,15 @@
                  [org.martinklepsch/s3-beam "0.6.0-alpha1"]
 
                  ;; CLJS
-                 [cljsjs/react "15.4.2-2"]
-                 [cljsjs/react-dom "15.4.2-2"]
+                 ;; For externs:
+                 [cljsjs/react-select "1.0.0-rc.1"]
+                 [cljsjs/react-grid-layout "0.13.7-0"]
+                 ;; React externs are checked in to git.
+                 ;; and we use src-hacks/ to put npm-deps react
+                 ;; as js/React
+                 ;; [cljsjs/react "15.5.0-0"]
+                 ;; [cljsjs/react-dom "15.5.0-0"]
+
                  [com.cognitect/transit-cljs "0.8.239"]
                  [org.clojure/clojurescript "1.9.542"
                   ;;  :classifier "aot"
@@ -147,8 +158,6 @@
                  [datascript "0.15.4"]
                  [cljsjs/stripe "2.0-0"]
                  [cljsjs/quill "1.1.0-3"]
-                 [cljsjs/react-select "1.0.0-rc.1"]
-                 [cljsjs/react-grid-layout "0.13.7-0"]
                  [bidi "2.0.10"]
                  [kibu/pushy "0.3.6"]
 		 [prone "1.1.4"]
@@ -164,7 +173,9 @@
                org.clojure/clojure
                org.clojure/clojurescript
                org.clojure/core.memoize
-               cljsjs/react]
+               cljsjs/react
+               cljsjs/react-dom
+               ]
 
   :jvm-opts ^:replace ["-Xms512m"
                        "-Xmx2048m"
@@ -306,7 +317,7 @@
                         :resource-paths ^:replace ["resources"]
                         :prep-tasks     ["compile" "prod-build-web" "css"]}
 
-             :mobile   {:dependencies [[org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"
+             :mobile   {:dependencies [[org.clojars.petterik/om "1.0.0-alpha49-npm-deps-1"
                                         :exclusions [cljsjs/react cljsjs/react-dom]]
                                        ]
                         :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
@@ -327,7 +338,7 @@
                                                                 :optimizations :none}}]}}
 
              :mob-prod {:dependencies
-                                   [[org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"
+                                   [[org.clojars.petterik/om "1.0.0-alpha49-npm-deps-1"
                                      :exclusions [cljsjs/react cljsjs/react-dom]]]
                         ;; [[org.omcljs/om "1.0.0-alpha46"
                         ;;   :exclusions [cljsjs/react cljsjs/react-dom]]]
@@ -365,18 +376,25 @@
                         :jvm-opts     ^:replace ["-Xmx3g" "-server"]
                         :cljsbuild    {:builds [{:id           "release"
                                                  :source-paths ["src/" "src-hacks/web/" "env/client/prod"]
-                                                 :compiler     {:closure-defines {"goog.DEBUG" false}
+                                                 :compiler     {:closure-defines {"goog.DEBUG" false
+                                                                                  process.env/NODE_ENV "production"}
                                                                 :main            "env.web.main"
                                                                 :asset-path      "/release/js/out"
                                                                 :output-to       "resources/public/release/js/out/budget.js"
                                                                 :output-dir      "resources/public/release/js/out/"
                                                                 :optimizations   :advanced
                                                                 :externs         ["src-hacks/js/externs/stripe-checkout.js"
-                                                                                  "src-hacks/js/externs/red5pro.js"
-                                                                                  "src-hacks/js/externs/hls.js"]
+                                                                                  "src-hacks/js/externs/react/react.ext.js"
+                                                                                  "src-hacks/js/externs/react/react-dom.ext.js"]
                                                                 :infer-externs   true
                                                                 ;; :preloads [env.web.preloads]
-                                                                ;; :language-in     :ecmascript5
+                                                                :preloads [process.env
+                                                                           cljsjs.react
+                                                                           cljsjs.react.web
+                                                                           ;; env.web.preloads
+                                                                           ]
+                                                                :language-in     :ecmascript6
+                                                                :language-out    :ecmascript3
                                                                 ;; :parallel-build  true
                                                                 ;; :pseudo-names true
                                                                 ;; :pretty-print true
@@ -393,9 +411,16 @@
                                                                 :output-to            "resources/public/dev/js/out/budget.js"
                                                                 ;; :modules ~(modules "/dev/js/out")
                                                                 :output-dir           "resources/public/dev/js/out/"
+                                                                :closure-defines {"goog.DEBUG" true
+                                                                                  process.env/NODE_ENV "development"}
                                                                 :optimizations        :none
                                                                 :parallel-build       true
                                                                 :source-map           true
+                                                                :language-in     :ecmascript6
+                                                                :language-out    :ecmascript3
+                                                                :preloads [process.env
+                                                                           ;; env.web.preloads
+                                                                           ]
                                                                 :npm-deps             ~npm-deps
                                                                 :closure-warnings     ~closure-warns
                                                                 ;; Speeds up Figwheel cycle, at the risk of dependent namespaces getting out of sync.
@@ -409,7 +434,15 @@
                                                                 :asset-path           "/devcards/js/out"
                                                                 :output-to            "resources/public/devcards/js/out/budget.js"
                                                                 :output-dir           "resources/public/devcards/js/out"
+                                                                :closure-defines {"goog.DEBUG" true
+                                                                                  process.env/NODE_ENV "development"}
+
                                                                 :source-map-timestamp true
+                                                                :language-in     :ecmascript6
+                                                                :language-out    :ecmascript3
+                                                                :preloads [process.env
+                                                                           ;; env.web.preloads
+                                                                           ]
                                                                 :closure-warnings     ~closure-warns
                                                                 :npm-deps             ~npm-deps
                                                                 :recompile-dependents false}}
@@ -420,9 +453,17 @@
                                                                 :output-dir       "resources/public/test/js/out"
                                                                 :asset-path       "/test/js/out"
                                                                 :main             "eponai.client.figwheel.test-main"
+                                                                :closure-defines {"goog.DEBUG" true
+                                                                                  process.env/NODE_ENV "development"}
+
                                                                 :parallel-build   true
                                                                 :optimizations    :none
                                                                 :source-map       true
+                                                                :language-in     :ecmascript6
+                                                                :language-out    :ecmascript3
+                                                                :preloads [process.env
+                                                                           ;; env.web.preloads
+                                                                           ]
                                                                 :closure-warnings ~closure-warns
                                                                 :npm-deps         ~npm-deps
                                                                 :recompile-dependents false
@@ -432,23 +473,41 @@
                                                  :compiler     {:output-to        "resources/public/doo-test/js/out/budget.js"
                                                                 :output-dir       "resources/public/doo-test/js/out"
                                                                 :main             "eponai.client.tests"
+                                                                :closure-defines {"goog.DEBUG" true
+                                                                                  process.env/NODE_ENV "development"}
+
                                                                 :parallel-build   true
                                                                 :optimizations    :none
                                                                 :source-map       true
+                                                                :language-in     :ecmascript6
+                                                                :language-out    :ecmascript3
+                                                                :preloads [process.env
+                                                                           ;; env.web.preloads
+                                                                           ]
                                                                 :closure-warnings ~closure-warns
                                                                 :npm-deps         ~npm-deps
                                                                 }}
                                                 {:id           "simple"
                                                  :source-paths ["src/" "src-hacks/web/" "env/client/simple"]
-                                                 :compiler     {:closure-defines {"goog.DEBUG" true}
-                                                                :main            "env.web.main"
+                                                 :compiler     {:main            "env.web.main"
                                                                 :asset-path      "/simple/js/out"
                                                                 :output-to       "resources/public/simple/js/out/budget.js"
                                                                 :output-dir      "resources/public/simple/js/out/"
+                                                                :closure-defines {"goog.DEBUG" true
+                                                                                  process.env/NODE_ENV "production"}
+
                                                                 :optimizations   :simple
-                                                                :externs         ["src-hacks/js/externs/stripe-checkout.js"]
+                                                                :externs         ["src-hacks/js/externs/stripe-checkout.js"
+                                                                                  "src-hacks/js/externs/react/react.ext.js"
+                                                                                  "src-hacks/js/externs/react/react-dom.ext.js"]
                                                                 :infer-externs   true
-                                                                ;; :language-in     :ecmascript5
+                                                                :language-in     :ecmascript6
+                                                                :language-out    :ecmascript3
+                                                                :preloads [process.env
+                                                                           cljsjs.react
+                                                                           cljsjs.react.web
+                                                                           ;; env.web.preloads
+                                                                           ]
                                                                 :parallel-build  true
                                                                 :pretty-print    true
                                                                 ;; :source-map   true

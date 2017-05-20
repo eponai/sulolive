@@ -63,7 +63,7 @@
       (debug "COMPONENT: " (pr-str component))
       (with-doctype
         (html/render-html-without-reactid-tags
-          (->component (assoc props ::root/app-html (render-page props))))))))
+          (->component (merge (assoc props ::root/app-html (render-page props)))))))))
 
 (def render-site (makesite root/Root))
 

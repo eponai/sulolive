@@ -1,6 +1,9 @@
 (ns eponai.web.app
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
+    [process.env]
+    [cljsjs.react]
+    [cljsjs.react.dom]
     [eponai.web.modules :as modules]
     [eponai.client.utils :as utils]
     [eponai.web.auth :as auth]
