@@ -85,7 +85,7 @@
 
 (defn head [{:keys [release? exclude-icons? cljs-build-id social-sharing]}]
   (dom/head
-    nil
+    {:prefix "og: http://ogp.me/ns# fb: http://ogp.me/ns/fb#"}
     (dom/meta {:name    "google-site-verification"
                   :content "eWC2ZsxC6JcZzOWYczeVin6E0cvP4u6PE3insn9p76U"})
 

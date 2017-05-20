@@ -6,7 +6,8 @@
             [eponai.common.stream :as stream]
             [eponai.server.external.wowza :as wowza]
             [eponai.common.routes :as routes]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [eponai.common.format :as f]))
 
 (defn- store [{:keys [state system]} store-id]
   (when-let [store-id (c/parse-long-safe store-id)]
@@ -49,24 +50,28 @@
     (when-let [product (db/pull (db/db state)
                                 [:store.item/name
                                  :store.item/price
+                                 :store.item/description
                                  {:store.item/photos [:store.item.photo/index
                                                       {:store.item.photo/photo [:photo/id]}]}]
                                 product-id)]
       (let [photo (first (sort-by :store.item.photo/index (:store.item/photos product)))
             image (photos/transform (get-in photo [:store.item.photo/photo :photo/id]) :transformation/full)
-            server-host (host/webserver-url (:system/server-address system))]
+            server-host (host/webserver-url (:system/server-address system))
+            description-html (f/bytes->str (:store.item/description product))
+            description-text (if description-html
+                                   (or (not-empty (string/replace description-html #"<(?:.|\n)*?>" ""))
+                                       (:store.item/name product))
+                                   (:store.item/name product))]
         {:facebook {:fb:app_id              "936364773079066"
                     :og:title               (:store.item/name product)
                     :og:type                "product"
-                    :product:price:amount   (:store.item/price product)
-                    :product:price:currency "cad"
-                    :og:description         (:store.item/name product)
+                    :og:description         description-text
                     :og:image               image
                     :og:url                 (str server-host (routes/path :product {:product-id product-id}))}
          :twitter {:twitter:card           "summary_large_image"
                    :twitter:site           "@sulolive"
                    :twitter:title          (:store.item/name product)
-                   :twitter:description    (:store.item/name product)
+                   :twitter:description    description-text
                    :twitter:image          image}}))))
 
 (defn share-objects [{:keys [route state route-params system] :as env}]

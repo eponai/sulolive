@@ -160,8 +160,8 @@
 (defn agent-whitelisted? [request]
   (let [whitelist #{"facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"
                     "facebookexternalhit/1.1"
-                    "Facebot/"
-                    "Twitterbot/"}
+                    "Facebot"
+                    "Twitterbot"}
         user-agent (get-in request [:headers "user-agent"])]
     (some #(string/includes? user-agent %) whitelist)))
 
