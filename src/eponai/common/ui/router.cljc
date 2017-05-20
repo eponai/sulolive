@@ -38,7 +38,7 @@
 
 (def routes [:index :store :browse :checkout :store-dashboard
              :shopping-bag :login :sell :product :live :help
-             :user :coming-soon :unauthorized :user-dashboard])
+             :user :coming-soon :unauthorized :user-settings])
 
 #?(:cljs
    (defn should-update-when-route-is-loaded

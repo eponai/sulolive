@@ -27,7 +27,7 @@
 
 (def user-routes
   {""          :user
-   "/settings" {"" :user-dashboard}
+   "/settings" {"" :user-settings}
    "/orders"   {""                       :user/order-list
                 ["/" [#"\w+" :order-id]] :user/order}
    "/profile"  :user/profile})

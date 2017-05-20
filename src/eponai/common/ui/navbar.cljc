@@ -58,7 +58,7 @@
                               (dom/span nil "Profile"))
               (menu/item-link {:href (routes/url :user/order-list {:user-id (:db/id user)})}
                               (dom/span nil "Purchases"))
-              (menu/item-link {:href (routes/url :user-dashboard {:user-id (:db/id user)})}
+              (menu/item-link {:href (routes/url :user-settings {:user-id (:db/id user)})}
                               (dom/span nil "Settings")))))
         (menu/item nil
                    (menu/vertical
@@ -595,8 +595,8 @@
                  ]
 
                 (and (some? route)
-                     (or (= route :user-dashboard)
-                         (= (namespace route) (name :user-dashboard))))
+                     (or (= route :user-settings)
+                         (= (namespace route) (name :user-settings))))
                 [(menu/vertical
                    nil
                    (when (some? auth)
@@ -694,7 +694,7 @@
                                                (dom/span nil "Profile"))
                                  (sidebar-link this :user/order-list {:user-id (:db/id auth)}
                                                (dom/span nil "Purchases"))
-                                 (sidebar-link this :user-dashboard {:user-id (:db/id auth)}
+                                 (sidebar-link this :user-settings {:user-id (:db/id auth)}
                                                (dom/span nil "Settings")))))
                   (when (some? owned-store)
                     (menu/item

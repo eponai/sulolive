@@ -10,6 +10,7 @@ $user-dashboard-max-width: 44rem;
 	}
 	.row {
 		max-width: $user-dashboard-max-width;
+		margin: 0 auto;
 	}
 	.page-content {
 		padding-top: 1rem;
@@ -17,7 +18,7 @@ $user-dashboard-max-width: 44rem;
 
 
 	h2 {
-		font-family: $header-font-family-serif;
+		// font-family: $header-font-family-serif;
 		// color: $dark-gray;
 		// text-transform: uppercase;
 		margin-bottom: 0.5rem;
@@ -76,9 +77,21 @@ $user-dashboard-max-width: 44rem;
 		.payment-card {
 			display: flex;
 			flex-direction: row;
+			align-items: center;
+		
 			> * {
 				margin-right: 1rem;
 			}
+			.payment-brand {
+				font-weight: $global-weight-bold;
+			}
+		}
+		.icon {
+			width: 2rem;
+			height: 2rem;
+			min-width: 2rem;
+			opacity: 1;
+			flex: 1 0;
 		}
 
 		.user-profile {
@@ -93,6 +106,24 @@ $user-dashboard-max-width: 44rem;
 		// margin: 0 auto;
 				// margin: 0.5rem 0;
 			}
+			span {
+				font-weight: $global-weight-bold;
+				// letter-spacing: 1px;
+			}
+		}
+	}
+
+	.reveal.full {
+		display: flex;
+		align-items: center;
+		// justify-content: center;
+		// flex-direction: column;
+		.user-profile-photo {
+			max-width: 10rem;
+			margin: 0 auto;
+		}
+		.section-list {
+			margin-bottom: 1rem;
 		}
 	}
 }
