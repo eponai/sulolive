@@ -9,7 +9,8 @@
     [eponai.common.ui.navbar :as nav]
     [taoensso.timbre :refer [debug]]
     [om.next :as om]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as p]
+    [eponai.web.social :as social]))
 
 (defn order-status-element [order]
   (let [status (:order/status order)]
@@ -153,7 +154,8 @@
              (css/align :right))
         ;(menu/item-link nil (dom/small nil "Privacy Policy"))
         ;(menu/item-link nil (dom/small nil "Terms & Conditions"))
-        (menu/item-text nil (dom/small {:classes ["copyright"]} "© eponai hb 2017"))))))
+        (menu/item nil (social/sulo-icon-attribution))
+        (menu/item-text nil (social/sulo-copyright))))))
 
 (defn page-container [{:keys [navbar id class-name no-footer?]} & content]
   (dom/div

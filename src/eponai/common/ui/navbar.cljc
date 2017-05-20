@@ -54,8 +54,8 @@
             (menu/vertical
               (css/add-class :nested)
               (dom/label nil (dom/span nil "Your Account"))
-              (menu/item-link {:href (routes/url :user {:user-id (:db/id user)})}
-                              (dom/span nil "Profile"))
+              ;(menu/item-link {:href (routes/url :user {:user-id (:db/id user)})}
+              ;                (dom/span nil "Profile"))
               (menu/item-link {:href (routes/url :user/order-list {:user-id (:db/id user)})}
                               (dom/span nil "Purchases"))
               (menu/item-link {:href (routes/url :user-settings {:user-id (:db/id user)})}
@@ -597,53 +597,92 @@
 
 
                 ;; Consumer side menu.
-                (menu/vertical
-                  nil
-                  (menu/item
-                    nil
-                    (dom/label nil "Explore")
-                    (menu/vertical
-                      nil
-                      (sidebar-highlight this :live nil "LIVE")))
-                  (menu/item
-                    nil (dom/label nil "Shop by category")
-                    (menu/vertical
-                      nil
-                      (map
-                        (fn [{:category/keys [name href]}]
-                          (sidebar-category this href (s/capitalize name)))
-                        navigation)))
-                  (when (some? auth)
-                    (menu/item nil
-                               (dom/label nil "Your account")
-                               (menu/vertical
-                                 nil
-                                 (sidebar-link this :user {:user-id (:db/id auth)}
-                                               (dom/span nil "Profile"))
-                                 (sidebar-link this :user/order-list {:user-id (:db/id auth)}
-                                               (dom/span nil "Purchases"))
-                                 (sidebar-link this :user-settings {:user-id (:db/id auth)}
-                                               (dom/span nil "Settings")))))
-                  (when (some? owned-store)
-                    (menu/item
-                      nil
-                      (dom/label nil "Manage store")
-                      (menu/vertical
-                        nil
-                        (menu/item
-                          nil
-                          (dom/a {:href (routes/url :store-dashboard {:store-id (:db/id owned-store)})}
-                                 (dom/span nil (get-in owned-store [:store/profile :store.profile/name])))))))
-                  (when (and (some? auth)
-                             (nil? owned-store))
-                    (menu/item nil (dom/a
-                                     (->> {:href (routes/url :sell)}
-                                          (css/button)) (dom/span nil "Start a store"))))
-                  (if (some? auth)
-                    (menu/item nil (dom/a
-                                     (->> {:href "/logout"}
-                                          (css/button-hollow)) (dom/span nil "Sign out")))
-                    (menu/item nil (dom/a
-                                     (->> {:onClick #(auth/show-lock (shared/by-key this :shared/auth-lock))}
-                                          (css/button)) (dom/span nil "Sign in")))))))))))
+                [(menu/vertical
+                   nil
+                   (menu/item
+                     nil
+                     (dom/label nil "Explore")
+                     (menu/vertical
+                       nil
+                       (sidebar-highlight this :live nil "LIVE")))
+                   (menu/item
+                     nil (dom/label nil "Shop by category")
+                     (menu/vertical
+                       nil
+                       (map
+                         (fn [{:category/keys [name href]}]
+                           (sidebar-category this href (s/capitalize name)))
+                         navigation)))
+                   (when (some? owned-store)
+                     (menu/item
+                       nil
+                       (dom/label nil "Manage store")
+                       (menu/vertical
+                         nil
+                         (menu/item
+                           nil
+                           (dom/a {:href (routes/url :store-dashboard {:store-id (:db/id owned-store)})}
+                                  (dom/div {:classes ["icon icon-shop"]})
+                                  (dom/span nil (get-in owned-store [:store/profile :store.profile/name])))))))
+                   (when (some? auth)
+                     (menu/item nil
+                                (dom/label nil "Your account")
+                                (menu/vertical
+                                  nil
+                                  ;(sidebar-link this :user {:user-id (:db/id auth)}
+                                  ;              (dom/div {:classes ["icon icon-profile"]})
+                                  ;              (dom/span nil "Profile"))
+                                  (sidebar-link this :user/order-list {:user-id (:db/id auth)}
+                                                (dom/div {:classes ["icon icon-order"]})
+                                                (dom/span nil "Purchases"))
+                                  (sidebar-link this :user-settings {:user-id (:db/id auth)}
+                                                (dom/div {:classes ["icon icon-settings"]})
+                                                (dom/span nil "Settings")))))
+                   ;(when (and (some? auth)
+                   ;           (nil? owned-store))
+                   ;  (menu/item nil (dom/a
+                   ;                   (->> {:href (routes/url :sell)}
+                   ;                        (css/button)) (dom/span nil "Start a store"))))
+                   ;(when (nil? auth)
+                   ;  ;(menu/item nil (dom/a
+                   ;  ;                 (->> {:href "/logout"}
+                   ;  ;                      (css/button-hollow)) (dom/span nil "Sign out")))
+                   ;  (menu/item nil (dom/a
+                   ;                   (->> {:onClick #(auth/show-lock (shared/by-key this :shared/auth-lock))}
+                   ;                        (css/button)) (dom/span nil "Sign in"))))
+                   )
+                 (menu/vertical
+                   (css/add-class :footer-menu)
+                   (menu/item
+                     (css/hide-for :large)
+                     (menu/vertical (css/add-class :signout-menu)
+                                    (when (and (some? auth)
+                                               (nil? owned-store))
+                                      (menu/item nil (dom/a
+                                                       (->> {:href (routes/url :sell)}
+                                                            (css/button)) (dom/span nil "Start a store"))))
+                                    (if (some? auth)
+                                      (menu/item nil (dom/a {:href "/logout"} (dom/small nil "Sign out")))
+                                      (menu/item nil (dom/a
+                                                       (->> {:onClick #(auth/show-lock (shared/by-key this :shared/auth-lock))}
+                                                            (css/button)) (dom/span nil "Sign in")))
+                                      ;(menu/item nil (dom/a (css/button {:onClick #(auth/show-lock (shared/by-key this :shared/auth-lock))})
+                                      ;                      (dom/span nil "Sign in")))
+                                      )))
+                   ;(menu/item
+                   ;  nil
+                   ;  (menu/horizontal
+                   ;    {:key "social"}
+                   ;    (menu/item-link {:href   "https://www.facebook.com/live.sulo"
+                   ;                     :target "_blank"}
+                   ;                    (dom/span {:classes ["icon icon-instagram"]}))
+                   ;    ;(menu/item-link nil (dom/i {:classes ["fa fa-twitter fa-fw"]}))
+                   ;    (menu/item-link {:href   "https://www.instagram.com/sulolive"
+                   ;                     :target "_blank"}
+                   ;                    (dom/span {:classes ["icon icon-facebook"]}))))
+                   ;<a href="https://icons8.com">Icon pack by Icons8</a>
+                   ;(menu/item-text nil (dom/a {:href   "https://icons8.com"
+                   ;                            :target "_blank"} (dom/small {:classes ["copyright"]} "Icons by Icons8")))
+                   (menu/item-text nil (dom/small {:classes ["copyright"]} "© eponai hb 2017")))]
+                ))))))
 (def ->Sidebar (om/factory Sidebar))
