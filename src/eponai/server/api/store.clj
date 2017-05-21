@@ -161,15 +161,17 @@
 
             result-db (:db-after (db/transact state [charge-entity
                                                      charged-order]))]
-        (if (some? user-stripe)
-          (stripe/update-customer (:system/stripe system) (:stripe/id user-stripe) {:source source})
-          (let [user (db/pull (db/db state) [:db/id :user/email] (:user-id auth))
-                customer (stripe/create-customer (:system/stripe system) {:email    (:user/email user)
-                                                                          :metadata {:id (:db/id user)}
-                                                                          :source   source})
-                new-stripe {:db/id     (db/tempid :db.part/user)
-                            :stripe/id (:id customer)}]
-            (db/transact state [new-stripe [:db/add (:user-id auth) :user/stripe (:db/id new-stripe)]])))
+        (when (some? auth)
+          (if (some? user-stripe)
+            (stripe/update-customer (:system/stripe system) (:stripe/id user-stripe) {:source source})
+            (let [user (db/pull (db/db state) [:user/email] (:user-id auth))
+                  customer (stripe/create-customer (:system/stripe system) {:email    (:user/email user)
+                                                                            :metadata {:id (:user-id auth)}
+                                                                            :source   source})
+                  new-stripe {:db/id     (db/tempid :db.part/user)
+                              :stripe/id (:stripe/id customer)}]
+              (db/transact state [new-stripe
+                                  [:db/add (:user-id auth) :user/stripe (:db/id new-stripe)]]))))
         ; Return order entity to redirect in the client
         (db/pull result-db [:db/id] [:order/uuid (:order/uuid order)])))))
 
@@ -193,5 +195,4 @@
 (defn account [{:keys [state system]} store-id]
   (let [{:keys [stripe/id] :as s} (stripe/pull-stripe (db/db state) store-id)]
     (when (some? id)
-      (merge s
-             (stripe/get-account (:system/stripe system) id)))))
+      (assoc (stripe/get-account (:system/stripe system) id) :db/id (:db/id s)))))

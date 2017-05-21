@@ -74,6 +74,22 @@ $user-dashboard-max-width: 44rem;
 			font-size: 120%;
 		}
 
+		.section-list-item--card {
+			.column:nth-child(2) {
+				text-align: left !important;
+				@include breakpoint(medium) {
+					text-align: center !important;
+				}
+			}
+			// .column:nth-child(3) {
+			// 	display: flex;
+			// 	flex-direction: column;
+			// 	@include breakpoint(medium) {
+			// 		flex-direction: row;
+			// 	}
+			// }
+		}
+
 		.payment-card {
 			display: flex;
 			flex-direction: row;
@@ -84,6 +100,19 @@ $user-dashboard-max-width: 44rem;
 			}
 			.payment-brand {
 				font-weight: $global-weight-bold;
+			
+			}
+			p {
+				text-align: left;
+				flex: 1;
+				display: flex;
+				flex-wrap: wrap;
+				align-items: flex-end;
+				margin: 0;
+				span:first-child {
+					margin-right: 1rem;
+					flex: 1;
+				}
 			}
 		}
 		.icon {
@@ -91,7 +120,7 @@ $user-dashboard-max-width: 44rem;
 			height: 2rem;
 			min-width: 2rem;
 			opacity: 1;
-			flex: 1 0;
+			// flex: 1 0;
 		}
 
 		.user-profile {

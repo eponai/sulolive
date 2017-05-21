@@ -148,7 +148,8 @@
    "Unknown"          "icon-cc-unknown"})
 
 (defn payment-info-modal [component]
-  (let [cards [{:brand "American Express" :last4 1234 :exp-year 2018 :exp-month 4}]
+  (let [{:query/keys [stripe-customer]} (om/props component)
+        cards (:stripe/sources stripe-customer)             ;[{:brand "American Express" :last4 1234 :exp-year 2018 :exp-month 4}]
         on-close #(om/update-state! component dissoc :modal)]
     (common/modal
       {:on-close on-close
@@ -166,33 +167,37 @@
             (menu/vertical
               (css/add-class :section-list)
               (map-indexed (fn [i c]
-                             (menu/item
-                               nil
-                               (grid/row
-                                 (css/add-class :collapse)
-                                 (grid/column
-                                   (css/add-class :shrink)
-                                   (dom/div {:classes ["icon" (get payment-logos (:brand c))]}))
-                                 (grid/column
-                                   nil
-                                   (grid/row
-                                     nil
-                                     (grid/column
-                                       nil
-                                       (dom/div
-                                         (css/add-class :payment-card)
-                                         (dom/p nil (dom/span (css/add-class :payment-brand) (:brand c)))
-                                         (dom/p nil (dom/small (css/add-class :payment-past4) (str "ending in " (:last4 c))))))
-                                     (grid/column
-                                       (grid/column-size {:small 12 :medium 6})
-                                       (dom/a (->> (css/button-hollow)
-                                                   (css/add-class :secondary)
-                                                   (css/add-class :small))
-                                              (dom/span nil "Set default"))
-                                       (dom/a (->> (css/button-hollow)
-                                                   (css/add-class :secondary)
-                                                   (css/add-class :small))
-                                              (dom/span nil "Remove"))))))))
+                             (let [{:stripe.card/keys [brand last4]} c]
+                               (menu/item
+                                 (css/add-class :section-list-item--card)
+                                 (grid/row
+                                   (css/add-class :collapse)
+                                   ;(grid/column
+                                   ;  (css/add-class :shrink)
+                                   ;  (dom/div {:classes ["icon" (get payment-logos brand "icon-cc-unknown")]}))
+                                   (grid/column
+                                     (->> (grid/column-size {:small 12 :medium 4}))
+                                     (dom/div
+                                       (css/add-class :payment-card)
+                                       (dom/div {:classes ["icon" (get payment-logos brand "icon-cc-unknown")]})
+                                       (dom/p nil
+                                              (dom/span (css/add-class :payment-brand) brand))))
+                                   (grid/column
+                                     (->> (css/text-align :center)
+                                          (grid/column-size {:small 6 :medium 4}))
+                                     (dom/small (css/add-class :payment-past4) (str "ending in " last4)))
+                                   (grid/column
+                                     (->> (css/text-align :right)
+                                          (grid/column-size {:small 6 :medium 4}))
+                                     (dom/a (->> (css/button-hollow)
+                                                 (css/add-class :secondary)
+                                                 (css/add-class :small))
+                                            (dom/span nil "Set default"))
+                                     (dom/a (->> (css/button-hollow)
+                                                 (css/add-class :secondary)
+                                                 (css/add-class :small))
+                                            (dom/span nil "Remove"))))
+                                 )))
                            cards))
             (dom/p nil (dom/small nil "Save your cards at checkout."))))
         (dom/a
@@ -208,6 +213,7 @@
                    {:user/profile [:user.profile/name
                                    {:user.profile/photo [:photo/id]}]}
                    :user/stripe]}
+     {:query/stripe-customer [:db/id :stripe/sources]}
      #?(:cljs
         {:proxy/uploader (om/get-query pu/PhotoUploader)})
      :query/current-route
@@ -241,11 +247,11 @@
   ;  {:modal :modal/edit-profile})
   (render [this]
     (let [{:proxy/keys [navbar]
-           :query/keys [auth current-route]} (om/props this)
+           :query/keys [auth current-route ]} (om/props this)
           {:keys [modal photo-upload queue-photo]} (om/get-state this)
           {user-profile :user/profile} auth
           {:keys [route-params]} current-route]
-      (debug "Auth: " auth)
+      (debug "Props: " (om/props this))
       (common/page-container
         {:navbar navbar :id "sulo-user-dashboard"}
         (grid/row-column

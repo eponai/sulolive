@@ -20,7 +20,6 @@
     (str "t_" (get transformations k))))
 
 (defn transform [public-id & [transformation file-ext]]
-  (debug "Transform: " file-ext)
   (let [ext (or file-ext "jpg")
         t (when-not (= transformation :transformation/full)
             (transformation-param transformation))

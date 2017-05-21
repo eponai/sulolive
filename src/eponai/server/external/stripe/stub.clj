@@ -43,7 +43,7 @@
   {:id      id
    :country "ca"
    :payout_schedule {:delay_days 7
-                       :interval "daily"}})
+                     :interval "daily"}})
 
 (defn add-account-verifications [account]
   (let [{:keys [external_accounts legal_entity]} account

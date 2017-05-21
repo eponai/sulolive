@@ -133,7 +133,6 @@
             {:photo-id (:photo/id photo)}
             {:photo-id "static/cat-profile"
              :ext "png"})]
-    (debug "User photo: " p)
     (dom/div
       (css/add-class :user-profile-photo)
       (circle
