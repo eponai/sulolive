@@ -203,7 +203,8 @@
               id (str (count customers))
               new-customer (-> params
                                (assoc :id id)
-                               (assoc :sources {:data [{:brand "Visa" :last4 1234 :exp_year 2018 :exp_month 4}]}))]
+                               (assoc :sources {:data [{:id "0" :brand "Visa" :last4 1234 :exp_year 2018 :exp_month 4}]})
+                               (assoc :default_source "0"))]
           (debug "Created fake Stripe customer: " new-customer)
           (swap! state update :customers assoc id new-customer)
           (debug "New state: " @state)
@@ -218,7 +219,7 @@
               (swap! state update :customers assoc customer-id new-customer)
               (f/stripe->customer new-customer))
             (throw (ex-info (str "Customer with id: " customer-id " does not exist.")
-                            {:id customer-id
+                            {:id     customer-id
                              :params params})))))
 
       (-get-customer [_ customer-id]

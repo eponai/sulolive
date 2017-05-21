@@ -213,7 +213,9 @@
                    {:user/profile [:user.profile/name
                                    {:user.profile/photo [:photo/id]}]}
                    :user/stripe]}
-     {:query/stripe-customer [:db/id :stripe/sources]}
+     {:query/stripe-customer [:db/id
+                              :stripe/sources
+                              :stripe/default-source]}
      #?(:cljs
         {:proxy/uploader (om/get-query pu/PhotoUploader)})
      :query/current-route

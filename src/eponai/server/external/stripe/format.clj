@@ -90,13 +90,17 @@
 
 (defn stripe->customer [customer]
   (let [source* (fn [s]
-                  {:stripe.card/brand     (:brand s)
-                   :stripe.card/exp-month (:exp_month s)
-                   :stripe.card/exp-year  (:exp_year s)
-                   :stripe.card/last4     (:last4 s)
-                   :stripe.card/name      (:name s)})]
-    {:stripe/id      (:id customer)
-     :stripe/sources (map source* (:data (:sources customer)))}))
+                  (f/remove-nil-keys
+                    {:stripe.card/id        (:id s)
+                     :stripe.card/brand     (:brand s)
+                     :stripe.card/exp-month (:exp_month s)
+                     :stripe.card/exp-year  (:exp_year s)
+                     :stripe.card/last4     (:last4 s)
+                     :stripe.card/name      (:name s)}))]
+    (f/remove-nil-keys
+      {:stripe/id             (:id customer)
+       :stripe/sources        (map source* (:data (:sources customer)))
+       :stripe/default-source (:default_source customer)})))
 
 (defn input->legal-entity [legal-entity]
   (let [{:field.legal-entity/keys [type address business-name business-tax-id first-name last-name dob personal-id-number]} legal-entity
