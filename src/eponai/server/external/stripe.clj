@@ -13,6 +13,11 @@
   (when store-id
     (db/pull-one-with db '[*] {:where   '[[?s :store/stripe ?e]]
                                :symbols {'?s store-id}})))
+
+(defn pull-user-stripe [db user-id]
+  (when user-id
+    (db/pull-one-with db '[*] {:where   '[[?u :user/stripe ?e]]
+                               :symbols {'?u user-id}})))
 ;; ########## Stripe protocol ################
 
 (defprotocol IStripeConnect
@@ -31,6 +36,7 @@
   (-update-account [this account-id params])
 
   (-create-customer [this opts])
+  (-update-customer [this customer-id opts])
   ;; Charges
   (-create-charge [this params])
   (-create-refund [this params]))
@@ -66,6 +72,12 @@
 (defn create-refund [stripe params]
   (-create-refund stripe params))
 
+(defn create-customer [stripe params]
+  (-create-customer stripe params))
+
+(defn update-customer [stripe customer-id params]
+  (-update-customer stripe customer-id params))
+
 ;; ############## Stripe record #################
 
 (defn stripe-endpoint [path & [id]]
@@ -91,10 +103,14 @@
       (debug "Updated: " updated)
       (f/stripe->account updated)))
 
-  (-create-customer [_ {:keys [email]}]
-    (let [params {:email email}
-          customer (json/read-str (:body (client/post (stripe-endpoint "customers") {:basic-auth api-key :form-params params})) :key-fn keyword)]
-      customer))
+  (-create-customer [_ params]
+    (let [customer (json/read-str (:body (client/post (stripe-endpoint "customers") {:basic-auth api-key :form-params params})) :key-fn keyword)]
+      {:id (:id customer)}))
+
+  (-update-customer [_ customer-id params]
+    (let [customer (json/read-str (:body (client/post (stripe-endpoint "customers" customer-id)
+                                                      {:basic-auth api-key :form-params params})) :key-fn keyword)]
+      {:id (:id customer)}))
 
   (-create-account [_ {:keys [country]}]
     (let [params {:country country :managed true}
@@ -171,14 +187,28 @@
           (swap! state update :accounts assoc account-id stripe-account)
           (f/stripe->account stripe-account)))
 
-      (-create-customer [_ {:keys [email]}]
+      (-create-customer [_ params]
         (let [{:keys [customers]} @state
               id (str (count customers))
-              new-customer {:id    id
-                            :email email}]
+              new-customer (-> params
+                               (assoc :id id)
+                               (assoc :sources [{:brand "Visa" :last4 1234 :exp-year 2018 :exp-month 4}]))]
           (debug "Created fake Stripe customer: " new-customer)
           (swap! state update :customers assoc id new-customer)
           new-customer))
+
+      (-update-customer [_ customer-id params]
+        (debug "Update customer: " @state)
+        (let [{:keys [customers]} @state
+              customer (get customers customer-id)]
+          (if (some? customer)
+            (let [new-customer (update customer :sources conj {:brand "Visa" :last4 1234 :exp-year 2018 :exp-month 4})]
+              (debug "Updated fake Stripe customer: " new-customer)
+              (swap! state update :customers assoc customer-id new-customer)
+              new-customer)
+            (throw (ex-info (str "Customer with id: " customer-id " does not exist.")
+                            {:id customer-id
+                             :params params})))))
 
       ;; Charge
       (-create-charge [_ params]

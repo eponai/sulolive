@@ -81,138 +81,138 @@
   (let [{:keys [input-validation]} state
         {:keys [collapse? shipping]} props
         {:keys [on-open]} computed]
-    (dom/div
+    (callout/callout
       nil
-      (callout/callout
-        nil
-        (dom/h3 nil "1. Ship to")
-        (dom/div
-          (when-not collapse?
-            (css/add-class :hide))
-          (let [{:shipping/keys [address]} shipping]
-            (dom/div
-              (css/add-class :shipping-address)
-              (dom/p nil (:shipping/name shipping))
-              (dom/div nil (dom/span nil (:shipping.address/street address)))
-              (dom/div nil (dom/span nil (:shipping.address/street2 address)))
-              (dom/div nil
-                       (dom/span nil
-                                 (str
-                                   (:shipping.address/locality address)
-                                   ", "
-                                   (:shipping.address/postal address)
-                                   " "
-                                   (:shipping.address/region address)
-                                   )))
-              (dom/div nil (dom/span nil (:shipping.address/country address)))))
+      (dom/div
+        (css/add-class :section-title)
+        (dom/p nil "1. Ship to"))
+      (dom/div
+        (when-not collapse?
+          (css/add-class :hide))
+        (let [{:shipping/keys [address]} shipping]
           (dom/div
-            (css/text-align :right)
-            (dom/a
-              (css/button-hollow {:onClick #(when on-open (on-open))})
-              (dom/span nil "Edit"))))
+            (css/add-class :shipping-address)
+            (dom/p nil (:shipping/name shipping))
+            (dom/div nil (dom/span nil (:shipping.address/street address)))
+            (dom/div nil (dom/span nil (:shipping.address/street2 address)))
+            (dom/div nil
+                     (dom/span nil
+                               (str
+                                 (:shipping.address/locality address)
+                                 ", "
+                                 (:shipping.address/postal address)
+                                 " "
+                                 (:shipping.address/region address)
+                                 )))
+            (dom/div nil (dom/span nil (:shipping.address/country address)))))
         (dom/div
-          (when collapse?
-            (css/add-class :hide))
+          (css/text-align :right)
+          (dom/a
+            (css/button-hollow {:onClick #(when on-open (on-open))})
+            (dom/span nil "Edit"))))
+      (dom/div
+        (when collapse?
+          (css/add-class :hide))
+        (grid/row
+          nil
+          (grid/column
+            nil
+            (dom/label nil "Full name")
+            (validate/input
+              {:id           (:shipping/name form-inputs)
+               :type         "text"
+               :name         "name"
+               :autoComplete "name"}
+              input-validation)))
+        (grid/row
+          nil
+          (grid/column
+            nil
+            ;(dom/label nil "Search address")
+            (dom/input {:id          "auto-complete"
+                        :placeholder "Enter location..."
+                        :type        "text"
+                        :onFocus     #(geo-locate this)})))
+        (dom/hr nil)
+        (dom/div
+          nil
           (grid/row
             nil
             (grid/column
               nil
-              (dom/label nil "Full name")
+              (dom/label nil "Country")
+              (dom/select
+                {:id           (:shipping.address/country form-inputs)
+                 :name         "ship-country"
+                 :autoComplete "shipping country"}
+                ;input-validation
+                (dom/option {:value "CA"} "Canada")
+                (dom/option {:value "SE"} "Sweden")
+                (dom/option {:value "US"} "United States"))))
+
+
+          (grid/row
+            nil
+            (grid/column
+              (grid/column-size {:small 12 :medium 8})
+              (dom/label nil "Address")
               (validate/input
-                {:id           (:shipping/name form-inputs)
+                {:id           (:shipping.address/street form-inputs)
                  :type         "text"
-                 :name         "name"
-                 :autoComplete "name"}
+                 :name         "ship-address"
+                 :autoComplete "shipping address-line1"}
+                input-validation))
+            (grid/column
+              (grid/column-size {:small 12 :medium 4})
+              (dom/label nil "Apt/Suite/Other (optional)")
+              (validate/input
+                {:type "text"
+                 :id   (:shipping.address/street2 form-inputs)}
                 input-validation)))
           (grid/row
             nil
             (grid/column
               nil
-              ;(dom/label nil "Search address")
-              (dom/input {:id          "auto-complete"
-                          :placeholder "Enter location..."
-                          :type        "text"
-                          :onFocus     #(geo-locate this)})))
-          (dom/hr nil)
-          (dom/div
-            nil
-            (grid/row
+              (dom/label nil "Postal code")
+              (validate/input
+                {:id           (:shipping.address/postal form-inputs)
+                 :type         "text"
+                 :name         "ship-zip"
+                 :autoComplete "shipping postal-code"}
+                input-validation))
+            (grid/column
+              (grid/column-size {:small 12 :large 4})
+              (dom/label nil "City")
+              (validate/input
+                {:type         "text"
+                 :id           (:shipping.address/locality form-inputs)
+                 :name         "ship-city"
+                 :autoComplete "shipping locality"}
+                input-validation))
+            (grid/column
               nil
-              (grid/column
-                nil
-                (dom/label nil "Country")
-                (dom/select
-                  {:id           (:shipping.address/country form-inputs)
-                   :name         "ship-country"
-                   :autoComplete "shipping country"}
-                  ;input-validation
-                  (dom/option {:value "CA"} "Canada")
-                  (dom/option {:value "SE"} "Sweden")
-                  (dom/option {:value "US"} "United States"))))
+              (dom/label nil "State/Province (optional)")
+              (validate/input
+                {:id           (:shipping.address/region form-inputs)
+                 :name         "ship-state"
+                 :type         "text"
+                 :autoComplete "shipping region"}
+                input-validation
+                ;input-validation
+                ;(dom/option {} "Select Province")
+                ;(dom/option {:value "bc"} "British Columbia")
+                ))
+            ))
 
-
-            (grid/row
-              nil
-              (grid/column
-                (grid/column-size {:small 12 :medium 8})
-                (dom/label nil "Address")
-                (validate/input
-                  {:id           (:shipping.address/street form-inputs)
-                   :type         "text"
-                   :name         "ship-address"
-                   :autoComplete "shipping address-line1"}
-                  input-validation))
-              (grid/column
-                (grid/column-size {:small 12 :medium 4})
-                (dom/label nil "Apt/Suite/Other (optional)")
-                (validate/input
-                  {:type "text"
-                   :id   (:shipping.address/street2 form-inputs)}
-                  input-validation)))
-            (grid/row
-              nil
-              (grid/column
-                nil
-                (dom/label nil "Postal code")
-                (validate/input
-                  {:id           (:shipping.address/postal form-inputs)
-                   :type         "text"
-                   :name         "ship-zip"
-                   :autoComplete "shipping postal-code"}
-                  input-validation))
-              (grid/column
-                (grid/column-size {:small 12 :large 4})
-                (dom/label nil "City")
-                (validate/input
-                  {:type         "text"
-                   :id           (:shipping.address/locality form-inputs)
-                   :name         "ship-city"
-                   :autoComplete "shipping locality"}
-                  input-validation))
-              (grid/column
-                nil
-                (dom/label nil "State/Province (optional)")
-                (validate/input
-                  {:id           (:shipping.address/region form-inputs)
-                   :name         "ship-state"
-                   :type         "text"
-                   :autoComplete "shipping region"}
-                  input-validation
-                  ;input-validation
-                  ;(dom/option {} "Select Province")
-                  ;(dom/option {:value "bc"} "British Columbia")
-                  ))
-              ))
-
-          (dom/div (css/text-align :right)
-                   (when input-validation
-                     (dom/p
-                       nil
-                       (dom/small (css/add-class :text-alert) "You have errors that need to be fixed before continuing")))
-                   (dom/a
-                     (css/button {:onClick #(.save-shipping this)})
-                     "Next")
-                   ))))))
+        (dom/div (css/text-align :right)
+                 (when input-validation
+                   (dom/p
+                     nil
+                     (dom/small (css/add-class :text-alert) "You have errors that need to be fixed before continuing")))
+                 (dom/a
+                   (css/button {:onClick #(.save-shipping this)})
+                   "Next")
+                 )))))
 
 (defui CheckoutShipping-no-loader
   static script-loader/IRenderLoadingScripts

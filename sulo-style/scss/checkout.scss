@@ -2,7 +2,7 @@
 	$primary-color: map-get($foundation-palette, action);
 	$border-color: rgba($light-gray, 0.75);
 	$border: 1px solid $border-color;
-	@include sulo-action-buttons;
+	// @include sulo-action-buttons;
 	.page-container {
 		$color: map-get($foundation-palette, primary);
 		background: rgba($color, 0.03);
@@ -23,7 +23,13 @@
 		// box-shadow: none;
 	}
 	h3 {
-		font-family: $header-font-family-serif;
+		// font-family: $header-font-family-serif;
+	}
+	.section-title {
+		p {
+			letter-spacing: 1px;
+			font-size: 120%;
+		}
 	}
 
 	.callout {
@@ -77,6 +83,16 @@
 	.checkout-payment {
 		.button {
 			margin-top: 1rem;
+		}
+	}
+
+	.footer {
+		background: transparent;
+		.row {
+			display: none;
+		}
+		.copyright {
+			color: $dark-gray;
 		}
 	}
 }

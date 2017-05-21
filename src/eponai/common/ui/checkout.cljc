@@ -101,15 +101,16 @@
                                         :subtotal subtotal
                                         :shipping shipping-fee}))
 
-            (dom/div
-              nil
-              (ship/->CheckoutShipping (om/computed {:collapse? (not= open-section :shipping)
-                                                     :shipping shipping}
-                                                    {:on-change #(om/update-state! this assoc :checkout/shipping % :open-section :payment)
-                                                     :on-open #(om/update-state! this assoc :open-section :shipping)})))
+            (ship/->CheckoutShipping (om/computed {:collapse? (not= open-section :shipping)
+                                                   :shipping  shipping}
+                                                  {:on-change #(om/update-state! this assoc :checkout/shipping % :open-section :payment)
+                                                   :on-open   #(om/update-state! this assoc :open-section :shipping)}))
+
             (callout/callout
               nil
-              (dom/h3 nil "2. Payment")
+              (dom/div
+                (css/add-class :section-title)
+                (dom/p nil "2. Payment"))
               (dom/div
                 (when (not= open-section :payment)
                   (css/add-class :hide))
