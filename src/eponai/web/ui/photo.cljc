@@ -9,45 +9,46 @@
 (defui Photo
   Object
   (componentDidMount [this]
-    (let [{:keys [photo-id transformation]} (om/props this)]
+    (let [{:keys [photo-id transformation ext]} (om/props this)]
       #?(:cljs
          (when (some? photo-id)
            (let [image-large (js/Image.)
-                 url (photos/transform photo-id (or transformation :transformation/preview))]
+                 url (photos/transform photo-id (or transformation :transformation/preview) ext)]
              (set! (.-onload image-large) #(do
                                             (om/update-state! this assoc :loaded-main? true)))
              (set! (.-src image-large) url))))))
 
   (render [this]
-    (let [{:keys [content src photo-id transformation classes]} (om/props this)]
+    (let [{:keys [content src photo-id transformation classes ext background?]} (om/props this)]
       (cond (some? photo-id)
             (let [{:keys [loaded-main?]} (om/get-state this)
-                  url-small (photos/transform photo-id :transformation/micro)
-                  url (photos/transform photo-id (or transformation :transformation/preview))]
+                  url-small (photos/transform photo-id :transformation/micro ext)
+                  url (photos/transform photo-id (or transformation :transformation/preview) ext)]
               (if-not (string? photo-id)
                 (warn "Ignoring invalid photo src type, expecting a URL string. Got src: " photo-id)
                 (dom/div
                   {:classes (conj classes ::css/photo)
-                   :style   {:backgroundImage (str "url(" url-small ")")}}
-                  (dom/div
-                    (cond-> (css/add-class :background {:style {:backgroundImage (str "url(" url ")")}})
-                            ;loaded-main?
-                            ;(assoc :style {:backgroundImage (str "url(" url ")")})
-                            loaded-main?
-                            (update :classes conj :loaded)))
-
-                  (when url-small
-                    (dom/img
-                      {:src     url-small
-                       :classes ["small"]}))
-                  (dom/img
-                    (cond->> {:src     (when loaded-main? url)
-                              :classes ["main"]
-                              :onLoad  #(om/update-state! this assoc :loaded-main? true)}
-                             loaded-main?
-                             (css/add-class :loaded)))
-                  (dom/div (css/add-class :content)
-                           content))))
+                   :style   (when background? {:backgroundImage (str "url(" url-small ")")})}
+                  (if background?
+                    [(dom/div
+                       (cond-> (css/add-class :background {:style {:backgroundImage (str "url(" url ")")}})
+                               ;loaded-main?
+                               ;(assoc :style {:backgroundImage (str "url(" url ")")})
+                               loaded-main?
+                               (update :classes conj :loaded)))
+                     (dom/div (css/add-class :content)
+                              content)]
+                    [
+                     (when url-small
+                       (dom/img
+                         {:src     url-small
+                          :classes ["small"]}))
+                     (dom/img
+                       (cond->> {:src     (when loaded-main? url)
+                                 :classes ["main"]
+                                 :onLoad  #(om/update-state! this assoc :loaded-main? true)}
+                                loaded-main?
+                                (css/add-class :loaded)))]))))
 
             (some? src)
             (dom/div
@@ -86,13 +87,15 @@
                     photo-id)]
     (photo (-> (css/add-class :cover props)
                (assoc :style :style/cover)
+               (assoc :background? true)
                (assoc :photo-id photo-key))
            content)))
 
 (defn header [props & content]
   (->Photo
     (-> (css/add-class ::css/photo-header props)
-        (assoc :content content))))
+        (assoc :content content)
+        (assoc :background? true))))
 
 (defn overlay [opts & content]
   (dom/div
@@ -126,12 +129,15 @@
 
 (defn user-photo [user {:keys [transformation]}]
   (let [photo (get-in user [:user/profile :user.profile/photo])
-        photo-id (:photo/id photo "static/storefront")]
+        p (if (:photo/id photo)
+            {:photo-id (:photo/id photo)}
+            {:photo-id "static/cat-profile"
+             :ext "png"})]
+    (debug "User photo: " p)
     (dom/div
       (css/add-class :user-profile-photo)
       (circle
-        {:photo-id       photo-id
-         :transformation transformation}))))
+        (merge p {:transformation transformation})))))
 
 (defn stream-photo [store]
   (let [photo (get-in store [:store/profile :store.profile/photo])
