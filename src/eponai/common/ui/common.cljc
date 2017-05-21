@@ -146,9 +146,11 @@
                          (menu/item-text nil (dom/span nil "Follow Us")))
           (menu/horizontal
             {:key "social"}
-            (menu/item-link {:href "https://www.facebook.com/live.sulo"} (dom/i {:classes ["fa fa-instagram fa-fw"]}))
+            (menu/item nil (social/sulo-social-link :social/facebook))
+            (menu/item nil (social/sulo-social-link :social/instagram))
+
             ;(menu/item-link nil (dom/i {:classes ["fa fa-twitter fa-fw"]}))
-            (menu/item-link {:href "https://www.instagram.com/sulolive/"} (dom/i {:classes ["fa fa-facebook fa-fw"]})))))
+            )))
       (menu/horizontal
         (->> {:key "legal"}
              (css/align :right))

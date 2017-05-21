@@ -18,6 +18,17 @@ $sidenav-width: 75%;
 	flex-direction: column;
 	justify-content: space-between;
 
+	li {
+		label {
+			font-size: 80%;
+			letter-spacing: 1px;
+		}
+		span {
+			letter-spacing: 0.5px;
+					// font-weight: $global-weight-bold;
+		}
+	}
+
 	li.category {
 		font-weight: $global-weight-bold;
 		text-transform: uppercase;
@@ -53,6 +64,7 @@ $sidenav-width: 75%;
 	}
 	.icon {
 		padding: 0 !important;
+		margin-right: 1rem;
 	}
 
 	.button {
