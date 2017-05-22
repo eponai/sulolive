@@ -1,5 +1,6 @@
 (ns eponai.repl
   (:require [eponai.server.core :as core]
+            [eponai.server.system :as system]
             [clojure.tools.namespace.repl :as ns.repl]
             [reloaded.repl :refer [system start stop go]]
             [taoensso.timbre :as timbre :refer [debug]]
@@ -28,7 +29,8 @@
             (reload-ns ns-sym))
           (finally
             (when (seq modified-namespaces)
-              (reloaded.repl/resume))))))))
+              (reloaded.repl/resume)
+              (system/resume-requests system))))))))
 
 (let [reloader-atom (atom nil)]
   (defn start-reloading
