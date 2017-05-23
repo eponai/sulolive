@@ -7,6 +7,7 @@
     [eponai.common.ui.dom :as dom]
     [taoensso.timbre :refer [debug info error]]
     [clojure.string :as string]
+    [eponai.common.ui.script-loader :as script-loader]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.elements.menu :as menu]))
@@ -78,77 +79,88 @@
   ;&& video.readyState > 2;
   )
 
-(defui VideoPlayer
+(defn hls-supported? []
+  #?(:cljs (boolean (.isSupported js/Hls))
+     :clj false))
+
+(defn subscribe-hls [component]
+  #?(:cljs
+     (let [video-element (utils/element-by-id video-element-id)
+           {:keys [source]} (om/props component)
+           hls (new js/Hls)]
+       (debug "Subscribing hls: " source)
+       (when-some [old-hls ^js/Hls (:hlsjs (om/get-state component))]
+         (.destroy old-hls))
+       (.attachMedia hls video-element)
+       (.on hls
+            js/Hls.Events.MEDIA_ATTACHED
+            (fn []
+              (info "HLS: Media attached")
+              (.loadSource hls source)
+              (.on hls
+                   js/Hls.Events.MANIFEST_PARSED
+                   (fn []
+                     (info "HLS: Manifest parsed")
+                     (.play video-element)))))
+       (.on hls
+            js/Hls.Events.ERROR
+            (fn [event ^js/Hls.EventData data]
+              (let [is-fatal? (.-fatal data)
+                    type (.-type data)]
+                (error "HLS: Error loading media of type " type ", is fatal " is-fatal?)
+                (when is-fatal?
+                  (cond (= type js/Hls.ErrorTypes.NETWORK_ERROR)
+                        (.startLoad hls)
+                        (= type js/Hls.ErrorTypes.MEDIA_ERROR)
+                        (.recoverMediaError hls)
+                        :else
+                        (.destroy hls))))))
+
+       (om/update-state! component assoc :hlsjs hls))))
+
+(defn init-video-player [component]
+  #?(:cljs
+     (let [video-element (utils/element-by-id video-element-id)]
+       (when (hls-supported?)
+         (subscribe-hls component))
+
+       (.setup js/plyr video-element #js {:controls #js ["play-large"
+                                                         "play"
+                                                         ;"progress"
+                                                         ;"current-time"
+                                                         "mute"
+                                                         "volume"
+                                                         ;"captions"
+                                                         "fullscreen"]})
+       ;(.addEventListener js/document "click" on-click-fn)
+       )))
+
+(defui VideoPlayer-no-loader
   Object
-  (hls-supported? [_]
-    #?(:cljs (boolean (.isSupported js/Hls))
-       :clj false))
-
-  (subscribe-hls [this]
-    #?(:cljs
-       (let [video-element (utils/element-by-id video-element-id)
-             {:keys [source]} (om/props this)
-             {:keys [hljsjs]} (om/get-state this)
-             hls (new js/Hls)]
-         (when (some? hljsjs)
-           (.destroy hljsjs))
-         (.attachMedia hls video-element)
-         (.on hls
-              js/Hls.Events.MEDIA_ATTACHED
-              (fn []
-                (info "HLS: Media attached")
-                (.loadSource hls source)
-                (.on hls
-                     js/Hls.Events.MANIFEST_PARSED
-                     (fn []
-                       (info "HLS: Manifest parsed")
-                       (.play video-element)))))
-         (.on hls
-              js/Hls.Events.ERROR
-              (fn [event data]
-                (let [is-fatal? (.-fatal data)
-                      type (.-type data)]
-                  (error "HLS: Error loading media of type " type ", is fatal " is-fatal?)
-                  (when is-fatal?
-                    (cond (= type js/Hls.ErrorTypes.NETWORK_ERROR)
-                          (.startLoad hls)
-                          (= type js/Hls.ErrorTypes.MEDIA_ERROR)
-                          (.recoverMediaError hls)
-                          :else
-                          (.destroy hls))))))
-
-         (om/update-state! this assoc :hlsjs hls))))
-
   (componentWillUnmount [this]
     #?(:cljs
-       (let [{:keys [hlsjs]} (om/get-state this)]
-         (.destroy hlsjs)
+       (when-some [hls ^js/Hls (:hlsjs (om/get-state this))]
+         (.destroy hls)
          ;(.removeEventListener js/document "click" on-click-fn)
          )))
 
   (componentDidMount [this]
     #?(:cljs
-       (let [video-element (utils/element-by-id video-element-id)]
-         (when (.hls-supported? this)
-           (.subscribe-hls this))
-
-         (.setup js/plyr video-element #js {:controls #js ["play-large"
-                                                           "play"
-                                                           ;"progress"
-                                                           ;"current-time"
-                                                           "mute"
-                                                           "volume"
-                                                           ;"captions"
-                                                           "fullscreen"]})
-         ;(.addEventListener js/document "click" on-click-fn)
-         )))
+       (when-not (script-loader/is-loading-scripts? this)
+         (init-video-player this))))
 
   (componentDidUpdate [this prev-props prev-state]
     #?(:cljs
-       (let [{:controls/keys [share-video-open?]} (om/get-state this)]
+       (let [{:controls/keys [share-video-open?] :keys [hlsjs]} (om/get-state this)]
+         (when (and (nil? hlsjs)
+                    (not (script-loader/is-loading-scripts? this)))
+           ;; hlsjs player was not initialized during didMount because scripts hadn't loaded.
+           ;; Do it now.
+           (init-video-player this))
+
          (when-not (= (:controls/share-video-open? prev-state)
                       share-video-open?)
-           (let [video-element (utils/element-by-id "sl-video-player")]
+           (let [video-element (utils/element-by-id video-element-id)]
              (if share-video-open?
                (when (video-is-playing?)
                  (.pause video-element))
@@ -168,7 +180,8 @@
           {:id video-element-id}
           (dom/source
             (cond-> {:id source-element-id}
-                    (not (.hls-supported? this))
+                    (and (not (script-loader/is-loading-scripts? this))
+                         (not (hls-supported?)))
                     (assoc :src source))))
         ;(dom/div
         ;  (css/add-class :sulo-share-video-overlay)
@@ -195,5 +208,11 @@
         ;                  (css/add-class :secondary))
         ;             (dom/span nil "Close")))))
         ))))
+
+(def VideoPlayer (script-loader/js-loader {:component VideoPlayer-no-loader
+                                      #?@(:cljs [:scripts [[#(exists? js/Hls)
+                                                            "https://cdn.jsdelivr.net/hls.js/latest/hls.js"]
+                                                           [#(exists? js/plyr)
+                                                            "https://cdn.plyr.io/1.8.2/plyr.js"]]])}))
 
 (def ->VideoPlayer (om/factory VideoPlayer))
