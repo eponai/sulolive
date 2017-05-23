@@ -5,10 +5,8 @@
     [om.next :as om :refer [defui]]
     [eponai.common.shared :as shared]
     [taoensso.timbre :refer [debug error info]]
-    [eponai.common.ui.script-loader :as script-loader]
     [eponai.web.ui.stream.videoplayer :as video]
     #?(:cljs [eponai.web.modules :as modules])
-    [eponai.web.ui.stream.wowza :as w]
     [eponai.common.ui.elements.css :as css]))
 
 (defn add-fullscreen-listener [f]

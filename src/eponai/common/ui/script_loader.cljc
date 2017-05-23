@@ -48,12 +48,12 @@
                   (om/update-state! this assoc ::loaded? true))))))
 
 (defn- render-loader [this child-props {:keys [component factory]}]
-  (let [computed (om/get-computed this)
-        child-props (cond-> child-props
-                            ;; Add the computed to the child props.
-                            (seq computed)
-                            (om/computed (assoc computed ::js-loader this)))]
-    (if (::loaded? (om/get-state this))
+  (let [{::keys [loaded?]} (om/get-state this)
+        child-props (om/computed child-props (assoc (or (om/get-computed this) {})
+                                               ::js-loader this
+                                               ;; Pass some props to make it update when we've loaded.
+                                               ::loaded? loaded?))]
+    (if loaded?
       ((or factory (om/factory component)) child-props)
       (render-while-loading component child-props))))
 

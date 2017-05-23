@@ -39,7 +39,6 @@
                       merge]
                :shared/keys [scroll-helper
                              loading-bar
-                             wowza-player
                              browser-history
                              auth-lock
                              local-storage
@@ -59,7 +58,6 @@
                                          :merge      merge
                                          :shared     {:shared/scroll-helper       scroll-helper
                                                       :shared/loading-bar         loading-bar
-                                                      :shared/wowza-player        wowza-player
                                                       :shared/modules             modules
                                                       :shared/browser-history     browser-history
                                                       :shared/local-storage       local-storage

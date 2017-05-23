@@ -65,7 +65,7 @@
         seen (atom {})
         eid->map (fn self [query eid]
                    (let [{:keys [ref-attrs ref-queries other-attrs]} (parse-query query)
-                         m (reduce (fn [m [_ a v]]
+                         m (reduce (fn [m {:keys [a v]}]
                                      (let [v (cond
                                                (contains? ref-attrs a)
                                                (or (get @seen v)

@@ -83,9 +83,8 @@
 (defonce history-atom (atom nil))
 (defonce reconciler-atom (atom nil))
 
-(defn- run [{:keys [auth-lock modules wowza-player loading-bar]
+(defn- run [{:keys [auth-lock modules loading-bar]
              :or   {auth-lock    (auth/auth0-lock)
-                    wowza-player ::shared/prod
                     loading-bar  (loading-bar/loading-bar)}
              :as   run-options}]
   (let [modules (or modules (modules/advanced-compilation-modules router/routes))
@@ -127,7 +126,6 @@
                                        :remotes                    (:order remote-config)
                                        :shared/scroll-helper       scroll-helper
                                        :shared/loading-bar         loading-bar
-                                       :shared/wowza-player        wowza-player
                                        :shared/modules             modules
                                        :shared/browser-history     history
                                        :shared/store-chat-listener ::shared/prod
@@ -165,7 +163,6 @@
 (defn run-dev [& [deps]]
   (run (merge {:auth-lock (auth/fake-lock)
                :modules   (modules/dev-modules router/routes)
-               :wowza-player ::shared/dev
                }
               deps)))
 
