@@ -111,7 +111,7 @@
 
 (defmethod client-read :query/stripe-customer
   [{:keys [route-params ast target db query]} _ _]
-  (let [user-id (c/parse-long (:user-id route-params))]
+  (let [user-id (c/parse-long-safe (:user-id route-params))]
     (if target
       {:remote (assoc-in ast [:params :user-id] user-id)}
       {:value (when user-id
