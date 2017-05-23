@@ -143,13 +143,13 @@
 
         ;(if loading?
         ;  (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"}))
-        (dom/p nil (dom/label #js {:className (if (nil? validation) "hide" "is-invalid-label")}
-                              "Sorry, your photo is too large. Please select a photo of max 5MB."))
-        (when-not hide-label?
-          (dom/label #js {:htmlFor (str "file-" id) :className "button hollow expanded"}
-                     (if loading?
-                       (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"})
-                       "Upload Photo")))
+        ;(dom/p nil (dom/label #js {:className (if (nil? validation) "hide" "is-invalid-label")}
+        ;                      "Sorry, your photo is too large. Please select a photo of max 5MB."))
+        ;(when-not hide-label?
+        ;  (dom/label #js {:htmlFor (str "file-" id) :className "button hollow expanded"}
+        ;             (if loading?
+        ;               (dom/i #js {:className "fa fa-spinner fa-spin fa-2x"})
+        ;               "Upload Photo")))
         ;(apply dom/ul nil (map (fn [{:keys [file response] :as upload}]
         ;                         (debug "Upload: " upload)
         ;                         (dom/li nil

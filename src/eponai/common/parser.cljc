@@ -438,7 +438,10 @@
             (on-not-authed (assoc env :auth-roles roles) k p)))))))
 
 (defn wrap-server-read-auth [read]
-  (let [read-authed (wrap-auth server-auth-role read (constantly nil))]
+  (let [read-authed (wrap-auth server-auth-role read (fn [env k p]
+                                                       (debug "Not authed enough for read: " k
+                                                              " params: " p
+                                                              " auth-roles: " (:auth-roles env))))]
     (fn [env k p]
       (if (is-special-key? k)
         (read env k p)

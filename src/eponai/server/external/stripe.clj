@@ -7,12 +7,18 @@
     [eponai.server.http :as h]
     [eponai.server.external.stripe.stub :as stub]
     [taoensso.timbre :refer [debug error info]]
-    [clojure.data.json :as json]))
+    [clojure.data.json :as json]
+    [clojure.string :as string]))
 
 (defn pull-stripe [db store-id]
   (when store-id
     (db/pull-one-with db '[*] {:where   '[[?s :store/stripe ?e]]
                                :symbols {'?s store-id}})))
+
+(defn pull-user-stripe [db user-id]
+  (when user-id
+    (db/pull-one-with db '[*] {:where   '[[?u :user/stripe ?e]]
+                               :symbols {'?u user-id}})))
 ;; ########## Stripe protocol ################
 
 (defprotocol IStripeConnect
@@ -30,7 +36,12 @@
 
   (-update-account [this account-id params])
 
+  ;; Customers
   (-create-customer [this opts])
+  (-update-customer [this customer-id opts])
+  (-get-customer [this customer-id])
+
+  (-create-card [this customer-id source])
   ;; Charges
   (-create-charge [this params])
   (-create-refund [this params]))
@@ -66,13 +77,25 @@
 (defn create-refund [stripe params]
   (-create-refund stripe params))
 
+(defn create-customer [stripe params]
+  (-create-customer stripe params))
+
+(defn update-customer [stripe customer-id params]
+  (-update-customer stripe customer-id params))
+
+(defn create-card [stripe customer-id source]
+  (-create-card stripe customer-id source))
+
+(defn get-customer [stripe customer-id]
+  (-get-customer stripe customer-id))
+
 ;; ############## Stripe record #################
 
-(defn stripe-endpoint [path & [id]]
-  (str "https://api.stripe.com/v1/"
-       path
-       (when id
-         (str "/" id))))
+(defn stripe-endpoint [path & [id tail]]
+  (string/join "/" (remove nil? ["https://api.stripe.com/v1"
+                                 path
+                                 id
+                                 tail])))
 
 (defrecord StripeRecord [api-key]
   IStripeConnect
@@ -91,10 +114,24 @@
       (debug "Updated: " updated)
       (f/stripe->account updated)))
 
-  (-create-customer [_ {:keys [email]}]
-    (let [params {:email email}
-          customer (json/read-str (:body (client/post (stripe-endpoint "customers") {:basic-auth api-key :form-params params})) :key-fn keyword)]
-      customer))
+  (-create-customer [_ params]
+    (let [customer (json/read-str (:body (client/post (stripe-endpoint "customers") {:basic-auth api-key :form-params params})) :key-fn keyword)]
+      (f/stripe->customer customer)))
+
+  (-update-customer [_ customer-id params]
+    (let [customer (json/read-str (:body (client/post (stripe-endpoint "customers" customer-id)
+                                                      {:basic-auth api-key :form-params params})) :key-fn keyword)]
+      (f/stripe->customer customer)))
+
+  (-get-customer [_ customer-id]
+    (let [customer (json/read-str (:body (client/get (stripe-endpoint "customers" customer-id) {:basic-auth api-key})) :key-fn keyword)]
+      (f/stripe->customer customer)))
+
+  (-create-card [_ customer-id source]
+    (let [params {:source source}
+          card (json/read-str (:body (client/post (stripe-endpoint "customers" customer-id "sources")
+                                                  {:basic-auth api-key :form-params params})) :key-fn keyword)]
+      card))
 
   (-create-account [_ {:keys [country]}]
     (let [params {:country country :managed true}
@@ -131,7 +168,10 @@
   (assert (some? api-key) "DEV - Fake Stripe: Stripe was not provided with an API key, make sure a string key is set in you environment. The provided key will not be used, but is required to replicate real behavior.")
   (let [state (atom {:accounts  {"acct_19k3ozC0YaFL9qxh" (stub/default-account "acct_19k3ozC0YaFL9qxh")}
                      :charges   {}
-                     :customers {}})]
+                     :customers {"0" {:id      "0"
+                                      :sources {:data [{:brand "Visa", :last4 1234, :exp_year 2018, :exp_month 4}
+                                                       {:brand "MasterCard" :last4 1234 :exp_year 2018 :exp_month 4}
+                                                       {:brand "Random" :last4 1234 :exp_year 2018 :exp_month 4}]}}}})]
     (reify IStripeConnect
       (-get-country-spec [_ code]
         (let [specs (get stub/country-specs code)]
@@ -171,14 +211,36 @@
           (swap! state update :accounts assoc account-id stripe-account)
           (f/stripe->account stripe-account)))
 
-      (-create-customer [_ {:keys [email]}]
+      (-create-customer [_ params]
         (let [{:keys [customers]} @state
               id (str (count customers))
-              new-customer {:id    id
-                            :email email}]
+              new-customer (-> params
+                               (assoc :id id)
+                               (assoc :sources {:data [{:id "0" :brand "Visa" :last4 1234 :exp_year 2018 :exp_month 4}]})
+                               (assoc :default_source "0"))]
           (debug "Created fake Stripe customer: " new-customer)
           (swap! state update :customers assoc id new-customer)
-          new-customer))
+          (debug "New state: " @state)
+          (f/stripe->customer new-customer)))
+
+      (-update-customer [_ customer-id params]
+        (let [{:keys [customers]} @state
+              customer (get customers customer-id)]
+          (if (some? customer)
+            (let [new-customer (update customer :sources conj {:brand "Visa" :last4 1234 :exp_year 2018 :exp_month 4})]
+              (debug "Updated fake Stripe customer: " new-customer)
+              (swap! state update :customers assoc customer-id new-customer)
+              (f/stripe->customer new-customer))
+            (throw (ex-info (str "Customer with id: " customer-id " does not exist.")
+                            {:id     customer-id
+                             :params params})))))
+
+      (-get-customer [_ customer-id]
+        (debug "Get customer id: " customer-id)
+        (debug "Get customer " @state)
+        (let [{:keys [customers]} @state
+              customer (get customers customer-id)]
+          (f/stripe->customer customer)))
 
       ;; Charge
       (-create-charge [_ params]

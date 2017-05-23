@@ -81,7 +81,7 @@
         old-photos (:store.item/photos old-item)
 
         ;_ (debug "GETTING OLD ITEM: " old-item)
-        store  (:store/_items old-item)
+        store (:store/_items old-item)
         ;; Update product with new info, name/description, etc. Collections are updated below.
         new-section (cf/add-tempid section)
         new-product (cond-> (f/product (assoc params :db/id product-id))
@@ -117,8 +117,10 @@
   (let [store (db/lookup-entity (db/db state) store-id)]
     (assoc o :order/store store :order/user user-id)))
 
-(defn create-order [{:keys [state system auth]} store-id {:keys [items source shipping subtotal shipping-fee]}]
-  (let [{:keys [stripe/id]} (stripe/pull-stripe (db/db state) store-id)
+(defn create-order [{:keys [state system auth]} store-id {:keys [items shipping source subtotal shipping-fee]}]
+  (let [
+        {:keys [stripe/id]} (stripe/pull-stripe (db/db state) store-id)
+        user-stripe (stripe/pull-user-stripe (db/db state) (:user-id auth))
         {:keys [shipping/address]} shipping
 
         total-amount (+ subtotal shipping-fee)
@@ -134,10 +136,11 @@
                             :order/amount   (bigdec destination-amount)})
                   (update :order/items conj {:order.item/type   :order.item.type/shipping
                                              :order.item/amount (bigdec shipping-fee)}))]
-    (when source
+    (when (some? user-stripe)
       (let [charge (stripe/create-charge (:system/stripe system) {:amount      (int (* 100 total-amount)) ;Convert to cents for Stripe
                                                                   ;:application_fee (int (+ application-fee transaction-fee))
                                                                   :currency    "cad"
+                                                                  :customer    (:stripe/id user-stripe)
                                                                   :source      source
                                                                   :metadata    {:order_uuid (:order/uuid order)}
                                                                   :shipping    {:name    (:shipping/name shipping)
@@ -150,14 +153,27 @@
                                                                   :destination {:account id
                                                                                 :amount  (int (* 100 destination-amount))}}) ;Convert to cents for Stripe
 
+
             charge-entity {:db/id     (db/tempid :db.part/user)
                            :charge/id (:charge/id charge)}
             is-paid? (:charge/paid? charge)
             order-status (if is-paid? :order.status/paid :order.status/created)
             charged-order (assoc order :order/status order-status :order/charge (:db/id charge-entity))
+
             result-db (:db-after (db/transact state [charge-entity
                                                      charged-order]))]
-        ;; Return order entity to redirect in the client
+        ;(when (some? auth)
+        ;  (if (some? user-stripe)
+        ;    (stripe/update-customer (:system/stripe system) (:stripe/id user-stripe) {:source source})
+        ;    (let [user (db/pull (db/db state) [:user/email] (:user-id auth))
+        ;          customer (stripe/create-customer (:system/stripe system) {:email    (:user/email user)
+        ;                                                                    :metadata {:id (:user-id auth)}
+        ;                                                                    :source   source})
+        ;          new-stripe {:db/id     (db/tempid :db.part/user)
+        ;                      :stripe/id (:stripe/id customer)}]
+        ;      (db/transact state [new-stripe
+        ;                          [:db/add (:user-id auth) :user/stripe (:db/id new-stripe)]]))))
+        ; Return order entity to redirect in the client
         (db/pull result-db [:db/id] [:order/uuid (:order/uuid order)])))))
 
 (defn update-order [{:keys [state system]} store-id order-id {:keys [order/status]}]
@@ -180,5 +196,4 @@
 (defn account [{:keys [state system]} store-id]
   (let [{:keys [stripe/id] :as s} (stripe/pull-stripe (db/db state) store-id)]
     (when (some? id)
-      (merge s
-             (stripe/get-account (:system/stripe system) id)))))
+      (assoc (stripe/get-account (:system/stripe system) id) :db/id (:db/id s)))))

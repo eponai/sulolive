@@ -323,6 +323,18 @@
              (let [{:stripe/keys [id]} (stripe/pull-stripe (db/db state) store-id)]
                (stripe/update-account (:system/stripe system) id account-params)))})
 
+(defmutation stripe/update-customer
+  [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [shipping source]}]
+  {:auth {::auth/any-user true}
+   :resp {:success return
+          :error   (if (some? exception)
+                     (or (.getMessage exception) "Something went wrong")
+                     "Something went wrong!")}}
+  {:action (fn []
+             (let [{:stripe/keys [id]} (stripe/pull-user-stripe (db/db state) (:user-id auth))]
+               (when source
+                 {:new-card (stripe/create-card (:system/stripe system) id source)})))})
+
 (defmutation store/create
   [{:keys [state ::parser/return ::parser/exception auth system] :as env} _ params]
   {:auth ::auth/any-user

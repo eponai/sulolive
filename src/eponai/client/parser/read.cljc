@@ -109,6 +109,14 @@
                 (db/pull-one-with db query {:where   '[[?s :store/stripe ?e]]
                                             :symbols {'?s store-id}}))})))
 
+(defmethod client-read :query/stripe-customer
+  [{:keys [ast target db query]} _ _]
+  (if target
+    {:remote true}
+    {:value (when-let [user-id (auth/current-auth db)]
+              (db/pull-one-with db query {:where   '[[?u :user/stripe ?e]]
+                                          :symbols {'?u user-id}}))}))
+
 (defmethod client-read :query/stripe-country-spec
   [{:keys [route-params ast target db]} _ _]
   (if target

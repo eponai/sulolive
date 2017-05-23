@@ -109,7 +109,8 @@
               (some? cover)
               (dom/div
                 (css/add-class :stream-container)
-                (p/cover {:photo-id (:photo/id cover)})
+                (p/cover {:photo-id (:photo/id cover)
+                          :transformation :transformation/full})
 
                 (chat/->StreamChat (om/computed (:proxy/chat props)
                                                 {:on-toggle-chat  (fn [show?]

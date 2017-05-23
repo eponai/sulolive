@@ -126,6 +126,14 @@
    :uniq-by [[:store-id store-id]]}
   {:value (store/account env store-id)})
 
+(defread query/stripe-customer
+  [env _ _]
+  {:auth    ::auth/any-user}
+  {:value (let [c (user/customer env)]
+            (debug "Query/stripe-customer " c)
+            c)})
+
+
 (defread query/stripe-country-spec
   [{:keys [system ast target db query]} _ _]
   {:auth ::auth/any-store-owner}

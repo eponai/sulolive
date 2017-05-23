@@ -9,7 +9,8 @@
     [eponai.common.ui.navbar :as nav]
     [taoensso.timbre :refer [debug]]
     [om.next :as om]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as p]
+    [eponai.web.social :as social]))
 
 (defn order-status-element [order]
   (let [status (:order/status order)]
@@ -145,15 +146,18 @@
                          (menu/item-text nil (dom/span nil "Follow Us")))
           (menu/horizontal
             {:key "social"}
-            (menu/item-link {:href "https://www.facebook.com/live.sulo"} (dom/i {:classes ["fa fa-instagram fa-fw"]}))
+            (menu/item nil (social/sulo-social-link :social/facebook))
+            (menu/item nil (social/sulo-social-link :social/instagram))
+
             ;(menu/item-link nil (dom/i {:classes ["fa fa-twitter fa-fw"]}))
-            (menu/item-link {:href "https://www.instagram.com/sulolive/"} (dom/i {:classes ["fa fa-facebook fa-fw"]})))))
+            )))
       (menu/horizontal
         (->> {:key "legal"}
              (css/align :right))
         ;(menu/item-link nil (dom/small nil "Privacy Policy"))
         ;(menu/item-link nil (dom/small nil "Terms & Conditions"))
-        (menu/item-text nil (dom/small {:classes ["copyright"]} "© eponai hb 2017"))))))
+        (menu/item nil (social/sulo-icon-attribution))
+        (menu/item-text nil (social/sulo-copyright))))))
 
 (defn page-container [{:keys [navbar id class-name no-footer?]} & content]
   (dom/div
@@ -194,3 +198,12 @@
                (dom/strong nil (str "Order #" order-id " was not found in "))
                (dom/a {:href return-href}
                       (dom/strong nil "your orders")))))))
+
+(defn payment-logos []
+  {"Visa"             "icon-cc-visa"
+   "American Express" "icon-cc-amex"
+   "MasterCard"       "icon-cc-mastercard"
+   "Discover"         "icon-cc-discover"
+   "JCB"              "icon-cc-jcb"
+   "Diners Club"      "icon-cc-diners"
+   "Unknown"          "icon-cc-unknown"})

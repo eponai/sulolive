@@ -54,12 +54,13 @@
                                     eponai.common.ui.help.first-stream
                                     eponai.common.ui.help.mobile-stream
                                     eponai.common.ui.help.quality]}
-        :user            {:entries [eponai.common.ui.user
-                                    eponai.common.ui.user.order-list
-                                    eponai.common.ui.user.order-receipt
-                                    eponai.common.ui.user.profile
-                                    eponai.common.ui.user.profile-edit]
+        :user            {:entries    [eponai.common.ui.user
+                                       eponai.common.ui.user.order-list
+                                       eponai.common.ui.user.order-receipt
+                                       eponai.common.ui.user.profile
+                                       eponai.common.ui.user.profile-edit]
                           :depends-on [:photo-uploader]}
+        :user-settings   {:entries [eponai.web.ui.user.dashboard]}
         :store-dashboard {:depends-on [:react-select
                                        :stream+chat
                                        :photo-uploader]

@@ -19,8 +19,9 @@
   (when k
     (str "t_" (get transformations k))))
 
-(defn transform [public-id & [transformation]]
-  (let [t (when-not (= transformation :transformation/full)
+(defn transform [public-id & [transformation file-ext]]
+  (let [ext (or file-ext "jpg")
+        t (when-not (= transformation :transformation/full)
             (transformation-param transformation))
-        url (string/join "/" (into [] (remove nil? [storage-host "image/upload" t (str public-id ".jpg")])))]
+        url (string/join "/" (into [] (remove nil? [storage-host "image/upload" t (str public-id "." ext)])))]
     url))

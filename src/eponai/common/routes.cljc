@@ -26,10 +26,11 @@
                  "/stream"   :store-dashboard/stream}})
 
 (def user-routes
-  {""         :user
-   "/orders"  {""                       :user/order-list
-               ["/" [#"\w+" :order-id]] :user/order}
-   "/profile" :user/profile})
+  {""          :user
+   "/settings" {"" :user-settings}
+   "/orders"   {""                       :user/order-list
+                ["/" [#"\w+" :order-id]] :user/order}
+   "/profile"  :user/profile})
 
 (def product-routes
   {""                         :browse/all-items

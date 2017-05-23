@@ -32,7 +32,9 @@
        :charge/paid? true})
     (-create-refund [_ {:keys [charge] :as params}]
       (async/put! chan params)
-      {:refund/charge charge})))
+      {:refund/charge charge})
+    (-create-customer [this opts])
+    (-update-customer [this customer-id opts])))
 
 (defn stripe-test-payment-failed [chan]
   (reify stripe/IStripeConnect
@@ -42,7 +44,9 @@
        :charge/paid? false})
     (-create-refund [_ {:keys [charge] :as params}]
       (async/put! chan params)
-      {:refund/charge charge})))
+      {:refund/charge charge})
+    (-create-customer [this opts])
+    (-update-customer [this customer-id opts])))
 
 (defn store-test []
   {:db/id        (db/tempid :db.part/user)

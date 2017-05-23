@@ -79,6 +79,9 @@
 (defn span [opts & content]
   (element dom/span opts content))
 
+(defn br [opts & content]
+  (element dom/br opts content))
+
 (defn small [opts & content]
   (element dom/small opts content))
 
