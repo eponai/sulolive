@@ -96,7 +96,8 @@
                     (:proxy/stream props)
                     {:hide-chat?            true
                      :store                 store
-                     :wowza-player-opts     {:on-error-retry-forever? true
+                     ;; TODO: Implement this in the new video player if we want to.
+                     :video-player-opts     {:on-error-retry-forever? true
                                              :on-started-playing      #(when (= stream-state :stream.state/offline)
                                                                          (om/transact! this `[(~'stream/ensure-online
                                                                                                 ~{:store-id (:db/id store)})

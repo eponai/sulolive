@@ -23,7 +23,6 @@
                                     eponai.common.stream
                                     eponai.common.ui.chat
                                     eponai.web.ui.stream.videoplayer
-                                    eponai.web.wowza-player
                                     eponai.web.chat
                                     eponai.web.sente
                                     taoensso.sente
