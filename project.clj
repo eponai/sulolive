@@ -105,7 +105,10 @@
                   :exclusions [joda-time org.clojure/test.check]]
                  [amazonica "0.3.85"
                   :exclusions [com.google.protobuf/protobuf-java]]
-                 [com.taoensso/timbre "4.8.0"]
+                 ;; Using our own com.taoensso/encore to exclude cljs.test and
+                 ;; cljs.pprint from advanced mode compilation.
+                 [org.clojars.petterik/encore "2.91.1-SNAPSHOT"]
+                 [com.taoensso/timbre "4.10.0"]
                  [com.taoensso/sente "1.11.0"]
                  [com.draines/postal "2.0.1"]
                  [environ "1.1.0"]
@@ -144,7 +147,7 @@
                  [cljs-http "0.1.39"]
                  [org.clojure/tools.reader "1.0.0-beta4"]
                  [garden "1.3.2"]
-                 [datascript "0.15.4"]
+                 [datascript "0.15.5"]
                  [cljsjs/stripe "2.0-0"]
                  [cljsjs/quill "1.1.0-3"]
                  [cljsjs/react-select "1.0.0-rc.1"]
@@ -164,7 +167,9 @@
                org.clojure/clojure
                org.clojure/clojurescript
                org.clojure/core.memoize
-               cljsjs/react]
+               cljsjs/react
+               ;; Using our own version which doesn't refer to cljs.test and cljs.pprint
+               com.taoensso/encore]
 
   :jvm-opts ^:replace ["-Xms512m"
                        "-Xmx2048m"
@@ -354,13 +359,6 @@
              :web-prod {:dependencies [[amazonica "0.3.85"
                                         :exclusions [com.taoensso/encore
                                                      com.google.protobuf/protobuf-java]]
-                                       [com.taoensso/timbre "4.8.0"
-                                        :exclusions [com.taoensso/encore]]
-                                       [com.taoensso/sente "1.11.0"
-                                        :exclusions [com.taoensso/encore]]
-                                       ;; Using our own encore to exclude cljs.test and cljs.pprint
-                                       ;; from advanced mode compilation.
-                                       [org.clojars.petterik/encore "2.91.1-SNAPSHOT"]
                                        ]
                         :jvm-opts     ^:replace ["-Xmx3g" "-server"]
                         :cljsbuild    {:builds [{:id           "release"
@@ -381,6 +379,7 @@
                                                                 ;; :pseudo-names true
                                                                 ;; :pretty-print true
                                                                 :verbose         true
+                                                                :compiler-stats  true
                                                                 :npm-deps        ~npm-deps
                                                                 :modules         ~(modules "resources/public/release/js/out/")
                                                                 }}]}}
@@ -451,8 +450,9 @@
                                                                 ;; :language-in     :ecmascript5
                                                                 :parallel-build  true
                                                                 :pretty-print    true
+                                                                :compiler-stats  true
+                                                                :verbose         true
                                                                 ;; :source-map   true
-                                                                ;; :verbose         true
                                                                 :npm-deps        ~npm-deps
                                                                 :modules         ~(modules "resources/public/simple/js/out/")
                                                                 }}]}}}
