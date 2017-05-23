@@ -117,7 +117,7 @@
   (let [store (db/lookup-entity (db/db state) store-id)]
     (assoc o :order/store store :order/user user-id)))
 
-(defn create-order [{:keys [state system auth]} store-id {:keys [items source shipping subtotal shipping-fee]}]
+(defn create-order [{:keys [state system auth]} store-id {:keys [items shipping source subtotal shipping-fee]}]
   (let [
         {:keys [stripe/id]} (stripe/pull-stripe (db/db state) store-id)
         user-stripe (stripe/pull-user-stripe (db/db state) (:user-id auth))
@@ -136,10 +136,11 @@
                             :order/amount   (bigdec destination-amount)})
                   (update :order/items conj {:order.item/type   :order.item.type/shipping
                                              :order.item/amount (bigdec shipping-fee)}))]
-    (when source
+    (when (some? user-stripe)
       (let [charge (stripe/create-charge (:system/stripe system) {:amount      (int (* 100 total-amount)) ;Convert to cents for Stripe
                                                                   ;:application_fee (int (+ application-fee transaction-fee))
                                                                   :currency    "cad"
+                                                                  :customer    (:stripe/id user-stripe)
                                                                   :source      source
                                                                   :metadata    {:order_uuid (:order/uuid order)}
                                                                   :shipping    {:name    (:shipping/name shipping)
@@ -161,17 +162,17 @@
 
             result-db (:db-after (db/transact state [charge-entity
                                                      charged-order]))]
-        (when (some? auth)
-          (if (some? user-stripe)
-            (stripe/update-customer (:system/stripe system) (:stripe/id user-stripe) {:source source})
-            (let [user (db/pull (db/db state) [:user/email] (:user-id auth))
-                  customer (stripe/create-customer (:system/stripe system) {:email    (:user/email user)
-                                                                            :metadata {:id (:user-id auth)}
-                                                                            :source   source})
-                  new-stripe {:db/id     (db/tempid :db.part/user)
-                              :stripe/id (:stripe/id customer)}]
-              (db/transact state [new-stripe
-                                  [:db/add (:user-id auth) :user/stripe (:db/id new-stripe)]]))))
+        ;(when (some? auth)
+        ;  (if (some? user-stripe)
+        ;    (stripe/update-customer (:system/stripe system) (:stripe/id user-stripe) {:source source})
+        ;    (let [user (db/pull (db/db state) [:user/email] (:user-id auth))
+        ;          customer (stripe/create-customer (:system/stripe system) {:email    (:user/email user)
+        ;                                                                    :metadata {:id (:user-id auth)}
+        ;                                                                    :source   source})
+        ;          new-stripe {:db/id     (db/tempid :db.part/user)
+        ;                      :stripe/id (:stripe/id customer)}]
+        ;      (db/transact state [new-stripe
+        ;                          [:db/add (:user-id auth) :user/stripe (:db/id new-stripe)]]))))
         ; Return order entity to redirect in the client
         (db/pull result-db [:db/id] [:order/uuid (:order/uuid order)])))))
 

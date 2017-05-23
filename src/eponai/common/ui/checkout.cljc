@@ -15,7 +15,9 @@
     [eponai.client.parser.message :as msg]
     [eponai.common :as c]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.elements.callout :as callout]))
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.common.ui.elements.menu :as menu]
+    [clojure.string :as string]))
 
 (defn get-route-params [component]
   (get-in (om/props component) [:query/current-route :route-params]))
@@ -36,56 +38,78 @@
                                                            {:store/profile [:store.profile/name
                                                                             {:store.profile/photo [:photo/id]}]}]}]}
                        ]}
+     {:query/stripe-customer [:stripe/id
+                              :stripe/sources]}
      :query/current-route
      {:query/auth [:db/id
-                   :user/email]}
+                   :user/email
+                   :user/stripe]}
      :query/messages])
   Object
-  #?(:cljs
-     (place-order
-       [this]
+  (place-order
+    [this payment]
+    #?(:cljs
        (let [{:query/keys [current-route checkout]} (om/props this)
-             {:checkout/keys [shipping payment]} (om/get-state this)
+             {:checkout/keys [shipping]} (om/get-state this)
              {:keys [source]} payment
              {:keys [route-params]} current-route
              {:keys [store-id]} route-params]
          (let [items checkout]
-           (msg/om-transact! this `[(store/create-order ~{:order    {:source   source
-                                                                     :shipping shipping
-                                                                     :items    items
+           (msg/om-transact! this `[(store/create-order ~{:order    {
+                                                                     ;:customer     (:stripe/id stripe-customer)
+                                                                     :source       source
+                                                                     :shipping     shipping
+                                                                     :items        items
                                                                      :shipping-fee 5
-                                                                     :subtotal (review/compute-item-price items)}
+                                                                     :subtotal     (review/compute-item-price items)}
                                                           :store-id (c/parse-long store-id)})])))))
+  (save-payment [this]
+    #?(:cljs
+       (let [{:checkout/keys [payment]} (om/get-state this)
+             {:keys [source is-new-source?]} payment]
+         (if is-new-source?
+           (msg/om-transact! this [(list 'stripe/update-customer {:source source})])
+           (.place-order this payment)))))
 
   (initLocalState [_]
     {:checkout/shipping nil
      :checkout/payment  nil
-     :open-section :shipping})
+     :open-section      :shipping})
 
   (componentDidUpdate [this _ _]
+    (when-let [customer-response (msg/last-message this 'stripe/update-customer)]
+      (debug "Saved customer: " customer-response)
+      (when (and (msg/final? customer-response)
+                 (msg/success? customer-response))
+        (let [message (msg/message customer-response)]
+          (msg/clear-messages! this 'stripe/update-customer)
+          (.place-order this {:source (:id (:new-card message))}))))
+
     (when-let [response (msg/last-message this 'store/create-order)]
-      (debug "Response: " response)
+      (debug "Created order: " response)
       (when (msg/final? response)
         (let [message (msg/message response)]
           (debug "Message: " message)
           (msg/clear-messages! this 'store/create-order)
           (if (msg/success? response)
             (let [{:query/keys [auth]} (om/props this)]
-              (routes/set-url! this :user/order {:order-id (:db/id message) :user-id (:db/id auth)}))
+              (debug "Will re-route to " (routes/url :user/order {:order-id (:db/id message) :user-id (:db/id auth)}))
+              ;(routes/set-url! this :user/order {:order-id (:db/id message) :user-id (:db/id auth)})
+              )
             (om/update-state! this assoc :error-message message))))))
 
   (render [this]
     (let [{:proxy/keys [navbar]
-           :query/keys [checkout current-route]} (om/props this)
+           :query/keys [checkout current-route stripe-customer]} (om/props this)
           {:checkout/keys [shipping payment]
-           :keys [open-section error-message]} (om/get-state this)
-          {:keys [route] } current-route
+           :keys          [open-section error-message]} (om/get-state this)
+          {:keys [route]} current-route
           checkout-resp (msg/last-message this 'store/create-order)
           subtotal (review/compute-item-price checkout)
           shipping-fee 5
           grandtotal (+ subtotal shipping-fee)]
 
-      (debug "Checkout props: " checkout)
+      (debug "Stripe customer checkout : " stripe-customer)
 
       (common/page-container
         {:navbar navbar :id "sulo-checkout"}
@@ -97,7 +121,7 @@
             (grid/column-size {:small 12 :medium 8 :large 8})
             (dom/div
               nil
-              (review/->CheckoutReview {:items checkout
+              (review/->CheckoutReview {:items    checkout
                                         :subtotal subtotal
                                         :shipping shipping-fee}))
 
@@ -114,11 +138,13 @@
               (dom/div
                 (when (not= open-section :payment)
                   (css/add-class :hide))
-                (pay/->CheckoutPayment (om/computed {:error  error-message
-                                                     :amount grandtotal}
+                (pay/->CheckoutPayment (om/computed {:error   error-message
+                                                     :amount  grandtotal
+                                                     :sources (:stripe/sources stripe-customer)}
                                                     {:on-change #(do
+                                                                  (debug "Got payment: " %)
                                                                   (om/update-state! this assoc :checkout/payment %)
-                                                                  (.place-order this))}))))))))))
+                                                                  (.save-payment this))}))))))))))
 
 (def ->Checkout (om/factory Checkout))
 

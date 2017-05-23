@@ -198,3 +198,12 @@
                (dom/strong nil (str "Order #" order-id " was not found in "))
                (dom/a {:href return-href}
                       (dom/strong nil "your orders")))))))
+
+(defn payment-logos []
+  {"Visa"             "icon-cc-visa"
+   "American Express" "icon-cc-amex"
+   "MasterCard"       "icon-cc-mastercard"
+   "Discover"         "icon-cc-discover"
+   "JCB"              "icon-cc-jcb"
+   "Diners Club"      "icon-cc-diners"
+   "Unknown"          "icon-cc-unknown"})

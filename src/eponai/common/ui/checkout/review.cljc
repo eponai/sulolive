@@ -63,12 +63,9 @@
                       nil
                       (grid/column
                         (grid/column-size {:small 12 :medium 8})
-                        (dom/p
-                          nil
-                          (dom/a (css/add-class :name) (dom/span nil item-name)))
-                        (dom/p
-                          nil
-                          (dom/span nil (:store.item.sku/variation sku))))
+                        (dom/a (css/add-class :name) (dom/span nil item-name))
+                        (dom/div nil
+                                 (dom/span nil (:store.item.sku/variation sku))))
 
                       (grid/column
                         (css/clearfix)

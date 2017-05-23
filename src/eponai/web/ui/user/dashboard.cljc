@@ -137,15 +137,13 @@
         ;      (css/text-align :right)
         ;      (dom/a (css/button {:onClick #(.save-info component)}) (dom/span nil "Save")))))
         ))))
-
-(def payment-logos
-  {"Visa"             "icon-cc-visa"
-   "American Express" "icon-cc-amex"
-   "MasterCard"       "icon-cc-mastercard"
-   "Discover"         "icon-cc-discover"
-   "JCB"              "icon-cc-jcb"
-   "Diners Club"      "icon-cc-diners"
-   "Unknown"          "icon-cc-unknown"})
+(def payment-logos {"Visa"             "icon-cc-visa"
+                    "American Express" "icon-cc-amex"
+                    "MasterCard"       "icon-cc-mastercard"
+                    "Discover"         "icon-cc-discover"
+                    "JCB"              "icon-cc-jcb"
+                    "Diners Club"      "icon-cc-diners"
+                    "Unknown"          "icon-cc-unknown"})
 
 (defn payment-info-modal [component]
   (let [{:query/keys [stripe-customer]} (om/props component)
@@ -164,47 +162,56 @@
                  (dom/small nil "Save your cards at checkout."))
           (dom/div
             nil
-            (menu/vertical
-              (css/add-class :section-list)
-              (map-indexed (fn [i c]
-                             (let [{:stripe.card/keys [brand last4]} c]
-                               (menu/item
-                                 (css/add-class :section-list-item--card)
-                                 (grid/row
-                                   (css/add-class :collapse)
-                                   ;(grid/column
-                                   ;  (css/add-class :shrink)
-                                   ;  (dom/div {:classes ["icon" (get payment-logos brand "icon-cc-unknown")]}))
-                                   (grid/column
-                                     (->> (grid/column-size {:small 12 :medium 4}))
+            (dom/div (css/add-classes [:section-title :text-left])
+                     (dom/small nil "Default"))
+            (let [default-card (some #(when (= (:stripe.card/id %) (:stripe/default-source stripe-customer)) %) (:stripe/sources stripe-customer))]
+              (menu/vertical
+                (css/add-classes [:section-list :section-list--cards])
+                (map-indexed (fn [i c]
+                               (let [{:stripe.card/keys [brand last4]} c]
+                                 (let [{:stripe.card/keys [brand last4 id]} c]
+                                   (menu/item
+                                     (css/add-class :section-list-item--card)
+                                     (dom/a
+                                       nil                  ;{:onClick #(om/update-state! this assoc :selected-source id)}
+                                       (dom/input {:type "radio"
+                                                   :name "sulo-select-cc"
+                                                   })
+                                       (dom/div
+                                         (css/add-class :payment-card)
+                                         (dom/div {:classes ["icon" (get {"Visa"             "icon-cc-visa"
+                                                                          "American Express" "icon-cc-amex"
+                                                                          "MasterCard"       "icon-cc-mastercard"
+                                                                          "Discover"         "icon-cc-discover"
+                                                                          "JCB"              "icon-cc-jcb"
+                                                                          "Diners Club"      "icon-cc-diners"
+                                                                          "Unknown"          "icon-cc-unknown"} brand "icon-cc-unknown ")]})
+                                         (dom/p nil
+                                                (dom/span (css/add-class :payment-brand) brand)
+                                                (dom/small (css/add-class :payment-last4) (str "ending in " last4))
+                                                )))
                                      (dom/div
-                                       (css/add-class :payment-card)
-                                       (dom/div {:classes ["icon" (get payment-logos brand "icon-cc-unknown")]})
-                                       (dom/p nil
-                                              (dom/span (css/add-class :payment-brand) brand))))
-                                   (grid/column
-                                     (->> (css/text-align :center)
-                                          (grid/column-size {:small 6 :medium 4}))
-                                     (dom/small (css/add-class :payment-past4) (str "ending in " last4)))
-                                   (grid/column
-                                     (->> (css/text-align :right)
-                                          (grid/column-size {:small 6 :medium 4}))
-                                     (dom/a (->> (css/button-hollow)
-                                                 (css/add-class :secondary)
-                                                 (css/add-class :small))
-                                            (dom/span nil "Set default"))
-                                     (dom/a (->> (css/button-hollow)
-                                                 (css/add-class :secondary)
-                                                 (css/add-class :small))
-                                            (dom/span nil "Remove"))))
-                                 )))
-                           cards))
-            (dom/p nil (dom/small nil "Save your cards at checkout."))))
-        (dom/a
-          (->> {:onClick on-close}
-               (css/button-hollow)
-               (css/add-class :secondary)
-               (css/add-class :small)) (dom/span nil "Close"))))))
+                                       nil
+                                       (dom/a
+                                         (->> (css/button-hollow)
+                                              (css/add-class :secondary)
+                                              (css/add-class :small))
+                                         (dom/span nil "Remove")))
+                                     ))))
+                             cards)))
+            (dom/p nil (dom/small nil "Save new cards at checkout."))))
+        (dom/div
+          (css/add-class :action-buttons)
+          (dom/a
+            (->> {:onClick on-close}
+                 (css/button-hollow)
+                 (css/add-class :secondary)
+                 (css/add-class :small)) (dom/span nil "Close"))
+          (dom/a
+            (->> {:onClick on-close}
+                 (css/button)
+                 (css/add-class :secondary)
+                 (css/add-class :small)) (dom/span nil "Save")))))))
 (defui UserDashboard
   static om/IQuery
   (query [_]
@@ -249,7 +256,7 @@
   ;  {:modal :modal/edit-profile})
   (render [this]
     (let [{:proxy/keys [navbar]
-           :query/keys [auth current-route ]} (om/props this)
+           :query/keys [auth current-route stripe-customer]} (om/props this)
           {:keys [modal photo-upload queue-photo]} (om/get-state this)
           {user-profile :user/profile} auth
           {:keys [route-params]} current-route]
@@ -325,6 +332,19 @@
                   (dom/p nil (dom/small nil "Manage your saved credit cards. Change your default card or remove old ones.")))
                 (grid/column
                   (grid/column-size {:small 12 :medium 6})
+
+                  (let [default-card (some #(when (= (:stripe/default-source stripe-customer) (:stripe.card/id %)) %)
+                                           (:stripe/sources stripe-customer))
+                        {:stripe.card/keys [brand last4]} default-card]
+                    (debug "Default card: " default-card)
+                    (dom/div
+                      (css/add-classes [:payment-card :default-card])
+                      ;(dom/div {:classes ["icon" (get payment-logos brand "icon-cc-unknown")]})
+                      (dom/p nil
+                             (dom/span (css/add-class :payment-brand) brand)
+                             (dom/br nil)
+                             (dom/small (css/add-class :payment-last4) (str "ending in " last4)))
+                      ))
                   (dom/a
                     (->> {:onClick #(om/update-state! this assoc :modal :modal/payment-info)}
                          (css/button-hollow)

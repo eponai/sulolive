@@ -7,7 +7,8 @@
     [eponai.server.http :as h]
     [eponai.server.external.stripe.stub :as stub]
     [taoensso.timbre :refer [debug error info]]
-    [clojure.data.json :as json]))
+    [clojure.data.json :as json]
+    [clojure.string :as string]))
 
 (defn pull-stripe [db store-id]
   (when store-id
@@ -35,9 +36,12 @@
 
   (-update-account [this account-id params])
 
+  ;; Customers
   (-create-customer [this opts])
   (-update-customer [this customer-id opts])
   (-get-customer [this customer-id])
+
+  (-create-card [this customer-id source])
   ;; Charges
   (-create-charge [this params])
   (-create-refund [this params]))
@@ -79,16 +83,19 @@
 (defn update-customer [stripe customer-id params]
   (-update-customer stripe customer-id params))
 
+(defn create-card [stripe customer-id source]
+  (-create-card stripe customer-id source))
+
 (defn get-customer [stripe customer-id]
   (-get-customer stripe customer-id))
 
 ;; ############## Stripe record #################
 
-(defn stripe-endpoint [path & [id]]
-  (str "https://api.stripe.com/v1/"
-       path
-       (when id
-         (str "/" id))))
+(defn stripe-endpoint [path & [id tail]]
+  (string/join "/" (remove nil? ["https://api.stripe.com/v1"
+                                 path
+                                 id
+                                 tail])))
 
 (defrecord StripeRecord [api-key]
   IStripeConnect
@@ -119,6 +126,12 @@
   (-get-customer [_ customer-id]
     (let [customer (json/read-str (:body (client/get (stripe-endpoint "customers" customer-id) {:basic-auth api-key})) :key-fn keyword)]
       (f/stripe->customer customer)))
+
+  (-create-card [_ customer-id source]
+    (let [params {:source source}
+          card (json/read-str (:body (client/post (stripe-endpoint "customers" customer-id "sources")
+                                                  {:basic-auth api-key :form-params params})) :key-fn keyword)]
+      card))
 
   (-create-account [_ {:keys [country]}]
     (let [params {:country country :managed true}

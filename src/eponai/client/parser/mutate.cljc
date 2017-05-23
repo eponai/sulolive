@@ -133,6 +133,14 @@
   (if target
     {:remote true}))
 
+(defmethod client-mutate 'stripe/update-customer
+  [{:keys [target]} _ p]
+  (debug "stripe/update-customer with params: " p)
+  (if target
+    {:remote true}))
+
+;; ########### STORE ##############
+
 (defmethod client-mutate 'store/create-product
   [{:keys [target]} _ p]
   (debug "store/create-product with params: " p)

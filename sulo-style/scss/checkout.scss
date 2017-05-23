@@ -26,6 +26,12 @@
 		// font-family: $header-font-family-serif;
 	}
 	.section-title {
+		letter-spacing: 1px;
+		margin-bottom: 0.2rem;
+		span {
+			// color: $dark-gray;
+			// margin-bottom: 1rem;
+		}
 		p {
 			letter-spacing: 1px;
 			font-size: 120%;
@@ -82,8 +88,11 @@
 
 	.checkout-payment {
 		.button {
-			margin-top: 1rem;
+			margin-bottom: 0.5rem;
 		}
+	}
+	.section-list {
+		margin-bottom: 0.5rem;
 	}
 
 	.footer {
@@ -95,6 +104,29 @@
 			color: $dark-gray;
 		}
 	}
+
+	.section-list--cards {
+		.section-list-item--card, .section-list-item--new-card {
+			padding: 0.25rem 0;
+			
+			
+			// a > * {
+			// 	margin-right: 1rem;
+			// }
+			// .payment-card {
+			// 	display: flex;
+			// 	.icon {
+			// 		opacity: 1;
+			// 		margin-right: 1rem;
+			// 	}
+			// 	p {
+			// 		small {
+			// 			color: $dark-gray;
+			// 		}
+			// 	}
+			// }
+		}
+	}
 }
 
 /**
@@ -103,7 +135,7 @@
  */
 #sulo-card-element {
 	@include form-element;
-	margin-bottom: 0.5rem;
+	margin-bottom: 0;
   &.StripeElement--invalid {
 		$background: $input-error-color;
 		$background-alpha: 0.025;
@@ -115,6 +147,7 @@
 #card-errors {
 	// height: 1rem;
 	color: $alert-color;
+	margin-bottom: 0.5rem;
 }
 
 .StripeElement--focus {

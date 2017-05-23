@@ -127,9 +127,8 @@
   {:value (store/account env store-id)})
 
 (defread query/stripe-customer
-  [env _ {:keys [user-id]}]
-  {:auth    {::auth/exact-user user-id}
-   :uniq-by [[:user-id user-id]]}
+  [env _ _]
+  {:auth    ::auth/any-user}
   {:value (let [c (user/customer env)]
             (debug "Query/stripe-customer " c)
             c)})
