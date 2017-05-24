@@ -27,7 +27,9 @@
           (dom/script {:src     "https://cdn.greta.io/greta.min.js"
                        :type    common/text-javascript
                        :id      "gretaScript"
-                       :data-ac "b554c0b026bb448362dfe657846bf982"
+                       :data-ac (if release?
+                                  "b554c0b026bb448362dfe657846bf982"
+                                  "fe5ab77ade7eee2c0d3e1e8f51692a7f")
                        ;; Using data-lazy right now because we have etsy images on our site
                        ;; which doesn't have CORS set up (for good reason).
                        ;:data-lazy "true"
