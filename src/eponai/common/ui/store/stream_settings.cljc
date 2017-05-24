@@ -13,7 +13,8 @@
     [eponai.common.ui.elements.callout :as callout]
     [eponai.web.ui.store.common :as store-common]
     [eponai.client.routes :as routes]
-    [eponai.common.ui.elements.grid :as grid]))
+    [eponai.common.ui.elements.grid :as grid]
+    [eponai.web.ui.button :as button]))
 
 (defn- get-store [component-or-props]
   (get-in (om/get-computed component-or-props) [:store]))
@@ -83,12 +84,19 @@
                     (dom/a
                       (css/button-hollow {:onClick #(om/transact! this [(list 'stream/end-live {:store-id (:db/id store)}) :query/stream])})
                       (dom/strong nil "End live")))
-                  (dom/a
-                    (css/button-hollow {:onClick #(binding [parser/*parser-allow-local-read* false]
-                                                    (om/transact! this [:query/stream]))})
+                  (button/default-hollow
+                    {:onClick #(binding [parser/*parser-allow-local-read* false]
+                                (om/transact! this [:query/stream]))}
                     (dom/i {:classes ["fa fa-refresh fa-fw"]})
                     (when (or (nil? stream-state) (= stream-state :stream.state/offline))
-                      (dom/strong nil "Refresh")))))
+                      (dom/strong nil "Refresh")))
+                  ;(dom/a
+                  ;  (css/button-hollow {:onClick #(binding [parser/*parser-allow-local-read* false]
+                  ;                                  (om/transact! this [:query/stream]))})
+                  ;  (dom/i {:classes ["fa fa-refresh fa-fw"]})
+                  ;  (when (or (nil? stream-state) (= stream-state :stream.state/offline))
+                  ;    (dom/strong nil "Refresh")))
+                  ))
               (callout/callout-small
                 nil
                 (stream/->Stream
@@ -172,9 +180,9 @@
                                 :placeholder "Create a stream key..."}))
                   (grid/column
                     nil
-                    (dom/a
-                      (css/button-hollow {:onClick #(msg/om-transact! this `[(stream-token/generate ~{:store-id (:db/id store)})
-                                                                             {:query/stream [:stream/token]}])})
+                    (button/default-hollow
+                      {:onClick #(msg/om-transact! this `[(stream-token/generate ~{:store-id (:db/id store)})
+                                                          {:query/stream [:stream/token]}])}
                       (dom/span nil "Create new key")))))))
           (grid/column
             nil

@@ -13,7 +13,7 @@
     [eponai.common.ui.store.product-list :as pl]
     [eponai.common.ui.store.stream-settings :as ss]
     [eponai.common.ui.router :as router]
-    [eponai.web.ui.store.common :as store-common :refer [edit-button cancel-button save-button]]
+    [eponai.web.ui.store.common :as store-common]
     [eponai.common.ui.utils :refer [two-decimal-price]]
     [eponai.common.ui.dom :as dom]
     [om.next :as om :refer [defui]]
@@ -23,7 +23,8 @@
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.format.date :as date]
-    [eponai.web.ui.photo :as photo]))
+    [eponai.web.ui.photo :as photo]
+    [eponai.web.ui.button :as button]))
 
 (defn find-product [store product-id]
   (let [product-id (c/parse-long product-id)]
@@ -33,37 +34,37 @@
 (def compute-route-params #(select-keys % [:route-params]))
 (def compute-store #(select-keys % [:store]))
 
-(def route-map {:store-dashboard/order-list     {:component   ol/OrderList
-                                                 :computed-fn compute-store}
-                :store-dashboard/order-list-new {:component   ol/OrderList
-                                                 :computed-fn compute-store}
+(def route-map {:store-dashboard/order-list           {:component   ol/OrderList
+                                                       :computed-fn compute-store}
+                :store-dashboard/order-list-new       {:component   ol/OrderList
+                                                       :computed-fn compute-store}
                 :store-dashboard/order-list-fulfilled {:component   ol/OrderList
                                                        :computed-fn compute-store}
-                :store-dashboard/order          {:component   oef/OrderEditForm
-                                                 :computed-fn compute-route-params}
-                :store-dashboard/create-order   {:component   oef/OrderEditForm
-                                                 :computed-fn (fn [{:keys [store route-params]}]
-                                                                {:route-params route-params
-                                                                 :products     (:store/items store)})}
-                :store-dashboard/profile        {:component   es/EditStore
-                                                 :computed-fn compute-store}
-                :store-dashboard/policies       {:component   es/EditStore
-                                                 :computed-fn compute-store}
-                :store-dashboard/stream         {:component   ss/StreamSettings
-                                                 :computed-fn compute-store}
-                :store-dashboard/settings       {:component   as/AccountSettings
-                                                 :computed-fn compute-store}
-                :store-dashboard/product-list   {:component   pl/ProductList
-                                                 :computed-fn compute-route-params}
-                :store-dashboard/create-product {:component   pef/ProductEditForm
-                                                 :computed-fn (fn [{:keys [store route-params]}]
-                                                                {:route-params route-params
-                                                                 :store        store})}
-                :store-dashboard/product        {:component   pef/ProductEditForm
-                                                 :computed-fn (fn [{:keys [store route-params]}]
-                                                                {:route-params route-params
-                                                                 :store        store
-                                                                 :product      (find-product store (:product-id route-params))})}})
+                :store-dashboard/order                {:component   oef/OrderEditForm
+                                                       :computed-fn compute-route-params}
+                :store-dashboard/create-order         {:component   oef/OrderEditForm
+                                                       :computed-fn (fn [{:keys [store route-params]}]
+                                                                      {:route-params route-params
+                                                                       :products     (:store/items store)})}
+                :store-dashboard/profile              {:component   es/EditStore
+                                                       :computed-fn compute-store}
+                :store-dashboard/policies             {:component   es/EditStore
+                                                       :computed-fn compute-store}
+                :store-dashboard/stream               {:component   ss/StreamSettings
+                                                       :computed-fn compute-store}
+                :store-dashboard/settings             {:component   as/AccountSettings
+                                                       :computed-fn compute-store}
+                :store-dashboard/product-list         {:component   pl/ProductList
+                                                       :computed-fn compute-route-params}
+                :store-dashboard/create-product       {:component   pef/ProductEditForm
+                                                       :computed-fn (fn [{:keys [store route-params]}]
+                                                                      {:route-params route-params
+                                                                       :store        store})}
+                :store-dashboard/product              {:component   pef/ProductEditForm
+                                                       :computed-fn (fn [{:keys [store route-params]}]
+                                                                      {:route-params route-params
+                                                                       :store        store
+                                                                       :product      (find-product store (:product-id route-params))})}})
 
 ;(defn str->json [s]
 ;  #?(:cljs (cljs.reader/read-string s)
@@ -237,10 +238,8 @@
                        (css/text-align :center))
                   (dom/h3 nil (get-in store [:store/profile :store.profile/name]))
                   (photo/store-photo store {:transformation :transformation/thumbnail})
-                  (dom/a
-                    (->> {:href (routes/url :store-dashboard/profile {:store-id store-id})}
-                         (css/button-hollow)
-                         (css/add-class :secondary))
+                  (button/default-hollow
+                    {:href (routes/url :store-dashboard/profile {:store-id store-id})}
                     (dom/span nil "Store info")
                     (dom/i {:classes ["fa fa-chevron-right"]})))
 
@@ -252,20 +251,16 @@
                       (css/text-align :center)
                       (dom/h3 nil "Products")
                       (dom/p (css/add-class :stat) (count (:store/items store)))
-                      (dom/a
-                        (->> {:href (routes/url :store-dashboard/product-list {:store-id store-id})}
-                             (css/button-hollow)
-                             (css/add-class :secondary))
+                      (button/default-hollow
+                        {:href (routes/url :store-dashboard/product-list {:store-id store-id})}
                         (dom/span nil "Products")
                         (dom/i {:classes ["fa fa-chevron-right"]})))
                     (grid/column
                       (css/text-align :center)
                       (dom/h3 nil "Orders")
                       (dom/p (css/add-class :stat) (count (:order/_store store)))
-                      (dom/a
-                        (->> {:href (routes/url :store-dashboard/order-list {:store-id store-id})}
-                             (css/button-hollow)
-                             (css/add-class :secondary))
+                      (button/default-hollow
+                        {:href (routes/url :store-dashboard/order-list {:store-id store-id})}
                         (dom/span nil "Orders")
                         (dom/i {:classes ["fa fa-chevron-right"]})))))))
 

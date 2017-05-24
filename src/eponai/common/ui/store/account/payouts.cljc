@@ -13,7 +13,8 @@
     [taoensso.timbre :refer [debug]]
     [eponai.client.parser.message :as msg]
     [eponai.common.ui.script-loader :as script-loader]
-    [eponai.common.ui.elements.callout :as callout]))
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.web.ui.button :as button]))
 (def prefix-key "payouts-details-")
 
 (def stripe-key "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")
@@ -79,13 +80,9 @@
               (grid/column
                 (->> (grid/column-size {:small 3})
                      (css/text-align :right))
-                (dom/a
-                  (->> {:onClick       #(om/update-state! component assoc :modal :payout-schedule)
-                        :aria-disabled true}
-                       (css/add-class :disabled)
-                       (css/button-hollow)
-                       (css/add-class :small))
-
+                (button/user-setting-default
+                  (->> {:onClick #(om/update-state! component assoc :modal :payout-schedule)}
+                       (css/add-class :disabled))
                   (dom/span nil "Change schedule"))
                 )))))
       (when (= modal :payout-schedule)
@@ -369,9 +366,8 @@
                                  (css/add-class :small)) (dom/span nil "Edit"))
                           )))))
                 external-accounts)
-              (dom/a
-                (->> (css/button-hollow {:aria-disabled true})
-                     (css/add-class :disabled))
+              (button/user-setting-default
+                (css/add-class :disabled)
                 (dom/span nil "Add bank account..."))))
           (when (= modal :bank-account)
             (let [on-close #(om/update-state! this dissoc :modal :modal-object :stripe-validation)

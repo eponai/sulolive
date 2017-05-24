@@ -11,6 +11,7 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.web.ui.photo :as photo]
     [eponai.common.ui.elements.css :as css]
+    [eponai.web.ui.button :as button]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.client.routes :as routes]
@@ -18,7 +19,7 @@
     [eponai.common.format :as f]
     ;[eponai.common.ui.elements.photo :as old-photo]
     [eponai.common.ui.elements.callout :as callout]
-    [eponai.web.ui.store.common :as store-common :refer [edit-button save-button cancel-button]]
+    ;[eponai.web.ui.store.common :as store-common :refer [edit-button save-button cancel-button]]
     [eponai.client.parser.message :as msg]
     [clojure.string :as string]))
 
@@ -58,9 +59,10 @@
         (if (:edit/info state)
           (dom/div
             nil
-            (cancel-button {:onClick #(om/update-state! component assoc :edit/info false)})
-            (save-button {:onClick #(.save-store component)}))
-          (edit-button {:onClick #(om/update-state! component assoc :edit/info true)})))
+            (button/cancel {:onClick #(om/update-state! component assoc :edit/info false)})
+            (button/save {:onClick #(.save-store component)}))
+          (button/edit
+            {:onClick #(om/update-state! component assoc :edit/info true)})))
       (when (and (:edit/info state) (:error/about state))
         (dom/p (css/add-class :section-error) (dom/small (css/add-class :text-alert) (:error/about state))))
 
@@ -223,8 +225,8 @@
               (dom/div
                 (->> (css/text-align :right)
                      (css/add-class :action-buttons))
-                (cancel-button {:onClick #(om/update-state! component dissoc :products/edit-sections)})
-                (save-button {:onClick #(.save-sections component)}))))))
+                (button/cancel {:onClick #(om/update-state! component dissoc :products/edit-sections)})
+                (button/save {:onClick #(.save-sections component)}))))))
       (callout/callout-small
         nil
         (menu/horizontal
@@ -403,11 +405,11 @@
                 (if (:edit/return-policy state)
                   (dom/div
                     nil
-                    (cancel-button {:onClick #(do
+                    (button/cancel {:onClick #(do
                                                (om/update-state! this assoc :edit/return-policy false)
                                                (quill/set-content (:editor/return-policy state) (f/bytes->str return-policy)))})
-                    (save-button {:onClick #(.save-return-policy this)}))
-                  (edit-button {:onClick #(om/update-state! this assoc :edit/return-policy true)})))
+                    (button/save {:onClick #(.save-return-policy this)}))
+                  (button/edit {:onClick #(om/update-state! this assoc :edit/return-policy true)})))
               (when (and (:edit/return-policy state) (:error/return-policy state))
                 (dom/p (css/add-class :section-error) (dom/small (css/add-class :text-alert) (:error/return-policy state))))
 
@@ -438,11 +440,11 @@
                 (if (:edit/shipping-policy state)
                   (dom/div
                     nil
-                    (cancel-button {:onClick #(do
+                    (button/cancel {:onClick #(do
                                                (om/update-state! this assoc :edit/shipping-policy false)
                                                (quill/set-content (:editor/shipping-policy state) (f/bytes->str shipping-policy)))})
-                    (save-button (css/add-class :disabled)))
-                  (edit-button {:onClick #(om/update-state! this assoc :edit/shipping-policy true)})))
+                    (button/save (css/add-class :disabled)))
+                  (button/edit {:onClick #(om/update-state! this assoc :edit/shipping-policy true)})))
               (callout/callout-small
                 (css/add-classes [:store-info-policy :store-info-policy--shipping])
                 ;(when (:edit/shipping-policy state)
@@ -492,16 +494,13 @@
               (css/add-class :section-title)
               (dom/h2 nil "Product sections")
               (dom/div
-                nil
-                (edit-button {:onClick #(om/update-state! this assoc :products/edit-sections (into [] (:store/sections store)))})
-                (dom/div
-                  (css/text-align :right)
-                  (dom/a
-                    (->> (css/button-hollow {:href (routes/url :store-dashboard/product-list {:store-id (:db/id store)})})
-                         (css/add-class :secondary)
-                         (css/add-class :see-products))
-                    (dom/span nil "Products")
-                    (dom/i {:classes ["fa fa-chevron-right"]})))))
+                (css/text-align :right)
+                (button/edit {:onClick #(om/update-state! this assoc :products/edit-sections (into [] (:store/sections store)))})
+                (button/default-hollow
+                  {:href (routes/url :store-dashboard/product-list {:store-id (:db/id store)})}
+                  (dom/span nil "Products")
+                  (dom/i {:classes ["fa fa-chevron-right"]}))
+                ))
 
             (products-section this)))))))
 

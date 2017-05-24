@@ -20,7 +20,8 @@
        [eponai.client.ui.photo-uploader :as pu])
     [eponai.client.parser.message :as msg]
     [clojure.string :as string]
-    [eponai.common.ui.elements.callout :as callout]))
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.web.ui.button :as button]))
 
 (def form-inputs
   {:user.info/name            "user.info.name"
@@ -117,16 +118,9 @@
           )
         (dom/div
           (css/add-class :action-buttons)
-          (dom/a
-            (->> (css/button-hollow {:onClick on-close})
-                 (css/add-class :secondary)
-                 (css/add-class :small))
-            (dom/span nil "Close"))
-
-          (dom/a
-            (->> (css/button {:onClick (when-not is-loading? #(.save-user-info component))})
-                 (css/add-class :secondary)
-                 (css/add-class :small))
+          (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))
+          (button/user-setting-cta
+            {:onClick (when-not is-loading? #(.save-user-info component))}
             (if is-loading?
               (dom/i {:classes ["fa fa-spinner fa-spin"]})
               (dom/span nil "Save"))))))))
@@ -221,19 +215,13 @@
         (dom/p nil (dom/small nil "Shipping address cannot be saved yet. We're working on this."))
         (dom/div
           (css/add-class :action-buttons)
-          (dom/a
-            (->> {:onClick on-close}
-                 (css/button-hollow)
-                 (css/add-class :secondary)
-                 (css/add-class :small)) (dom/span nil "Close"))
-          (dom/a
+          (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))
+          (button/user-setting-cta
             (->> {:onClick #(do
                              ;(.save-shipping-info component)
                              )}
-                 (css/button)
-                 (css/add-class :secondary)
-                 (css/add-class :small)
-                 (css/add-class :disabled)) (dom/span nil "Save")))))))
+                 (css/add-class :disabled))
+            (dom/span nil "Save")))))))
 
 (defn payment-info-modal [component]
   (let [{:query/keys [stripe-customer]} (om/props component)
@@ -250,13 +238,9 @@
                   (dom/span nil "You don't have any saved credit cards.")
                   (dom/br nil)
                   (dom/small nil "New cards are saved at checkout."))
-           (dom/a
-             (->> {:onClick on-close}
-                  (css/button-hollow)
-                  (css/add-class :secondary)
-                  (css/add-class :small)) (dom/span nil "Close"))]
-          [
-           (dom/div
+           (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))]
+
+          [(dom/div
              nil
              (dom/div (css/add-classes [:section-title :text-left])
                       (dom/small nil "Default"))
@@ -298,16 +282,8 @@
              (dom/p nil (dom/small nil "New cards are saved at checkout.")))
            (dom/div
              (css/add-class :action-buttons)
-             (dom/a
-               (->> {:onClick on-close}
-                    (css/button-hollow)
-                    (css/add-class :secondary)
-                    (css/add-class :small)) (dom/span nil "Close"))
-             (dom/a
-               (->> {:onClick on-close}
-                    (css/button)
-                    (css/add-class :secondary)
-                    (css/add-class :small)) (dom/span nil "Save")))])))))
+             (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))
+             (button/user-setting-cta {:onClick on-close} (dom/span nil "Save")))])))))
 (defui UserDashboard
   static om/IQuery
   (query [_]
@@ -440,11 +416,8 @@
                     (css/add-class :user-profile)
                     (dom/span nil (:user.profile/name user-profile))
                     (photo/user-photo auth {:transformation :transformation/thumbnail}))
-                  (dom/a
-                    (->> {:onClick #(om/update-state! this assoc :modal :modal/edit-profile)}
-                         (css/button-hollow)
-                         (css/add-class :secondary)
-                         (css/add-class :small))
+                  (button/user-setting-default
+                    {:onClick #(om/update-state! this assoc :modal :modal/edit-profile)}
                     (dom/span nil "Edit profile"))))))
           (dom/div
             (css/add-class :section-title)
@@ -478,11 +451,8 @@
                         ))
                     (dom/p nil (dom/small nil (dom/i nil "No default card")))
                     )
-                  (dom/a
-                    (->> {:onClick #(om/update-state! this assoc :modal :modal/payment-info)}
-                         (css/button-hollow)
-                         (css/add-class :secondary)
-                         (css/add-class :small))
+                  (button/user-setting-default
+                    {:onClick #(om/update-state! this assoc :modal :modal/payment-info)}
                     (dom/span nil "Manage payment info")))))
             (menu/item
               nil
@@ -511,10 +481,8 @@
                         ))
                     (dom/p nil (dom/small nil (dom/i nil "No saved address")))
                     )
-                  (dom/a
-                    (->> (css/button-hollow {:onClick #(om/update-state! this assoc :modal :modal/shipping-info)})
-                         (css/add-class :secondary)
-                         (css/add-class :small))
+                  (button/user-setting-default
+                    {:onClick #(om/update-state! this assoc :modal :modal/shipping-info)}
                     (dom/span nil "Manage shipping info"))))))
 
           (dom/div
@@ -534,11 +502,8 @@
                 (grid/column
                   (->> (grid/column-size {:small 12 :medium 6})
                        (css/text-align :right))
-                  (dom/a
-                    (->> (css/button)
-                         (css/add-class :facebook)
-                         (css/add-class :small)
-                         (css/add-class :disabled))
+                  (button/user-setting-cta
+                    (css/add-classes [:disabled :facebook])
                     (dom/i {:classes ["fa fa-facebook fa-fw"]})
                     (dom/span nil "Connect to Facebook")))))
 
@@ -554,11 +519,8 @@
                 (grid/column
                   (->> (grid/column-size {:small 12 :medium 6})
                        (css/text-align :right))
-                  (dom/a
-                    (->> (css/button)
-                         (css/add-class :twitter)
-                         (css/add-class :small)
-                         (css/add-class :disabled))
+                  (button/user-setting-cta
+                    (css/add-classes [:disabled :twitter])
                     (dom/i {:classes ["fa fa-twitter fa-fw"]})
                     (dom/span nil "Connect to Twitter")))))))))))
 

@@ -20,7 +20,8 @@
     [eponai.common.ui.elements.callout :as callout]
     [eponai.web.ui.photo :as photo]
     [clojure.string :as string]
-    [eponai.client.parser.message :as msg]))
+    [eponai.client.parser.message :as msg]
+    [eponai.web.ui.button :as button]))
 
 (defn products->grid-layout [component products]
   (let [num-cols 3
@@ -230,14 +231,14 @@
                  (if grid-editable?
                    [(dom/div
                       nil
-                      (store-common/save-button {:onClick #(.save-product-order this)})
-                      (store-common/cancel-button {:onClick #(do
+                      (button/save {:onClick #(.save-product-order this)})
+                      (button/cancel {:onClick #(do
                                                               (.update-layout this)
                                                               (om/update-state! this assoc :grid-editable? false))}))
                     (callout/callout-small
                       (css/add-class :warning)
                       (dom/small nil "This is how your products will appear in your store. Try moving them around and find a layout you like. Don't forget to save when you're done!"))]
-                   (store-common/edit-button
+                   (button/edit
                      {:onClick #(om/update-state! this assoc :grid-editable? true)}
                      (dom/span nil "Edit layout")))
                  (grid/row
