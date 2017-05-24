@@ -56,14 +56,14 @@
         resource-type "image"]
     (clojure.string/join "/" [api cloud-name resource-type endpoint])))
 
-(defn cloudinary-pipe [uploaded]
+(defn cloudinary-pipe [uploaded preset]
   (let [queue (chan)]
     (async/pipeline-async
       3
       uploaded
       (fn [{:keys [file]} c]
         (async/take! (http/post (cloudinary-endpoint "upload") {:form-params       {:file          file
-                                                                                    :upload_preset "product-photo"}
+                                                                                    :upload_preset (or preset "product-photo")}
                                                                 :headers           {"X-Requested-With" "XMLHttpRequest"}
                                                                 :with-credentials? false})
                      (fn [response]
@@ -105,9 +105,10 @@
   ;)
 
   (initLocalState [this]
-    (let [uploaded (chan 20)]
+    (let [uploaded (chan 20)
+          {:keys [preset]} (om/get-computed this)]
       {:dropped-queue (chan 20)
-       :upload-queue  (cloudinary-pipe uploaded)            ;(s3/s3-pipe uploaded {:server-url "/aws" :key-fn #(.s3-key this %)})
+       :upload-queue  (cloudinary-pipe uploaded preset)            ;(s3/s3-pipe uploaded {:server-url "/aws" :key-fn #(.s3-key this %)})
        :uploaded      uploaded
        :uploads       []}))
   (componentDidMount [this]

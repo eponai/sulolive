@@ -27,7 +27,8 @@
    :field.general/store-tagline "general.store-tagline"})
 
 (defn photo-uploader [component id]
-  (let [{:proxy/keys [photo-upload]} (om/props component)]
+  (let [{:proxy/keys [photo-upload]} (om/props component)
+        preset (when (= id "cover") "cover-photo")]
 
     #?(:cljs
        (pu/->PhotoUploader (om/computed
@@ -39,6 +40,7 @@
                                                                                (-> st
                                                                                    (dissoc (keyword id "queue"))
                                                                                    (assoc (keyword id "upload") photo)))))
+                              :preset preset
                               :id              id
                               :hide-label?     true})))))
 

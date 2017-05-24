@@ -47,20 +47,24 @@
 (s/def ::shipping (s/keys :req [:shipping/address
                                 :shipping/name]))
 
+(s/def :user.info/name (s/and string? #(not-empty %)))
+
 (defn validate
   [spec m & [prefix]]
   (when-let [err (s/explain-data spec m)]
     (let [problems (::s/problems err)
           invalid-paths (map (fn [p]
                                (str prefix (some #(get form-inputs %) p)))
-                             (map :path problems))]
+                             (map :via problems))]
       {:explain-data  err
        :invalid-paths invalid-paths})))
 
 (defn edit-profile-modal [component]
   (let [{:query/keys [auth]} (om/props component)
-        {:keys [photo-upload queue-photo]} (om/get-state component)
+        {:keys [photo-upload queue-photo]
+         :profile/keys [input-validation]} (om/get-state component)
         user-profile (:user/profile auth)
+        is-loading? (.is-loading? component)
         on-close #(om/update-state! component dissoc :modal :photo-upload :queue-photo)]
     (common/modal
       {:on-close on-close
@@ -104,10 +108,11 @@
                                                         ;(msg/om-transact! this [(list 'photo/upload {:photo photo})
                                                         ;                        :query/user])
                                                         )})))))
-                (dom/input {:type         "text"
+                (v/input {:type         "text"
                             :placeholder "Name"
                             :id           (:user.info/name form-inputs)
-                            :defaultValue (:user.profile/name user-profile)})
+                            :defaultValue (:user.profile/name user-profile)}
+                         input-validation)
                 (dom/p nil (dom/small nil "This name will be visible to other users in chats.")))))
           )
         (dom/div
@@ -119,10 +124,12 @@
             (dom/span nil "Close"))
 
           (dom/a
-            (->> (css/button {:onClick #(.save-user-info component)})
+            (->> (css/button {:onClick (when-not is-loading? #(.save-user-info component))})
                  (css/add-class :secondary)
                  (css/add-class :small))
-            (dom/span nil "Save")))))))
+            (if is-loading?
+              (dom/i {:classes ["fa fa-spinner fa-spin"]})
+              (dom/span nil "Save"))))))))
 
 (def payment-logos {"Visa"             "icon-cc-visa"
                     "American Express" "icon-cc-amex"
@@ -337,13 +344,16 @@
   (save-user-info [this]
     #?(:cljs
        (let [input-name (utils/input-value-by-id (:user.info/name form-inputs))
-             {:keys [photo-upload]} (om/get-state this)]
-         (when (not-empty input-name)
+             {:keys [photo-upload]} (om/get-state this)
+             validation (validate :user.info/name input-name)]
+         (debug "validation: " validation)
+         (when (nil? validation)
            (msg/om-transact! this (cond-> [(list 'user.info/update {:user/name input-name})]
                                           (some? photo-upload)
                                           (conj (list 'photo/upload {:photo photo-upload}))
                                           :else
-                                          (conj :query/auth)))))))
+                                          (conj :query/auth))))
+         (om/update-state! this assoc :profile/input-validation validation))))
   (componentDidUpdate [this _ _]
     (let [info-msg (msg/last-message this 'user.info/update)
           photo-msg (msg/last-message this 'photo/upload)
@@ -359,6 +369,7 @@
                 (msg/clear-messages! this 'user.info/update)
                 (msg/clear-messages! this 'photo/upload)
                 (om/update-state! this dissoc :modal))))
+
       (when (and (msg/final? shipping-msg)
                  (msg/success? shipping-msg))
         (msg/clear-messages! this 'stripe/update-customer)
@@ -366,6 +377,11 @@
 
   ;(initLocalState [_]
   ;  {:modal :modal/shipping-info})
+  (is-loading? [this]
+    (let [info-msg (msg/last-message this 'user.info/update)
+          photo-msg (msg/last-message this 'photo/upload)]
+      (or (msg/pending? info-msg)
+          (msg/pending? photo-msg))))
   (render [this]
     (let [{:proxy/keys [navbar]
            :query/keys [auth current-route stripe-customer]} (om/props this)

@@ -27,11 +27,14 @@
     (css/add-class :message-container)
     (my-dom/div (css/add-class :message-photo)
                 (p/user-photo (:chat.message/user msg) {:transformation :transformation/thumbnail-tiny}))
-    (my-dom/div
-      (css/add-class :message-text)
-      (my-dom/strong nil (str (get-in msg [:chat.message/user :user/email])
-                           ": "))
-      (my-dom/span nil (:chat.message/text msg)))
+    (let [username (get-in msg [:chat.message/user :user/profile :user.profile/name])]
+      (my-dom/div
+        (css/add-class :message-text)
+        (if (some? username)
+          (my-dom/strong nil (str username
+                                  ": "))
+          (my-dom/strong nil (my-dom/i nil "anonymous: ")))
+        (my-dom/span nil (:chat.message/text msg))))
     ;(my-dom/div
     ;  (->> (css/grid-row)
     ;       (css/align :top))
