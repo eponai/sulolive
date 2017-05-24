@@ -19,7 +19,8 @@
     #?(:cljs
        [eponai.client.ui.photo-uploader :as pu])
     [eponai.client.parser.message :as msg]
-    [clojure.string :as string]))
+    [clojure.string :as string]
+    [eponai.common.ui.elements.callout :as callout]))
 
 (def form-inputs
   {:user.info/name            "user.info.name"
@@ -104,6 +105,7 @@
                                                         ;                        :query/user])
                                                         )})))))
                 (dom/input {:type         "text"
+                            :placeholder "Name"
                             :id           (:user.info/name form-inputs)
                             :defaultValue (:user.profile/name user-profile)})
                 (dom/p nil (dom/small nil "This name will be visible to other users in chats.")))))
@@ -207,6 +209,9 @@
                             :autoComplete "shipping region"
                             :placeholder  "Province/State"}
                          input-validation)))))
+        ;(callout/callout-small
+        ;  (css/add-class :warning))
+        (dom/p nil (dom/small nil "Shipping address cannot be saved yet. We're working on this."))
         (dom/div
           (css/add-class :action-buttons)
           (dom/a
@@ -215,10 +220,13 @@
                  (css/add-class :secondary)
                  (css/add-class :small)) (dom/span nil "Close"))
           (dom/a
-            (->> {:onClick #(.save-shipping-info component)}
+            (->> {:onClick #(do
+                             ;(.save-shipping-info component)
+                             )}
                  (css/button)
                  (css/add-class :secondary)
-                 (css/add-class :small)) (dom/span nil "Save")))))))
+                 (css/add-class :small)
+                 (css/add-class :disabled)) (dom/span nil "Save")))))))
 
 (defn payment-info-modal [component]
   (let [{:query/keys [stripe-customer]} (om/props component)
@@ -513,7 +521,8 @@
                   (dom/a
                     (->> (css/button)
                          (css/add-class :facebook)
-                         (css/add-class :small))
+                         (css/add-class :small)
+                         (css/add-class :disabled))
                     (dom/i {:classes ["fa fa-facebook fa-fw"]})
                     (dom/span nil "Connect to Facebook")))))
 
@@ -532,7 +541,8 @@
                   (dom/a
                     (->> (css/button)
                          (css/add-class :twitter)
-                         (css/add-class :small))
+                         (css/add-class :small)
+                         (css/add-class :disabled))
                     (dom/i {:classes ["fa fa-twitter fa-fw"]})
                     (dom/span nil "Connect to Twitter")))))))))))
 

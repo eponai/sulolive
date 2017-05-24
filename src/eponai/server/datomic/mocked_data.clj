@@ -401,9 +401,10 @@
         chats (mock-chats stores)
         live-streams (mock-streams (take 4 stores) :stream.state/offline)
         streams (mock-streams (drop 4 stores) :stream.state/offline)
-        storeless-user (user-no-store)]
+        ;storeless-user (user-no-store)
+        ]
     (db/transact conn categories)
-    (db/transact-one conn storeless-user)
+    ;(db/transact-one conn storeless-user)
     (debug "Categories added")
     (db/transact conn (concat stores live-streams streams chats))
     (debug "Stores with items, chats and streams added")))

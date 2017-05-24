@@ -139,7 +139,7 @@
     (r/response (call-parser request)))
 
   ;(POST "/stripe/main" request (r/response (stripe/webhook (::m/conn request) (:params request))))
-  (GET "/auth" request (auth/authenticate request))
+  (GET "/auth" request (auth/authenticate request (::m/conn request)))
 
   (GET "/logout" request (-> (auth/redirect request (or (get-in request [:params :redirect])
                                                         (routes/path :coming-soon)))

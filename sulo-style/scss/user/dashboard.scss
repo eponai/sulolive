@@ -155,6 +155,11 @@ $user-dashboard-max-width: 44rem;
 		margin-bottom: 4rem;
 	}
 	
+	.callout.warning {
+		small {
+			color: $body-font-color;
+		}
+	}
 
 	.reveal-overlay {
 		overflow: hidden;
@@ -173,6 +178,14 @@ $user-dashboard-max-width: 44rem;
 				margin: 1rem auto;
 				max-width: 10rem;
 				width: 10rem;
+				.content {
+					// padding: 0.5rem;
+					font-size: 1rem;
+				}
+				i {
+					color: $dark-gray;
+					font-size: 1rem;
+				}
 			}
 		}
 		.action-buttons {

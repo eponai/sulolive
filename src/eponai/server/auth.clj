@@ -7,7 +7,7 @@
     [buddy.auth.protocols :as auth.protocols]
     [manifold.deferred :as deferred]
     [environ.core :refer [env]]
-    [taoensso.timbre :refer [error debug warn]]
+    [taoensso.timbre :refer [error debug warn info]]
     [ring.util.response :as r]
     [eponai.server.datomic.format :as f]
     [eponai.server.external.auth0 :as auth0]
@@ -77,8 +77,10 @@
             (when (some? auth0-user)
               (if-not (some? (:email auth0-user))
                 (warn "Authenticated an auth0 user but it had no email. Auth0-user: " auth0-user)
-                (do (authenticate-auth0-user conn auth0-user)
-                    auth0-user))))
+                auth0-user
+                ;(do (authenticate-auth0-user conn auth0-user)
+                ;    auth0-user)
+                )))
           (catch Exception e
             (if-let [token-failure (when-let [data (ex-data e)]
                                      (let [{:keys [type cause]} data]
@@ -149,10 +151,16 @@
         (wrap-authorization auth-backend)
         (wrap-http-auth-responder))))
 
-(defn authenticate [{:keys [params] :as request}]
+(defn authenticate [{:keys [params] :as request} conn]
   (let [auth0 (get-in request [:eponai.server.middleware/system :system/auth0])
         {:keys [code state]} params
-        {:keys [redirect-url token]} (auth0/authenticate auth0 code state)]
+        {:keys [redirect-url token profile]} (auth0/authenticate auth0 code state)
+        old-user (db/lookup-entity (db/db conn) [:user/email (:email profile)])]
+    (when-not old-user
+      (let [new-user (f/auth0->user profile)]
+        (info "Auth - authenticated user did not exist, creating new user.")
+        (debug "Auth - new user: " new-user)
+        (db/transact-one conn new-user)))
     (if token
       (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token})
       (prompt-login request))))

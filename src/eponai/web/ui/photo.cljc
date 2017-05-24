@@ -127,7 +127,7 @@
                  (css/add-class :store-photo))
             content)))
 
-(defn user-photo [user {:keys [transformation]}]
+(defn user-photo [user {:keys [transformation]} & content]
   (let [photo (get-in user [:user/profile :user.profile/photo])
         p (if (:photo/id photo)
             {:photo-id (:photo/id photo)}
@@ -136,7 +136,8 @@
     (dom/div
       (css/add-class :user-profile-photo)
       (circle
-        (merge p {:transformation transformation})))))
+        (merge p {:transformation transformation})
+        content))))
 
 (defn stream-photo [store]
   (let [photo (get-in store [:store/profile :store.profile/photo])
