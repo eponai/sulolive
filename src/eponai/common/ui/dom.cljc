@@ -112,6 +112,9 @@
 (defn input [opts & content]
   (element dom/input opts content))
 
+(defn form [opts & content]
+  (element dom/form opts content))
+
 (defn select [opts & content]
   (element dom/select opts content))
 

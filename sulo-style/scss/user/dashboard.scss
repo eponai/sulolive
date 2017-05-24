@@ -35,6 +35,26 @@ $user-dashboard-max-width: 44rem;
 		}
 	}
 }
+.section-form.section-form--address {
+	border-top: $global-border-secondary;
+	border-bottom: $global-border-secondary;
+	margin-bottom: 1rem;
+	> div {
+		border-bottom: $global-border-secondary;
+		padding: 1rem 0 0 0;
+		&:last-child {
+			border: none;
+		}
+	}
+	// li {
+		.column {
+			margin-bottom: 1rem;
+			// &:last-child {
+			// 	margin-bottom: 0;
+			// }
+		}
+	// }
+}
 .section-list.section-list--cards {
 	.section-list-item--card, .section-list-item--new-card {
 		display: flex;
@@ -117,7 +137,8 @@ $user-dashboard-max-width: 44rem;
 #sulo-user-dashboard {
 	.row {
 		max-width: $user-dashboard-max-width;
-		margin: 0 auto;
+		margin-right: auto;
+		margin-left: auto;
 	}
 	.page-content {
 		padding-top: 1rem;

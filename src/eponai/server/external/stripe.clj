@@ -119,6 +119,7 @@
       (f/stripe->customer customer)))
 
   (-update-customer [_ customer-id params]
+    (debug "Update customer: " params)
     (let [customer (json/read-str (:body (client/post (stripe-endpoint "customers" customer-id)
                                                       {:basic-auth api-key :form-params params})) :key-fn keyword)]
       (f/stripe->customer customer)))
