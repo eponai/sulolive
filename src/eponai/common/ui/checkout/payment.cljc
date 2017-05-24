@@ -78,7 +78,10 @@
         (menu/item
           (css/add-classes [:section-list-item--new-card])
           (dom/a
-            {:onClick #(om/update-state! this assoc :selected-source :new-card)}
+            (cond->> {:onClick #(om/update-state! this assoc :selected-source :new-card)}
+                     (and (not-empty sources)
+                          (not add-new-card?))
+                     (css/add-class :hide))
             (dom/input
               (cond->> {:type    "radio"
                         :name    "sulo-select-cc"
@@ -90,13 +93,13 @@
               (cond->> {:id "sulo-card-element"}
                        (and (not-empty sources)
                             (not add-new-card?))
-                       (css/add-class :hide)))
-            (when (and (not-empty sources)
-                       (not add-new-card?))
-              (dom/a (->> (css/button-hollow {:onClick #(om/update-state! this assoc :add-new-card? true)})
-                          (css/add-class :secondary)
-                          (css/add-class :small))
-                     (dom/span nil "Add new card..."))))))
+                       (css/add-class :hide))))
+          (if (and (not-empty sources)
+                     (not add-new-card?))
+            (dom/a (->> (css/button-hollow {:onClick #(om/update-state! this assoc :add-new-card? true)})
+                        (css/add-class :secondary)
+                        (css/add-class :small))
+                   (dom/span nil "Add new card...")))))
 
       ;(when (and (not-empty sources)
       ;           (not add-new-card?))

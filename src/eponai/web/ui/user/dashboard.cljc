@@ -106,7 +106,7 @@
                 (dom/input {:type         "text"
                             :id           (:user.info/name form-inputs)
                             :defaultValue (:user.profile/name user-profile)})
-                (dom/p nil (dom/small nil "This is the name that will be used when you hang out in chats.")))))
+                (dom/p nil (dom/small nil "This name will be visible to other users in chats.")))))
           )
         (dom/div
           (css/add-class :action-buttons)
@@ -142,6 +142,7 @@
       (grid/row-column
         (css/text-align :center)
         (dom/h2 nil "Shipping address")
+        (dom/p nil (dom/small nil "Shipping address to use at checkout."))
         (dom/form
           (css/add-classes [:section-form :section-form--address])
           (dom/div
@@ -355,8 +356,8 @@
         (msg/clear-messages! this 'stripe/update-customer)
         (om/update-state! this dissoc :modal))))
 
-  (initLocalState [_]
-    {:modal :modal/shipping-info})
+  ;(initLocalState [_]
+  ;  {:modal :modal/shipping-info})
   (render [this]
     (let [{:proxy/keys [navbar]
            :query/keys [auth current-route stripe-customer]} (om/props this)
@@ -406,7 +407,7 @@
                 (grid/column
                   nil
                   (dom/label nil "Public profile")
-                  (dom/p nil (dom/small nil "This is how other users on SULO will see you when you interact in common spaces (such as store chat rooms)."))
+                  (dom/p nil (dom/small nil "This is how other users on SULO will see you when you interact and hang out in stores."))
                   )
                 (grid/column
                   (->> (grid/column-size {:small 12 :medium 6})
@@ -423,7 +424,7 @@
                     (dom/span nil "Edit profile"))))))
           (dom/div
             (css/add-class :section-title)
-            (dom/span nil "Shopping details"))
+            (dom/span nil "Shopper details"))
           (menu/vertical
             (css/add-class :section-list)
 
@@ -467,7 +468,7 @@
                 (grid/column
                   nil
                   (dom/label nil "Shipping")
-                  (dom/p nil (dom/small nil "Manage your saved shipping address. This address will be pre-selected for you at checkout.")))
+                  (dom/p nil (dom/small nil "Manage your saved shipping address. This address will be pre-filled for you at checkout.")))
                 (grid/column
                   (->> (grid/column-size {:small 12 :medium 6})
                        (css/text-align :right))

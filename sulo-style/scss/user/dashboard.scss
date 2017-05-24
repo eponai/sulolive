@@ -67,7 +67,9 @@ $user-dashboard-max-width: 44rem;
 				width: 2rem;
 				flex: 0 0 auto;
 			}
-			color: $body-font-color;
+			&:not(.button) {
+				color: $body-font-color;
+			}
 			&:nth-child(2) {
 				flex: 0 0 auto;
 			}
@@ -129,7 +131,7 @@ $user-dashboard-max-width: 44rem;
 			color: $dark-gray;
 		}
 		.button {
-			margin-bottom: 0.5rem;
+			margin-bottom: 0;
 		}
 	}
 }

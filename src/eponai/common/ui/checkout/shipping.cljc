@@ -91,25 +91,27 @@
           (css/add-class :hide))
         (let [{:shipping/keys [address]} shipping]
           (dom/div
-            (css/add-class :shipping-address)
-            (dom/p nil (:shipping/name shipping))
-            (dom/div nil (dom/span nil (:shipping.address/street address)))
-            (dom/div nil (dom/span nil (:shipping.address/street2 address)))
-            (dom/div nil
-                     (dom/span nil
-                               (str
-                                 (:shipping.address/locality address)
-                                 ", "
-                                 (:shipping.address/postal address)
-                                 " "
-                                 (:shipping.address/region address)
-                                 )))
-            (dom/div nil (dom/span nil (:shipping.address/country address)))))
-        (dom/div
-          (css/text-align :right)
-          (dom/a
-            (css/button-hollow {:onClick #(when on-open (on-open))})
-            (dom/span nil "Edit"))))
+            (css/add-classes [:section-form :section-form--address])
+            (dom/div
+              nil
+              (dom/p nil (:shipping/name shipping))
+              (dom/div nil (dom/span nil (:shipping.address/street address)))
+              (dom/div nil (dom/span nil (:shipping.address/street2 address)))
+              (dom/div nil
+                       (dom/span nil
+                                 (str
+                                   (:shipping.address/locality address)
+                                   ", "
+                                   (:shipping.address/postal address)
+                                   " "
+                                   (:shipping.address/region address)
+                                   )))
+              (dom/div nil (dom/span nil (:shipping.address/country address))))))
+        (dom/a
+          (->> (css/button-hollow {:onClick #(when on-open (on-open))})
+               (css/add-class :secondary)
+               (css/add-class :small))
+          (dom/span nil "Edit address")))
       (dom/div
         (when collapse?
           (css/add-class :hide))
@@ -245,6 +247,21 @@
                                                                      :on-change  (fn [place]
                                                                                    (prefill-address-form place))})]
          (om/update-state! this assoc :autocomplete autocomplete))))
+  (componentWillReceiveProps [this next-props]
+    #?(:cljs
+       (let [{:keys [shipping]} next-props]
+         (debug "Getting props with shipping: " shipping)
+         (when (some? shipping)
+           (let [address (:shipping/address shipping)
+                 {:shipping.address/keys [street street2 postal locality region country]
+                  :shipping/keys         [name]} form-inputs]
+             (set! (.-value (web-utils/element-by-id name)) (:shipping/name shipping))
+             (set! (.-value (web-utils/element-by-id street)) (:shipping.address/street address))
+             (set! (.-value (web-utils/element-by-id street2)) (:shipping.address/street2 address))
+             (set! (.-value (web-utils/element-by-id postal)) (:shipping.address/postal address))
+             (set! (.-value (web-utils/element-by-id locality)) (:shipping.address/locality address))
+             (set! (.-value (web-utils/element-by-id country)) (:shipping.address/country address))
+             (set! (.-value (web-utils/element-by-id region)) (:shipping.address/region address)))))))
   (render [this]
     (render-checkout-shipping this
                               (om/props this)
