@@ -158,7 +158,7 @@
                         :value     ""
                         :name      "file"
                         :id        (str "file-" id)
-                        :accept    "image/jpeg"
+                        :accept    "image/*"
                         :onChange  #(when-not loading? (queue-file % this state))
                         :className "show-for-sr"})))))
 

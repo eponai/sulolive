@@ -97,6 +97,7 @@
           jwt-secret (secret this)]
       (debug "Authing self-signed jwt token on localhost with auth-data: " auth-data)
       {:token        (jwt/sign auth-data jwt-secret)
+       :profile      auth-data
        :token-type   "Bearer"
        :redirect-url state}))
   (refresh [this token]
