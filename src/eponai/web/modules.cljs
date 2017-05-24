@@ -8,6 +8,7 @@
 
 (def non-route-modules [:react-select :stream+chat :photo-uploader])
 (def dependencies {:login           [:index]
+                   :user-settings   [:photo-uploader]
                    :user            [:photo-uploader]
                    :store           [:stream+chat]
                    :store-dashboard [:photo-uploader :react-select :stream+chat]})

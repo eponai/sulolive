@@ -60,7 +60,7 @@
                                        eponai.common.ui.user.profile
                                        eponai.common.ui.user.profile-edit]
                           :depends-on [:photo-uploader]}
-        :user-settings   {:entries [eponai.web.ui.user.dashboard]
+        :user-settings   {:entries    [eponai.web.ui.user.dashboard]
                           :depends-on [:photo-uploader]}
         :store-dashboard {:depends-on [:react-select
                                        :stream+chat
