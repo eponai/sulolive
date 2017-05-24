@@ -116,7 +116,7 @@
           users (into #{} (comp (mapcat :chat/messages)
                                 (map :chat.message/user)
                                 (map :db/id))
-                      chat-messages)
+                      [chat-messages])
           user-pattern (parse-chat-message-user-query query)
           _ (debug "Parsed user pattern: " user-pattern)
           user-data (db/pull-many (db/db (:conn sulo-datomic))
