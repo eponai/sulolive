@@ -24,6 +24,22 @@
     [eponai.server.external.aws-s3 :as s3]
     [medley.core :as medley]))
 
+(def system-keys #{:system/aleph
+                   :system/auth0
+                   :system/aws-ec2
+                   :system/aws-elb
+                   :system/aws-s3
+                   :system/chat
+                   :system/chat-datomic
+                   :system/chat-websocket
+                   :system/cloudinary
+                   :system/datomic
+                   :system/handler
+                   :system/mailchimp
+                   :system/server-address
+                   :system/stripe
+                   :system/wowza})
+
 (defn to-queued-request
   "Queue request and put the response on the deferred response."
   [request deferred-response]
@@ -128,90 +144,109 @@
       (when (seq requests)
         (debug "Resumed all suspended requests.")))))
 
-(defn- system [in-prod? {:keys [env] :as config}]
+(defn components-without-fakes [{:keys [env] :as config}]
+  {:system/aleph          (c/using (aleph/map->Aleph (select-keys config [:handler :port :netty-options]))
+                                   {:handler :system/handler})
+   :system/cloudinary     (cloudinary/->Cloudinary
+                            (:cloudinary-api-key env)
+                            (:cloudinary-api-secret env))
+   :system/chat           (c/using (chat/map->DatomicChat {})
+                                   {:chat-datomic :system/chat-datomic
+                                    :sulo-datomic :system/datomic})
+   :system/chat-datomic   (datomic/map->Datomic
+                            {:db-url           (:chat-db-url env)
+                             :add-mocked-data? false})
+   :system/chat-websocket (c/using (websocket/map->StoreChatWebsocket {})
+                                   {:chat :system/chat})
+   :system/datomic        (datomic/map->Datomic
+                            {:db-url           (:db-url env)
+                             :provided-conn    (::provided-conn config)
+                             :add-mocked-data? true})
+   :system/server-address (c/using (server-address/map->ServerAddress {:schema (:server-url-schema env)
+                                                                       :host   (:server-url-host env)})
+                                   {:aws-elb :system/aws-elb})})
 
-  (let [system-map (c/system-map
-                     :system/aleph (c/using (aleph/map->Aleph (select-keys config [:handler :port :netty-options]))
-                                            {:handler :system/handler})
-                     :system/auth0 (c/using (auth0/map->Auth0 {:client-id     (:auth0-client-id env)
-                                                               :client-secret (:auth0-client-secret env)})
-                                            {:server-address :system/server-address})
-                     :system/aws-ec2 (ec2/aws-ec2)
-                     :system/aws-elb (c/using (elb/map->AwsElasticBeanstalk {})
-                                              {:aws-ec2 :system/aws-ec2})
-                     :system/aws-s3 (s3/map->AwsS3 {:bucket     (:aws-s3-bucket-photos env)
-                                                    :zone       (:aws-s3-bucket-photos-zone env)
-                                                    :access-key (:aws-access-key-id env)
-                                                    :secret     (:aws-secret-access-key env)})
-                     :system/cloudinary (cloudinary/->Cloudinary
-                                          (:cloudinary-api-key env)
-                                          (:cloudinary-api-secret env))
-                     :system/chat (c/using (chat/map->DatomicChat {})
-                                           {:chat-datomic :system/chat-datomic
-                                            :sulo-datomic :system/datomic})
-                     :system/chat-datomic (datomic/map->Datomic
-                                            {:db-url           (:chat-db-url env)
-                                             :add-mocked-data? false})
-                     :system/chat-websocket (c/using (websocket/map->StoreChatWebsocket {})
-                                                     {:chat :system/chat})
-                     :system/datomic (datomic/map->Datomic
-                                       {:db-url           (:db-url env)
-                                        :provided-conn    (::provided-conn config)
-                                        :add-mocked-data? true})
-                     :system/mailchimp (mailchimp/mail-chimp (:mailchimp-api-key env))
-                     :system/server-address (c/using (server-address/map->ServerAddress {:schema (:server-url-schema env)
-                                                                                         :host   (:server-url-host env)})
-                                                     {:aws-elb :system/aws-elb})
-                     :system/stripe (stripe/stripe (:stripe-secret-key env))
-                     :system/wowza (wowza/wowza {:secret         (:wowza-jwt-secret env)
-                                                 :subscriber-url (:wowza-subscriber-url env)
-                                                 :publisher-url  (:wowza-publisher-url env)}))
-        ;; Put all of the other components in our request.
-        system-map (assoc system-map
-                     :system/handler (c/using (map->RequestHandler {:disable-ssl          (::disable-ssl config)
-                                                                    :disable-anti-forgery (::disable-anti-forgery config)
-                                                                    :in-production?       in-prod?
-                                                                    :cljs-build-id        (:cljs-build-id env "dev")})
-                                              (vec (keys (dissoc system-map :system/aleph)))))]
-    ;; Returns the system wrapped in an atom in case we want to adjust it more.
-    ;; The final state of the system atom will be the one assoc'ed in the request.
-    system-map))
+(defn real-components [{:keys [env] :as config}]
+  {:system/auth0     (c/using (auth0/map->Auth0 {:client-id     (:auth0-client-id env)
+                                                 :client-secret (:auth0-client-secret env)})
+                              {:server-address :system/server-address})
+   :system/aws-ec2   (ec2/aws-ec2)
+   :system/aws-elb   (c/using (elb/map->AwsElasticBeanstalk {})
+                              {:aws-ec2 :system/aws-ec2})
+   :system/aws-s3    (s3/map->AwsS3 {:bucket     (:aws-s3-bucket-photos env)
+                                     :zone       (:aws-s3-bucket-photos-zone env)
+                                     :access-key (:aws-access-key-id env)
+                                     :secret     (:aws-secret-access-key env)})
+   :system/mailchimp (mailchimp/mail-chimp (:mailchimp-api-key env))
+   :system/stripe    (stripe/stripe (:stripe-secret-key env))
+   :system/wowza     (wowza/wowza {:secret         (:wowza-jwt-secret env)
+                                   :subscriber-url (:wowza-subscriber-url env)
+                                   :publisher-url  (:wowza-publisher-url env)})})
 
-(defn old-system-keys []
-  #{:system/auth0
-    :system/chat
-    :system/chat-websocket
-    :system/wowza
-    :system/mailchimp
-    :system/stripe
-    :system/aws-ec2
-    :system/aws-elb
-    :system/aws-s3})
+(defn fake-components [{:keys [env] :as config}]
+  {:system/auth0     (c/using (auth0/map->FakeAuth0 {})
+                              {:datomic :system/datomic})
+   :system/aws-ec2   (ec2/aws-ec2-stub)
+   :system/aws-elb   (elb/aws-elastic-beanstalk-stub)
+   :system/aws-s3    (s3/aws-s3-stub)
+   :system/mailchimp (mailchimp/mail-chimp-stub)
+   :system/stripe    (stripe/stripe-stub (:stripe-secret-key env))
+   :system/wowza     (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})})
+
+(defn with-request-handler [system {:keys [in-prod? env] :as config}]
+  (assoc system
+    :system/handler
+    (c/using (map->RequestHandler {:disable-ssl          (::disable-ssl config)
+                                   :disable-anti-forgery (::disable-anti-forgery config)
+                                   :in-production?       in-prod?
+                                   :cljs-build-id        (:cljs-build-id env "dev")})
+             (vec (keys (dissoc system :system/aleph))))))
+
+(defn real-system [{:keys [in-aws?] :as config}]
+  (c/map->SystemMap (-> (merge (components-without-fakes config)
+                               (real-components config)
+                               (when (not in-aws?)
+                                 (select-keys (fake-components config) [:system/aws-elb :system/aws-ec2])))
+                        (with-request-handler config))))
+
+(defn fake-system [config & real-component-keys]
+  (let [reals (real-components config)
+        fakes (fake-components config)]
+    (assert (= (set (keys reals)) (set (keys fakes)))
+            (str "Real components and fake components did not contain the same"
+                 " keys. Either create a fake (or real) and put it in the "
+                 " function missing the component, or if the component does not"
+                 " have a fake, put it in (components-without fakes ..)."
+                 " diff of (clojure.data/diff (set (keys reals)) (set (keys fakes))) => "
+                 (clojure.data/diff (set (keys reals))
+                                    (set (keys fakes)))))
+    (c/map->SystemMap (-> (merge (components-without-fakes config)
+                                 fakes
+                                 (select-keys reals real-component-keys))
+                          (with-request-handler config)))))
 
 (defn prod-system [config]
-  {:post [(every? (set (keys %)) (old-system-keys))]}
-  (let [config (assoc config :env environ/env)
-        in-aws? (some? (get-in config [:env :aws-elb]))]
-    (cond-> (system true config)
-            (not in-aws?)
-            (assoc :system/aws-elb (elb/aws-elastic-beanstalk-stub)
-                   :system/aws-ec2 (ec2/aws-ec2-stub)))))
+  {:post [(= (set (keys %)) system-keys)]}
+  (let [config (assoc config :env environ/env
+                             :in-prod? true
+                             :in-aws? (some? (get-in config [:env :aws-elb])))]
+    (real-system config)))
+
+(defn dev-config [config]
+  (assoc config :env environ/env
+                :in-prod? false
+                ::disable-ssl true
+                ::disable-anti-forgery true))
 
 (defn dev-system [config]
-  (let [{:keys [env] :as config} (assoc config :env environ/env
-                                               ::disable-ssl true
-                                               ::disable-anti-forgery true)]
-    (cond-> (assoc (system false config)
-              ;; Comment out things to use the production ones.
-              :system/auth0 (c/using (auth0/map->FakeAuth0 {})
-                                     {:datomic :system/datomic})
-              :system/aws-elb (elb/aws-elastic-beanstalk-stub)
-              :system/aws-ec2 (ec2/aws-ec2-stub)
-              ;:system/aws-s3 (s3/aws-s3-stub)
-              :system/mailchimp (mailchimp/mail-chimp-stub)
-              )
-            ;; Conditionals for common ones to try real implementation of:
-            (nil? (env :use-real-stripe))
-            (assoc :system/stripe (stripe/stripe-stub (:stripe-secret-key env)))
-            (nil? (env :use-real-wowza))
-            (assoc :system/wowza (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})))))
+  {:post [(= (set (keys %)) system-keys)]}
+  (fake-system (dev-config config)
+               ;; Put keys under here to use the real implementation
+               ;; :system/stripe
+               ;; :system/mailchimp
+               ))
+
+(defn test-system [config]
+  {:post [(= (set (keys %)) system-keys)]}
+  ;; Never uses a real implementation.
+  (fake-system (dev-config config)))
