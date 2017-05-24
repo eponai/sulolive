@@ -156,62 +156,68 @@
         (css/text-align :center)
         (dom/h2 nil "Credit cards")
         (if (empty? cards)
-          (dom/p nil
-                 (dom/span nil "You don't have any saved credit cards.")
-                 (dom/br nil)
-                 (dom/small nil "Save your cards at checkout."))
-          (dom/div
-            nil
-            (dom/div (css/add-classes [:section-title :text-left])
-                     (dom/small nil "Default"))
-            (let [default-card (some #(when (= (:stripe.card/id %) (:stripe/default-source stripe-customer)) %) (:stripe/sources stripe-customer))]
-              (menu/vertical
-                (css/add-classes [:section-list :section-list--cards])
-                (map-indexed (fn [i c]
-                               (let [{:stripe.card/keys [brand last4]} c]
-                                 (let [{:stripe.card/keys [brand last4 id]} c]
-                                   (menu/item
-                                     (css/add-class :section-list-item--card)
-                                     (dom/a
-                                       nil                  ;{:onClick #(om/update-state! this assoc :selected-source id)}
-                                       (dom/input {:type "radio"
-                                                   :name "sulo-select-cc"
-                                                   })
-                                       (dom/div
-                                         (css/add-class :payment-card)
-                                         (dom/div {:classes ["icon" (get {"Visa"             "icon-cc-visa"
-                                                                          "American Express" "icon-cc-amex"
-                                                                          "MasterCard"       "icon-cc-mastercard"
-                                                                          "Discover"         "icon-cc-discover"
-                                                                          "JCB"              "icon-cc-jcb"
-                                                                          "Diners Club"      "icon-cc-diners"
-                                                                          "Unknown"          "icon-cc-unknown"} brand "icon-cc-unknown ")]})
-                                         (dom/p nil
-                                                (dom/span (css/add-class :payment-brand) brand)
-                                                (dom/small (css/add-class :payment-last4) (str "ending in " last4))
-                                                )))
-                                     (dom/div
-                                       nil
-                                       (dom/a
-                                         (->> (css/button-hollow)
-                                              (css/add-class :secondary)
-                                              (css/add-class :small))
-                                         (dom/span nil "Remove")))
-                                     ))))
-                             cards)))
-            (dom/p nil (dom/small nil "Save new cards at checkout."))))
-        (dom/div
-          (css/add-class :action-buttons)
-          (dom/a
-            (->> {:onClick on-close}
-                 (css/button-hollow)
-                 (css/add-class :secondary)
-                 (css/add-class :small)) (dom/span nil "Close"))
-          (dom/a
-            (->> {:onClick on-close}
-                 (css/button)
-                 (css/add-class :secondary)
-                 (css/add-class :small)) (dom/span nil "Save")))))))
+          [(dom/p nil
+                  (dom/span nil "You don't have any saved credit cards.")
+                  (dom/br nil)
+                  (dom/small nil "New cards are saved at checkout."))
+           (dom/a
+             (->> {:onClick on-close}
+                  (css/button-hollow)
+                  (css/add-class :secondary)
+                  (css/add-class :small)) (dom/span nil "Close"))]
+          [
+           (dom/div
+             nil
+             (dom/div (css/add-classes [:section-title :text-left])
+                      (dom/small nil "Default"))
+             (let [default-card (some #(when (= (:stripe.card/id %) (:stripe/default-source stripe-customer)) %) (:stripe/sources stripe-customer))]
+               (menu/vertical
+                 (css/add-classes [:section-list :section-list--cards])
+                 (map-indexed (fn [i c]
+                                (let [{:stripe.card/keys [brand last4]} c]
+                                  (let [{:stripe.card/keys [brand last4 id]} c]
+                                    (menu/item
+                                      (css/add-class :section-list-item--card)
+                                      (dom/a
+                                        nil                 ;{:onClick #(om/update-state! this assoc :selected-source id)}
+                                        (dom/input {:type "radio"
+                                                    :name "sulo-select-cc"
+                                                    })
+                                        (dom/div
+                                          (css/add-class :payment-card)
+                                          (dom/div {:classes ["icon" (get {"Visa"             "icon-cc-visa"
+                                                                           "American Express" "icon-cc-amex"
+                                                                           "MasterCard"       "icon-cc-mastercard"
+                                                                           "Discover"         "icon-cc-discover"
+                                                                           "JCB"              "icon-cc-jcb"
+                                                                           "Diners Club"      "icon-cc-diners"
+                                                                           "Unknown"          "icon-cc-unknown"} brand "icon-cc-unknown ")]})
+                                          (dom/p nil
+                                                 (dom/span (css/add-class :payment-brand) brand)
+                                                 (dom/small (css/add-class :payment-last4) (str "ending in " last4))
+                                                 )))
+                                      (dom/div
+                                        nil
+                                        (dom/a
+                                          (->> (css/button-hollow)
+                                               (css/add-class :secondary)
+                                               (css/add-class :small))
+                                          (dom/span nil "Remove")))
+                                      ))))
+                              cards)))
+             (dom/p nil (dom/small nil "New cards are saved at checkout.")))
+           (dom/div
+             (css/add-class :action-buttons)
+             (dom/a
+               (->> {:onClick on-close}
+                    (css/button-hollow)
+                    (css/add-class :secondary)
+                    (css/add-class :small)) (dom/span nil "Close"))
+             (dom/a
+               (->> {:onClick on-close}
+                    (css/button)
+                    (css/add-class :secondary)
+                    (css/add-class :small)) (dom/span nil "Save")))])))))
 (defui UserDashboard
   static om/IQuery
   (query [_]
@@ -304,7 +310,8 @@
                   (dom/p nil (dom/small nil "This is how other users on SULO will see you when you interact in common spaces (such as store chat rooms)."))
                   )
                 (grid/column
-                  (grid/column-size {:small 12 :medium 6})
+                  (->> (grid/column-size {:small 12 :medium 6})
+                       (css/text-align :right))
                   (dom/div
                     (css/add-class :user-profile)
                     (dom/span nil (:user.profile/name user-profile))
@@ -331,20 +338,22 @@
                   (dom/label nil "Payment info")
                   (dom/p nil (dom/small nil "Manage your saved credit cards. Change your default card or remove old ones.")))
                 (grid/column
-                  (grid/column-size {:small 12 :medium 6})
+                  (->> (grid/column-size {:small 12 :medium 6})
+                       (css/text-align :right))
 
-                  (let [default-card (some #(when (= (:stripe/default-source stripe-customer) (:stripe.card/id %)) %)
-                                           (:stripe/sources stripe-customer))
-                        {:stripe.card/keys [brand last4]} default-card]
-                    (debug "Default card: " default-card)
-                    (dom/div
-                      (css/add-classes [:payment-card :default-card])
-                      ;(dom/div {:classes ["icon" (get payment-logos brand "icon-cc-unknown")]})
-                      (dom/p nil
-                             (dom/span (css/add-class :payment-brand) brand)
-                             (dom/br nil)
-                             (dom/small (css/add-class :payment-last4) (str "ending in " last4)))
-                      ))
+                  (if-let [default-card (some #(when (= (:stripe/default-source stripe-customer) (:stripe.card/id %)) %)
+                                           (:stripe/sources stripe-customer))]
+                    (let [{:stripe.card/keys [brand last4]} default-card]
+                      (dom/div
+                        (css/add-classes [:payment-card :default-card])
+                        ;(dom/div {:classes ["icon" (get payment-logos brand "icon-cc-unknown")]})
+                        (dom/p nil
+                               (dom/span (css/add-class :payment-brand) brand)
+                               (dom/br nil)
+                               (dom/small (css/add-class :payment-last4) (str "ending in " last4)))
+                        ))
+                    (dom/p nil (dom/small nil (dom/i nil "No default card")))
+                    )
                   (dom/a
                     (->> {:onClick #(om/update-state! this assoc :modal :modal/payment-info)}
                          (css/button-hollow)
@@ -361,7 +370,8 @@
                   (dom/label nil "Shipping")
                   (dom/p nil (dom/small nil "Your saved shipping addresses for easier checkout.")))
                 (grid/column
-                  (grid/column-size {:small 12 :medium 6})
+                  (->> (grid/column-size {:small 12 :medium 6})
+                       (css/text-align :right))
                   (dom/a
                     (->> (css/button-hollow)
                          (css/add-class :secondary)
@@ -383,7 +393,8 @@
                   (dom/label nil "Facebook")
                   (dom/p nil (dom/small nil "Connect to Facebook to login with your account. We will never post to Facebook or message your friends without your permission")))
                 (grid/column
-                  (grid/column-size {:small 12 :medium 6})
+                  (->> (grid/column-size {:small 12 :medium 6})
+                       (css/text-align :right))
                   (dom/a
                     (->> (css/button)
                          (css/add-class :facebook)
@@ -401,7 +412,8 @@
                   (dom/label nil "Twitter")
                   (dom/p nil (dom/small nil "Connect to Twitter to login with your account. We will never post to Twitter or message your followers without your permission.")))
                 (grid/column
-                  (grid/column-size {:small 12 :medium 6})
+                  (->> (grid/column-size {:small 12 :medium 6})
+                       (css/text-align :right))
                   (dom/a
                     (->> (css/button)
                          (css/add-class :twitter)

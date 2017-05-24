@@ -1,38 +1,3 @@
-// @mixin action-button($color, $button-fill) {
-// 	@each $name, $color in $foundation-palette {
-//       @if $button-fill != hollow {
-//         &.#{$name} {
-//           @include button-style($color, auto, auto);
-//         }
-//       }
-//       @else {
-//         &.#{$name} {
-//           @include button-hollow-style($color);
-//         }
-//       }
-//     }
-// }
-
-// @mixin sulo-action-buttons {
-// 	@include foundation-button;
-// 	.button {
-// 		$color: map-get($foundation-palette, action);
-// 		&:not(.hollow) {
-// 			@include action-button($color, solid);
-// 			@include button-style($color, auto, auto);
-// 		}
-// 		&.hollow {
-// 			@include action-button($color, hollow);
-// 			@include button-hollow-style($color);
-// 			// border: none;
-// 		}
-// 	}
-// }
-
-// $dashboard-max-width: 100%;
-// $dashboard-primary-color: map-get($foundation-palette, action);
-// $dashboard-background: rgba($light-gray, 0.5);
-// $dashboard-content-width: 54rem;
 
 #sulo-store-dashboard {
 	.page-container {
@@ -173,11 +138,6 @@
 	}
 
 	.page-content {
-		// @include sulo-action-buttons;
-
-		// h3 {
-		// 	margin-top: 0;
-		// }
 		padding-top: 5rem;
 		@include breakpoint(large) {
 			padding-top: 5rem;
