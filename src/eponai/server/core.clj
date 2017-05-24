@@ -6,14 +6,14 @@
     [eponai.common.validate]
     [eponai.server.parser.read]
     [eponai.server.parser.mutate]
-    [eponai.server.middleware :as m]
     [aleph.netty]
     [taoensso.timbre :refer [debug error info]]
     ;; Dev/debug require
     [eponai.server.system :as system]
     [clojure.spec :as s]))
 
-(defn- make-system [opts]
+(defn- make-system [{::keys [system-fn] :as opts}]
+  {:pre [(ifn? (::system-fn opts))]}
   (let [default-port 3000
         env-port (try
                    (Long/parseLong (env/env :port))
@@ -22,12 +22,10 @@
         port (or (:port opts) env-port default-port)
         _ (info "Using port: " port)
         config (merge {:port port :env env/env} opts)]
-    (if (::dev-system config)
-      (system/dev-system config)
-      (system/prod-system config))))
+    (system-fn config)))
 
 (defn -main [& _]
-  (let [system (component/start-system (make-system {}))
+  (let [system (component/start-system (make-system {::system-fn system/prod-system}))
         server (get-in system [:system/aleph :server])]
     (aleph.netty/wait-for-close server)))
 
@@ -35,18 +33,21 @@
   []
   (debug "Running repl in production mode without ssl")
   (component/start-system
-    (make-system {::system/disable-ssl true})))
+    (make-system {::system/disable-ssl true
+                  ::system-fn system/prod-system})))
 
 (defn make-dev-system
   "For repl, debug and test usages. Takes an optional map. Returns the aleph-server."
   [& [opts]]
   {:pre [(or (nil? opts) (map? opts))]}
   (s/check-asserts true)
-  (make-system (merge {::dev-system true} opts)))
+  (make-system (merge {::system-fn system/dev-system} opts)))
 
 (defn system-for-tests [& [{:keys [conn port] :as opts}]]
   {:pre [(or (nil? opts) (map? opts))]}
-  (make-dev-system
+  (s/check-asserts true)
+  (make-system
     (merge {:port                  (or port 0)
+            ::system-fn            system/test-system
             ::system/provided-conn conn}
            opts)))
