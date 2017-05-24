@@ -218,7 +218,7 @@
      Filters are updated incrementally via the ::filter-atom (which
      is renewed everytime parser is called (see wrap-parser-filter-atom)."
      [read-or-mutate]
-     (fn [{:keys [state ::filter-atom auth] :as env} k p]
+     (fn [{:keys [state auth] ::keys [filter-atom] :as env} k p]
        (let [db (datomic/db state)
              update-filters (fn [old-filters]
                               (let [filters (or old-filters
@@ -229,8 +229,11 @@
                                                       (filter/not-authenticated-db-filters))))]
                                 (filter/update-filters db filters)))
              filters (swap! filter-atom update-filters)
-             db (filter/apply-filters db filters)]
-         (read-or-mutate (assoc env :db db) k p)))))
+             filtered-db (filter/apply-filters db filters)]
+         (read-or-mutate (assoc env :db filtered-db
+                                    :raw-db db)
+                         k
+                         p)))))
 
 (defn wrap-datascript-db
   "Wraps a :db in the environment for each read.
