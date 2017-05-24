@@ -179,7 +179,7 @@
       (when (some? edit-sections)
         (common/modal
           {:on-close #(om/update-state! component dissoc :products/edit-sections)}
-          (let [items-by-section (group-by #(get-in % [:store.item/section :db/id]) items)]
+          (let [items-by-section (group-by #(get-in % [:store.item/section :db/id]) (:store/items store))]
             (dom/div
               nil
               (dom/p (css/add-class :header) "Edit sections")
@@ -208,16 +208,21 @@
                                                                      (fn [sections]
                                                                        (into [] (remove nil? (assoc sections i nil)))))}
                                         (css/button-hollow)
-                                        (css/add-class ::css/color-secondary))
-                                   (dom/i {:classes ["fa fa-trash-o fa-fw"]})))))
-                  edit-sections))
+                                        (css/add-class ::css/color-secondary)
+                                        (css/add-class :small))
+                                   (dom/span nil "Remove")))))
+                  edit-sections)
+                (menu/item
+                  (css/add-class :edit-sections-item)
+                  (dom/a
+                    (->> (css/button-hollow {:onClick #(om/update-state! component update :products/edit-sections conj {})})
+                         (css/add-class :secondary)
+                         (css/add-class :small))
+                    (dom/span nil "Add section..."))))
 
-              (dom/a (css/button-hollow {:onClick #(om/update-state! component update :products/edit-sections conj {})})
-                     (dom/i {:classes ["fa fa-plus-circle fa-fw"]})
-                     (dom/span nil "Add section"))
-              (dom/hr nil)
               (dom/div
-                (css/text-align :right)
+                (->> (css/text-align :right)
+                     (css/add-class :action-buttons))
                 (cancel-button {:onClick #(om/update-state! component dissoc :products/edit-sections)})
                 (save-button {:onClick #(.save-sections component)}))))))
       (callout/callout-small
@@ -389,7 +394,7 @@
           (grid/row
             (->> (css/add-class :expanded)
                  (css/add-class :collapse)
-                 (css/add-class :policies))
+                 (css/add-classes [:store-info-section :store-info-section--policies]))
             (grid/column
               (grid/column-size {:small 12 :medium 6})
               (dom/div
@@ -439,26 +444,31 @@
                     (save-button (css/add-class :disabled)))
                   (edit-button {:onClick #(om/update-state! this assoc :edit/shipping-policy true)})))
               (callout/callout-small
-                nil
-                (when (:edit/shipping-policy state)
-                  (callout/callout-small
-                    (css/add-class :warning)
-                    (dom/small nil
-                               "We're not quite there yet with shipping settings, so this info cannot be saved for now. We're working on it, hang in there!")))
-                (grid/row
-                  (->> (css/add-class :expanded)
-                       (css/add-class :collapse))
-                  (grid/column
-                    (css/add-class :shrink)
-                    (dom/label nil "Fee"))
-                  (grid/column
-                    nil
-                    (dom/input
-                      (cond-> {:type         "number"
-                               :defaultValue "0.00"
-                               :step 0.01}
-                              (not (:edit/shipping-policy state))
-                              (assoc :readOnly true)))))
+                (css/add-classes [:store-info-policy :store-info-policy--shipping])
+                ;(when (:edit/shipping-policy state)
+                ;  (dom/p nil
+                ;         (dom/small nil "Bas"))
+                ;  (callout/callout-small
+                ;    (css/add-class :warning)
+                ;    (dom/small nil
+                ;               "We're not quite there yet with shipping settings, so this info cannot be saved for now. We're working on it, hang in there!")))
+                (dom/div
+                  (->> (css/add-class :shipping-fee))
+                  ;(grid/column
+                  ;  (css/add-class :shrink)
+                  ;  (dom/label nil "Fee"))
+                  ;(grid/column
+                  ;  nil)
+                  (dom/label nil "Fee")
+                  (dom/input
+                    (cond-> {:type         "number"
+                             :defaultValue "0.00"
+                             :step         0.01}
+                            (not (:edit/shipping-policy state))
+                            (assoc :readOnly true)))
+                  (when (:edit/shipping-policy state)
+                    (dom/small nil "Your base shipping fee that will be added to all orders. Additional cost can also be specified for each product.")))
+
                 (if (:edit/shipping-policy state)
                   (dom/div
                     (css/text-align :right)

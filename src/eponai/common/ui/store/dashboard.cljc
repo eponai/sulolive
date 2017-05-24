@@ -340,7 +340,7 @@
 
             (dom/div
               (css/add-class :section-title)
-              (dom/h1 nil (dom/small nil "Questions?")))
+              (dom/h2 nil "Questions?"))
             (callout/callout
               nil
               (dom/p nil

@@ -126,7 +126,7 @@ $sidenav-width: 75%;
 	z-index: 10;
 }
 
-@include breakpoint(large) {
+@include breakpoint(xlarge) {
 	#sulo-store-dashboard {
 		$sidebar-width: 20rem;
 		.page-content-container {

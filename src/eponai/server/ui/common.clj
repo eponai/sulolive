@@ -106,10 +106,6 @@
       (dom/link {:href "/bower_components/nvd3/build/nv.d3.css"
                  :rel  "stylesheet"}))
 
-    ;;TODO: https://cdn.quilljs.com/1.0.0/quill.snow.css if want to save to local in dev mode
-    (dom/link {:href "//cdn.quilljs.com/1.2.0/quill.snow.css"
-               :rel  "stylesheet"})
-
     (dom/link {:href (versionize "/assets/css/app.css")
                :rel  "stylesheet"})
     ;; Custom fonts

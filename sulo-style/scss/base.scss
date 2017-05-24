@@ -184,10 +184,14 @@ h3 {
 
 .reveal-overlay {
 	display: block;
+	overflow: auto;
 	.reveal {
 		display: block;
 		// top: 2rem;
 		margin-bottom: 2rem;
+	}
+	.reveal.large {
+		top: 2rem;
 	}
 }
 

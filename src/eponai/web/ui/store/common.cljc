@@ -10,19 +10,26 @@
   (dom/a
     (->> (css/button-hollow opts)
          (css/add-class :shrink)
-         (css/add-class :secondary))
+         (css/add-class :secondary)
+         )
     (dom/i {:classes ["fa fa-pencil  fa-fw"]})
     (if (not-empty content)
       content
       (dom/span nil "Edit"))))
 
 (defn save-button [opts & content]
-  (dom/a (css/button opts)
-         (dom/span nil "Save")))
+  (dom/a
+    (->> (css/button opts)
+         (css/add-class :secondary)
+         )
+    (dom/span nil "Save")))
 
 (defn cancel-button [opts & content]
-  (dom/a (css/button-hollow opts)
-         (dom/span nil "Cancel")))
+  (dom/a
+    (->> (css/button-hollow opts)
+         (css/add-class :secondary)
+         )
+    (dom/span nil "Cancel")))
 
 (defprotocol IDashboardNavbarContent
   (render-subnav [this current-route] "Return the component's content for the sub navbar in store dashboard"))
