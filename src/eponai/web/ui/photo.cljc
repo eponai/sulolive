@@ -6,24 +6,37 @@
     [eponai.common.ui.elements.css :as css]
     [taoensso.timbre :refer [debug warn]]))
 
+#?(:cljs
+   (defn is-loaded? [photo-url]
+     (let [img (js/Image.)]
+       (set! (.-src img) photo-url)
+       (.-complete img))))
+
 (defui Photo
   Object
-  (componentDidMount [this]
+  (large-image-url [this]
     (let [{:keys [photo-id transformation ext]} (om/props this)]
+      (photos/transform photo-id (or transformation :transformation/preview) ext)))
+  (initLocalState [this]
+    {:loaded-main? #?(:clj  false
+                      :cljs (when (string? (:photo-id (om/props this)))
+                              (is-loaded? (.large-image-url this))))})
+  (componentDidMount [this]
+    (let [{:keys [photo-id]} (om/props this)]
       #?(:cljs
          (when (some? photo-id)
            (let [image-large (js/Image.)
-                 url (photos/transform photo-id (or transformation :transformation/preview) ext)]
+                 url (.large-image-url this)]
              (set! (.-onload image-large) #(do
-                                            (om/update-state! this assoc :loaded-main? true)))
+                                             (om/update-state! this assoc :loaded-main? true)))
              (set! (.-src image-large) url))))))
 
   (render [this]
-    (let [{:keys [content src photo-id transformation classes ext background?]} (om/props this)]
+    (let [{:keys [content src photo-id classes ext background?]} (om/props this)]
       (cond (some? photo-id)
             (let [{:keys [loaded-main?]} (om/get-state this)
                   url-small (photos/transform photo-id :transformation/micro ext)
-                  url (photos/transform photo-id (or transformation :transformation/preview) ext)]
+                  url (.large-image-url this)]
               (if-not (string? photo-id)
                 (warn "Ignoring invalid photo src type, expecting a URL string. Got src: " photo-id)
                 (dom/div
@@ -38,8 +51,7 @@
                                (update :classes conj :loaded)))
                      (dom/div (css/add-class :content)
                               content)]
-                    [
-                     (when url-small
+                    [(when url-small
                        (dom/img
                          {:src     url-small
                           :classes ["small"]}))
@@ -132,7 +144,7 @@
         p (if (:photo/id photo)
             {:photo-id (:photo/id photo)}
             {:photo-id "static/cat-profile"
-             :ext "png"})]
+             :ext      "png"})]
     (dom/div
       (css/add-class :user-profile-photo)
       (circle
