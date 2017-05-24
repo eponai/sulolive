@@ -9,11 +9,8 @@
 (defui Root
   Object
   (render [this]
-    (let [{:keys [release? ::app-html route cljs-build-id social-sharing]} (om/props this)]
-      ;(debug "ROOT PROPS: " (om/props this))
+    (let [{:keys [release? ::app-html route auth cljs-build-id social-sharing]} (om/props this)]
       (debug "app-html: " app-html)
-      (debug "ROUTE: " route)
-      (debug "SHARING: " social-sharing)
       (dom/html
         {:lang "en"}
         (common/head {:release?       release?
@@ -35,24 +32,16 @@
                        ;; which doesn't have CORS set up (for good reason).
                        ;:data-lazy "true"
                        })
-          ;(common/inline-javascript ["window.fbAsyncInit = function()"
-          ;                           " {FB.init({ appId      : '1791653057760981', "
-          ;                           "xfbml      : true,   version    : 'v2.9'   });"
-          ;                           "FB.AppEvents.logPageView(); }; (function(d, s, id)"
-          ;                           "{var js, fjs = d.getElementsByTagName(s)[0];"
-          ;                           "if (d.getElementById(id)) {return;} js = d.createElement(s); "
-          ;                           "js.id = id;     js.src = \"//connect.facebook.net/en_US/sdk.js\";"
-          ;                           "fjs.parentNode.insertBefore(js, fjs);   }"
-          ;                           "(document, 'script', 'facebook-jssdk'));"])
-          ;type="text/javascript"
-          ;async defer
-          ;src="//assets.pinterest.com/js/pinit.js"
           (dom/script {:src "//assets.pinterest.com/js/pinit.js"
                        :async true
                        :defer true
                        :type common/text-javascript})
           (dom/script {:src  (common/budget-js-path)
                        :type common/text-javascript})
+
+          (when (and release? (some? (:user-id auth)))
+            (common/inline-javascript [(str "mixpanel.identify(\"" (:user-id auth) "\");")
+                                       (str "mixpanel.people.set_once({\"$email\": \"" (:email auth) "\"});")]))
 
           (when-not (= cljs-build-id "devcards")
             (common/inline-javascript ["env.web.main.runsulo()"])))))))
