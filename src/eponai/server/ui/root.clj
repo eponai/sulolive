@@ -24,8 +24,8 @@
           (dom/div {:height "100%" :id router/dom-app-id}
             app-html)
 
-          (common/auth0-lock-passwordless release?)
-          ;(common/auth0-lock release?)
+          ; (common/auth0-lock-passwordless release?)
+          (common/auth0-lock release?)
 
           (dom/script {:src     "https://cdn.greta.io/greta.min.js"
                        :type    common/text-javascript
