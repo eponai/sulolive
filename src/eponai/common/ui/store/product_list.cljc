@@ -16,7 +16,7 @@
     [eponai.common.ui.utils :as utils]
     [eponai.common.ui.elements.table :as table]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.photo :as photo]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.web.ui.photo :as photo]
     [clojure.string :as string]
@@ -67,7 +67,7 @@
           (css/add-class :primary-photo))
         (photo/product-preview p
                                {}
-                               (p/overlay nil)))
+                               (photo/overlay nil)))
 
       (dom/div
         (->> (css/add-class :header)
@@ -210,7 +210,7 @@
                          (dom/a
                            (css/add-class :tr {:href product-link})
                            (dom/span (css/add-class :td)
-                                     (p/product-preview p {:transformation :transformation/thumbnail-tiny}))
+                                     (photo/product-preview p {:transformation :transformation/thumbnail-tiny}))
                            (dom/span (css/add-class :td)
                                      (:store.item/name p))
                            (dom/span

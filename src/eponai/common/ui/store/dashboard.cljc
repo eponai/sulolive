@@ -23,7 +23,7 @@
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.format.date :as date]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as photo]))
 
 (defn find-product [store product-id]
   (let [product-id (c/parse-long product-id)]
@@ -236,7 +236,7 @@
                   (->> (grid/column-size {:small 12 :medium 4})
                        (css/text-align :center))
                   (dom/h3 nil (get-in store [:store/profile :store.profile/name]))
-                  (p/store-photo store {:transformation :transformation/thumbnail})
+                  (photo/store-photo store {:transformation :transformation/thumbnail})
                   (dom/a
                     (->> {:href (routes/url :store-dashboard/profile {:store-id store-id})}
                          (css/button-hollow)

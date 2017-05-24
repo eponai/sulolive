@@ -16,7 +16,7 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.photo :as photo]
     [eponai.web.social :as social]
     [eponai.common.photos :as photos]))
 
@@ -109,7 +109,7 @@
               (some? cover)
               (dom/div
                 (css/add-class :stream-container)
-                (p/cover {:photo-id (:photo/id cover)
+                (photo/cover {:photo-id   (:photo/id cover)
                           :transformation :transformation/full})
 
                 (chat/->StreamChat (om/computed (:proxy/chat props)
@@ -130,7 +130,7 @@
 
               (grid/column
                 (grid/column-size {:small 12 :medium 2})
-                (p/store-photo store {:transformation :transformation/thumbnail}))
+                (photo/store-photo store {:transformation :transformation/thumbnail}))
 
               (grid/column
                 (css/add-class :shrink)

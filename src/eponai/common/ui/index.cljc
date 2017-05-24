@@ -2,7 +2,7 @@
   (:require
     [eponai.common.ui.common :as common]
     [eponai.common.ui.navbar :as nav]
-    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.photo :as photo]
     [eponai.common.ui.product-item :as pi]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
@@ -47,8 +47,8 @@
   (my-dom/a
     {:href    href
      :classes [:full :category-photo]}
-    (p/photo {:photo-id photo-id}
-             (p/overlay
+    (photo/photo {:photo-id photo-id}
+                 (photo/overlay
                nil(my-dom/div
                           (->> (css/text-align :center))
                           (dom/span nil title))))))
@@ -87,7 +87,7 @@
           {:navbar navbar}
           (dom/div #js {:id "sulo-index-container" :onScroll #(debug "Did scroll page: " %)}
 
-            (p/header
+            (photo/header
               (css/add-class :center {:photo-id "static/home-header-bg"
                                       :transformation :transformation/full})
               (div

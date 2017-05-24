@@ -11,7 +11,7 @@
     [eponai.common.ui.om-quill :as quill]
     [eponai.common.format :as f]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.photo :as photo]
     [eponai.web.social :as social]
     [eponai.common.photos :as photos]
     [eponai.client.routes :as routes]))
@@ -108,7 +108,7 @@
                                  (css/add-class ::css/is-active)
                                  (= active-photo-index i)
                                  (css/add-class ::css/is-in))
-                        (p/product-photo
+                        (photo/product-photo
                           item
                           (->> {:index i}
                                (css/add-class :orbit-image)
@@ -120,7 +120,7 @@
                     (fn [i p]
                       (dom/button
                         {:onClick #(om/update-state! this assoc :active-photo-index i)}
-                        (p/product-thumbnail item {:index          i
+                        (photo/product-thumbnail item {:index      i
                                                    :transformation :transformation/thumbnail})))
                     photos))))
 
@@ -213,7 +213,7 @@
               (css/align :middle)
               (grid/column
                 (grid/column-size {:small 3 :medium 2})
-                (p/store-photo store {:transformation :transformation/thumbnail})
+                (photo/store-photo store {:transformation :transformation/thumbnail})
                 )
 
               (grid/column

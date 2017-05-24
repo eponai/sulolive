@@ -12,7 +12,7 @@
     [eponai.client.routes :as routes]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.icons :as icons]
-    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.photo :as photo]
     [eponai.common.ui.elements.callout :as callout]))
 
 (defn items-by-store [items]
@@ -29,7 +29,7 @@
 
       (grid/column
         (grid/column-size {:small 3 :medium 2 :large 1})
-        (p/store-photo s {:transformation :transformation/thumbnail}))
+        (photo/store-photo s {:transformation :transformation/thumbnail}))
 
       (grid/column
         (->> (grid/column-size {:small 12})
@@ -50,7 +50,7 @@
              (css/add-class :item))
         (grid/column
           (grid/column-size {:small 3 :medium 2 :large 1})
-          (p/product-preview product {:transformation :transformation/thumbnail}))
+          (photo/product-preview product {:transformation :transformation/thumbnail}))
 
         (grid/column
           (grid/column-size {:small 8})

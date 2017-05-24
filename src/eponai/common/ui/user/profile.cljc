@@ -11,7 +11,7 @@
     [eponai.common.ui.elements.menu :as menu]
     [taoensso.timbre :refer [debug]]
     [eponai.client.routes :as routes]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as photo]))
 
 (defui Profile
   Object
@@ -46,7 +46,7 @@
               (cond->> (css/add-class :profile-photo)
                        is-current-user?
                        (css/add-class :edit-enabled))
-              (p/user-photo user {:transformation :transformation/thumbnail-large}))
+              (photo/user-photo user {:transformation :transformation/thumbnail-large}))
 
             (grid/row-column
               (css/text-align :center)

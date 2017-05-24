@@ -17,7 +17,7 @@
     [eponai.common :as c]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.photo :as photo]
     [eponai.web.ui.store.common :as store-common]
     [eponai.common.ui.components.select :as sel]))
 
@@ -248,7 +248,7 @@
                       (when (some? photo-key)
                         (dom/div
                           nil
-                          (p/square {:photo-id       photo-key
+                          (photo/square {:photo-id   photo-key
                                      :transformation :transformation/thumbnail})
                           (dom/a
                             (->>
@@ -258,8 +258,8 @@
               (when (some? queue-photo)
                 (grid/column
                   nil
-                  (p/square {:src (:src queue-photo)}
-                            (p/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]})))))
+                  (photo/square {:src (:src queue-photo)}
+                                (photo/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]})))))
               (when (and (nil? queue-photo) (> 5 (count (conj uploaded-photos))))
                 (grid/column
                   nil

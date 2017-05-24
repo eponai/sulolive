@@ -20,7 +20,7 @@
     [eponai.client.parser.message :as msg]
     [taoensso.timbre :refer [debug]]
     [eponai.client.routes :as routes]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as photo]))
 
 (def form-inputs
   {:field.store/name    "store.name"
@@ -80,7 +80,7 @@
         {:navbar navbar :id "sulo-start-store"}
         (when (msg/pending? message)
           (common/loading-spinner))
-        (p/header
+        (photo/header
           {:photo-id "static/coming-soon-sell-bg"
            :transformation :transformation/full}
           (dom/div

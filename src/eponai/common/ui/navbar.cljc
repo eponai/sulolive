@@ -12,7 +12,7 @@
     [eponai.common.ui.icons :as icons]
     [eponai.client.routes :as routes]
     [clojure.string :as s]
-    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.photo :as photo]
     [clojure.string :as string]
     [eponai.common.ui.router :as router]
     [eponai.web.social :as social]))
@@ -167,7 +167,7 @@
                :classes  [:user-photo-item]
                :href     "#"
                :onClick  #(.open-dropdown component :dropdown/user)}
-              (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))
+              (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
             (dom/a
               (->> {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
                    (css/button-hollow))
@@ -201,7 +201,7 @@
                :href     "#"
                :onClick  #(.open-dropdown component :dropdown/user)}
               (css/show-for :large))
-         (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))
+         (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
        (menu/item
          (css/show-for :large)
          (dom/a

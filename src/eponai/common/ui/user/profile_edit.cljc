@@ -12,7 +12,7 @@
     [eponai.client.parser.message :as msg]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.callout :as callout]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as photo]))
 
 (def form-inputs
   {:user.info/name "user.info.name"})
@@ -59,11 +59,11 @@
                   (if (some? queue-photo)
                     (my-dom/div
                       {:classes ["upload-photo circle loading user-profile-photo"]}
-                      (p/circle {:src (:src queue-photo)}
-                                (p/overlay nil (my-dom/i {:classes ["fa fa-spinner fa-spin"]}))))
+                      (photo/circle {:src (:src queue-photo)}
+                                    (photo/overlay nil (my-dom/i {:classes ["fa fa-spinner fa-spin"]}))))
                     (my-dom/label {:htmlFor "file-profile"
                                 :classes ["upload-photo circle"]}
-                               (p/user-photo user {:transformation :transformation/thumbnail})
+                               (photo/user-photo user {:transformation :transformation/thumbnail})
                                #?(:cljs
                                   (pu/->PhotoUploader
                                     (om/computed

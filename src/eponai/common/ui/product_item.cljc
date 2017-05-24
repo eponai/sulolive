@@ -10,7 +10,7 @@
     [taoensso.timbre :refer [debug]]
     [eponai.client.routes :as routes]
     [eponai.common.ui.elements.css :as css]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as photo]))
 
 (defn product-element [opts product & children]
   (let [{:keys [on-click open-url?]} opts
@@ -27,7 +27,7 @@
         (->> {:onClick on-click
               :href    goods-href}
              (css/add-class :primary-photo))
-        (p/product-preview product))
+        (photo/product-preview product))
 
       (dom/div
         (->> (css/add-class :header)

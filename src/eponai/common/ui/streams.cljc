@@ -10,7 +10,7 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.router :as router]
     [eponai.client.routes :as routes]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as photo]))
 
 (defui Streams
   static om/IQuery
@@ -78,7 +78,7 @@
                                   (css/add-class :stream-item))
                              (my-dom/a
                                {:href (routes/url :store {:store-id (:db/id store)})}
-                               (p/store-photo store {:transformation :transformation/thumbnail-large}))
+                               (photo/store-photo store {:transformation :transformation/thumbnail-large}))
                              (my-dom/div
                                (->> (css/add-class :text)
                                     (css/add-class :header))
