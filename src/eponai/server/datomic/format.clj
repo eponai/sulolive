@@ -114,7 +114,7 @@
   (-> (select-keys params [:db/id :store.item/name :store.item/description :store.item/price :store.item/uuid])
       (assoc :store.item/created-at (date/current-millis))
       ;(update :store.item/skus #(map sku %))
-      (update :store.item/description #(when (some? %) (.getBytes %)))
+      (update :store.item/description #(when (some? %) (cf/str->bytes %)))
       (update :store.item/price input->price)
       common.format/add-tempid
       common.format/remove-nil-keys))

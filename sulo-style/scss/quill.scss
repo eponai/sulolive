@@ -25,6 +25,7 @@ $editor-font-family: $header-font-family-sans-serif;//$header-font-family-serif;
 	flex-direction: column;
 	justify-content: center;
 	position: relative;
+	overflow: hidden;
 	.ql-editor.ql-blank {
 		&::before {
 			color: $dark-gray;
@@ -39,10 +40,11 @@ $editor-font-family: $header-font-family-sans-serif;//$header-font-family-serif;
 		padding-top: 3rem;
 		position: relative;
 		z-index: 0;
+		overflow-y: auto;
 	}
 	.ql-toolbar {
 		position: absolute;
-		// background: $white;
+		background: $white;
 		z-index: 1;
 		top: 0;
 		left: 0;
