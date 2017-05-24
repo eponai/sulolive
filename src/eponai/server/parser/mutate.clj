@@ -95,8 +95,8 @@
   {:action (fn []
              (debug "beta/customer with email " email)
              (let [ret (mailchimp/subscribe (:system/mailchimp system)
-                                            {:email        email
-                                             :list-id      (env/env :mailchimp-customer-beta-id)})]
+                                            {:email   email
+                                             :list-id (env/env :mailchimp-customer-beta-id)})]
                ret))})
 
 (defmutation photo/upload
@@ -115,8 +115,8 @@
                                    (into photo-txs [new-profile
                                                     [:db/add (:user-id auth) :user/profile (:db/id new-profile)]])))]
 
-                   (debug "UPloaded photo: " photo)
-                   (db/transact state profile-txs)))})
+               (debug "UPloaded photo: " photo)
+               (db/transact state profile-txs)))})
 
 (defmutation user.info/update
   [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ {:keys [:user/name]}]
@@ -210,7 +210,7 @@
   [{:keys [state auth] :as env} k {:keys [store-id] :as p}]
   {:auth {::auth/store-owner store-id}
    :resp {:success "Stream is online"
-          :error "Could not ensure stream was online"}}
+          :error   "Could not ensure stream was online"}}
   {:action (fn []
              (ensure-stream-is-atleast-online state store-id))})
 
@@ -331,9 +331,19 @@
                      (or (.getMessage exception) "Something went wrong")
                      "Something went wrong!")}}
   {:action (fn []
-             (let [{:stripe/keys [id]} (stripe/pull-user-stripe (db/db state) (:user-id auth))]
-               (when source
-                 {:new-card (stripe/create-card (:system/stripe system) id source)})))})
+             (let [{:stripe/keys [id]} (stripe/pull-user-stripe (db/db state) (:user-id auth))
+                   new-card (when source (stripe/create-card (:system/stripe system) id source))]
+               (when shipping
+                 (let [address (:shipping/address shipping)]
+                   (stripe/update-customer (:system/stripe system)
+                                           id
+                                           {:shipping {:name    (:shipping/name shipping)
+                                                       :address {:line1       (:shipping.address/street address)
+                                                                 :line2       (:shipping.address/street2 address)
+                                                                 :postal_code (:shipping.address/postal address)
+                                                                 :city        (:shipping.address/locality address)
+                                                                 :state       (:shipping.address/region address)}}})))
+               {:new-card     new-card}))})
 
 (defmutation store/create
   [{:keys [state ::parser/return ::parser/exception auth system] :as env} _ params]
@@ -387,7 +397,7 @@
 
 (defmutation chat/send-message
   [{::parser/keys [exception] :keys [state system] :as env} k {:keys [store text user]}]
-  {:auth {::auth/exact-user  (:db/id user)}
+  {:auth {::auth/exact-user (:db/id user)}
    :resp {:success "Message sent"
           :error   (if (some? exception)
                      (.getMessage exception)

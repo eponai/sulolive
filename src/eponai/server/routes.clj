@@ -46,7 +46,9 @@
         sharing-objects (social/share-objects {:route-params route-params
                                                :state        state
                                                :route        route
-                                               :system       system})]
+                                               :system       system})
+        user-email (:email (:identity request))
+        auth-user (when user-email (db/lookup-entity (db/db state) [:user/email user-email]))]
     {:empty-datascript-db (::m/empty-datascript-db request)
      :state               state
      :system              system
@@ -55,7 +57,7 @@
      :route-params        route-params
      :route               route
      :query-params        (:params request)
-     :auth                (:identity request)
+     :auth                (assoc (:identity request) :user-id (:db/id auth-user))
      :social-sharing      sharing-objects}))
 
 ;---------- Auth handlers
@@ -139,7 +141,7 @@
     (r/response (call-parser request)))
 
   ;(POST "/stripe/main" request (r/response (stripe/webhook (::m/conn request) (:params request))))
-  (GET "/auth" request (auth/authenticate request))
+  (GET "/auth" request (auth/authenticate request (::m/conn request)))
 
   (GET "/logout" request (-> (auth/redirect request (or (get-in request [:params :redirect])
                                                         (routes/path :coming-soon)))

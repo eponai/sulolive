@@ -53,7 +53,7 @@
 
       (if (some? code)
         (let [{:keys [id_token access_token token_type] :as to} (code->token code)
-              profile nil]
+              profile (token->profile access_token)]
           ;; TODO: Do we ever need the profile of the token?
           ;; We're not using it right now, so let's avoid that http request.
           ;; profile (token->profile access_token)
@@ -97,6 +97,7 @@
           jwt-secret (secret this)]
       (debug "Authing self-signed jwt token on localhost with auth-data: " auth-data)
       {:token        (jwt/sign auth-data jwt-secret)
+       :profile      auth-data
        :token-type   "Bearer"
        :redirect-url state}))
   (refresh [this token]

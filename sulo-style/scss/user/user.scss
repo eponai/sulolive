@@ -1,11 +1,5 @@
 
 #sulo-user {
-
-	.page-container {
-		$color: map-get($foundation-palette, primary);
-		// background: rgba($color, 0.03);
-	}
-
 	.page-content-container {
 		.user-profile-photo {
 			margin: 1.75rem auto;
@@ -15,8 +9,6 @@
 				@include breakpoint(large) {
 					max-width: 15rem;
 				}
-				// max-width: 15rem;
-				// min-width: 15rem;
 			}
 		}
 	}

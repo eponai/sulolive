@@ -39,7 +39,8 @@
                                                                             {:store.profile/photo [:photo/id]}]}]}]}
                        ]}
      {:query/stripe-customer [:stripe/id
-                              :stripe/sources]}
+                              :stripe/sources
+                              :stripe/shipping]}
      :query/current-route
      {:query/auth [:db/id
                    :user/email
@@ -94,9 +95,21 @@
           (if (msg/success? response)
             (let [{:query/keys [auth]} (om/props this)]
               (debug "Will re-route to " (routes/url :user/order {:order-id (:db/id message) :user-id (:db/id auth)}))
-              ;(routes/set-url! this :user/order {:order-id (:db/id message) :user-id (:db/id auth)})
+              (routes/set-url! this :user/order {:order-id (:db/id message) :user-id (:db/id auth)})
               )
             (om/update-state! this assoc :error-message message))))))
+  (componentDidMount [this]
+    (let [{:query/keys [stripe-customer]} (om/props this)]
+      (when (some? (:stripe/shipping stripe-customer))
+        (let [address (:stripe.shipping/address (:stripe/shipping stripe-customer))
+              formatted {:shipping/name    (:stripe.shipping/name (:stripe/shipping stripe-customer))
+                         :shipping/address {:shipping.address/street   (:stripe.shipping.address/street address)
+                                            :shipping.address/street2  (:stripe.shipping.address/street2 address)
+                                            :shipping.address/locality (:stripe.shipping.address/city address)
+                                            :shipping.address/country  (:stripe.shipping.address/country address)
+                                            :shipping.address/region   (:stripe.shipping.address/state address)
+                                            :shipping.address/postal   (:stripe.shipping.address/postal address)}}]
+          (om/update-state! this assoc :checkout/shipping formatted :open-section :payment)))))
 
   (render [this]
     (let [{:proxy/keys [navbar]

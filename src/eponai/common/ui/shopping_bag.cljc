@@ -112,7 +112,8 @@
                        (dom/strong nil (utils/two-decimal-price (+ item-price shipping-price))))
                 (dom/a
                   (->> {:href (routes/url :checkout {:store-id (:db/id s)})}
-                       (css/button)) "Checkout"))))
+                       (css/button)
+                       (css/add-class :disabled)) "Checkout"))))
           ))
       skus-by-store)))
 

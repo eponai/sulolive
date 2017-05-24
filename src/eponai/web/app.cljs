@@ -161,7 +161,8 @@
               deps)))
 
 (defn run-dev [& [deps]]
-  (run (merge {:auth-lock (auth/fake-lock)
+  (run (merge {
+               :auth-lock (auth/fake-lock)
                :modules   (modules/dev-modules router/routes)
                }
               deps)))

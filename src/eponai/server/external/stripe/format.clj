@@ -96,11 +96,24 @@
                      :stripe.card/exp-month (:exp_month s)
                      :stripe.card/exp-year  (:exp_year s)
                      :stripe.card/last4     (:last4 s)
-                     :stripe.card/name      (:name s)}))]
+                     :stripe.card/name      (:name s)}))
+        shipping* (fn [s]
+                    (let [address* (fn [a]
+                                     (f/remove-nil-keys
+                                       {:stripe.shipping.address/street  (:line1 a)
+                                        :stripe.shipping.address/street2 (:line2 a)
+                                        :stripe.shipping.address/city    (:city a)
+                                        :stripe.shipping.address/postal  (:postal_code a)
+                                        :stripe.shipping.address/state   (:state a)
+                                        :stripe.shipping.address/country (:country a)}))]
+                      (f/remove-nil-keys
+                        {:stripe.shipping/name    (:name s)
+                         :stripe.shipping/address (address* (:address s))})))]
     (f/remove-nil-keys
       {:stripe/id             (:id customer)
        :stripe/sources        (map source* (:data (:sources customer)))
-       :stripe/default-source (:default_source customer)})))
+       :stripe/default-source (:default_source customer)
+       :stripe/shipping       (shipping* (:shipping customer))})))
 
 (defn input->legal-entity [legal-entity]
   (let [{:field.legal-entity/keys [type address business-name business-tax-id first-name last-name dob personal-id-number]} legal-entity
