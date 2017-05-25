@@ -15,6 +15,9 @@
 (defn hollow [& [opts]]
   (css/add-class :hollow opts))
 
+(defn expanded [& [opts]]
+  (css/add-class :expanded opts))
+
 (defn small [& [opts]]
   (css/add-class :small opts))
 

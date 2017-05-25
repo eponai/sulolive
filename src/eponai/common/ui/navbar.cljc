@@ -15,7 +15,8 @@
     [eponai.web.ui.photo :as photo]
     [clojure.string :as string]
     [eponai.common.ui.router :as router]
-    [eponai.web.social :as social]))
+    [eponai.web.social :as social]
+    [eponai.web.ui.button :as button]))
 
 (def dropdown-elements
   {:dropdown/user       "sl-user-dropdown"
@@ -168,9 +169,8 @@
                :href     "#"
                :onClick  #(.open-dropdown component :dropdown/user)}
               (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
-            (dom/a
-              (->> {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
-                   (css/button-hollow))
+            (button/button
+              (button/hollow {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))})
               (dom/span nil "Sign in"))))))))
 
 (def routes->titles
@@ -204,9 +204,8 @@
          (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
        (menu/item
          (css/show-for :large)
-         (dom/a
-           (->> {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
-                (css/button-hollow))
+         (button/button
+           (button/hollow {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))})
            (dom/span nil "Sign in"))))
      ;(when (some? auth)
      ;  (menu/item

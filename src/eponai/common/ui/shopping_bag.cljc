@@ -13,7 +13,8 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.icons :as icons]
     [eponai.web.ui.photo :as photo]
-    [eponai.common.ui.elements.callout :as callout]))
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.web.ui.button :as button]))
 
 (defn items-by-store [items]
   (group-by #(get-in % [:store.item/_skus :store/_items]) items))
@@ -165,9 +166,8 @@
               (dom/p nil (dom/strong nil "Your shopping bag is empty"))
               (icons/empty-shopping-bag)
               ;(dom/p (css/add-class :header))
-              (dom/a
-                (->> {:href (routes/url :browse/all-items)}
-                     (css/button-hollow))
+              (button/button
+                (button/hollow {:href (routes/url :browse/all-items)})
                 (dom/span nil "Go to the market - start shopping")))))))))
 
 (def ->ShoppingBag (om/factory ShoppingBag))

@@ -14,7 +14,8 @@
     [eponai.common.ui.script-loader :as script-loader]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.elements.callout :as callout]))
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.web.ui.button :as button]))
 
 (def form-inputs
   {:shipping/name             "sulo-shipping-full-name"
@@ -107,10 +108,8 @@
                                    (:shipping.address/region address)
                                    )))
               (dom/div nil (dom/span nil (:shipping.address/country address))))))
-        (dom/a
-          (->> (css/button-hollow {:onClick #(when on-open (on-open))})
-               (css/add-class :secondary)
-               (css/add-class :small))
+        (button/user-setting-default
+          {:onClick #(when on-open (on-open))}
           (dom/span nil "Edit address")))
       (dom/div
         (when collapse?

@@ -272,12 +272,9 @@
                                                  )))
                                       (dom/div
                                         nil
-                                        (dom/a
-                                          (->> (css/button-hollow)
-                                               (css/add-class :secondary)
-                                               (css/add-class :small))
-                                          (dom/span nil "Remove")))
-                                      ))))
+                                        (button/user-setting-default
+                                          nil
+                                          (dom/span nil "Remove")))))))
                               cards)))
              (dom/p nil (dom/small nil "New cards are saved at checkout.")))
            (dom/div

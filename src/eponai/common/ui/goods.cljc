@@ -15,7 +15,8 @@
     [eponai.common.api.products :as products]
     [clojure.string :as str]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.web.ui.button :as button]))
 
 (def sorting-vals
   {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
@@ -116,10 +117,10 @@
           (css/hide-for :large)
           (grid/column
             nil
-            (dom/a
+            (button/button
               (->> {:onClick #(om/update-state! this assoc :filters-open? true)}
-                   (css/button-hollow)
-                   (css/add-class :expanded))
+                   (button/hollow)
+                   (button/expanded))
               (dom/span nil "Filter Products"))))
         (grid/row
           nil

@@ -205,21 +205,16 @@
                                  (if (= 1 no-items)
                                    (dom/small nil (str no-items " item"))
                                    (dom/small nil (str no-items " items")))
-                                 (dom/a
-                                   (->> {:onClick #(om/update-state! component update :products/edit-sections
-                                                                     (fn [sections]
-                                                                       (into [] (remove nil? (assoc sections i nil)))))}
-                                        (css/button-hollow)
-                                        (css/add-class ::css/color-secondary)
-                                        (css/add-class :small))
+                                 (button/user-setting-default
+                                   {:onClick #(om/update-state! component update :products/edit-sections
+                                                                (fn [sections]
+                                                                  (into [] (remove nil? (assoc sections i nil)))))}
                                    (dom/span nil "Remove")))))
                   edit-sections)
                 (menu/item
                   (css/add-class :edit-sections-item)
-                  (dom/a
-                    (->> (css/button-hollow {:onClick #(om/update-state! component update :products/edit-sections conj {})})
-                         (css/add-class :secondary)
-                         (css/add-class :small))
+                  (button/user-setting-default
+                    {:onClick #(om/update-state! component update :products/edit-sections conj {})}
                     (dom/span nil "Add section..."))))
 
               (dom/div
