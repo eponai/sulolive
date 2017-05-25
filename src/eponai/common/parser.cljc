@@ -218,18 +218,20 @@
      Filters are updated incrementally via the ::filter-atom (which
      is renewed everytime parser is called (see wrap-parser-filter-atom)."
      [read-or-mutate]
-     (fn [{:keys [state auth] ::keys [filter-atom] :as env} k p]
+     (fn [{:keys [state auth] :as env} k p]
        (let [db (datomic/db state)
-             update-filters (fn [old-filters]
-                              (let [filters (or old-filters
-                                                (if-some [user-id (:user-id auth)]
-                                                  (do (debug "Using auth db for user:" user-id)
-                                                      (filter/authenticated-db-filters user-id))
-                                                  (do (debug "Using non auth db")
-                                                      (filter/not-authenticated-db-filters))))]
-                                (filter/update-filters db filters)))
-             filters (swap! filter-atom update-filters)
-             filtered-db (filter/apply-filters db filters)]
+
+             authed-user-id
+             (when (:email auth)
+               (db/find-with db (db/merge-query (auth/auth-role-query ::auth/any-user auth {})
+                                                {:find '[?user .]})))
+             authed-store-ids
+             (when authed-user-id
+               (db/find-with db (db/merge-query (auth/auth-role-query ::auth/any-store-owner auth {})
+                                                {:symbols {'?user authed-user-id}
+                                                 :find    '[[?store ...]]})))
+
+             filtered-db (filter/filter-authed db authed-user-id authed-store-ids)]
          (read-or-mutate (assoc env :db filtered-db
                                     :raw-db db)
                          k

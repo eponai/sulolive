@@ -154,3 +154,263 @@
     "TODO: Implement public filters"
     [(non-user-entities-filter-map)])
   [])
+
+(def public (constantly true))
+
+(defn user-attribute [user-id]
+  (fn [_ [e]]
+    (= e user-id)))
+
+
+(defn store-attribute [store-id]
+  (fn [_ [e]]
+    (= e store-id)))
+
+(defn query [q]
+  (fn [db [e a v]]
+    (db/one-with db (db/merge-query q {:symbols {'?e e '?v v}}))))
+
+(defn filter-or [& fns]
+  (reduce (fn [a b]
+            (fn [db datom]
+              (or (a db datom)
+                  (b db datom))))
+          (first fns)
+          (rest fns)))
+
+(defn stripe-owner [user-id store-id]
+  (query {:where   '[(or-join [?e]
+                              [?user :user/stripe ?e]
+                              [?store :store/stripe ?e])]
+          :symbols {'?user  user-id
+                    '?store store-id}}))
+
+(defn order-owner [user-id store-id]
+  (query {:where   '[(or-join [?e]
+                              [?e :order/user ?user]
+                              [?e :order/store ?store])]
+          :symbols {'?user  user-id
+                    '?store store-id}}))
+
+(defn order-item-owner [user-id store-id]
+  (fn [db [e]]
+    ((order-owner user-id store-id)
+      db
+      [(:db/id (:order/_items (d/entity db e)))])))
+
+(defn shipping-address-owner [user-id store-id]
+  (fn [db [e]]
+    ((order-owner user-id store-id)
+      db
+      [(:db/id (:order/_shipping (d/entity db e)))])))
+
+(defn filter-by-attribute [{:keys [user-id store-id]}]
+  {
+   ;; public?
+   :user/email                     public
+   ;; user
+   :user/verified                  (user-attribute user-id)
+   ;; user
+   :user/stripe                    (user-attribute user-id)
+   ;; user
+   :user/cart                      (user-attribute user-id)
+   ;; public
+   :user/profile                   public
+   ;; public
+   :user.profile/name              public
+   ;; public
+   :user.profile/photo             public
+   ;; user or store-owner
+   :stripe/id                      (stripe-owner user-id store-id)
+   ;; store-owner
+   :stripe/publ                    (stripe-owner user-id store-id)
+   ;; store-owner
+   :stripe/secret                  (stripe-owner user-id store-id)
+   ;; public
+   :store/uuid                     public
+   ;; store-owner
+   :store/stripe                   (store-attribute store-id)
+   :store/owners                   public
+   :store/items                    public
+   :store/profile                  public
+   :store/sections                 public
+   :store.profile/name             public
+   :store.profile/description      public
+   :store.profile/return-policy    public
+   :store.profile/tagline          public
+   :store.profile/photo            public
+   :store.profile/cover            public
+   :store.section/label            public
+   :store.section/path             public
+   :store.owner/user               public
+   :store.owner/role               public
+   :store.item/uuid                public
+   :store.item/name                public
+   :store.item/description         public
+   :store.item/price               public
+   :store.item/category            public
+   :store.item/section             public
+   :store.item/photos              public
+   :store.item/skus                public
+   :store.item.photo/photo         public
+   :store.item.photo/index         public
+   :store.item.sku/variation       public
+   :store.item.sku/inventory       public
+   :store.item.sku.inventory/type  public
+   :store.item.sku.inventory/value public
+   :photo/path                     public
+   :stream/title                   public
+   :stream/store                   public
+   :stream/state                   public
+   ;; store-owner
+   :stream/token                   (query {:where   '[[?e :stream/store ?store]]
+                                           :symbols {'?store store-id}})
+   :user.cart/items                (query {:where   '[[?user :user/cart ?e]]
+                                           :symbols {'?user user-id}})
+   :chat/store                     public
+   :chat/messages                  public
+   :chat.message/text              public
+   :chat.message/user              public
+   ;; store or user for the order. order-owner ?
+   :order/charge                   (order-owner user-id store-id)
+   :order/amount                   (order-owner user-id store-id)
+   :order/status                   (order-owner user-id store-id)
+   :order/store                    (order-owner user-id store-id)
+   :order/user                     (order-owner user-id store-id)
+   :order/uuid                     (order-owner user-id store-id)
+   :order/shipping                 (order-owner user-id store-id)
+   :order/items                    (order-owner user-id store-id)
+   :order.item/parent              (order-item-owner user-id store-id)
+   :order.item/type                (order-item-owner user-id store-id)
+   :order.item/amount              (order-item-owner user-id store-id)
+   ;; store or user?
+   :charge/id                      (fn [db [e]]
+                                     ((order-owner user-id store-id)
+                                       db
+                                       [(:db/id (:order/_charge (d/entity db e)))]))
+   ;; order owner
+   :shipping/name                  (shipping-address-owner user-id store-id)
+   :shipping/address               (shipping-address-owner user-id store-id)
+   :shipping.address/street        (shipping-address-owner user-id store-id)
+   :shipping.address/street2       (shipping-address-owner user-id store-id)
+   :shipping.address/postal        (shipping-address-owner user-id store-id)
+   :shipping.address/locality      (shipping-address-owner user-id store-id)
+   :shipping.address/region        (shipping-address-owner user-id store-id)
+   :shipping.address/country       (shipping-address-owner user-id store-id)
+   :category/path                  public
+   :category/name                  public
+   :category/label                 public
+   :category/children              public
+   :user/created-at                public
+   :store/created-at               public
+   :store.item/created-at          public
+   :store.item/index               public
+   :photo/id                       public})
+
+(defn filter-authed [db authed-user-id authed-store-ids]
+  (let [filters (filter-by-attribute {:user-id  authed-user-id
+                                      ;; TODO: Should check for all owned stores.
+                                      :store-id (first authed-store-ids)})]
+    (d/filter db (fn [db datom]
+                   (if-let [filter (get filters (:ident (d/attribute db (:a datom))))]
+                     (filter db datom)
+                     (throw (ex-info "Filter not implemented for attribute"
+                                     {:attribute (d/attribute db (:a datom))})))))))
+
+(def schema-keys
+  [
+   ;; public?
+   :user/email
+   ;; user
+   :user/verified
+   ;; user
+   :user/stripe
+   ;; user
+   :user/cart
+   ;; public
+   :user/profile
+   ;; public
+   :user.profile/name
+   ;; public
+   :user.profile/photo
+   ;; user or store-owner
+   :stripe/id
+   ;; store-owner
+   :stripe/publ
+   ;; store-owner
+   :stripe/secret
+   ;; public
+   :store/uuid
+   ;; store-owner
+   :store/stripe
+   :store/owners
+   :store/items
+   :store/profile
+   :store/sections
+   :store.profile/name
+   :store.profile/description
+   :store.profile/return-policy
+   :store.profile/tagline
+   :store.profile/photo
+   :store.profile/cover
+   :store.section/label
+   :store.section/path
+   :store.owner/user
+   :store.owner/role
+   :store.item/uuid
+   :store.item/name
+   :store.item/description
+   :store.item/price
+   :store.item/category
+   :store.item/section
+   :store.item/photos
+   :store.item/skus
+   :store.item.photo/photo
+   :store.item.photo/index
+   :store.item.sku/variation
+   :store.item.sku/inventory
+   :store.item.sku.inventory/type
+   :store.item.sku.inventory/value
+   :photo/path
+   :stream/title
+   :stream/store
+   :stream/state
+   ;; store-owner
+   :stream/token
+   :user.cart/items
+   :chat/store
+   :chat/messages
+   :chat.message/text
+   :chat.message/user
+   ;; store or user?
+   :charge/id
+   ;; store or user for the order. order-owner ?
+   :order/charge
+   :order/amount
+   :order/status
+   :order/store
+   :order/user
+   :order/uuid
+   :order/shipping
+   :order/items
+   :order.item/parent
+   :order.item/type
+   :order.item/amount
+   :shipping/name
+   ;; user or store for the whole shipping address
+   :shipping/address
+   :shipping.address/street
+   :shipping.address/street2
+   :shipping.address/postal
+   :shipping.address/locality
+   :shipping.address/region
+   :shipping.address/country
+   :category/path
+   :category/name
+   :category/label
+   :category/children
+   :user/created-at
+   :store/created-at
+   :store.item/created-at
+   :store.item/index
+   :photo/id])
