@@ -174,12 +174,13 @@ $user-dashboard-max-width: 44rem;
 		}
 
 		.edit-profile-modal {
-			.upload-photo {
+			.photo-container {
 				margin: 1rem auto;
 				max-width: 10rem;
 				width: 10rem;
+				// height: 10rem;
 				.content {
-					// padding: 0.5rem;
+					padding: 0.5rem;
 					font-size: 1rem;
 				}
 				i {

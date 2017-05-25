@@ -68,7 +68,7 @@
                        :value     ""
                        :name      "file"
                        :id        (or id "file-uploader")
-                       :accept    "image/jpeg"
+                       :accept    "image/*"
                        :onChange  #(queue-file this %)
                        :className "show-for-sr"})))))
 

@@ -69,8 +69,10 @@
               (dom/img
                 {:src     src
                  :classes ["main loaded"]})
-              (dom/div (css/add-class :content)
-                       content))
+
+              (when (some? content)
+                (dom/div (css/add-class :content)
+                         content)))
 
             :else
             (warn "Photo component got no data source, expecing a photo key or a src.")))))
@@ -152,7 +154,7 @@
                  (css/add-class :store-photo))
             content)))
 
-(defn user-photo [user {:keys [transformation]} & content]
+(defn user-photo [user props & content]
   (let [photo (get-in user [:user/profile :user.profile/photo])
         p (if (:photo/id photo)
             {:photo-id (:photo/id photo)}
@@ -161,7 +163,7 @@
     (dom/div
       (css/add-class :user-profile-photo)
       (circle
-        (merge p {:transformation transformation})
+        (merge props p)
         content))))
 
 (defn stream-photo [store]
