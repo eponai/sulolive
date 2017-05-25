@@ -83,7 +83,7 @@
     (let [{:keys [proxy/navbar query/featured-items query/featured-streams]
            :query/keys [owned-store]} (om/props this)
           {:keys [input-search]} (om/get-state this)]
-      (debug "Featured items: " featured-items)
+
       (dom/div #js {:id "sulo-index" :className "sulo-page"}
         (common/page-container
           {:navbar navbar}

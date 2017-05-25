@@ -161,7 +161,7 @@
           (dom/a (css/button {:href    (routes/url :store-dashboard/create-product
                                                    {:store-id (:store-id route-params)
                                                     :action   "create"})
-                              :onClick (mixpanel/track "Store: Add product")})
+                              :onClick #(mixpanel/track "Store: Add product")})
                  "Add product"))
         (callout/callout
           nil

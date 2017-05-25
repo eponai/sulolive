@@ -41,7 +41,6 @@
     (request-handler/resume-requests request-handler)))
 
 (defn components-without-fakes [{:keys [env] :as config}]
-  (debug "CONFIG: " config)
   {:system/aleph          (c/using (aleph/map->Aleph (select-keys config [:handler :port :netty-options]))
                                    {:handler :system/handler})
    :system/cloudinary     (cloudinary/cloudinary
