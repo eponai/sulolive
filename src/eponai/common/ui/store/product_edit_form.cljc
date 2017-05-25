@@ -161,7 +161,7 @@
           product (input-product this)
           skus (input-skus this product)
           selected-section (selected-section-entity this)]
-      (mixpanel/track "Store: Update new product" {:product product})
+      (mixpanel/track "Store: Update product" {:product product})
       (msg/om-transact! this `[(store/update-product ~{:product    (cond-> product
                                                                            (not-empty skus)
                                                                            (assoc :store.item/skus skus)

@@ -4,7 +4,8 @@
     [om.next :as om :refer [defui]]
     [eponai.common.ui.router :as router]
     [eponai.server.ui.common :as common]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [clojure.data.json :as json]))
 
 (defui Root
   Object
@@ -43,7 +44,7 @@
 
           (when (some? (:user-id auth))
             (common/inline-javascript [(str "mixpanel.identify(\"" (:user-id auth) "\");")
-                                       (str "mixpanel.people.set_once({\"$email\": \"" (:email auth) "\"});")]))
+                                       (str "mixpanel.people.set_once(" (json/write-str {:$email (:email auth) :$last_name (:email auth)}) ");")]))
 
           (when-not (= cljs-build-id "devcards")
             (common/inline-javascript ["env.web.main.runsulo()"])))))))
