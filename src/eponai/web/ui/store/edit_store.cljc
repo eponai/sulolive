@@ -417,12 +417,12 @@
           (dom/h1 (css/show-for-sr) "Edit store")
           (edit-about-section this)
 
-          (grid/row
+          (dom/div
             (->> (css/add-class :expanded)
                  (css/add-class :collapse)
                  (css/add-classes [:store-info-section :store-info-section--policies]))
-            (grid/column
-              (grid/column-size {:small 12 :medium 6})
+            (dom/div
+              nil
               (dom/div
                 (css/add-class :section-title)
                 (dom/h2 nil "Return policy")
@@ -457,10 +457,9 @@
                                                    :placeholder "No return policy"}
                                                   {:on-editor-created on-editor-create
                                                    :on-text-change    on-editor-change}))))
-            (grid/column
-              (cond->> (grid/column-size {:small 12 :medium 6})
-                       (:edit/shipping-policy state)
-                       (css/add-class :editable))
+            (dom/div
+              (when (:edit/shipping-policy state)
+                (css/add-class :editable))
               (dom/div
                 (css/add-class :section-title)
                 (dom/h2 nil "Shipping policy")
@@ -499,8 +498,7 @@
                              :step         0.01}
                             (not (:edit/shipping-policy state))
                             (assoc :readOnly true)))
-                  (when (:edit/shipping-policy state)
-                    (dom/small nil "Your base shipping fee that will be added to all orders. Additional cost can also be specified for each product.")))
+                  (dom/small nil "Your base shipping fee that will be added to all orders. Additional cost can also be specified for each product."))
 
                 (if (:edit/shipping-policy state)
                   (dom/div

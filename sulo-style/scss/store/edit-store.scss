@@ -96,7 +96,7 @@
 
 						&.disabled {
 							flex: 1;
-							min-height: 15rem;
+							min-height: 19rem;
 						}
 					}
 				}
@@ -108,6 +108,7 @@
 			}
 			input {
 				// color: $dark-gray;
+				max-width: 20rem;
 			}
 			small {
 				color: $dark-gray;

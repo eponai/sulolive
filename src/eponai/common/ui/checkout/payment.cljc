@@ -91,7 +91,7 @@
                             (not add-new-card?))
                        (css/add-class :hide)))
             (dom/div
-              (cond->> {:id "sulo-card-element"}
+              (cond->> {:id stripe-card-element}
                        (and (not-empty sources)
                             (not add-new-card?))
                        (css/add-class :hide))))

@@ -79,7 +79,8 @@
           (->>
             (css/add-class :shrink)
             (css/align :right))
-          (dom/a {:onClick #(.remove-item component sku)} (dom/i {:classes ["fa fa-trash-o"]}))
+          (dom/a {:onClick #(.remove-item component sku)}
+                 (dom/i {:classes ["fa fa-trash-o"]}))
           ;(dom/input {:type             "number"
           ;               ;; :defaultValue doesn't work for clj dom/input.
           ;               ;; File om.next/dom bug?
