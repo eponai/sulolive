@@ -8,8 +8,7 @@
 
 (defn filter-db [db filters]
   (->> filters
-       (f/update-filters db)
-       (f/apply-filters db)))
+       ))
 
 (defn make-query
   "Takes queries that binds ?e.

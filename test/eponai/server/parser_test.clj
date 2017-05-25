@@ -29,6 +29,7 @@
                                                       :stripe/publ]}]}
                         ~{:store-id store-id})]]
     (test/is (number? store-id))
+    (test/is (not (empty? (parse nil [:datascript/schema]))))
     (test/is (empty? (get-in (parse nil store-query) [:query/store :store/stripe])))
     (test/is (= (-> (parse owner-email store-query)
                     (get-in [:query/store :store/stripe])

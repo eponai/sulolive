@@ -234,7 +234,7 @@
                                  filter (filter/filter-authed authed-user-id authed-store-ids)]
                              (reset! filter-atom filter)
                              filter))]
-         (read-or-mutate (assoc env :db (d/filter db auth-filter)
+         (read-or-mutate (assoc env :db (datomic/filter db auth-filter)
                                     :raw-db db)
                          k
                          p)))))
