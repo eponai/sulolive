@@ -155,17 +155,34 @@
     [(non-user-entities-filter-map)])
   [])
 
-(defn query [q]
-  (fn [db [e a v]]
-    (db/one-with db (db/merge-query q {:symbols {'?e e '?v v}}))))
+(defn- public-attr [_ _]
+  (fn [_ _]
+    true))
 
-(defn filter-or [& fns]
-  (reduce (fn [a b]
-            (fn [db datom]
-              (or (a db datom)
-                  (b db datom))))
-          (first fns)
-          (rest fns)))
+(defn- unauthorized-filter [_ _]
+  false)
+
+(defn require-stores [store-ids f]
+  (if (empty? store-ids)
+    unauthorized-filter
+    f))
+
+(defn require-user [user-id f]
+  (if (some? user-id)
+    unauthorized-filter
+    f))
+
+(defn filter-or
+  "Combines filter functions with or. Removing any unauthorized filters, as they are not needed."
+  [& fns]
+  (if-some [fns (seq (remove #(identical? % unauthorized-filter) fns))]
+    (reduce (fn [a b]
+              (fn [db datom]
+                (or (a db datom)
+                    (b db datom))))
+            (first fns)
+            (rest fns))
+    unauthorized-filter))
 
 (defn- walk-entity-path [entity path]
   (reduce (fn [x p]
@@ -180,28 +197,32 @@
           path))
 
 (defn user-path [user-id path]
-  (fn [db [e]]
-    (let [walked (walk-entity-path (d/entity db e) path)]
-      (if (set? walked)
-        (some #(= user-id (:db/id %)) walked)
-        (= user-id (:db/id walked))))))
+  (require-user user-id
+                (fn [db [e]]
+                  (let [walked (walk-entity-path (d/entity db e) path)]
+                    (if (set? walked)
+                      (some #(= user-id (:db/id %)) walked)
+                      (= user-id (:db/id walked)))))))
 
 
 (defn store-path [store-ids path]
-  (fn [db [e]]
-    (let [walked (walk-entity-path (d/entity db e) path)]
-      (if (set? walked)
-        (some #(contains? store-ids (:db/id %)) walked)
-        (contains? store-ids (:db/id walked))))))
+  (require-stores store-ids
+                  (fn [db [e]]
+                    (let [walked (walk-entity-path (d/entity db e) path)]
+                      (if (set? walked)
+                        (some #(contains? store-ids (:db/id %)) walked)
+                        (contains? store-ids (:db/id walked)))))))
 
 (def filter-by-attribute
-  (letfn [(public [_ _] (constantly true))
-          (user-attribute [user-id store-ids]
-            (fn [_ [e]]
-              (= e user-id)))
-          (store-attribute [user-id store-ids]
-            (fn [_ [e]]
-              (contains? store-ids e)))
+  (letfn [(user-attribute [user-id _]
+            (require-user user-id (fn [_ [e]] (= e user-id))))
+          (store-attribute [_ store-ids]
+            (require-stores store-ids (fn [_ [e]] (contains? store-ids e))))
+
+          (stream-owner [_ store-ids]
+            (store-path store-ids [:stream/store]))
+          (cart-owner [user-id _]
+            (user-path user-id [:user/_cart]))
           (stripe-owner [user-id store-ids]
             (filter-or (user-path user-id [:user/_stripe])
                        (store-path store-ids [:store/_stripe])))
@@ -213,10 +234,13 @@
                        (store-path store-ids [:order/_items :order/store])))
           (shipping-address-owner [user-id store-ids]
             (filter-or (user-path user-id [:order/_shipping :order/user])
-                       (store-path store-ids [:order/_shipping :order/store])))]
+                       (store-path store-ids [:order/_shipping :order/store])))
+          (order-charge-owner [user-id store-ids]
+            (filter-or (user-path user-id [:order/_charge :order/user])
+                       (store-path store-ids [:order/_charge :order/store])))]
     {
      ;; public?
-     :user/email                     public
+     :user/email                     public-attr
      ;; user
      :user/verified                  user-attribute
      ;; user
@@ -224,11 +248,11 @@
      ;; user
      :user/cart                      user-attribute
      ;; public
-     :user/profile                   public
+     :user/profile                   public-attr
      ;; public
-     :user.profile/name              public
+     :user.profile/name              public-attr
      ;; public
-     :user.profile/photo             public
+     :user.profile/photo             public-attr
      ;; user or store-owner
      :stripe/id                      stripe-owner
      ;; store-owner
@@ -236,50 +260,48 @@
      ;; store-owner
      :stripe/secret                  stripe-owner
      ;; public
-     :store/uuid                     public
+     :store/uuid                     public-attr
      ;; store-owner
      :store/stripe                   store-attribute
-     :store/owners                   public
-     :store/items                    public
-     :store/profile                  public
-     :store/sections                 public
-     :store.profile/name             public
-     :store.profile/description      public
-     :store.profile/return-policy    public
-     :store.profile/tagline          public
-     :store.profile/photo            public
-     :store.profile/cover            public
-     :store.section/label            public
-     :store.section/path             public
-     :store.owner/user               public
-     :store.owner/role               public
-     :store.item/uuid                public
-     :store.item/name                public
-     :store.item/description         public
-     :store.item/price               public
-     :store.item/category            public
-     :store.item/section             public
-     :store.item/photos              public
-     :store.item/skus                public
-     :store.item.photo/photo         public
-     :store.item.photo/index         public
-     :store.item.sku/variation       public
-     :store.item.sku/inventory       public
-     :store.item.sku.inventory/type  public
-     :store.item.sku.inventory/value public
-     :photo/path                     public
-     :stream/title                   public
-     :stream/store                   public
-     :stream/state                   public
+     :store/owners                   public-attr
+     :store/items                    public-attr
+     :store/profile                  public-attr
+     :store/sections                 public-attr
+     :store.profile/name             public-attr
+     :store.profile/description      public-attr
+     :store.profile/return-policy    public-attr
+     :store.profile/tagline          public-attr
+     :store.profile/photo            public-attr
+     :store.profile/cover            public-attr
+     :store.section/label            public-attr
+     :store.section/path             public-attr
+     :store.owner/user               public-attr
+     :store.owner/role               public-attr
+     :store.item/uuid                public-attr
+     :store.item/name                public-attr
+     :store.item/description         public-attr
+     :store.item/price               public-attr
+     :store.item/category            public-attr
+     :store.item/section             public-attr
+     :store.item/photos              public-attr
+     :store.item/skus                public-attr
+     :store.item.photo/photo         public-attr
+     :store.item.photo/index         public-attr
+     :store.item.sku/variation       public-attr
+     :store.item.sku/inventory       public-attr
+     :store.item.sku.inventory/type  public-attr
+     :store.item.sku.inventory/value public-attr
+     :photo/path                     public-attr
+     :stream/title                   public-attr
+     :stream/store                   public-attr
+     :stream/state                   public-attr
      ;; store-owner
-     :stream/token                   (fn [user-id store-ids]
-                                       (store-path store-ids [:stream/store]))
-     :user.cart/items                (fn [user-id store-ids]
-                                       (user-path user-id [:user/_cart]))
-     :chat/store                     public
-     :chat/messages                  public
-     :chat.message/text              public
-     :chat.message/user              public
+     :stream/token                   stream-owner
+     :user.cart/items                cart-owner
+     :chat/store                     public-attr
+     :chat/messages                  public-attr
+     :chat.message/text              public-attr
+     :chat.message/user              public-attr
      ;; store or user for the order. order-owner ?
      :order/charge                   order-owner
      :order/amount                   order-owner
@@ -293,10 +315,7 @@
      :order.item/type                order-item-owner
      :order.item/amount              order-item-owner
      ;; store or user?
-     :charge/id                      (fn [user-id store-ids]
-                                       (filter-or
-                                         (user-path user-id [:order/_charge :order/user])
-                                         (store-path store-ids [:order/_charge :order/store])))
+     :charge/id                      order-charge-owner
      ;; order owner
      :shipping/name                  shipping-address-owner
      :shipping/address               shipping-address-owner
@@ -306,32 +325,31 @@
      :shipping.address/locality      shipping-address-owner
      :shipping.address/region        shipping-address-owner
      :shipping.address/country       shipping-address-owner
-     :category/path                  public
-     :category/name                  public
-     :category/label                 public
-     :category/children              public
-     :user/created-at                public
-     :store/created-at               public
-     :store.item/created-at          public
-     :store.item/index               public
-     :photo/id                       public}))
+     :category/path                  public-attr
+     :category/name                  public-attr
+     :category/label                 public-attr
+     :category/children              public-attr
+     :user/created-at                public-attr
+     :store/created-at               public-attr
+     :store.item/created-at          public-attr
+     :store.item/index               public-attr
+     :photo/id                       public-attr}))
 
-(defn filter-authed [db authed-user-id authed-store-ids]
+(defn filter-authed [authed-user-id authed-store-ids]
   (let [authed-store-ids (set authed-store-ids)
         filter-cache (atom {})
-        get-filter (memoize
-                     (fn [a]
-                       (let [filter-fn (get filter-by-attribute (:ident (d/attribute db a)))]
-                         (if-some [filter (get @filter-cache filter-fn)]
-                           filter
-                           (let [filter (filter-fn authed-user-id authed-store-ids)]
-                             (swap! filter-cache assoc filter-fn filter)
-                             filter)))))]
-    (d/filter db (fn [db datom]
-                   (if-let [filter (get-filter (:a datom))]
-                     (filter db datom)
-                     (throw (ex-info "Filter not implemented for attribute"
-                                     {:attribute (d/attribute db (:a datom))})))))))
+        get-filter (fn [db a]
+                     (let [filter-fn (get filter-by-attribute (:ident (d/attribute db a)))]
+                       (if-some [filter (get @filter-cache filter-fn)]
+                         filter
+                         (let [filter (filter-fn authed-user-id authed-store-ids)]
+                           (swap! filter-cache assoc filter-fn filter)
+                           filter))))]
+    (fn [db datom]
+      (if-let [filter (get-filter db (:a datom))]
+        (filter db datom)
+        (throw (ex-info "Filter not implemented for attribute"
+                        {:attribute (d/attribute db (:a datom))}))))))
 
 (def schema-keys
   [

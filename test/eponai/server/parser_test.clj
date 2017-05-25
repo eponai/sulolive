@@ -15,24 +15,24 @@
                            :auth  {:email email}}
                           query)))
 
-        [store-id owner-email stripe-publ :as found]
+        [store-id owner-email stripe-publ stripe-secret]
         (first (db/find-with (db/db (:conn datomic))
-                             {:find  '[?store ?email ?publ]
+                             {:find  '[?store ?email ?publ ?secret]
                               :where '[[?store :store/profile _]
                                        [?store :store/owners ?owners]
                                        [?owners :store.owner/user ?user]
                                        [?user :user/email ?email]
                                        [?store :store/stripe ?stripe]
-                                       [?stripe :stripe/publ ?publ]]}))
-        store-query `[({:query/store [{:store/stripe [:stripe/publ]}]}
+                                       [?stripe :stripe/publ ?publ]
+                                       [?stripe :stripe/secret ?secret]]}))
+        store-query `[({:query/store [{:store/stripe [:stripe/secret
+                                                      :stripe/publ]}]}
                         ~{:store-id store-id})]]
-    (debug "Found: " found)
     (test/is (number? store-id))
-    (time
-      (dotimes [_ 1000]
-        (test/is (nil? (get-in (parse nil store-query)
-                               [:query/store :store/stripe :stripe/publ])))
-        (test/is (= stripe-publ
-                    (get-in (parse owner-email store-query)
-                            [:query/store :store/stripe :stripe/publ])))))
+    (test/is (empty? (get-in (parse nil store-query) [:query/store :store/stripe])))
+    (test/is (= (-> (parse owner-email store-query)
+                    (get-in [:query/store :store/stripe])
+                    (select-keys [:stripe/publ :stripe/secret]))
+                {:stripe/publ   stripe-publ
+                 :stripe/secret stripe-secret}))
     (c/stop datomic)))

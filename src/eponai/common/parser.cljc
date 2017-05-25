@@ -1,6 +1,6 @@
 (ns eponai.common.parser
   (:require [eponai.common.parser.util :as util #?(:clj :refer :cljs :refer-macros) [timeit]]
-            [taoensso.timbre :as timbre  :refer [debug error info warn trace]]
+            [taoensso.timbre :as timbre :refer [debug error info warn trace]]
             [om.next :as om]
             [om.next.cache :as om.cache]
             [om.next.impl.parser :as om.parser]
@@ -218,21 +218,23 @@
      Filters are updated incrementally via the ::filter-atom (which
      is renewed everytime parser is called (see wrap-parser-filter-atom)."
      [read-or-mutate]
-     (fn [{:keys [state auth] :as env} k p]
+     (fn [{:keys [state auth] ::keys [filter-atom] :as env} k p]
        (let [db (datomic/db state)
-
-             authed-user-id
-             (when (:email auth)
-               (db/find-with db (db/merge-query (auth/auth-role-query ::auth/any-user auth {})
-                                                {:find '[?user .]})))
-             authed-store-ids
-             (when authed-user-id
-               (db/find-with db (db/merge-query (auth/auth-role-query ::auth/any-store-owner auth {})
-                                                {:symbols {'?user authed-user-id}
-                                                 :find    '[[?store ...]]})))
-
-             filtered-db (filter/filter-authed db authed-user-id authed-store-ids)]
-         (read-or-mutate (assoc env :db filtered-db
+             auth-filter (if-let [filter @filter-atom]
+                           filter
+                           (let [authed-user-id
+                                 (when (:email auth)
+                                   (db/find-with db (db/merge-query (auth/auth-role-query ::auth/any-user auth {})
+                                                                    {:find '[?user .]})))
+                                 authed-store-ids
+                                 (when authed-user-id
+                                   (db/find-with db (db/merge-query (auth/auth-role-query ::auth/any-store-owner auth {})
+                                                                    {:symbols {'?user authed-user-id}
+                                                                     :find    '[[?store ...]]})))
+                                 filter (filter/filter-authed authed-user-id authed-store-ids)]
+                             (reset! filter-atom filter)
+                             filter))]
+         (read-or-mutate (assoc env :db (d/filter db auth-filter)
                                     :raw-db db)
                          k
                          p)))))
