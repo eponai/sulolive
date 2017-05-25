@@ -10,6 +10,7 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.input-validate :as v]
+    [eponai.common.mixpanel :as mixpanel]
     [eponai.web.ui.photo :as photo]
     #?(:cljs [cljs.spec :as s]
        :clj
@@ -20,7 +21,8 @@
        [eponai.client.ui.photo-uploader :as pu])
     [eponai.client.parser.message :as msg]
     [clojure.string :as string]
-    [eponai.common.ui.elements.callout :as callout]))
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.web.ui.button :as button]))
 
 (def form-inputs
   {:user.info/name            "user.info.name"
@@ -101,6 +103,7 @@
                                      :on-photo-queue  (fn [img-result]
                                                         (om/update-state! component assoc :queue-photo {:src img-result}))
                                      :on-photo-upload (fn [photo]
+                                                        (mixpanel/track-key ::mixpanel/upload-photo (assoc photo :type "User profile photo"))
                                                         (om/update-state! component (fn [s]
                                                                                       (-> s
                                                                                           (assoc :photo-upload photo)
@@ -117,16 +120,9 @@
           )
         (dom/div
           (css/add-class :action-buttons)
-          (dom/a
-            (->> (css/button-hollow {:onClick on-close})
-                 (css/add-class :secondary)
-                 (css/add-class :small))
-            (dom/span nil "Close"))
-
-          (dom/a
-            (->> (css/button {:onClick (when-not is-loading? #(.save-user-info component))})
-                 (css/add-class :secondary)
-                 (css/add-class :small))
+          (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))
+          (button/user-setting-cta
+            {:onClick (when-not is-loading? #(.save-user-info component))}
             (if is-loading?
               (dom/i {:classes ["fa fa-spinner fa-spin"]})
               (dom/span nil "Save"))))))))
@@ -221,19 +217,13 @@
         (dom/p nil (dom/small nil "Shipping address cannot be saved yet. We're working on this."))
         (dom/div
           (css/add-class :action-buttons)
-          (dom/a
-            (->> {:onClick on-close}
-                 (css/button-hollow)
-                 (css/add-class :secondary)
-                 (css/add-class :small)) (dom/span nil "Close"))
-          (dom/a
+          (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))
+          (button/user-setting-cta
             (->> {:onClick #(do
                              ;(.save-shipping-info component)
                              )}
-                 (css/button)
-                 (css/add-class :secondary)
-                 (css/add-class :small)
-                 (css/add-class :disabled)) (dom/span nil "Save")))))))
+                 (css/add-class :disabled))
+            (dom/span nil "Save")))))))
 
 (defn payment-info-modal [component]
   (let [{:query/keys [stripe-customer]} (om/props component)
@@ -250,13 +240,9 @@
                   (dom/span nil "You don't have any saved credit cards.")
                   (dom/br nil)
                   (dom/small nil "New cards are saved at checkout."))
-           (dom/a
-             (->> {:onClick on-close}
-                  (css/button-hollow)
-                  (css/add-class :secondary)
-                  (css/add-class :small)) (dom/span nil "Close"))]
-          [
-           (dom/div
+           (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))]
+
+          [(dom/div
              nil
              (dom/div (css/add-classes [:section-title :text-left])
                       (dom/small nil "Default"))
@@ -288,26 +274,17 @@
                                                  )))
                                       (dom/div
                                         nil
-                                        (dom/a
-                                          (->> (css/button-hollow)
-                                               (css/add-class :secondary)
-                                               (css/add-class :small))
-                                          (dom/span nil "Remove")))
-                                      ))))
+                                        (button/user-setting-default
+                                          nil
+                                          (dom/span nil "Remove")))))))
                               cards)))
              (dom/p nil (dom/small nil "New cards are saved at checkout.")))
            (dom/div
              (css/add-class :action-buttons)
-             (dom/a
-               (->> {:onClick on-close}
-                    (css/button-hollow)
-                    (css/add-class :secondary)
-                    (css/add-class :small)) (dom/span nil "Close"))
-             (dom/a
-               (->> {:onClick on-close}
-                    (css/button)
-                    (css/add-class :secondary)
-                    (css/add-class :small)) (dom/span nil "Save")))])))))
+             (button/user-setting-default {:onClick #(do
+                                                      (mixpanel/track "Close shipping info")
+                                                      (on-close))} (dom/span nil "Close"))
+             (button/user-setting-cta {:onClick #(do (mixpanel/track "Save payment info"))} (dom/span nil "Save")))])))))
 (defui UserDashboard
   static om/IQuery
   (query [_]
@@ -338,6 +315,7 @@
              validation (validate ::shipping shipping-map)]
          (debug "Validation: " validation)
          (when (nil? validation)
+           (mixpanel/track "Save shipping info")
            (msg/om-transact! this [(list 'stripe/update-customer {:shipping shipping-map})
                                    :query/stripe-customer]))
          (om/update-state! this assoc :shipping/input-validation validation))))
@@ -348,6 +326,8 @@
              validation (validate :user.info/name input-name)]
          (debug "validation: " validation)
          (when (nil? validation)
+           (mixpanel/track "Save public profile")
+           (mixpanel/people-set {:$first_name input-name})
            (msg/om-transact! this (cond-> [(list 'user.info/update {:user/name input-name})]
                                           (some? photo-upload)
                                           (conj (list 'photo/upload {:photo photo-upload}))
@@ -388,7 +368,6 @@
           {:keys [modal photo-upload queue-photo]} (om/get-state this)
           {user-profile :user/profile} auth
           {:keys [route-params]} current-route]
-      (debug "Props: " (om/props this))
       (common/page-container
         {:navbar navbar :id "sulo-user-dashboard"}
         (grid/row-column
@@ -440,11 +419,10 @@
                     (css/add-class :user-profile)
                     (dom/span nil (:user.profile/name user-profile))
                     (photo/user-photo auth {:transformation :transformation/thumbnail}))
-                  (dom/a
-                    (->> {:onClick #(om/update-state! this assoc :modal :modal/edit-profile)}
-                         (css/button-hollow)
-                         (css/add-class :secondary)
-                         (css/add-class :small))
+                  (button/user-setting-default
+                    {:onClick #(do
+                                (mixpanel/track "Edit profile")
+                                (om/update-state! this assoc :modal :modal/edit-profile))}
                     (dom/span nil "Edit profile"))))))
           (dom/div
             (css/add-class :section-title)
@@ -478,11 +456,10 @@
                         ))
                     (dom/p nil (dom/small nil (dom/i nil "No default card")))
                     )
-                  (dom/a
-                    (->> {:onClick #(om/update-state! this assoc :modal :modal/payment-info)}
-                         (css/button-hollow)
-                         (css/add-class :secondary)
-                         (css/add-class :small))
+                  (button/user-setting-default
+                    {:onClick #(do
+                                (mixpanel/track "Manage payment info")
+                                (om/update-state! this assoc :modal :modal/payment-info))}
                     (dom/span nil "Manage payment info")))))
             (menu/item
               nil
@@ -511,10 +488,10 @@
                         ))
                     (dom/p nil (dom/small nil (dom/i nil "No saved address")))
                     )
-                  (dom/a
-                    (->> (css/button-hollow {:onClick #(om/update-state! this assoc :modal :modal/shipping-info)})
-                         (css/add-class :secondary)
-                         (css/add-class :small))
+                  (button/user-setting-default
+                    {:onClick #(do
+                                (mixpanel/track "Manage shipping")
+                                (om/update-state! this assoc :modal :modal/shipping-info))}
                     (dom/span nil "Manage shipping info"))))))
 
           (dom/div
@@ -534,11 +511,8 @@
                 (grid/column
                   (->> (grid/column-size {:small 12 :medium 6})
                        (css/text-align :right))
-                  (dom/a
-                    (->> (css/button)
-                         (css/add-class :facebook)
-                         (css/add-class :small)
-                         (css/add-class :disabled))
+                  (button/user-setting-cta
+                    (css/add-classes [:disabled :facebook])
                     (dom/i {:classes ["fa fa-facebook fa-fw"]})
                     (dom/span nil "Connect to Facebook")))))
 
@@ -554,11 +528,8 @@
                 (grid/column
                   (->> (grid/column-size {:small 12 :medium 6})
                        (css/text-align :right))
-                  (dom/a
-                    (->> (css/button)
-                         (css/add-class :twitter)
-                         (css/add-class :small)
-                         (css/add-class :disabled))
+                  (button/user-setting-cta
+                    (css/add-classes [:disabled :twitter])
                     (dom/i {:classes ["fa fa-twitter fa-fw"]})
                     (dom/span nil "Connect to Twitter")))))))))))
 

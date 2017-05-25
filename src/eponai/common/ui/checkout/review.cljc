@@ -7,7 +7,7 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.callout :as callout]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as photo]))
 
 (defn compute-item-price [items]
   (reduce + (map #(get-in % [:store.item/_skus :store.item/price]) items)))
@@ -23,7 +23,7 @@
            (css/align :center))
       (grid/column
         (grid/column-size {:small 3 :medium 2})
-        (p/store-photo s {:transformation :transformation/thumbnail}))
+        (photo/store-photo s {:transformation :transformation/thumbnail}))
       (grid/column
         (->> (grid/column-size {:small 12})
              (css/text-align :center))
@@ -56,7 +56,7 @@
                   (dom/div
                     (->> (css/add-class :sl-CheckoutItemlist-cell)
                          (css/add-class :sl-CheckoutItemlist-cell--photo))
-                    (p/product-preview product))
+                    (photo/product-preview product))
                   (dom/div
                     (css/add-class :sl-CheckoutItemlist-cell)
                     (grid/row

@@ -12,14 +12,14 @@
     [eponai.common.ui.elements.table :as table]
     [eponai.common.format.date :as date]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as photo]))
 
 (defn store-element [s]
   (let [{:store/keys  [photo]
          {store-name :store.profile/name} :store.profile} s]
     (dom/div
       nil
-      (p/store-photo s {:transformation :transformation/thumbnail-tiny})
+      (photo/store-photo s {:transformation :transformation/thumbnail-tiny})
       (dom/div
         (css/text-align :center)
         (dom/p nil (dom/strong
@@ -41,7 +41,7 @@
           (dom/div nil
                    (dom/a
                      {:href (routes/url :store {:store-id (:db/id store)})}
-                     (p/store-photo store {:transformation :transformation/thumbnail-tiny}))
+                     (photo/store-photo store {:transformation :transformation/thumbnail-tiny}))
                    (dom/p nil
                           (dom/span nil "Purchased from ")
                           (dom/a {:href (routes/url :store {:store-id (:db/id store)})} (:store.profile/name (:store/profile store)))))
@@ -66,7 +66,7 @@
                         (table/td
                           (->> (css/add-class :sl-OrderItemlist-cell)
                                (css/add-class :sl-OrderItemlist-cell--photo))
-                          (p/product-preview item))
+                          (photo/product-preview item))
                         (table/td
                           (->> (css/add-class :sl-OrderItemlist-cell)
                                (css/add-class :sl-OrderItemlist-cell--photo)) (:store.item/name item)))))

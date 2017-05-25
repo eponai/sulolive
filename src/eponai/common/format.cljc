@@ -28,12 +28,12 @@
 (defn str->bytes [s]
   (when (some? s)
     #?(:cljs (crypt/stringToUtf8ByteArray s)
-       :clj  (.getBytes s))))
+       :clj  (.getBytes s "UTF-8"))))
 
 (defn bytes->str [bytes]
   (when (some? bytes)
-    #?(:cljs (crypt/byteArrayToString bytes)
-       :clj  (apply str (map char bytes)))))
+    #?(:cljs (crypt/utf8ByteArrayToString bytes)
+       :clj  (String. bytes "UTF-8"))))
 
 (defn remove-nil-keys [m]
   (not-empty (into {} (remove (fn [[k v]] (nil? v)) m))))

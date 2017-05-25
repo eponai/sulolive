@@ -11,6 +11,7 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.web.ui.photo :as photo]
     [eponai.common.ui.elements.css :as css]
+    [eponai.web.ui.button :as button]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.client.routes :as routes]
@@ -18,9 +19,10 @@
     [eponai.common.format :as f]
     ;[eponai.common.ui.elements.photo :as old-photo]
     [eponai.common.ui.elements.callout :as callout]
-    [eponai.web.ui.store.common :as store-common :refer [edit-button save-button cancel-button]]
+    ;[eponai.web.ui.store.common :as store-common :refer [edit-button save-button cancel-button]]
     [eponai.client.parser.message :as msg]
-    [clojure.string :as string]))
+    [clojure.string :as string]
+    [eponai.common.mixpanel :as mixpanel]))
 
 (def form-inputs
   {:field.general/store-name    "general.store-name"
@@ -36,11 +38,14 @@
                              {:on-photo-queue  (fn [img-result]
                                                  (om/update-state! component assoc (keyword id "queue") {:src img-result}))
                               :on-photo-upload (fn [photo]
+                                                 (if (= id "cover")
+                                                   (mixpanel/track-key ::mixpanel/upload-photo (assoc photo :type "Store cover photo"))
+                                                   (mixpanel/track-key ::mixpanel/upload-photo (assoc photo :type "Store profile photo")))
                                                  (om/update-state! component (fn [st]
                                                                                (-> st
                                                                                    (dissoc (keyword id "queue"))
                                                                                    (assoc (keyword id "upload") photo)))))
-                              :preset preset
+                              :preset          preset
                               :id              id
                               :hide-label?     true})))))
 
@@ -58,9 +63,14 @@
         (if (:edit/info state)
           (dom/div
             nil
-            (cancel-button {:onClick #(om/update-state! component assoc :edit/info false)})
-            (save-button {:onClick #(.save-store component)}))
-          (edit-button {:onClick #(om/update-state! component assoc :edit/info true)})))
+            (button/cancel {:onClick #(do
+                                       (mixpanel/track "Store: Cancel edit about info")
+                                       (om/update-state! component assoc :edit/info false))})
+            (button/save {:onClick #(.save-store component)}))
+          (button/edit
+            {:onClick #(do
+                        (mixpanel/track "Store: Edit about info")
+                        (om/update-state! component assoc :edit/info true))})))
       (when (and (:edit/info state) (:error/about state))
         (dom/p (css/add-class :section-error) (dom/small (css/add-class :text-alert) (:error/about state))))
 
@@ -179,7 +189,7 @@
       (when (some? edit-sections)
         (common/modal
           {:on-close #(om/update-state! component dissoc :products/edit-sections)}
-          (let [items-by-section (group-by #(get-in % [:store.item/section :db/id]) items)]
+          (let [items-by-section (group-by #(get-in % [:store.item/section :db/id]) (:store/items store))]
             (dom/div
               nil
               (dom/p (css/add-class :header) "Edit sections")
@@ -203,23 +213,23 @@
                                  (if (= 1 no-items)
                                    (dom/small nil (str no-items " item"))
                                    (dom/small nil (str no-items " items")))
-                                 (dom/a
-                                   (->> {:onClick #(om/update-state! component update :products/edit-sections
-                                                                     (fn [sections]
-                                                                       (into [] (remove nil? (assoc sections i nil)))))}
-                                        (css/button-hollow)
-                                        (css/add-class ::css/color-secondary))
-                                   (dom/i {:classes ["fa fa-trash-o fa-fw"]})))))
-                  edit-sections))
+                                 (button/user-setting-default
+                                   {:onClick #(om/update-state! component update :products/edit-sections
+                                                                (fn [sections]
+                                                                  (into [] (remove nil? (assoc sections i nil)))))}
+                                   (dom/span nil "Remove")))))
+                  edit-sections)
+                (menu/item
+                  (css/add-class :edit-sections-item)
+                  (button/user-setting-default
+                    {:onClick #(om/update-state! component update :products/edit-sections conj {})}
+                    (dom/span nil "Add section..."))))
 
-              (dom/a (css/button-hollow {:onClick #(om/update-state! component update :products/edit-sections conj {})})
-                     (dom/i {:classes ["fa fa-plus-circle fa-fw"]})
-                     (dom/span nil "Add section"))
-              (dom/hr nil)
               (dom/div
-                (css/text-align :right)
-                (cancel-button {:onClick #(om/update-state! component dissoc :products/edit-sections)})
-                (save-button {:onClick #(.save-sections component)}))))))
+                (->> (css/text-align :right)
+                     (css/add-class :action-buttons))
+                (button/cancel {:onClick #(om/update-state! component dissoc :products/edit-sections)})
+                (button/save {:onClick #(.save-sections component)}))))))
       (callout/callout-small
         nil
         (menu/horizontal
@@ -308,6 +318,7 @@
 
          (if (< description-length (:text-max/about state))
            (do
+             (mixpanel/track "Store: Save about info" {:description-length description-length})
              (msg/om-transact! this (cond-> [(list 'store/update-info {:db/id         (:db/id store)
                                                                        :store/profile {:store.profile/name        store-name
                                                                                        :store.profile/tagline     store-tagline
@@ -325,7 +336,8 @@
                                             :always
                                             (conj :query/store)))
              (om/update-state! this assoc :edit/info false))
-           (om/update-state! this assoc :error/about "Sorry, your description is too long.")))))
+           (do
+             (om/update-state! this assoc :error/about "Sorry, your description is too long."))))))
   (save-return-policy [this]
     #?(:cljs
        (let [{:editor/keys [return-policy] :as state} (om/get-state this)
@@ -334,6 +346,7 @@
              text-lentgh (or (when return-policy (.getLength return-policy)) 0)]
          (if (< text-lentgh (:text-max/return-policy state))
            (do
+             (mixpanel/track "Store: Save return policy" {:length text-lentgh})
              (msg/om-transact! this [(list 'store/update-info {:db/id         (:db/id store)
                                                                :store/profile {:store.profile/return-policy store-return-policy}})
                                      :query/store])
@@ -389,7 +402,7 @@
           (grid/row
             (->> (css/add-class :expanded)
                  (css/add-class :collapse)
-                 (css/add-class :policies))
+                 (css/add-classes [:store-info-section :store-info-section--policies]))
             (grid/column
               (grid/column-size {:small 12 :medium 6})
               (dom/div
@@ -398,11 +411,14 @@
                 (if (:edit/return-policy state)
                   (dom/div
                     nil
-                    (cancel-button {:onClick #(do
+                    (button/cancel {:onClick #(do
+                                               (mixpanel/track "Store: Cancel edit return policy.")
                                                (om/update-state! this assoc :edit/return-policy false)
                                                (quill/set-content (:editor/return-policy state) (f/bytes->str return-policy)))})
-                    (save-button {:onClick #(.save-return-policy this)}))
-                  (edit-button {:onClick #(om/update-state! this assoc :edit/return-policy true)})))
+                    (button/save {:onClick #(.save-return-policy this)}))
+                  (button/edit {:onClick #(do
+                                           (mixpanel/track "Store: Edit return policy.")
+                                           (om/update-state! this assoc :edit/return-policy true))})))
               (when (and (:edit/return-policy state) (:error/return-policy state))
                 (dom/p (css/add-class :section-error) (dom/small (css/add-class :text-alert) (:error/return-policy state))))
 
@@ -433,32 +449,40 @@
                 (if (:edit/shipping-policy state)
                   (dom/div
                     nil
-                    (cancel-button {:onClick #(do
+                    (button/cancel {:onClick #(do
+                                               (mixpanel/track "Store: Cancel edit shipping policy")
                                                (om/update-state! this assoc :edit/shipping-policy false)
                                                (quill/set-content (:editor/shipping-policy state) (f/bytes->str shipping-policy)))})
-                    (save-button (css/add-class :disabled)))
-                  (edit-button {:onClick #(om/update-state! this assoc :edit/shipping-policy true)})))
+                    (button/save (css/add-class :disabled)))
+                  (button/edit {:onClick #(do
+                                           (mixpanel/track "Store: Edit shipping policy")
+                                           (om/update-state! this assoc :edit/shipping-policy true))})))
               (callout/callout-small
-                nil
-                (when (:edit/shipping-policy state)
-                  (callout/callout-small
-                    (css/add-class :warning)
-                    (dom/small nil
-                               "We're not quite there yet with shipping settings, so this info cannot be saved for now. We're working on it, hang in there!")))
-                (grid/row
-                  (->> (css/add-class :expanded)
-                       (css/add-class :collapse))
-                  (grid/column
-                    (css/add-class :shrink)
-                    (dom/label nil "Fee"))
-                  (grid/column
-                    nil
-                    (dom/input
-                      (cond-> {:type         "number"
-                               :defaultValue "0.00"
-                               :step 0.01}
-                              (not (:edit/shipping-policy state))
-                              (assoc :readOnly true)))))
+                (css/add-classes [:store-info-policy :store-info-policy--shipping])
+                ;(when (:edit/shipping-policy state)
+                ;  (dom/p nil
+                ;         (dom/small nil "Bas"))
+                ;  (callout/callout-small
+                ;    (css/add-class :warning)
+                ;    (dom/small nil
+                ;               "We're not quite there yet with shipping settings, so this info cannot be saved for now. We're working on it, hang in there!")))
+                (dom/div
+                  (->> (css/add-class :shipping-fee))
+                  ;(grid/column
+                  ;  (css/add-class :shrink)
+                  ;  (dom/label nil "Fee"))
+                  ;(grid/column
+                  ;  nil)
+                  (dom/label nil "Fee")
+                  (dom/input
+                    (cond-> {:type         "number"
+                             :defaultValue "0.00"
+                             :step         0.01}
+                            (not (:edit/shipping-policy state))
+                            (assoc :readOnly true)))
+                  (when (:edit/shipping-policy state)
+                    (dom/small nil "Your base shipping fee that will be added to all orders. Additional cost can also be specified for each product.")))
+
                 (if (:edit/shipping-policy state)
                   (dom/div
                     (css/text-align :right)
@@ -482,16 +506,16 @@
               (css/add-class :section-title)
               (dom/h2 nil "Product sections")
               (dom/div
-                nil
-                (edit-button {:onClick #(om/update-state! this assoc :products/edit-sections (into [] (:store/sections store)))})
-                (dom/div
-                  (css/text-align :right)
-                  (dom/a
-                    (->> (css/button-hollow {:href (routes/url :store-dashboard/product-list {:store-id (:db/id store)})})
-                         (css/add-class :secondary)
-                         (css/add-class :see-products))
-                    (dom/span nil "Products")
-                    (dom/i {:classes ["fa fa-chevron-right"]})))))
+                (css/text-align :right)
+                (button/edit {:onClick #(do
+                                         (mixpanel/track "Store: Edit product sections")
+                                         (om/update-state! this assoc :products/edit-sections (into [] (:store/sections store))))})
+                (button/default-hollow
+                  {:href (routes/url :store-dashboard/product-list {:store-id (:db/id store)})
+                   :onClick #(mixpanel/track-key ::mixpanel/go-to-products {:source "store-info"})}
+                  (dom/span nil "Products")
+                  (dom/i {:classes ["fa fa-chevron-right"]}))
+                ))
 
             (products-section this)))))))
 

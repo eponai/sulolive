@@ -16,11 +16,13 @@
     [eponai.common.ui.utils :as utils]
     [eponai.common.ui.elements.table :as table]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.photo :as photo]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.web.ui.photo :as photo]
     [clojure.string :as string]
-    [eponai.client.parser.message :as msg]))
+    [eponai.client.parser.message :as msg]
+    [eponai.web.ui.button :as button]
+    [eponai.common.mixpanel :as mixpanel]))
 
 (defn products->grid-layout [component products]
   (let [num-cols 3
@@ -67,7 +69,7 @@
           (css/add-class :primary-photo))
         (photo/product-preview p
                                {}
-                               (p/overlay nil)))
+                               (photo/overlay nil)))
 
       (dom/div
         (->> (css/add-class :header)
@@ -156,9 +158,10 @@
         (dom/div
           (css/add-class :section-title)
           (dom/h2 nil "Products")
-          (dom/a (css/button {:href (routes/url :store-dashboard/create-product
-                                                {:store-id (:store-id route-params)
-                                                 :action   "create"})})
+          (dom/a (css/button {:href    (routes/url :store-dashboard/create-product
+                                                   {:store-id (:store-id route-params)
+                                                    :action   "create"})
+                              :onClick (mixpanel/track "Store: Add product")})
                  "Add product"))
         (callout/callout
           nil
@@ -210,7 +213,7 @@
                          (dom/a
                            (css/add-class :tr {:href product-link})
                            (dom/span (css/add-class :td)
-                                     (p/product-preview p {:transformation :transformation/thumbnail-tiny}))
+                                     (photo/product-preview p {:transformation :transformation/thumbnail-tiny}))
                            (dom/span (css/add-class :td)
                                      (:store.item/name p))
                            (dom/span
@@ -230,14 +233,14 @@
                  (if grid-editable?
                    [(dom/div
                       nil
-                      (store-common/save-button {:onClick #(.save-product-order this)})
-                      (store-common/cancel-button {:onClick #(do
+                      (button/save {:onClick #(.save-product-order this)})
+                      (button/cancel {:onClick #(do
                                                               (.update-layout this)
                                                               (om/update-state! this assoc :grid-editable? false))}))
                     (callout/callout-small
                       (css/add-class :warning)
                       (dom/small nil "This is how your products will appear in your store. Try moving them around and find a layout you like. Don't forget to save when you're done!"))]
-                   (store-common/edit-button
+                   (button/edit
                      {:onClick #(om/update-state! this assoc :grid-editable? true)}
                      (dom/span nil "Edit layout")))
                  (grid/row

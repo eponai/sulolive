@@ -5,7 +5,7 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.routes :as routes]
-    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.photo :as photo]
     [eponai.common.ui.elements.callout :as callout]))
 
 (defui FirstStream
@@ -30,7 +30,7 @@
           (css/align :middle)
           (grid/column
             (grid/column-size {:small 3 :medium 2 :large 1})
-            (p/square {:src "/assets/img/obs-logo.png"}))
+            (photo/square {:src "/assets/img/obs-logo.png"}))
           (grid/column
             nil
             (dom/p nil

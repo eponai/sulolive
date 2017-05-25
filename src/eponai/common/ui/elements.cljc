@@ -5,7 +5,7 @@
     #?(:cljs
        [eponai.web.utils :as utils])
     [taoensso.timbre :refer [debug]]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as photo]))
 
 (def fake-messages [{:photo "/assets/img/kids-new.jpg"
                      :text  "this is some message"
@@ -26,7 +26,7 @@
   (my-dom/li
     (css/add-class :message-container)
     (my-dom/div (css/add-class :message-photo)
-                (p/user-photo (:chat.message/user msg) {:transformation :transformation/thumbnail-tiny}))
+                (photo/user-photo (:chat.message/user msg) {:transformation :transformation/thumbnail-tiny}))
     (let [username (get-in msg [:chat.message/user :user/profile :user.profile/name])]
       (my-dom/div
         (css/add-class :message-text)

@@ -17,9 +17,10 @@
     [eponai.common :as c]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.photo :as photo]
     [eponai.web.ui.store.common :as store-common]
-    [eponai.common.ui.components.select :as sel]))
+    [eponai.common.ui.components.select :as sel]
+    [eponai.common.mixpanel :as mixpanel]))
 
 (def form-elements
   {:input-price          "input-price"
@@ -97,6 +98,7 @@
                                                    (debug "Got photo: " img-result)
                                                    (om/update-state! component assoc :queue-photo {:src img-result}))
                                 :on-photo-upload (fn [photo]
+                                                   (mixpanel/track "Store: Upload product photo" photo)
                                                    (om/update-state! component (fn [st]
                                                                                  (-> st
                                                                                      (dissoc :queue-photo)
@@ -150,6 +152,7 @@
       ))
   (delete-product [this]
     (let [{:keys [product-id store-id]} (get-route-params this)]
+      (mixpanel/track "Store: Delete product" {:product-id product-id})
       (msg/om-transact! this `[(store/delete-product ~{:store-id store-id
                                                        :product  {:db/id (c/parse-long product-id)}})])))
 
@@ -158,6 +161,7 @@
           product (input-product this)
           skus (input-skus this product)
           selected-section (selected-section-entity this)]
+      (mixpanel/track "Store: Update product" {:product product})
       (msg/om-transact! this `[(store/update-product ~{:product    (cond-> product
                                                                            (not-empty skus)
                                                                            (assoc :store.item/skus skus)
@@ -172,6 +176,7 @@
           product (input-product this)
           skus (input-skus this product)
           selected-section (selected-section-entity this)]
+      (mixpanel/track "Store: Create new product" {:product product})
       (msg/om-transact! this `[(store/create-product ~{:product  (cond-> product
                                                                          (not-empty skus)
                                                                          (assoc :store.item/skus skus)
@@ -248,7 +253,7 @@
                       (when (some? photo-key)
                         (dom/div
                           nil
-                          (p/square {:photo-id       photo-key
+                          (photo/square {:photo-id   photo-key
                                      :transformation :transformation/thumbnail})
                           (dom/a
                             (->>
@@ -258,13 +263,14 @@
               (when (some? queue-photo)
                 (grid/column
                   nil
-                  (p/square {:src (:src queue-photo)}
-                            (p/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]})))))
+                  (photo/square {:src (:src queue-photo)}
+                                (photo/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]})))))
               (when (and (nil? queue-photo) (> 5 (count (conj uploaded-photos))))
                 (grid/column
                   nil
                   (dom/label
-                    {:htmlFor (str "file-" (count photos))}
+                    {:htmlFor (str "file-" (count photos))
+                     :onClick #(mixpanel/track "Store: Open product photo upload")}
                     (empty-photo-button)
                     (photo-uploader this (count photos))))))))
 
@@ -444,7 +450,9 @@
               (grid/column
                 nil
                 (dom/a
-                  (->> {:onClick #(om/update-state! this update :sku-count inc)}
+                  (->> {:onClick #(do
+                                   (mixpanel/track "Store: Add product variation")
+                                   (om/update-state! this update :sku-count inc))}
                        (css/button-hollow)) (dom/span nil "Add variation..."))))))
 
         (grid/row
@@ -458,7 +466,8 @@
           (grid/column
             (css/text-align :right)
             (dom/a
-              (css/button-hollow {:href (routes/url :store-dashboard/product-list {:store-id store-id})})
+              (css/button-hollow {:href (routes/url :store-dashboard/product-list {:store-id store-id})
+                                  :onClick #(mixpanel/track "Store: Cancel edit product")})
               (dom/span nil "Cancel"))
             (dom/a
               (->> {

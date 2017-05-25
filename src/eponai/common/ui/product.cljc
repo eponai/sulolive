@@ -11,10 +11,11 @@
     [eponai.common.ui.om-quill :as quill]
     [eponai.common.format :as f]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.photo :as photo]
     [eponai.web.social :as social]
     [eponai.common.photos :as photos]
-    [eponai.client.routes :as routes]))
+    [eponai.client.routes :as routes]
+    [eponai.common.mixpanel :as mixpanel]))
 
 ;(defn reviews-list [reviews]
 ;  (apply dom/div
@@ -65,6 +66,7 @@
                                   (:db/id (first (:store.item/skus product))))]
                (debug "Selected sku value: " selected-sku)
                (when (some? selected-sku)
+                 (mixpanel/track "Add product to bag")
                  (om/transact! this `[(shopping-bag/add-item ~{:sku selected-sku})
                                       :query/cart])
                  (om/update-state! this assoc :added-to-bag? true)))))
@@ -108,7 +110,7 @@
                                  (css/add-class ::css/is-active)
                                  (= active-photo-index i)
                                  (css/add-class ::css/is-in))
-                        (p/product-photo
+                        (photo/product-photo
                           item
                           (->> {:index i}
                                (css/add-class :orbit-image)
@@ -120,8 +122,8 @@
                     (fn [i p]
                       (dom/button
                         {:onClick #(om/update-state! this assoc :active-photo-index i)}
-                        (p/product-thumbnail item {:index          i
-                                                   :transformation :transformation/thumbnail})))
+                        (photo/product-thumbnail item {:index          i
+                                                       :transformation :transformation/thumbnail})))
                     photos))))
 
             (grid/column
@@ -179,25 +181,26 @@
                          (css/add-class :share-menu))
                     (menu/item
                       nil
-                      (social/share-button {:platform :social/facebook
+                      (social/share-button {:on-click #(mixpanel/track "Share on social media" {:platform "facebook"
+                                                                                                :object   "product"})
+                                            :platform :social/facebook
                                             :href     item-url}))
                     (menu/item
                       nil
-                      (social/share-button {:platform    :social/twitter
+                      (social/share-button {:on-click    #(mixpanel/track "Share on social media" {:platform "twitter"
+                                                                                                   :object   "product"})
+                                            :platform    :social/twitter
                                             :description item-name
                                             :href        item-url}))
                     (menu/item
                       nil
-                      (social/share-button {:platform    :social/pinterest
+                      (social/share-button {:on-click    #(mixpanel/track "Share on social media" {:platform "pinterest"
+                                                                                                   :object   "product"})
+                                            :platform    :social/pinterest
                                             :href        item-url
                                             :description item-name
                                             :media       (photos/transform (get-in (first photos) [:store.item.photo/photo :photo/id])
-                                                                           :transformation/full)}))
-                    ;(menu/item
-                    ;  {:title "Share on email"}
-                    ;  (social/share-button nil {:platform :social/email}))
-                    )))
-              ))
+                                                                           :transformation/full)})))))))
 
           (grid/row-column
             (css/add-class :product-details)
@@ -213,7 +216,7 @@
               (css/align :middle)
               (grid/column
                 (grid/column-size {:small 3 :medium 2})
-                (p/store-photo store {:transformation :transformation/thumbnail})
+                (photo/store-photo store {:transformation :transformation/thumbnail})
                 )
 
               (grid/column
@@ -229,37 +232,6 @@
                   (css/add-class :store-tagline) (dom/p nil (:store.profile/description (:store/profile store))))
                 (dom/div nil
                          (common/follow-button nil))))
-            (dom/hr nil))
-
-          ;(common/content-section {}
-          ;                        (dom/div nil (dom/span nil "More from ") (dom/a nil (:store.profile/name (:store/profile store))))
-          ;                        (dom/div nil)
-          ;                        "Load More")
-
-          ;(my-dom/div
-          ;  (css/grid-column)
-          ;  (menu/horizontal
-          ;    nil
-          ;    (menu/item-tab {:active?  (= selected-tab :details)
-          ;                    :on-click #(om/update-state! this assoc :selected-tab :details)}
-          ;                   "Details")
-          ;    (menu/item-tab {:active?  (= selected-tab :shipping)
-          ;                    :on-click #(om/update-state! this assoc :selected-tab :shipping)}
-          ;                   "Shipping")
-          ;    (menu/item-tab {:active?  (= selected-tab :rating)
-          ;                    :on-click #(om/update-state! this assoc :selected-tab :rating)}
-          ;                   (c/rating-element 4 11)))
-          ;  (cond (= selected-tab :rating)
-          ;        (dom/div #js {:className "product-reviews"}
-          ;          (reviews-list [{:review/rating 4}
-          ;                         {:review/rating 3}
-          ;                         {:review/rating 5}]))
-          ;        (= selected-tab :details)
-          ;        (dom/div #js {:className "product-details"}
-          ;          details)
-          ;
-          ;        (= selected-tab :shipping)
-          ;        (dom/div #js {:className "product-details"})))
-          )))))
+            (dom/hr nil)))))))
 
 (def ->Product (om/factory Product))

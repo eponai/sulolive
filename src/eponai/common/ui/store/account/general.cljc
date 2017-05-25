@@ -13,7 +13,7 @@
     [om.next :as om :refer [defui]]
     [eponai.client.parser.message :as msg]
     [eponai.common.ui.elements.callout :as callout]
-    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.photo :as photo]
     [taoensso.timbre :refer [debug]]))
 
 (defn label-column [opts & content]
@@ -96,15 +96,15 @@
                 (if (some? queue)
                   (dom/div
                     {:classes ["upload-photo circle loading"]}
-                    (p/circle {:src (:src queue)}
-                              (p/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))))
+                    (photo/circle {:src (:src queue)}
+                                  (photo/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))))
                   (dom/label {:htmlFor "file-profile"
                               :classes ["upload-photo circle"]}
                              (if (some? upload)
-                               (p/circle {:photo-id       (:public_id upload)
+                               (photo/circle {:photo-id   (:public_id upload)
                                           :transformation :transformation/thumbnail})
-                               (p/store-photo store {:transformation :transformation/thumbnail}
-                                              (p/overlay nil (dom/i {:classes ["fa fa-camera fa-2x"]}))))
+                               (photo/store-photo store {:transformation :transformation/thumbnail}
+                                                  (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-2x"]}))))
                              ;(p/cover {:photo-id     (:photo/id cover)
                              ;          :placeholder? true
                              ;          :classes      ["contain"]}
@@ -121,16 +121,16 @@
                 (if (some? queue)
                   (dom/div
                     {:classes "upload-photo cover loading"}
-                    (p/cover {:src (:src queue)}
-                             (p/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))))
+                    (photo/cover {:src (:src queue)}
+                                 (photo/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))))
                   (dom/label {:htmlFor "file-cover"
                               :classes ["upload-photo cover"]}
                              (if (some? upload)
-                               (p/cover {:photo-id (:public_id upload)
+                               (photo/cover {:photo-id   (:public_id upload)
                                          :transformation :transformation/thumbnail})
-                               (p/cover {:photo-id     (:photo/id cover)
+                               (photo/cover {:photo-id (:photo/id cover)
                                          :placeholder? true}
-                                        (p/overlay nil (dom/i {:classes ["fa fa-camera fa-2x"]}))))
+                                            (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-2x"]}))))
                              ;(dom/label
                              ;  {:htmlFor (str "file-" (count photos))})
                              (photo-uploader this "cover"))))

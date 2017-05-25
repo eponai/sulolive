@@ -14,7 +14,7 @@
     [eponai.client.auth :as auth]
     [eponai.client.utils :as utils]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.photo :as photo]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.router :as router]))
@@ -105,7 +105,7 @@
                                                   (my-dom/span nil (dom/span nil "Shop on SULO?"))
                                                   (my-dom/i {:classes ["fa fa-caret-right fa-fw"]})))})}
         (debug "Live opene: " live-open?)
-        (p/header
+        (photo/header
           {:photo-id "static/coming-soon-sell-bg"
            :transformation :transformation/full}
 
@@ -225,7 +225,7 @@
                                                              (my-dom/span nil (dom/span nil "Sell on SULO?"))
                                                              (dom/i #js {:className "fa fa-caret-right fa-fw"})))})}
 
-            (p/header
+            (photo/header
               {:photo-id "static/home-header-bg"
                :transformation :transformation/full}
 

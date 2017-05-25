@@ -9,7 +9,7 @@
     [eponai.common.ui.navbar :as nav]
     [taoensso.timbre :refer [debug]]
     [om.next :as om]
-    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.photo :as photo]
     [eponai.web.social :as social]))
 
 (defn order-status-element [order]
@@ -63,7 +63,7 @@
            (css/add-class :stream-item))
       (dom/a
         {:href store-link}
-        (p/stream-photo store))
+        (photo/stream-photo store))
       (dom/div
         (->> (css/add-class :text)
              (css/add-class :header))

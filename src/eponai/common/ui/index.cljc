@@ -2,7 +2,7 @@
   (:require
     [eponai.common.ui.common :as common]
     [eponai.common.ui.navbar :as nav]
-    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.photo :as photo]
     [eponai.common.ui.product-item :as pi]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
@@ -12,7 +12,9 @@
     [eponai.client.routes :as routes]
     [eponai.common.ui.icons :as icons]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.router :as router]))
+    [eponai.common.ui.router :as router]
+    [eponai.web.ui.button :as button]
+    [eponai.common.mixpanel :as mixpanel]))
 
 (defn top-feature [opts icon title text]
   (dom/div #js {:className "feature-item column"}
@@ -47,8 +49,8 @@
   (my-dom/a
     {:href    href
      :classes [:full :category-photo]}
-    (p/photo {:photo-id photo-id}
-             (p/overlay
+    (photo/photo {:photo-id photo-id}
+                 (photo/overlay
                nil(my-dom/div
                           (->> (css/text-align :center))
                           (dom/span nil title))))))
@@ -87,7 +89,7 @@
           {:navbar navbar}
           (dom/div #js {:id "sulo-index-container" :onScroll #(debug "Did scroll page: " %)}
 
-            (p/header
+            (photo/header
               (css/add-class :center {:photo-id "static/home-header-bg"
                                       :transformation :transformation/full})
               (div
@@ -121,17 +123,21 @@
                                                            #?(:cljs
                                                               (when (= 13 (.. e -keyCode))
                                                                 (let [search-string (.. e -target -value)]
+                                                                  (mixpanel/track "Search products" {:source        "index"
+                                                                                                     :search-string search-string})
                                                                   (set! js/window.location (str "/products?search=" search-string))))))}))
                        (div (->> (css/grid-column)
                                  (css/grid-column-size {:small 4 :medium 3})
                                  (css/text-align :left))
-                            (dom/a #js {:className "button expanded search drop-shadow"
-                                        :onClick   (fn []
-                                                     #?(:cljs
-                                                        (set! js/window.location (str "/products?search=" input-search))))}
-                                   "Search"))
-                       )
-                  )))
+                            (button/button
+                              (->> (button/expanded {:onClick (fn []
+                                                                #?(:cljs
+                                                                   (do
+                                                                     (mixpanel/track "Search products" {:source        "index"
+                                                                                                        :search-string input-search})
+                                                                     (set! js/window.location (str "/products?search=" input-search)))))})
+                                   (css/add-classes [:search :drop-shadow]))
+                              (dom/span nil "Search")))))))
 
             (dom/div #js {:className "top-features"}
               (dom/div #js {:className " row small-up-1 medium-up-3"}
@@ -223,7 +229,7 @@
                     (dom/div nil
                       (dom/h2 nil "Watch, shop and chat with your favorite vendors and artisans.")
                       (dom/p nil "Follow and stay up-to-date on when they're online to meet you!")
-                      (dom/a #js {:className "button"} "Join")
+                      (button/button nil (dom/span nil "Join"))
                       )
                     (icons/heart-drawing))
 
@@ -232,7 +238,9 @@
                     (dom/div nil
                       (dom/h2 nil "Open your own store on SULO and tell your story to Vancouver.")
                       (dom/p nil "Enjoy a community that lives for local.")
-                      (my-dom/a (css/button-hollow {:href (routes/url :sell)}) "Start a store"))
+                      (button/button
+                        (button/hollow {:href (routes/url :sell)})
+                        (dom/span nil "Start a store")))
                     nil)))))))
 
 

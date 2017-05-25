@@ -41,11 +41,12 @@
 		margin-bottom: 0 !important; 
 	}
 	.header {
-		border-bottom: $global-border;
-		font-weight: $global-weight-bold;
-		margin-bottom: 1rem;
-		font-family: $header-font-family-serif;
-		text-transform: uppercase;
+		// border-bottom: $global-border;
+		letter-spacing: 1px;
+		// font-weight: $global-weight-bold;
+		// margin-bottom: 1rem;
+		// font-family: $header-font-family-serif;
+		// text-transform: uppercase;
 	}
 	.callout {
 		margin-bottom: 1rem;

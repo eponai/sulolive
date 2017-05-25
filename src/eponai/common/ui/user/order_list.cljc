@@ -11,7 +11,7 @@
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.format.date :as date]
-    [eponai.web.ui.photo :as p]))
+    [eponai.web.ui.photo :as photo]))
 
 (defn order-element [component order]
   (let [{:query/keys [current-route]} (om/props component)
@@ -28,7 +28,7 @@
         (dom/div nil
                  (dom/a
                    {:href (routes/url :store {:store-id (:db/id store)})}
-                   (p/store-photo store {:transformation :transformation/thumbnail-tiny}))
+                   (photo/store-photo store {:transformation :transformation/thumbnail-tiny}))
                  (dom/p nil
                         (dom/span nil "Order ")
                         (dom/a {:href (routes/url :user/order (assoc route-params :order-id (:db/id order)))} (dom/strong nil (str "#" (:db/id order))))
@@ -59,7 +59,7 @@
                         (table/td
                           (->> (css/add-class :sl-OrderItemlist-cell)
                                (css/add-class :sl-OrderItemlist-cell--photo))
-                          (p/product-preview item))
+                          (photo/product-preview item))
                         (table/td
                           (->> (css/add-class :sl-OrderItemlist-cell)
                                (css/add-class :sl-OrderItemlist-cell--description))

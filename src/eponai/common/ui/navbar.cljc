@@ -12,10 +12,12 @@
     [eponai.common.ui.icons :as icons]
     [eponai.client.routes :as routes]
     [clojure.string :as s]
-    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.photo :as photo]
     [clojure.string :as string]
     [eponai.common.ui.router :as router]
-    [eponai.web.social :as social]))
+    [eponai.web.social :as social]
+    [eponai.web.ui.button :as button]
+    [eponai.common.mixpanel :as mixpanel]))
 
 (def dropdown-elements
   {:dropdown/user       "sl-user-dropdown"
@@ -23,7 +25,8 @@
    :dropdown/collection "sl-collection-dropdown"})
 
 (defn user-dropdown [component user owned-store]
-  (let [{:keys [dropdown-key]} (om/get-state component)]
+  (let [{:keys [dropdown-key]} (om/get-state component)
+        track-event (fn [k & [p]] (mixpanel/track-key k (merge p {:source "nav-dropdown"})))]
     (dom/div
       (cond->> (->> (css/add-class :dropdown-pane)
                     (css/add-class :user-dropdown))
@@ -37,16 +40,20 @@
             (dom/label nil (dom/small nil "Manage Store"))
             (menu/vertical
               (css/add-class :nested)
-              (menu/item-link
-                {:href (routes/url :store-dashboard {:store-id (:db/id owned-store)})}
-                (get-in owned-store [:store/profile :store.profile/name]))))
+              (let [store-name (get-in owned-store [:store/profile :store.profile/name])]
+                (menu/item-link
+                  {:href    (routes/url :store-dashboard {:store-id (:db/id owned-store)})
+                   :onClick #(track-event ::mixpanel/go-to-manage-store {:store-id   (:db/id owned-store)
+                                                                         :store-name store-name})}
+                  (dom/span nil store-name)))))
           (menu/item
             (css/add-class :my-stores)
             (dom/label nil (dom/small nil "Manage store"))
             (menu/vertical
               (css/add-class :nested)
               (menu/item-link
-                {:href (routes/url :sell)}
+                {:href    (routes/url :sell)
+                 :onClick #(track-event ::mixpanel/go-to-start-store)}
                 (dom/small nil "Start a store")))))
         (when user
           (menu/item
@@ -54,16 +61,17 @@
             (menu/vertical
               (css/add-class :nested)
               (dom/label nil (dom/small nil "Your account"))
-              ;(menu/item-link {:href (routes/url :user {:user-id (:db/id user)})}
-              ;                (dom/span nil "Profile"))
-              (menu/item-link {:href (routes/url :user/order-list {:user-id (:db/id user)})}
+              (menu/item-link {:href    (routes/url :user/order-list {:user-id (:db/id user)})
+                               :onClick #(track-event ::mixpanel/go-to-purchases)}
                               (dom/small nil "Purchases"))
-              (menu/item-link {:href (routes/url :user-settings {:user-id (:db/id user)})}
+              (menu/item-link {:href    (routes/url :user-settings {:user-id (:db/id user)})
+                               :onClick #(track-event ::mixpanel/go-to-settings)}
                               (dom/small nil "Settings")))))
         (menu/item nil
                    (menu/vertical
                      (css/add-class :nested)
-                     (menu/item-link {:href "/logout"}
+                     (menu/item-link {:href    "/logout"
+                                      :onClick #(track-event ::mixpanel/signout)}
                                      (dom/small nil "Sign out"))))))))
 
 (defn navbar-content [opts & content]
@@ -74,9 +82,11 @@
 
 (defn collection-links [component disabled?]
   (map
-    (fn [{:category/keys [href name] :as a}]
-      (let [opts (when (not disabled?)
-                   {:href href})]
+    (fn [{:category/keys [href name path] :as a}]
+      (let [opts (if (not disabled?)
+                   {:href    href
+                    :onClick #(mixpanel/track-key ::mixpanel/shop-by-category {:source   "navbar"
+                                                                               :category path})})]
         (menu/item-link
           (->> opts
                (css/add-class :category)
@@ -167,10 +177,9 @@
                :classes  [:user-photo-item]
                :href     "#"
                :onClick  #(.open-dropdown component :dropdown/user)}
-              (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))
-            (dom/a
-              (->> {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
-                   (css/button-hollow))
+              (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
+            (button/button
+              (button/hollow {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))})
               (dom/span nil "Sign in"))))))))
 
 (def routes->titles
@@ -201,12 +210,11 @@
                :href     "#"
                :onClick  #(.open-dropdown component :dropdown/user)}
               (css/show-for :large))
-         (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))
+         (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
        (menu/item
          (css/show-for :large)
-         (dom/a
-           (->> {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
-                (css/button-hollow))
+         (button/button
+           (button/hollow {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))})
            (dom/span nil "Sign in"))))
      ;(when (some? auth)
      ;  (menu/item
@@ -262,12 +270,6 @@
             (dom/span nil (get-in owned-store [:store/profile :store.profile/name])))
           (user-menu-item component))))))
 
-(defn sidebar-category [component href title]
-  (menu/item
-    (css/add-class :category)
-    (dom/a {:onClick #(routes/set-url! component href)}
-           (dom/span nil title))))
-
 (defn sidebar-highlight [component route route-params title]
   (let [{:query/keys [current-route]} (om/props component)
         {:keys [on-live-click]} (om/get-computed component)]
@@ -281,14 +283,6 @@
                          (routes/set-url! component route route-params))}
              (css/add-class ::css/highlight))
         (dom/span nil title)))))
-
-(defn sidebar-link [component route route-params & content]
-  (let [{:query/keys [current-route]} (om/props component)]
-    (menu/item
-      (when (= route (:route current-route))
-        (css/add-class :is-active))
-      (dom/a {:onClick #(routes/set-url! component route route-params)}
-             content))))
 
 (defn standard-navbar [component]
   (let [{:query/keys [cart loading-bar]} (om/props component)]
@@ -324,7 +318,9 @@
                                                   #?(:cljs
                                                      (when (= 13 (.. e -keyCode))
                                                        (let [search-string (.. e -target -value)]
-                                                         (set! js/window.location (str "/goods?search=" search-string))))))})))
+                                                         (mixpanel/track "Search products" {:source        "navbar"
+                                                                                            :search-string search-string})
+                                                         (set! js/window.location (str "/products?search=" search-string))))))})))
           (user-menu-item component)
           (menu/item
             nil
@@ -523,7 +519,8 @@
   Object
   (render [this]
     (let [{:query/keys [auth owned-store navigation current-route]} (om/props this)
-          {:keys [route]} current-route]
+          {:keys [route]} current-route
+          track-event (fn [k & [p]] (mixpanel/track-key k (merge p {:source "sidebar"})))]
       (dom/div
         (css/add-class :sidebar-container)
         (dom/div {:classes [:sidebar-overlay]})
@@ -531,180 +528,203 @@
           {:id      "sulo-sidebar"
            :classes [:sidebar]}
           (if (and (some? route)
-                     (or (= route :store-dashboard)
-                         (= (namespace route) (name :store-dashboard))))
-                ;; Store owner side menu
-                [
+                   (or (= route :store-dashboard)
+                       (= (namespace route) (name :store-dashboard))))
+            ;; Store owner side menu
+            [
+             (menu/vertical
+               nil
+               (menu/item
+                 nil
                  (menu/vertical
                    nil
                    (menu/item
-                     nil
-                     (menu/vertical
-                       nil
+                     (css/add-class :back)
+                     (dom/a {:href    (routes/url :index nil)
+                             :onClick #(mixpanel/track "Store: Go back to marketplace")}
+                            (dom/i {:classes ["fa fa-chevron-left fa-fw"]})
+                            (dom/span nil "SULO Live")))))
+               (when (some? owned-store)
+                 [
+                  (menu/item
+                    (when (= :store-dashboard (:route current-route))
+                      (css/add-class :is-active))
+                    (dom/a {:href    (routes/url :store-dashboard {:store-id (:db/id owned-store)})
+                            :onClick #(track-event ::mixpanel/go-to-dashboard)}
+                           (dom/div {:classes ["icon icon-home"]})
+                           (dom/span nil "Home")))
+                  (menu/item
+                    (when (= :store-dashboard/stream (:route current-route))
+                      (css/add-class :is-active))
+                    (dom/a {:href    (routes/url :store-dashboard/stream {:store-id (:db/id owned-store)})
+                            :onClick #(track-event ::mixpanel/go-to-stream-settings)}
+                           (dom/div {:classes ["icon icon-stream"]})
+                           (dom/span nil "Live stream")))
+                  (menu/item
+                    (when (= :store-dashboard/profile (:route current-route))
+                      (css/add-class :is-active))
+                    (dom/a {:href    (routes/url :store-dashboard/profile {:store-id (:db/id owned-store)})
+                            :onClick #(track-event ::mixpanel/go-to-store-info)}
+                           (dom/div {:classes ["icon icon-shop"]})
+                           (dom/span nil "Store info")))
+                  (menu/item
+                    (when (contains? #{:store-dashboard/product-list
+                                       :store-dashboard/create-product
+                                       :store-dashboard/product} (:route current-route))
+                      (css/add-class :is-active))
+                    (dom/a {:href    (routes/url :store-dashboard/product-list {:store-id (:db/id owned-store)})
+                            :onClick #(track-event ::mixpanel/go-to-products)}
+                           (dom/div {:classes ["icon icon-product"]})
+                           (dom/span nil "Products")))
+                  (menu/item
+                    (when (contains? #{:store-dashboard/order-list
+                                       :store-dashboard/order-list-new
+                                       :store-dashboard/order-list-fulfilled
+                                       :store-dashboard/order} (:route current-route))
+                      (css/add-class :is-active))
+                    (dom/a {:href    (routes/url :store-dashboard/order-list {:store-id (:db/id owned-store)})
+                            :onClick #(track-event ::mixpanel/go-to-orders)}
+                           (dom/div {:classes ["icon icon-order"]})
+                           (dom/span nil "Orders")))
+                  (menu/item
+                    (when (or (= :store-dashboard/settings#payouts (:route current-route))
+                              (= :store-dashboard/settings#business (:route current-route)))
+                      (css/add-class :is-active))
+                    (dom/a {:href    (routes/url :store-dashboard/settings#payouts {:store-id (:db/id owned-store)})
+                            :onClick #(track-event ::mixpanel/go-to-business)}
+                           (dom/div {:classes ["icon icon-business"]})
+                           (dom/span nil "Business")))]))
+             (menu/vertical
+               (css/add-class :footer-menu)
+               (menu/item
+                 (css/hide-for :large)
+                 (menu/vertical (css/add-class :signout-menu)
+                                (if (some? auth)
+                                  (menu/item nil (dom/a {:href    (routes/url :logout)
+                                                         :onClick #(track-event ::mixpanel/signout)} (dom/small nil "Sign out")))
+                                  (menu/item nil (dom/a (css/button {:onClick #(do
+                                                                                (track-event ::mixpanel/open-signin)
+                                                                                (auth/show-lock (shared/by-key this :shared/auth-lock)))}) (dom/span nil "Sign in"))))))
+               (menu/item
+                 nil
+                 (menu/horizontal
+                   {:key "social"}
+                   (menu/item nil (social/sulo-social-link :social/facebook))
+                   (menu/item nil (social/sulo-social-link :social/instagram))))
+               (menu/item-text nil (social/sulo-icon-attribution))
+               (menu/item-text nil (social/sulo-copyright)))]
+
+
+            ;; Consumer side menu.
+            [(menu/vertical
+               nil
+               (menu/item
+                 nil
+                 (dom/label nil "Explore")
+                 (menu/vertical
+                   nil
+                   (sidebar-highlight this :live nil "LIVE")))
+               (menu/item
+                 nil (dom/label nil "Shop by category")
+                 (menu/vertical
+                   nil
+                   (map
+                     (fn [{:category/keys [name path href]}]
                        (menu/item
-                         (css/add-class :back)
-                         (dom/a {:onClick #(routes/set-url! this :index nil)}
-                                (dom/i {:classes ["fa fa-chevron-left fa-fw"]})
-                                (dom/span nil "SULO Live")))))
-                   (when (some? owned-store)
-                     [
-                      (menu/item
-                        (when (= :store-dashboard (:route current-route))
-                          (css/add-class :is-active))
-                        (dom/a {:onClick #(routes/set-url! this :store-dashboard {:store-id (:db/id owned-store)})}
-                               (dom/div {:classes ["icon icon-home"]})
-                               (dom/span nil "Home")))
-                      (menu/item
-                        (when (= :store-dashboard/stream (:route current-route))
-                          (css/add-class :is-active))
-                        (dom/a {:onClick #(routes/set-url! this :store-dashboard/stream {:store-id (:db/id owned-store)})}
-                               (dom/div {:classes ["icon icon-stream"]})
-                               (dom/span nil "Live stream")))
-                      (menu/item
-                        (when (= :store-dashboard/profile (:route current-route))
-                          (css/add-class :is-active))
-                        (dom/a {:onClick #(routes/set-url! this :store-dashboard/profile {:store-id (:db/id owned-store)})}
-                               (dom/div {:classes ["icon icon-shop"]})
-                               (dom/span nil "Store info")))
-                      (menu/item
-                        (when (contains? #{:store-dashboard/product-list
-                                           :store-dashboard/create-product
-                                           :store-dashboard/product} (:route current-route))
-                          (css/add-class :is-active))
-                        (dom/a {:onClick #(routes/set-url! this :store-dashboard/product-list {:store-id (:db/id owned-store)})}
-                               (dom/div {:classes ["icon icon-product"]})
-                               (dom/span nil "Products")))
-                      (menu/item
-                        (when (contains? #{:store-dashboard/order-list
-                                           :store-dashboard/order-list-new
-                                           :store-dashboard/order-list-fulfilled
-                                           :store-dashboard/order} (:route current-route))
-                          (css/add-class :is-active))
-                        (dom/a {:onClick #(routes/set-url! this :store-dashboard/order-list {:store-id (:db/id owned-store)})}
-                               (dom/div {:classes ["icon icon-order"]})
-                               (dom/span nil "Orders")))
-                      (menu/item
-                        (when (or (= :store-dashboard/settings#payouts (:route current-route))
-                                  (= :store-dashboard/settings#business (:route current-route)))
-                          (css/add-class :is-active))
-                        (dom/a {:onClick #(routes/set-url! this :store-dashboard/settings#payouts {:store-id (:db/id owned-store)})}
-                               (dom/div {:classes ["icon icon-business"]})
-                               (dom/span nil "Business")))])
-                   )
-                 (menu/vertical
-                   (css/add-class :footer-menu)
-                   (menu/item
-                     (css/hide-for :large)
-                     (menu/vertical (css/add-class :signout-menu)
-                                    (if (some? auth)
-                                      (menu/item nil (dom/a {:href "/logout"} (dom/small nil "Sign out")))
-                                      (menu/item nil (dom/a (css/button {:onClick #(auth/show-lock (shared/by-key this :shared/auth-lock))}) (dom/span nil "Sign in"))))))
-                   (menu/item
-                     nil
-                     (menu/horizontal
-                       {:key "social"}
-                       (menu/item-link {:href   "https://www.facebook.com/live.sulo"
-                                        :target "_blank"}
-                                       (dom/span {:classes ["icon icon-instagram"]}))
-                       ;(menu/item-link nil (dom/i {:classes ["fa fa-twitter fa-fw"]}))
-                       (menu/item-link {:href   "https://www.instagram.com/sulolive"
-                                        :target "_blank"}
-                                       (dom/span {:classes ["icon icon-facebook"]}))))
-                   ;<a href="https://icons8.com">Icon pack by Icons8</a>
-                   (menu/item-text nil (dom/a {:href   "https://icons8.com"
-                                               :target "_blank"} (dom/small {:classes ["copyright"]} "Icons by Icons8")))
-                   (menu/item-text nil (dom/small {:classes ["copyright"]} "© eponai hb 2017")))
-
-                 ]
-
-
-                ;; Consumer side menu.
-                [(menu/vertical
+                         (css/add-class :category)
+                         (dom/a {:href    href
+                                 :onClick #(mixpanel/track-key ::mixpanel/shop-by-category {:source   "sidebar"
+                                                                                            :category path})}
+                                (dom/span nil (s/capitalize name))))
+                       ;(sidebar-category this href (s/capitalize name))
+                       )
+                     navigation)))
+               (when (some? owned-store)
+                 (menu/item
                    nil
-                   (menu/item
+                   (dom/label nil "Manage store")
+                   (menu/vertical
                      nil
-                     (dom/label nil "Explore")
-                     (menu/vertical
-                       nil
-                       (sidebar-highlight this :live nil "LIVE")))
-                   (menu/item
-                     nil (dom/label nil "Shop by category")
-                     (menu/vertical
-                       nil
-                       (map
-                         (fn [{:category/keys [name href]}]
-                           (sidebar-category this href (s/capitalize name)))
-                         navigation)))
-                   (when (some? owned-store)
-                     (menu/item
-                       nil
-                       (dom/label nil "Manage store")
-                       (menu/vertical
+                     (let [store-name (get-in owned-store [:store/profile :store.profile/name])]
+                       (menu/item
                          nil
-                         (menu/item
-                           nil
-                           (dom/a {:href (routes/url :store-dashboard {:store-id (:db/id owned-store)})}
-                                  (dom/div {:classes ["icon icon-shop"]})
-                                  (dom/span nil (get-in owned-store [:store/profile :store.profile/name])))))))
-                   (when (some? auth)
-                     (menu/item nil
-                                (dom/label nil "Your account")
-                                (menu/vertical
-                                  nil
-                                  ;(sidebar-link this :user {:user-id (:db/id auth)}
-                                  ;              (dom/div {:classes ["icon icon-profile"]})
-                                  ;              (dom/span nil "Profile"))
-                                  (sidebar-link this :user/order-list {:user-id (:db/id auth)}
-                                                (dom/div {:classes ["icon icon-order"]})
-                                                (dom/span nil "Purchases"))
-                                  (sidebar-link this :user-settings {:user-id (:db/id auth)}
-                                                (dom/div {:classes ["icon icon-settings"]})
-                                                (dom/span nil "Settings")))))
-                   ;(when (and (some? auth)
-                   ;           (nil? owned-store))
-                   ;  (menu/item nil (dom/a
-                   ;                   (->> {:href (routes/url :sell)}
-                   ;                        (css/button)) (dom/span nil "Start a store"))))
-                   ;(when (nil? auth)
-                   ;  ;(menu/item nil (dom/a
-                   ;  ;                 (->> {:href "/logout"}
-                   ;  ;                      (css/button-hollow)) (dom/span nil "Sign out")))
-                   ;  (menu/item nil (dom/a
-                   ;                   (->> {:onClick #(auth/show-lock (shared/by-key this :shared/auth-lock))}
-                   ;                        (css/button)) (dom/span nil "Sign in"))))
-                   )
-                 (menu/vertical
-                   (css/add-class :footer-menu)
-                   (menu/item
-                     (css/hide-for :large)
-                     (menu/vertical (css/add-class :signout-menu)
-                                    (when (and (some? auth)
-                                               (nil? owned-store))
-                                      (menu/item nil (dom/a
-                                                       (->> {:href (routes/url :sell)}
-                                                            (css/button)) (dom/span nil "Start a store"))))
-                                    (if (some? auth)
-                                      (menu/item nil (dom/a {:href "/logout"} (dom/small nil "Sign out")))
-                                      (menu/item nil (dom/a
-                                                       (->> {:onClick #(auth/show-lock (shared/by-key this :shared/auth-lock))}
-                                                            (css/button)) (dom/span nil "Sign in")))
-                                      ;(menu/item nil (dom/a (css/button {:onClick #(auth/show-lock (shared/by-key this :shared/auth-lock))})
-                                      ;                      (dom/span nil "Sign in")))
-                                      )))
-                   ;(menu/item
-                   ;  nil
-                   ;  (menu/horizontal
-                   ;    {:key "social"}
-                   ;    (menu/item-link {:href   "https://www.facebook.com/live.sulo"
-                   ;                     :target "_blank"}
-                   ;                    (dom/span {:classes ["icon icon-instagram"]}))
-                   ;    ;(menu/item-link nil (dom/i {:classes ["fa fa-twitter fa-fw"]}))
-                   ;    (menu/item-link {:href   "https://www.instagram.com/sulolive"
-                   ;                     :target "_blank"}
-                   ;                    (dom/span {:classes ["icon icon-facebook"]}))))
-                   ;<a href="https://icons8.com">Icon pack by Icons8</a>
-                   ;(menu/item-text nil (dom/a {:href   "https://icons8.com"
-                   ;                            :target "_blank"} (dom/small {:classes ["copyright"]} "Icons by Icons8")))
-                   (menu/item-text nil (dom/small {:classes ["copyright"]} "© eponai hb 2017")))]
-                ))))))
+                         (dom/a {:href    (routes/url :store-dashboard {:store-id (:db/id owned-store)})
+                                 :onClick #(track-event ::mixpanel/go-to-manage-store {:store-id   (:db/id owned-store)
+                                                                                       :store-name store-name})}
+                                (dom/div {:classes ["icon icon-shop"]})
+                                (dom/span nil store-name)))))))
+               (when (some? auth)
+                 (menu/item nil
+                            (dom/label nil "Your account")
+                            (menu/vertical
+                              nil
+                              ;(sidebar-link this :user {:user-id (:db/id auth)}
+                              ;              (dom/div {:classes ["icon icon-profile"]})
+                              ;              (dom/span nil "Profile"))
+                              (menu/item
+                                (when (= route (:route current-route))
+                                  (css/add-class :is-active))
+                                (dom/a {:href    (routes/url :user/order-list {:user-id (:db/id auth)})
+                                        :onClick #(track-event ::mixpanel/go-to-purchases)}
+                                       (dom/div {:classes ["icon icon-order"]})
+                                       (dom/span nil "Purchases")))
+                              (menu/item
+                                (when (= route (:route current-route))
+                                  (css/add-class :is-active))
+                                (dom/a {:href    (routes/url :user/order-list {:user-id (:db/id auth)})
+                                        :onClick #(track-event ::mixpanel/go-to-settings)}
+                                       (dom/div {:classes ["icon icon-settings"]})
+                                       (dom/span nil "Settings"))))))
+               ;(when (and (some? auth)
+               ;           (nil? owned-store))
+               ;  (menu/item nil (dom/a
+               ;                   (->> {:href (routes/url :sell)}
+               ;                        (css/button)) (dom/span nil "Start a store"))))
+               ;(when (nil? auth)
+               ;  ;(menu/item nil (dom/a
+               ;  ;                 (->> {:href "/logout"}
+               ;  ;                      (css/button-hollow)) (dom/span nil "Sign out")))
+               ;  (menu/item nil (dom/a
+               ;                   (->> {:onClick #(auth/show-lock (shared/by-key this :shared/auth-lock))}
+               ;                        (css/button)) (dom/span nil "Sign in"))))
+               )
+             (menu/vertical
+               (css/add-class :footer-menu)
+               (menu/item
+                 (css/hide-for :large)
+                 (menu/vertical (css/add-class :signout-menu)
+                                (when (and (some? auth)
+                                           (nil? owned-store))
+                                  (menu/item nil (dom/a
+                                                   (->> {:href    (routes/url :sell)
+                                                         :onClick #(track-event ::mixpanel/go-to-start-store)}
+                                                        (css/button)) (dom/span nil "Start a store"))))
+                                (if (some? auth)
+                                  (menu/item nil (dom/a {:href    "/logout"
+                                                         :onClick #(track-event ::mixpanel/signout)}
+                                                        (dom/small nil "Sign out")))
+                                  (menu/item nil (dom/a
+                                                   (->> {:onClick #(do
+                                                                    (track-event ::mixpanel/open-signin)
+                                                                    (auth/show-lock (shared/by-key this :shared/auth-lock)))}
+                                                        (css/button)) (dom/span nil "Sign in")))
+                                  ;(menu/item nil (dom/a (css/button {:onClick #(auth/show-lock (shared/by-key this :shared/auth-lock))})
+                                  ;                      (dom/span nil "Sign in")))
+                                  )))
+               ;(menu/item
+               ;  nil
+               ;  (menu/horizontal
+               ;    {:key "social"}
+               ;    (menu/item-link {:href   "https://www.facebook.com/live.sulo"
+               ;                     :target "_blank"}
+               ;                    (dom/span {:classes ["icon icon-instagram"]}))
+               ;    ;(menu/item-link nil (dom/i {:classes ["fa fa-twitter fa-fw"]}))
+               ;    (menu/item-link {:href   "https://www.instagram.com/sulolive"
+               ;                     :target "_blank"}
+               ;                    (dom/span {:classes ["icon icon-facebook"]}))))
+               ;<a href="https://icons8.com">Icon pack by Icons8</a>
+               ;(menu/item-text nil (dom/a {:href   "https://icons8.com"
+               ;                            :target "_blank"} (dom/small {:classes ["copyright"]} "Icons by Icons8")))
+               (menu/item-text nil (dom/small {:classes ["copyright"]} "© eponai hb 2017")))]
+            ))))))
 (def ->Sidebar (om/factory Sidebar))

@@ -1,4 +1,11 @@
 #sulo-store-dashboard {
+	.action-buttons {
+		display: flex;
+		justify-content: flex-end;
+		.button:first-child {
+			margin-right: 0.5rem;
+		}
+	}
 	.section-title {
 		display: flex;
 		align-items: flex-end;
@@ -36,20 +43,12 @@
 		}
 	}
 	#sulo-store.edit-store {
-		// @include foundation-button;
 		max-width: $global-width;
 		padding: 0;
-		// margin-top: -2.5rem;
-		// border: $global-border;
-
 		.section-error {
 			text-align: center;
 		}
-		// .section-title {
-		// 	p {
-		// 		display: inline-block;
-		// 	}
-		// }
+
 		.callout {
 			@include breakpoint(large) {
 				padding: 1rem;
@@ -64,13 +63,6 @@
 			}
 			.photo.cover {
 				border: $global-border;
-			}
-		}
-		.product-item, .photo-container .overlay {
-			// transition: all .25s ease-in-out;
-			// position: relative;
-			&:hover {
-				// box-shadow: 0 0 10px 3px $dashboard-primary-color;
 			}
 		}
 
@@ -88,7 +80,7 @@
 			}
 		}
 
-		.policies {
+		.store-info-section--policies {
 			.column {
 				display: flex;
 				flex-direction: column;
@@ -100,12 +92,21 @@
 						justify-content: flex-start;
 
 						&.disabled {
-							min-height: 13.5rem;
+							flex: 1;
+							min-height: 15rem;
 						}
 					}
 				}
 			}
+			.callout {
+				display: flex;
+				flex-direction: column;
+				// flex: 1;
+			}
 			input {
+				color: $dark-gray;
+			}
+			small {
 				color: $dark-gray;
 			}
 			.editable {
@@ -119,6 +120,17 @@
 				}
 				.column:last-child {
 					padding-left: 1rem;
+				}
+			}
+			.store-info-policy--shipping {
+				input {
+					margin-bottom: 0;
+				}
+				.row {
+					margin-bottom: 1rem;
+				}
+				.shipping-fee {
+					margin-bottom: 1rem;
 				}
 			}
 		}
@@ -164,8 +176,11 @@
 		.edit-sections-menu {
 			margin-bottom: 1rem;
 			.edit-sections-item {
-				border-bottom: $global-border;
-				padding: 0.5rem 0;
+				border-bottom: $global-border-secondary;
+				&:first-child {
+					border-top: $global-border-secondary;
+				}
+				padding: 1rem 0;
 				display: flex;
 				justify-content: space-between;
 				align-items: center;

@@ -11,7 +11,8 @@
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.common :as common]))
+    [eponai.common.ui.common :as common]
+    [eponai.web.ui.button :as button]))
 
 (def stripe-key "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")
 (def stripe-card-element "sulo-card-element")
@@ -96,10 +97,9 @@
                        (css/add-class :hide))))
           (if (and (not-empty sources)
                      (not add-new-card?))
-            (dom/a (->> (css/button-hollow {:onClick #(om/update-state! this assoc :add-new-card? true)})
-                        (css/add-class :secondary)
-                        (css/add-class :small))
-                   (dom/span nil "Add new card...")))))
+            (button/user-setting-default
+              {:onClick #(om/update-state! this assoc :add-new-card? true)}
+              (dom/span nil "Add new card...")))))
 
       ;(when (and (not-empty sources)
       ;           (not add-new-card?))

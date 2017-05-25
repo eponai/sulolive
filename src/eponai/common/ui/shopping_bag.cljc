@@ -12,8 +12,9 @@
     [eponai.client.routes :as routes]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.icons :as icons]
-    [eponai.web.ui.photo :as p]
-    [eponai.common.ui.elements.callout :as callout]))
+    [eponai.web.ui.photo :as photo]
+    [eponai.common.ui.elements.callout :as callout]
+    [eponai.web.ui.button :as button]))
 
 (defn items-by-store [items]
   (group-by #(get-in % [:store.item/_skus :store/_items]) items))
@@ -29,7 +30,7 @@
 
       (grid/column
         (grid/column-size {:small 3 :medium 2 :large 1})
-        (p/store-photo s {:transformation :transformation/thumbnail}))
+        (photo/store-photo s {:transformation :transformation/thumbnail}))
 
       (grid/column
         (->> (grid/column-size {:small 12})
@@ -50,7 +51,7 @@
              (css/add-class :item))
         (grid/column
           (grid/column-size {:small 3 :medium 2 :large 1})
-          (p/product-preview product {:transformation :transformation/thumbnail}))
+          (photo/product-preview product {:transformation :transformation/thumbnail}))
 
         (grid/column
           (grid/column-size {:small 8})
@@ -165,9 +166,8 @@
               (dom/p nil (dom/strong nil "Your shopping bag is empty"))
               (icons/empty-shopping-bag)
               ;(dom/p (css/add-class :header))
-              (dom/a
-                (->> {:href (routes/url :browse/all-items)}
-                     (css/button-hollow))
+              (button/button
+                (button/hollow {:href (routes/url :browse/all-items)})
                 (dom/span nil "Go to the market - start shopping")))))))))
 
 (def ->ShoppingBag (om/factory ShoppingBag))

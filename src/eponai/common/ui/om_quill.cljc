@@ -102,7 +102,7 @@
     (let [{:keys [html placeholder classes]} (om/props this)]
       (my-dom/div
         (->> {:placeholder             placeholder
-              :classes                 classes
+              :classes                 (conj classes :sl-quill-renderer)
               :dangerouslySetInnerHTML #js {:__html (sanitize-html html)}}
              (css/add-class "ql-editor"))))))
 

@@ -16,9 +16,10 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.web.ui.photo :as p]
+    [eponai.web.ui.photo :as photo]
     [eponai.web.social :as social]
-    [eponai.common.photos :as photos]))
+    [eponai.common.photos :as photos]
+    [eponai.common.mixpanel :as mixpanel]))
 
 
 (defn about-section [component]
@@ -109,7 +110,7 @@
               (some? cover)
               (dom/div
                 (css/add-class :stream-container)
-                (p/cover {:photo-id (:photo/id cover)
+                (photo/cover {:photo-id   (:photo/id cover)
                           :transformation :transformation/full})
 
                 (chat/->StreamChat (om/computed (:proxy/chat props)
@@ -130,7 +131,7 @@
 
               (grid/column
                 (grid/column-size {:small 12 :medium 2})
-                (p/store-photo store {:transformation :transformation/thumbnail}))
+                (photo/store-photo store {:transformation :transformation/thumbnail}))
 
               (grid/column
                 (css/add-class :shrink)
@@ -169,16 +170,22 @@
                      (css/add-class :share-menu))
                 (menu/item
                   nil
-                  (social/share-button {:platform :social/facebook
+                  (social/share-button {:on-click #(mixpanel/track "Share on social media" {:platform "facebook"
+                                                                                            :object   "store"})
+                                        :platform :social/facebook
                                         :href     store-url}))
                 (menu/item
                   nil
-                  (social/share-button {:platform :social/twitter
+                  (social/share-button {:on-click #(mixpanel/track "Share on social media" {:platform "twitter"
+                                                                                            :object   "store"})
+                                        :platform :social/twitter
                                         :description (:store.profile/name profile)
                                         :href     store-url}))
                 (menu/item
                   nil
-                  (social/share-button {:platform    :social/pinterest
+                  (social/share-button {:on-click #(mixpanel/track "Share on social media" {:platform "pinterest"
+                                                                                            :object   "store"})
+                                        :platform    :social/pinterest
                                         :href        store-url
                                         :description (:store.profile/name profile)
                                         :media       (photos/transform (:photo/id (:store.profile/photo profile))
