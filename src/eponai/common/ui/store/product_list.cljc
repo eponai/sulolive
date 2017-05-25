@@ -21,7 +21,8 @@
     [eponai.web.ui.photo :as photo]
     [clojure.string :as string]
     [eponai.client.parser.message :as msg]
-    [eponai.web.ui.button :as button]))
+    [eponai.web.ui.button :as button]
+    [eponai.common.mixpanel :as mixpanel]))
 
 (defn products->grid-layout [component products]
   (let [num-cols 3
@@ -157,9 +158,10 @@
         (dom/div
           (css/add-class :section-title)
           (dom/h2 nil "Products")
-          (dom/a (css/button {:href (routes/url :store-dashboard/create-product
-                                                {:store-id (:store-id route-params)
-                                                 :action   "create"})})
+          (dom/a (css/button {:href    (routes/url :store-dashboard/create-product
+                                                   {:store-id (:store-id route-params)
+                                                    :action   "create"})
+                              :onClick (mixpanel/track "Store: Add product")})
                  "Add product"))
         (callout/callout
           nil

@@ -184,6 +184,10 @@
 			font-size: 90%;
 			font-weight: $global-weight-bold;
 		}
+		.column {
+			margin-bottom: 1.5rem;
+			padding-bottom: 0;
+		}
 		// border-bottom: $global-border;
 
 		> .header {

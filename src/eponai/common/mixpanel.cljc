@@ -1,9 +1,13 @@
 (ns eponai.common.mixpanel
   (:require
     [taoensso.timbre :refer [warn debug]]
-    #?(:clj [clojure.data.json :as json])
-    #?(:clj [clj-http.client :as http])
-    #?(:clj [buddy.core.codecs.base64 :as base64])))
+    #?(:clj
+    [clojure.data.json :as json])
+    #?(:clj
+    [clj-http.client :as http])
+    #?(:clj
+    [buddy.core.codecs.base64 :as base64])
+    [eponai.common.format.date :as date]))
 
 #?(:clj
    (def token-atom (atom nil)))
@@ -21,10 +25,10 @@
 (defn track [event & [properties]]
   #?(:cljs (.track js/mixpanel event (clj->js properties))
      :clj  (if-let [token @token-atom]
-             (let [params (json/write-str {:event event
-                                           :properties (merge properties {:token token})})]
-               (debug "Params: " params)
-               (debug "Query params: " {:query-params {:data (String. (base64/encode params true))}})
+             (let [params (json/write-str {:event      event
+                                           :properties (assoc properties
+                                                         :token token
+                                                         :time (date/current-secs))})]
                (http/get "https://api.mixpanel.com/track"
                          {:query-params {:data (String. (base64/encode params true))}}))
              (throw (ex-info "Mixpanel token is nil, make sure to set token before first call to track"
@@ -48,9 +52,15 @@
 
    ::signout               "Sign out user"
    ::open-signin           "Open sign in user"
-   ::go-to-start-store     "Go to start store"})
+   ::go-to-start-store     "Go to start store"
+
+   ::shop-by-category "Shop by category"
+   ::upload-photo          "Upload photo"})
 
 (defn track-key [k & [properties]]
   (if-let [event (get events k)]
     (track event properties)
     (warn "Mixpanel - Received unrecognized event key:  " k)))
+
+(defn people-set [params]
+  #?(:cljs (.set (.-people js/mixpanel) (clj->js params))))

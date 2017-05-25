@@ -13,7 +13,8 @@
     [eponai.common.ui.icons :as icons]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.router :as router]
-    [eponai.web.ui.button :as button]))
+    [eponai.web.ui.button :as button]
+    [eponai.common.mixpanel :as mixpanel]))
 
 (defn top-feature [opts icon title text]
   (dom/div #js {:className "feature-item column"}
@@ -122,14 +123,19 @@
                                                            #?(:cljs
                                                               (when (= 13 (.. e -keyCode))
                                                                 (let [search-string (.. e -target -value)]
+                                                                  (mixpanel/track "Search products" {:source        "index"
+                                                                                                     :search-string search-string})
                                                                   (set! js/window.location (str "/products?search=" search-string))))))}))
                        (div (->> (css/grid-column)
                                  (css/grid-column-size {:small 4 :medium 3})
                                  (css/text-align :left))
                             (button/button
-                              (->> (button/expanded {:onClick   (fn []
-                                                                  #?(:cljs
-                                                                     (set! js/window.location (str "/products?search=" input-search))))})
+                              (->> (button/expanded {:onClick (fn []
+                                                                #?(:cljs
+                                                                   (do
+                                                                     (mixpanel/track "Search products" {:source        "index"
+                                                                                                        :search-string input-search})
+                                                                     (set! js/window.location (str "/products?search=" input-search)))))})
                                    (css/add-classes [:search :drop-shadow]))
                               (dom/span nil "Search")))))))
 

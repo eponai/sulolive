@@ -103,7 +103,7 @@
                                      :on-photo-queue  (fn [img-result]
                                                         (om/update-state! component assoc :queue-photo {:src img-result}))
                                      :on-photo-upload (fn [photo]
-                                                        (mixpanel/track "Upload profile photo")
+                                                        (mixpanel/track-key ::mixpanel/upload-photo (assoc photo :type "User profile photo"))
                                                         (om/update-state! component (fn [s]
                                                                                       (-> s
                                                                                           (assoc :photo-upload photo)
@@ -327,6 +327,7 @@
          (debug "validation: " validation)
          (when (nil? validation)
            (mixpanel/track "Save public profile")
+           (mixpanel/people-set {:$first_name input-name})
            (msg/om-transact! this (cond-> [(list 'user.info/update {:user/name input-name})]
                                           (some? photo-upload)
                                           (conj (list 'photo/upload {:photo photo-upload}))
@@ -367,7 +368,6 @@
           {:keys [modal photo-upload queue-photo]} (om/get-state this)
           {user-profile :user/profile} auth
           {:keys [route-params]} current-route]
-      (debug "Props: " (om/props this))
       (common/page-container
         {:navbar navbar :id "sulo-user-dashboard"}
         (grid/row-column

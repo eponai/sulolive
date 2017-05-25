@@ -166,7 +166,8 @@
                old-user)]
     (if token
       (do
-        (mixpanel/track "Sign in user" {:distinct_id (:db/id user)})
+        (mixpanel/track "Sign in user" {:distinct_id (:db/id user)
+                                        :ip          (:remote-addr request)})
         (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token}))
       (prompt-login request))))
 

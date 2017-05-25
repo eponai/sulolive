@@ -20,7 +20,8 @@
     [eponai.client.parser.message :as msg]
     [taoensso.timbre :refer [debug]]
     [eponai.client.routes :as routes]
-    [eponai.web.ui.photo :as photo]))
+    [eponai.web.ui.photo :as photo]
+    [eponai.common.mixpanel :as mixpanel]))
 
 (def form-inputs
   {:field.store/name    "store.name"
@@ -60,6 +61,7 @@
                         :field.store/country store-country}
              validation (validate :field/store input-map)]
          (when (nil? validation)
+           (mixpanel/track "Start store")
            (msg/om-transact! this [(list 'store/create {:name store-name :country store-country})]))
 
          (om/update-state! this assoc :input-validation validation))))
@@ -68,6 +70,7 @@
       (when (msg/final? message)
         (if (msg/success? message)
           (let [new-store (msg/message message)]
+            (mixpanel/people-set {:store true})
             (routes/set-url! this :store-dashboard {:store-id (:db/id new-store)}))))))
 
   (render [this]

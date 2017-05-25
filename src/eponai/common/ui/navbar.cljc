@@ -61,8 +61,6 @@
             (menu/vertical
               (css/add-class :nested)
               (dom/label nil (dom/small nil "Your account"))
-              ;(menu/item-link {:href (routes/url :user {:user-id (:db/id user)})}
-              ;                (dom/span nil "Profile"))
               (menu/item-link {:href    (routes/url :user/order-list {:user-id (:db/id user)})
                                :onClick #(track-event ::mixpanel/go-to-purchases)}
                               (dom/small nil "Purchases"))
@@ -72,7 +70,8 @@
         (menu/item nil
                    (menu/vertical
                      (css/add-class :nested)
-                     (menu/item-link {:href "/logout"}
+                     (menu/item-link {:href    "/logout"
+                                      :onClick #(track-event ::mixpanel/signout)}
                                      (dom/small nil "Sign out"))))))))
 
 (defn navbar-content [opts & content]
@@ -83,9 +82,11 @@
 
 (defn collection-links [component disabled?]
   (map
-    (fn [{:category/keys [href name] :as a}]
-      (let [opts (when (not disabled?)
-                   {:href href})]
+    (fn [{:category/keys [href name path] :as a}]
+      (let [opts (if (not disabled?)
+                   {:href    href
+                    :onClick #(mixpanel/track-key ::mixpanel/shop-by-category {:source   "navbar"
+                                                                               :category path})})]
         (menu/item-link
           (->> opts
                (css/add-class :category)
@@ -269,12 +270,6 @@
             (dom/span nil (get-in owned-store [:store/profile :store.profile/name])))
           (user-menu-item component))))))
 
-(defn sidebar-category [component href title]
-  (menu/item
-    (css/add-class :category)
-    (dom/a {:onClick #(routes/set-url! component href)}
-           (dom/span nil title))))
-
 (defn sidebar-highlight [component route route-params title]
   (let [{:query/keys [current-route]} (om/props component)
         {:keys [on-live-click]} (om/get-computed component)]
@@ -323,7 +318,9 @@
                                                   #?(:cljs
                                                      (when (= 13 (.. e -keyCode))
                                                        (let [search-string (.. e -target -value)]
-                                                         (set! js/window.location (str "/goods?search=" search-string))))))})))
+                                                         (mixpanel/track "Search products" {:source        "navbar"
+                                                                                            :search-string search-string})
+                                                         (set! js/window.location (str "/products?search=" search-string))))))})))
           (user-menu-item component)
           (menu/item
             nil
@@ -543,7 +540,7 @@
                    nil
                    (menu/item
                      (css/add-class :back)
-                     (dom/a {:href (routes/url :index nil)
+                     (dom/a {:href    (routes/url :index nil)
                              :onClick #(mixpanel/track "Store: Go back to marketplace")}
                             (dom/i {:classes ["fa fa-chevron-left fa-fw"]})
                             (dom/span nil "SULO Live")))))
@@ -603,7 +600,7 @@
                  (css/hide-for :large)
                  (menu/vertical (css/add-class :signout-menu)
                                 (if (some? auth)
-                                  (menu/item nil (dom/a {:href (routes/url :logout)
+                                  (menu/item nil (dom/a {:href    (routes/url :logout)
                                                          :onClick #(track-event ::mixpanel/signout)} (dom/small nil "Sign out")))
                                   (menu/item nil (dom/a (css/button {:onClick #(do
                                                                                 (track-event ::mixpanel/open-signin)
@@ -632,8 +629,15 @@
                  (menu/vertical
                    nil
                    (map
-                     (fn [{:category/keys [name href]}]
-                       (sidebar-category this href (s/capitalize name)))
+                     (fn [{:category/keys [name path href]}]
+                       (menu/item
+                         (css/add-class :category)
+                         (dom/a {:href    href
+                                 :onClick #(mixpanel/track-key ::mixpanel/shop-by-category {:source   "sidebar"
+                                                                                            :category path})}
+                                (dom/span nil (s/capitalize name))))
+                       ;(sidebar-category this href (s/capitalize name))
+                       )
                      navigation)))
                (when (some? owned-store)
                  (menu/item
@@ -692,11 +696,11 @@
                                 (when (and (some? auth)
                                            (nil? owned-store))
                                   (menu/item nil (dom/a
-                                                   (->> {:href (routes/url :sell)
+                                                   (->> {:href    (routes/url :sell)
                                                          :onClick #(track-event ::mixpanel/go-to-start-store)}
                                                         (css/button)) (dom/span nil "Start a store"))))
                                 (if (some? auth)
-                                  (menu/item nil (dom/a {:href "/logout"
+                                  (menu/item nil (dom/a {:href    "/logout"
                                                          :onClick #(track-event ::mixpanel/signout)}
                                                         (dom/small nil "Sign out")))
                                   (menu/item nil (dom/a

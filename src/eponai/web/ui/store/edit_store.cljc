@@ -39,13 +39,13 @@
                                                  (om/update-state! component assoc (keyword id "queue") {:src img-result}))
                               :on-photo-upload (fn [photo]
                                                  (if (= id "cover")
-                                                   (mixpanel/track "Store: Upload cover photo" photo)
-                                                   (mixpanel/track "Store: Upload profile photo" photo))
+                                                   (mixpanel/track-key ::mixpanel/upload-photo (assoc photo :type "Store cover photo"))
+                                                   (mixpanel/track-key ::mixpanel/upload-photo (assoc photo :type "Store profile photo")))
                                                  (om/update-state! component (fn [st]
                                                                                (-> st
                                                                                    (dissoc (keyword id "queue"))
                                                                                    (assoc (keyword id "upload") photo)))))
-                              :preset preset
+                              :preset          preset
                               :id              id
                               :hide-label?     true})))))
 
