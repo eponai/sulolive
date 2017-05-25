@@ -121,7 +121,9 @@
   (let [
         {:keys [stripe/id]} (stripe/pull-stripe (db/db state) store-id)
         user-stripe (stripe/pull-user-stripe (db/db state) (:user-id auth))
+        {:keys [user/cart]} (db/pull (db/db state) [{:user/cart [:db/id]}] (:user-id auth))
         {:keys [shipping/address]} shipping
+        shipping-fee (or shipping-fee 0)
 
         total-amount (+ subtotal shipping-fee)
         application-fee (* 0.2 subtotal)                    ;Convert to cents for Stripe
@@ -159,9 +161,13 @@
             is-paid? (:charge/paid? charge)
             order-status (if is-paid? :order.status/paid :order.status/created)
             charged-order (assoc order :order/status order-status :order/charge (:db/id charge-entity))
+            retract-from-cart-txs (map (fn [sku]
+                                         [:db/retract (:db/id cart) :user.cart/items (:db/id sku)])
+                                       items)
 
-            result-db (:db-after (db/transact state [charge-entity
-                                                     charged-order]))]
+            result-db (:db-after (db/transact state (into [charge-entity
+                                                           charged-order]
+                                                          retract-from-cart-txs)))]
         ;(when (some? auth)
         ;  (if (some? user-stripe)
         ;    (stripe/update-customer (:system/stripe system) (:stripe/id user-stripe) {:source source})

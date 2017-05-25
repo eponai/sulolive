@@ -41,7 +41,8 @@
                        ]}
      {:query/stripe-customer [:stripe/id
                               :stripe/sources
-                              :stripe/shipping]}
+                              :stripe/shipping
+                              :stripe/default-source]}
      :query/current-route
      {:query/auth [:db/id
                    :user/email
