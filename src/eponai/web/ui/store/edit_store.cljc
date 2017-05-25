@@ -28,26 +28,22 @@
   {:field.general/store-name    "general.store-name"
    :field.general/store-tagline "general.store-tagline"})
 
-(defn photo-uploader [component id]
-  (let [{:proxy/keys [photo-upload]} (om/props component)
-        preset (when (= id "cover") "cover-photo")]
-
-    #?(:cljs
+(defn photo-uploader [component id k]
+  #?(:cljs
+     (let [preset (when (= k "cover") :preset/cover-photo)]
        (pu/->PhotoUploader (om/computed
-                             photo-upload
+                             {:id id}
                              {:on-photo-queue  (fn [img-result]
-                                                 (om/update-state! component assoc (keyword id "queue") {:src img-result}))
+                                                 (om/update-state! component assoc (keyword k "queue") {:src img-result}))
+                              :preset          preset
                               :on-photo-upload (fn [photo]
                                                  (if (= id "cover")
                                                    (mixpanel/track-key ::mixpanel/upload-photo (assoc photo :type "Store cover photo"))
                                                    (mixpanel/track-key ::mixpanel/upload-photo (assoc photo :type "Store profile photo")))
                                                  (om/update-state! component (fn [st]
                                                                                (-> st
-                                                                                   (dissoc (keyword id "queue"))
-                                                                                   (assoc (keyword id "upload") photo)))))
-                              :preset          preset
-                              :id              id
-                              :hide-label?     true})))))
+                                                                                   (dissoc (keyword k "queue"))
+                                                                                   (assoc (keyword k "upload") photo)))))})))))
 
 (defn edit-about-section [component]
   (let [{:keys [store]} (om/get-computed component)
@@ -66,11 +62,15 @@
             (button/cancel {:onClick #(do
                                        (mixpanel/track "Store: Cancel edit about info")
                                        (om/update-state! component assoc :edit/info false))})
-            (button/save {:onClick #(.save-store component)}))
+            (button/save (cond->> {:onClick #(.save-store component)}
+                                  (or (some? (:cover/queue state))
+                                      (some? (:profile/queue state)))
+                                  (css/add-class :disabled))))
           (button/edit
             {:onClick #(do
                         (mixpanel/track "Store: Edit about info")
                         (om/update-state! component assoc :edit/info true))})))
+
       (when (and (:edit/info state) (:error/about state))
         (dom/p (css/add-class :section-error) (dom/small (css/add-class :text-alert) (:error/about state))))
 
@@ -78,25 +78,26 @@
         (css/add-class :section-content)
 
         ;; Enable Cover upload when in edit mode for the info section
-        (if (:edit/info state)
-          (let [{:cover/keys [upload queue]} state]
+        (let [{:cover/keys [upload queue]} state]
+          (if (:edit/info state)
             (if (some? queue)
-              (dom/div
-                {:classes "upload-photo cover loading"}
-                (photo/cover {:src (:src queue)}
-                             (photo/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))))
-              (dom/label {:htmlFor "file-cover"
-                          :classes ["upload-photo cover"]}
-                         (if (some? upload)
-                           (photo/cover {:photo-id       (:public_id upload)
-                                         :transformation :transformation/preview}
-                                        (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]})))
-                           (photo/cover {:photo-id     (:photo/id cover)
-                                         :placeholder? true}
-                                        (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]}))))
-                         (photo-uploader component "cover"))))
-          (photo/cover {:photo-id     (:photo/id cover)
-                        :placeholder? true}))
+              ;; If there's a photo in queue, show the image data
+              (photo/cover {:src    (:src queue)
+                            :status :loading})
+              (dom/label
+                {:htmlFor "cover-photo-upload"}
+
+                ;; Use the recently uploaded photo if one exists, otherwise use our saved photo.
+                (photo/cover {:photo-id (or (:public_id upload) (:photo/id cover))
+                              :status   :edit})
+                (photo-uploader component "cover-photo-upload" "cover")))
+
+            (let [photo-status-msg (msg/last-message component 'store.photo/upload)
+                  ;; If we're waiting for response from the upload request to our server, show the uploaded url while waiting
+                  photo-key (if (and (some? photo-status-msg) (msg/pending? photo-status-msg))
+                              (:public_id upload)
+                              (:photo/id cover))]
+              (photo/cover {:photo-id photo-key}))))
 
 
         (dom/div
@@ -110,24 +111,26 @@
               (grid/column-size {:small 12 :medium 2})
 
               ;; Enable photo upload when in edit mode for the info section
-              (if (:edit/info state)
-                (let [{:profile/keys [upload queue]} state]
-
+              (let [{:profile/keys [upload queue]} state]
+                (if (:edit/info state)
                   (if (some? queue)
-                    (dom/div
-                      {:classes ["upload-photo circle loading"]}
-                      (photo/circle {:src (:src queue)}
-                                    (photo/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))))
-                    (dom/label {:htmlFor "file-profile"
-                                :classes ["upload-photo circle"]}
-                               (if (some? upload)
-                                 (photo/circle {:photo-id       (:public_id upload)
-                                                :transformation :transformation/thumbnail}
-                                               (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]})))
-                                 (photo/store-photo store {:transformation :transformation/thumbnail}
-                                                    (photo/overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]}))))
-                               (photo-uploader component "profile"))))
-                (photo/store-photo store {:transformation :transformation/thumbnail})))
+                    (photo/circle {:src    (:src queue)
+                                   :status :loading})
+                    (dom/label
+                      {:htmlFor "store-profile-photo-upload"}
+                      (if (some? upload)
+                        (photo/circle {:photo-id       (:public_id upload)
+                                       :transformation :transformation/thumbnail
+                                       :status         :edit})
+                        (photo/store-photo store {:transformation :transformation/thumbnail
+                                                  :status         :edit}))
+                      (photo-uploader component "store-profile-photo-upload" "profile")))
+                  (let [photo-status-msg (msg/last-message component 'store.photo/upload)]
+                    (if (and (some? photo-status-msg)
+                             (msg/pending? photo-status-msg))
+                      (photo/circle {:photo-id       (:public_id upload)
+                                     :transformation :transformation/thumbnail})
+                      (photo/store-photo store {:transformation :transformation/thumbnail}))))))
 
             (if (:edit/info state)
               (grid/column
@@ -260,7 +263,7 @@
                                 item-name        :store.item/name} p]
                            (dom/a
                              (->> {:href (routes/url :store-dashboard/product (assoc (:route-params current-route) :product-id (:db/id p)))}
-                               (css/add-class :content-item)
+                                  (css/add-class :content-item)
                                   (css/add-class :product-item))
                              (dom/div
                                (->>
@@ -289,9 +292,7 @@
 (defui EditStore
   static om/IQuery
   (query [_]
-    [#?(:cljs
-        {:proxy/photo-upload (om/get-query pu/PhotoUploader)})
-     :query/current-route
+    [:query/current-route
      :query/messages])
 
   Object

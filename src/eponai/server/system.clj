@@ -43,9 +43,10 @@
 (defn components-without-fakes [{:keys [env] :as config}]
   {:system/aleph          (c/using (aleph/map->Aleph (select-keys config [:handler :port :netty-options]))
                                    {:handler :system/handler})
-   :system/cloudinary     (cloudinary/->Cloudinary
+   :system/cloudinary     (cloudinary/cloudinary
                             (:cloudinary-api-key env)
-                            (:cloudinary-api-secret env))
+                            (:cloudinary-api-secret env)
+                            (:in-prod? config))
    :system/chat           (c/using (chat/map->DatomicChat {})
                                    {:chat-datomic :system/chat-datomic
                                     :sulo-datomic :system/datomic})

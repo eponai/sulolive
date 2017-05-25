@@ -22,12 +22,11 @@
     content))
 
 (defn photo-uploader [component id]
-  (let [{:keys [did-mount?]} (om/get-state component)
-        {:proxy/keys [photo-upload]} (om/props component)]
+  (let [{:keys [did-mount?]} (om/get-state component)]
 
     #?(:cljs
        (pu/->PhotoUploader (om/computed
-                             photo-upload
+                             {:id              id}
                              {:on-photo-queue  (fn [img-result]
                                                  (om/update-state! component assoc (keyword id "queue") {:src img-result}))
                               :on-photo-upload (fn [photo]
@@ -35,15 +34,12 @@
                                                                                (-> st
                                                                                    (dissoc (keyword id "queue"))
                                                                                    (assoc (keyword id "upload") photo)))))
-                              :id              id
-                              :hide-label?     true})))))
+                              })))))
 
 (defui General
   static om/IQuery
   (query [_]
-    [#?(:cljs
-        {:proxy/photo-upload (om/get-query pu/PhotoUploader)})
-     :query/messages])
+    [:query/messages])
   Object
   (save-store [this]
     #?(:cljs (let [{uploaded-photo :profile/upload

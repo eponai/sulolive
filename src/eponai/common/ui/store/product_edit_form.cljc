@@ -87,13 +87,12 @@
     content))
 
 (defn photo-uploader [component index]
-  (let [{:keys [did-mount?]} (om/get-state component)
-        {:proxy/keys [photo-upload]} (om/props component)]
+  (let [{:keys [did-mount?]} (om/get-state component)]
 
     (when did-mount?
       #?(:cljs
          (pu/->PhotoUploader (om/computed
-                               photo-upload
+                               {:id (str "product-photo-" index)}
                                {:on-photo-queue  (fn [img-result]
                                                    (debug "Got photo: " img-result)
                                                    (om/update-state! component assoc :queue-photo {:src img-result}))
@@ -102,9 +101,7 @@
                                                    (om/update-state! component (fn [st]
                                                                                  (-> st
                                                                                      (dissoc :queue-photo)
-                                                                                     (update :uploaded-photos conj photo)))))
-                                :id              (str index)
-                                :hide-label?     true}))))))
+                                                                                     (update :uploaded-photos conj photo)))))}))))))
 
 (defn empty-photo-button []
   (dom/div
@@ -125,8 +122,6 @@
   (query [_]
     [:query/current-route
      :query/messages
-     #?(:cljs
-        {:proxy/photo-upload (om/get-query pu/PhotoUploader)})
      {:query/navigation [:category/name :category/label :category/path :category/href]}])
   static store-common/IDashboardNavbarContent
 
@@ -248,8 +243,6 @@
                         photo-key (or (:public_id p) (:photo/id photo) p)]
                     (grid/column
                       nil
-                      ;(dom/label
-                      ;  {:htmlFor file-id})
                       (when (some? photo-key)
                         (dom/div
                           nil
@@ -258,18 +251,20 @@
                           (dom/a
                             (->>
                               {:onClick #(.remove-uploaded-photo this i)}
-                              (css/button-hollow)) (dom/span nil "Remove")))))))
+                              (css/button-hollow)
+                              (css/add-classes [:secondary :expanded]))
+                            (dom/i {:classes ["fa fa-trash-o"]})))))))
                 uploaded-photos)
               (when (some? queue-photo)
                 (grid/column
                   nil
-                  (photo/square {:src (:src queue-photo)}
-                                (photo/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]})))))
+                  (photo/square {:src (:src queue-photo)
+                                 :status :loading})))
               (when (and (nil? queue-photo) (> 5 (count (conj uploaded-photos))))
                 (grid/column
                   nil
                   (dom/label
-                    {:htmlFor (str "file-" (count photos))
+                    {:htmlFor (str "product-photo-" (count photos))
                      :onClick #(mixpanel/track "Store: Open product photo upload")}
                     (empty-photo-button)
                     (photo-uploader this (count photos))))))))

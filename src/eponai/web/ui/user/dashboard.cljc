@@ -85,29 +85,28 @@
               (grid/column
                 (grid/column-size {:small 12 :medium 8})
                 (if (some? queue-photo)
-                  (dom/div
-                    {:classes ["upload-photo circle loading user-profile-photo"]}
-                    (photo/circle {:src (:src queue-photo)}
-                                  (photo/overlay nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))))
-                  (dom/label {:htmlFor "file-profile"
-                              :classes ["upload-photo circle"]}
-                             (if (some? photo-upload)
-                               (photo/circle {:photo-id       (:public_id photo-upload)
-                                              :transformation :transformation/thumbnail})
-                               (photo/user-photo auth {:transformation :transformation/thumbnail}))
-                             #?(:cljs
-                                (pu/->PhotoUploader
-                                  (om/computed
-                                    {}
-                                    {:id              "profile"
-                                     :on-photo-queue  (fn [img-result]
-                                                        (om/update-state! component assoc :queue-photo {:src img-result}))
-                                     :on-photo-upload (fn [photo]
-                                                        (mixpanel/track-key ::mixpanel/upload-photo (assoc photo :type "User profile photo"))
-                                                        (om/update-state! component (fn [s]
-                                                                                      (-> s
-                                                                                          (assoc :photo-upload photo)
-                                                                                          (dissoc :queue-photo))))
+                  (photo/circle {:src    (:src queue-photo)
+                                 :status :loading})
+                  (dom/label
+                    {:htmlFor "profile-photo-upload"}
+                    (if (some? photo-upload)
+                      (photo/circle {:photo-id       (:public_id photo-upload)
+                                     :transformation :transformation/thumbnail
+                                     :status         :edit})
+                      (photo/user-photo auth {:transformation :transformation/thumbnail
+                                              :status         :edit}))
+                    #?(:cljs
+                       (pu/->PhotoUploader
+                         (om/computed
+                           {:id              "profile-photo-upload"}
+                           {:on-photo-queue  (fn [img-result]
+                                               (om/update-state! component assoc :queue-photo {:src img-result}))
+                            :on-photo-upload (fn [photo]
+                                               (mixpanel/track-key ::mixpanel/upload-photo (assoc photo :type "User profile photo"))
+                                               (om/update-state! component (fn [s]
+                                                                             (-> s
+                                                                                 (assoc :photo-upload photo)
+                                                                                 (dissoc :queue-photo))))
                                                         ;(msg/om-transact! this [(list 'photo/upload {:photo photo})
                                                         ;                        :query/user])
                                                         )})))))
@@ -297,8 +296,6 @@
                               :stripe/sources
                               :stripe/default-source
                               :stripe/shipping]}
-     #?(:cljs
-        {:proxy/uploader (om/get-query pu/PhotoUploader)})
      :query/current-route
      :query/messages])
   Object

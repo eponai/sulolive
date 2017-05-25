@@ -50,6 +50,7 @@
 (defn system-for-tests [& [{:keys [conn port] :as opts}]]
   {:pre [(or (nil? opts) (map? opts))]}
   (s/check-asserts true)
+  (mixpanel/set-token ::mixpanel/token-tests)
   (make-system
     (merge {:port                  (or port 0)
             ::system-fn            system/test-system

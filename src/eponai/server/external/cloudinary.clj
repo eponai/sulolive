@@ -4,16 +4,27 @@
     [clj-http.client :as http]
     [taoensso.timbre :refer [debug]]
     [clojure.data.json :as json]
-    [eponai.common.format.date :as date])
+    [eponai.common.format.date :as date]
+    [eponai.common.photos :as photos])
   (:import
     (org.apache.commons.codec.digest DigestUtils)))
 
 (defprotocol ICloudinary
   (real-photo-id [this temp-id])
-  (upload-dynamic-photo [this {:keys [public_id resource_type url]}]))
+  (upload-dynamic-photo [this {:keys [public_id resource_type url]}])
+  (destroy-photo [this photo-id]))
 
-(defn rename-url [resource-type]
-  (str "https://api.cloudinary.com/v1_1/sulolive/" resource-type "/rename"))
+(defn rename-photo [params]
+  (let [resource-type "image"
+        endpoint "rename"
+        url (string/join "/" [photos/api-host photos/cloud-name resource-type endpoint])]
+    (http/post url {:form-params params})))
+
+(defn destroy-photo [params]
+  (let [resource-type "image"
+        endpoint "destroy"
+        url (string/join "/" [photos/api-host photos/cloud-name resource-type endpoint])]
+    (http/post url {:form-params params})))
 
 (defn sign-params [params api-key api-secret]
   (let [include-params (->> (dissoc params :api_key :resource_type :type :file)
@@ -28,22 +39,31 @@
     (debug "Cloudinary SHA-1 for string: " (str query-string api-secret))
     (DigestUtils/sha1Hex (str query-string api-secret))))
 
-(defrecord Cloudinary [api-key api-secret]
+(defrecord Cloudinary [api-key api-secret uploaded-folder]
   ICloudinary
   (real-photo-id [_ tempid]
-    (string/replace tempid #"temp" "real"))
-  (upload-dynamic-photo [this {:keys [public_id resource_type url]}]
-    (let [real-public-id (real-photo-id this public_id)     ;(string/replace public_id #"temp" "real")
-          ;url (rename-url resource_type)
+    (string/replace tempid #"temp" uploaded-folder))
+  (upload-dynamic-photo [this {:keys [public_id resource_type url] :as p}]
+    (let [real-public-id (real-photo-id this public_id)
           params {:from_public_id public_id
                   :to_public_id   real-public-id
                   :timestamp      (date/current-secs)
                   :api_key        api-key}
-          _ (debug "Cloudinary rename to url: " real-public-id)
-
-          result (http/post (rename-url resource_type) {:form-params (assoc params :signature (sign-params params api-key api-secret))})]
-      (debug "Renamed photo: " (json/read-str (:body result)))
+          result (rename-photo (assoc params :signature (sign-params params api-key api-secret)))]
+      (debug "Cloudinary: Renamed photo: " (json/read-str (:body result)))
       {:photo/path (string/replace url #"temp" "real")
-       :photo/id   real-public-id})
-    ;dynamic/temp/mkhjmyaolebtu74msslg
-    ))
+       :photo/id   real-public-id}))
+  (destroy-photo [this photo-id]
+    (let [params {:public_id photo-id
+                  :timestamp (date/current-secs)
+                  :api_key   api-key}
+          result (destroy-photo (assoc params :signature (sign-params params api-key api-secret)))]
+      (debug "Cloudinary: Destroyed photo: " (json/read-str (:body result))))))
+
+(defn cloudinary-dev [api-key api-secret]
+  (->Cloudinary api-key api-secret "dev"))
+
+(defn cloudinary [api-key api-secret in-prod?]
+  (if in-prod?
+    (->Cloudinary api-key api-secret "real")
+    (->Cloudinary api-key api-secret "dev")))
