@@ -253,14 +253,14 @@
                   (->> (css/add-class :sl-OrderItemlist-row)
                        (css/add-class :sl-OrderItemlist-row--shipping))
                   (item-cell (css/add-class :sl-OrderItemlist-cell--id) (dom/span nil "Shipping"))
-                  (item-cell (css/add-class :sl-OrderItemlist-cell--description) (dom/span nil "Free shipping"))
+                  (item-cell (css/add-class :sl-OrderItemlist-cell--description) )
                   (item-cell nil)
                   (item-cell (css/add-class :sl-OrderItemlist-cell--price) (dom/span nil (two-decimal-price (:order.item/amount shipping-item))))))
               (table/thead-row
                 (->> (css/add-class :sl-OrderItemlist-row)
                      (css/add-class :sl-OrderItemlist-row--tax))
                 (item-cell (css/add-class :sl-OrderItemlist-cell--id) (dom/span nil "Tax"))
-                (item-cell (css/add-class :sl-OrderItemlist-cell--description) (dom/span nil "Taxes (included)"))
+                (item-cell (css/add-class :sl-OrderItemlist-cell--description) )
                 (item-cell nil)
                 (item-cell (css/add-class :sl-OrderItemlist-cell--price) (dom/span nil (two-decimal-price 0)))))
             (table/tfoot
@@ -308,7 +308,7 @@
         ;  ;(dom/h3 nil (dom/span nil "Edit product - ") (dom/small nil item-name))
         ;  (dom/h3 nil (dom/span nil "Order - ") (dom/small nil (str "#" (:db/id order)))))
         (grid/column
-          (css/text-align :right)
+          nil
           (when (or (= order-status :order.status/created)
                     (= order-status :order.status/paid))
             (dom/a

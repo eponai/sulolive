@@ -165,6 +165,11 @@
                                                       "::placeholder" {:color "#aab7c4"}}}}))]
            (.mount ^js/Stripe.card card (str "#" stripe-card-element))
            (om/update-state! this assoc :card card :stripe stripe)))))
+  (initLocalState [this]
+    (let [{:keys [default-source]} (om/props this)]
+      (if (some? default-source)
+        {:selected-source default-source}
+        {:selected-source :new-card})))
 
   (render [this]
     (render-payment this (om/props this) (om/get-state this))))
