@@ -34,9 +34,13 @@
 
 (defn policies-section [component]
   (let [{:query/keys [store]} (om/props component)
-        {:store.profile/keys [return-policy]} (:store/profile store)]
+        {:store.profile/keys [return-policy shipping-policy]} (:store/profile store)]
     (grid/row-column
       nil
+      (dom/div
+        (css/callout)
+        (dom/p nil (dom/strong nil "Shipping"))
+        (quill/->QuillRenderer {:html (f/bytes->str shipping-policy)}))
       (dom/div
         (css/callout)
         (dom/p nil (dom/strong nil "Returns"))
@@ -59,6 +63,7 @@
                                      :store.profile/description
                                      :store.profile/tagline
                                      :store.profile/return-policy
+                                     :store.profile/shipping-policy
                                      {:store.profile/photo [:photo/path :photo/id]}
                                      {:store.profile/cover [:photo/path :photo/id]}]}]}
      {:query/store-items (om/get-query item/Product)}

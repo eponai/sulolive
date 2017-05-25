@@ -1,0 +1,15 @@
+[
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store.profile/shipping-policy
+  :db/valueType          :db.type/bytes
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Store's custom shipping policy"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store.profile/shipping-fee
+  :db/valueType          :db.type/bigdec
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Store's base shipping fee"
+  :db.install/_attribute :db.part/db}
+ ]

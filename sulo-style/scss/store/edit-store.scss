@@ -48,6 +48,9 @@
 		.section-error {
 			text-align: center;
 		}
+		.sl-quill-editor-container {
+			// color: $dark-gray;
+		}
 
 		.callout {
 			@include breakpoint(large) {
@@ -104,7 +107,7 @@
 				// flex: 1;
 			}
 			input {
-				color: $dark-gray;
+				// color: $dark-gray;
 			}
 			small {
 				color: $dark-gray;
