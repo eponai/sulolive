@@ -28,9 +28,11 @@
                         ~{:store-id store-id})]]
     (debug "Found: " found)
     (test/is (number? store-id))
-    (test/is (nil? (get-in (parse nil store-query)
-                           [:query/store :store/stripe :stripe/publ])))
-    (test/is (= stripe-publ
-                (get-in (parse owner-email store-query)
-                        [:query/store :store/stripe :stripe/publ])))
+    (time
+      (dotimes [_ 1000]
+        (test/is (nil? (get-in (parse nil store-query)
+                               [:query/store :store/stripe :stripe/publ])))
+        (test/is (= stripe-publ
+                    (get-in (parse owner-email store-query)
+                            [:query/store :store/stripe :stripe/publ])))))
     (c/stop datomic)))

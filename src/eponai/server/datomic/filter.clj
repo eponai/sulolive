@@ -155,17 +155,6 @@
     [(non-user-entities-filter-map)])
   [])
 
-(def public (constantly true))
-
-(defn user-attribute [user-id]
-  (fn [_ [e]]
-    (= e user-id)))
-
-
-(defn store-attribute [store-id]
-  (fn [_ [e]]
-    (= e store-id)))
-
 (defn query [q]
   (fn [db [e a v]]
     (db/one-with db (db/merge-query q {:symbols {'?e e '?v v}}))))
@@ -178,141 +167,168 @@
           (first fns)
           (rest fns)))
 
-(defn stripe-owner [user-id store-id]
-  (query {:where   '[(or-join [?e]
-                              [?user :user/stripe ?e]
-                              [?store :store/stripe ?e])]
-          :symbols {'?user  user-id
-                    '?store store-id}}))
+(defn- walk-entity-path [entity path]
+  (reduce (fn [x p]
+            (if-not (set? x)
+              (get x p)
+              (into #{}
+                    (mapcat (fn [entity]
+                              (let [ret (get entity p)]
+                                (cond-> ret (not (set? ret)) (vector)))))
+                    x)))
+          entity
+          path))
 
-(defn order-owner [user-id store-id]
-  (query {:where   '[(or-join [?e]
-                              [?e :order/user ?user]
-                              [?e :order/store ?store])]
-          :symbols {'?user  user-id
-                    '?store store-id}}))
-
-(defn order-item-owner [user-id store-id]
+(defn user-path [user-id path]
   (fn [db [e]]
-    ((order-owner user-id store-id)
-      db
-      [(:db/id (:order/_items (d/entity db e)))])))
+    (let [walked (walk-entity-path (d/entity db e) path)]
+      (if (set? walked)
+        (some #(= user-id (:db/id %)) walked)
+        (= user-id (:db/id walked))))))
 
-(defn shipping-address-owner [user-id store-id]
+
+(defn store-path [store-ids path]
   (fn [db [e]]
-    ((order-owner user-id store-id)
-      db
-      [(:db/id (:order/_shipping (d/entity db e)))])))
+    (let [walked (walk-entity-path (d/entity db e) path)]
+      (if (set? walked)
+        (some #(contains? store-ids (:db/id %)) walked)
+        (contains? store-ids (:db/id walked))))))
 
-(defn filter-by-attribute [{:keys [user-id store-id]}]
-  {
-   ;; public?
-   :user/email                     public
-   ;; user
-   :user/verified                  (user-attribute user-id)
-   ;; user
-   :user/stripe                    (user-attribute user-id)
-   ;; user
-   :user/cart                      (user-attribute user-id)
-   ;; public
-   :user/profile                   public
-   ;; public
-   :user.profile/name              public
-   ;; public
-   :user.profile/photo             public
-   ;; user or store-owner
-   :stripe/id                      (stripe-owner user-id store-id)
-   ;; store-owner
-   :stripe/publ                    (stripe-owner user-id store-id)
-   ;; store-owner
-   :stripe/secret                  (stripe-owner user-id store-id)
-   ;; public
-   :store/uuid                     public
-   ;; store-owner
-   :store/stripe                   (store-attribute store-id)
-   :store/owners                   public
-   :store/items                    public
-   :store/profile                  public
-   :store/sections                 public
-   :store.profile/name             public
-   :store.profile/description      public
-   :store.profile/return-policy    public
-   :store.profile/tagline          public
-   :store.profile/photo            public
-   :store.profile/cover            public
-   :store.section/label            public
-   :store.section/path             public
-   :store.owner/user               public
-   :store.owner/role               public
-   :store.item/uuid                public
-   :store.item/name                public
-   :store.item/description         public
-   :store.item/price               public
-   :store.item/category            public
-   :store.item/section             public
-   :store.item/photos              public
-   :store.item/skus                public
-   :store.item.photo/photo         public
-   :store.item.photo/index         public
-   :store.item.sku/variation       public
-   :store.item.sku/inventory       public
-   :store.item.sku.inventory/type  public
-   :store.item.sku.inventory/value public
-   :photo/path                     public
-   :stream/title                   public
-   :stream/store                   public
-   :stream/state                   public
-   ;; store-owner
-   :stream/token                   (query {:where   '[[?e :stream/store ?store]]
-                                           :symbols {'?store store-id}})
-   :user.cart/items                (query {:where   '[[?user :user/cart ?e]]
-                                           :symbols {'?user user-id}})
-   :chat/store                     public
-   :chat/messages                  public
-   :chat.message/text              public
-   :chat.message/user              public
-   ;; store or user for the order. order-owner ?
-   :order/charge                   (order-owner user-id store-id)
-   :order/amount                   (order-owner user-id store-id)
-   :order/status                   (order-owner user-id store-id)
-   :order/store                    (order-owner user-id store-id)
-   :order/user                     (order-owner user-id store-id)
-   :order/uuid                     (order-owner user-id store-id)
-   :order/shipping                 (order-owner user-id store-id)
-   :order/items                    (order-owner user-id store-id)
-   :order.item/parent              (order-item-owner user-id store-id)
-   :order.item/type                (order-item-owner user-id store-id)
-   :order.item/amount              (order-item-owner user-id store-id)
-   ;; store or user?
-   :charge/id                      (fn [db [e]]
-                                     ((order-owner user-id store-id)
-                                       db
-                                       [(:db/id (:order/_charge (d/entity db e)))]))
-   ;; order owner
-   :shipping/name                  (shipping-address-owner user-id store-id)
-   :shipping/address               (shipping-address-owner user-id store-id)
-   :shipping.address/street        (shipping-address-owner user-id store-id)
-   :shipping.address/street2       (shipping-address-owner user-id store-id)
-   :shipping.address/postal        (shipping-address-owner user-id store-id)
-   :shipping.address/locality      (shipping-address-owner user-id store-id)
-   :shipping.address/region        (shipping-address-owner user-id store-id)
-   :shipping.address/country       (shipping-address-owner user-id store-id)
-   :category/path                  public
-   :category/name                  public
-   :category/label                 public
-   :category/children              public
-   :user/created-at                public
-   :store/created-at               public
-   :store.item/created-at          public
-   :store.item/index               public
-   :photo/id                       public})
+(def filter-by-attribute
+  (letfn [(public [_ _] (constantly true))
+          (user-attribute [user-id store-ids]
+            (fn [_ [e]]
+              (= e user-id)))
+          (store-attribute [user-id store-ids]
+            (fn [_ [e]]
+              (contains? store-ids e)))
+          (stripe-owner [user-id store-ids]
+            (filter-or (user-path user-id [:user/_stripe])
+                       (store-path store-ids [:store/_stripe])))
+          (order-owner [user-id store-ids]
+            (filter-or (user-path user-id [:order/user])
+                       (store-path store-ids [:order/store])))
+          (order-item-owner [user-id store-ids]
+            (filter-or (user-path user-id [:order/_items :order/user])
+                       (store-path store-ids [:order/_items :order/store])))
+          (shipping-address-owner [user-id store-ids]
+            (filter-or (user-path user-id [:order/_shipping :order/user])
+                       (store-path store-ids [:order/_shipping :order/store])))]
+    {
+     ;; public?
+     :user/email                     public
+     ;; user
+     :user/verified                  user-attribute
+     ;; user
+     :user/stripe                    user-attribute
+     ;; user
+     :user/cart                      user-attribute
+     ;; public
+     :user/profile                   public
+     ;; public
+     :user.profile/name              public
+     ;; public
+     :user.profile/photo             public
+     ;; user or store-owner
+     :stripe/id                      stripe-owner
+     ;; store-owner
+     :stripe/publ                    stripe-owner
+     ;; store-owner
+     :stripe/secret                  stripe-owner
+     ;; public
+     :store/uuid                     public
+     ;; store-owner
+     :store/stripe                   store-attribute
+     :store/owners                   public
+     :store/items                    public
+     :store/profile                  public
+     :store/sections                 public
+     :store.profile/name             public
+     :store.profile/description      public
+     :store.profile/return-policy    public
+     :store.profile/tagline          public
+     :store.profile/photo            public
+     :store.profile/cover            public
+     :store.section/label            public
+     :store.section/path             public
+     :store.owner/user               public
+     :store.owner/role               public
+     :store.item/uuid                public
+     :store.item/name                public
+     :store.item/description         public
+     :store.item/price               public
+     :store.item/category            public
+     :store.item/section             public
+     :store.item/photos              public
+     :store.item/skus                public
+     :store.item.photo/photo         public
+     :store.item.photo/index         public
+     :store.item.sku/variation       public
+     :store.item.sku/inventory       public
+     :store.item.sku.inventory/type  public
+     :store.item.sku.inventory/value public
+     :photo/path                     public
+     :stream/title                   public
+     :stream/store                   public
+     :stream/state                   public
+     ;; store-owner
+     :stream/token                   (fn [user-id store-ids]
+                                       (store-path store-ids [:stream/store]))
+     :user.cart/items                (fn [user-id store-ids]
+                                       (user-path user-id [:user/_cart]))
+     :chat/store                     public
+     :chat/messages                  public
+     :chat.message/text              public
+     :chat.message/user              public
+     ;; store or user for the order. order-owner ?
+     :order/charge                   order-owner
+     :order/amount                   order-owner
+     :order/status                   order-owner
+     :order/store                    order-owner
+     :order/user                     order-owner
+     :order/uuid                     order-owner
+     :order/shipping                 order-owner
+     :order/items                    order-owner
+     :order.item/parent              order-item-owner
+     :order.item/type                order-item-owner
+     :order.item/amount              order-item-owner
+     ;; store or user?
+     :charge/id                      (fn [user-id store-ids]
+                                       (filter-or
+                                         (user-path user-id [:order/_charge :order/user])
+                                         (store-path store-ids [:order/_charge :order/store])))
+     ;; order owner
+     :shipping/name                  shipping-address-owner
+     :shipping/address               shipping-address-owner
+     :shipping.address/street        shipping-address-owner
+     :shipping.address/street2       shipping-address-owner
+     :shipping.address/postal        shipping-address-owner
+     :shipping.address/locality      shipping-address-owner
+     :shipping.address/region        shipping-address-owner
+     :shipping.address/country       shipping-address-owner
+     :category/path                  public
+     :category/name                  public
+     :category/label                 public
+     :category/children              public
+     :user/created-at                public
+     :store/created-at               public
+     :store.item/created-at          public
+     :store.item/index               public
+     :photo/id                       public}))
 
 (defn filter-authed [db authed-user-id authed-store-ids]
-  (let [filters (filter-by-attribute {:user-id  authed-user-id
-                                      ;; TODO: Should check for all owned stores.
-                                      :store-id (first authed-store-ids)})]
+  (let [authed-store-ids (set authed-store-ids)
+        filter-cache (atom {})
+        get-filter (memoize
+                     (fn [a]
+                       (let [filter-fn (get filter-by-attribute (:ident (d/attribute db a)))]
+                         (if-some [filter (get @filter-cache filter-fn)]
+                           filter
+                           (let [filter (filter-fn authed-user-id authed-store-ids)]
+                             (swap! filter-cache assoc filter-fn filter)
+                             filter)))))]
     (d/filter db (fn [db datom]
-                   (if-let [filter (get filters (:ident (d/attribute db (:a datom))))]
+                   (if-let [filter (get-filter (:a datom))]
                      (filter db datom)
                      (throw (ex-info "Filter not implemented for attribute"
                                      {:attribute (d/attribute db (:a datom))})))))))
