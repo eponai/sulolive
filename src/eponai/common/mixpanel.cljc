@@ -1,10 +1,35 @@
 (ns eponai.common.mixpanel
   (:require
-    [taoensso.timbre :refer [warn]]))
+    [taoensso.timbre :refer [warn debug]]
+    #?(:clj [clojure.data.json :as json])
+    #?(:clj [clj-http.client :as http])
+    #?(:clj [buddy.core.codecs.base64 :as base64])))
 
+#?(:clj
+   (def token-atom (atom nil)))
+
+#?(:clj
+   (def tokens
+     {::token-dev     "5b80eeb6f690b9f97815f4cce58d96ac"
+      ::token-release "b266c99172ca107a814c16cb22661d04"}))
+
+#?(:clj
+   (defn set-token [key]
+     (let [token (get tokens key)]
+       (reset! token-atom token))))
 
 (defn track [event & [properties]]
-  #?(:cljs (.track js/mixpanel event (clj->js properties))))
+  #?(:cljs (.track js/mixpanel event (clj->js properties))
+     :clj  (if-let [token @token-atom]
+             (let [params (json/write-str {:event event
+                                           :properties (merge properties {:token token})})]
+               (debug "Params: " params)
+               (debug "Query params: " {:query-params {:data (String. (base64/encode params true))}})
+               (http/get "https://api.mixpanel.com/track"
+                         {:query-params {:data (String. (base64/encode params true))}}))
+             (throw (ex-info "Mixpanel token is nil, make sure to set token before first call to track"
+                             {:event      event
+                              :properties properties})))))
 
 (def events
   {

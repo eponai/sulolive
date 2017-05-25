@@ -17,7 +17,8 @@
     [eponai.common :as c]
     [clojure.spec :as s]
     [medley.core :as medley]
-    [clojure.string :as string]))
+    [clojure.string :as string]
+    [eponai.common.mixpanel :as mixpanel]))
 
 (def auth-token-cookie-name "sulo-auth-token")
 (def auth-token-remove-value "kill")
@@ -155,14 +156,18 @@
   (let [auth0 (get-in request [:eponai.server.middleware/system :system/auth0])
         {:keys [code state]} params
         {:keys [redirect-url token profile]} (auth0/authenticate auth0 code state)
-        old-user (db/lookup-entity (db/db conn) [:user/email (:email profile)])]
-    (when-not old-user
-      (let [new-user (f/auth0->user profile)]
-        (info "Auth - authenticated user did not exist, creating new user.")
-        (debug "Auth - new user: " new-user)
-        (db/transact-one conn new-user)))
+        old-user (db/lookup-entity (db/db conn) [:user/email (:email profile)])
+        user (if-not (some? old-user)
+               (let [new-user (f/auth0->user profile)
+                     _ (info "Auth - authenticated user did not exist, creating new user.")
+                     result (db/transact-one conn new-user)]
+                 (debug "Auth - new user: " new-user)
+                 (db/lookup-entity (:db-after result) [:user/email (:email profile)]))
+               old-user)]
     (if token
-      (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token})
+      (do
+        (mixpanel/track "Sign in user" {:distinct_id (:db/id user)})
+        (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token}))
       (prompt-login request))))
 
 (defn agent-whitelisted? [request]
