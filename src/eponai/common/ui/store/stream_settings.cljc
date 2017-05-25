@@ -14,7 +14,8 @@
     [eponai.web.ui.store.common :as store-common]
     [eponai.client.routes :as routes]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.web.ui.button :as button]))
+    [eponai.web.ui.button :as button]
+    [eponai.common.mixpanel :as mixpanel]))
 
 (defn- get-store [component-or-props]
   (get-in (om/get-computed component-or-props) [:store]))
@@ -77,15 +78,20 @@
                   (cond
                     (= stream-state :stream.state/online)
                     (dom/a
-                      (->> (css/button {:onClick #(om/transact! this [(list 'stream/go-live {:store-id (:db/id store)}) :query/stream])})
+                      (->> (css/button {:onClick #(do
+                                                   (mixpanel/track "Store: Stream go live")
+                                                   (om/transact! this [(list 'stream/go-live {:store-id (:db/id store)}) :query/stream]))})
                            (css/add-class :highlight))
                       (dom/strong nil "Go live!"))
                     (= stream-state :stream.state/live)
                     (dom/a
-                      (css/button-hollow {:onClick #(om/transact! this [(list 'stream/end-live {:store-id (:db/id store)}) :query/stream])})
+                      (css/button-hollow {:onClick #(do
+                                                     (mixpanel/track "Store: Stream end live")
+                                                     (om/transact! this [(list 'stream/end-live {:store-id (:db/id store)}) :query/stream]))})
                       (dom/strong nil "End live")))
                   (button/default-hollow
                     {:onClick #(binding [parser/*parser-allow-local-read* false]
+                                (mixpanel/track "Store: Stream refresh")
                                 (om/transact! this [:query/stream]))}
                     (dom/i {:classes ["fa fa-refresh fa-fw"]})
                     (when (or (nil? stream-state) (= stream-state :stream.state/offline))
@@ -107,6 +113,7 @@
                      ;; TODO: Implement this in the new video player if we want to.
                      :video-player-opts     {:on-error-retry-forever? true
                                              :on-started-playing      #(when (= stream-state :stream.state/offline)
+                                                                        (mixpanel/track "Store: Stream started playing")
                                                                          (om/transact! this `[(~'stream/ensure-online
                                                                                                 ~{:store-id (:db/id store)})
                                                                                               :query/stream]))}
@@ -181,8 +188,10 @@
                   (grid/column
                     nil
                     (button/default-hollow
-                      {:onClick #(msg/om-transact! this `[(stream-token/generate ~{:store-id (:db/id store)})
-                                                          {:query/stream [:stream/token]}])}
+                      {:onClick #(do
+                                  (mixpanel/track "Store: Generate stream key")
+                                  (msg/om-transact! this `[(stream-token/generate ~{:store-id (:db/id store)})
+                                                              {:query/stream [:stream/token]}]))}
                       (dom/span nil "Create new key")))))))
           (grid/column
             nil
@@ -204,7 +213,8 @@
                            (dom/span nil "Before you can start streaming on SULO Live, you need to download encoding software, and then set it up.
                          Learn more about setting up encoders in our ")
                            (dom/a {:href   (routes/url :help/first-stream)
-                                   :target "_blank"}
+                                   :target "_blank"
+                                   :onClick #(mixpanel/track "Store: Go to streaming guide")}
                                   (dom/span nil "First Stream Guide"))
                            (dom/span nil ". You'll need to use the Server URL and Stream key to configure the encoding software.")))
                   (dom/dt

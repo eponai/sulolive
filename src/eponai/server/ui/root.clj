@@ -41,7 +41,7 @@
           (dom/script {:src  (common/budget-js-path)
                        :type common/text-javascript})
 
-          (when (and release? (some? (:user-id auth)))
+          (when (some? (:user-id auth))
             (common/inline-javascript [(str "mixpanel.identify(\"" (:user-id auth) "\");")
                                        (str "mixpanel.people.set_once({\"$email\": \"" (:email auth) "\"});")]))
 

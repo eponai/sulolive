@@ -12,7 +12,8 @@
     [clojure.string :as str]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
-    [eponai.common.ui.elements.menu :as menu]))
+    [eponai.common.ui.elements.menu :as menu]
+    [eponai.common.mixpanel :as mixpanel]))
 
 (defn get-messages [component]
   (let [messages (get-in (om/props component) [:query/chat :chat/messages])
@@ -33,6 +34,8 @@
 (defn send-message [component]
   (let [chat-message (get-chat-message component)]
     (when-not (str/blank? chat-message)
+      (mixpanel/track "Send chat message" {:message chat-message
+                                           :store-id (get-store-id component)})
       (om/transact! component `[(chat/send-message
                                   ~{:store (select-keys (get-store component) [:db/id])
                                     :text  chat-message})
@@ -85,6 +88,7 @@
            (set! (.-scrollTop chat-content) (.-scrollHeight chat-content))))))
   (toggle-chat [this show?]
     (let [{:keys [on-toggle-chat]} (om/get-computed this)]
+      (mixpanel/track "Toggle chat window" {:show show?})
       (when on-toggle-chat
         (on-toggle-chat show?))
       (om/update-state! this assoc :show-chat? show?)))

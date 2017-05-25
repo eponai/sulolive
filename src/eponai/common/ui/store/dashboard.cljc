@@ -24,7 +24,8 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.format.date :as date]
     [eponai.web.ui.photo :as photo]
-    [eponai.web.ui.button :as button]))
+    [eponai.web.ui.button :as button]
+    [eponai.common.mixpanel :as mixpanel]))
 
 (defn find-product [store product-id]
   (let [product-id (c/parse-long product-id)]
@@ -239,7 +240,8 @@
                   (dom/h3 nil (get-in store [:store/profile :store.profile/name]))
                   (photo/store-photo store {:transformation :transformation/thumbnail})
                   (button/default-hollow
-                    {:href (routes/url :store-dashboard/profile {:store-id store-id})}
+                    {:href (routes/url :store-dashboard/profile {:store-id store-id})
+                     :onClick #(mixpanel/track-key ::mixpanel/go-to-store-info {:source "store-dashboard"})}
                     (dom/span nil "Store info")
                     (dom/i {:classes ["fa fa-chevron-right"]})))
 
@@ -252,7 +254,8 @@
                       (dom/h3 nil "Products")
                       (dom/p (css/add-class :stat) (count (:store/items store)))
                       (button/default-hollow
-                        {:href (routes/url :store-dashboard/product-list {:store-id store-id})}
+                        {:href    (routes/url :store-dashboard/product-list {:store-id store-id})
+                         :onClick #(mixpanel/track-key ::mixpanel/go-to-products {:source "store-dashboard"})}
                         (dom/span nil "Products")
                         (dom/i {:classes ["fa fa-chevron-right"]})))
                     (grid/column
@@ -260,7 +263,8 @@
                       (dom/h3 nil "Orders")
                       (dom/p (css/add-class :stat) (count (:order/_store store)))
                       (button/default-hollow
-                        {:href (routes/url :store-dashboard/order-list {:store-id store-id})}
+                        {:href (routes/url :store-dashboard/order-list {:store-id store-id})
+                         :onClick #(mixpanel/track-key ::mixpanel/go-to-orders {:source "store-dashboard"})}
                         (dom/span nil "Orders")
                         (dom/i {:classes ["fa fa-chevron-right"]})))))))
 

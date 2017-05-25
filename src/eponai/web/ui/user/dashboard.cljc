@@ -10,6 +10,7 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.input-validate :as v]
+    [eponai.common.mixpanel :as mixpanel]
     [eponai.web.ui.photo :as photo]
     #?(:cljs [cljs.spec :as s]
        :clj
@@ -102,6 +103,7 @@
                                      :on-photo-queue  (fn [img-result]
                                                         (om/update-state! component assoc :queue-photo {:src img-result}))
                                      :on-photo-upload (fn [photo]
+                                                        (mixpanel/track "Upload profile photo")
                                                         (om/update-state! component (fn [s]
                                                                                       (-> s
                                                                                           (assoc :photo-upload photo)
@@ -276,8 +278,10 @@
              (dom/p nil (dom/small nil "New cards are saved at checkout.")))
            (dom/div
              (css/add-class :action-buttons)
-             (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))
-             (button/user-setting-cta {:onClick on-close} (dom/span nil "Save")))])))))
+             (button/user-setting-default {:onClick #(do
+                                                      (mixpanel/track "Close shipping info")
+                                                      (on-close))} (dom/span nil "Close"))
+             (button/user-setting-cta {:onClick #(do (mixpanel/track "Save payment info"))} (dom/span nil "Save")))])))))
 (defui UserDashboard
   static om/IQuery
   (query [_]
@@ -308,6 +312,7 @@
              validation (validate ::shipping shipping-map)]
          (debug "Validation: " validation)
          (when (nil? validation)
+           (mixpanel/track "Save shipping info")
            (msg/om-transact! this [(list 'stripe/update-customer {:shipping shipping-map})
                                    :query/stripe-customer]))
          (om/update-state! this assoc :shipping/input-validation validation))))
@@ -318,6 +323,7 @@
              validation (validate :user.info/name input-name)]
          (debug "validation: " validation)
          (when (nil? validation)
+           (mixpanel/track "Save public profile")
            (msg/om-transact! this (cond-> [(list 'user.info/update {:user/name input-name})]
                                           (some? photo-upload)
                                           (conj (list 'photo/upload {:photo photo-upload}))
@@ -411,7 +417,9 @@
                     (dom/span nil (:user.profile/name user-profile))
                     (photo/user-photo auth {:transformation :transformation/thumbnail}))
                   (button/user-setting-default
-                    {:onClick #(om/update-state! this assoc :modal :modal/edit-profile)}
+                    {:onClick #(do
+                                (mixpanel/track "Edit profile")
+                                (om/update-state! this assoc :modal :modal/edit-profile))}
                     (dom/span nil "Edit profile"))))))
           (dom/div
             (css/add-class :section-title)
@@ -446,7 +454,9 @@
                     (dom/p nil (dom/small nil (dom/i nil "No default card")))
                     )
                   (button/user-setting-default
-                    {:onClick #(om/update-state! this assoc :modal :modal/payment-info)}
+                    {:onClick #(do
+                                (mixpanel/track "Manage payment info")
+                                (om/update-state! this assoc :modal :modal/payment-info))}
                     (dom/span nil "Manage payment info")))))
             (menu/item
               nil
@@ -476,7 +486,9 @@
                     (dom/p nil (dom/small nil (dom/i nil "No saved address")))
                     )
                   (button/user-setting-default
-                    {:onClick #(om/update-state! this assoc :modal :modal/shipping-info)}
+                    {:onClick #(do
+                                (mixpanel/track "Manage shipping")
+                                (om/update-state! this assoc :modal :modal/shipping-info))}
                     (dom/span nil "Manage shipping info"))))))
 
           (dom/div
