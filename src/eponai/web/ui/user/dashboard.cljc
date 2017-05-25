@@ -219,7 +219,10 @@
           (css/add-class :action-buttons)
           (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))
           (button/user-setting-cta
-            {:onClick #(.save-shipping-info component)}
+            (->> {:onClick #(do
+                             ;(.save-shipping-info component)
+                             )}
+                 (css/add-class :disabled))
             (dom/span nil "Save")))))))
 
 (defn payment-info-modal [component]

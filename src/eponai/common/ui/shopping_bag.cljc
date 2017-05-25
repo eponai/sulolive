@@ -111,9 +111,11 @@
                 (dom/p nil
                        (dom/span nil "Total: ")
                        (dom/strong nil (utils/two-decimal-price (+ item-price shipping-price))))
-                (button/button
-                  {:href (routes/url :checkout {:store-id (:db/id s)})}
-                  (dom/span nil "Checkout")))))))
+                (dom/a
+                  (->> {:href (routes/url :checkout {:store-id (:db/id s)})}
+                       (css/button)
+                       (css/add-class :disabled)) "Checkout"))))
+          ))
       skus-by-store)))
 
 (defui ShoppingBag
