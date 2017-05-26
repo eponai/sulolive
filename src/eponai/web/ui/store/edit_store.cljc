@@ -470,19 +470,22 @@
                                                (mixpanel/track "Store: Cancel edit shipping policy")
                                                (om/update-state! this assoc :edit/shipping-policy false)
                                                (quill/set-content (:editor/shipping-policy state) (f/bytes->str shipping-policy)))})
-                    (button/save {:onClick #(.save-shipping-policy this)}))
+                    (button/save {:onClick #(do
+                                             (mixpanel/track "Store: Save shipping policy")
+                                             ;(.save-shipping-policy this)
+                                             )}))
                   (button/edit {:onClick #(do
                                            (mixpanel/track "Store: Edit shipping policy")
                                            (om/update-state! this assoc :edit/shipping-policy true))})))
               (callout/callout-small
                 (css/add-classes [:store-info-policy :store-info-policy--shipping])
-                ;(when (:edit/shipping-policy state)
-                ;  (dom/p nil
-                ;         (dom/small nil "Bas"))
-                ;  (callout/callout-small
-                ;    (css/add-class :warning)
-                ;    (dom/small nil
-                ;               "We're not quite there yet with shipping settings, so this info cannot be saved for now. We're working on it, hang in there!")))
+                (when (:edit/shipping-policy state)
+                  (dom/p nil
+                         (dom/small nil "Bas"))
+                  (callout/callout-small
+                    (css/add-class :warning)
+                    (dom/small nil
+                               "We're not quite ready with the work on shipping settings, so this section cannot be saved yet. We're working on it, hang in there!")))
                 (dom/div
                   (->> (css/add-class :shipping-fee))
                   ;(grid/column
