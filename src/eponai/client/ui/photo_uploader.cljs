@@ -57,8 +57,8 @@
               (when on-photo-upload
                 (on-photo-upload response))))))))
 
-  (componentDidUpdate [this _ _]
-    (debug "Photo uploader updated: " (om/get-state this)))
+  ;(componentDidUpdate [this _ _]
+  ;  (debug "Photo uploader updated: " (om/get-state this)))
 
   (render [this]
     (let [{:keys [id]} (om/props this)]

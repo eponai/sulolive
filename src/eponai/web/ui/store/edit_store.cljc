@@ -411,7 +411,7 @@
           {:query/keys [current-route countries]} (om/props this)
           {:keys [store-id]} (:route-params current-route)
           {:return-policy/keys [on-editor-create on-editor-change] :as state} (om/get-state this)]
-      (debug "Countries: " countries)
+      ;(debug "Countries: " countries)
       (dom/div
         {:id "sulo-store-edit"}
         (grid/row-column
