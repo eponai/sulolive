@@ -19,7 +19,7 @@
                               store-id)]
       (let [{:keys  [store/profile]
              stream :stream/_store} store
-            image (photos/transform (get-in profile [:store.profile/photo :photo/id]) :transformation/full)
+            image (photos/transform (get-in profile [:store.profile/photo :photo/id]) :transformation/thumbnail-large)
             stream-url (when (= :stream.state/live
                                 (:stream/state stream))
                          (stream/wowza-live-stream-url (wowza/subscriber-url (:system/wowza system))
@@ -55,7 +55,7 @@
                                                       {:store.item.photo/photo [:photo/id]}]}]
                                 product-id)]
       (let [photo (first (sort-by :store.item.photo/index (:store.item/photos product)))
-            image (photos/transform (get-in photo [:store.item.photo/photo :photo/id]) :transformation/full)
+            image (photos/transform (get-in photo [:store.item.photo/photo :photo/id]) :transformation/preview)
             server-host (host/webserver-url (:system/server-address system))
             description-html (f/bytes->str (:store.item/description product))
             description-text (if description-html
