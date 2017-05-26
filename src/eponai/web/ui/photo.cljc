@@ -7,10 +7,21 @@
     [taoensso.timbre :refer [debug warn]]))
 
 #?(:cljs
-   (defn is-loaded? [photo-url]
-     (let [img (js/Image.)]
-       (set! (.-src img) photo-url)
-       (.-complete img))))
+   (let [loaded-url-cache (atom nil)]
+     (defn is-loaded? [photo-url]
+       (let [img (js/Image.)
+             _ (set! (.-src img) photo-url)
+             loaded? (.-complete img)]
+         (if loaded?
+           (if (contains? @loaded-url-cache photo-url)
+             ;; It's loaded and it's not the first time we check this.
+             true
+             ;; Return false the first time to let the animation happen.
+             (do (swap! loaded-url-cache (fnil conj #{}) photo-url)
+                 false))
+           (do
+             (swap! loaded-url-cache (fnil disj #{}) photo-url)
+             false))))))
 
 (defui Photo
   Object
