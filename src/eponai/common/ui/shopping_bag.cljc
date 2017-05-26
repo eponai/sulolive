@@ -14,7 +14,8 @@
     [eponai.common.ui.icons :as icons]
     [eponai.web.ui.photo :as photo]
     [eponai.common.ui.elements.callout :as callout]
-    [eponai.web.ui.button :as button]))
+    [eponai.web.ui.button :as button]
+    [eponai.common.mixpanel :as mixpanel]))
 
 (defn items-by-store [items]
   (group-by #(get-in % [:store.item/_skus :store/_items]) items))
@@ -45,12 +46,13 @@
          item-name        :store.item/name :as product} (get sku :store.item/_skus)
         {:store.item.photo/keys [photo]} (first (sort-by :store.item.photo/index photos))]
     (menu/item
-      nil
+      (css/add-class :sl-productlist-item--row)
       (grid/row
         (->> (css/align :middle)
-             (css/add-class :item))
+             (css/add-class :item)
+             (css/add-class :sl-productlist-item--cell))
         (grid/column
-          (grid/column-size {:small 3 :medium 2 :large 1})
+          (grid/column-size {:small 2 :medium 1})
           (photo/product-preview product {:transformation :transformation/thumbnail}))
 
         (grid/column
@@ -70,22 +72,27 @@
         ;  (css/text-align :right)
         ;  (dom/i {:classes ["fa fa-trash-o"]}))
         (grid/column
-          (css/text-align :right)
-          (dom/div nil
-                   (dom/span
-                     (css/add-class :price)
-                     (utils/two-decimal-price price))))
-        (grid/column
           (->>
             (css/add-class :shrink)
-            (css/align :right))
-          (dom/a {:onClick #(.remove-item component sku)} (dom/i {:classes ["fa fa-trash-o"]}))
+            (css/align :right)
+            (css/add-class :sl-productlist-item--cell))
+          (button/default-hollow
+            {:onClick #(.remove-item component sku)}
+            (dom/span nil "Remove"))
           ;(dom/input {:type             "number"
           ;               ;; :defaultValue doesn't work for clj dom/input.
           ;               ;; File om.next/dom bug?
           ;                :defaultValue 1
           ;                #?@(:clj [:value 1])})
           )
+        (grid/column
+          (->> (css/text-align :right)
+               (css/add-class :sl-productlist-item--cell))
+          (dom/div nil
+                   (dom/span
+                     (css/add-class :price)
+                     (utils/two-decimal-price price))))
+
         ))))
 
 (defn store-items-element [component skus-by-store]
@@ -112,9 +119,11 @@
                        (dom/span nil "Total: ")
                        (dom/strong nil (utils/two-decimal-price (+ item-price shipping-price))))
                 (dom/a
-                  (->> {:href (routes/url :checkout {:store-id (:db/id s)})}
-                       (css/button)
-                       (css/add-class :disabled)) "Checkout"))))
+                  (->> {:href    "#"                        ;(routes/url :checkout {:store-id (:db/id s)})
+                        :onClick #(mixpanel/track "Checkout shopping bag" {:store-id   (:db/id s)
+                                                                           :store-name (get-in s [:store/profile :store.profile/name])
+                                                                           :item-count (count skus)})}
+                       (css/button)) "Checkout"))))
           ))
       skus-by-store)))
 
@@ -129,7 +138,8 @@
                                                           {:store.item/photos [{:store.item.photo/photo [:photo/id]}
                                                                                :store.item.photo/index]}
                                                           :store.item/name
-                                                          {:store/_items [{:store/profile [:store.profile/name
+                                                          {:store/_items [:db/id
+                                                                          {:store/profile [:store.profile/name
                                                                                            {:store.profile/photo [:photo/id]}]}]}]}]}]}
      {:query/auth [:user/email]}])
   Object

@@ -65,5 +65,12 @@
 		flex-direction: column;
 		justify-content: space-between;
 	}
+
+	.sl-productlist-item--cell {
+		.button.hollow {
+			border: none;
+			font-weight: $global-weight-normal;
+		}
+	}
 }
 

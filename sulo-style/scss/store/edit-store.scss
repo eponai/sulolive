@@ -48,6 +48,9 @@
 		.section-error {
 			text-align: center;
 		}
+		.sl-quill-editor-container {
+			// color: $dark-gray;
+		}
 
 		.callout {
 			@include breakpoint(large) {
@@ -93,22 +96,29 @@
 
 						&.disabled {
 							flex: 1;
-							min-height: 15rem;
+							min-height: 19rem;
 						}
 					}
 				}
+			}
+			small {
+				color: $dark-gray;
 			}
 			.callout {
 				display: flex;
 				flex-direction: column;
 				// flex: 1;
+				&.warning {
+					small {
+						color: $body-font-color;
+					}
+				}
 			}
 			input {
-				color: $dark-gray;
+				// color: $dark-gray;
+				max-width: 20rem;
 			}
-			small {
-				color: $dark-gray;
-			}
+		
 			.editable {
 				input {
 					color: $black;
@@ -201,7 +211,7 @@
 			.text {
 				padding: 0 0.5rem;
 				justify-content: flex-start;
-				font-size: 80%;
+				// font-size: 80%;
 			}
 			.edit-item-menu {
 				justify-content: stretch;

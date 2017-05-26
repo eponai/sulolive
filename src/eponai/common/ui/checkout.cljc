@@ -36,11 +36,13 @@
                                            :store.item/name
                                            {:store/_items [:db/id
                                                            {:store/profile [:store.profile/name
+                                                                            :store.profile/shipping-fee
                                                                             {:store.profile/photo [:photo/id]}]}]}]}
                        ]}
      {:query/stripe-customer [:stripe/id
                               :stripe/sources
-                              :stripe/shipping]}
+                              :stripe/shipping
+                              :stripe/default-source]}
      :query/current-route
      {:query/auth [:db/id
                    :user/email
@@ -52,6 +54,7 @@
     #?(:cljs
        (let [{:query/keys [current-route checkout]} (om/props this)
              {:checkout/keys [shipping]} (om/get-state this)
+             shipping-fee (get-in (first checkout) [:store.item/_skus :store/_items :store/profile :store.profile/shipping-fee] )
              {:keys [source]} payment
              {:keys [route-params]} current-route
              {:keys [store-id]} route-params]
@@ -61,7 +64,7 @@
                                                                      :source       source
                                                                      :shipping     shipping
                                                                      :items        items
-                                                                     :shipping-fee 5
+                                                                     :shipping-fee shipping-fee
                                                                      :subtotal     (review/compute-item-price items)}
                                                           :store-id (c/parse-long store-id)})])))))
   (save-payment [this]
@@ -119,10 +122,8 @@
           {:keys [route]} current-route
           checkout-resp (msg/last-message this 'store/create-order)
           subtotal (review/compute-item-price checkout)
-          shipping-fee 5
+          shipping-fee (get-in (first checkout) [:store.item/_skus :store/_items :store/profile :store.profile/shipping-fee] )
           grandtotal (+ subtotal shipping-fee)]
-
-      (debug "Stripe customer checkout : " stripe-customer)
 
       (common/page-container
         {:navbar navbar :id "sulo-checkout"}
@@ -153,6 +154,7 @@
                   (css/add-class :hide))
                 (pay/->CheckoutPayment (om/computed {:error   error-message
                                                      :amount  grandtotal
+                                                     :default-source (:stripe/default-source stripe-customer)
                                                      :sources (:stripe/sources stripe-customer)}
                                                     {:on-change #(do
                                                                   (debug "Got payment: " %)

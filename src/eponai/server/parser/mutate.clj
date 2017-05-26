@@ -260,9 +260,15 @@
           :error   "Could not update store info"}}
   {:action (fn []
              (let [db-store (db/pull (db/db state) [:store/profile] (:db/id store))
-                   s (-> (select-keys profile [:store.profile/name :store.profile/description :store.profile/tagline :store.profile/return-policy])
+                   s (-> (select-keys profile [:store.profile/name :store.profile/description :store.profile/tagline :store.profile/return-policy
+                                               :store.profile/shipping-policy :store.profile/shipping-fee])
                          (update :store.profile/description #(f/str->bytes (quill/sanitize-html %)))
                          (update :store.profile/return-policy #(f/str->bytes (quill/sanitize-html %)))
+                         (update :store.profile/shipping-fee #(if (not-empty %)
+                                                               (when-let [fee (c/parse-long-safe %)]
+                                                                 (bigdec fee))
+                                                               (bigdec 0)))
+                         (update :store.profile/shipping-policy #(f/str->bytes (quill/sanitize-html %)))
                          f/remove-nil-keys
                          (assoc :db/id (:db/id (:store/profile db-store))))]
                (debug "store/update-info with params: " s)

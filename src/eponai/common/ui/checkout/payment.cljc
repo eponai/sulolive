@@ -91,14 +91,14 @@
                             (not add-new-card?))
                        (css/add-class :hide)))
             (dom/div
-              (cond->> {:id "sulo-card-element"}
+              (cond->> {:id stripe-card-element}
                        (and (not-empty sources)
                             (not add-new-card?))
                        (css/add-class :hide))))
           (if (and (not-empty sources)
                      (not add-new-card?))
             (button/user-setting-default
-              {:onClick #(om/update-state! this assoc :add-new-card? true)}
+              {:onClick #(om/update-state! this assoc :add-new-card? true :selected-source :new-card)}
               (dom/span nil "Add new card...")))))
 
       ;(when (and (not-empty sources)
@@ -165,6 +165,12 @@
                                                       "::placeholder" {:color "#aab7c4"}}}}))]
            (.mount ^js/Stripe.card card (str "#" stripe-card-element))
            (om/update-state! this assoc :card card :stripe stripe)))))
+  (initLocalState [this]
+    (let [{:keys [default-source]} (om/props this)]
+      ;(debug "Mount with default source: " new-props)
+      {:selected-source (or default-source :new-card)}
+      ;(om/update-state! this assoc :selected-source (or default-source :new-card))
+      ))
 
   (render [this]
     (render-payment this (om/props this) (om/get-state this))))
