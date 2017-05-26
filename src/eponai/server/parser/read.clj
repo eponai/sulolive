@@ -14,7 +14,8 @@
     [eponai.server.api.store :as store]
     [eponai.common.api.products :as products]
     [eponai.server.api.user :as user]
-    [taoensso.timbre :as timbre]))
+    [taoensso.timbre :as timbre]
+    [clojure.data.json :as json]))
 
 (defmacro defread
   ""
@@ -298,3 +299,9 @@
                      {:where   '[[?owners :store.owner/user ?user]
                                  [?e :store/owners ?owners]]
                       :symbols {'?user (:user-id auth)}})})
+
+(defread query/countries
+  [{:keys [db db-history auth query]} _ _]
+  {:auth ::auth/any-user}
+  {:value (let [countries (json/read-str (slurp (str "public/assets/country-data.json")) :key-fn keyword)]
+            (debug "Countries: " countries))})

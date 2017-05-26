@@ -399,3 +399,8 @@
   [{:keys [target]} _ _]
   (when target
     {:remote true}))
+
+(defmethod client-read :query/countries
+  [{:keys [target]} _ _]
+  (when target
+    {:remote true}))
