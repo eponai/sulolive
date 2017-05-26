@@ -12,7 +12,8 @@
 (defprotocol ICloudinary
   (real-photo-id [this temp-id])
   (upload-dynamic-photo [this {:keys [public_id resource_type url]}])
-  (destroy-photo [this photo-id]))
+  ;(destroy-photo [this photo-id])
+  )
 
 (defn rename-photo [params]
   (let [resource-type "image"
@@ -20,11 +21,11 @@
         url (string/join "/" [photos/api-host photos/cloud-name resource-type endpoint])]
     (http/post url {:form-params params})))
 
-(defn destroy-photo [params]
-  (let [resource-type "image"
-        endpoint "destroy"
-        url (string/join "/" [photos/api-host photos/cloud-name resource-type endpoint])]
-    (http/post url {:form-params params})))
+;(defn destroy-photo [params]
+;  (let [resource-type "image"
+;        endpoint "destroy"
+;        url (string/join "/" [photos/api-host photos/cloud-name resource-type endpoint])]
+;    (http/post url {:form-params params})))
 
 (defn sign-params [params api-key api-secret]
   (let [include-params (->> (dissoc params :api_key :resource_type :type :file)
@@ -53,12 +54,13 @@
       (debug "Cloudinary: Renamed photo: " (json/read-str (:body result)))
       {:photo/path (string/replace url #"temp" "real")
        :photo/id   real-public-id}))
-  (destroy-photo [this photo-id]
-    (let [params {:public_id photo-id
-                  :timestamp (date/current-secs)
-                  :api_key   api-key}
-          result (destroy-photo (assoc params :signature (sign-params params api-key api-secret)))]
-      (debug "Cloudinary: Destroyed photo: " (json/read-str (:body result))))))
+  ;(destroy-photo [this photo-id]
+  ;  (let [params {:public_id photo-id
+  ;                :timestamp (date/current-secs)
+  ;                :api_key   api-key}
+  ;        result (destroy-photo (assoc params :signature (sign-params params api-key api-secret)))]
+  ;    (debug "Cloudinary: Destroyed photo: " (json/read-str (:body result)))))
+  )
 
 (defn cloudinary-dev [api-key api-secret]
   (->Cloudinary api-key api-secret "dev"))
