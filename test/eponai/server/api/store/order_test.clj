@@ -6,7 +6,8 @@
     [eponai.server.api.store.test-util :refer [store-test stripe-test-payment-succeeded stripe-test-payment-failed user-test]]
     [eponai.server.test-util :refer [new-db]]
     [clojure.core.async :as async]
-    [eponai.common.database :as db])
+    [eponai.common.database :as db]
+    [eponai.common.format :as cf])
   (:import (clojure.lang ExceptionInfo)))
 
 (deftest create-order-payment-succeeded
@@ -16,7 +17,7 @@
                       (assoc :store.item/skus [(f/sku {:store.item.sku/variation "sku"})]))
           store (-> (store-test)
                     (assoc :store/items [product]))
-          user (user-test)
+          user (assoc (user-test) :user/cart (cf/add-tempid {:user.cart/items (:store.item/skus product)}))
           conn (new-db [store user])
           db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid store)])
           db-sku (db/pull-one-with (db/db conn) [:db/id {:store.item/_skus [:store.item/price]}] {:where '[[_ :store.item/skus ?e]]})
@@ -54,7 +55,7 @@
                       (assoc :store.item/skus [(f/sku {:store.item.sku/variation "sku"})]))
           store (-> (store-test)
                     (assoc :store/items [product]))
-          user (user-test)
+          user (assoc (user-test) :user/cart (cf/add-tempid {:user.cart/items (:store.item/skus product)}))
           conn (new-db [store user])
           db-store (db/pull (db/db conn) [:db/id] [:store/uuid (:store/uuid store)])
           db-sku (db/pull-one-with (db/db conn) [:db/id {:store.item/_skus [:store.item/price]}] {:where '[[_ :store.item/skus ?e]]})
