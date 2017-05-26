@@ -9,9 +9,12 @@ $editor-font-family: $header-font-family-sans-serif;//$header-font-family-serif;
 	}
 	white-space: pre-wrap;
 }
-.quill-content-render {
+.sl-quill-renderer {
 	.ql-toolbar {
 		visibility: hidden;
+	}
+		> * {
+		white-space: pre-wrap;
 	}
 }
 #sulo-store-dashboard {
