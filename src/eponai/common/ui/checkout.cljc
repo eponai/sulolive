@@ -36,7 +36,7 @@
                                            :store.item/name
                                            {:store/_items [:db/id
                                                            {:store/profile [:store.profile/name
-                                                                            :store.profile/shipping-fee
+                                                                            ;:store.profile/shipping-fee
                                                                             {:store.profile/photo [:photo/id]}]}]}]}
                        ]}
      {:query/stripe-customer [:stripe/id
@@ -54,7 +54,7 @@
     #?(:cljs
        (let [{:query/keys [current-route checkout]} (om/props this)
              {:checkout/keys [shipping]} (om/get-state this)
-             shipping-fee (get-in (first checkout) [:store.item/_skus :store/_items :store/profile :store.profile/shipping-fee] )
+             shipping-fee (get-in (first checkout) [:store.item/_skus :store/_items :store/profile :store.profile/shipping-fee] 0)
              {:keys [source]} payment
              {:keys [route-params]} current-route
              {:keys [store-id]} route-params]
@@ -122,7 +122,7 @@
           {:keys [route]} current-route
           checkout-resp (msg/last-message this 'store/create-order)
           subtotal (review/compute-item-price checkout)
-          shipping-fee (get-in (first checkout) [:store.item/_skus :store/_items :store/profile :store.profile/shipping-fee] )
+          shipping-fee (get-in (first checkout) [:store.item/_skus :store/_items :store/profile :store.profile/shipping-fee] 0)
           grandtotal (+ subtotal shipping-fee)]
 
       (common/page-container

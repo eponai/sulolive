@@ -166,8 +166,8 @@
                                      :store.profile/name
                                      :store.profile/tagline
                                      :store.profile/return-policy
-                                     :store.profile/shipping-policy
-                                     :store.profile/shipping-fee
+                                     ;:store.profile/shipping-policy
+                                     ;:store.profile/shipping-fee
                                      {:store.profile/cover [:photo/id]}
                                      {:store.profile/photo [:photo/path :photo/id]}]}
                     {:store/owners [{:store.owner/user [:user/email]}]}

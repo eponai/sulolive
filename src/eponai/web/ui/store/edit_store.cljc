@@ -497,7 +497,7 @@
                   (dom/input
                     (cond-> {:id           (:field.shipping/fee form-inputs)
                              :type         "number"
-                             :defaultValue shipping-fee
+                             :defaultValue (or shipping-fee 0)
                              :step         0.01}
                             (not (:edit/shipping-policy state))
                             (assoc :readOnly true)))
