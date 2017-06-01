@@ -19,6 +19,7 @@
   Hopefully overtime, we figure out an easier way to describe
   incrementally updatable database filters."
   (:require [datomic.api :as d]
+            [eponai.server.datomic.query :as query]
             [taoensso.timbre :as timbre :refer [debug trace]]
             ))
 
@@ -52,29 +53,69 @@
             (rest fns))
     unauthorized-filter))
 
-(defn- walk-entity-path [db from path to]
-  ;; TODO: IMPLEMENT.
-  ;; where to can be a number or a set of matching db/ids.
-  ;; - Walk using d/datoms from <from> via <path> to <to>
-  ;;   - Enter <to> as the value when we're at the end of the path.
-  ;; - Remove "since" if it's on the database
-  ;;   - Otherwise it's possible that we can't detect the path
-  ;;   - (assoc (d/since (d/db conn) 1329) :sinceT nil)
-  (throw (ex-info "TODO: Implement." {:from from :path path :to to}))
-  )
+(defn- step-towards
+  ([db from attr] (step-towards db from attr nil))
+  ([db from attr & to]
+   (apply d/datoms db
+          (if (query/reverse-lookup-attr? attr) :avet :aevt)
+          (query/normalize-attribute attr)
+          from
+          to)))
+
+(defn- walk-to [db from attr to]
+  (step-towards db from attr to))
+
+(defn- walk-towards [db from attr tos]
+  (->> (step-towards db from attr)
+       (sequence (comp (map (if (query/reverse-lookup-attr? attr) :e :v))
+                       (filter #(contains? tos %))
+                       ;; We only need one, so we can short circuit all sequences.
+                       (take 1)))))
+
+(defn- walk-entity-path [db from [attr :as path] to]
+  (if (= 1 (count path))
+    (if (set? to)
+      (walk-towards db from attr to)
+      (walk-to db from attr to))
+    (sequence
+      (comp (map (if (query/reverse-lookup-attr? attr) :e :v))
+            (distinct)
+            (mapcat #(walk-entity-path db % (rest path) to))
+            (take 1))
+      (step-towards db from attr))))
+
+(defn de-since [db]
+  {:pre [(contains? db :sinceT)]}
+  (cond-> db (some? (:sinceT db)) (assoc :sinceT nil)))
 
 (defn user-path
   "Takes a user-id and a path to walk from the datom to reach the user-id."
   [user-id path]
   (require-user user-id
                 (fn [db [e]]
-                  (walk-entity-path db e path user-id))))
+                  (if-some [s (seq (walk-entity-path (de-since db) e path user-id))]
+                    (do (debug "user-id: " user-id " path: " path " e: " e)
+                        (debug "walked to: " (into [] s))
+                        (some? s))
+                    (debug "Found nothing walking "
+                           "user-id: " user-id
+                           " path: " path
+                           " e: " e)))))
 
 (defn store-path [store-ids path]
   "Takes a store-ids and a path to walk from the datom to reach any of the stores."
   (require-stores store-ids
                   (fn [db [e]]
-                    (walk-entity-path db e path store-ids))))
+                    (if-some [s (seq (walk-entity-path (de-since db) e path store-ids))]
+                      (do (debug "store-ids: " store-ids
+                                 " path: " path
+                                 " e: " e)
+                          (debug "walked to: " (into [] s))
+                          (some? s))
+                      (debug "Found nothing walking "
+                             "store-ids: " store-ids
+                             " path: " path
+                             " e: " e)))))
 
 (def filter-by-attribute
   (letfn [(user-attribute [user-id _]
@@ -199,9 +240,7 @@
                                  db-part
                                  (reset! db-partition-cache (:db/id (d/entity db [:db/ident :db.part/db]))))))]
     (fn [db datom]
-      ;; TODO: Remove this d/is-history?
-      (or (d/is-history db)
-          (is-db-partition? db datom)
+      (or (is-db-partition? db datom)
           (if-let [filter (get-filter db (:a datom))]
             (filter db datom)
             (throw (ex-info "Filter not implemented for attribute"
