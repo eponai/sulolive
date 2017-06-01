@@ -4,14 +4,19 @@
 
 	.reveal {
 		overflow: hidden;
-		max-height: 80vh;
-		min-height: 60vh;
+		height: 70vh;
+		min-height: 30rem;
+		max-height: 50rem;
+		padding-left: 0;
+		padding-right: 0;
+		// min-height: 60vh;
 		display: flex;
 		flex-direction: column;
 		small {
 			color: $dark-gray;
 		}
 		.section-title {
+			padding: 0 1rem;
 			margin: 0;
 			a.close-button {
 				position: inherit;
@@ -19,21 +24,90 @@
 			flex: 0 0 auto;
 			align-items: flex-start;
 		}
+		.section-container {
+			position: relative;
+			height: 100%;
+			width: 100%;
+
+			.section-content {
+				.action-buttons {
+					flex: 1 0 auto;
+					align-items: flex-end;
+					.button {
+						margin-top: 1rem;
+						margin-bottom: 0;
+					}
+				}
+				&.section-content--rates {
+					.action-buttons {
+						justify-content: space-between;
+					}
+				}
+			}
+		}
 		.section-content {
-			// overflow: scroll;
+			position: absolute;
+			padding: 0 1rem;
+			height: 100%;
+			width: 100%;
+			left: 0;
+			top: 0;
 			flex: 1;
 			display: flex;
 			flex-direction: column;
+			opacity: 0;
+			transition: left .37s ease-out, opacity .37s ease-out;
+			&.is-active {
+				opacity: 1;
+			}
 			.row {
 				flex: 0 0 auto;
 				margin: 0;
 			}
-			
+			&:first-child {
+				left: -100%;
+				// margin-right: 1rem;
+				&.is-active {
+					left: 0;
+					// margin-right: 0;
+				}
+			}
+			&:last-child {
+				left: 100%;
+				// margin-left: 1rem;
+				&.is-active {
+					left: 0;
+					// margin-left: 0;
+				}
+			}
+			input {
+				margin-bottom: 0;
+				&[type="number"] {
+					// max-width: 10rem;
+				}
+			}
+			p {
+				// margin-bottom: 0.25rem;
+			}
+			.row {
+				margin-bottom: 1rem;
+				.column {
+					&:first-child {
+						padding-left: 0;
+					}
+					&:last-child {
+						padding-right: 0;
+					}
+				}
+			}
+			.switch-container {
+				margin-top: 2rem;
+			}
 		}
 		.menu.vertical {
 			overflow-y: scroll;
 			border: $global-border;
-			// max-height: 60vh;
+			max-height: 100%;
 			border-bottom: none;
 			// padding: 0;
 			// flex: 1;

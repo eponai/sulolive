@@ -61,6 +61,13 @@ p a {
 }
 @include label-hollow;
 
+.switch-container {
+	display: flex;
+	.switch {
+		margin-right: 1rem;
+	}
+}
+
 .menu.share-menu {
 	// overflow-x: hidden;
 	.share-button {
