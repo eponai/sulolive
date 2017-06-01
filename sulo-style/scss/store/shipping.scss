@@ -3,9 +3,11 @@
 	margin: 0 auto;
 
 	.reveal {
-		// overflow: visible;
+		overflow: hidden;
 		max-height: 80vh;
-		min-height: 80vh;
+		min-height: 60vh;
+		display: flex;
+		flex-direction: column;
 		small {
 			color: $dark-gray;
 		}
@@ -14,18 +16,32 @@
 			a.close-button {
 				position: inherit;
 			}
+			flex: 0 0 auto;
 			align-items: flex-start;
 		}
+		.section-content {
+			// overflow: scroll;
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			.row {
+				flex: 0 0 auto;
+				margin: 0;
+			}
+			
+		}
 		.menu.vertical {
-			// overflow-y: scroll;
+			overflow-y: scroll;
 			border: $global-border;
-			// max-height: 50vh;
-
+			// max-height: 60vh;
+			border-bottom: none;
+			// padding: 0;
+			// flex: 1;
 			li {
 				padding: 0.5rem 0.75rem;
 				border-bottom: $global-border-secondary;
 				&:last-child {
-					border-bottom: none;
+					border-bottom: $global-border;
 				}
 				font-size: 90%;
 				display: flex;
@@ -40,6 +56,16 @@
 				&:hover {
 					background: rgba($light-gray, 0.2);
 				}
+			}
+			&::-webkit-scrollbar {
+				width: 1px;
+					// background: $black;
+			}
+			&::-webkit-scrollbar-track {
+				background: $white;
+			}
+			&::-webkit-scrollbar-thumb {
+				background: $medium-gray;//map-get($foundation-palette,primary);
 			}
 		}
 		// option {

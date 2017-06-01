@@ -45,19 +45,17 @@
     (common/modal
       {
        ;:on-close       on-close
-       :require-close? true}
+       ;:require-close? true
+       }
+      (dom/div
+        (css/add-class :section-title)
+        (dom/p (css/add-class :header) (dom/span nil "Add destinations"))
+        (dom/a
+          (css/add-class :close-button {:onClick on-close})
+          (dom/span nil "Cancel")))
 
       (dom/div
-        nil
-        (dom/div
-          (css/add-class :section-title)
-          (dom/p (css/add-class :header) (dom/span nil "Add destinations"))
-          (dom/a
-            (css/add-class :close-button {:onClick on-close})
-            (dom/span nil "Cancel")))
-
-
-
+        (css/add-class :section-content)
         (select/->SelectOne (om/computed {:options (reduce (fn [l [con cs]]
                                                              (into l (into [{:value     (:continent/code con)
                                                                              :label     (:continent/name con)
