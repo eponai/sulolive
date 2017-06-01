@@ -60,7 +60,8 @@
   ;; - Remove "since" if it's on the database
   ;;   - Otherwise it's possible that we can't detect the path
   ;;   - (assoc (d/since (d/db conn) 1329) :sinceT nil)
-  (throw (ex-info "TODO: Implement." {:from from :path path :to to})))
+  (throw (ex-info "TODO: Implement." {:from from :path path :to to}))
+  )
 
 (defn user-path
   "Takes a user-id and a path to walk from the datom to reach the user-id."
@@ -198,6 +199,7 @@
                                  db-part
                                  (reset! db-partition-cache (:db/id (d/entity db [:db/ident :db.part/db]))))))]
     (fn [db datom]
+      ;; TODO: Remove this d/is-history?
       (or (d/is-history db)
           (is-db-partition? db datom)
           (if-let [filter (get-filter db (:a datom))]
