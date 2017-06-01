@@ -1,97 +1,66 @@
 (ns eponai.server.datomic.filter-test
-  (:require [clojure.test :refer :all]
-            [datomic.api :as d]
+  (:require [clojure.test :as test :refer [deftest]]
+            [datomic.api :as datomic]
+            [datascript.core :as datascript]
             [eponai.common.database :as db]
-            [eponai.server.datomic.filter :as f]
-            [eponai.server.test-util :as util]
+            [eponai.server.datomic.filter :as filter]
             [taoensso.timbre :as timbre :refer [debug]]))
 
-(defn filter-db [db filters]
-  (->> filters
-       ))
+(defn create-conn []
+  (let [schema
+        (as-> (into {}
+                    (map (juxt identity (constantly {:db/valueType :db.type/ref})))
+                    [:user/profile
+                     :user.profile/photo
+                     :user/cart
+                     :user.cart/items
+                     :store/items
+                     :store/owners
+                     :store.owner/user])
+              $schema
+              (reduce (fn [m k]
+                        (assoc-in m [k :db/cardinality] :db.cardinality/many))
+                      $schema
+                      [:user.cart/items
+                       :store/items]))
+        conn (datascript/create-conn schema)
+        photo {:db/id    -2
+               :photo/id "photo-id"}
+        items [{:db/id -10
+                :store.item/name   "item 2"}
+               {:db/id -11
+                :store.item/name   "item 2"}]
+        user-1 {:db/id        -1
+                :user/stripe  {:stripe/publ "user-1 publ"}
+                :user/profile {:user.profile/name  "Mr. Tester"
+                               :user.profile/photo {:db/id -2}}
+                :user/cart    {:user.cart/items
+                               (into [] (comp (take 1)
+                                              (map :db/id))
+                                     items)}}
+        user-2 {:db/id        -3
+                :user/stripe  {:stripe/publ "user-2 publ"}
+                :user/profile {:user.profile/name  "Dr. Carla"
+                               :user.profile/photo {:db/id -2}}}
+        store {:store/owners {:store.owner/user user-1}
+               :store/items  (into [] (map :db/id) items)}]
+    (db/transact conn (concat [photo user-1 user-2 store]
+                              items))
+    conn))
 
-(defn make-query
-  "Takes queries that binds ?e.
-  Can take a query as a single vector or multiple vectors.
-  If ?e is not the first vectors first argument, it's added
-  into the vector. Examples that work:
+(deftest test-walking-entity-graphs
+  (let [conn (create-conn)
+        db (db/db conn)
+        user (db/one-with db {:where '[[?e :user/profile ?p]
+                                       [?p :user.profile/name "Mr. Tester"]]})
+        user-2 (db/one-with db {:where '[[?e :user/profile ?p]
+                                         [?p :user.profile/name "Dr. Carla"]]})
+        store (db/one-with db {:where '[[?e :store/owners]]})]
+    (test/are [test from path to]
+      (test (seq (filter/walk-entity-path db from (filter/attr-path path) to)))
 
-  [:attr]
-  [?e :attr]
-  [[?e :attr]]
-  [[:attr][:attr2]]
-  [[?e :attr ?y][?y ?attr :value]]"
-  [query]
-  (let [query (if (vector? (first query))
-                query
-                [query])
-        query (map (fn [v] (if (symbol? (first v))
-                             v
-                             (cons '?e v)))
-                   query)]
-    {:find '[[?e ...]] :where query}))
-
-;(deftest filters
-;  (let [user "filter-test@e.com"
-;        user2 "other-user@e.com"
-;        conn (util/new-db)
-;        project-uuid (d/squuid)
-;        project-uuid2 (d/squuid)
-;        _ (util/setup-db-with-user! conn [{:user user :project-uuid project-uuid}
-;                                          {:user user2 :project-uuid project-uuid2}])
-;        db (d/db conn)
-;        user-uuid (util/user-email->user-uuid db user)
-;        auth-db (filter-db db (f/authenticated-db-filters user-uuid))
-;        no-auth-db (filter-db db (f/not-authenticated-db-filters))
-;        something!= (fn [user-res db-res]
-;                    (and (not-empty user-res)
-;                         (not-empty db-res)
-;                         (not= user-res db-res)))
-;        none (fn [user-res db-res]
-;               (and (empty? user-res)
-;                    (seq db-res)))]
-;    (are [compare query database] (compare (d/q (make-query query) database)
-;                                      (d/q (make-query query) db))
-;                             ;none [:password/credential] TODO: remove password entity.
-;                             = [:currency/name] auth-db
-;                             = [:date/year] auth-db
-;                             = [:tag/name] auth-db
-;                             = [:conversion/date] auth-db
-;                             something!= '[?e :transaction/uuid] auth-db
-;                             something!= '[?e :project/uuid] auth-db
-;                                  ;; something!= '[?e :dashboard/uuid] auth-db
-;                             none '[?e :transaction/uuid] no-auth-db
-;                             none '[?e :project/uuid] no-auth-db
-;                                  ;; none '[?e :dashboard/uuid] no-auth-db
-;                             = [:db/ident :db/valueType] auth-db
-;                             = [:db.install/attribute] auth-db
-;                             = [:db/valueType :db.type/ref] auth-db
-;                             = [:db/cardinality :db.cardinality/many] auth-db
-;                             = [:db/ident :transaction/date] auth-db
-;                             = [:db/ident :transaction/date] auth-db
-;                             = '[[?e :db/ident :conversion/date]
-;                                 [?e :db/valueType ?id]
-;                                 [?id :db/ident :db.type/ref]] auth-db
-;                             = [:verification/uuid] auth-db
-;                             = [:verification/uuid] no-auth-db)))
-
-;(deftest filtered-db-contains-newly-created-entity
-;  (let [user "filter-test@e.com"
-;        conn (util/new-db)
-;        project-uuid (d/squuid)
-;        _ (util/setup-db-with-user! conn [{:user user :project-uuid project-uuid}])
-;        db (d/db conn)
-;        user-uuid (util/user-email->user-uuid db user)
-;        new-project-uuid (d/squuid)
-;        auth-filters (f/update-filters db (f/authenticated-db-filters user-uuid))
-;        {:keys [db-after]} (db/transact conn [{:project/name       "foo"
-;                                              :project/uuid       new-project-uuid
-;                                              :project/created-by [:user/uuid user-uuid]
-;                                              :project/users      [[:user/uuid user-uuid]]
-;                                              :db/id             (d/tempid :db.part/user)}])
-;        updated-filters (f/update-filters db-after auth-filters)
-;        db-after-with-filters (f/apply-filters db-after updated-filters)]
-;    (is (= db-after (d/db conn)))
-;    (are [db] (some? (d/entity db [:project/uuid new-project-uuid]))
-;              (d/db conn)
-;              db-after-with-filters)))
+      some? store [:store/owners :store.owner/user] user
+      nil? store [:store/owners :store.owner/user] user-2
+      some? store [:store/owners :store.owner/user
+                   :user/cart :user.cart/items
+                   :store/_items] store)))

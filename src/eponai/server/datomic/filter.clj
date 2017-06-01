@@ -18,7 +18,8 @@
   It sounds more complicated than it is..?
   Hopefully overtime, we figure out an easier way to describe
   incrementally updatable database filters."
-  (:require [datomic.api :as d]
+  (:require [datomic.api :as datomic]
+            [eponai.common.database :as db]
             [eponai.server.datomic.query :as query]
             [taoensso.timbre :as timbre :refer [debug trace]]
             ))
@@ -29,6 +30,9 @@
 
 (defn- unauthorized-filter [_ _]
   false)
+
+(defn- private-attr [_ _]
+  unauthorized-filter)
 
 (defn require-stores
   [store-ids f]
@@ -57,7 +61,7 @@
   ([db from attr]
    (step-towards db from attr nil))
   ([db from {:keys [reverse? normalized-attr]} & to]
-   (apply d/datoms db (if reverse? :avet :aevt) normalized-attr from to)))
+   (apply db/datoms db (if reverse? :avet :aevt) normalized-attr from to)))
 
 (defn- walk-to [db from attr to]
   (step-towards db from attr to))
@@ -69,7 +73,8 @@
                        ;; We only need one, so we can short circuit all sequences.
                        (take 1)))))
 
-(defn- walk-entity-path [db from [attr :as path] to]
+(defn walk-entity-path [db from [attr :as path] to]
+  {:pre [(or (number? to) (set? to))]}
   (if (= 1 (count path))
     (if (set? to)
       (walk-towards db from attr to)
@@ -85,7 +90,7 @@
   {:pre [(contains? db :sinceT)]}
   (cond-> db (some? (:sinceT db)) (assoc :sinceT nil)))
 
-(defn- attr-path [path]
+(defn attr-path [path]
   (into []
         (map #(hash-map :normalized-attr (query/normalize-attribute %)
                         :reverse? (query/reverse-lookup-attr? %)))
@@ -104,7 +109,10 @@
   (let [attrs (attr-path path)]
     (require-stores store-ids
                     (fn [db [e]]
-                      (some? (seq (walk-entity-path (de-since db) e attrs store-ids)))))))
+                      (some? (seq (walk-entity-path (de-since db) e attrs
+                                                    (cond-> store-ids
+                                                            (= 1 (count store-ids))
+                                                            (first)))))))))
 
 (def filter-by-attribute
   (letfn [(user-attribute [user-id _]
@@ -140,8 +148,8 @@
      :user.profile/name              public-attr
      :user.profile/photo             public-attr
      :stripe/id                      stripe-owner
-     :stripe/publ                    stripe-owner
-     :stripe/secret                  stripe-owner
+     :stripe/publ                    private-attr
+     :stripe/secret                  private-attr
      :store/uuid                     public-attr
      :store/stripe                   store-attribute
      :store/owners                   public-attr
@@ -216,18 +224,20 @@
   (let [authed-store-ids (set authed-store-ids)
         filter-cache (atom {})
         get-filter (fn [db a]
-                     (when-let [filter-fn (get filter-by-attribute (:ident (d/attribute db a)))]
+                     (when-let [filter-fn
+                                (get filter-by-attribute
+                                     (:ident (datomic/attribute db a)))]
                        (if-some [filter (get @filter-cache filter-fn)]
                          filter
                          (let [filter (filter-fn authed-user-id authed-store-ids)]
                            (swap! filter-cache assoc filter-fn filter)
                            filter))))
         is-db-partition? (fn [db [e]]
-                           (== (d/part e) (d/entid db :db.part/db)))]
+                           (== (datomic/part e) (datomic/entid db :db.part/db)))]
     (fn [db datom]
       (or (is-db-partition? db datom)
           (if-let [filter (get-filter db (:a datom))]
             (filter db datom)
             (throw (ex-info "Filter not implemented for attribute"
                             {:datom     datom
-                             :attribute (d/attribute db (:a datom))})))))))
+                             :attribute (datomic/attribute db (:a datom))})))))))
