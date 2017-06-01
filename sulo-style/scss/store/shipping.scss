@@ -1,4 +1,71 @@
 #sulo-shipping-settings {
 	max-width: $global-width;
 	margin: 0 auto;
+
+	.reveal {
+		// overflow: visible;
+		max-height: 80vh;
+		min-height: 80vh;
+		small {
+			color: $dark-gray;
+		}
+		.section-title {
+			margin: 0;
+			a.close-button {
+				position: inherit;
+			}
+			align-items: flex-start;
+		}
+		.menu.vertical {
+			// overflow-y: scroll;
+			border: $global-border;
+			// max-height: 50vh;
+
+			li {
+				padding: 0.5rem 0.75rem;
+				border-bottom: $global-border-secondary;
+				&:last-child {
+					border-bottom: none;
+				}
+				font-size: 90%;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				a.icon {
+					padding: 0;
+					opacity: 0.3;
+					// height: 12px;
+					// width: 12px;
+				}
+				&:hover {
+					background: rgba($light-gray, 0.2);
+				}
+			}
+		}
+		// option {
+			// border-bottom: $global-border;
+		// }
+		.continent {
+			font-weight: $global-weight-bold;
+			margin-top: 1rem;
+			font-size: 90%;
+			border-bottom: $global-border-secondary
+
+			// color: $dark-gray;
+			// padding-left: 1rem;
+		}
+		.country {
+			margin-left: 1rem;
+			font-size: 90%;
+			// > * {
+				border-bottom: $global-border-secondary;
+			// }
+		}
+		.action-buttons {
+			.button {
+				margin-right: 0;
+				// margin-bottom: 0.5rem;
+			}
+		}
+	}
 }

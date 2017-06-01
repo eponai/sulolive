@@ -19,7 +19,7 @@ $select-input-border-width:         1px !default;
 $select-input-height:               36px !default;
 $select-input-internal-height:      ($select-input-height - ($select-input-border-width * 2)) !default;
 $select-input-placeholder:          #aaa !default;
-$select-text-color:                 #333 !default;
+$select-text-color:                 $body-font-color !default;//#333 !default;
 $select-link-hover-color:           $select-input-border-focus !default;
 
 $select-padding-vertical:           8px !default;
@@ -27,12 +27,12 @@ $select-padding-horizontal:         10px !default;
 
 // menu options
 $select-menu-zindex:                2 !default;
-$select-menu-max-height:            200px !default;
+$select-menu-max-height:            300px !default;//200px !default;
 
 $select-option-color:               lighten($select-text-color, 20%) !default;
 $select-option-bg:                  $select-input-bg !default;
 $select-option-focused-color:       $select-text-color !default;
-$select-option-focused-bg:          rgba($light-gray, 0.5);//#f2f9fc !default; // pale blue
+$select-option-focused-bg:          rgba($light-gray, 0.2);//#f2f9fc !default; // pale blue
 $select-option-selected-color:      $select-text-color !default;
 $select-option-selected-bg:         $select-option-focused-bg;//#f5faff !default; // lightest blue
 $select-option-disabled-color:      lighten($select-text-color, 60%) !default;

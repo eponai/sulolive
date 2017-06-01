@@ -199,20 +199,6 @@ h3 {
 	min-height: 100%;
 }
 
-.wip-label {
-	font-size: 1rem;
-	font-weight: $global-weight-bold;
-	padding: 0.5rem 1rem;
-}
-
-// @mixin list-item-hover($color: $white, $hover-color: darken($color, 5%)) {
-// 	transition: background .25s ease-in-out;
-// 	&:hover, &:focus {
-// 		background: $hover-color;
-// 	}
-// }
-
-
 @mixin sulo-colors {
 	@each $name, $color in $foundation-palette {
 		&.#{$name} {
