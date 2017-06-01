@@ -222,12 +222,8 @@
                          (let [filter (filter-fn authed-user-id authed-store-ids)]
                            (swap! filter-cache assoc filter-fn filter)
                            filter))))
-        db-partition-cache (atom nil)
         is-db-partition? (fn [db [e]]
-                           (== (d/part e)
-                               (if-let [db-part @db-partition-cache]
-                                 db-part
-                                 (reset! db-partition-cache (:db/id (d/entity db [:db/ident :db.part/db]))))))]
+                           (== (d/part e) (d/entid db :db.part/db)))]
     (fn [db datom]
       (or (is-db-partition? db datom)
           (if-let [filter (get-filter db (:a datom))]
