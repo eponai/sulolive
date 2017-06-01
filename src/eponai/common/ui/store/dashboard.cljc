@@ -26,6 +26,7 @@
     [eponai.web.ui.photo :as photo]
     [eponai.web.ui.button :as button]
     [eponai.common.mixpanel :as mixpanel]
+    [eponai.web.ui.store.shipping :as shipping]
     [eponai.web.ui.store.home :as home]))
 
 (defn find-product [store product-id]
@@ -67,6 +68,9 @@
                                                                       {:route-params route-params
                                                                        :store        store
                                                                        :product      (find-product store (:product-id route-params))})}
+                :store-dashboard/shipping             {:component   shipping/StoreShipping
+                                                       :computed-fn (fn [{:keys [route-params]}]
+                                                                      {:route-params route-params})}
                 :store-dashboard                      {:component   home/StoreHome
                                                        :computed-fn (fn [{:keys [route-params]}]
                                                                       {:route-params route-params})}})
