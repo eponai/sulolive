@@ -54,20 +54,17 @@
     unauthorized-filter))
 
 (defn- step-towards
-  ([db from attr] (step-towards db from attr nil))
-  ([db from attr & to]
-   (apply d/datoms db
-          (if (query/reverse-lookup-attr? attr) :avet :aevt)
-          (query/normalize-attribute attr)
-          from
-          to)))
+  ([db from attr]
+   (step-towards db from attr nil))
+  ([db from {:keys [reverse? normalized-attr]} & to]
+   (apply d/datoms db (if reverse? :avet :aevt) normalized-attr from to)))
 
 (defn- walk-to [db from attr to]
   (step-towards db from attr to))
 
 (defn- walk-towards [db from attr tos]
   (->> (step-towards db from attr)
-       (sequence (comp (map (if (query/reverse-lookup-attr? attr) :e :v))
+       (sequence (comp (map (if (:reverse? attr) :e :v))
                        (filter #(contains? tos %))
                        ;; We only need one, so we can short circuit all sequences.
                        (take 1)))))
@@ -78,7 +75,7 @@
       (walk-towards db from attr to)
       (walk-to db from attr to))
     (sequence
-      (comp (map (if (query/reverse-lookup-attr? attr) :e :v))
+      (comp (map (if (:reverse? attr) :e :v))
             (distinct)
             (mapcat #(walk-entity-path db % (rest path) to))
             (take 1))
@@ -88,34 +85,26 @@
   {:pre [(contains? db :sinceT)]}
   (cond-> db (some? (:sinceT db)) (assoc :sinceT nil)))
 
+(defn- attr-path [path]
+  (into []
+        (map #(hash-map :normalized-attr (query/normalize-attribute %)
+                        :reverse? (query/reverse-lookup-attr? %)))
+        path))
+
 (defn user-path
   "Takes a user-id and a path to walk from the datom to reach the user-id."
   [user-id path]
-  (require-user user-id
-                (fn [db [e]]
-                  (if-some [s (seq (walk-entity-path (de-since db) e path user-id))]
-                    (do (debug "user-id: " user-id " path: " path " e: " e)
-                        (debug "walked to: " (into [] s))
-                        (some? s))
-                    (debug "Found nothing walking "
-                           "user-id: " user-id
-                           " path: " path
-                           " e: " e)))))
+  (let [attrs (attr-path path)]
+    (require-user user-id
+                 (fn [db [e]]
+                   (some? (seq (walk-entity-path (de-since db) e attrs user-id)))))))
 
 (defn store-path [store-ids path]
   "Takes a store-ids and a path to walk from the datom to reach any of the stores."
-  (require-stores store-ids
-                  (fn [db [e]]
-                    (if-some [s (seq (walk-entity-path (de-since db) e path store-ids))]
-                      (do (debug "store-ids: " store-ids
-                                 " path: " path
-                                 " e: " e)
-                          (debug "walked to: " (into [] s))
-                          (some? s))
-                      (debug "Found nothing walking "
-                             "store-ids: " store-ids
-                             " path: " path
-                             " e: " e)))))
+  (let [attrs (attr-path path)]
+    (require-stores store-ids
+                    (fn [db [e]]
+                      (some? (seq (walk-entity-path (de-since db) e attrs store-ids)))))))
 
 (def filter-by-attribute
   (letfn [(user-attribute [user-id _]
