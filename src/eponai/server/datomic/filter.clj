@@ -1,28 +1,10 @@
 (ns eponai.server.datomic.filter
-  "Filter maps can be combined, incrementally updated and
-  applied as either AND or OR filters.
-
-  A filter map is defined as:
-  {:f filter-function
-   :props map-of-values-which-describe-a-filter}.
-
-  The filter function takes keys from :props as input
-  and returns a datomic filter function (fn [db datom]).
-
-  Each key in props contain:
-  {:init initial-value
-  :update-fn (fn [db new-eids old-val] return new-val)}
-  The purpose of the :props is to describe a filter to be incrementaly
-  updated. The param new-eids is either nil or a seq of entity ids.
-
-  It sounds more complicated than it is..?
-  Hopefully overtime, we figure out an easier way to describe
-  incrementally updatable database filters."
-  (:require [datomic.api :as datomic]
-            [eponai.common.database :as db]
-            [eponai.server.datomic.query :as query]
-            [taoensso.timbre :as timbre :refer [debug trace]]
-            ))
+  (:require
+    [datomic.api :as datomic]
+    [eponai.common.database :as db]
+    [eponai.server.datomic.query :as query]
+    [taoensso.timbre :as timbre :refer [debug trace]]
+    ))
 
 (defn- public-attr [_ _]
   (fn [_ _]
@@ -75,7 +57,7 @@
 
 (defn walk-entity-path [db from [attr :as path] to]
   {:pre [(or (number? to) (set? to))]}
-  (if (= 1 (count path))
+  (if (== 1 (count path))
     (if (set? to)
       (walk-towards db from attr to)
       (walk-to db from attr to))
@@ -86,7 +68,7 @@
             (take 1))
       (step-towards db from attr))))
 
-(defn de-since [db]
+(defn desince [db]
   {:pre [(contains? db :sinceT)]}
   (cond-> db (some? (:sinceT db)) (assoc :sinceT nil)))
 
@@ -102,14 +84,14 @@
   (let [attrs (attr-path path)]
     (require-user user-id
                  (fn [db [e]]
-                   (some? (seq (walk-entity-path (de-since db) e attrs user-id)))))))
+                   (some? (seq (walk-entity-path (desince db) e attrs user-id)))))))
 
 (defn store-path [store-ids path]
   "Takes a store-ids and a path to walk from the datom to reach any of the stores."
   (let [attrs (attr-path path)]
     (require-stores store-ids
                     (fn [db [e]]
-                      (some? (seq (walk-entity-path (de-since db) e attrs
+                      (some? (seq (walk-entity-path (desince db) e attrs
                                                     (cond-> store-ids
                                                             (= 1 (count store-ids))
                                                             (first)))))))))
@@ -140,7 +122,7 @@
             (filter-or (user-path user-id [:order/_charge :order/user])
                        (store-path store-ids [:order/_charge :order/store])))]
     {
-     :user/email                     public-attr
+     :user/email                     user-attribute
      :user/verified                  user-attribute
      :user/stripe                    user-attribute
      :user/cart                      user-attribute
@@ -238,6 +220,7 @@
       (or (is-db-partition? db datom)
           (if-let [filter (get-filter db (:a datom))]
             (filter db datom)
-            (throw (ex-info "Filter not implemented for attribute"
-                            {:datom     datom
-                             :attribute (datomic/attribute db (:a datom))})))))))
+            (let [attr (datomic/attribute db (:a datom))]
+              (throw (ex-info (str "Database filter not implemented for attribute: " (:ident attr))
+                              {:datom     datom
+                               :attribute attr}))))))))
