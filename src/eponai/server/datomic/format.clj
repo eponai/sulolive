@@ -144,13 +144,13 @@
                 cf/add-tempid))
           (rate* [r]
             (-> r
-                (select-keys [:shipping.rate/first :shipping.rate/additional :shipping.rate/free-above])
+                (select-keys [:shipping.rate/first :shipping.rate/additional :shipping.rate/free-above :shipping.rate/title])
                 (update :shipping.rate/first input->price)
                 (update :shipping.rate/additional input->price)
                 (update :shipping.rate/free-above input->price)
                 cf/add-tempid
                 cf/remove-nil-keys))]
-    (-> (select-keys sr [:shipping.rule/destinations :shipping.rule/rates])
+    (-> (select-keys sr [:shipping.rule/destinations :shipping.rule/rates :shipping.rule/title])
         (update :shipping.rule/destinations #(map destination* %))
         (update :shipping.rule/rates #(map rate* %))
         cf/add-tempid)))

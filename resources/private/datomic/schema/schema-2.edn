@@ -37,6 +37,13 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping.rule/title
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Shipping rule title"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
   :db/ident              :shipping.rule/rates
   :db/isComponent        true
   :db/valueType          :db.type/ref
@@ -65,6 +72,13 @@
   :db/valueType          :db.type/bigdec
   :db/cardinality        :db.cardinality/one
   :db/doc                "Shipping is free above this amount"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping.rate/title
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Name of this shipping rate to show customer (e.g. FedEx 3-day)"
   :db.install/_attribute :db.part/db}
 
  ;; Countries

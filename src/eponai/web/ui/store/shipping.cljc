@@ -1,5 +1,6 @@
 (ns eponai.web.ui.store.shipping
   (:require
+    [clojure.spec :as s]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
     [om.next :as om :refer [defui]]
@@ -14,13 +15,36 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.client.parser.message :as msg]
     [clojure.string :as string]
-    [eponai.common.ui.elements.table :as table]))
+    [eponai.common.ui.elements.table :as table]
+    [eponai.common.ui.elements.input-validate :as v]
+    [eponai.common :as c]))
 
 (def form-inputs
-  {:shipping.rate/first       "shipping.rate.first"
+  {:shipping.rate/title       "shipping.rate.title"
+   :shipping.rate/first       "shipping.rate.first"
    :shipping.rate/additional  "shipping.rate.additional"
    :shipping.rate/offer-free? "shipping.rate.offer-free?"
    :shipping.rate/free-above  "shipping.rate.free-above"})
+
+(s/def :shipping.rate/title (s/and string? #(not-empty %)))
+(s/def :shipping.rate/first (s/or :pos #(pos? (c/parse-long-safe %)) :zero #(zero? (c/parse-long-safe %))))
+(s/def :shipping.rate/additional (s/or :pos #(pos? (c/parse-long-safe %)) :zero #(zero? (c/parse-long-safe %))))
+(s/def :shipping.rate/free-above (s/or :value #(and (number? (c/parse-long-safe %)) (<= 0 (c/parse-long-safe %))) :empty nil?))
+
+(s/def :shipping.rule/rate (s/keys :req [:shipping.rate/first :shipping.rate/additional :shipping.rate/title]
+                                   :opt [:shipping.rate/free-above]))
+(s/def :shipping.rule/rates (s/coll-of :shipping.rule/rate))
+(s/def ::shipping (s/keys :req [:shipping.rule/rates]))
+
+(defn validate
+  [spec m]
+  (when-let [err (s/explain-data spec m)]
+    (let [problems (::s/problems err)
+          invalid-paths (map (fn [p]
+                               (some #(get form-inputs %) p))
+                             (map :path problems))]
+      {:explain-data  err
+       :invalid-paths invalid-paths})))
 
 (defn add-shipping-destination [component selection]
   (let [{:query/keys [countries]} (om/props component)
@@ -51,9 +75,12 @@
                                                     (dissoc :modal)
                                                     (assoc :selected-countries []
                                                            :shipping-rule/section :shipping-rule.section/destinations))))
-        {:query/keys [countries]} (om/props component)
+        {:query/keys [countries store]} (om/props component)
         countries-by-continent (group-by :country/continent countries)
-        {:keys [selected-countries shipping-rule/section shipping-rule/offer-free?]} (om/get-state component)]
+        used-countries (reduce #(into %1 (:shipping.rule/destinations %2)) [] (get-in store [:store/shipping :shipping/rules]))
+        {:keys [input-validation selected-countries shipping-rule/section shipping-rule/offer-free?]} (om/get-state component)
+        used-country-codes (set (map :country/code used-countries))]
+    (debug "Used ccountries: " used-countries)
     (common/modal
       {
        ;:on-close       on-close
@@ -85,9 +112,10 @@
                                                                                     {:value     (:country/code c)
                                                                                      :label     (:country/name c)
                                                                                      :className "country"
-                                                                                     :disabled  (some #(= (:country/code %)
-                                                                                                          (:country/code c))
-                                                                                                      selected-countries)})
+                                                                                     :disabled  (or (some #(= (:country/code %)
+                                                                                                              (:country/code c))
+                                                                                                          selected-countries)
+                                                                                                    (contains? used-country-codes (:country/code c)))})
                                                                                   (sort-by :country/name cs)))))
                                                              []
                                                              countries-by-continent)}
@@ -167,8 +195,10 @@
             (grid/column
               nil
               (dom/label nil "Title")
-              (dom/input {:type        "text"
-                          :placeholder "e.g USPS Priority, FedEx 3-day"})
+              (v/input {:type        "text"
+                        :id          (:shipping.rate/title form-inputs)
+                        :placeholder "e.g USPS Priority, FedEx 3-day"}
+                       input-validation)
               (dom/small nil "This will be visible to your customers at checkout.")))
 
           (grid/row
@@ -177,15 +207,19 @@
             (grid/column
               nil
               (dom/label nil "Rate first item")
-              (dom/input {:type         "number"
-                          :id           (:shipping.rate/first form-inputs)
-                          :defaultValue 0}))
+              (v/input {:type         "number"
+                        :id           (:shipping.rate/first form-inputs)
+                        :defaultValue 0
+                        :min          0}
+                       input-validation))
             (grid/column
               nil
               (dom/label nil "Rate additional item")
-              (dom/input {:type         "number"
-                          :id           (:shipping.rate/additional form-inputs)
-                          :defaultValue 0})))
+              (v/input {:type         "number"
+                        :id           (:shipping.rate/additional form-inputs)
+                        :defaultValue 0
+                        :min          0}
+                       input-validation)))
 
           ;(dom/p (css/add-class :header) (dom/span nil "Offers"))
 
@@ -208,9 +242,11 @@
               (grid/column
                 nil
                 (dom/label nil "When cart total is above amount")
-                (dom/input {:type         "number"
-                            :id           (:shipping.rate/free-above form-inputs)
-                            :defaultValue 0}))
+                (v/input {:type         "number"
+                          :id           (:shipping.rate/free-above form-inputs)
+                          :defaultValue 0
+                          :min          0}
+                         input-validation))
               (grid/column nil)))
           ;<div class= "switch" >
           ;<input class= "switch-input" id= "exampleSwitch" type= "checkbox" name= "exampleSwitch" >
@@ -237,7 +273,11 @@
                         :country/name
                         {:country/continent [:continent/code
                                              :continent/name]}]}
-     {:query/store [{:store/shipping [{:shipping/rules [{:shipping.rule/rates [:shipping.rate/first :shipping.rate/additional :shipping.rate/free-above]}
+     {:query/store [{:store/shipping [{:shipping/rules [:shipping.rule/title
+                                                        {:shipping.rule/rates [:shipping.rate/title
+                                                                               :shipping.rate/first
+                                                                               :shipping.rate/additional
+                                                                               :shipping.rate/free-above]}
                                                         {:shipping.rule/destinations [:country/code :country/name]}]}]}]}])
   Object
   (initLocalState [_]
@@ -249,17 +289,24 @@
              rate-additional (utils/input-value-by-id (:shipping.rate/additional form-inputs))
              offer-free? (utils/input-checked-by-id? (:shipping.rate/offer-free? form-inputs))
              free-above (when offer-free? (utils/input-value-by-id (:shipping.rate/free-above form-inputs)))
+
+             rule-title (utils/input-value-by-id (:shipping.rate/title form-inputs))
              {:query/keys [current-route store]} (om/props this)
              {:keys [selected-countries]} (om/get-state this)
 
              input-map {:shipping.rule/destinations selected-countries
                         :shipping.rule/rates        [{:shipping.rate/first      rate-first
+                                                      :shipping.rate/title      rule-title
                                                       :shipping.rate/additional rate-additional
-                                                      :shipping.rate/free-above free-above}]}]
+                                                      :shipping.rate/free-above free-above}]}
+             input-validation (validate ::shipping input-map)]
          (debug "input: " input-map)
-         (msg/om-transact! this [(list 'store/save-shipping-rule {:shipping-rule input-map
-                                                                  :store-id      (:store-id (:route-params current-route))})
-                                 :query/store])))
+         (debug "validation: " input-validation)
+         (when (nil? input-validation)
+           (msg/om-transact! this [(list 'store/save-shipping-rule {:shipping-rule input-map
+                                                                    :store-id      (:store-id (:route-params current-route))})
+                                   :query/store]))
+         (om/update-state! this assoc :input-validation input-validation)))
     )
   (componentDidUpdate [this _ _]
     (let [rule-message (msg/last-message this 'store/save-shipping-rule)]
@@ -352,7 +399,7 @@
                                  nil
                                  (table/tbody-row
                                    nil
-                                   (table/td nil (dom/span nil "UPS"))
+                                   (table/td nil (dom/span nil (:shipping.rate/title r)))
                                    (table/td
                                      nil
                                      (dom/span nil (ui-utils/two-decimal-price (:shipping.rate/first r))))
