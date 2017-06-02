@@ -174,7 +174,7 @@
                com.taoensso/encore]
 
   :jvm-opts ^:replace ["-Xms512m"
-                       "-Xmx2048m"
+                       "-Xmx3048m"
                        "-server"
                        "-XX:+CMSClassUnloadingEnabled"
                        "-Djava.awt.headless=true"
