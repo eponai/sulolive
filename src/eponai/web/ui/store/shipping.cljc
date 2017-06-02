@@ -46,7 +46,7 @@
       {:explain-data  err
        :invalid-paths invalid-paths})))
 
-(defn add-shipping-destination [component selection]
+(defn add-shipping-destination [component selection used-country-codes]
   (let [{:query/keys [countries]} (om/props component)
         countries-by-continent (group-by :country/continent countries)
         {:keys [selected-countries]} (om/get-state component)]
@@ -54,9 +54,10 @@
     (if-let [selected-continent (some #(when (and (= (:value selection) (:continent/code %))
                                                   (= (:label selection) (:continent/name %))) %) (keys countries-by-continent))]
       (let [new-countries (remove (fn [c]
-                                    (some #(= (:country/code c)
-                                              (:country/code %))
-                                          selected-countries)) (get countries-by-continent selected-continent))]
+                                    (or (some #(= (:country/code %)
+                                                  (:country/code c))
+                                              selected-countries)
+                                        (contains? used-country-codes (:country/code c)))) (get countries-by-continent selected-continent))]
         (debug "Selected continent: " selected-continent " with countries: " (into [] (get countries-by-continent selected-continent)))
         (om/update-state! component update :selected-countries into new-countries))
       (do
@@ -119,7 +120,7 @@
                                                                                   (sort-by :country/name cs)))))
                                                              []
                                                              countries-by-continent)}
-                                           {:on-change #(add-shipping-destination component %)}))
+                                           {:on-change #(add-shipping-destination component % used-country-codes)}))
           ;(grid/row
           ;  (css/add-class :collapse)
           ;  (grid/column

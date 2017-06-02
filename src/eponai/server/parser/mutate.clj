@@ -356,8 +356,9 @@
                                                                  :line2       (:shipping.address/street2 address)
                                                                  :postal_code (:shipping.address/postal address)
                                                                  :city        (:shipping.address/locality address)
-                                                                 :state       (:shipping.address/region address)}}})))
-               {:new-card     new-card}))})
+                                                                 :state       (:shipping.address/region address)
+                                                                 :country     (:shipping.address/country address)}}})))
+               {:new-card new-card}))})
 
 (defmutation store/create
   [{:keys [state ::parser/return ::parser/exception auth system] :as env} _ params]

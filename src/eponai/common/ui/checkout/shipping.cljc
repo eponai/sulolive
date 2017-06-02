@@ -80,13 +80,10 @@
 
 (defn render-checkout-shipping [this props computed state]
   (let [{:keys [input-validation]} state
-        {:keys [collapse? shipping]} props
+        {:keys [collapse? shipping countries]} props
         {:keys [on-open]} computed]
-    (callout/callout
+    (dom/div
       nil
-      (dom/div
-        (css/add-class :section-title)
-        (dom/p nil "1. Ship to"))
       (dom/div
         (when-not collapse?
           (css/add-class :hide))
@@ -145,11 +142,12 @@
               (dom/select
                 {:id           (:shipping.address/country form-inputs)
                  :name         "ship-country"
-                 :autoComplete "shipping country"}
+                 :autoComplete "shipping country"
+                 :defaultValue "CA"}
                 ;input-validation
-                (dom/option {:value "CA"} "Canada")
-                (dom/option {:value "SE"} "Sweden")
-                (dom/option {:value "US"} "United States"))))
+                (map (fn [c]
+                       (dom/option {:value (:country/code c)} (:country/name c)))
+                     (sort-by :country/name countries)))))
 
 
           (grid/row
