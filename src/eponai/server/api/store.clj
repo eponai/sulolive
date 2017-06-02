@@ -110,6 +110,17 @@
     (when (not-empty section-txs)
       (db/transact state section-txs))))
 
+(defn save-shipping-rule [{:keys [state]} store-id {:keys [shipping-rule]}]
+  (let [{old-shipping :store/shipping} (db/pull (db/db state) [:db/id :store/shipping] store-id)
+        new-rule (f/shipping-rule shipping-rule)]
+    (debug "New rule: " new-rule)
+    (if old-shipping
+      (db/transact state [new-rule
+                          [:db/add (:db/id old-shipping) :shipping/rules (:db/id new-rule)]])
+      (let [new-shipping (cf/add-tempid {:shipping/rules [new-rule]})]
+        (db/transact state [new-shipping
+                            [:db/add store-id :store/shipping (:db/id new-shipping)]])))))
+
 (defn delete-product [{:keys [state]} product-id]
   (db/transact state [[:db.fn/retractEntity product-id]]))
 

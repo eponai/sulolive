@@ -68,6 +68,16 @@ p a {
 	}
 }
 
+.flex {
+	display: flex;
+	&.flex-row {
+		flex-direction: row;
+	}
+	&.flex-column {
+		flex-direction: column;
+	}
+}
+
 .menu.share-menu {
 	// overflow-x: hidden;
 	.share-button {

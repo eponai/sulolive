@@ -292,6 +292,15 @@
              (debug "store/update-sections with params: " p)
              (store/update-sections env (c/parse-long store-id) p))})
 
+(defmutation store/save-shipping-rule
+  [env _ {:keys [store-id] :as p}]
+  {:auth {::auth/store-owner store-id}
+   :resp {:success "Your store sections were updated"
+          :error   "Could not update store sections."}}
+  {:action (fn []
+             (debug "store/update-sections with params: " p)
+             (store/save-shipping-rule env (c/parse-long store-id) p))})
+
 ;######## STRIPE ########
 
 (comment

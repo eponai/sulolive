@@ -12,4 +12,75 @@
   :db/cardinality        :db.cardinality/one
   :db/doc                "Store's base shipping fee"
   :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store/shipping
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Store's shipping settings"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping/rules
+  :db/valueType          :db.type/ref
+  :db/isComponent        true
+  :db/cardinality        :db.cardinality/many
+  :db/doc                "Shipping rules."
+  :db.install/_attribute :db.part/db}
+
+ ;; Shipping Rules
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping.rule/destinations
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/many
+  :db/doc                "Shipping destinations"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping.rule/rates
+  :db/isComponent        true
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/many
+  :db/doc                "Shipping rates in this rule"
+  :db.install/_attribute :db.part/db}
+
+ ;; Shipping rates
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping.rate/first
+  :db/valueType          :db.type/bigdec
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Shipping rate first item"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping.rate/additional
+  :db/valueType          :db.type/bigdec
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Shipping rate additional item"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping.rate/free-above
+  :db/valueType          :db.type/bigdec
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Shipping is free above this amount"
+  :db.install/_attribute :db.part/db}
+
+ ;; Countries
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :country/code
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "Country code"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :country/name
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Country name"
+  :db.install/_attribute :db.part/db}
+
  ]

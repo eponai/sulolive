@@ -171,6 +171,12 @@
   (if target
     {:remote true}))
 
+(defmethod client-mutate 'store/save-shipping-rule
+  [{:keys [target]} _ p]
+  (debug "store/save-shipping-rule with params: " p)
+  (if target
+    {:remote true}))
+
 (defmethod client-mutate 'stream-token/generate
   [{:keys [target]} k p]
   (assert (some? (:store-id p))
