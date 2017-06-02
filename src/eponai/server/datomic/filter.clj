@@ -42,8 +42,14 @@
 (defn- step-towards
   ([db from attr]
    (step-towards db from attr nil))
-  ([db from {:keys [reverse? normalized-attr]} & to]
-   (apply db/datoms db (if reverse? :avet :aevt) normalized-attr from to)))
+  ([db from {:keys [reverse? normalized-attr]} to]
+   (if reverse?
+     (if (some? to)
+       (db/datoms db :eavt to normalized-attr from)
+       (db/datoms db :avet normalized-attr from))
+     (if (some? to)
+       (db/datoms db :eavt from normalized-attr to)
+       (db/datoms db :eavt from normalized-attr)))))
 
 (defn- walk-to [db from attr to]
   (step-towards db from attr to))

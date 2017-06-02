@@ -700,8 +700,8 @@
                      (-> read
                          read-returning-basis-t
                          wrap-server-read-auth
-                         (wrap-datomic-db (atom nil))
-                         wrap-debug-read-or-mutate))
+                         (wrap-datomic-db (atom nil))))
+
                    (fn [mutate state]
                      (-> mutate
                          ;mutate-with-tx-meta
