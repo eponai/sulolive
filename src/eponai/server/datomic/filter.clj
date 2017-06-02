@@ -23,7 +23,7 @@
     f))
 
 (defn require-user [user-id f]
-  (if (some? user-id)
+  (if (nil? user-id)
     unauthorized-filter
     f))
 
