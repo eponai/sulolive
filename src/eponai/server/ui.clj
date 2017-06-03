@@ -38,7 +38,7 @@
 (defn make-reconciler [request-env]
   (let [reconciler-atom (atom nil)
         parser (parser/client-parser (parser/client-parser-state {:query-params (:query-params request-env)}))
-        send-fn (server-send request-env reconciler-atom )
+        send-fn (server-send request-env reconciler-atom)
         reconciler (client.reconciler/create {:conn         (datascript/conn-from-db (:empty-datascript-db request-env))
                                               :parser       parser
                                               :send-fn      send-fn
@@ -46,7 +46,6 @@
                                               :route        (:route request-env)
                                               :route-params (:route-params request-env)})]
     (reset! reconciler-atom reconciler)
-    (client.utils/init-state! reconciler send-fn router-query)
     reconciler))
 
 (defn render-root! [reconciler]
@@ -60,6 +59,7 @@
 
 (defn render-page [env]
   (let [reconciler (make-reconciler env)
+        _ (client.utils/init-state! reconciler (get-in reconciler [:config :send]) router-query)
         ui-root (render-root! reconciler)
         html-string (dom/render-to-str ui-root)]
     (html/raw-string html-string)))
