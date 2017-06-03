@@ -1,156 +1,232 @@
 (ns eponai.server.datomic.filter
-  "Filter maps can be combined, incrementally updated and
-  applied as either AND or OR filters.
+  (:require
+    [datomic.api :as datomic]
+    [eponai.common.database :as db]
+    [eponai.server.datomic.query :as query]
+    [taoensso.timbre :as timbre :refer [debug trace]]
+    ))
 
-  A filter map is defined as:
-  {:f filter-function
-   :props map-of-values-which-describe-a-filter}.
+(defn- public-attr [_ _]
+  (fn [_ _]
+    true))
 
-  The filter function takes keys from :props as input
-  and returns a datomic filter function (fn [db datom]).
+(defn- unauthorized-filter [_ _]
+  false)
 
-  Each key in props contain:
-  {:init initial-value
-  :update-fn (fn [db new-eids old-val] return new-val)}
-  The purpose of the :props is to describe a filter to be incrementaly
-  updated. The param new-eids is either nil or a seq of entity ids.
+(defn- private-attr [_ _]
+  unauthorized-filter)
 
-  It sounds more complicated than it is..?
-  Hopefully overtime, we figure out an easier way to describe
-  incrementally updatable database filters."
-  (:require [clojure.set :as s]
-            [datomic.api :as d]
-            [eponai.common.database :as db]
-            [taoensso.timbre :as timbre :refer [debug trace]]))
+(defn require-stores
+  [store-ids f]
+  (if (empty? store-ids)
+    unauthorized-filter
+    f))
 
-;; Updating and applying filters
+(defn require-user [user-id f]
+  (if (nil? user-id)
+    unauthorized-filter
+    f))
 
-(defn update-props
-  "Preforms an incremental update on the props of a filter-map.
+(defn filter-or
+  "Combines filter functions with or. Removing any unauthorized filters, as they are not needed."
+  [& fns]
+  (if-some [fns (seq (remove #(identical? % unauthorized-filter) fns))]
+    (reduce (fn [a b]
+              (fn [db datom]
+                (or (a db datom)
+                    (b db datom))))
+            (first fns)
+            (rest fns))
+    unauthorized-filter))
 
-  By adding the last time we update the props onto the map, we
-  can quickly avoid computing new filters for the database."
-  [db {:keys [::basis-t] :as props}]
-  {:pre [(map? props)]}
-  (let [basis-t (or basis-t -1)
-        new-basis-t (d/basis-t db)]
-    (if (= basis-t new-basis-t)
-      (do
-        (trace "avoiding update to filter:" basis-t)
-        props)
-      (let [db-since (d/since db basis-t)]
-        (trace "Will update filter: " props)
-        (let [updated-props (reduce-kv (fn [props key {:keys [init update-fn value]}]
-                                         (assoc-in props [key :value]
-                                                   (update-fn db db-since (or value init))))
-                                       props
-                                       (dissoc props ::basis-t))]
-          (trace "Did update filter: " updated-props)
-          (assoc updated-props ::basis-t new-basis-t))))))
+(defn- step-towards
+  ([db from attr]
+   (step-towards db from attr nil))
+  ([db from {:keys [reverse? normalized-attr]} to]
+   (if reverse?
+     (if (some? to)
+       (db/datoms db :eavt to normalized-attr from)
+       (db/datoms db :avet normalized-attr from))
+     (if (some? to)
+       (db/datoms db :eavt from normalized-attr to)
+       (db/datoms db :eavt from normalized-attr)))))
 
-(defn update-filters
-  "Updating filters with db."
-  [db filters]
-  {:pre [(sequential? filters)]}
-  (mapv #(assoc % :props (update-props db (:props %))) filters))
+(defn- walk-to [db from attr to]
+  (step-towards db from attr to))
 
-(defn- extract-prop-values
-  "Takes a filter-map's props and assoc's the value of each key onto the keys."
-  [props]
-  {:pre [(map? props)]}
-  (reduce-kv (fn [p k v] (assoc p k (:value v)))
-             {}
-             props))
+(defn- walk-towards [db from attr tos]
+  (->> (step-towards db from attr)
+       (sequence (comp (map (if (:reverse? attr) :e :v))
+                       (filter #(contains? tos %))
+                       ;; We only need one, so we can short circuit all sequences.
+                       (take 1)))))
 
-(defn apply-filters
-  "Applies filters with AND to a db."
-  [db filters]
-  {:pre [(sequential? filters)]}
-  (reduce (fn [db {:keys [f props]}]
-            (d/filter db (f (extract-prop-values props))))
-          db
-          filters))
+(defn walk-entity-path [db from [attr :as path] to]
+  {:pre [(or (number? to) (set? to))]}
+  (if (== 1 (count path))
+    (if (set? to)
+      (walk-towards db from attr to)
+      (walk-to db from attr to))
+    (sequence
+      (comp (map (if (:reverse? attr) :e :v))
+            (distinct)
+            (mapcat #(walk-entity-path db % (rest path) to))
+            (take 1))
+      (step-towards db from attr))))
 
-(defn or-filter
-  "Combines a filter-map such that the filter passes if either of the filters pass."
-  [& filter-maps]
-  ;; No filter has the same props keys.
-  {:pre [(empty? (apply s/intersection (->> filter-maps (map :props) (map keys) (map set))))]}
-  (let []
-    (reduce (fn [filter1 filter2]
-              {:props (merge (:props filter1) (:props filter2))
-               :f     (fn [props]
-                        (let [f1 ((:f filter1) props)
-                              f2 ((:f filter2) props)]
-                          (fn [db datom]
-                            (or (f1 db datom)
-                                (f2 db datom)))))})
-            (first filter-maps)
-            (rest filter-maps))))
+(defn desince [db]
+  {:pre [(contains? db :sinceT)]}
+  (cond-> db (some? (:sinceT db)) (assoc :sinceT nil)))
 
-(def user-owned-rule
-  '[[(owner? ?user-id ?e)
-     [?e :user/uuid ?user-id]]
-    [(owner? ?user-id ?e)
-     [?e ?ref-attr ?ref]
-     (owner? ?user-id ?ref)]])
+(defn attr-path [path]
+  (into []
+        (map #(hash-map :normalized-attr (query/normalize-attribute %)
+                        :reverse? (query/reverse-lookup-attr? %)))
+        path))
 
-(defn user-entities [db db-since user-id]
-  (comment
-    "Not used yet, because we don't have a user/uuid thing"
-    (let [query {:where   '[[$ ?e]
-                            [$since ?e]
-                            (owner? ?user-id ?e)]
-                 :symbols {'$since   db-since
-                           '?user-id user-id
-                           '%        user-owned-rule}}]
-      (db/all-with db query)))
-  #{})
+(defn user-path
+  "Takes a user-id and a path to walk from the datom to reach the user-id."
+  [user-id path]
+  (let [attrs (attr-path path)]
+    (require-user user-id
+                 (fn [db [e]]
+                   (some? (seq (walk-entity-path (desince db) e attrs user-id)))))))
 
-(defn user-attributes [db db-since]
-  ;;TODO: Add more user entities? We want to filter out anything that has to do with sensitive
-  ;;      user data. Such as what they have bought.
-  (let [user-entity-keys []                                 ;; [:project/uuid :transaction/uuid]
-        query {:find '[[?a ...]]
-               :where        '[[$ ?e ?user-entity-key]
-                               [$ ?e ?a]
-                               [$since ?e]]
-               :symbols      {'$since                 db-since
-                              '[?user-entity-key ...] user-entity-keys}}]
-    (db/find-with db query)))
+(defn store-path [store-ids path]
+  "Takes a store-ids and a path to walk from the datom to reach any of the stores."
+  (let [attrs (attr-path path)]
+    (require-stores store-ids
+                    (fn [db [e]]
+                      (some? (seq (walk-entity-path (desince db) e attrs
+                                                    (cond-> store-ids
+                                                            (= 1 (count store-ids))
+                                                            (first)))))))))
 
-(defn- user-specific-entities-filter [user-id]
-  {:props {:user-entities {:init      #{}
-                            :update-fn (fn [db db-since old-val]
-                                         (into old-val (user-entities db db-since user-id)))}}
-   :f     (fn [{:keys [user-entities]}]
-            {:pre [(set? user-entities)]}
-            ;; Returning a datomic filter function (fn [db datom])
-            (fn [db [eid]]
-              (contains? user-entities eid)))})
+(def filter-by-attribute
+  (letfn [(user-attribute [user-id _]
+            (require-user user-id (fn [_ [e]] (= e user-id))))
+          (store-attribute [_ store-ids]
+            (require-stores store-ids (fn [_ [e]] (contains? store-ids e))))
 
-(defn- non-user-entities-filter-map []
-  {:props {:user-attrs {:init      #{}
-                        :update-fn (fn [db db-since old-val]
-                                     (into old-val (user-attributes db db-since)))}}
-   :f     (fn [{:keys [user-attrs]}]
-            {:pre [(set? user-attrs)]}
-            ;; Returning a datomic filter function (fn [db datom])
-            (fn [db [eid attr]]
-              (not (contains? user-attrs attr))))})
+          (stream-owner [_ store-ids]
+            (store-path store-ids [:stream/store]))
+          (cart-owner [user-id _]
+            (user-path user-id [:user/_cart]))
+          (stripe-owner [user-id store-ids]
+            (filter-or (user-path user-id [:user/_stripe])
+                       (store-path store-ids [:store/_stripe])))
+          (order-owner [user-id store-ids]
+            (filter-or (user-path user-id [:order/user])
+                       (store-path store-ids [:order/store])))
+          (order-item-owner [user-id store-ids]
+            (filter-or (user-path user-id [:order/_items :order/user])
+                       (store-path store-ids [:order/_items :order/store])))
+          (shipping-address-owner [user-id store-ids]
+            (filter-or (user-path user-id [:order/_shipping :order/user])
+                       (store-path store-ids [:order/_shipping :order/store])))
+          (order-charge-owner [user-id store-ids]
+            (filter-or (user-path user-id [:order/_charge :order/user])
+                       (store-path store-ids [:order/_charge :order/store])))]
+    {
+     :user/email                     user-attribute
+     :user/verified                  user-attribute
+     :user/stripe                    user-attribute
+     :user/cart                      user-attribute
+     :user/profile                   public-attr
+     :user.profile/name              public-attr
+     :user.profile/photo             public-attr
+     :stripe/id                      stripe-owner
+     :stripe/publ                    private-attr
+     :stripe/secret                  private-attr
+     :store/uuid                     public-attr
+     :store/stripe                   store-attribute
+     :store/owners                   public-attr
+     :store/items                    public-attr
+     :store/profile                  public-attr
+     :store/sections                 public-attr
+     :store.profile/name             public-attr
+     :store.profile/description      public-attr
+     :store.profile/return-policy    public-attr
+     :store.profile/tagline          public-attr
+     :store.profile/photo            public-attr
+     :store.profile/cover            public-attr
+     :store.section/label            public-attr
+     :store.section/path             public-attr
+     :store.owner/user               public-attr
+     :store.owner/role               public-attr
+     :store.item/uuid                public-attr
+     :store.item/name                public-attr
+     :store.item/description         public-attr
+     :store.item/price               public-attr
+     :store.item/category            public-attr
+     :store.item/section             public-attr
+     :store.item/photos              public-attr
+     :store.item/skus                public-attr
+     :store.item.photo/photo         public-attr
+     :store.item.photo/index         public-attr
+     :store.item.sku/variation       public-attr
+     :store.item.sku/inventory       public-attr
+     :store.item.sku.inventory/type  public-attr
+     :store.item.sku.inventory/value public-attr
+     :photo/path                     public-attr
+     :stream/title                   public-attr
+     :stream/store                   public-attr
+     :stream/state                   public-attr
+     :stream/token                   stream-owner
+     :user.cart/items                cart-owner
+     :chat/store                     public-attr
+     :chat/messages                  public-attr
+     :chat.message/text              public-attr
+     :chat.message/user              public-attr
+     :order/charge                   order-owner
+     :order/amount                   order-owner
+     :order/status                   order-owner
+     :order/store                    order-owner
+     :order/user                     order-owner
+     :order/uuid                     order-owner
+     :order/shipping                 order-owner
+     :order/items                    order-owner
+     :order.item/parent              order-item-owner
+     :order.item/type                order-item-owner
+     :order.item/amount              order-item-owner
+     :charge/id                      order-charge-owner
+     :shipping/name                  shipping-address-owner
+     :shipping/address               shipping-address-owner
+     :shipping.address/street        shipping-address-owner
+     :shipping.address/street2       shipping-address-owner
+     :shipping.address/postal        shipping-address-owner
+     :shipping.address/locality      shipping-address-owner
+     :shipping.address/region        shipping-address-owner
+     :shipping.address/country       shipping-address-owner
+     :category/path                  public-attr
+     :category/name                  public-attr
+     :category/label                 public-attr
+     :category/children              public-attr
+     :user/created-at                public-attr
+     :store/created-at               public-attr
+     :store.item/created-at          public-attr
+     :store.item/index               public-attr
+     :photo/id                       public-attr}))
 
-(defn authenticated-db-filters
-  "When authenticated, we can access entities specific to one user
-  or entities which do not contain user data (e.g. dates)."
-  [user-id]
-  (comment
-    "TODO: Implement authed filters"
-    [(or-filter (user-specific-entities-filter user-id)
-                (non-user-entities-filter-map))])
-  [])
-
-(defn not-authenticated-db-filters []
-  (comment
-    "TODO: Implement public filters"
-    [(non-user-entities-filter-map)])
-  [])
+(defn filter-authed [authed-user-id authed-store-ids]
+  (let [authed-store-ids (set authed-store-ids)
+        filter-cache (atom {})
+        get-filter (fn [db a]
+                     (when-let [filter-fn
+                                (get filter-by-attribute
+                                     (:ident (datomic/attribute db a)))]
+                       (if-some [filter (get @filter-cache filter-fn)]
+                         filter
+                         (let [filter (filter-fn authed-user-id authed-store-ids)]
+                           (swap! filter-cache assoc filter-fn filter)
+                           filter))))
+        is-db-partition? (fn [db [e]]
+                           (== (datomic/part e) (datomic/entid db :db.part/db)))]
+    (fn [db datom]
+      (or (is-db-partition? db datom)
+          (if-let [filter (get-filter db (:a datom))]
+            (filter db datom)
+            (let [attr (datomic/attribute db (:a datom))]
+              (throw (ex-info (str "Database filter not implemented for attribute: " (:ident attr))
+                              {:datom     datom
+                               :attribute attr}))))))))

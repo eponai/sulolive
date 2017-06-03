@@ -17,11 +17,6 @@
      (d/create-database uri)
      (d/connect uri))))
 
-(defn database-functions-schema []
-  {:db/id    #db/id [:db.part/user]
-   :db/ident :db.fn/edit-attr
-   :db/fn    (dbfn/dbfn dbfn/edit-attr)})
-
 (defn- parse-resource [resource]
   (edn/read-string {:readers *data-readers*} (slurp resource)))
 
@@ -35,7 +30,7 @@
   ([] (read-schema-files (list-schema-files)))
   ([schema-files]
    (let [schema (into [] (mapcat parse-resource) schema-files)]
-     (conj schema (database-functions-schema)))))
+     schema)))
 
 (defn add-data-to-connection
   ([conn add-data? & [schema]]

@@ -1,6 +1,6 @@
 (ns eponai.common.parser
   (:require [eponai.common.parser.util :as util #?(:clj :refer :cljs :refer-macros) [timeit]]
-            [taoensso.timbre :as timbre  :refer [debug error info warn trace]]
+            [taoensso.timbre :as timbre :refer [debug error info warn trace]]
             [om.next :as om]
             [om.next.cache :as om.cache]
             [om.next.impl.parser :as om.parser]
@@ -214,23 +214,33 @@
 
 #?(:clj
    (defn wrap-datomic-db
-     "Wraps the key :db to the environment with the latest filter.
-     Filters are updated incrementally via the ::filter-atom (which
-     is renewed everytime parser is called (see wrap-parser-filter-atom)."
-     [read-or-mutate]
-     (fn [{:keys [state ::filter-atom auth] :as env} k p]
-       (let [db (datomic/db state)
-             update-filters (fn [old-filters]
-                              (let [filters (or old-filters
-                                                (if-some [user-id (:user-id auth)]
-                                                  (do (debug "Using auth db for user:" user-id)
-                                                      (filter/authenticated-db-filters user-id))
-                                                  (do (debug "Using non auth db")
-                                                      (filter/not-authenticated-db-filters))))]
-                                (filter/update-filters db filters)))
-             filters (swap! filter-atom update-filters)
-             db (filter/apply-filters db filters)]
-         (read-or-mutate (assoc env :db db) k p)))))
+     "Wraps the key :db to the environment with a database filter.
+     If passed an atom, it'll cache the filter for consecutive reads or mutates.
+
+     Separating filter caches for reads and mutates (at the moment) because mutates
+     might change what a user has access to."
+     ([read-or-mutate] (wrap-datomic-db read-or-mutate nil))
+     ([read-or-mutate filter-atom]
+      (fn [{:keys [state auth] :as env} k p]
+        (let [db (datomic/db state)
+              auth-filter (if-let [filter (when filter-atom @filter-atom)]
+                            filter
+                            (let [authed-user-id
+                                  (when (:email auth)
+                                    (db/find-with db (db/merge-query (auth/auth-role-query ::auth/any-user auth {})
+                                                                     {:find '[?user .]})))
+                                  authed-store-ids
+                                  (when authed-user-id
+                                    (db/find-with db (db/merge-query (auth/auth-role-query ::auth/any-store-owner auth {})
+                                                                     {:symbols {'?user authed-user-id}
+                                                                      :find    '[[?store ...]]})))
+                                  filter (filter/filter-authed authed-user-id authed-store-ids)]
+                              (when filter-atom (reset! filter-atom filter))
+                              filter))]
+          (read-or-mutate (assoc env :db (datomic/filter db auth-filter)
+                                     :raw-db db)
+                          k
+                          p))))))
 
 (defn wrap-datascript-db
   "Wraps a :db in the environment for each read.
@@ -238,7 +248,9 @@
   side, so we're not using ::filter-atom."
   [read-or-mutate]
   (fn [{:keys [state] :as env} k p]
-    (read-or-mutate (assoc env :db (datascript/db state)) k p)))
+    (let [db (datascript/db state)]
+      ;; associng :raw-db to match server-side where we filter the :db.
+      (read-or-mutate (assoc env :db db :raw-db db) k p))))
 
 (defn read-with-dbid-in-query [read]
   (fn [{:keys [query] :as env} k p]
@@ -432,7 +444,8 @@
       (if (auth/is-public-role? roles)
         (read-or-mutate env k p)
         (let [roles (cond-> roles (keyword? roles) (hash-map true))]
-          (if-some [user (auth/authed-user-for-params (:db env) (keys roles) (:auth env) roles)]
+          ;; Use an unfiltered db to check auth.
+          (if-some [user (auth/authed-user-for-params (:raw-db env) (keys roles) (:auth env) roles)]
             (read-or-mutate (update env :auth #(-> (dissoc % :email) (assoc :user-id user)))
                             k p)
             (on-not-authed (assoc env :auth-roles roles) k p)))))))
@@ -687,7 +700,8 @@
                      (-> read
                          read-returning-basis-t
                          wrap-server-read-auth
-                         wrap-datomic-db))
+                         (wrap-datomic-db (atom nil))))
+
                    (fn [mutate state]
                      (-> mutate
                          ;mutate-with-tx-meta

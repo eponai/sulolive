@@ -140,7 +140,8 @@
                     {:expected expected
                      :actual   val
                      :path     path
-                     :in-map   result}))))
+                     :in-map   actual}))))
+
          (filter some?)
          (seq))))
 
@@ -290,4 +291,5 @@
   ;; Runs the test multiple times to make sure things are working
   ;; after setup and tear down.
   (run-tests [test-store-login-2
-              test-dedupe-parser-returns-super-set-of-original-parser]))
+              test-dedupe-parser-returns-super-set-of-original-parser
+              ]))
