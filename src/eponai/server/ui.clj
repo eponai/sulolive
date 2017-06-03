@@ -16,9 +16,7 @@
     [eponai.server.auth :as auth]
     [eponai.server.ui.root :as root]
     [taoensso.timbre :as timbre :refer [debug]]
-    [eponai.common.ui.router :as router]
-    [om.next.protocols :as p])
-  (:import (om.next.protocols IReactDOMElement)))
+    [eponai.common.ui.router :as router]))
 
 (defn server-send [server-env reconciler-atom]
   (fn [queries cb]
