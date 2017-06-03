@@ -97,22 +97,8 @@
               :label    "Accessories"
               :children (fn []
                           (let [unisex-cats (hash-map-by :category/name
-                                                         [(leaf "belt")
-                                                          (leaf "caps")
-                                                          (leaf "clothing" "accessories")
-                                                          (leaf "eyewear")
-                                                          (leaf "gloves")
-                                                          (leaf "hats")
+                                                         [(leaf "hats")
                                                           (leaf "keychains")
-                                                          (leaf "outdoor" "wear" "accessories")
-                                                          (leaf "patches")
-                                                          (leaf "rain" "accessories")
-                                                          (leaf "scarves")
-                                                          (leaf "shoe" "accessories")
-                                                          (leaf "special" "occasion" "accessories")
-                                                          (leaf "sunglasses")
-                                                          (leaf "tech" "accessories")
-                                                          (leaf "umbrellas")
                                                           (leaf "watches")])]
                             (into
                               [#:category{:name     "childrens"
@@ -123,7 +109,6 @@
                               (adult-category "Accessories" {:unisex-adult unisex-cats
                                                              :men-fn       #(assoc % "socks" (leaf "socks"))
                                                              :women-fn     #(-> %
-                                                                                (assoc "hair-acc" (leaf "hair" "accessories"))
                                                                                 (assoc "handbag" (leaf "handbag" "accessories"))
                                                                                 (assoc "socks" (leaf "socks"))
                                                                                 (assoc "wallets" (leaf "wallets")))}))))}])
