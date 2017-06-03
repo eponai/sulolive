@@ -29,7 +29,7 @@
                    :result res})))
           queries)))
 
-(defn make-reconciler [request-env component]
+(defn make-reconciler [request-env]
   (let [reconciler-atom (atom nil)
         parser (parser/client-parser (parser/client-parser-state {:query-params (:query-params request-env)}))
         send-fn (server-send request-env reconciler-atom )
@@ -40,12 +40,11 @@
                                               :route        (:route request-env)
                                               :route-params (:route-params request-env)})]
     (reset! reconciler-atom reconciler)
-    (client.utils/init-state! reconciler send-fn component)
     reconciler))
 
 (defn render-page [env]
   (let [component router/Router
-        reconciler (make-reconciler env component)
+        reconciler (make-reconciler env)
         ui-root (om/add-root! reconciler component nil)
         html-string (dom/render-to-str ui-root)]
     (html/raw-string html-string)))
