@@ -107,6 +107,17 @@
 			width: 100%;
 
 			.section-content {
+				overflow-y:  auto;
+				&::-webkit-scrollbar {
+					width: 1px;
+						// background: $black;
+				}
+				&::-webkit-scrollbar-track {
+					background: $white;
+				}
+				&::-webkit-scrollbar-thumb {
+					background: $medium-gray;//map-get($foundation-palette,primary);
+				}
 				.action-buttons {
 					flex: 1 0 auto;
 					align-items: flex-end;
@@ -182,7 +193,9 @@
 			}
 			.row {
 				margin-bottom: 1rem;
+				flex: 1 0 auto;
 				.column {
+					// flex: 1 0 auto;
 					&:first-child {
 						padding-left: 0;
 					}
@@ -193,6 +206,7 @@
 			}
 			.switch-container {
 				margin-top: 2rem;
+				flex: 0 0 auto;
 			}
 		}
 		.menu.vertical {
@@ -253,6 +267,7 @@
 			// }
 		}
 		.action-buttons {
+			flex: 1 0 auto;
 			.button {
 				margin-right: 0;
 				// margin-bottom: 0.5rem;

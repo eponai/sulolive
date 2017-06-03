@@ -21,12 +21,14 @@
 
 (def form-inputs
   {:shipping.rate/title       "shipping.rate.title"
+   :shipping.rate/info        "shipping.rate.info"
    :shipping.rate/first       "shipping.rate.first"
    :shipping.rate/additional  "shipping.rate.additional"
    :shipping.rate/offer-free? "shipping.rate.offer-free?"
    :shipping.rate/free-above  "shipping.rate.free-above"})
 
 (s/def :shipping.rate/title (s/and string? #(not-empty %)))
+(s/def :shipping.rate/title (s/or :value #(string? (not-empty %)) :empty nil?))
 (s/def :shipping.rate/first (s/or :pos #(pos? (c/parse-long-safe %)) :zero #(zero? (c/parse-long-safe %))))
 (s/def :shipping.rate/additional (s/or :pos #(pos? (c/parse-long-safe %)) :zero #(zero? (c/parse-long-safe %))))
 (s/def :shipping.rate/free-above (s/or :value #(and (number? (c/parse-long-safe %)) (<= 0 (c/parse-long-safe %))) :empty nil?))
@@ -79,7 +81,7 @@
         {:query/keys [countries store]} (om/props component)
         countries-by-continent (group-by :country/continent countries)
         used-countries (reduce #(into %1 (:shipping.rule/destinations %2)) [] (get-in store [:store/shipping :shipping/rules]))
-        {:keys [input-validation selected-countries modal]
+        {:keys               [input-validation selected-countries modal]
          :shipping-rule/keys [section offer-free? edit-rule]} (om/get-state component)
         used-country-codes (set (map :country/code used-countries))]
     (debug "Used ccountries: " used-countries)
@@ -215,6 +217,16 @@
                         :placeholder "e.g USPS Priority, FedEx 3-day"}
                        input-validation)
               (dom/small nil "This will be visible to your customers at checkout.")))
+
+          (grid/row
+            (css/add-class :collapse)
+            (grid/column
+              nil
+              (dom/label nil "Additional information")
+              (v/input {:type "text"
+                        :id   (:shipping.rate/info form-inputs)}
+                       input-validation)
+              (dom/small nil "What should shoppers know about this shipping option?")))
 
           (grid/row
             ;(css/add-class :collapse)
