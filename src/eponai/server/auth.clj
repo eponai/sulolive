@@ -177,7 +177,8 @@
                     "Facebot"
                     "Twitterbot"}
         user-agent (get-in request [:headers "user-agent"])]
-    (some #(string/includes? user-agent %) whitelist)))
+    (when (some? user-agent)
+      (some #(string/includes? user-agent %) whitelist))))
 
 (defn bidi-route-restrictions
   "For each bidi route, we get the roles required for the route
