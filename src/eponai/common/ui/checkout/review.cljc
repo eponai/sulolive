@@ -78,7 +78,7 @@
                     (dom/span
                       (css/add-class :price)
                       (utils/two-decimal-price price))))))
-            items))
+            (sort-by #(get-in % [:store.item/_skus :store.item/name]) items)))
         (dom/div
           (css/add-class :receipt)
           (grid/row

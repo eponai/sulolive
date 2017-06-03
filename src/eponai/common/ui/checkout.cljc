@@ -94,28 +94,26 @@
            (msg/om-transact! this [(list 'stripe/update-customer {:source source})])
            (.place-order this payment)))))
 
-  (save-shipping [this props shipping]
+  (save-shipping [this shipping]
+    (om/update-state! this merge (.state-from-shipping this (om/props this) shipping)))
+
+  (state-from-shipping [_ props shipping]
     (let [country-code (get-in shipping [:shipping/address :shipping.address/country])
           {:query/keys [checkout]} props
           store (:store/_items (:store.item/_skus (first checkout)))
           shipping-rules (get-in store [:store/shipping :shipping/rules])
-          allowed-rule (some (fn [r] (some #(when (= (:country/code %) country-code) r) (:shipping.rule/destinations r))) shipping-rules)
-          available-rates (map #(assoc % :shipping.rate/total (compute-shipping-fee % checkout)) (:shipping.rule/rates allowed-rule))
-          {:shipping/keys [selected-rate]} (om/get-state this)
+          rule-for-country (some (fn [r] (some #(when (= (:country/code %) country-code) r) (:shipping.rule/destinations r))) shipping-rules)
+          available-rates (map #(assoc % :shipping.rate/total (compute-shipping-fee % checkout)) (:shipping.rule/rates rule-for-country))
           new-selected-rate (first (sort-by :shipping.rate/total available-rates))]
-      (debug "Allowed rules: " allowed-rule)
-      (debug "Saving shipping: " shipping)
-      (om/update-state! this assoc
-                        :checkout/shipping shipping
-                        :open-section (if (not-empty available-rates) :payment :shipping)
-                        :shipping/available-rates available-rates
-                        :shipping/selected-rate new-selected-rate)))
+      (debug "State from shipping: " shipping)
+      {:checkout/shipping        shipping
+       :open-section             (if (and (some? shipping) (not-empty available-rates)) :payment :shipping)
+       :shipping/available-rates available-rates
+       :shipping/selected-rate   new-selected-rate}))
 
-
-  ;; React lifecycle
   (local-state-from-props [this props]
-    (let [{:query/keys [stripe-customer] :as props} props]
-      (when (some? (:stripe/shipping stripe-customer))
+    (let [{:query/keys [stripe-customer]} props]
+      (if (some? (:stripe/shipping stripe-customer))
         (let [address (:stripe.shipping/address (:stripe/shipping stripe-customer))
               formatted {:shipping/name    (:stripe.shipping/name (:stripe/shipping stripe-customer))
                          :shipping/address {:shipping.address/street   (:stripe.shipping.address/street address)
@@ -124,22 +122,19 @@
                                             :shipping.address/country  (:stripe.shipping.address/country address)
                                             :shipping.address/region   (:stripe.shipping.address/state address)
                                             :shipping.address/postal   (:stripe.shipping.address/postal address)}}]
-          (.save-shipping this props formatted)))))
+          (.state-from-shipping this props formatted))
+        (.state-from-shipping this props nil))))
 
-  (initLocalState [_]
-    {:checkout/shipping nil
-     :checkout/payment  nil
-     :open-section      :shipping})
-
-  (componentDidMount [this]
-    (.local-state-from-props this (om/props this)))
+  ;; React lifecycle
+  (initLocalState [this]
+    (merge {:checkout/payment nil}
+           (.local-state-from-props this (om/props this))))
 
   (componentWillReceiveProps [this next-props]
-    (.local-state-from-props this next-props))
+    (om/update-state! this merge (.local-state-from-props this next-props)))
 
   (componentDidUpdate [this _ _]
     (when-let [customer-response (msg/last-message this 'stripe/update-customer)]
-      (debug "Saved customer: " customer-response)
       (when (and (msg/final? customer-response)
                  (msg/success? customer-response))
         (let [message (msg/message customer-response)]
@@ -147,14 +142,11 @@
           (.place-order this {:source (:id (:new-card message))}))))
 
     (when-let [response (msg/last-message this 'store/create-order)]
-      (debug "Created order: " response)
       (when (msg/final? response)
         (let [message (msg/message response)]
-          (debug "Message: " message)
           (msg/clear-messages! this 'store/create-order)
           (if (msg/success? response)
             (let [{:query/keys [auth]} (om/props this)]
-              (debug "Will re-route to " (routes/url :user/order {:order-id (:db/id message) :user-id (:db/id auth)}))
               (routes/set-url! this :user/order {:order-id (:db/id message) :user-id (:db/id auth)}))
             (om/update-state! this assoc :error-message message))))))
 
@@ -171,7 +163,6 @@
           grandtotal (+ subtotal shipping-fee)]
 
       (debug "Checkout state: " (om/get-state this))
-      (debug "Checkout props: " (om/props this))
       (common/page-container
         {:navbar navbar :id "sulo-checkout"}
         (when (msg/pending? checkout-resp)
@@ -209,7 +200,7 @@
                 (css/add-class :section-title)
                 (dom/p nil "2. Delivery & Payment"))
               (dom/div
-                (when (and (not= open-section :payment)
+                (when (or (not= open-section :payment)
                            (empty? available-rates))
                   (css/add-class :hide))
 
