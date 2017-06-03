@@ -146,7 +146,7 @@
                               (async/close! initial-module-loaded-chan)))
     (go
       (async/<! initial-module-loaded-chan)
-      (utils/init-state! reconciler send-fn router/Router)
+      (utils/init-state! reconciler send-fn (om/get-query router/Router))
       (async/<! initial-merge-chan)
       (debug "Adding reconciler to root.")
       (add-root! reconciler)

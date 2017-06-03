@@ -29,6 +29,10 @@
                    :result res})))
           queries)))
 
+;; The query is static, so we might as well just compute it once.
+(def router-query (om/get-query router/Router))
+(def ->Router (om/factory router/Router))
+
 (defn make-reconciler [request-env]
   (let [reconciler-atom (atom nil)
         parser (parser/client-parser (parser/client-parser-state {:query-params (:query-params request-env)}))
@@ -40,12 +44,16 @@
                                               :route        (:route request-env)
                                               :route-params (:route-params request-env)})]
     (reset! reconciler-atom reconciler)
+    (client.utils/init-state! reconciler send-fn router-query)
     reconciler))
 
+(defn render-root! [reconciler]
+  (let [parse (client.utils/parse reconciler router-query nil)]
+    (->Router parse)))
+
 (defn render-page [env]
-  (let [component router/Router
-        reconciler (make-reconciler env)
-        ui-root (om/add-root! reconciler component nil)
+  (let [reconciler (make-reconciler env)
+        ui-root (render-root! reconciler)
         html-string (dom/render-to-str ui-root)]
     (html/raw-string html-string)))
 
