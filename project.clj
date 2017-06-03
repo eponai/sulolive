@@ -112,7 +112,7 @@
                  [org.clojars.petterik/encore "2.91.1-SNAPSHOT"]
                  [com.taoensso/timbre "4.10.0"]
                  [com.taoensso/sente "1.11.0"]
-                 [com.draines/postal "2.0.1"]
+                 [com.draines/postal "2.0.2"]
                  [environ "1.1.0"]
                  [hiccup "1.0.5"]
                  [org.clojure/data.generators "0.1.2"]

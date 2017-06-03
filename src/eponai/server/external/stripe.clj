@@ -8,6 +8,7 @@
     [eponai.server.http :as h]
     [eponai.server.external.stripe.stub :as stub]
     [taoensso.timbre :refer [debug error info]]
+    [eponai.server.external.stripe.webhooks :as webhooks]
     [clojure.data.json :as json]
     [clojure.string :as string])
   (:import (clojure.lang ExceptionInfo)))
@@ -269,3 +270,8 @@
            :charge/paid?  (:paid charge)}))
 
       (-create-refund [this params]))))
+
+(defn webhook [env event]
+  (if-let [response (webhooks/handle-webhook env event)]
+    response
+    {}))

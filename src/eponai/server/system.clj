@@ -16,6 +16,7 @@
     [eponai.server.external.mailchimp :as mailchimp]
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.aws-s3 :as s3]
+    [eponai.server.external.email :as email]
     [eponai.server.external.request-handler :as request-handler]))
 
 (def system-keys #{:system/aleph
@@ -32,7 +33,8 @@
                    :system/mailchimp
                    :system/server-address
                    :system/stripe
-                   :system/wowza})
+                   :system/wowza
+                   :system/email})
 
 (defn resume-requests
   "Resumes requests when a system has been restarted."
@@ -61,7 +63,13 @@
                              :add-mocked-data? true})
    :system/server-address (c/using (server-address/map->ServerAddress {:schema (:server-url-schema env)
                                                                        :host   (:server-url-host env)})
-                                   {:aws-elb :system/aws-elb})})
+                                   {:aws-elb :system/aws-elb})
+
+   :system/email          (email/->SendEmail {:host (:smtp-host env)
+                                              ;:port (Long/parseLong (:smtp-port env))
+                                              :ssl  true
+                                              :user (:smtp-user env)
+                                              :pass (:smtp-password env)})})
 
 (defn real-components [{:keys [env] :as config}]
   {:system/auth0     (c/using (auth0/map->Auth0 {:client-id     (:auth0-client-id env)
@@ -140,7 +148,7 @@
   {:post [(= (set (keys %)) system-keys)]}
   (fake-system (dev-config config)
                ;; Put keys under here to use the real implementation
-                :system/stripe
+               :system/stripe
                ;; :system/mailchimp
                ))
 
