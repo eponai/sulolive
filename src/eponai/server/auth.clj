@@ -18,7 +18,8 @@
     [clojure.spec :as s]
     [medley.core :as medley]
     [clojure.string :as string]
-    [eponai.common.mixpanel :as mixpanel]))
+    [eponai.common.mixpanel :as mixpanel]
+    [taoensso.timbre :as timbre]))
 
 (def auth-token-cookie-name "sulo-auth-token")
 (def auth-token-remove-value "kill")
@@ -35,6 +36,9 @@
   (auth/-redirect (::auth-responder request) path))
 
 (defn remove-auth-cookie [response]
+  (when (timbre/may-log? :debug)
+    (debug "Removing auth cookie! Stacktrace:")
+    (.printStackTrace (Exception.)))
   (assoc-in response [:cookies auth-token-cookie-name] {:value {:token auth-token-remove-value} :max-age 1}))
 
 (defrecord HttpAuthResponder []
