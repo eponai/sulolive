@@ -2,14 +2,15 @@
   width: 40px;
   height: 40px;
   background-color: $white;
-  border: 1px solid $primary-color; 
-  position: fixed;
-  margin: 0 auto;
-  vertical-align: middle;
+  // border: 1px solid $primary-color; 
+  // position: fixed;
+  // margin: 0 auto;
+  // vertical-align: middle;
 
-  margin: 100px auto;
+  // margin: 100px auto;
   -webkit-animation: sk-rotateplane 1.2s infinite ease-in-out;
   animation: sk-rotateplane 1.2s infinite ease-in-out;
+  vertical-align: middle;
 }
 
 @-webkit-keyframes sk-rotateplane {
@@ -32,18 +33,23 @@
 }
 
 .sl-spinner-overlay {
-  background: rgba($white, 0.5);
-  position: absolute;
+  background: rgba($white, 0.6);
+  position: fixed;
   display: flex;
+  flex-direction: column;
   justify-content: center;
+  align-items: center;
   // align-items: center;
   width: 100%;
-  height: 100%;
+  height: 100vh;
   top: 0;
   left: 0;
   // margin-left: auto;
   // margin-right: auto; 
   z-index: 5;
+  .sl-spinner {
+    margin-bottom: 1rem;
+  }
 }
 
 @keyframes loading-slider {

@@ -135,11 +135,13 @@
 
   (componentDidUpdate [this _ _]
     (when-let [customer-response (msg/last-message this 'stripe/update-customer)]
-      (when (and (msg/final? customer-response)
-                 (msg/success? customer-response))
+      (when (msg/final? customer-response)
         (let [message (msg/message customer-response)]
-          (msg/clear-messages! this 'stripe/update-customer)
-          (.place-order this {:source (:id (:new-card message))}))))
+          (debug "error message: " message)
+          (msg/clear-one-message! this 'stripe/update-customer)
+          (if (msg/success? customer-response)
+            (.place-order this {:source (:id (:new-card message))})
+            (om/update-state! this assoc :error-message message)))))
 
     (when-let [response (msg/last-message this 'store/create-order)]
       (when (msg/final? response)
@@ -158,15 +160,16 @@
            :shipping/keys [available-rates selected-rate]} (om/get-state this)
           {:keys [route]} current-route
           checkout-resp (msg/last-message this 'store/create-order)
+          customer-resp (msg/last-message this 'stripe/update-customer)
           subtotal (review/compute-item-price checkout)
           shipping-fee (compute-shipping-fee selected-rate checkout)
           grandtotal (+ subtotal shipping-fee)]
 
-      (debug "Checkout state: " (om/get-state this))
       (common/page-container
         {:navbar navbar :id "sulo-checkout"}
-        (when (msg/pending? checkout-resp)
-          (common/loading-spinner nil))
+        (when (or (msg/pending? checkout-resp)
+                  (msg/pending? customer-resp))
+          (common/loading-spinner nil (dom/span nil "Placing your order...")))
         (grid/row
           (css/align :center)
           (grid/column

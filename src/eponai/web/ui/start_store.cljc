@@ -82,7 +82,7 @@
       (common/page-container
         {:navbar navbar :id "sulo-start-store"}
         (when (msg/pending? message)
-          (common/loading-spinner))
+          (common/loading-spinner nil))
         (photo/header
           {:photo-id "static/coming-soon-sell-bg"
            :transformation :transformation/full}

@@ -142,8 +142,8 @@
      :stripe/publ                    private-attr
      :stripe/secret                  private-attr
      :store/uuid                     public-attr
-     :store/stripe                   store-attribute
      :store/owners                   public-attr
+     :store/stripe                   store-attribute
      ;;TODO should :store/shipping be public?
      :store/shipping                 public-attr
      :store/items                    public-attr

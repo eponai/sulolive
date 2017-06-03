@@ -47,12 +47,13 @@
             (dom/span nil "x")))
         content))))
 
-(defn loading-spinner [& [opts]]
+(defn loading-spinner [opts & content]
   (dom/div
     (css/add-class :sl-spinner-overlay)
     (dom/div
       (css/add-class :sl-spinner)
-      (dom/img {:src "/assets/img/auth0-icon.png"}))))
+      (dom/img {:src "/assets/img/auth0-icon.png"}))
+    content))
 
 (defn online-channel-element [channel]
   (let [{:stream/keys [store]

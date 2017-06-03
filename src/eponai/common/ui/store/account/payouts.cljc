@@ -296,7 +296,7 @@
       (dom/div
         nil
         (cond (msg/pending? message)
-              (common/loading-spinner)
+              (common/loading-spinner nil)
               (msg/final? message)
               (when-not (msg/success? message)
                 (dom/div

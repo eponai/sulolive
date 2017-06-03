@@ -351,7 +351,7 @@
   {:auth {::auth/any-user true}
    :resp {:success return
           :error   (if (some? exception)
-                     (or (.getMessage exception) "Something went wrong")
+                     (or (:message (ex-data exception)) "Something went wrong")
                      "Something went wrong!")}}
   {:action (fn []
              (let [{:stripe/keys [id]} (stripe/pull-user-stripe (db/db state) (:user-id auth))
@@ -414,7 +414,7 @@
    :resp {:success return
           :error   (let [default-msg "Could not create order"]
                      (if (some? exception)
-                       (:user-message (ex-data exception) default-msg)
+                       (:message (ex-data exception) default-msg)
                        default-msg))}}
   {:action (fn []
              (store/create-order env store-id order))})
