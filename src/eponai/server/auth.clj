@@ -83,6 +83,8 @@
                 ;    auth0-user)
                 )))
           (catch Exception e
+            (debug "Authenticate exception. Unable to authenticate data: " data
+                   " exception: " e)
             (if-let [token-failure (when-let [data (ex-data e)]
                                      (let [{:keys [type cause]} data]
                                        (when (= type :validation)
