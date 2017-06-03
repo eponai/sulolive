@@ -290,12 +290,14 @@
                   (button/small {:onClick #(om/update-state! component assoc :shipping-rule/section :shipping-rule.section/destinations)})
                   (dom/i {:classes ["fa fa-chevron-left  fa-fw"]})
                   (dom/span nil "Back"))))
-            (button/default
-              (button/small {:onClick #(cond (= modal :modal/add-shipping-rule)
-                                             (.save-shipping-rule component)
-                                             (= modal :modal/add-shipping-rate)
-                                             (.save-shipping-rate component))})
-              (dom/span nil "Save"))))))))
+            (dom/div
+              nil
+              (button/default
+                (button/small {:onClick #(cond (= modal :modal/add-shipping-rule)
+                                               (.save-shipping-rule component)
+                                               (= modal :modal/add-shipping-rate)
+                                               (.save-shipping-rate component))})
+                (dom/span nil "Save")))))))))
 
 (defui StoreShipping
   static om/IQuery
@@ -308,6 +310,7 @@
                                              :continent/name]}]}
      {:query/store [{:store/shipping [{:shipping/rules [:shipping.rule/title
                                                         {:shipping.rule/rates [:shipping.rate/title
+                                                                               :shipping.rate/info
                                                                                :shipping.rate/first
                                                                                :shipping.rate/additional
                                                                                :shipping.rate/free-above]}
@@ -323,13 +326,15 @@
              offer-free? (utils/input-checked-by-id? (:shipping.rate/offer-free? form-inputs))
              free-above (when offer-free? (utils/input-value-by-id (:shipping.rate/free-above form-inputs)))
 
-             rule-title (utils/input-value-by-id (:shipping.rate/title form-inputs))
+             rate-title (utils/input-value-by-id (:shipping.rate/title form-inputs))
+             rate-info (utils/input-value-or-nil-by-id (:shipping.rate/info form-inputs))
              {:query/keys [current-route store]} (om/props this)
              {:keys [selected-countries]} (om/get-state this)
 
              input-map {:shipping.rule/destinations selected-countries
                         :shipping.rule/rates        [{:shipping.rate/first      rate-first
-                                                      :shipping.rate/title      rule-title
+                                                      :shipping.rate/title      rate-title
+                                                      :shipping.rate/info       rate-info
                                                       :shipping.rate/additional rate-additional
                                                       :shipping.rate/free-above free-above}]}
              input-validation (validate ::shipping input-map)]
@@ -339,8 +344,7 @@
            (msg/om-transact! this [(list 'store/save-shipping-rule {:shipping-rule input-map
                                                                     :store-id      (:store-id (:route-params current-route))})
                                    :query/store]))
-         (om/update-state! this assoc :input-validation input-validation)))
-    )
+         (om/update-state! this assoc :input-validation input-validation))))
   (save-shipping-rate [this]
     #?(:cljs
        (let [rate-first (utils/input-value-by-id (:shipping.rate/first form-inputs))
@@ -349,10 +353,12 @@
              free-above (when offer-free? (utils/input-value-by-id (:shipping.rate/free-above form-inputs)))
 
              rule-title (utils/input-value-by-id (:shipping.rate/title form-inputs))
+             rate-info (utils/input-value-or-nil-by-id (:shipping.rate/info form-inputs))
              {:query/keys [current-route store]} (om/props this)
              {:shipping-rule/keys [edit-rule]} (om/get-state this)
              input-map {:shipping.rate/first      rate-first
                         :shipping.rate/title      rule-title
+                        :shipping.rate/info       rate-info
                         :shipping.rate/additional rate-additional
                         :shipping.rate/free-above free-above}
 

@@ -210,7 +210,7 @@
                   (menu/vertical
                     (css/add-classes [:section-list :section-list--shipping])
                     (map (fn [r]
-                           (let [{:shipping.rate/keys [free-above total]} r]
+                           (let [{:shipping.rate/keys [free-above total info]} r]
                              (menu/item
                                (css/add-class :section-list-item)
                                (dom/a
@@ -225,7 +225,7 @@
                                      (css/add-class :shipping-rule)
                                      (dom/p nil (dom/span nil (:shipping.rate/title r))
                                             (dom/br nil)
-                                            (dom/small nil "This options is door to door delivery, keep your phone number close."))))
+                                            (dom/small nil info))))
                                  (dom/div
                                    (css/add-class :shipping-cost)
                                    (dom/p nil

@@ -81,6 +81,14 @@
   :db/doc                "Name of this shipping rate to show customer (e.g. FedEx 3-day)"
   :db.install/_attribute :db.part/db}
 
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping.rate/info
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/fulltext           true
+  :db/doc                "Information about this shipping for customers."
+  :db.install/_attribute :db.part/db}
+
  ;; Countries
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :country/code

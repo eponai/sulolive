@@ -81,11 +81,12 @@
 
 	.reveal {
 		overflow: hidden;
-		height: 70vh;
+		height: 100vh;
 		min-height: 30rem;
-		max-height: 50rem;
+		max-height: 40rem;
 		padding-left: 0;
 		padding-right: 0;
+		top:5rem;
 		// min-height: 60vh;
 		display: flex;
 		flex-direction: column;
@@ -105,6 +106,7 @@
 			position: relative;
 			height: 100%;
 			width: 100%;
+			display: flex;
 
 			.section-content {
 				overflow-y:  auto;
@@ -135,6 +137,7 @@
 		}
 		.section-content {
 			position: absolute;
+			flex: 1;
 			padding: 0 1rem;
 			height: 100%;
 			width: 100%;
@@ -143,6 +146,7 @@
 			flex: 1;
 			display: flex;
 			flex-direction: column;
+			// justify-content: flex-start;
 			opacity: 0;
 			transition: left .37s ease-out, opacity .37s ease-out;
 			.country-list {
@@ -163,7 +167,7 @@
 				opacity: 1;
 			}
 			.row {
-				flex: 0 0 auto;
+				flex: 0 0 auto !important;
 				margin: 0;
 			}
 			&:first-child {
@@ -268,7 +272,12 @@
 		}
 		.action-buttons {
 			flex: 1 0 auto;
+			align-items: flex-end;
+			> * {
+				flex: 0 0 auto;
+			}
 			.button {
+				flex: 0 0 auto;
 				margin-right: 0;
 				// margin-bottom: 0.5rem;
 			}
