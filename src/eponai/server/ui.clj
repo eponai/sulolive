@@ -16,7 +16,9 @@
     [eponai.server.auth :as auth]
     [eponai.server.ui.root :as root]
     [taoensso.timbre :as timbre :refer [debug]]
-    [eponai.common.ui.router :as router]))
+    [eponai.common.ui.router :as router]
+    [om.next.protocols :as p])
+  (:import (om.next.protocols IReactDOMElement)))
 
 (defn server-send [server-env reconciler-atom]
   (fn [queries cb]
@@ -49,7 +51,12 @@
 
 (defn render-root! [reconciler]
   (let [parse (client.utils/parse reconciler router-query nil)]
-    (->Router parse)))
+    (binding [om/*reconciler* reconciler
+              om/*shared* (merge (get-in reconciler [:config :shared])
+                                 (when-let [shared-fn (get-in reconciler [:config :shared-fn])]
+                                   (shared-fn parse)))
+              om/*instrument* (get-in reconciler [:config :instrument])]
+      (->Router parse))))
 
 (defn render-page [env]
   (let [reconciler (make-reconciler env)
