@@ -1,6 +1,7 @@
 (ns eponai.client.parser.read
   (:require
     [clojure.string :as str]
+    [om.next.impl.parser :as om.parser]
     [eponai.common.parser :as parser :refer [client-read]]
     [eponai.common.parser.util :as parser.util]
     [eponai.common.database :as db]
@@ -27,11 +28,10 @@
 
 (defmethod client-read :query/store
   [{:keys [db query target ast route-params] :as env} _ _]
-  (let [store-id (c/parse-long (:store-id route-params))
-        store (db/pull db query store-id)]
+  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
     (if target
       {:remote (assoc-in ast [:params :store-id] store-id)}
-      {:value (common.read/multiply-store-items store)})))
+      {:value (common.read/multiply-store-items (db/pull db query store-id))})))
 
 (defmethod client-read :query/stores
   [{:keys [db query target]} _ _]
@@ -45,69 +45,88 @@
 
 (defmethod client-read :query/store-items
   [{:keys [db query target ast route-params]} _ _]
-  (let [store-id (c/parse-long (:store-id route-params))
-        navigation (:navigation route-params)]
-    (debug "REad store items with nav: " navigation " store- id : ")
+  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
+    (let [navigation (:navigation route-params)]
+      (debug "REad store items with nav: " navigation " store- id : ")
+      (if target
+        {:remote (-> ast
+                     (assoc-in [:params :store-id] store-id)
+                     (assoc-in [:params :navigation] navigation))}
+        {:value (let [params (if (not-empty navigation)
+                               {:where   '[[?s :store/items ?e]
+                                           [?e :store.item/section ?n]
+                                           [?n :store.section/path ?p]]
+                                :symbols {'?s store-id
+                                          '?p navigation}}
+                               {:where   '[[?s :store/items ?e]]
+                                :symbols {'?s store-id}})]
+                  (db/pull-all-with db query params))}))))
+
+(defmethod client-read :query/store-item-count
+  [{:keys [db target route-params]} _ _]
+  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
     (if target
-      {:remote (-> ast
-                   (assoc-in [:params :store-id] store-id)
-                   (assoc-in [:params :navigation] navigation))}
-      {:value (let [params (if (not-empty navigation)
-                             {:where   '[[?s :store/items ?e]
-                                         [?e :store.item/section ?n]
-                                         [?n :store.section/path ?p]]
-                              :symbols {'?s store-id
-                                        '?p navigation}}
-                             {:where   '[[?s :store/items ?e]]
-                              :symbols {'?s store-id}})]
-                (db/pull-all-with db query params))})))
+      {:remote (om.parser/expr->ast (list {:query/store [{:store/items [:store.item/name]}]} {:store-id store-id}))}
+      {:value (db/find-with db {:find    '[(count ?e) .]
+                                :where   '[[?store :store/items ?e]]
+                                :symbols {'?store store-id}})})))
 
 (defmethod client-read :query/orders
   [{:keys [db query target ast route-params] :as env} _ _]
   (let [{:keys [store-id user-id]} route-params
-        store-id (when store-id (c/parse-long store-id))
-        user-id (when user-id (c/parse-long user-id))]
-    (if target
-      {:remote (-> ast
-                   (assoc-in [:params :store-id] store-id)
-                   (assoc-in [:params :user-id] user-id))}
-      {:value (cond (some? store-id)
-                    (db/pull-all-with db query {:where   '[[?e :order/store ?s]]
-                                                :symbols {'?s store-id}})
-                    (some? user-id)
-                    (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
-                                                :symbols {'?u user-id}}))})))
+        store-id (c/parse-long-safe store-id)
+        user-id (c/parse-long-safe user-id)]
+    (when (and store-id user-id)
+      (if target
+        {:remote (-> ast
+                     (assoc-in [:params :store-id] store-id)
+                     (assoc-in [:params :user-id] user-id))}
+        {:value (cond (some? store-id)
+                      (db/pull-all-with db query {:where   '[[?e :order/store ?s]]
+                                                  :symbols {'?s store-id}})
+                      (some? user-id)
+                      (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
+                                                  :symbols {'?u user-id}}))}))))
 
 (defmethod client-read :query/inventory
   [{:keys [db query target ast route-params] :as env} _ _]
-  (let [store-id (c/parse-long (:store-id route-params))]
+  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
     (if target
       {:remote (assoc-in ast [:params :store-id] store-id)}
-      {:value (db/pull-all-with db '[*] {:where '[[?store :store/items ?e]]
+      {:value (db/pull-all-with db '[*] {:where   '[[?store :store/items ?e]]
                                          :symbols {'?store store-id}})})))
+
+(defn map-all-keys
+  "returns nil when all keys couldn't be selected."
+  [map-fn in-map ks]
+  (let [res (into [] (comp
+                       (map #(get in-map %))
+                       (map map-fn)
+                       (take-while some?))
+                  ks)]
+    (when (== (count res)
+              (count ks))
+      res)))
 
 (defmethod client-read :query/order
   [{:keys [db query target ast route-params] :as env} _ _]
-  (let [{:keys [order-id store-id user-id]} route-params
-        store-id (when store-id (c/parse-long store-id))
-        user-id (when user-id (c/parse-long user-id))]
+  (when-let [[store-id user-id order-id] (map-all-keys c/parse-long-safe
+                                                       route-params
+                                                       [:store-id :user-id :order-id])]
     (if target
-      {:remote (when order-id (-> ast
-                                  (assoc-in [:params :store-id] store-id)
-                                  (assoc-in [:params :user-id] user-id)
-                                  (assoc-in [:params :order-id] (c/parse-long order-id))))}
-      {:value (when order-id
-                (db/pull db query (c/parse-long order-id)))})))
+      {:remote (-> ast
+                   (assoc-in [:params :store-id] store-id)
+                   (assoc-in [:params :user-id] user-id)
+                   (assoc-in [:params :order-id] order-id))}
+      {:value (db/pull db query order-id)})))
 
 (defmethod client-read :query/stripe-account
   [{:keys [route-params ast target db query]} _ _]
-  (let [{:keys [store-id]} route-params
-        store-id (when store-id (c/parse-long store-id))]
+  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
     (if target
       {:remote (assoc-in ast [:params :store-id] store-id)}
-      {:value (when store-id
-                (db/pull-one-with db query {:where   '[[?s :store/stripe ?e]]
-                                            :symbols {'?s store-id}}))})))
+      {:value (db/pull-one-with db query {:where   '[[?s :store/stripe ?e]]
+                                          :symbols {'?s store-id}})})))
 
 (defmethod client-read :query/stripe-customer
   [{:keys [ast target db query]} _ _]
@@ -131,12 +150,11 @@
 
 (defmethod client-read :query/user
   [{:keys [db query target ast route-params] :as env} _ _]
-  (let [user-id (c/parse-long (:user-id route-params))
-        user (db/pull-one-with db query {:where   '[[?e]]
-                                         :symbols {'?e user-id}})]
+  (when-let [user-id (c/parse-long-safe (:user-id route-params))]
     (if target
       {:remote (assoc-in ast [:params :user-id] user-id)}
-      {:value user})))
+      {:value (db/pull-one-with db query {:where   '[[?e]]
+                                          :symbols {'?e user-id}})})))
 
 (defmethod client-read :query/route-params
   [{:keys [route-params]} _ _]
@@ -144,23 +162,21 @@
 
 (defmethod client-read :query/cart
   [{:keys [db query target ast]} _ _]
-  (let [cart (db/pull-one-with db query {:where '[[?e :user.cart/items]]})]
-    (if target
-      {:remote true }
-      {:value cart})))                                      ;(common.read/compute-cart-price cart)
+  (if target
+    {:remote true}
+    {:value (db/pull-one-with db query {:where '[[?e :user.cart/items]]})}))
+;(common.read/compute-cart-price cart)
 
 (defmethod client-read :query/checkout
   [{:keys [db query route-params target ast]} _ _]
-  (let [store-id (c/parse-long-safe (:store-id route-params))]
-    (debug "query/checkout with store-id: " store-id)
+  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
     (if target
       {:remote (assoc-in ast [:params :store-id] store-id)}
-      {:value (when (some? store-id)
-                (db/pull-all-with db query {:where   '[[?u :user/cart ?c]
-                                                       [?c :user.cart/items ?e]
-                                                       [?i :store.item/skus ?e]
-                                                       [?s :store/items ?i]]
-                                            :symbols {'?s store-id}}))})))
+      {:value (db/pull-all-with db query {:where   '[[?u :user/cart ?c]
+                                                     [?c :user.cart/items ?e]
+                                                     [?i :store.item/skus ?e]
+                                                     [?s :store/items ?i]]
+                                          :symbols {'?s store-id}})})))
 
 (defmethod client-read :query/browse-items
   [{:keys [db target query route-params ast]} _ _]
@@ -289,7 +305,7 @@
 
 (defmethod client-read :query/item
   [{:keys [db query target route-params ast]} _ _]
-  (let [product-id (c/parse-long (:product-id route-params))]
+  (when-let [product-id (c/parse-long-safe (:product-id route-params))]
     (if target
       {:remote (assoc-in ast [:params :product-id] product-id)}
       {:value (db/pull-one-with db query
@@ -307,7 +323,7 @@
 
 (defmethod client-read :query/stream
   [{:keys [db query target ast route-params] :as env} _ _]
-  (let [store-id (c/parse-long (:store-id route-params))]
+  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
     (if target
       {:remote (assoc-in ast [:params :store-id] store-id)}
       {:value (db/pull-one-with db query {:where   '[[?e :stream/store ?store-id]]
@@ -389,7 +405,7 @@
 
 (defmethod client-read :query/chat
   [{:keys [ast target db route-params query]} _ _]
-  (let [store-id (c/parse-long (:store-id route-params))]
+  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
     (if (some? target)
       {:remote/chat (assoc-in ast [:params :store :db/id] store-id)}
       {:value (db/pull-one-with db query {:where   '[[?e :chat/store ?store-id]]

@@ -149,7 +149,7 @@
 
 (defn wrap-debug-read-or-mutate [read-or-mutate]
   (fn [env k params]
-    (debug "parsing key:" k)
+    (debug "parsing key:" k " query: " (:query env))
     (let [ret (read-or-mutate env k params)]
       (debug "parsed key:" k "returned:" ret)
       ret)))
@@ -666,12 +666,13 @@
    (make-parser state
                 (fn [parser state]
                   (-> parser
-                      (db-state-parser state)
-                      (cond-> (not (::skip-dedupe state)) (dedupe-parser (::read state)))))
+                      (cond-> (not (::skip-dedupe state)) (dedupe-parser (::read state)))
+                      (db-state-parser state)))
                 (fn [read {:keys [txs-by-project]}]
                   (-> read
                       wrap-datascript-db
-                      (with-txs-by-project-atom txs-by-project)))
+                      (with-txs-by-project-atom txs-by-project)
+                      (cond-> (::debug-reads state) wrap-debug-read-or-mutate)))
                 (fn [mutate state]
                   (-> mutate
                       with-pending-message
@@ -766,7 +767,7 @@
 (defn- flatten-reads
   "Returns map with #{:key :params :query}"
   [env parser-read query]
-  (let [target nil
+  (let [target (:target env)
         flattened (atom [])
         ;; TODO: Flatten reads without calling parser.
         ;; Calling parser will create an ast of everything.
@@ -777,14 +778,23 @@
                      (is-proxy? k)
                      (util/read-join env k p)
                      :else
-                     (swap! flattened conj (:ast env)))
+                     (let [ast (if (nil? target)
+                                 (:ast env)
+                                 (let [ret (get (parser-read env k p) target)]
+                                   ;; Makes it possible for remote queries to be different then the
+                                   ;; original ast
+                                   (if (true? ret)
+                                     (:ast env)
+                                     ret)))]
+                       (when (some? ast)
+                         (swap! flattened conj ast))))
                ;; Return nil so the parser doesn't have to do anything with the return.
                nil)
         parser (om/parser {:read        read
                            :mutate      (constantly nil)
                            :elide-paths true})]
     (parser env query target)
-    @flattened))
+    (not-empty @flattened)))
 
 (defn- key-params->dedupe-key [key params]
   (keyword "proxy" (str (when-let [ns (namespace key)] (str ns "-"))
@@ -817,12 +827,13 @@
   (let [dedupe-cache (atom {})]
     (fn [env query & [target]]
       ;; assoc the passed parser instead of using this parser.
-      (let [env (assoc env :parser parser)
+      (let [env (assoc env :parser parser :target target)
             {mutations true reads false} (group-by mutation? query)
             ;; Do mutations first.
             mutate-ret (when (seq mutations)
                          (parser env mutations target))
-            cache-path (delay [(hash reads)
+            cache-path (delay [target
+                               (hash reads)
                                (hash (client.routes/current-route (:state env)))])
             deduped-query (when (seq reads)
                             (if-let [q (get-in @dedupe-cache @cache-path)]
@@ -830,7 +841,6 @@
                               (let [q (dedupe-reads parser-read env reads)]
                                 (swap! dedupe-cache assoc-in @cache-path q)
                                 q)))
-
             deduped-parse (parser env deduped-query target)
             deduped-result-parser
             (om/parser
@@ -848,11 +858,11 @@
                                       {:value v})))})
             ret (if (some? target)
                   (cond-> mutate-ret
-                          (seq reads)
+                          (seq deduped-query)
                           ((fnil into []) deduped-parse))
                   (cond->> mutate-ret
                            (seq reads)
                            (merge (-> (deduped-result-parser env query target)
                                       (om.parser/path-meta (if (contains? env :path) (:path env) [])
                                                            query)))))]
-        ret))))
+        (not-empty ret)))))
