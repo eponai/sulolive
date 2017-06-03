@@ -84,12 +84,8 @@
         {:keys               [input-validation selected-countries modal]
          :shipping-rule/keys [section offer-free? edit-rule]} (om/get-state component)
         used-country-codes (set (map :country/code used-countries))]
-    (debug "Used ccountries: " used-countries)
     (common/modal
-      {
-       ;:on-close       on-close
-       ;:require-close? true
-       }
+      nil
       (dom/div
         (css/add-class :section-title)
         (cond (and (= section :shipping-rule.section/destinations)
@@ -127,15 +123,6 @@
                                                              []
                                                              countries-by-continent)}
                                            {:on-change #(add-shipping-destination component % used-country-codes)}))
-          ;(grid/row
-          ;  (css/add-class :collapse)
-          ;  (grid/column
-          ;    nil
-          ;    )
-          ;  (grid/column
-          ;    (css/add-class :shrink)
-          ;    ))
-
           (when (not-empty selected-countries)
             [
              (menu/vertical
@@ -155,58 +142,13 @@
                  (cond->> (button/small {:onClick #(om/update-state! component assoc :shipping-rule/section :shipping-rule.section/rates)})
                           (empty? selected-countries)
                           (css/add-class :disabled))
-                 (dom/span nil "Next")))
+                 (dom/span nil "Next")))]))
 
-             ])
-          ;(dom/select nil
-          ;            (map (fn [[continent cs]]
-          ;                   (debug "Entry: " {:continent continent
-          ;                                     :countries cs})
-          ;                   (dom/optgroup
-          ;                     {:label (:continent/name continent)}
-          ;                     (map (fn [c]
-          ;                            (dom/option {:value (:country/code c)} (:country/name c)))
-          ;                          cs)))
-          ;                 countries-by-continent))
-          )
         (dom/div
           (cond->> (css/add-classes [:section-content :section-content--rates])
                    (or (= section :shipping-rule.section/rates)
                        (= modal :modal/add-shipping-rate))
                    (css/add-class :is-active))
-          ;(menu/horizontal
-          ;  (css/add-class :shipping-types)
-          ;  (menu/item
-          ;    nil
-          ;    (dom/a
-          ;      {:onClick #(om/update-state! component assoc :shipping-rule/selected-type :flat-rate)}
-          ;      (dom/label
-          ;        (css/add-class :shipping-type-option)
-          ;        (dom/input {:type    "radio"
-          ;                    :name    "sulo-select-shipping-type"
-          ;                    :onClick #(om/update-state! component assoc :shipping-rule/selected-type :flat-rate)
-          ;                    :checked (= selected-type :flat-rate)})
-          ;        (dom/span nil "Flat rate"))))
-          ;  (menu/item
-          ;    nil
-          ;    (dom/a
-          ;      {:onClick #(om/update-state! component assoc :shipping-rule/selected-type :free-shipping)}
-          ;      (dom/label
-          ;        (css/add-class :shipping-type-option)
-          ;        (dom/input {:type    "radio"
-          ;                    :name    "sulo-select-shipping-type"
-          ;                    :onClick #(om/update-state! component assoc :shipping-rule/selected-type :free-shipping)
-          ;                    :checked (= selected-type :free-shipping)})
-          ;        (dom/span nil "Free shipping")))))
-          ;(when (some? edit-rule)
-          ;  (let [{:shipping.rule/keys [destinations]} edit-rule
-          ;        sorted-dest (sort-by :country/name destinations)]
-          ;    (dom/div
-          ;      (css/add-class :shipping-rule-card-header--title)
-          ;      (dom/label nil
-          ;                 (string/join ", " (map :country/name (take 3 sorted-dest))))
-          ;      (when (< 0 (- (count destinations) 3))
-          ;        (dom/label nil (str " & " (- (count destinations) 3) " more"))))))
           (grid/row
             (css/add-class :collapse)
             (grid/column
@@ -275,12 +217,6 @@
                           :min          0}
                          input-validation))
               (grid/column nil)))
-          ;<div class= "switch" >
-          ;<input class= "switch-input" id= "exampleSwitch" type= "checkbox" name= "exampleSwitch" >
-          ;<label class= "switch-paddle" for= "exampleSwitch" >
-          ;<span class= "show-for-sr" >Download Kittens</span>
-          ;</label>
-          ;</div>
           (dom/div
             (css/add-class :action-buttons)
             (dom/div
@@ -338,8 +274,6 @@
                                                       :shipping.rate/additional rate-additional
                                                       :shipping.rate/free-above free-above}]}
              input-validation (validate ::shipping input-map)]
-         (debug "input:  " input-map)
-         (debug "validation: " input-validation)
          (when (nil? input-validation)
            (msg/om-transact! this [(list 'store/save-shipping-rule {:shipping-rule input-map
                                                                     :store-id      (:store-id (:route-params current-route))})
@@ -363,8 +297,6 @@
                         :shipping.rate/free-above free-above}
 
              input-validation (validate :shipping.rule/rate input-map)]
-         (debug "input: " input-map)
-         (debug "validation: " input-validation)
          (when (nil? input-validation)
            (msg/om-transact! this [(list 'store/update-shipping-rule {:shipping-rule (update edit-rule :shipping.rule/rates conj input-map)
                                                                       :store-id      (:store-id (:route-params current-route))})
@@ -477,10 +409,5 @@
                                  (let [free-above (:shipping.rate/free-above r)]
                                    (if (some? free-above)
                                      (dom/span nil (str "> " (ui-utils/two-decimal-price free-above)))
-                                     (dom/span nil "No")))))) rates)))
-                  ;(dom/div
-                  ;  (css/add-class :shipping-rule-card-footer)
-                  ;  (button/default-hollow
-                  ;    (button/small) (dom/span nil "Add shipping rate")))
-                  )))
+                                     (dom/span nil "No")))))) rates))))))
             (get-in store [:store/shipping :shipping/rules])))))))
