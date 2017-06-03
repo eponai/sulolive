@@ -48,10 +48,10 @@
       (parser env query target)
       (parser env query))))
 
-(defn init-state! [reconciler send-fn component]
+(defn init-state! [reconciler send-fn root-query]
   (let [remote-queries (into {}
                              (map (fn [remote]
-                                    [remote (parse reconciler (om/get-query component) remote)]))
+                                    [remote (parse reconciler root-query remote)]))
                              (reconciler-remotes reconciler))]
     (debug "Remote-queries: " remote-queries)
     (send-fn remote-queries

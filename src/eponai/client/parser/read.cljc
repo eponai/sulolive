@@ -214,23 +214,28 @@
                  [:top-category :sub-category :sub-sub-category]))
 
 (defn navigate-gender [db query gender]
-  (when (db/one-with db (db/merge-query (products/category-names-query {:sub-category gender})
-                                        {:where '[[(identity ?sub) ?e]]}))
-    (let [query-without-children (into [] (remove-query-key :category/children) query)]
-      (-> {:category/name     gender
-           :category/label    (str/capitalize gender)
-           :category/children (->> (db/pull-all-with db query-without-children
-                                                     (db/merge-query (products/category-names-query {:sub-category gender})
-                                                                     {:where '[[?e :category/children ?sub]]}))
-                                   (into []
-                                         (map (fn [category]
-                                                (->> (db/merge-query (products/category-names-query
-                                                                       {:top-category (:category/name category)
-                                                                        :sub-category gender})
-                                                                     {:where '[[?sub :category/children ?e]]})
-                                                     (db/pull-all-with db query-without-children)
-                                                     (assoc category :category/children))))))}
-          (assoc-gender-hrefs)))))
+  (let [gender-query (products/category-names-query {:sub-category gender})]
+    (when (db/one-with db (db/merge-query gender-query {:where '[[(identity ?sub) ?e]]}))
+     (let [query-without-children (into [:db/id] (remove-query-key :category/children) query)
+           ;; Since our query is flat, it's faster to just select keys from the entity.
+           entity-pull (comp (map #(db/entity db %))
+                             (map #(select-keys % query-without-children)))]
+       #_(assert (every? keyword? query-without-children))
+       (-> {:category/name     gender
+            :category/label    (str/capitalize gender)
+            :category/children (->> (db/all-with db (db/merge-query gender-query {:where '[[?e :category/children ?sub]]}))
+                                    (into []
+                                          (comp
+                                            entity-pull
+                                            (map (fn [category]
+                                                   (->> (db/merge-query (products/category-names-query
+                                                                          {:top-category (:category/name category)
+                                                                           :sub-category gender})
+                                                                        {:where '[[?sub :category/children ?e]]})
+                                                        (db/all-with db)
+                                                        (into [] entity-pull)
+                                                        (assoc category :category/children)))))))}
+           (assoc-gender-hrefs))))))
 
 (defn navigate-category [db query category-name]
   (some-> (db/pull-one-with db (into [{:category/children '...}]

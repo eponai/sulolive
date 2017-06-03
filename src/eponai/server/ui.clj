@@ -29,10 +29,14 @@
                    :result res})))
           queries)))
 
-(defn make-reconciler [request-env component]
+;; The query is static, so we might as well just compute it once.
+(def router-query (om/get-query router/Router))
+(def ->Router (om/factory router/Router))
+
+(defn make-reconciler [request-env]
   (let [reconciler-atom (atom nil)
         parser (parser/client-parser (parser/client-parser-state {:query-params (:query-params request-env)}))
-        send-fn (server-send request-env reconciler-atom )
+        send-fn (server-send request-env reconciler-atom)
         reconciler (client.reconciler/create {:conn         (datascript/conn-from-db (:empty-datascript-db request-env))
                                               :parser       parser
                                               :send-fn      send-fn
@@ -40,13 +44,21 @@
                                               :route        (:route request-env)
                                               :route-params (:route-params request-env)})]
     (reset! reconciler-atom reconciler)
-    (client.utils/init-state! reconciler send-fn component)
     reconciler))
 
+(defn render-root! [reconciler]
+  (let [parse (client.utils/parse reconciler router-query nil)]
+    (binding [om/*reconciler* reconciler
+              om/*shared* (merge (get-in reconciler [:config :shared])
+                                 (when-let [shared-fn (get-in reconciler [:config :shared-fn])]
+                                   (shared-fn parse)))
+              om/*instrument* (get-in reconciler [:config :instrument])]
+      (->Router parse))))
+
 (defn render-page [env]
-  (let [component router/Router
-        reconciler (make-reconciler env component)
-        ui-root (om/add-root! reconciler component nil)
+  (let [reconciler (make-reconciler env)
+        _ (client.utils/init-state! reconciler (get-in reconciler [:config :send]) router-query)
+        ui-root (render-root! reconciler)
         html-string (dom/render-to-str ui-root)]
     (html/raw-string html-string)))
 

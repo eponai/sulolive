@@ -50,12 +50,12 @@
           (db/merge-query {:where   '[[?top :category/path ?top-name]]
                            :symbols {'?top-name top-category}})
           (some? sub-category)
-          (db/merge-query {:where   '[[?top :category/children ?sub]
-                                      [?sub :category/name ?sub-name]]
+          (db/merge-query {:where   '[[?sub :category/name ?sub-name]
+                                      [?top :category/children ?sub]]
                            :symbols {'[?sub-name ...] (normalize-gender sub-category)}})
           (some? sub-sub-category)
-          (db/merge-query {:where   '[[?sub :category/children ?sub-sub]
-                                      [?sub-sub :category/name ?sub-sub-name]]
+          (db/merge-query {:where   '[[?sub-sub :category/name ?sub-sub-name]
+                                      [?sub :category/children ?sub-sub]]
                            :symbols {'[?sub-sub-name ...] (normalize-gender sub-sub-category)}})))
 
 (defn smallest-category [{:keys [top-category sub-category sub-sub-category]}]

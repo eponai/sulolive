@@ -82,3 +82,31 @@
                        (test/is (some? (-> result :stream/_store first :stream/token)))
                        (test/is (some? (-> result :store/owners))))))))
     (c/stop datomic)))
+
+
+(deftest optimize-navigate-gender
+  (let [datomic (c/start (datomic/map->Datomic
+                           {:add-mocked-data? true}))]
+    (try
+      (let [server-parse (fn [query]
+                           ((parser/server-parser) {:state (:conn datomic)} query))
+            datascript-schema (:datascript/schema (server-parse [:datascript/schema]))
+            ds-conn (datascript/create-conn (merge datascript-schema
+                                                   (eponai.common.datascript/ui-schema)))
+            client-parse (fn [query]
+                           (let [client-parser (parser/client-parser)
+                                 env {:state ds-conn}
+                                 remote-query (client-parser env query :remote)
+                                 server-response (server-parse remote-query)]
+                             ;; Poor man's merge
+                             (reduce (fn self [conn [k v]]
+                                          (if (parser/is-special-key? k)
+                                            (reduce self conn v)
+                                            (datascript/transact conn v))
+                                          conn)
+                                     ds-conn
+                                     server-response)
+                             ((parser/client-parser) {:state ds-conn} query)))]
+        (test/is (seq (:query/navigation (client-parse [{:query/navigation [:category/name :category/label :category/path :category/href]}])))))
+      (finally
+        (c/stop datomic)))))
