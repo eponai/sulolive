@@ -73,13 +73,14 @@
 (defn add-shipping-rule-modal [component]
   (let [on-close #(om/update-state! component (fn [st]
                                                 (-> st
-                                                    (dissoc :modal)
+                                                    (dissoc :modal :shipping-rule/edit-rule)
                                                     (assoc :selected-countries []
                                                            :shipping-rule/section :shipping-rule.section/destinations))))
         {:query/keys [countries store]} (om/props component)
         countries-by-continent (group-by :country/continent countries)
         used-countries (reduce #(into %1 (:shipping.rule/destinations %2)) [] (get-in store [:store/shipping :shipping/rules]))
-        {:keys [input-validation selected-countries shipping-rule/section shipping-rule/offer-free?]} (om/get-state component)
+        {:keys [input-validation selected-countries modal]
+         :shipping-rule/keys [section offer-free? edit-rule]} (om/get-state component)
         used-country-codes (set (map :country/code used-countries))]
     (debug "Used ccountries: " used-countries)
     (common/modal
@@ -89,9 +90,11 @@
        }
       (dom/div
         (css/add-class :section-title)
-        (cond (= section :shipping-rule.section/destinations)
+        (cond (and (= section :shipping-rule.section/destinations)
+                   (not= modal :modal/add-shipping-rate))
               (dom/p (css/add-class :header) (dom/span nil "Add destinations"))
-              (= section :shipping-rule.section/rates)
+              (or (= section :shipping-rule.section/rates)
+                  (= modal :modal/add-shipping-rate))
               (dom/p (css/add-class :header) (dom/span nil "Add shipping rate")))
         (dom/a
           (css/add-class :close-button {:onClick on-close})
@@ -102,7 +105,8 @@
 
         (dom/div
           (cond->> (css/add-classes [:section-content :section-content--destinations])
-                   (= section :shipping-rule.section/destinations)
+                   (and (= section :shipping-rule.section/destinations)
+                        (not= modal :modal/add-shipping-rate))
                    (css/add-class :is-active))
           (dom/small nil "Select which countries you want to ship to. You'll add rates in the next step.")
           (select/->SelectOne (om/computed {:options (reduce (fn [l [con cs]]
@@ -165,7 +169,8 @@
           )
         (dom/div
           (cond->> (css/add-classes [:section-content :section-content--rates])
-                   (= section :shipping-rule.section/rates)
+                   (or (= section :shipping-rule.section/rates)
+                       (= modal :modal/add-shipping-rate))
                    (css/add-class :is-active))
           ;(menu/horizontal
           ;  (css/add-class :shipping-types)
@@ -191,6 +196,15 @@
           ;                    :onClick #(om/update-state! component assoc :shipping-rule/selected-type :free-shipping)
           ;                    :checked (= selected-type :free-shipping)})
           ;        (dom/span nil "Free shipping")))))
+          ;(when (some? edit-rule)
+          ;  (let [{:shipping.rule/keys [destinations]} edit-rule
+          ;        sorted-dest (sort-by :country/name destinations)]
+          ;    (dom/div
+          ;      (css/add-class :shipping-rule-card-header--title)
+          ;      (dom/label nil
+          ;                 (string/join ", " (map :country/name (take 3 sorted-dest))))
+          ;      (when (< 0 (- (count destinations) 3))
+          ;        (dom/label nil (str " & " (- (count destinations) 3) " more"))))))
           (grid/row
             (css/add-class :collapse)
             (grid/column
@@ -257,12 +271,18 @@
           ;</div>
           (dom/div
             (css/add-class :action-buttons)
-            (button/default-hollow
-              (button/small {:onClick #(om/update-state! component assoc :shipping-rule/section :shipping-rule.section/destinations)})
-              (dom/i {:classes ["fa fa-chevron-left  fa-fw"]})
-              (dom/span nil "Back"))
+            (dom/div
+              nil
+              (if-not (= modal :modal/add-shipping-rate)
+                (button/default-hollow
+                  (button/small {:onClick #(om/update-state! component assoc :shipping-rule/section :shipping-rule.section/destinations)})
+                  (dom/i {:classes ["fa fa-chevron-left  fa-fw"]})
+                  (dom/span nil "Back"))))
             (button/default
-              (button/small {:onClick #(.save-shipping-rule component)})
+              (button/small {:onClick #(cond (= modal :modal/add-shipping-rule)
+                                             (.save-shipping-rule component)
+                                             (= modal :modal/add-shipping-rate)
+                                             (.save-shipping-rate component))})
               (dom/span nil "Save"))))))))
 
 (defui StoreShipping
@@ -301,7 +321,7 @@
                                                       :shipping.rate/additional rate-additional
                                                       :shipping.rate/free-above free-above}]}
              input-validation (validate ::shipping input-map)]
-         (debug "input: " input-map)
+         (debug "input:  " input-map)
          (debug "validation: " input-validation)
          (when (nil? input-validation)
            (msg/om-transact! this [(list 'store/save-shipping-rule {:shipping-rule input-map
@@ -309,14 +329,47 @@
                                    :query/store]))
          (om/update-state! this assoc :input-validation input-validation)))
     )
+  (save-shipping-rate [this]
+    #?(:cljs
+       (let [rate-first (utils/input-value-by-id (:shipping.rate/first form-inputs))
+             rate-additional (utils/input-value-by-id (:shipping.rate/additional form-inputs))
+             offer-free? (utils/input-checked-by-id? (:shipping.rate/offer-free? form-inputs))
+             free-above (when offer-free? (utils/input-value-by-id (:shipping.rate/free-above form-inputs)))
+
+             rule-title (utils/input-value-by-id (:shipping.rate/title form-inputs))
+             {:query/keys [current-route store]} (om/props this)
+             {:shipping-rule/keys [edit-rule]} (om/get-state this)
+             input-map {:shipping.rate/first      rate-first
+                        :shipping.rate/title      rule-title
+                        :shipping.rate/additional rate-additional
+                        :shipping.rate/free-above free-above}
+
+             input-validation (validate :shipping.rule/rate input-map)]
+         (debug "input: " input-map)
+         (debug "validation: " input-validation)
+         (when (nil? input-validation)
+           (msg/om-transact! this [(list 'store/update-shipping-rule {:shipping-rule (update edit-rule :shipping.rule/rates conj input-map)
+                                                                      :store-id      (:store-id (:route-params current-route))})
+                                   :query/store]))
+         (om/update-state! this assoc :input-validation input-validation))))
+
   (componentDidUpdate [this _ _]
-    (let [rule-message (msg/last-message this 'store/save-shipping-rule)]
+    (let [rule-message (msg/last-message this 'store/save-shipping-rule)
+          update-message (msg/last-message this 'store/update-shipping-rule)]
       (when (and (msg/final? rule-message)
                  (msg/success? rule-message))
         (msg/clear-one-message! this 'store/save-shipping-rule)
         (om/update-state! this (fn [st]
                                  (-> st
                                      (dissoc :modal)
+                                     (assoc :selected-countries []
+                                            :shipping-rule/section :shipping-rule.section/destinations)))))
+      (when (and (msg/final? update-message)
+                 (msg/success? update-message))
+        (msg/clear-one-message! this 'store/update-shipping-rule)
+        (om/update-state! this (fn [st]
+                                 (-> st
+                                     (dissoc :modal :shipping-rule/edit-rule)
                                      (assoc :selected-countries []
                                             :shipping-rule/section :shipping-rule.section/destinations)))))))
   (render [this]
@@ -345,8 +398,8 @@
         (dom/div
           (css/add-class :section-title)
           (dom/h2 nil "Shipping rules"))
-        (cond (= modal :modal/add-shipping-rule)
-              (add-shipping-rule-modal this))
+        (when (some? modal)
+          (add-shipping-rule-modal this))
         (callout/callout
           (css/add-classes [:section-container :section-container--shipping-rules])
           (grid/row
@@ -381,35 +434,32 @@
                       (->> (css/add-class :shipping-rule-card-header--add-new)
                            (grid/column-size {:small 12 :medium 4}))
                       (button/default-hollow
-                        (button/small) (dom/span nil "Add shipping rate"))))
-                  (menu/vertical
+                        (button/small {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-rate :shipping-rule/edit-rule sr)})
+                        (dom/span nil "Add shipping rate"))))
+                  (table/table
                     nil
-                    (map (fn [r]
-                           (menu/item
-                             nil
-                             (table/table
+                    (table/thead
+                      nil
+                      (table/thead-row
+                        nil
+                        (table/th nil "Name")
+                        (table/th nil "Rate")
+                        (table/th nil "Free shipping")))
+                    (table/tbody
+                      nil
+                      (map (fn [r]
+                             (table/tbody-row
                                nil
-                               (table/thead
+                               (table/td nil (dom/span nil (:shipping.rate/title r)))
+                               (table/td
                                  nil
-                                 (table/thead-row
-                                   nil
-                                   (table/th nil "Name")
-                                   (table/th nil "Rate")
-                                   (table/th nil "Free shipping")))
-                               (table/tbody
+                                 (dom/span nil (ui-utils/two-decimal-price (:shipping.rate/first r))))
+                               (table/td
                                  nil
-                                 (table/tbody-row
-                                   nil
-                                   (table/td nil (dom/span nil (:shipping.rate/title r)))
-                                   (table/td
-                                     nil
-                                     (dom/span nil (ui-utils/two-decimal-price (:shipping.rate/first r))))
-                                   (table/td
-                                     nil
-                                     (let [free-above (:shipping.rate/free-above r)]
-                                       (if (some? free-above)
-                                         (dom/span nil (str "> " (ui-utils/two-decimal-price free-above)))
-                                         (dom/span nil "No"))))))))) rates))
+                                 (let [free-above (:shipping.rate/free-above r)]
+                                   (if (some? free-above)
+                                     (dom/span nil (str "> " (ui-utils/two-decimal-price free-above)))
+                                     (dom/span nil "No")))))) rates)))
                   ;(dom/div
                   ;  (css/add-class :shipping-rule-card-footer)
                   ;  (button/default-hollow

@@ -110,7 +110,7 @@
     (when (not-empty section-txs)
       (db/transact state section-txs))))
 
-(defn save-shipping-rule [{:keys [state]} store-id {:keys [shipping-rule]}]
+(defn create-shipping-rule [{:keys [state]} store-id {:keys [shipping-rule]}]
   (let [{old-shipping :store/shipping} (db/pull (db/db state) [:db/id :store/shipping] store-id)
         new-rule (f/shipping-rule shipping-rule)]
     (debug "New rule: " new-rule)
@@ -120,6 +120,17 @@
       (let [new-shipping (cf/add-tempid {:shipping/rules [new-rule]})]
         (db/transact state [new-shipping
                             [:db/add store-id :store/shipping (:db/id new-shipping)]])))))
+
+(defn update-shipping-rule [{:keys [state]} rule-id {:shipping.rule/keys [rates] :as params}]
+  (let [old-rule (db/pull (db/db state) [:db/id :shipping.rule/rates] rule-id)
+        old-rates (:shipping.rule/rates old-rule)
+        new-rule (f/shipping-rule (assoc params :db/id rule-id))
+
+        rule-txs [new-rule]
+
+        new-rates (map #(f/shipping-rate %) rates)
+        rule-rates-txs (into rule-txs (edit-many-txs rule-id :shipping.rule/rates old-rates new-rates))]
+    (db/transact state rule-rates-txs)))
 
 (defn delete-product [{:keys [state]} product-id]
   (db/transact state [[:db.fn/retractEntity product-id]]))

@@ -134,6 +134,20 @@
 			flex-direction: column;
 			opacity: 0;
 			transition: left .37s ease-out, opacity .37s ease-out;
+			.country-list {
+				display: flex;
+				> * {
+					margin-right: 0.5rem;
+				}
+				margin-bottom: 1rem;
+				border-bottom: $global-border-secondary;
+				label {
+					font-weight: $global-weight-normal;
+					// color: $body-font-color;
+					text-transform: uppercase;
+					// font-size: 90%;
+				}
+			}
 			&.is-active {
 				opacity: 1;
 			}

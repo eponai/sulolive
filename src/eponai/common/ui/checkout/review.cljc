@@ -13,7 +13,7 @@
   (reduce + (map #(get-in % [:store.item/_skus :store.item/price]) items)))
 
 (defn store-element [s]
-  (debug "Store element: " s)
+  ;(debug "Store element: " s)
   (let [{:store/keys [profile]} s
         {:store.profile/keys [photo]
          store-name :store.profile/name} profile]
@@ -35,7 +35,7 @@
   (render [this]
     (let [{:keys [items subtotal shipping]} (om/props this)
           item-count (count items)]
-      (debug "CheckoutReview " (om/props this))
+      ;(debug "CheckoutReview " (om/props this))
       (callout/callout
         nil
         (let [store (:store/_items (:store.item/_skus (first items)))]
@@ -45,7 +45,7 @@
           (css/add-class :sl-CheckoutItemlist)
           (map
             (fn [sku]
-              (debug "SKU: " sku)
+              ;(debug "SKU: " sku)
               (let [{:store.item/keys [price photos]
                      product-id       :db/id
                      item-name        :store.item/name :as product} (get sku :store.item/_skus)

@@ -299,7 +299,16 @@
           :error   "Could not update store sections."}}
   {:action (fn []
              (debug "store/update-sections with params: " p)
-             (store/save-shipping-rule env (c/parse-long store-id) p))})
+             (store/create-shipping-rule env (c/parse-long store-id) p))})
+
+(defmutation store/update-shipping-rule
+  [env _ {:keys [store-id shipping-rule] :as p}]
+  {:auth {::auth/store-owner store-id}
+   :resp {:success "Your store sections were updated"
+          :error   "Could not update store sections."}}
+  {:action (fn []
+             (debug "store/update-shipping-rule with params: " p)
+             (store/update-shipping-rule env (:db/id shipping-rule) shipping-rule))})
 
 ;######## STRIPE ########
 

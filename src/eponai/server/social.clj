@@ -19,7 +19,7 @@
                               store-id)]
       (let [{:keys  [store/profile]
              stream :stream/_store} store
-            image (photos/transform (get-in profile [:store.profile/photo :photo/id]) :transformation/thumbnail-large)
+            image (photos/transform (get-in profile [:store.profile/photo :photo/id]) :transformation/thumbnail)
             stream-url (when (= :stream.state/live
                                 (:stream/state stream))
                          (stream/wowza-live-stream-url (wowza/subscriber-url (:system/wowza system))

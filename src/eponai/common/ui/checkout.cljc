@@ -94,9 +94,9 @@
            (msg/om-transact! this [(list 'stripe/update-customer {:source source})])
            (.place-order this payment)))))
 
-  (save-shipping [this shipping]
+  (save-shipping [this props shipping]
     (let [country-code (get-in shipping [:shipping/address :shipping.address/country])
-          {:query/keys [checkout]} (om/props this)
+          {:query/keys [checkout]} props
           store (:store/_items (:store.item/_skus (first checkout)))
           shipping-rules (get-in store [:store/shipping :shipping/rules])
           allowed-rule (some (fn [r] (some #(when (= (:country/code %) country-code) r) (:shipping.rule/destinations r))) shipping-rules)
@@ -104,16 +104,38 @@
           {:shipping/keys [selected-rate]} (om/get-state this)
           new-selected-rate (first (sort-by :shipping.rate/total available-rates))]
       (debug "Allowed rules: " allowed-rule)
+      (debug "Saving shipping: " shipping)
       (om/update-state! this assoc
                         :checkout/shipping shipping
                         :open-section (if (not-empty available-rates) :payment :shipping)
                         :shipping/available-rates available-rates
                         :shipping/selected-rate new-selected-rate)))
 
+
+  ;; React lifecycle
+  (local-state-from-props [this props]
+    (let [{:query/keys [stripe-customer] :as props} props]
+      (when (some? (:stripe/shipping stripe-customer))
+        (let [address (:stripe.shipping/address (:stripe/shipping stripe-customer))
+              formatted {:shipping/name    (:stripe.shipping/name (:stripe/shipping stripe-customer))
+                         :shipping/address {:shipping.address/street   (:stripe.shipping.address/street address)
+                                            :shipping.address/street2  (:stripe.shipping.address/street2 address)
+                                            :shipping.address/locality (:stripe.shipping.address/city address)
+                                            :shipping.address/country  (:stripe.shipping.address/country address)
+                                            :shipping.address/region   (:stripe.shipping.address/state address)
+                                            :shipping.address/postal   (:stripe.shipping.address/postal address)}}]
+          (.save-shipping this props formatted)))))
+
   (initLocalState [_]
     {:checkout/shipping nil
      :checkout/payment  nil
      :open-section      :shipping})
+
+  (componentDidMount [this]
+    (.local-state-from-props this (om/props this)))
+
+  (componentWillReceiveProps [this next-props]
+    (.local-state-from-props this next-props))
 
   (componentDidUpdate [this _ _]
     (when-let [customer-response (msg/last-message this 'stripe/update-customer)]
@@ -135,20 +157,6 @@
               (debug "Will re-route to " (routes/url :user/order {:order-id (:db/id message) :user-id (:db/id auth)}))
               (routes/set-url! this :user/order {:order-id (:db/id message) :user-id (:db/id auth)}))
             (om/update-state! this assoc :error-message message))))))
-  (componentDidMount [this]
-    (let [{:query/keys [stripe-customer]} (om/props this)]
-      (when (some? (:stripe/shipping stripe-customer))
-        (let [address (:stripe.shipping/address (:stripe/shipping stripe-customer))
-              formatted {:shipping/name    (:stripe.shipping/name (:stripe/shipping stripe-customer))
-                         :shipping/address {:shipping.address/street   (:stripe.shipping.address/street address)
-                                            :shipping.address/street2  (:stripe.shipping.address/street2 address)
-                                            :shipping.address/locality (:stripe.shipping.address/city address)
-                                            :shipping.address/country  (:stripe.shipping.address/country address)
-                                            :shipping.address/region   (:stripe.shipping.address/state address)
-                                            :shipping.address/postal   (:stripe.shipping.address/postal address)}}]
-          (.save-shipping this formatted)
-          ;(om/update-state! this assoc :checkout/shipping formatted :open-section :payment)
-          ))))
 
   (render [this]
     (let [{:proxy/keys [navbar]
@@ -162,6 +170,8 @@
           shipping-fee (compute-shipping-fee selected-rate checkout)
           grandtotal (+ subtotal shipping-fee)]
 
+      (debug "Checkout state: " (om/get-state this))
+      (debug "Checkout props: " (om/props this))
       (common/page-container
         {:navbar navbar :id "sulo-checkout"}
         (when (msg/pending? checkout-resp)
