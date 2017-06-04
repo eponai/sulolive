@@ -14,11 +14,11 @@
     (debug "Sending email... " smtp)
     (let [{:keys [source created amount]} charge
           {:keys [last4 brand]} source
-          {:order/keys [store shipping]} order
+          {:order/keys [store shipping user]} order
           {store-name :store.profile/name} (:store/profile store)
           sent-email (postal/send-message smtp
-                                          {:from    "hello@sulo.live"
-                                           :to      "diana@sulo.live"
+                                          {:from    "SULO Live <hello@sulo.live>"
+                                           :to      (:user/email user)
                                            :subject (str "Your SULO Live receipt from " store-name " #" (:db/id order))
                                            :body    [{:type    "text/html"
                                                       :content (templates/receipt params)}]})]

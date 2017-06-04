@@ -271,7 +271,9 @@
 
       (-create-refund [this params]))))
 
-(defn webhook [env event]
-  (if-let [response (webhooks/handle-webhook env event)]
-    response
-    {}))
+(defn webhook [{:keys [type] :as env} event]
+  (cond (= type :account)
+        (or (webhooks/handle-account-webhook env event) {})
+
+        (= type :connected)
+        (or (webhooks/handle-connected-webhook env event) {})))

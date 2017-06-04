@@ -4,7 +4,8 @@
     [hiccup.page :refer [xhtml]]
     [eponai.common.format.date :as date]
     [eponai.common.routes :as routes]
-    [clojure.string :as string]))
+    [clojure.string :as string]
+    [eponai.common.photos :as photos]))
 
 (defn- container [title content]
   (xhtml
@@ -48,13 +49,17 @@
              [:td {:align "center"}
               [:p {:style "font-size: 18px; padding-bottom:1em;margin-bottom:0em;"}
                [:span "Congratulations on your order from "]
-               [:a {:href (str host (routes/path :store {:store-id (:db/id store)}))} (str store-name)]
+               [:a {:style "text-decoration: none;"
+                    :href (str host (routes/path :store {:store-id (:db/id store)}))}
+                [:strong (str store-name)]]
                [:span "!"]
                [:br]
                [:br]
                [:span {:style "font-size: 16px;"} "Your order number is "]
-               [:a {:href (str host (routes/path :user/order-list {:order-id (:db/id order)
-                                                                   :user-id  123}))} (:db/id order)]]]]
+               [:a {:style "text-decoration: none;"
+                    :href (str host (routes/path :user/order-list {:order-id (:db/id order)
+                                                                   :user-id  123}))}
+                [:strong (str (:db/id order))]]]]]
             ;[:tr
             ; [:td {:align "center"}
             ;  [:p {:style "font-size: 16px; border-bottom:1px solid #e6e6e6; padding-bottom:0.25em;margin-bottom:0;"}
@@ -94,7 +99,7 @@
 
         [:tr                                                ;{:style "background: #e6e6e6"}
          [:td {:align "center"}
-          [:table {:width "100%"}
+          [:table {:width 600}
            [:tbody
             [:tr
              [:td {:style "border-top: 1px solid #e6e6e6;padding-top:1em;"}]]
@@ -114,7 +119,7 @@
             [:tr
              [:td
               [:p {:style "font-size:18px;margin-top:1em;margin-bottom:1em;"}
-               [:strong {:style "letter-spacing:1px;"} "Order details"]]]]
+               [:span {:style "letter-spacing:1px;"} "Order details"]]]]
             ;[:tr
             ; [:td {:align "left" :style "padding-top:1em;padding-bottom:1em;"}
             ;  [:span {:style "font-size:14px;"} brand]
@@ -123,41 +128,56 @@
             ;  [:span {:style "font-size:14px;"} (date/date->string (* created 1000) "MMM dd YYYY")]]]
             ]]
           ]]
+        ;[:tr
+        ; [:td {:align "center"}
+        ;  [:table {:width 600}
+        ;   [:tbody
+        ;    [:tr
+        ;     [:td {:style "border-top: 1px solid #e6e6e6;"}]]]]]]
         (map
           (fn [order-item]
-            (if (= order-item :separator)
+            ;(if (= order-item :separator))
+            ;[:tr
+            ; [:td {:align "center"}
+            ;  [:table {:width 600}
+            ;   [:tbody
+            ;    [:tr
+            ;     [:td {:style "border-bottom: 1px solid #e6e6e6;"}]]]]]]
+            (let [sku (:order.item/parent order-item)
+                  store-item (:store.item/_skus sku)
+                  photo-id (:photo/id (:store.item.photo/photo (first (:store.item/photos store-item))))
+                  photo (photos/transform photo-id :transformation/thumbnail)]
               [:tr
                [:td {:align "center"}
                 [:table {:width 600}
                  [:tbody
                   [:tr
-                   [:td {:style "border-bottom: 1px solid #e6e6e6;"}]]]]]]
-              (let [store-item (get-in order-item [:order.item/parent :store.item/_skus])]
-                [:tr
-                 [:td {:align "center"}
-                  [:table {:width 600}
-                   [:tbody
-                    [:tr
-                     [:td {:align "left" :style "padding-top:0.25em; padding-bottom:0.25em;"}
-                      [:span {:style "font-size:16px;"} (str (:store.item/name store-item))]]
-                     [:td {:align "right" :style "padding-top:0.25em; padding-bottom:0.25em;"}
-                      [:span {:style "font-size:16px;"} (str (ui-utils/two-decimal-price (:store.item/price store-item)))]]]]]]])))
-          (interleave (:order/items order) (repeat :separator)))
+                   [:td {:align "left" :style "padding-top:0.25em; padding-bottom:0.25em;" :width 50}
+                    [:img {:src photo :width 50 :height 50}]]
+                   [:td {:align "left" :style "padding:0.25em;"}
+                    [:p [:span {:style "font-size:16px;"} (str (:store.item/name store-item))]
+                     [:br]
+                     [:span {:style "color:#8a8a8a;"} (:store.item.sku/variation sku)]]]
+                   [:td {:align "right" :style "padding-top:0.25em; padding-bottom:0.25em;"}
+                    [:span {:style "font-size:16px;"} (str (ui-utils/two-decimal-price (:store.item/price store-item)))]]]]]]]))
+          (filter #(= (:order.item/type %) :order.item.type/sku) (:order/items order))
+          ;(interleave (filter #(= (:order.item/type %) :order.item.type/sku) (:order/items order)) (repeat :separator))
+          )
         [:tr
          [:td {:align "center"}
           [:table {:width 600}
            [:tbody
             [:tr
-             [:td {:align "left" :style "padding-top:0.25em; padding-bottom:0.25em;"}
+             [:td {:align "left" :style "padding-top:0.25em; padding-bottom:0.25em;margin-bottom:1em;"}
               [:strong {:style "font-size:16px;"} "Total"]]
-             [:td {:align "right" :style "padding-top:0.25em; padding-bottom:0.25em;"}
+             [:td {:align "right" :style "padding-top:0.25em; padding-bottom:0.25em;margin-bottom:1em;"}
               [:strong {:style "font-size:16px;"} (ui-utils/two-decimal-price (/ amount 100))]]]]]]]
         [:tr
          [:td {:align "center"}
-          [:table {:width "100%"}
+          [:table {:width 600}
            [:tbody
             [:tr
-             [:td {:style "border-bottom: 1px solid #e6e6e6;padding-top:1em;"}]]]]]]
+             [:td {:style "border-bottom: 1px solid #e6e6e6;padding-top:1em;margin-top:1em;"}]]]]]]
         ;[:tr
         ; [:td {:align "center"}
         ;  [:table {:width "100%"}
@@ -174,8 +194,8 @@
              [:tbody
               [:tr
                [:td
-                [:p {:style "font-size:18px;margin-top:1em;margin-bottom:0;"}
-                 [:strong {:style "letter-spacing:1px;"} "Shipping address"]]]]
+                [:p {:style "font-size:18px;margin-top:1em;margin-bottom:0;margin-top:1em;"}
+                 [:span {:style "letter-spacing:1px;"} "Shipping address"]]]]
               [:tr
                [:td
                 [:p {:style "font-size:16px;margin-bottom:0;margin-top:1em;"} (str to-name)]]]
@@ -206,20 +226,20 @@
         ;  ; [:br]
         ;  ; [:a {:href link} link]]
         ;  ]]
-        [:tr                                                ;{:style "background: #e6e6e6"}
-         [:td {:align "center"}
-          [:table {:width "100%"}
-           [:tbody
-            [:tr
-             [:td {:style "border-top: 1px solid #e6e6e6;padding-top:1em;"}]]
-            ;[:tr
-            ; [:td {:align "left" :style "padding-top:1em;padding-bottom:1em;"}
-            ;  [:span {:style "font-size:14px;"} brand]
-            ;  [:span {:style "margin-left:0.5em;font-size:14px;"} last4]]
-            ; [:td {:align "right" :style "padding-top:1em;padding-bottom:1em;"}
-            ;  [:span {:style "font-size:14px;"} (date/date->string (* created 1000) "MMM dd YYYY")]]]
-            ]]
-          ]]
+        ;[:tr                                                ;{:style "background: #e6e6e6"}
+        ; [:td {:align "center"}
+        ;  [:table {:width "100%"}
+        ;   [:tbody
+        ;    [:tr
+        ;     [:td {:style "border-top: 1px solid #e6e6e6;padding-top:1em;"}]]
+        ;    ;[:tr
+        ;    ; [:td {:align "left" :style "padding-top:1em;padding-bottom:1em;"}
+        ;    ;  [:span {:style "font-size:14px;"} brand]
+        ;    ;  [:span {:style "margin-left:0.5em;font-size:14px;"} last4]]
+        ;    ; [:td {:align "right" :style "padding-top:1em;padding-bottom:1em;"}
+        ;    ;  [:span {:style "font-size:14px;"} (date/date->string (* created 1000) "MMM dd YYYY")]]]
+        ;    ]]
+        ;  ]]
         [:tr
          [:td
           {:align "center"}
@@ -227,13 +247,15 @@
            [:tbody
             [:tr
              [:td {:align "center"}
-              [:p {:style "color:#8a8a8a;padding:1em;"}
+              [:p {:style "color:#8a8a8a;padding:1em;border-top: 1px solid #e6e6e6;"}
                [:span "You are receiving this email because you made a purchase at "]
-               [:a {:href "https://sulo.live"} "SULO Live"]
+               [:a {:style "color:#8a8a8a;text-decoration: underline;"
+                    :href "https://sulo.live"} "SULO Live"]
                [:span "."]
                [:br] [:br]
                [:span ". If you were not involved in this transaction, please contact us at "
-                [:a {:href "mailto:hello@sulo.live"} "hello@sulo.live"] [:span "."]]]]]
+                [:a {:style "color:#8a8a8a;text-decoration: underline;"
+                     :href "mailto:hello@sulo.live"} "hello@sulo.live"] [:span "."]]]]]
             [:tr
              [:td {:align "center"}
               [:p {:style "color:#8a8a8a;padding:1em;"}
@@ -245,4 +267,4 @@
             [:tr
              [:td {:align "center"}
               [:p {:style "color:#8a8a8a;margin-top:1em;"}
-               [:small "© eponai hb 2017"]]]]]]]]]])))
+               [:small "&copy; eponai hb 2017"]]]]]]]]]])))
