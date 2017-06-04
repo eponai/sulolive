@@ -251,7 +251,8 @@
         {:route-params {:user-id (get-id {:where '[[?e :user/email]]})}}))))
 
 (defn test-dedupe-parser-returns-super-set-of-original-parser []
-  (let [original (parser/client-parser (parser/client-parser-state {::parser/skip-dedupe true}))
+  (let [original (parser/client-parser (parser/client-parser-state {::parser/skip-dedupe true
+                                                                    ::parser/debug-reads true}))
         orig-parse (fn [reconciler]
                      (original (#'om/to-env reconciler) (om/get-query router/Router) nil))
         dedupe (parser/client-parser (parser/client-parser-state {::parser/skip-dedupe false}))
@@ -270,8 +271,9 @@
                              (data/diff (orig-parse reconciler)
                                         (dedupe-parse reconciler))]
                          (when (some? dedup)
-                           (info "Dedupe got something else: " dedupe))
+                           (info "Dedupe got something else: " dedup))
                          (when (some? orig)
+                           (debug "Route we fail on: " route)
                            {:type     :fail
                             :expected "dedupe parse to have at least everything that original parse had"
                             :actual   orig})))})]

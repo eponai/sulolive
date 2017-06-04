@@ -84,14 +84,15 @@
                     {:store/owners [{:store.owner/user [:user/email]}]}
                     :store/stripe
                     {:order/_store [:order/items]}
-                    :store/items
                     {:stream/_store [:stream/state]}]}
+     :query/store-item-count
      {:query/stripe-account [:stripe/details-submitted?]}
      :query/current-route])
   Object
   (render [this]
-    (let [{:query/keys [store current-route stripe-account]} (om/props this)
-          {:keys [store-id]} (:route-params current-route)]
+    (let [{:query/keys [store store-item-count current-route stripe-account]} (om/props this)
+          {:keys [store-id]} (:route-params current-route)
+          store-item-count (or store-item-count 0)]
       (dom/div
         {:id "sulo-main-dashboard"}
 
@@ -123,7 +124,7 @@
                 (grid/column
                   (css/text-align :center)
                   (dom/h3 nil "Products")
-                  (dom/p (css/add-class :stat) (count (:store/items store)))
+                  (dom/p (css/add-class :stat) store-item-count)
                   (button/default-hollow
                     {:href    (routes/url :store-dashboard/product-list {:store-id store-id})
                      :onClick #(mixpanel/track-key ::mixpanel/go-to-products {:source "store-dashboard"})}
@@ -171,7 +172,7 @@
               (dom/span nil "Describe your store. People love to hear your story."))
 
             (check-list-item
-              (boolean (not-empty (:store/items store)))
+              (boolean (pos? store-item-count))
               (routes/url :store-dashboard/create-product {:store-id store-id})
               (dom/span nil "Show off your amazing goods, add your first product."))
 

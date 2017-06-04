@@ -130,7 +130,7 @@
                                    {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                         :store.item.photo/index]}
                                    {:store.item/skus [:db/id
-                                                      {:store.item.sku/inventory [:store.item.sku.inventory/value]}
+                                                      :store.item.sku/inventory
                                                       :store.item.sku/variation]}]}
                     {:stream/_store [:stream/state]}]}
      :query/current-route
