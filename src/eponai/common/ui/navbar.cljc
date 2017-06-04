@@ -322,7 +322,10 @@
                                                        (let [search-string (.. e -target -value)]
                                                          (mixpanel/track "Search products" {:source        "navbar"
                                                                                             :search-string search-string})
-                                                         (set! js/window.location (str "/products?search=" search-string))))))})))
+                                                         (routes/set-url! component
+                                                                          :browse/all-items
+                                                                          nil
+                                                                          {:search search-string})))))})))
           (user-menu-item component)
           (menu/item
             nil

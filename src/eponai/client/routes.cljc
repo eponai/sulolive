@@ -6,6 +6,7 @@
     [om.next :as om]
     [eponai.common.database :as db]
     [taoensso.timbre :as timbre :refer [error debug warn]]
+    [cemerick.url :as url]
     [eponai.common.shared :as shared]))
 
 (def root-route-key :routing/app-root)
@@ -65,11 +66,17 @@
               (pushy/set-token! history url)
               (warn "No history found in shared for component: " component
                     ". Make sure :history was passed to the reconciler."))))
-  ([component route route-params]
+  ([component route route-params] (set-url! component route route-params nil))
+  ([component route route-params query-params]
    {:pre [(om/component? component)]}
    (if-let [bidi-url (url route route-params)]
-     (do (debug "Will set url: " bidi-url " created with " [:route route :route-params route-params])
-         (set-url! component bidi-url))
+     (let [url (cond-> bidi-url
+                       (not (empty? query-params))
+                       (str "?" (url/map->query query-params)))]
+       (debug "Will set url: " url " created with " {:route        route
+                                                     :route-params route-params
+                                                     :query-params query-params})
+       (set-url! component bidi-url))
      (warn "Unable to create a url with route: " route " route-params: " route-params))))
 
 (defn current-route [x]

@@ -125,7 +125,10 @@
                                                                 (let [search-string (.. e -target -value)]
                                                                   (mixpanel/track "Search products" {:source        "index"
                                                                                                      :search-string search-string})
-                                                                  (set! js/window.location (str "/products?search=" search-string))))))}))
+                                                                  (routes/set-url! this
+                                                                                   :browse/all-items
+                                                                                   nil
+                                                                                   {:search search-string})))))}))
                        (div (->> (css/grid-column)
                                  (css/grid-column-size {:small 4 :medium 3})
                                  (css/text-align :left))
