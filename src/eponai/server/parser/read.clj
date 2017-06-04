@@ -51,7 +51,8 @@
                                                  [?c :user.cart/items ?e]
                                                  [?i :store.item/skus ?e]
                                                  [?s :store/items ?i]]
-                                      :symbols {'?s store-id}})})
+                                      :symbols {'?s store-id
+                                                '?u (:user-id auth)}})})
 
 (defread query/store
   [{:keys [db db-history query]} _ {:keys [store-id]}]
@@ -63,10 +64,10 @@
 (defread query/stores
   [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
-  {:value (query/all db db-history query {:where '[[?s :stream/state ?states]
-                                                   [?s :stream/store ?e]]
+  {:value (query/all db db-history query {:where   '[[?s :stream/state ?states]
+                                                     [?s :stream/store ?e]]
                                           :symbols {'[?states ...] [:stream.state/online
-                                                                   :stream.state/offline]}})})
+                                                                    :stream.state/offline]}})})
 
 (defread query/store-items
   [{:keys [db db-history query]} _ {:keys [store-id navigation]}]
@@ -86,19 +87,16 @@
             (query/all db db-history query params))})
 
 (defread query/orders
-  [{:keys [db query]} _ {:keys [store-id user-id]}]
-  {:auth    (cond
-              (some? user-id)
-              {::auth/exact-user user-id}
-              (some? store-id)
-              {::auth/store-owner store-id})
-   :uniq-by [[:user-id user-id] [:store-id store-id]]}
-  {:value (cond (some? store-id)
-                (db/pull-all-with db query {:where   '[[?e :order/store ?s]]
-                                            :symbols {'?s store-id}})
-                (some? user-id)
-                (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
-                                            :symbols {'?u user-id}}))})
+  [{:keys [db query auth]} _ {:keys [store-id]}]
+  {:auth    (if (some? store-id)
+              {::auth/store-owner store-id}
+              ::auth/any-user)
+   :uniq-by [[:store-id store-id]]}
+  {:value (if (some? store-id)
+            (db/pull-all-with db query {:where   '[[?e :order/store ?s]]
+                                        :symbols {'?s store-id}})
+            (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
+                                        :symbols {'?u (:user-id auth)}}))})
 
 (defread query/inventory
   [{:keys [query db]} _ {:keys [store-id]}]
@@ -110,17 +108,16 @@
             items)})
 
 (defread query/order
-  [{:keys [state query db] :as env} _ {:keys [order-id store-id user-id]}]
+  [{:keys [state query db auth] :as env} _ {:keys [order-id store-id]}]
   {:auth    {::auth/store-owner store-id}
-   :uniq-by [[:user-id user-id] [:store-id store-id] [:order-id order-id]]}
-  {:value (cond (some? store-id)
-                (db/pull-one-with db query {:where   '[[?e :order/store ?s]]
-                                            :symbols {'?e order-id
-                                                      '?s store-id}})
-                (some? user-id)
-                (db/pull-one-with db query {:where   '[[?e :order/user ?u]]
-                                            :symbols {'?e order-id
-                                                      '?u user-id}}))})
+   :uniq-by [[:store-id store-id] [:order-id order-id]]}
+  {:value (if (some? store-id)
+            (db/pull-one-with db query {:where   '[[?e :order/store ?s]]
+                                        :symbols {'?e order-id
+                                                  '?s store-id}})
+            (db/pull-one-with db query {:where   '[[?e :order/user ?u]]
+                                        :symbols {'?e order-id
+                                                  '?u (:user-id auth)}}))})
 
 (defread query/stripe-account
   [env _ {:keys [store-id]}]
@@ -130,7 +127,7 @@
 
 (defread query/stripe-customer
   [env _ _]
-  {:auth    ::auth/any-user}
+  {:auth ::auth/any-user}
   {:value (let [c (user/customer env)]
             (debug "Query/stripe-customer " c)
             c)})
@@ -160,8 +157,7 @@
 
 (defread query/user
   [{:keys [db db-history query]} _ {:keys [user-id]}]
-  {:auth    ::auth/public
-   :uniq-by [[:user-id user-id]]}
+  {:auth    ::auth/any-user}
   {:value (query/one db db-history query {:where   '[[?e]]
                                           :symbols {'?e user-id}})})
 

@@ -79,8 +79,7 @@
           [:p {:style "font-size: 1em; padding-bottom:1em;margin-bottom:0em;"}
            [:span "Your order number is "]
            [:a {:style "text-decoration: none;"
-                :href  (str host (routes/path :user/order-list {:order-id (:db/id order)
-                                                                :user-id  123}))}
+                :href  (str host (routes/path :user/order {:order-id (:db/id order)}))}
             [:strong (str (:db/id order))]]]]])
 
       (table-column
