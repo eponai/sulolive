@@ -43,30 +43,24 @@
   ([db from attr]
    (step-towards db from attr nil))
   ([db from {:keys [reverse? normalized-attr]} to]
-   (if reverse?
-     (if (some? to)
-       (db/datoms db :eavt to normalized-attr from)
-       (db/datoms db :avet normalized-attr from))
-     (if (some? to)
-       (db/datoms db :eavt from normalized-attr to)
-       (db/datoms db :eavt from normalized-attr)))))
+   (let [index (if reverse? :vaet :eavt)]
+     (if (nil? to)
+       (db/datoms db index from normalized-attr)
+       (db/datoms db index from normalized-attr to)))))
 
-(defn- walk-to [db from attr to]
-  (step-towards db from attr to))
-
-(defn- walk-towards [db from attr tos]
-  (->> (step-towards db from attr)
-       (sequence (comp (map (if (:reverse? attr) :e :v))
-                       (filter #(contains? tos %))
-                       ;; We only need one, so we can short circuit all sequences.
-                       (take 1)))))
+(defn- final-step [db from attr to]
+  (if-not (set? to)
+    (step-towards db from attr to)
+    (->> (step-towards db from attr)
+         (sequence (comp (map (if (:reverse? attr) :e :v))
+                         (filter #(contains? to %))
+                         ;; We only need one, so we can short circuit all sequences.
+                         (take 1))))))
 
 (defn walk-entity-path [db from [attr :as path] to]
   {:pre [(or (number? to) (set? to))]}
   (if (== 1 (count path))
-    (if (set? to)
-      (walk-towards db from attr to)
-      (walk-to db from attr to))
+    (final-step db from attr to)
     (sequence
       (comp (map (if (:reverse? attr) :e :v))
             (distinct)
@@ -94,13 +88,11 @@
 
 (defn store-path [store-ids path]
   "Takes a store-ids and a path to walk from the datom to reach any of the stores."
-  (let [attrs (attr-path path)]
+  (let [attrs (attr-path path)
+        ids (cond-> store-ids (= 1 (count store-ids)) (first))]
     (require-stores store-ids
                     (fn [db [e]]
-                      (some? (seq (walk-entity-path (desince db) e attrs
-                                                    (cond-> store-ids
-                                                            (= 1 (count store-ids))
-                                                            (first)))))))))
+                      (some? (seq (walk-entity-path (desince db) e attrs ids)))))))
 
 (def filter-by-attribute
   (letfn [(user-attribute [user-id _]
