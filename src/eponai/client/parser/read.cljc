@@ -189,9 +189,15 @@
   [{:keys [db target query route-params ast query-params]} _ _]
   (let [{:keys [top-category sub-category]} route-params]
     (if target
-      {:remote (update ast :params (fnil merge {}) route-params)}
-      {:value (db/pull-all-with db query (if (or (some? sub-category) (some? top-category))
+      {:remote (-> ast
+                   (assoc-in [:params :route-params] route-params)
+                   (assoc-in [:params :query-params] query-params))}
+      {:value (db/pull-all-with db query (cond
+                                           (seq (:search query-params))
+                                           (products/find-with-search (:search query-params))
+                                           (or (some? sub-category) (some? top-category))
                                            (products/find-with-category-names route-params)
+                                           :else
                                            (products/find-all)))})))
 
 (defmethod client-read :query/owned-store
