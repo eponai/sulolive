@@ -94,7 +94,7 @@
 
         scroll-helper nil
         ;; (scroll-helper/init-scroll!)
-        match-route (partial bidi/match-route (common.routes/without-coming-soon-route common.routes/routes))
+        match-route (partial bidi/match-route common.routes/routes)
         update-route! (update-route-fn reconciler-atom)
         history (pushy/pushy update-route! (wrap-route-logging match-route))
         _ (reset! history-atom history)
@@ -134,11 +134,7 @@
 
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
-      (pushy/start! history)
-      ;; Pushy is configured to not work with all routes.
-      ;; We ensure that routes has been inited
-      (when-not (:route (routes/current-route reconciler))
-        (set-current-route! history update-route!)))
+      (pushy/start! history))
     (modules/require-route! modules
                             (:route (routes/current-route reconciler))
                             (fn [route]

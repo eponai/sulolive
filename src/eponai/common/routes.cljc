@@ -128,18 +128,3 @@
                    " error: " e)
        #?(:clj (.printStackTrace e))
        nil))))
-
-;; #################################################
-;; WHERE IS THE MAPPING BETWEEN ROUTE AND COMPONENT?
-;;
-;; See namespace: eponai.common.ui.router <<------
-;;
-;; We need this namespace to be requirable from
-;; components.
-;; #################################################
-
-;; Used on the client side to avoid us using routing for kick-off lab stuff.
-(defn without-coming-soon-route [routes]
-  (update routes 1 dissoc "coming-soon" "sell/coming-soon"))
-
-(defn normalize-route [])
