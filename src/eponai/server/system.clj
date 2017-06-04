@@ -63,13 +63,7 @@
                              :add-mocked-data? true})
    :system/server-address (c/using (server-address/map->ServerAddress {:schema (:server-url-schema env)
                                                                        :host   (:server-url-host env)})
-                                   {:aws-elb :system/aws-elb})
-
-   :system/email          (email/->SendEmail {:host (:smtp-host env)
-                                              ;:port (Long/parseLong (:smtp-port env))
-                                              :ssl  true
-                                              :user (:smtp-user env)
-                                              :pass (:smtp-password env)})})
+                                   {:aws-elb :system/aws-elb})})
 
 (defn real-components [{:keys [env] :as config}]
   {:system/auth0     (c/using (auth0/map->Auth0 {:client-id     (:auth0-client-id env)
@@ -82,6 +76,11 @@
                                      :zone       (:aws-s3-bucket-photos-zone env)
                                      :access-key (:aws-access-key-id env)
                                      :secret     (:aws-secret-access-key env)})
+   :system/email     (email/email {:host (:smtp-host env)
+                                   ;:port (Long/parseLong (:smtp-port env))
+                                   :ssl  true
+                                   :user (:smtp-user env)
+                                   :pass (:smtp-password env)})
    :system/mailchimp (mailchimp/mail-chimp (:mailchimp-api-key env))
    :system/stripe    (stripe/stripe (:stripe-secret-key env))
    :system/wowza     (wowza/wowza {:secret         (:wowza-jwt-secret env)
@@ -96,7 +95,8 @@
    :system/aws-s3    (s3/aws-s3-stub)
    :system/mailchimp (mailchimp/mail-chimp-stub)
    :system/stripe    (stripe/stripe-stub (:stripe-secret-key env))
-   :system/wowza     (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})})
+   :system/wowza     (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})
+   :system/email     (email/email-stub)})
 
 (defn with-request-handler [system {:keys [in-prod? env] :as config}]
   (assoc system
@@ -148,7 +148,8 @@
   {:post [(= (set (keys %)) system-keys)]}
   (fake-system (dev-config config)
                ;; Put keys under here to use the real implementation
-               :system/stripe
+               ;:system/stripe
+               ;:system/email
                ;; :system/mailchimp
                ))
 

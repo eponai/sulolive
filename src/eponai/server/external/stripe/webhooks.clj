@@ -44,10 +44,10 @@
 
 (defmethod handle-account-webhook "charge.captured"
   [{:keys [state system] :as env} event]
-  (debug "Will handle captured charged:  " event)
+  ;(debug "Will handle captured charged:  " event)
   (send-order-receipt env event))
 
 (defmethod handle-account-webhook "charge.succeeded"
   [{:keys [state system] :as env} event]
-  (debug "Will handle captured succeeded:  " event)
+  ;(debug "Will handle captured succeeded:  " event)
   (send-order-receipt env event))
