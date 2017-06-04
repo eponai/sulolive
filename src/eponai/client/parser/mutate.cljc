@@ -51,14 +51,17 @@
                (debug "Mutate search string: " search-string))}))
 
 (defmethod client-mutate 'routes/set-route!
-  [{:keys [state]} _ {:keys [route route-params]}]
+  [{:keys [state]} _ {:keys [route route-params query-params]}]
   {:action (fn []
              (debug "Setting route: " route " route-params: " route-params)
              (let [id (:db/id (db/entity (db/db state) [:ui/singleton :ui.singleton/routes]))]
                (db/transact state [[:db/add id :ui.singleton.routes/current-route route]
                                    (if (seq route-params)
                                      [:db/add id :ui.singleton.routes/route-params route-params]
-                                     [:db.fn/retractAttribute id :ui.singleton.routes/route-params])])))})
+                                     [:db.fn/retractAttribute id :ui.singleton.routes/route-params])
+                                   (if (seq query-params)
+                                     [:db/add id :ui.singleton.routes/query-params query-params]
+                                     [:db.fn/retractAttribute id :ui.singleton.routes/query-params])])))})
 
 (defmethod client-mutate 'beta/vendor
   [{:keys [target]} _ p]

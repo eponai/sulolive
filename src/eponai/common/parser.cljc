@@ -612,27 +612,17 @@
           ::db-state         (atom {})}
          custom-state))
 
-(defn- client-query-params [env parser-state]
-  #?(:cljs
-          (->> (:shared/browser-history (:shared env))
-               (pushy/get-token)
-               (url/url)
-               :query
-               (medley/map-keys keyword))
-     ;;TODO: Implement a shared protocol to get the query params
-     :clj (:query-params parser-state)))
-
 (defn- client-db-state [env state]
   (let [db (db/db (:state env))
         db-state (deref (::db-state state))]
     (if (identical? db (:db db-state))
       db-state
-      (let [{:keys [route-params route]} (client.routes/current-route db)]
+      (let [{:keys [route route-params query-params]} (client.routes/current-route db)]
         (reset! (::db-state state)
                 {:db              db
-                 :route-params    route-params
                  :route           route
-                 :query-params    (client-query-params env state)
+                 :route-params    route-params
+                 :query-params    query-params
                  :auth            (when-let [email (client.auth/authed-email db)]
                                     {:email email})
                  ::auth-responder (reify

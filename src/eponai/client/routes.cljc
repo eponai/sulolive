@@ -33,7 +33,7 @@
    for example, and I'm not sure it works with datascript(?))."
   ([x route]
    (transact-route! x route nil))
-  ([x route {:keys [delayed-queue queue? route-params tx] :or {queue? true}}]
+  ([x route {:keys [delayed-queue queue? route-params query-params tx] :or {queue? true}}]
    {:pre [(or (om/reconciler? x) (om/component? x))
           (keyword? route)]}
    (let [reconciler (cond-> x (om/component? x) (om/get-reconciler))
@@ -42,7 +42,8 @@
          reads-fn #(-> (om/transform-reads reconciler [root-route-key])
                        (conj :query/current-route))
          tx (cond-> [(list 'routes/set-route! {:route route
-                                               :route-params route-params})]
+                                               :route-params route-params
+                                               :query-params query-params})]
                     :always (into tx)
                     queue? (into (reads-fn)))]
      (debug "Transacting tx: " tx)
@@ -76,7 +77,7 @@
        (debug "Will set url: " url " created with " {:route        route
                                                      :route-params route-params
                                                      :query-params query-params})
-       (set-url! component bidi-url))
+       (set-url! component url))
      (warn "Unable to create a url with route: " route " route-params: " route-params))))
 
 (defn current-route [x]
@@ -84,4 +85,5 @@
       (db/entity [:ui/singleton :ui.singleton/routes])
       (->> (into {}))
       (set/rename-keys {:ui.singleton.routes/current-route :route
-                        :ui.singleton.routes/route-params  :route-params})))
+                        :ui.singleton.routes/route-params  :route-params
+                        :ui.singleton.routes/query-params  :query-params})))

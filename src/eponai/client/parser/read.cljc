@@ -186,7 +186,7 @@
                                           :symbols {'?s store-id}})})))
 
 (defmethod client-read :query/browse-items
-  [{:keys [db target query route-params ast]} _ _]
+  [{:keys [db target query route-params ast query-params]} _ _]
   (let [{:keys [top-category sub-category]} route-params]
     (if target
       {:remote (update ast :params (fnil merge {}) route-params)}
@@ -384,10 +384,8 @@
                              {:where '[[?e :ui/singleton :ui.singleton/stream-config]]})})
 
 (defmethod client-read :query/current-route
-  [{:keys [db query-params]} k p]
-  {:value (cond-> (client.routes/current-route db)
-                  (some? query-params)
-                  (assoc :query-params query-params))})
+  [{:keys [db]} _ _]
+  {:value (client.routes/current-route db)})
 
 (defmethod client-read :routing/app-root
   [{:keys [db] :as env} k p]
