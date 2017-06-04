@@ -26,16 +26,20 @@
    ;; we can index some attributes.
    :category/path {:db/index true}
    :category/name {:db/index true}
-   :category/children {:db/index true}
    })
 
 (defn schema-datomic->datascript [datomic-schema]
   (reduce (fn [datascript-s {:keys [db/ident db/valueType] :as datomic-s}]
             (assoc datascript-s ident
                                 (-> (if (= valueType :db.type/ref)
-                                      ;; Refs cannot be unique in datascript yet.
-                                      ;; See: github.com/tonsky/datascript/issues/147
-                                      (dissoc datomic-s :db/unique)
+                                      (-> datomic-s
+                                          ;; Refs cannot be unique in datascript yet.
+                                          ;; See: github.com/tonsky/datascript/issues/147
+                                          (dissoc :db/unique)
+                                          ;; There's no :vaet index for refs in datascript
+                                          ;; so we index all refs to make queries fast
+                                          ;; at the cost of size.
+                                          (assoc :db/index true))
                                       ;; Refs are the only valueTypes we care about
                                       ;; so we dissoc the rest.
                                       (dissoc datomic-s :db/valueType))
