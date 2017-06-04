@@ -113,7 +113,7 @@
 (defn- wrap-expired-token [handler]
   (let [token-failure #{::token-manipulated ::token-expired}]
     (fn [request]
-      (if-not (token-failure (:identity request))
+      (if-not (contains? token-failure (:identity request))
         (handler request)
         (do
           (debug "Auth token failure: " (:identity request)

@@ -57,6 +57,24 @@
                                                       (str/ends-with? s sub)
                                                       (str/starts-with? s sub)))}}))
 
+(defn- datascript-datoms [db index args]
+  ;; The :vaet index isn't implemented for datascript (who knew!?)
+  ;; so this patches it up a little
+  (if-not (= :vaet index)
+    (apply datascript/datoms db index args)
+    (let [[value attr eid tx] args
+          val= (fn [{:keys [v]}] (= value v))
+          ref? (fn [{:keys [a]}] (= :db.type/ref (get-in (:schema db) [a :db/valueType])))]
+      (condp = (count args)
+        0 (filter ref? (datascript/datoms db :eavt))
+        ;; value
+        1 (sequence (comp (filter ref?) (filter val=)) (datascript/datoms db :eavt))
+        ;; value attr
+        2 (filter val= (datascript/datoms db :aevt attr))
+        ;; value attr eid
+        3 (datascript/datoms db :eavt eid attr value)
+        4 (datascript/datoms db :eavt eid attr value tx)))))
+
 (extend-protocol DatabaseApi
   #?@(:clj  [Db
              (q* [db query args] (apply datomic/q query db args))
@@ -70,14 +88,14 @@
              (entity* [db eid] (datascript/entity db eid))
              (pull* [db pattern eid] (do-pull datascript/pull db pattern eid))
              (pull-many* [db pattern eids] (do-pull datascript/pull-many db pattern eids))
-             (datoms* [db index args] (apply datascript/datoms db index args))
+             (datoms* [db index args] (datascript-datoms db index args))
              (fulltext-search [_ fulltext] (datascript-fulltext fulltext))]
       :cljs [datascript.db/DB
              (q* [db query args] (apply datascript/q query db args))
              (entity* [db eid] (datascript/entity db eid))
              (pull* [db pattern eid] (do-pull datascript/pull db pattern eid))
              (pull-many* [db pattern eids] (do-pull datascript/pull-many db pattern eids))
-             (datoms* [db index args] (apply datascript/datoms db index args))
+             (datoms* [db index args] (datascript-datoms db index args))
              (fulltext-search [_ fulltext] (datascript-fulltext fulltext))]))
 
 (declare convert-datomic-ids)

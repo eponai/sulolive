@@ -143,6 +143,7 @@
 (defn handle-auth-response! [reconciler auth]
   (let [{:keys [redirects prompt-login unauthorized logout]} auth]
     (when logout
+      (debug "LOGGING OUT because of auth: " auth)
       (logout-with-redirect! auth))
     (when unauthorized
       (#?(:cljs js/alert :clj error) "You are unauthorized to execute the action"))

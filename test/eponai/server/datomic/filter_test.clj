@@ -30,20 +30,19 @@
                 :store.item/name   "item 2"}
                {:db/id -11
                 :store.item/name   "item 2"}]
+        item-refs (into [] (map :db/id) items)
         user-1 {:db/id        -1
                 :user/stripe  {:stripe/publ "user-1 publ"}
                 :user/profile {:user.profile/name  "Mr. Tester"
                                :user.profile/photo {:db/id -2}}
-                :user/cart    {:user.cart/items
-                               (into [] (comp (take 1)
-                                              (map :db/id))
-                                     items)}}
+                :user/cart    {:user.cart/items item-refs}}
         user-2 {:db/id        -3
                 :user/stripe  {:stripe/publ "user-2 publ"}
                 :user/profile {:user.profile/name  "Dr. Carla"
-                               :user.profile/photo {:db/id -2}}}
+                               :user.profile/photo {:db/id -2}}
+                :user/cart {:user.cart/items item-refs}}
         store {:store/owners {:store.owner/user user-1}
-               :store/items  (into [] (map :db/id) items)}]
+               :store/items  item-refs}]
     (db/transact conn (concat [photo user-1 user-2 store]
                               items))
     conn))
@@ -60,7 +59,8 @@
       (test (seq (filter/walk-entity-path db from (filter/attr-path path) to)))
 
       some? store [:store/owners :store.owner/user] user
+      some? store [:store/owners :store.owner/user] #{user-2 user}
       nil? store [:store/owners :store.owner/user] user-2
-      some? store [:store/owners :store.owner/user
-                   :user/cart :user.cart/items
-                   :store/_items] store)))
+      some? store [:store/owners :store.owner/user :user/cart :user.cart/items :store/_items] store
+      some? user-2 [:user/cart :user.cart/items :store/_items :store/owners :store.owner/user] user
+      some? user-2 [:user/cart :user.cart/items :store/_items :store/owners :store.owner/user] #{user-2 user})))

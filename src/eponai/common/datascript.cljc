@@ -16,20 +16,30 @@
    :ui.store-chat-queue/store-id {:db/unique :db.unique/identity}
    :order/id {:db/unique :db.unique/identity}
    :country-spec/id {:db/unique :db.unique/identity}
-   :category/path {:db/index true}
    :country/code {:db/unique :db.unique/identity}
    :country/continent {:db/valueType :db.type/ref}
    :continent/code {:db/unique :db.unique/identity}
    ;:store.item/uuid {:db/unique :db.unique/identity}
-   :db/ident {:db/unique :db.unique/identity}})
+   :db/ident {:db/unique :db.unique/identity}
+   ;; Datascript doesn't have an :vaet index, so to speed up
+   ;; reverse search queryies, i.e. [[?e :some/thing "known"]]
+   ;; we can index some attributes.
+   :category/path {:db/index true}
+   :category/name {:db/index true}
+   })
 
 (defn schema-datomic->datascript [datomic-schema]
   (reduce (fn [datascript-s {:keys [db/ident db/valueType] :as datomic-s}]
             (assoc datascript-s ident
                                 (-> (if (= valueType :db.type/ref)
-                                      ;; Refs cannot be unique in datascript yet.
-                                      ;; See: github.com/tonsky/datascript/issues/147
-                                      (dissoc datomic-s :db/unique)
+                                      (-> datomic-s
+                                          ;; Refs cannot be unique in datascript yet.
+                                          ;; See: github.com/tonsky/datascript/issues/147
+                                          (dissoc :db/unique)
+                                          ;; There's no :vaet index for refs in datascript
+                                          ;; so we index all refs to make queries fast
+                                          ;; at the cost of size.
+                                          (assoc :db/index true))
                                       ;; Refs are the only valueTypes we care about
                                       ;; so we dissoc the rest.
                                       (dissoc datomic-s :db/valueType))
@@ -42,8 +52,9 @@
           datomic-schema))
 
 (defn init-db [datomic-schema ui-data]
-  (-> (merge (schema-datomic->datascript datomic-schema)
-             (ui-schema))
+  (-> (merge-with merge
+                  (schema-datomic->datascript datomic-schema)
+                  (ui-schema))
       (d/create-conn)
       (d/db)
       (d/db-with ui-data)))
