@@ -91,8 +91,10 @@
       (let [server-parse (fn [query]
                            ((parser/server-parser) {:state (:conn datomic)} query))
             datascript-schema (:datascript/schema (server-parse [:datascript/schema]))
-            ds-conn (datascript/create-conn (merge datascript-schema
-                                                   (eponai.common.datascript/ui-schema)))
+            schema (merge-with merge
+                               datascript-schema
+                               (eponai.common.datascript/ui-schema))
+            ds-conn (datascript/create-conn schema)
             client-parse (fn [query]
                            (let [client-parser (parser/client-parser)
                                  env {:state ds-conn}
