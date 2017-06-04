@@ -43,7 +43,8 @@
 
 (s/def :shipping/address (s/keys :req [:shipping.address/street
                                        :shipping.address/postal
-                                       :shipping.address/locality]
+                                       :shipping.address/locality
+                                       :shipping.address/country]
                                  :opt [:shipping.address/street2
                                        :shipping.address/region]))
 (s/def ::shipping (s/keys :req [:shipping/address
@@ -135,7 +136,7 @@
                     "Unknown"          "icon-cc-unknown"})
 
 (defn shipping-info-modal [component]
-  (let [{:query/keys [stripe-customer]} (om/props component)
+  (let [{:query/keys [stripe-customer countries]} (om/props component)
         shipping (:stripe/shipping stripe-customer)         ;[{:brand "American Express" :last4 1234 :exp-year 2018 :exp-month 4}]
         address (:stripe.shipping/address shipping)
         {:shipping/keys [input-validation]} (om/get-state component)
@@ -162,8 +163,22 @@
                             :autoComplete "name"
                             :placeholder  "Full name"}
                          input-validation))))
+
           (dom/div
             nil
+            (grid/row
+              nil
+              (grid/column
+                nil
+                (dom/select
+                  {:id           (:shipping.address/country form-inputs)
+                   :name         "ship-country"
+                   :autoComplete "shipping country"
+                   :defaultValue (:stripe.shipping.address/country address)}
+                  ;input-validation
+                  (map (fn [c]
+                         (dom/option {:value (:country/code c)} (:country/name c)))
+                       (sort-by :country/name countries)))))
             (grid/row
               nil
               (grid/column
@@ -218,10 +233,9 @@
           (css/add-class :action-buttons)
           (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))
           (button/user-setting-cta
-            (->> {:onClick #(do
-                             ;(.save-shipping-info component)
-                             )}
-                 (css/add-class :disabled))
+            {:onClick #(do
+                        (.save-shipping-info component)
+                        )}
             (dom/span nil "Save")))))))
 
 (defn payment-info-modal [component]
@@ -296,6 +310,7 @@
                               :stripe/sources
                               :stripe/default-source
                               :stripe/shipping]}
+     {:query/countries [:country/name :country/code]}
      :query/current-route
      :query/messages])
   Object
@@ -306,7 +321,7 @@
                            :shipping/address {:shipping.address/street   (utils/input-value-or-nil-by-id street)
                                               :shipping.address/street2  (utils/input-value-or-nil-by-id street2)
                                               :shipping.address/locality (utils/input-value-or-nil-by-id locality)
-                                              ;:shipping.address/country  (utils/input-value-or-nil-by-id country)
+                                              :shipping.address/country  (utils/input-value-or-nil-by-id country)
                                               :shipping.address/region   (utils/input-value-or-nil-by-id region)
                                               :shipping.address/postal   (utils/input-value-or-nil-by-id postal)}}
              validation (validate ::shipping shipping-map)]

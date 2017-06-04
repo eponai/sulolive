@@ -404,3 +404,9 @@
   [{:keys [target]} _ _]
   (when target
     {:remote true}))
+
+(defmethod client-read :query/countries
+  [{:keys [target query db]} _ _]
+  (if target
+    {:remote true}
+    {:value (db/pull-all-with db query {:where '[[?e :country/code _]]})}))

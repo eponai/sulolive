@@ -25,6 +25,9 @@
 	h3 {
 		// font-family: $header-font-family-serif;
 	}
+	p {
+		// margin-bottom: 0;
+	}
 	.section-title {
 		letter-spacing: 1px;
 		margin-bottom: 0.2rem;
@@ -37,8 +40,23 @@
 			font-size: 120%;
 		}
 	}
+	.subsection {
+		margin-bottom: 3rem;
+		&:last-child {
+			margin-bottom: 0;
+		}
+	}
+	.subsection-title {
+		margin-bottom: 0.5rem;
+		// margin-top: 4rem;
+		letter-spacing: 1px;
+	}
 
 	.callout {
+		&.small.warning {
+			box-shadow: none;
+			border: none;
+		}
 		.sl-CheckoutItemlist {
 			padding: 1rem 0;
 			border-top: $border;
@@ -88,11 +106,13 @@
 
 	.checkout-payment {
 		.button {
-			margin: 0.5rem 0;
+			margin: 0.5rem 0 0.5rem 1rem;
 		}
 	}
 	.section-list {
 		margin-bottom: 0.5rem;
+		border-radius: $global-radius;
+		border: $global-border;
 	}
 
 	.footer {
@@ -108,6 +128,58 @@
 	.section-list--cards {
 		.section-list-item--card, .section-list-item--new-card {
 			padding: 0.25rem 0;
+		}
+	}
+	.section-list--shipping {
+		.section-list-item {
+			padding: 0;
+			p {
+				margin-bottom: 0;
+				line-height: 1.2;
+			}
+			&:hover {
+				background: rgba($light-gray, 0.2);
+				a {
+					color: $body-font-color;
+				}
+			}
+			a {
+				padding: 1rem;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+			.row {
+				width: 100%;
+			}
+			.shipping-info {
+				display: flex;
+				align-items: center;
+				input {
+					margin-right: 0.5rem;
+					width: 2rem;
+					flex: 0 0 auto;
+				}
+				.shipping-rule {
+					// p {
+					// 	margin-bottom: 0;
+					// }
+				}
+			}
+			.shipping-cost {
+				text-align: right;
+				margin-left:  0.5rem;
+				
+				small {
+					font-size: 70%;
+				}
+				// align-items: flex-end;
+				// display: flex;
+				// flex-direction: column;
+				// p {
+				// 	margin-bottom: 0.25rem;
+				// }
+			}
 		}
 	}
 }

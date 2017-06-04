@@ -16,6 +16,7 @@
     [eponai.server.external.mailchimp :as mailchimp]
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.aws-s3 :as s3]
+    [eponai.server.external.email :as email]
     [eponai.server.external.request-handler :as request-handler]))
 
 (def system-keys #{:system/aleph
@@ -32,7 +33,8 @@
                    :system/mailchimp
                    :system/server-address
                    :system/stripe
-                   :system/wowza})
+                   :system/wowza
+                   :system/email})
 
 (defn resume-requests
   "Resumes requests when a system has been restarted."
@@ -74,6 +76,11 @@
                                      :zone       (:aws-s3-bucket-photos-zone env)
                                      :access-key (:aws-access-key-id env)
                                      :secret     (:aws-secret-access-key env)})
+   :system/email     (email/email {:host (:smtp-host env)
+                                   ;:port (Long/parseLong (:smtp-port env))
+                                   :ssl  true
+                                   :user (:smtp-user env)
+                                   :pass (:smtp-password env)})
    :system/mailchimp (mailchimp/mail-chimp (:mailchimp-api-key env))
    :system/stripe    (stripe/stripe (:stripe-secret-key env))
    :system/wowza     (wowza/wowza {:secret         (:wowza-jwt-secret env)
@@ -88,7 +95,8 @@
    :system/aws-s3    (s3/aws-s3-stub)
    :system/mailchimp (mailchimp/mail-chimp-stub)
    :system/stripe    (stripe/stripe-stub (:stripe-secret-key env))
-   :system/wowza     (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})})
+   :system/wowza     (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})
+   :system/email     (email/email-stub)})
 
 (defn with-request-handler [system {:keys [in-prod? env] :as config}]
   (assoc system
@@ -140,7 +148,8 @@
   {:post [(= (set (keys %)) system-keys)]}
   (fake-system (dev-config config)
                ;; Put keys under here to use the real implementation
-               ; :system/stripe
+               ;:system/stripe
+               ;:system/email
                ;; :system/mailchimp
                ))
 

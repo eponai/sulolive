@@ -119,12 +119,11 @@
                        (dom/span nil "Total: ")
                        (dom/strong nil (utils/two-decimal-price (+ item-price shipping-price))))
                 (dom/a
-                  (->> {:href    "#"                        ;(routes/url :checkout {:store-id (:db/id s)})
+                  (->> {:href    (routes/url :checkout {:store-id (:db/id s)})
                         :onClick #(mixpanel/track "Checkout shopping bag" {:store-id   (:db/id s)
                                                                            :store-name (get-in s [:store/profile :store.profile/name])
                                                                            :item-count (count skus)})}
-                       (css/button)) "Checkout"))))
-          ))
+                       (css/button)) "Checkout"))))))
       skus-by-store)))
 
 (defui ShoppingBag

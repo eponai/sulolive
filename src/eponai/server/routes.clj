@@ -25,7 +25,9 @@
     [eponai.common.routes :as routes]
     [eponai.common.database :as db]
     [eponai.common :as c]
-    [eponai.common.photos :as photos]))
+    [eponai.common.photos :as photos]
+    [eponai.server.external.email.templates :as templates]
+    [eponai.common.format.date :as date]))
 
 (defn html [& path]
   (-> (clj.string/join "/" path)
@@ -140,7 +142,6 @@
   (POST "/api/chat" request
     (r/response (call-parser request)))
 
-  ;(POST "/stripe/main" request (r/response (stripe/webhook (::m/conn request) (:params request))))
   (GET "/auth" request (auth/authenticate request (::m/conn request)))
 
   (GET "/logout" request (-> (auth/redirect request (or (get-in request [:params :redirect])
@@ -163,6 +164,18 @@
   (POST "/ws/chat" {::m/keys [system] :as request}
     (websocket/handler-post-request (:system/chat-websocket system)
                                     request))
+
+  ;; Webhooks
+  (POST "/stripe/connected" request (do
+                                      (debug "Webhook connected")
+                                      (r/response (stripe/webhook {:state  (::m/conn request)
+                                                                   :type :connected
+                                                                     :system (::m/system request)} (:body request)))))
+  (POST "/stripe" request (do
+                            (debug "Webhook account")
+                            (r/response (stripe/webhook {:state  (::m/conn request)
+                                                         :type :account
+                                                           :system (::m/system request)} (:body request)))))
 
   (context "/" [:as request]
     member-routes

@@ -294,7 +294,8 @@
   static om/IQuery
   (query [_]
     [:query/current-route
-     :query/messages])
+     :query/messages
+     {:query/countries [{:country/continent [:continent/code]}]}])
 
   Object
   (save-sections [this]
@@ -407,9 +408,10 @@
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
           {{:store.profile/keys [return-policy shipping-policy shipping-fee]} :store/profile} store
-          {:query/keys [current-route]} (om/props this)
+          {:query/keys [current-route countries]} (om/props this)
           {:keys [store-id]} (:route-params current-route)
           {:return-policy/keys [on-editor-create on-editor-change] :as state} (om/get-state this)]
+      ;(debug "Countries: " countries)
       (dom/div
         {:id "sulo-store-edit"}
         (grid/row-column

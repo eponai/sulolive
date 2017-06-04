@@ -61,6 +61,23 @@ p a {
 }
 @include label-hollow;
 
+.switch-container {
+	display: flex;
+	.switch {
+		margin-right: 1rem;
+	}
+}
+
+.flex {
+	display: flex;
+	&.flex-row {
+		flex-direction: row;
+	}
+	&.flex-column {
+		flex-direction: column;
+	}
+}
+
 .menu.share-menu {
 	// overflow-x: hidden;
 	.share-button {
@@ -198,20 +215,6 @@ h3 {
 .drilldown-submenu-cover-previous {
 	min-height: 100%;
 }
-
-.wip-label {
-	font-size: 1rem;
-	font-weight: $global-weight-bold;
-	padding: 0.5rem 1rem;
-}
-
-// @mixin list-item-hover($color: $white, $hover-color: darken($color, 5%)) {
-// 	transition: background .25s ease-in-out;
-// 	&:hover, &:focus {
-// 		background: $hover-color;
-// 	}
-// }
-
 
 @mixin sulo-colors {
 	@each $name, $color in $foundation-palette {

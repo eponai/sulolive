@@ -89,8 +89,8 @@
   [user-id path]
   (let [attrs (attr-path path)]
     (require-user user-id
-                 (fn [db [e]]
-                   (some? (seq (walk-entity-path (desince db) e attrs user-id)))))))
+                  (fn [db [e]]
+                    (some? (seq (walk-entity-path (desince db) e attrs user-id)))))))
 
 (defn store-path [store-ids path]
   "Takes a store-ids and a path to walk from the datom to reach any of the stores."
@@ -128,6 +128,9 @@
             (filter-or (user-path user-id [:order/_charge :order/user])
                        (store-path store-ids [:order/_charge :order/store])))]
     {
+     ;; TODO getting exception if :db/ident is not specified here, bug?
+     :db/ident                       public-attr
+
      :user/email                     user-attribute
      :user/verified                  user-attribute
      :user/stripe                    user-attribute
@@ -139,8 +142,10 @@
      :stripe/publ                    private-attr
      :stripe/secret                  private-attr
      :store/uuid                     public-attr
-     :store/stripe                   store-attribute
      :store/owners                   public-attr
+     :store/stripe                   store-attribute
+     ;;TODO should :store/shipping be public?
+     :store/shipping                 public-attr
      :store/items                    public-attr
      :store/profile                  public-attr
      :store/sections                 public-attr
@@ -190,6 +195,20 @@
      :order.item/type                order-item-owner
      :order.item/amount              order-item-owner
      :charge/id                      order-charge-owner
+     ;; TODO Implement real filter-fn
+     :shipping/rules                 public-attr
+     :shipping.rule/destinations     public-attr
+     :shipping.rule/rates            public-attr
+     :shipping.rate/title            public-attr
+     :shipping.rate/info             public-attr
+     :shipping.rate/first            public-attr
+     :shipping.rate/additional       public-attr
+     :shipping.rate/free-above       public-attr
+     :country/code                   public-attr
+     :country/name                   public-attr
+     :continent/code                 public-attr
+     :continent/name                 public-attr
+     ;; TODO End of Implement real filter-fn
      :shipping/name                  shipping-address-owner
      :shipping/address               shipping-address-owner
      :shipping.address/street        shipping-address-owner

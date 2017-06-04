@@ -1,6 +1,6 @@
 (def npm-deps {
                ;;:dompurify "0.8.6"
-              })
+               })
 (def closure-warns {:non-standard-jsdoc :off})
 
 (defn modules [output-dir]
@@ -112,7 +112,7 @@
                  [org.clojars.petterik/encore "2.91.1-SNAPSHOT"]
                  [com.taoensso/timbre "4.10.0"]
                  [com.taoensso/sente "1.11.0"]
-                 [com.draines/postal "2.0.1"]
+                 [com.draines/postal "2.0.2"]
                  [environ "1.1.0"]
                  [hiccup "1.0.5"]
                  [org.clojure/data.generators "0.1.2"]
@@ -120,7 +120,7 @@
                  [org.clojure/core.memoize "0.5.9"]
                  [org.clojure/data.json "0.2.6"]
                  [com.stuartsierra/component "0.3.2"]
-		 [suspendable "0.1.1"]
+                 [suspendable "0.1.1"]
                  ;; Depending on transit-clj for faster cljs builds
                  [com.cognitect/transit-clj "0.8.300"]
                  ; ring helpers
@@ -135,6 +135,7 @@
                  [cheshire "5.7.1" :exclusions [com.fasterxml.jackson.core/jackson-core]]
                  [medley "0.8.3"]
                  [org.martinklepsch/s3-beam "0.6.0-alpha1"]
+                 [slingshot "0.12.2"]
 
                  ;; CLJS
                  [cljsjs/react "15.4.2-2"]
@@ -156,7 +157,7 @@
                  [cljsjs/react-grid-layout "0.13.7-0"]
                  [bidi "2.0.10"]
                  [kibu/pushy "0.3.6"]
-		 [prone "1.1.4"]
+                 [prone "1.1.4"]
 
                  ;; React-native
                  [natal-shell "0.3.0"]
@@ -178,11 +179,11 @@
                        "-server"
                        "-XX:+CMSClassUnloadingEnabled"
                        "-Djava.awt.headless=true"
-                      ]
+                       ]
   :resource-paths ["resources" "node_modules" "bower_components"]
 
   :plugins [
-           ;; [lein-npm "0.6.1"]
+            ;; [lein-npm "0.6.1"]
             [lein-shell "0.5.0"]
             [lein-doo "0.1.7" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
             [lein-cljsbuild "1.1.5" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
@@ -196,9 +197,9 @@
                                     "resources/public/doo-test/js/out"
                                     "resources/public/test/js/out"
                                     "target/"
-                                  ;;  "index.ios.js"
-                                  ;;  "index.android.js"
-                                   ]
+                                    ;;  "index.ios.js"
+                                    ;;  "index.android.js"
+                                    ]
 
   :aliases {"all-deps"               ^{:doc "Fetches both clj, cljs and node dependencies."}
                                      ["do"
@@ -279,10 +280,10 @@
   :uberjar-name "budget-0.1.0-SNAPSHOT-standalone.jar"
 
   :figwheel {:validate-config :ignore-unknown-keys
-             :css-dirs    ["resources/public/assets/css/"]
-             :server-port ~(read-string (or (System/getenv "FIGWHEEL_PORT") "3449"))
-      ;;       :reload-clj-files {:clj true :cljc true}
- }
+             :css-dirs        ["resources/public/assets/css/"]
+             :server-port     ~(read-string (or (System/getenv "FIGWHEEL_PORT") "3449"))
+             ;;       :reload-clj-files {:clj true :cljc true}
+             }
 
   :profiles {:dev      {:dependencies [[lein-doo "0.1.7"
                                         :exclusions [org.clojure/clojure]]
@@ -385,94 +386,94 @@
                                                                 :npm-deps        ~npm-deps
                                                                 :modules         ~(modules "resources/public/release/js/out/")
                                                                 }}]}}
-             :web      {:jvm-opts     ^:replace ["-Xmx3g" "-server"]
-                        :cljsbuild    {:builds [{:id           "dev"
-                                                 :figwheel     {:on-jsload "eponai.web.figwheel/reload!"}
-                                                 :source-paths ["src/" "src-hacks/web/" "env/client/dev"]
-                                                 :compiler     {:main                 "env.web.main"
-                                                                :asset-path           "/dev/js/out"
-                                                                :output-to            "resources/public/dev/js/out/budget.js"
-                                                                ;; :modules ~(modules "/dev/js/out")
-                                                                :output-dir           "resources/public/dev/js/out/"
-                                                                :optimizations        :none
-                                                                :parallel-build       true
-                                                                :source-map           true
-                                                                :npm-deps             ~npm-deps
-                                                                :closure-warnings     ~closure-warns
-                                                                ;; Speeds up Figwheel cycle, at the risk of dependent namespaces getting out of sync.
-                                                                :recompile-dependents false
-                                                                }}
-                                                {:id           "devcards"
-                                                 :source-paths ["src/" "src-hacks/web/" "test/"]
-                                                 :figwheel     {:devcards true ;; <- note this
-                                                                }
-                                                 :compiler     {:main                 "eponai.devcards.devcards_main"
-                                                                :asset-path           "/devcards/js/out"
-                                                                :output-to            "resources/public/devcards/js/out/budget.js"
-                                                                :output-dir           "resources/public/devcards/js/out"
-                                                                :source-map-timestamp true
-                                                                :closure-warnings     ~closure-warns
-                                                                :npm-deps             ~npm-deps
-                                                                :recompile-dependents false}}
-                                                {:id           "test"
-                                                 :source-paths ["src/" "src-hacks/web/" "test/"]
-                                                 :figwheel     {:on-jsload "eponai.client.figwheel.test-main/reload-figwheel!"}
-                                                 :compiler     {:output-to        "resources/public/test/js/out/budget.js"
-                                                                :output-dir       "resources/public/test/js/out"
-                                                                :asset-path       "/test/js/out"
-                                                                :main             "eponai.client.figwheel.test-main"
-                                                                :parallel-build   true
-                                                                :optimizations    :none
-                                                                :source-map       true
-                                                                :closure-warnings ~closure-warns
-                                                                :npm-deps         ~npm-deps
-                                                                :recompile-dependents false
-                                                                }}
-                                                {:id           "doo-test"
-                                                 :source-paths ["src/" "src-hacks/web/" "test/"]
-                                                 :compiler     {:output-to        "resources/public/doo-test/js/out/budget.js"
-                                                                :output-dir       "resources/public/doo-test/js/out"
-                                                                :main             "eponai.client.tests"
-                                                                :parallel-build   true
-                                                                :optimizations    :none
-                                                                :source-map       true
-                                                                :closure-warnings ~closure-warns
-                                                                :npm-deps         ~npm-deps
-                                                                }}
-                                                {:id           "simple"
-                                                 :source-paths ["src/" "src-hacks/web/" "env/client/simple"]
-                                                 :compiler     {:closure-defines {"goog.DEBUG" true}
-                                                                :main            "env.web.main"
-                                                                :asset-path      "/simple/js/out"
-                                                                :output-to       "resources/public/simple/js/out/budget.js"
-                                                                :output-dir      "resources/public/simple/js/out/"
-                                                                :optimizations   :simple
-                                                                :externs         ["src-hacks/js/externs/stripe-checkout.js"]
-                                                                :infer-externs   true
-                                                                ;; :language-in     :ecmascript5
-                                                                :parallel-build  true
-                                                                :pretty-print    true
-                                                                :compiler-stats  true
-                                                                :verbose         true
-                                                                ;; :source-map   true
-                                                                :npm-deps        ~npm-deps
-                                                                :modules         ~(modules "resources/public/simple/js/out/")
-                                                                }}]}}}
+             :web      {:jvm-opts  ^:replace ["-Xmx3g" "-server"]
+                        :cljsbuild {:builds [{:id           "dev"
+                                              :figwheel     {:on-jsload "eponai.web.figwheel/reload!"}
+                                              :source-paths ["src/" "src-hacks/web/" "env/client/dev"]
+                                              :compiler     {:main                 "env.web.main"
+                                                             :asset-path           "/dev/js/out"
+                                                             :output-to            "resources/public/dev/js/out/budget.js"
+                                                             ;; :modules ~(modules "/dev/js/out")
+                                                             :output-dir           "resources/public/dev/js/out/"
+                                                             :optimizations        :none
+                                                             :parallel-build       true
+                                                             :source-map           true
+                                                             :npm-deps             ~npm-deps
+                                                             :closure-warnings     ~closure-warns
+                                                             ;; Speeds up Figwheel cycle, at the risk of dependent namespaces getting out of sync.
+                                                             :recompile-dependents false
+                                                             }}
+                                             {:id           "devcards"
+                                              :source-paths ["src/" "src-hacks/web/" "test/"]
+                                              :figwheel     {:devcards true ;; <- note this
+                                                             }
+                                              :compiler     {:main                 "eponai.devcards.devcards_main"
+                                                             :asset-path           "/devcards/js/out"
+                                                             :output-to            "resources/public/devcards/js/out/budget.js"
+                                                             :output-dir           "resources/public/devcards/js/out"
+                                                             :source-map-timestamp true
+                                                             :closure-warnings     ~closure-warns
+                                                             :npm-deps             ~npm-deps
+                                                             :recompile-dependents false}}
+                                             {:id           "test"
+                                              :source-paths ["src/" "src-hacks/web/" "test/"]
+                                              :figwheel     {:on-jsload "eponai.client.figwheel.test-main/reload-figwheel!"}
+                                              :compiler     {:output-to            "resources/public/test/js/out/budget.js"
+                                                             :output-dir           "resources/public/test/js/out"
+                                                             :asset-path           "/test/js/out"
+                                                             :main                 "eponai.client.figwheel.test-main"
+                                                             :parallel-build       true
+                                                             :optimizations        :none
+                                                             :source-map           true
+                                                             :closure-warnings     ~closure-warns
+                                                             :npm-deps             ~npm-deps
+                                                             :recompile-dependents false
+                                                             }}
+                                             {:id           "doo-test"
+                                              :source-paths ["src/" "src-hacks/web/" "test/"]
+                                              :compiler     {:output-to        "resources/public/doo-test/js/out/budget.js"
+                                                             :output-dir       "resources/public/doo-test/js/out"
+                                                             :main             "eponai.client.tests"
+                                                             :parallel-build   true
+                                                             :optimizations    :none
+                                                             :source-map       true
+                                                             :closure-warnings ~closure-warns
+                                                             :npm-deps         ~npm-deps
+                                                             }}
+                                             {:id           "simple"
+                                              :source-paths ["src/" "src-hacks/web/" "env/client/simple"]
+                                              :compiler     {:closure-defines {"goog.DEBUG" true}
+                                                             :main            "env.web.main"
+                                                             :asset-path      "/simple/js/out"
+                                                             :output-to       "resources/public/simple/js/out/budget.js"
+                                                             :output-dir      "resources/public/simple/js/out/"
+                                                             :optimizations   :simple
+                                                             :externs         ["src-hacks/js/externs/stripe-checkout.js"]
+                                                             :infer-externs   true
+                                                             ;; :language-in     :ecmascript5
+                                                             :parallel-build  true
+                                                             :pretty-print    true
+                                                             :compiler-stats  true
+                                                             :verbose         true
+                                                             ;; :source-map   true
+                                                             :npm-deps        ~npm-deps
+                                                             :modules         ~(modules "resources/public/simple/js/out/")
+                                                             }}]}}}
 
-   ;;;;;;;;;;;;;
-   ;; clj:
-   ;;;;;;;;;;;;;
-   :target-path  "target/%s"
-   :source-paths ["src"]
-   :ring         {:handler eponai.server.core/app
-                  :init    eponai.server.core/init}
-   :main         eponai.server.core
-   :repositories {"my.datomic.com" {:url      "https://my.datomic.com/repo"
-                                    :username ~(System/getenv "DATOMIC_EMAIL")
-                                    :password ~(System/getenv "DATOMIC_KEY")}}
+  ;;;;;;;;;;;;;
+  ;; clj:
+  ;;;;;;;;;;;;;
+  :target-path "target/%s"
+  :source-paths ["src"]
+  :ring {:handler eponai.server.core/app
+         :init    eponai.server.core/init}
+  :main eponai.server.core
+  :repositories {"my.datomic.com" {:url      "https://my.datomic.com/repo"
+                                   :username ~(System/getenv "DATOMIC_EMAIL")
+                                   :password ~(System/getenv "DATOMIC_KEY")}}
 
-   ;;;;;;;;;;;;;
-   ;; cljs:
-   ;;;;;;;;;;;;;
-   :doo          {:paths {:phantom "./node_modules/phantomjs/bin/phantomjs"}}
+  ;;;;;;;;;;;;;
+  ;; cljs:
+  ;;;;;;;;;;;;;
+  :doo {:paths {:phantom "./node_modules/phantomjs/bin/phantomjs"}}
   )

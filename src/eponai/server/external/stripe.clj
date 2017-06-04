@@ -1,14 +1,17 @@
 (ns eponai.server.external.stripe
   (:require
     [clj-http.client :as client]
+    [slingshot.slingshot :refer [try+]]
     [clojure.spec :as s]
     [eponai.common.database :as db]
     [eponai.server.external.stripe.format :as f]
     [eponai.server.http :as h]
     [eponai.server.external.stripe.stub :as stub]
     [taoensso.timbre :refer [debug error info]]
+    [eponai.server.external.stripe.webhooks :as webhooks]
     [clojure.data.json :as json]
-    [clojure.string :as string]))
+    [clojure.string :as string])
+  (:import (clojure.lang ExceptionInfo)))
 
 (defn pull-stripe [db store-id]
   (when store-id
@@ -121,7 +124,8 @@
   (-update-customer [_ customer-id params]
     (debug "Update customer: " params)
     (let [customer (json/read-str (:body (client/post (stripe-endpoint "customers" customer-id)
-                                                      {:basic-auth api-key :form-params params})) :key-fn keyword)]
+                                                      {:basic-auth api-key :form-params params :throw-exceptions false})) :key-fn keyword)]
+      (debug "Customer: " customer)
       (f/stripe->customer customer)))
 
   (-get-customer [_ customer-id]
@@ -129,10 +133,16 @@
       (f/stripe->customer customer)))
 
   (-create-card [_ customer-id source]
-    (let [params {:source source}
-          card (json/read-str (:body (client/post (stripe-endpoint "customers" customer-id "sources")
-                                                  {:basic-auth api-key :form-params params})) :key-fn keyword)]
-      card))
+    (try+
+      (let [params {:source source}
+            card (json/read-str (:body (client/post (stripe-endpoint "customers" customer-id "sources")
+                                                    {:basic-auth api-key :form-params params})) :key-fn keyword)]
+        card)
+      (catch [:status 402] r
+        (let [{:keys [body]} r
+              {:keys [error]} (json/read-str body :key-fn keyword)]
+          ;(debug "Error response: " (clojure.walk/keywordize-keys body))
+          (throw (ex-info (:message error) error))))))
 
   (-create-account [_ {:keys [country]}]
     (let [params {:country country :managed true}
@@ -143,11 +153,16 @@
        :publ   (:publishable keys)}))
 
   (-create-charge [_ params]
-    (let [charge (json/read-str (:body (client/post (stripe-endpoint "charges") {:basic-auth api-key :form-params params})) :key-fn keyword)]
-      (debug "Created charge: " charge)
-      {:charge/status (:status charge)
-       :charge/id     (:id charge)
-       :charge/paid?  (:paid charge)}))
+    (try+
+      (let [charge (json/read-str (:body (client/post (stripe-endpoint "charges") {:basic-auth       api-key
+                                                                                   :form-params      params})) :key-fn keyword)]
+        {:charge/status (:status charge)
+         :charge/id     (:id charge)
+         :charge/paid?  (:paid charge)})
+      (catch [:status 402] r
+        (let [{:keys [body]} r
+              {:keys [error]} (json/read-str body :key-fn keyword)]
+          (throw (ex-info (:message error) error))))))
 
   (-create-refund [_ {:keys [charge]}]
     (let [params {:charge           charge
@@ -255,3 +270,10 @@
            :charge/paid?  (:paid charge)}))
 
       (-create-refund [this params]))))
+
+(defn webhook [{:keys [type] :as env} event]
+  (cond (= type :account)
+        (or (webhooks/handle-account-webhook env event) {})
+
+        (= type :connected)
+        (or (webhooks/handle-connected-webhook env event) {})))

@@ -9,8 +9,8 @@
    "/dashboard" {""          :store-dashboard
                  "/profile"  :store-dashboard/profile
                  "/policies" :store-dashboard/policies
+                 "/shipping" :store-dashboard/shipping
                  "/settings" {""          :store-dashboard/settings
-                              "/shipping" :store-dashboard/settings#shipping
                               "/payments" :store-dashboard/settings#payments
                               "/payouts"  :store-dashboard/settings#payouts
                               "/business" :store-dashboard/settings#business

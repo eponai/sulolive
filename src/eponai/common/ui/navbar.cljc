@@ -193,12 +193,14 @@
    :store-dashboard/order-list-new       "Orders"
    :store-dashboard/order-list-fulfilled "Orders"
    :store-dashboard/order                "Order"
+   :store-dashboard/shipping "Shipping"
    :store-dashboard/settings             "Business"
    :store-dashboard/settings#payments    "Business"
    :store-dashboard/settings#general     "Business"
    :store-dashboard/settings#shipping    "Business"
    :store-dashboard/settings#activate    "Business"
-   :store-dashboard/settings#business    "Business"})
+   :store-dashboard/settings#business    "Business"
+   :store-dashboard/settings#payouts "Business"})
 
 (defn user-menu-item [component]
   (let [{:query/keys [auth owned-store]} (om/props component)]
@@ -339,6 +341,7 @@
                                                           {:store/_items [{:store/profile [:store.profile/name]}]}]}]}]}
      {:query/auth [:db/id
                    :user/email
+                   {:user/stripe [:stripe/id]}
                    {:user/profile [{:user.profile/photo [:photo/path :photo/id]}]}]}
      {:query/owned-store [:db/id
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
@@ -586,6 +589,14 @@
                             :onClick #(track-event ::mixpanel/go-to-orders)}
                            (dom/div {:classes ["icon icon-order"]})
                            (dom/span nil "Orders")))
+                  (menu/item
+                    (when (contains? #{:store-dashboard/shipping} (:route current-route))
+                      (css/add-class :is-active))
+                    (dom/a {:href    (routes/url :store-dashboard/shipping {:store-id (:db/id owned-store)})
+                            ;:onClick #(track-event ::mixpanel/go-to-orders)
+                            }
+                           (dom/div {:classes ["icon icon-truck"]})
+                           (dom/span nil "Shipping")))
                   (menu/item
                     (when (or (= :store-dashboard/settings#payouts (:route current-route))
                               (= :store-dashboard/settings#business (:route current-route)))

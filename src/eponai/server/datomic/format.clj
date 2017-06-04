@@ -137,6 +137,25 @@
         (update :shipping/address address*)
         cf/add-tempid)))
 
+(defn shipping-rate [r]
+  (-> r
+      (select-keys [:shipping.rate/first :shipping.rate/additional :shipping.rate/free-above :shipping.rate/title :shipping.rate/info])
+      (update :shipping.rate/first input->price)
+      (update :shipping.rate/additional input->price)
+      (update :shipping.rate/free-above input->price)
+      cf/add-tempid
+      cf/remove-nil-keys))
+
+(defn shipping-rule [sr]
+  (letfn [(destination* [d]
+            (-> d
+                (select-keys [:country/code :country/name])
+                cf/add-tempid))]
+    (-> (select-keys sr [:shipping.rule/destinations :shipping.rule/rates :shipping.rule/title])
+        (update :shipping.rule/destinations #(map destination* %))
+        (update :shipping.rule/rates #(map shipping-rate %))
+        cf/add-tempid)))
+
 (defn order [o]
   (let [item* (fn [sku]
                 {:db/id             (db/tempid :db.part/user)

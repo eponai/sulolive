@@ -292,6 +292,24 @@
              (debug "store/update-sections with params: " p)
              (store/update-sections env (c/parse-long store-id) p))})
 
+(defmutation store/save-shipping-rule
+  [env _ {:keys [store-id] :as p}]
+  {:auth {::auth/store-owner store-id}
+   :resp {:success "Your store sections were updated"
+          :error   "Could not update store sections."}}
+  {:action (fn []
+             (debug "store/update-sections with params: " p)
+             (store/create-shipping-rule env (c/parse-long store-id) p))})
+
+(defmutation store/update-shipping-rule
+  [env _ {:keys [store-id shipping-rule] :as p}]
+  {:auth {::auth/store-owner store-id}
+   :resp {:success "Your store sections were updated"
+          :error   "Could not update store sections."}}
+  {:action (fn []
+             (debug "store/update-shipping-rule with params: " p)
+             (store/update-shipping-rule env (:db/id shipping-rule) shipping-rule))})
+
 ;######## STRIPE ########
 
 (comment
@@ -333,7 +351,7 @@
   {:auth {::auth/any-user true}
    :resp {:success return
           :error   (if (some? exception)
-                     (or (.getMessage exception) "Something went wrong")
+                     (or (:message (ex-data exception)) "Something went wrong")
                      "Something went wrong!")}}
   {:action (fn []
              (let [{:stripe/keys [id]} (stripe/pull-user-stripe (db/db state) (:user-id auth))
@@ -347,8 +365,9 @@
                                                                  :line2       (:shipping.address/street2 address)
                                                                  :postal_code (:shipping.address/postal address)
                                                                  :city        (:shipping.address/locality address)
-                                                                 :state       (:shipping.address/region address)}}})))
-               {:new-card     new-card}))})
+                                                                 :state       (:shipping.address/region address)
+                                                                 :country     (:shipping.address/country address)}}})))
+               {:new-card new-card}))})
 
 (defmutation store/create
   [{:keys [state ::parser/return ::parser/exception auth system] :as env} _ params]
@@ -395,7 +414,7 @@
    :resp {:success return
           :error   (let [default-msg "Could not create order"]
                      (if (some? exception)
-                       (:user-message (ex-data exception) default-msg)
+                       (:message (ex-data exception) default-msg)
                        default-msg))}}
   {:action (fn []
              (store/create-order env store-id order))})

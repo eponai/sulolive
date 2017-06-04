@@ -41,7 +41,7 @@ $sidenav-width: 75%;
 	> ul {
 		flex: 0 0 auto;
 		> li {
-			padding: 0.5rem 1rem;
+			padding: 0.25rem 1rem;
 			border-bottom: $global-border-secondary;
 			&:last-child {
 				// border-bottom: none;
@@ -128,7 +128,7 @@ $sidenav-width: 75%;
 
 @include breakpoint(xlarge) {
 	#sulo-store-dashboard {
-		$sidebar-width: 20rem;
+		$sidebar-width: 15rem;
 		.page-content-container {
 			display: flex;
 			.page-content {
@@ -151,7 +151,7 @@ $sidenav-width: 75%;
 				left: auto;
 				top: $navbar-height;
 				// position: absolute;
-				width: 100%;
+				width: $sidebar-width;
 				height: auto;
 				bottom: 0;
 				// z-index: 0;
@@ -163,7 +163,13 @@ $sidenav-width: 75%;
 				li {
 					transition: background .25s linear;
 					a {
-						font-weight: $global-weight-bold;
+						color: $body-font-color;
+						font-weight: $global-weight-normal;
+					}
+					&.is-active {
+						a {
+							font-weight: $global-weight-bold;
+						}
 					}
 				}
 				li.is-active, li:hover {

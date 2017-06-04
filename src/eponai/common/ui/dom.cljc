@@ -121,6 +121,9 @@
 (defn option [opts & content]
   (element dom/option opts content))
 
+(defn optgroup [opts & content]
+  (element dom/optgroup opts content))
+
 (defn img [opts & content]
   (element dom/img opts content))
 

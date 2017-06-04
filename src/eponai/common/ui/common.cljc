@@ -34,23 +34,26 @@
 (defn modal [opts & content]
   (let [{:keys [on-close size]} opts]
     (dom/div
-      (->> {:id        "reveal-overlay"
-            :onClick   #(when (= "reveal-overlay" (.-id (.-target %)))
-                         (on-close))}
+      (->> {:id      "reveal-overlay"
+            :onClick #(when (= "reveal-overlay" (.-id (.-target %)))
+                       (when on-close
+                         (on-close)))}
            (css/add-class :reveal-overlay))
       (dom/div
         (css/add-class (str "reveal " (when (some? size) (name size))))
-             (dom/a
-               (css/add-class :close-button {:onClick on-close})
-               (dom/span nil "x"))
-             content))))
+        (when on-close
+          (dom/a
+            (css/add-class :close-button {:onClick on-close})
+            (dom/span nil "x")))
+        content))))
 
-(defn loading-spinner [& [opts]]
+(defn loading-spinner [opts & content]
   (dom/div
     (css/add-class :sl-spinner-overlay)
     (dom/div
       (css/add-class :sl-spinner)
-      (dom/img {:src "/assets/img/auth0-icon.png"}))))
+      (dom/img {:src "/assets/img/auth0-icon.png"}))
+    content))
 
 (defn online-channel-element [channel]
   (let [{:stream/keys [store]

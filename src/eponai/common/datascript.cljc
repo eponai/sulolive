@@ -17,6 +17,9 @@
    :order/id {:db/unique :db.unique/identity}
    :country-spec/id {:db/unique :db.unique/identity}
    :category/path {:db/index true}
+   :country/code {:db/unique :db.unique/identity}
+   :country/continent {:db/valueType :db.type/ref}
+   :continent/code {:db/unique :db.unique/identity}
    ;:store.item/uuid {:db/unique :db.unique/identity}
    :db/ident {:db/unique :db.unique/identity}})
 
