@@ -103,7 +103,10 @@
       ;;       We do this because the client's auth and the cookie's auth may
       ;;       not agree on who's logged in. We may want to prompt a "continue as"
       ;;       screen, instead of forcing the logout.
-      {:auth {:logout true}}
+      (do
+        (debug "Has queried auth and client's auth doesn't match cookie's auth.")
+        (debug "clients-auth: " clients-auth " cookie-auth: " cookie-auth)
+        {:auth {:logout true}})
       (let [auth-responder (parser/stateful-auth-responder)
             ret (handle-parser-request (assoc request ::parser/auth-responder auth-responder)
                                        read-basis-t-graph)
