@@ -167,10 +167,7 @@
            (om/update-state! this assoc :card card :stripe stripe)))))
   (initLocalState [this]
     (let [{:keys [default-source]} (om/props this)]
-      ;(debug "Mount with default source: " new-props)
-      {:selected-source (or default-source :new-card)}
-      ;(om/update-state! this assoc :selected-source (or default-source :new-card))
-      ))
+      {:selected-source (or default-source :new-card)}))
 
   (render [this]
     (render-payment this (om/props this) (om/get-state this))))

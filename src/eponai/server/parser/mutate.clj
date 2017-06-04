@@ -347,15 +347,17 @@
                (stripe/update-account (:system/stripe system) id account-params)))})
 
 (defmutation stripe/update-customer
-  [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [shipping source]}]
+  [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [shipping source remove-source] :as params}]
   {:auth {::auth/any-user true}
    :resp {:success return
           :error   (if (some? exception)
                      (or (:message (ex-data exception)) "Something went wrong")
                      "Something went wrong!")}}
   {:action (fn []
+             (debug "Stripe update customer: " params)
              (let [{:stripe/keys [id]} (stripe/pull-user-stripe (db/db state) (:user-id auth))
-                   new-card (when source (stripe/create-card (:system/stripe system) id source))]
+                   new-card (when source (stripe/create-card (:system/stripe system) id source))
+                   remove-source (when remove-source (stripe/delete-card (:system/stripe system) id remove-source))]
                (when shipping
                  (let [address (:shipping/address shipping)]
                    (stripe/update-customer (:system/stripe system)
@@ -367,7 +369,8 @@
                                                                  :city        (:shipping.address/locality address)
                                                                  :state       (:shipping.address/region address)
                                                                  :country     (:shipping.address/country address)}}})))
-               {:new-card new-card}))})
+               {:new-card     new-card
+                :deleted-card remove-source}))})
 
 (defmutation store/create
   [{:keys [state ::parser/return ::parser/exception auth system] :as env} _ params]

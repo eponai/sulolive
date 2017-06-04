@@ -109,9 +109,8 @@
     ::auth/store-owner
     (= (namespace handler) "store-dashboard")
     ::auth/store-owner
-    (#{:user/profile :user/order :user/order-list} handler)
-    ::auth/exact-user
-    (= handler :checkout)
+
+    (#{:user/order :user/order-list :checkout} handler)
     ::auth/any-user
     :else
     ::auth/any-user))

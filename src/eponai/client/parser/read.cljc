@@ -73,20 +73,16 @@
 
 (defmethod client-read :query/orders
   [{:keys [db query target ast route-params] :as env} _ _]
-  (let [{:keys [store-id user-id]} route-params
-        store-id (c/parse-long-safe store-id)
-        user-id (c/parse-long-safe user-id)]
-    (when (and store-id user-id)
-      (if target
-        {:remote (-> ast
-                     (assoc-in [:params :store-id] store-id)
-                     (assoc-in [:params :user-id] user-id))}
-        {:value (cond (some? store-id)
-                      (db/pull-all-with db query {:where   '[[?e :order/store ?s]]
-                                                  :symbols {'?s store-id}})
-                      (some? user-id)
-                      (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
-                                                  :symbols {'?u user-id}}))}))))
+  (let [{:keys [store-id]} route-params
+        store-id (c/parse-long-safe store-id)]
+    (if target
+      {:remote (-> ast (assoc-in [:params :store-id] store-id))}
+      {:value (if (some? store-id)
+                (db/pull-all-with db query {:where   '[[?e :order/store ?s]]
+                                            :symbols {'?s store-id}})
+                (when-let [user-id (auth/current-auth db)]
+                  (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
+                                              :symbols {'?u user-id}})))})))
 
 (defmethod client-read :query/inventory
   [{:keys [db query target ast route-params] :as env} _ _]
