@@ -1,4 +1,4 @@
-(ns eponai.web.ui.user.dashboard
+(ns eponai.web.ui.user.settings
   (:require
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
@@ -298,7 +298,7 @@
                                                       (mixpanel/track "Close shipping info")
                                                       (on-close))} (dom/span nil "Close"))
              (button/user-setting-cta {:onClick #(do (mixpanel/track "Save payment info"))} (dom/span nil "Save")))])))))
-(defui UserDashboard
+(defui UserSettings
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
@@ -381,7 +381,7 @@
           {user-profile :user/profile} auth
           {:keys [route-params]} current-route]
       (common/page-container
-        {:navbar navbar :id "sulo-user-dashboard"}
+        {:navbar navbar :id "sulo-user-settings"}
         (grid/row-column
           nil
           (dom/h1 nil "Settings")
@@ -547,4 +547,4 @@
 
 ;(def ->UserSettings (om/factory UserSettings))
 
-(router/register-component :user-settings UserDashboard)
+(router/register-component :user-settings UserSettings)

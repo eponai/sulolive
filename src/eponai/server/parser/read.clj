@@ -91,12 +91,16 @@
   {:auth    (if (some? store-id)
               {::auth/store-owner store-id}
               ::auth/any-user)
-   :uniq-by [[:store-id store-id]]}
+   :uniq-by [[:val (if (some? store-id)
+                     [:store-id store-id]
+                     [:user-id (hash (:email auth))])]]}
   {:value (if (some? store-id)
             (db/pull-all-with db query {:where   '[[?e :order/store ?s]]
                                         :symbols {'?s store-id}})
-            (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
-                                        :symbols {'?u (:user-id auth)}}))})
+            (do
+              (debug "Query: " query)
+              (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
+                                          :symbols {'?u (:user-id auth)}})))})
 
 (defread query/inventory
   [{:keys [query db]} _ {:keys [store-id]}]
@@ -110,7 +114,9 @@
 (defread query/order
   [{:keys [state query db auth] :as env} _ {:keys [order-id store-id]}]
   {:auth    {::auth/store-owner store-id}
-   :uniq-by [[:store-id store-id] [:order-id order-id]]}
+   :uniq-by [[:val (if (some? store-id)
+                     [:store-id store-id]
+                     [:user-id (hash (:email auth))])] [:order-id order-id]]}
   {:value (if (some? store-id)
             (db/pull-one-with db query {:where   '[[?e :order/store ?s]]
                                         :symbols {'?e order-id

@@ -93,7 +93,11 @@
                                                                             {:store.item/photos [{:store.item.photo/photo [:photo/path]}
                                                                                                  :store.item.photo/index]}]}]}]}
                     {:order/shipping [:shipping/name
-                                      :shipping/address]}
+                                      {:shipping/address [:shipping.address/street
+                                                          :shipping.address/postal
+                                                          :shipping.address/locality
+                                                          :shipping.address/region
+                                                          :shipping.address/country]}]}
                     :order/user
                     {:order/store [{:store/profile [{:store.profile/photo [:photo/path]}
                                                     :store.profile/name]}]}]}])
