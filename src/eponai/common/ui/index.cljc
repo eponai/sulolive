@@ -138,8 +138,13 @@
                                                                    (do
                                                                      (mixpanel/track "Search products" {:source        "index"
                                                                                                         :search-string input-search})
-                                                                     (set! js/window.location (str "/products?search=" input-search)))))})
-                                   (css/add-classes [:search :drop-shadow]))
+                                                                     (routes/set-url! this
+                                                                                      :browse/all-items
+                                                                                      nil
+                                                                                      {:search input-search}))))})
+                                   (css/add-classes (cond-> [:search :drop-shadow]
+                                                            (empty? input-search)
+                                                            (conj :disabled))))
                               (dom/span nil "Search")))))))
 
             (dom/div #js {:className "top-features"}
