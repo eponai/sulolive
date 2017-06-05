@@ -136,6 +136,7 @@
                  [medley "0.8.3"]
                  [org.martinklepsch/s3-beam "0.6.0-alpha1"]
                  [slingshot "0.12.2"]
+                 [inflections "0.13.0"]
 
                  ;; CLJS
                  [cljsjs/react "15.4.2-2"]

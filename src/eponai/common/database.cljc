@@ -9,6 +9,7 @@
     #?(:clj
     [datomic.api :as datomic])
     [datascript.core :as datascript]
+    [inflections.core :as inflections]
     [medley.core :as medley])
   #?(:clj
      (:import [clojure.lang ExceptionInfo]
@@ -44,9 +45,17 @@
 
 (declare do-pull)
 
+(defn- singularize [s join-words]
+  (let [singular (inflections/singular s)]
+    (if (str/starts-with? s singular)
+      singular
+      (join-words s singular))))
+
 (defn datomic-needle-fn [raw-needle]
   ;; Takes a needle and returns a datomic search
   (->> (str/split raw-needle #" ")
+       (map #(singularize % (fn [s singular]
+                              (str "(" s " OR " singular ")"))))
        (str/join " OR ")))
 
 (defn- datomic-fulltext [{:keys [db attr arg return]}]
@@ -56,7 +65,9 @@
 
 (defn datascript-find-fn [raw-needle]
   (let [needles (into []
-                      (map #(re-pattern (str "(?i)" %)))
+                      (comp
+                        (map #(singularize % (fn [s singular] (str s "|" singular))))
+                        (map #(re-pattern (str "(?i)" %))))
                       (str/split raw-needle #" "))]
     (fn [haystack]
       (every? #(re-find % haystack) needles))))
