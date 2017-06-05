@@ -106,6 +106,7 @@
       (do
         (debug "Has queried auth and client's auth doesn't match cookie's auth.")
         (debug "clients-auth: " clients-auth " cookie-auth: " cookie-auth)
+        (debug "query: " (get-in request :body :query))
         {:auth {:logout true}})
       (let [auth-responder (parser/stateful-auth-responder)
             ret (handle-parser-request (assoc request ::parser/auth-responder auth-responder)
