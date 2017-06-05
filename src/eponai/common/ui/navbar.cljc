@@ -287,7 +287,7 @@
         (dom/span nil title)))))
 
 (defn standard-navbar [component]
-  (let [{:query/keys [cart loading-bar]} (om/props component)]
+  (let [{:query/keys [cart loading-bar current-route]} (om/props component)]
     (navbar-content
       nil
       (dom/div
@@ -314,18 +314,19 @@
           (menu/item nil
                      (dom/div
                        (css/show-for :medium)
-                       (dom/input {:type        "text"
-                                   :placeholder "Search on SULO..."
-                                   :onKeyDown   (fn [e]
-                                                  #?(:cljs
-                                                     (when (= 13 (.. e -keyCode))
-                                                       (let [search-string (.. e -target -value)]
-                                                         (mixpanel/track "Search products" {:source        "navbar"
-                                                                                            :search-string search-string})
-                                                         (routes/set-url! component
-                                                                          :browse/all-items
-                                                                          nil
-                                                                          {:search search-string})))))})))
+                       (dom/input {:type         "text"
+                                   :placeholder  "Search on SULO..."
+                                   :defaultValue (or (get-in current-route [:query-params :search]) "")
+                                   :onKeyDown    (fn [e]
+                                                   #?(:cljs
+                                                      (when (= 13 (.. e -keyCode))
+                                                        (let [search-string (.. e -target -value)]
+                                                          (mixpanel/track "Search products" {:source        "navbar"
+                                                                                             :search-string search-string})
+                                                          (routes/set-url! component
+                                                                           :browse/all-items
+                                                                           nil
+                                                                           {:search search-string})))))})))
           (user-menu-item component)
           (menu/item
             nil
