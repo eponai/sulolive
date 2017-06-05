@@ -59,13 +59,16 @@
                                        ::m/parser              (parser/server-parser)
                                        ::m/cljs-build-id       (or cljs-build-id "dev")
                                        ::m/system              system})
+                        ;; Places wrap-suspendable under wrap-js-files, so figwheel can get the
+                        ;; javascript files from our server, but ajax requests waits until the
+                        ;; system is restarted.
+                        (cond-> (not in-production?) wrap-suspendable)
                         (m/wrap-js-files cljs-build-id)
                         (m/wrap-defaults in-production? disable-anti-forgery)
                         m/wrap-trace-request
                         (cond-> (and in-production? (not disable-ssl))
                                 m/wrap-ssl)
-                        (m/wrap-error in-production?)
-                        (cond-> (not in-production?) wrap-suspendable))
+                        (m/wrap-error in-production?))
             ;; Wraps handler in an atom in development, so we can swap implementation
             ;; at runtime/reload-time.
             handler-atom (atom handler)
