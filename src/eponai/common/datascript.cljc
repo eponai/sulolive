@@ -26,6 +26,7 @@
    ;; we can index some attributes.
    :category/path {:db/index true}
    :category/name {:db/index true}
+   :store.item/name {:db/index true}
    })
 
 (defn schema-datomic->datascript [datomic-schema]

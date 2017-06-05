@@ -44,18 +44,34 @@
 
 (declare do-pull)
 
+(defn datomic-needle-fn [raw-needle]
+  ;; Takes a needle and returns a datomic search
+  (->> (str/split raw-needle #" ")
+       (str/join " OR ")))
+
 (defn- datomic-fulltext [{:keys [db attr arg return]}]
-  {:where [[(list 'fulltext db attr arg) return]]})
+  (let [polished-needle '?eponai-db-fulltext-datomic-needle]
+    {:where [[`(datomic-needle-fn ~arg) polished-needle]
+             [(list 'fulltext db attr polished-needle) return]]}))
+
+(defn datascript-find-fn [raw-needle]
+  (let [needles (into []
+                      (map #(re-pattern (str "(?i)" %)))
+                      (str/split raw-needle #" "))]
+    (fn [haystack]
+      (every? #(re-find % haystack) needles))))
 
 (defn- datascript-fulltext [{:keys [db attr arg return]}]
   (let [[[eid value tx score]] return
-        val-sym (or value '?val)]
+        val-sym (or value '?val)
+        find-needle-fn (atom nil)
+        find-fn (fn [haystack needle]
+                  (when-not @find-needle-fn
+                    (reset! find-needle-fn (datascript-find-fn needle)))
+                  (@find-needle-fn haystack))]
     {:where   [[db eid attr val-sym]
-               [(list '?eponai.db.fulltext/includes-fn val-sym arg)]]
-     :symbols {'?eponai.db.fulltext/includes-fn (fn [s sub]
-                                                  (or (str/includes? s (str " " sub " "))
-                                                      (str/ends-with? s sub)
-                                                      (str/starts-with? s sub)))}}))
+               `[(~'?eponai.db.fulltext/includes-fn ~val-sym ~arg)]]
+     :symbols {'?eponai.db.fulltext/includes-fn find-fn}}))
 
 (defn- datascript-datoms [db index args]
   ;; The :vaet index isn't implemented for datascript (who knew!?)
