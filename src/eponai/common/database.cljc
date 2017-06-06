@@ -56,7 +56,7 @@
   (->> (str/split raw-needle #" ")
        (map #(singularize % (fn [s singular]
                               (str "(" s " OR " singular ")"))))
-       (str/join " OR ")))
+       (str/join " AND ")))
 
 (defn- datomic-fulltext [{:keys [db attr arg return]}]
   (let [polished-needle '?eponai-db-fulltext-datomic-needle]
