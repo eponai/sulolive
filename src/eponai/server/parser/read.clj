@@ -97,10 +97,8 @@
   {:value (if (some? store-id)
             (db/pull-all-with db query {:where   '[[?e :order/store ?s]]
                                         :symbols {'?s store-id}})
-            (do
-              (debug "Query: " query)
-              (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
-                                          :symbols {'?u (:user-id auth)}})))})
+            (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
+                                        :symbols {'?u (:user-id auth)}}))})
 
 (defread query/inventory
   [{:keys [query db]} _ {:keys [store-id]}]
@@ -113,7 +111,7 @@
 
 (defread query/order
   [{:keys [state query db auth] :as env} _ {:keys [order-id store-id]}]
-  {:auth    {::auth/store-owner store-id}
+  {:auth    ::auth/any-user
    :uniq-by [[:val (if (some? store-id)
                      [:store-id store-id]
                      [:user-id (hash (:email auth))])] [:order-id order-id]]}
@@ -124,6 +122,23 @@
             (db/pull-one-with db query {:where   '[[?e :order/user ?u]]
                                         :symbols {'?e order-id
                                                   '?u (:user-id auth)}}))})
+
+(defread query/order-payment
+  [{:keys [state query db auth system] :as env} _ {:keys [order-id store-id]}]
+  {:auth    ::auth/any-user
+   :uniq-by [[:val (if (some? store-id)
+                     [:store-id store-id]
+                     [:user-id (hash (:email auth))])] [:order-id order-id]]}
+  {:value (when-let [charge (if (some? store-id)
+                              (db/pull-one-with db [:charge/id] {:where   '[[?o :order/store ?s]
+                                                                            [?o :order/charge ?e]]
+                                                                 :symbols {'?o order-id
+                                                                           '?s store-id}})
+                              (db/pull-one-with db [:charge/id] {:where   '[[?o :order/user ?u]
+                                                                            [?o :order/charge ?e]]
+                                                                 :symbols {'?o order-id
+                                                                           '?u (:user-id auth)}}))]
+            (stripe/get-charge (:system/stripe system) (:charge/id charge)))})
 
 (defread query/stripe-account
   [env _ {:keys [store-id]}]
@@ -163,7 +178,7 @@
 
 (defread query/user
   [{:keys [db db-history query]} _ {:keys [user-id]}]
-  {:auth    ::auth/any-user}
+  {:auth ::auth/any-user}
   {:value (query/one db db-history query {:where   '[[?e]]
                                           :symbols {'?e user-id}})})
 

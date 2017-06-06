@@ -135,6 +135,12 @@
 	}
 }
 
+.section-title {
+	margin-top: 2rem;
+	letter-spacing: 1px;
+	margin-bottom: 0.2rem;
+}
+
 #sulo-user-settings {
 	.row {
 		max-width: $user-dashboard-max-width;
@@ -145,11 +151,7 @@
 		padding-top: 1rem;
 	}
 
-	.section-title {
-		margin-top: 2rem;
-		letter-spacing: 1px;
-		margin-bottom: 0.2rem;
-	}
+	
 	.section-list {
 		margin-bottom: 4rem;
 	}

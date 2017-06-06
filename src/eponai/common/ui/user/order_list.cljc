@@ -139,16 +139,13 @@
                           ;(photo/store-cover store nil)
                           (dom/div
                             (css/add-classes [:section-title :sl-order-card-title])
+
                             (dom/a
                               (css/add-class :sl-order-card-title--store {:href (routes/url :store {:store-id (:db/id store)})})
                               (photo/store-photo store {:transformation :transformation/thumbnail-tiny})
                               (dom/p nil
-                                     (dom/span nil (str store-name))
-                                     (dom/br nil)
-                                     (dom/small nil (date/date->string (:order/created-at o) "MMMM dd, YYYY"))))
-                            (dom/div
-                              (css/add-class :sl-order-card-title--number)
-                              (button/user-setting-default {:href (routes/url :user/order {:order-id (:db/id o)})} "View order")))
+                                     (dom/span nil (str store-name))))
+                            (dom/p nil (dom/small nil (date/date->string (:order/created-at o) "MMMM dd, YYYY"))))
 
                           (dom/div
                             (css/add-classes [:section-content :sl-order-card-content])
@@ -159,19 +156,20 @@
                                            product (:store.item/_skus sku)]
                                        (menu/item
                                          nil
+                                         ;(dom/a
+                                         ;  nil)
                                          (dom/a
-                                           nil
+                                           (css/add-class :sl-order-items-list-item--info)
                                            (dom/div
-                                             (css/add-class :sl-order-items-list-item--info)
-                                             (dom/div
-                                               (css/add-class :info-photo)
-                                               (photo/product-preview product {:transformation :transformation/thumbnail}))
-                                             (dom/p nil (dom/small nil (:store.item/name product))
-                                                    (dom/br nil)
-                                                    (dom/small nil (:store.item.sku/variation sku))))
-                                           (dom/div
-                                             (css/add-classes [:shrink :sl-order-items-list-item--price])
-                                             (dom/small nil (ui-utils/two-decimal-price (:store.item/price product))))))))
+                                             (css/add-class :info-photo)
+                                             (photo/product-preview product {:transformation :transformation/thumbnail}))
+                                           (dom/p nil (dom/small nil (:store.item/name product))
+                                                  (dom/br nil)
+                                                  (dom/small nil (:store.item.sku/variation sku))))
+                                         (dom/div
+                                           (css/add-classes [:shrink :sl-order-items-list-item--price])
+                                           (dom/small nil (ui-utils/two-decimal-price (:store.item/price product))))
+                                         )))
                                    (filter #(= (:order.item/type %) :order.item.type/sku) (:order/items o))))
 
                             (dom/div
@@ -182,7 +180,10 @@
                               (css/add-class :sl-order-card-content--status)
                               (dom/div
                                 nil
-                                (dom/label nil "Status: ") (dom/span nil (str (string/capitalize (name (:order/status o)))))))
+                                (dom/label nil "Status: ") (dom/span nil (str (string/capitalize (name (:order/status o))))))
+                              (dom/div
+                                (css/add-class :sl-order-card-title--number)
+                                (button/user-setting-default {:href (routes/url :user/order {:order-id (:db/id o)})} "View receipt")))
                             ))))
                     os)])
                orders-by-month))))))

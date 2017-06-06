@@ -1,9 +1,7 @@
 $user-dashboard-max-width: 44rem;
 
 #sulo-user {
-	.page-content {
-		padding-top: 1rem;
-	}
+
 	.page-content-container {
 		.user-profile-photo {
 			margin: 1.75rem auto;
@@ -27,3 +25,4 @@ $user-dashboard-max-width: 44rem;
 @import "settings";
 @import "profile";
 @import "order";
+@import "receipt";

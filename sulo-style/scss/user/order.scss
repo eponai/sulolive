@@ -1,6 +1,9 @@
 #sulo-user-order-list {
 	// .row {
-		max-width: $user-dashboard-max-width;
+		// .page-content {
+			padding-top: 1rem;
+		// }
+		max-width: $dashboard-content-width;
 		margin: 0 auto;
 	// }
 	// h1 {
@@ -13,7 +16,7 @@
 
 	.section-title {
 		margin-top: 2rem;
-		// letter-spacing: 1px;
+		letter-spacing: 0;
 		margin-bottom: 0.2rem;
 		display: flex;
 		justify-content: space-between;
@@ -23,6 +26,7 @@
 		}
 		small {
 			color: $dark-gray;
+			// line-height: 1;
 			font-weight: $global-weight-bold;
 		}
 		// font-weight: $global-weight-bold;
@@ -30,11 +34,12 @@
 	}
 
 	.sl-order-card {
-		// border-top: $global-border;
-		border: $global-border;
-		// box-shadow: 0 0 5px 0 rgba($black, 0.2);
+		border-top: $global-border-secondary;
+		// border-bottom: $global-border;
+		// border: $global-border;
+		box-shadow: 0 1px 3px 0 rgba($black, 0.1);
 		// padding: 0.5rem;
-		margin-bottom: 2rem;
+		margin-bottom: 4rem;
 		.sl-order-card-subtitle {
 			// display: flex;
 			// justify-content: space-between;
@@ -44,24 +49,27 @@
 		.sl-order-card-title {
 			// background: rgba($light-gray, 0.5);
 			margin: 0;
-			padding: 0.5rem;
+			padding: 1rem;
 			// border-bottom: $global-border-secondary;
 			// margin-bottom: 0.5rem;
-			align-items: flex-start;
+			align-items: center;
 			.sl-order-card-title--store {
 				display: flex;
-				align-items: flex-start;
+				align-items: center;
 				// margin-right: 1rem;
 				// margin-top: 0.5rem;
 				p {
 					margin-left: 1rem;
 					font-size: 110%;
 				}
+				a {
+					display: flex;
+				}
 				.photo-container {
 					flex: 0 0 auto;
 					min-width: 2.5rem;
 					max-width: 2.5rem;
-					width: 2.55rem;
+					width: 2.5rem;
 				}
 			}
 			.sl-order-card-title--number {
@@ -69,8 +77,9 @@
 				flex: 0 0 auto;
 				// margin-left: 0.5rem;
 				small {
-					color: $dark-gray;
-					letter-spacing: 1px;
+					// color: $dark-gray;
+					font-weight: $global-weight-bold;
+					// letter-spacing: 1px;
 				}
 			}
 		}
@@ -78,21 +87,29 @@
 			// display: flex;
 			// padding: 0.5rem;
 			.sl-order-card-content--status {
-				// display: flex;
-				// justify-content: space-between;
-				padding: 0.5rem;
-				background: rgba($light-gray, 0.3);
+				border-top: $global-border-secondary;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 1rem;
+				// padding-top: 0;
+				.button {
+					margin: 0;
+				}
+				// background: rgba($light-gray, 0.3);
 			}
 			.menu {
 				// margin-bottom: 1rem;
-				padding: 0.5rem;
+				padding: 1rem;
+				padding-top: 0;
 				li {
-					// display: flex;
+					display: flex;
 					border-bottom: $global-border-secondary;
 					&:first-child {
 						border-top: $global-border-secondary;
 					}
 					padding: 0.5rem 0;
+					justify-content: space-between;
 					a {
 						padding: 0;
 						justify-content: space-between;
@@ -104,7 +121,7 @@
 						margin: 0;
 					}
 					&:hover {
-						background: rgba($light-gray, 0.2);
+						// background: rgba($light-gray, 0.2);
 					}
 					.photo-container {
 						min-width: 2.5rem;
@@ -113,8 +130,8 @@
 						width: 3rem;
 					}
 					.sl-order-items-list-item--info {
-						display: flex;
-						align-items: flex-start;
+						// display: flex;
+						// align-items: flex-start;
 						// .info-photo {
 						// 	padding: 0.5rem 0;
 						// }
