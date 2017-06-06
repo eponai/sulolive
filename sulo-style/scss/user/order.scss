@@ -52,6 +52,10 @@
 			padding: 1rem;
 			// border-bottom: $global-border-secondary;
 			// margin-bottom: 0.5rem;
+			.button {
+				margin-bottom: 0;
+				margin-top: 0.5rem;
+			}
 			align-items: center;
 			.sl-order-card-title--store {
 				display: flex;
@@ -67,9 +71,9 @@
 				}
 				.photo-container {
 					flex: 0 0 auto;
-					min-width: 2.5rem;
-					max-width: 2.5rem;
-					width: 2.5rem;
+					min-width: 4rem;
+					max-width: 4rem;
+					width: 4rem;
 				}
 			}
 			.sl-order-card-title--number {

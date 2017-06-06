@@ -83,6 +83,7 @@
         {:keys [collapse? shipping countries]} props
         {:keys [on-open]} computed
         {:shipping/keys [address]} shipping]
+    (debug "Render shipping: " shipping)
     (dom/div
       nil
       (dom/div
@@ -121,7 +122,9 @@
                :type         "text"
                :name         "name"
                :autoComplete "name"
-               :defaultValue (:shipping/name shipping)}
+               ;; :defaultValue (:shipping/name shipping)
+               ;:value (:shipping/name shipping)
+               }
               input-validation)))
         (grid/row
           nil
@@ -131,22 +134,23 @@
                         :placeholder "Enter location..."
                         :type        "text"
                         :onFocus     #(geo-locate this)})))
+        (grid/row
+          nil
+          (grid/column
+            nil
+            (dom/label nil "Country")
+            (dom/select
+              {:id           (:shipping.address/country form-inputs)
+               :name         "ship-country"
+               :autoComplete "shipping country"
+               ;:defaultValue (or (:shipping.address/country address) "CA")
+               }
+              (map (fn [c]
+                     (dom/option {:value (:country/code c)} (:country/name c)))
+                   (sort-by :country/name countries)))))
         (dom/hr nil)
         (dom/div
           nil
-          (grid/row
-            nil
-            (grid/column
-              nil
-              (dom/label nil "Country")
-              (dom/select
-                {:id           (:shipping.address/country form-inputs)
-                 :name         "ship-country"
-                 :autoComplete "shipping country"
-                 :defaultValue (or (:shipping.address/country address) "CA")}
-                (map (fn [c]
-                       (dom/option {:value (:country/code c)} (:country/name c)))
-                     (sort-by :country/name countries)))))
 
 
           (grid/row
@@ -157,7 +161,7 @@
               (validate/input
                 {:id           (:shipping.address/street form-inputs)
                  :type         "text"
-                 :defaultValue (:shipping.address/street address)
+                 ;:defaultValue (:shipping.address/street address)
                  :name         "ship-address"
                  :autoComplete "shipping address-line1"}
                 input-validation))
@@ -167,7 +171,8 @@
               (validate/input
                 {:type         "text"
                  :id           (:shipping.address/street2 form-inputs)
-                 :defaultValue (:shipping.address/street2 address)}
+                 ;:defaultValue (:shipping.address/street2 address)
+                 }
                 input-validation)))
           (grid/row
             nil
@@ -179,7 +184,8 @@
                  :type         "text"
                  :name         "ship-zip"
                  :autoComplete "shipping postal-code"
-                 :defaultValue (:shipping.address/postal address)}
+                 ;:defaultValue (:shipping.address/postal address)
+                 }
                 input-validation))
             (grid/column
               (grid/column-size {:small 12 :large 4})
@@ -187,7 +193,7 @@
               (validate/input
                 {:type         "text"
                  :id           (:shipping.address/locality form-inputs)
-                 :defaultValue (:shipping.address/locality address)
+                 ;:defaultValue (:shipping.address/locality address)
                  :name         "ship-city"
                  :autoComplete "shipping locality"}
                 input-validation))
@@ -196,7 +202,7 @@
               (dom/label nil "State/Province (optional)")
               (validate/input
                 {:id           (:shipping.address/region form-inputs)
-                 :defaultValue (:shipping.address/region address)
+                 ;:defaultValue (:shipping.address/region address)
                  :name         "ship-state"
                  :type         "text"
                  :autoComplete "shipping region"}
@@ -241,7 +247,38 @@
        (let [autocomplete (places/mount-places-address-autocomplete {:element-id "auto-complete"
                                                                      :on-change  (fn [place]
                                                                                    (prefill-address-form place))})]
-         (om/update-state! this assoc :autocomplete autocomplete))))
+         (om/update-state! this assoc :autocomplete autocomplete)
+         (let [{:keys [shipping]} (om/props this)]
+           (when (some? shipping)
+             (let [address (:shipping/address shipping)
+                   {:shipping.address/keys [street street2 postal locality region country]
+                    :shipping/keys         [name]} form-inputs]
+               (set! (.-value (web-utils/element-by-id name)) (:shipping/name shipping))
+               (set! (.-value (web-utils/element-by-id street)) (:shipping.address/street address))
+               (set! (.-value (web-utils/element-by-id street2)) (:shipping.address/street2 address))
+               (set! (.-value (web-utils/element-by-id postal)) (:shipping.address/postal address))
+               (set! (.-value (web-utils/element-by-id locality)) (:shipping.address/locality address))
+               (set! (.-value (web-utils/element-by-id country)) (:shipping.address/country address))
+               (set! (.-value (web-utils/element-by-id region)) (:shipping.address/region address))))
+           )
+         )))
+  (componentDidUpdate [this prev-props _]
+    #?(:cljs
+       (let [{:keys [shipping]} (om/props this)]
+         (when-not (= shipping (:shipping prev-props))
+           (let [address (:shipping/address shipping)
+                 {:shipping.address/keys [street street2 postal locality region country]
+                  :shipping/keys         [name]} form-inputs]
+             (set! (.-value (web-utils/element-by-id name)) (:shipping/name shipping))
+             (set! (.-value (web-utils/element-by-id street)) (:shipping.address/street address))
+             (set! (.-value (web-utils/element-by-id street2)) (:shipping.address/street2 address))
+             (set! (.-value (web-utils/element-by-id postal)) (:shipping.address/postal address))
+             (set! (.-value (web-utils/element-by-id locality)) (:shipping.address/locality address))
+             (set! (.-value (web-utils/element-by-id country)) (:shipping.address/country address))
+             (set! (.-value (web-utils/element-by-id region)) (:shipping.address/region address))))
+         )))
+  (componentWillReceiveProps [this next-props]
+    )
   (render [this]
     (render-checkout-shipping this
                               (om/props this)

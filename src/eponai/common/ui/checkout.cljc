@@ -134,7 +134,9 @@
            (.local-state-from-props this (om/props this))))
 
   (componentWillReceiveProps [this next-props]
-    (om/update-state! this merge (.local-state-from-props this next-props)))
+    (when-not (= (:query/stripe-customer next-props)
+                 (:query/stripe-customer (om/props this)))
+      (om/update-state! this merge (.local-state-from-props this next-props))))
 
   (componentDidUpdate [this _ _]
 
