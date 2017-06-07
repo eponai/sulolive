@@ -8,6 +8,10 @@
 	}
 	.page-content {
 		// padding: 0;
+
+	}
+	h1, h2, h3 {
+		font-family: 'Montserrat', Helvetica, Arial, sans-serif
 	}
 	h3 {
 		text-transform: none;
@@ -46,6 +50,7 @@
 			// background-position: bottom center;
 		}
 		p {
+				font-family: 'Montserrat', Helvetica, Arial, sans-serif;
 			font-size: 110%;
 			@include breakpoint(medium) {
 				font-size: 130%;
@@ -106,6 +111,7 @@
 						left: 0;
 						padding-left: 0.5rem;
 						margin: 0;
+						font-family: 'Montserrat', Helvetica, Arial, sans-serif
 						// color: $white;
 						// margin: 0 auto;
 					}
@@ -121,7 +127,9 @@
 						// color: $white;
 					}
 					strong {
-						text-transform: uppercase
+						font-family: 'Montserrat', Helvetica, Arial, sans-serif;
+						text-transform: uppercase;
+						font-weight: bold;
 					}
 					&:hover {
 						
@@ -147,6 +155,7 @@
 
 		.section-title {
 			margin-top: 3rem;
+			letter-spacing: 0;
 			@include breakpoint(large) {
 				margin-top: 8%;
 				margin-bottom: 5%;
