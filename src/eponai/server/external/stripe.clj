@@ -292,6 +292,9 @@
            :charge/id     (:id charge)
            :charge/paid?  (:paid charge)}))
 
+      (-get-charge [_ charge-id]
+        )
+
       (-create-refund [this params]))))
 
 (defn webhook [{:keys [type] :as env} event]
