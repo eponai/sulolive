@@ -17,18 +17,6 @@
     [eponai.web.ui.button :as button]
     [eponai.common.mixpanel :as mixpanel]))
 
-(defn top-feature [opts icon title text]
-  (dom/div #js {:className "feature-item column"}
-    (div
-      (->> (css/grid-row)
-           (css/add-class :align-middle))
-      (div (->> (css/grid-column)
-                (css/grid-column-size {:small 2 :medium 12}))
-           icon)
-      (div (css/grid-column)
-           (dom/strong #js {:className "feature-title"} title)
-           (dom/p nil text)))))
-
 (defn banner [{:keys [color align] :as opts} primary secondary]
   (let [align (or align :left)
         color (or color :default)]
@@ -89,7 +77,7 @@
           {:navbar navbar}
           (dom/div #js {:id "sulo-index-container" :onScroll #(debug "Did scroll page: " %)}
 
-            (photo/header
+            (photo/cover
               (css/add-class :center {:photo-id "static/home-header-bg"
                                       :transformation :transformation/cover})
               (div
@@ -106,8 +94,8 @@
                   (div
                     (css/text-align :left)
                     (dom/h1 #js {:id "header-content" :className "show-for-sr"} "SULO")
-                    ;(dom/h1 nil "LO" (dom/small nil "CAL"))
-                    (dom/h2 #js {:className "header"} "Your local marketplace online")
+                    ;(dom/h1 nil "LO" (dom/small nil "CAL"))Your local marketplace online
+                    (dom/h2 #js {:className "header"} "")
                     (dom/p nil (dom/strong nil (dom/i #js {:className "fa fa-map-marker fa-fw"}) "Vancouver, BC")))
 
                   (div (->> (css/grid-row)
@@ -127,26 +115,9 @@
                                                                   (when (nil? search-bar)
                                                                     (error "NO SEARCH BAR :( " this))
                                                                   (search-bar/trigger-search! search-bar)))})
-                                   (css/add-classes [:search :drop-shadow]))
+                                   (css/add-classes [ :drop-shadow]))
                               (dom/span nil "Search")))))))
 
-            (dom/div #js {:className "top-features"}
-              (dom/div #js {:className " row small-up-1 medium-up-3"}
-                (top-feature
-                  nil
-                  (icons/shopping-bag)
-                  "Shop and Discover"
-                  "Get lost in a marketplace filled with your local gems.")
-                (top-feature
-                  nil
-                  (icons/video-camera)
-                  "Watch, chat and follow"
-                  "Hang out with your favourite local brands on SULO LIVE.")
-                (top-feature
-                  nil
-                  (icons/heart)
-                  "Join the Community"
-                  "Sign up to follow others and share your faves.")))
 
 
             (common/content-section {:href  (routes/url :live)

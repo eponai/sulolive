@@ -126,6 +126,31 @@
     ;    (dom/small nil "Preview"))
     ))
 
+(defn user-menu-item [component]
+  (let [{:query/keys [auth owned-store]} (om/props component)]
+    [
+     (if (some? auth)
+       (menu/item-dropdown
+         (->> {:dropdown (user-dropdown component auth owned-store)
+               :classes  [:user-photo-item]
+               :href     "#"
+               :onClick  #(.open-dropdown component :dropdown/user)}
+              (css/show-for :large))
+         (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
+       (menu/item
+         (css/show-for :large)
+         (dom/a
+           {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
+           (dom/strong nil (dom/small nil "Sign in")))))
+     ;(when (some? auth)
+     ;  (menu/item
+     ;    (->> (css/hide-for :large)
+     ;         (css/add-class :user-photo-item))
+     ;    (dom/a
+     ;      {:href (routes/url :user {:user-id (:db/id auth)})}
+     ;      (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))))
+     ]))
+
 (defn coming-soon-navbar [component]
   (let [{:keys [right-menu on-live-click]} (om/get-computed component)]
     (navbar-content
@@ -139,7 +164,7 @@
             (dom/a
               (css/hide-for :large {:onClick #(.open-sidebar component)})
               (dom/i {:classes ["fa fa-bars fa-fw"]})))
-          (navbar-brand (routes/url :coming-soon))
+          (navbar-brand (routes/url :landing-page))
 
           (live-link on-live-click)
           ;(menu/item-dropdown
@@ -153,13 +178,14 @@
 
       (dom/div
         {:classes ["top-bar-right"]}
-        (menu/horizontal
-          nil
-          (menu/item
-            nil
-            (dom/a
-              {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
-              (dom/strong nil (dom/small nil "Sign in")))))
+        (user-menu-item component)
+        ;(menu/horizontal
+        ;  nil
+        ;  (menu/item
+        ;    nil
+        ;    (dom/a
+        ;      {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
+        ;      (dom/strong nil (dom/small nil "Sign in")))))
         ;right-menu
         ))))
 
@@ -212,30 +238,7 @@
    :store-dashboard/settings#business    "Business"
    :store-dashboard/settings#payouts "Business"})
 
-(defn user-menu-item [component]
-  (let [{:query/keys [auth owned-store]} (om/props component)]
-    [
-     (if (some? auth)
-       (menu/item-dropdown
-         (->> {:dropdown (user-dropdown component auth owned-store)
-               :classes  [:user-photo-item]
-               :href     "#"
-               :onClick  #(.open-dropdown component :dropdown/user)}
-              (css/show-for :large))
-         (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
-       (menu/item
-         (css/show-for :large)
-         (dom/a
-           {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
-           (dom/strong nil (dom/small nil "Sign in")))))
-     ;(when (some? auth)
-     ;  (menu/item
-     ;    (->> (css/hide-for :large)
-     ;         (css/add-class :user-photo-item))
-     ;    (dom/a
-     ;      {:href (routes/url :user {:user-id (:db/id auth)})}
-     ;      (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))))
-     ]))
+
 
 (defn manage-store-navbar [component]
   (let [{:query/keys [auth owned-store current-route]} (om/props component)
@@ -322,7 +325,7 @@
         {:classes ["top-bar-right"]}
         (menu/horizontal
           nil
-          (menu/item nil
+          (menu/item (css/add-class :search-input)
                      (dom/div
                        (css/show-for :medium)
                        (search-bar/->SearchBar {:placeholder     "Search on SULO..."
@@ -330,7 +333,7 @@
                                                 :mixpanel-source "navbar"})))
           (user-menu-item component)
           (menu/item
-            nil
+            (css/add-class :shopping-bag)
             (dom/a {:classes ["shopping-bag-icon"]
                     :href    (routes/url :shopping-bag)}
                    (icons/shopping-bag)
@@ -490,7 +493,7 @@
                      (or (= route :store-dashboard) (= (name :store-dashboard) (namespace route))))
                 (manage-store-navbar this)
 
-                (or (= route :coming-soon) (= route :coming-soon/sell) (= route :landing-page))
+                (or (= route :coming-soon) (= route :coming-soon/sell))
                 (coming-soon-navbar this)
 
                 (and (some? route) (= (namespace route) "help"))

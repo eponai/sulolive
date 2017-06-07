@@ -1,4 +1,4 @@
-$primary-color: map-get($foundation-palette, primary);
+$primary-color: map-get($foundation-palette, sulo);
 
 $header-background-color: rgba($white,1);//map-get($foundation-palette, primary);//#2E2A31;
 $header-font-color: $black;
@@ -26,29 +26,17 @@ $section-footer-color: $primary-color;
 			text-transform: uppercase;
 			font-weight: bold;
 		}
+		
 		.button {
 			font-weight: $global-weight-bold;
 		}
 	}
-
-	.top-features {
-		padding: 0.5rem;
-		.feature-item {
-			padding: 2%;
-			.icon {
-				width: auto;
-				height: auto;
-			}
-			i {
-				padding: 10% 0;
-				font-size: 2rem;
-			}
-			@include breakpoint(medium) {
-				text-align: center;
-				i {
-					font-size: 2.5rem;
-				}
-			}
+	.photo-container.cover {
+		.overlay {
+			background: rgba($primary-color, 0.3);
+		}
+		.content {
+			flex: 1;
 		}
 	}
 
