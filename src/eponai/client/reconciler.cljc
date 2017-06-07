@@ -31,6 +31,7 @@
                       history
                       route
                       route-params
+                      query-params
                       instrument
                       tx-listen
                       ;; With defaults:
@@ -68,5 +69,6 @@
                                          :instrument instrument}))]
     (when (some? route)
       (routes/transact-route! reconciler route {:route-params route-params
+                                                :query-params query-params
                                                 :queue?       false}))
     reconciler))

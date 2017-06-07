@@ -35,14 +35,15 @@
 
 (defn make-reconciler [request-env]
   (let [reconciler-atom (atom nil)
-        parser (parser/client-parser (parser/client-parser-state {:query-params (:query-params request-env)}))
+        parser (parser/client-parser)
         send-fn (server-send request-env reconciler-atom)
         reconciler (client.reconciler/create {:conn         (datascript/conn-from-db (:empty-datascript-db request-env))
                                               :parser       parser
                                               :send-fn      send-fn
                                               :history      2
                                               :route        (:route request-env)
-                                              :route-params (:route-params request-env)})]
+                                              :route-params (:route-params request-env)
+                                              :query-params (:query-params request-env)})]
     (reset! reconciler-atom reconciler)
     reconciler))
 

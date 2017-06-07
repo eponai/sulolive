@@ -9,6 +9,7 @@
     #?(:clj
     [datomic.api :as datomic])
     [datascript.core :as datascript]
+    [inflections.core :as inflections]
     [medley.core :as medley])
   #?(:clj
      (:import [clojure.lang ExceptionInfo]
@@ -44,18 +45,73 @@
 
 (declare do-pull)
 
+(defn- singularize
+  ([s join-words] (singularize s join-words identity))
+  ([s join-words term-fn]
+   (let [singular (inflections/singular s)]
+     (cond
+       (empty? singular)
+       (term-fn s)
+       ;; If there's a singular version of s, it's not empty and
+       ;; s starts with it, then we can replace s with the singular version.
+       (str/starts-with? s singular)
+       (term-fn singular)
+       ;; Otherwise, join both.
+       :else
+       (join-words (term-fn s) (term-fn singular))))))
+
+(defn- sanitized-needles
+  "returning multiple needles, split by spaces."
+  [needle]
+  (sequence
+    (comp
+      (map #(if (or (= % \space)
+                    #?(:clj (Character/isLetterOrDigit ^char %)
+                       :cljs (re-find #"[a-zA-Z0-9]" (str %))))
+              %
+              \space))
+      (partition-by #(= % \space))
+      (remove #(= (first %) \space))
+      (map #(apply str %)))
+    needle))
+
+(defn datomic-needle-fn [raw-needle]
+  ;; Takes a needle and returns a datomic search
+  #?(:clj
+     (->> (sanitized-needles raw-needle)
+          (map #(singularize %
+                             (fn [s singular]
+                               (str "(" s " OR " singular ")"))
+                             (fn [term]
+                               (str term "*"))))
+          (str/join " AND "))))
+
 (defn- datomic-fulltext [{:keys [db attr arg return]}]
-  {:where [[(list 'fulltext db attr arg) return]]})
+  (let [polished-needle '?eponai-db-fulltext-datomic-needle]
+    {:where [[`(datomic-needle-fn ~arg) polished-needle]
+             [(list 'fulltext db attr polished-needle) return]]}))
+
+(defn datascript-find-fn [raw-needle]
+  (let [needles (into []
+                      (comp
+                        (map #(singularize % (fn [s singular] (str s "|" singular))))
+                        (map #(re-pattern (str "(?i)" %))))
+                      (sanitized-needles raw-needle))]
+    (fn [haystack]
+      (every? #(re-find % haystack) needles))))
+
 
 (defn- datascript-fulltext [{:keys [db attr arg return]}]
   (let [[[eid value tx score]] return
-        val-sym (or value '?val)]
+        val-sym (or value '?val)
+        find-needle-fn (atom nil)
+        find-fn (fn [haystack needle]
+                  (when-not @find-needle-fn
+                    (reset! find-needle-fn (datascript-find-fn needle)))
+                  (@find-needle-fn haystack))]
     {:where   [[db eid attr val-sym]
-               [(list '?eponai.db.fulltext/includes-fn val-sym arg)]]
-     :symbols {'?eponai.db.fulltext/includes-fn (fn [s sub]
-                                                  (or (str/includes? s (str " " sub " "))
-                                                      (str/ends-with? s sub)
-                                                      (str/starts-with? s sub)))}}))
+               `[(~'?eponai.db.fulltext/includes-fn ~val-sym ~arg)]]
+     :symbols {'?eponai.db.fulltext/includes-fn find-fn}}))
 
 (defn- datascript-datoms [db index args]
   ;; The :vaet index isn't implemented for datascript (who knew!?)

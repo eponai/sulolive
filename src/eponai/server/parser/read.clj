@@ -289,12 +289,23 @@
                   (parser/value-with-basis-t (chat/last-read chat)))})))
 
 (defread query/browse-items
-  [{:keys [db db-history query]} _ {:keys [top-category sub-category sub-sub-category] :as params}]
+  [{:keys [db db-history query]} _ {{:keys [top-category sub-category] :as categories} :route-params
+                                    {:keys [search]}                                   :query-params}]
   {:auth    ::auth/public
-   :uniq-by [[:tc top-category] [:sc sub-category] [:ssc sub-sub-category]]}
+   :uniq-by [[:filter (cond
+                        (seq search)
+                        [:search search]
+                        (some? top-category)
+                        [:tc top-category]
+                        (some? sub-category)
+                        [:sc sub-category])]]}
   {:value (query/all db db-history query (cond
-                                           (or (some? sub-category) (some? top-category))
-                                           (products/find-with-category-names params)
+                                           (seq search)
+                                           (products/find-with-search search)
+                                           (some? top-category)
+                                           (products/find-with-category-names (select-keys categories [:top-category]))
+                                           (some? sub-category)
+                                           (products/find-with-category-names (select-keys categories [:sub-category]))
                                            :else
                                            (products/find-all)))})
 

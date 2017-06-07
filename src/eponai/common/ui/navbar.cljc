@@ -2,6 +2,7 @@
   (:require
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
+    [eponai.common.ui.search-bar :as search-bar]
     #?(:cljs
        [eponai.web.utils :as utils])
     [om.next :as om :refer [defui]]
@@ -287,7 +288,7 @@
         (dom/span nil title)))))
 
 (defn standard-navbar [component]
-  (let [{:query/keys [cart loading-bar]} (om/props component)]
+  (let [{:query/keys [cart loading-bar current-route]} (om/props component)]
     (navbar-content
       nil
       (dom/div
@@ -314,15 +315,9 @@
           (menu/item nil
                      (dom/div
                        (css/show-for :medium)
-                       (dom/input {:type        "text"
-                                   :placeholder "Search on SULO..."
-                                   :onKeyDown   (fn [e]
-                                                  #?(:cljs
-                                                     (when (= 13 (.. e -keyCode))
-                                                       (let [search-string (.. e -target -value)]
-                                                         (mixpanel/track "Search products" {:source        "navbar"
-                                                                                            :search-string search-string})
-                                                         (set! js/window.location (str "/products?search=" search-string))))))})))
+                       (search-bar/->SearchBar {:placeholder     "Search on SULO..."
+                                                :default-value   (or (get-in current-route [:query-params :search]) "")
+                                                :mixpanel-source "navbar"})))
           (user-menu-item component)
           (menu/item
             nil

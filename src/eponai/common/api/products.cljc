@@ -34,6 +34,14 @@
 (defn find-all []
   {:where '[[?e :store.item/name]]})
 
+(defn find-with-search [search]
+  {:where    [{:fulltext-id 1}]
+   :symbols  {'?search search}
+   :fulltext [{:id     1
+               :attr   :store.item/name
+               :arg    '?search
+               :return '[[?e ?item-name _ ?score]]}]})
+
 (defn- normalize-gender [category-name]
   (let [unisex-categories {"women"        ["unisex-adult"]
                            "men"          ["unisex-adult"]

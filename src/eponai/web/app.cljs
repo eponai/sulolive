@@ -2,7 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
     [eponai.web.modules :as modules]
-    [eponai.client.utils :as utils]
+    [eponai.client.utils :as client.utils]
     [eponai.web.auth :as auth]
     [eponai.common.parser :as parser]
     [eponai.client.parser.read]
@@ -23,7 +23,9 @@
     ;; [eponai.web.scroll-helper :as scroll-helper]
     [cljs.core.async :as async]
     [eponai.common.shared :as shared]
-    [eponai.client.chat :as client.chat]))
+    [eponai.client.chat :as client.chat]
+    [cemerick.url :as url]
+    [medley.core :as medley]))
 
 (defn add-root! [reconciler]
   (binding [parser/*parser-allow-remote* false]
@@ -33,11 +35,18 @@
   (fn [{:keys [handler route-params] :as match}]
     (try
       (let [reconciler @reconciler-atom
-            modules (get-in reconciler [:config :shared :shared/modules])
+            modules (shared/by-key reconciler :shared/modules)
             loaded-route? (modules/loaded-route? modules handler)
-            allow-remotes? parser/*parser-allow-remote*]
+            allow-remotes? parser/*parser-allow-remote*
+            query-params (->> (shared/by-key reconciler :shared/browser-history)
+                              (pushy/get-token)
+                              (url/url)
+                              :query
+                              (medley/map-keys keyword))]
+        (debug "updating route: " handler " query: " query-params)
         (routes/transact-route! reconciler handler
                                 {:route-params  route-params
+                                 :query-params  query-params
                                  :queue?        (and loaded-route?
                                                      (some? (om/app-root reconciler)))
                                  :delayed-queue (when-not loaded-route?
@@ -94,11 +103,11 @@
 
         scroll-helper nil
         ;; (scroll-helper/init-scroll!)
-        match-route (partial bidi/match-route (common.routes/without-coming-soon-route common.routes/routes))
+        match-route (partial bidi/match-route common.routes/routes)
         update-route! (update-route-fn reconciler-atom)
         history (pushy/pushy update-route! (wrap-route-logging match-route))
         _ (reset! history-atom history)
-        conn (utils/create-conn)
+        conn (client.utils/create-conn)
         parser (parser/client-parser)
         remote-config (-> (reconciler/remote-config conn)
                           (update :remote/chat #(remotes/send-with-chat-update-basis-t % reconciler-atom)))
@@ -121,7 +130,7 @@
                                                 (cond-> query (= :remote remote) (add-schema-to-query-once)))})
         reconciler (reconciler/create {:conn                       conn
                                        :parser                     parser
-                                       :ui->props                  (utils/cached-ui->props-fn parser)
+                                       :ui->props                  (client.utils/cached-ui->props-fn parser)
                                        :send-fn                    send-fn
                                        :remotes                    (:order remote-config)
                                        :shared/scroll-helper       scroll-helper
@@ -134,11 +143,7 @@
 
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
-      (pushy/start! history)
-      ;; Pushy is configured to not work with all routes.
-      ;; We ensure that routes has been inited
-      (when-not (:route (routes/current-route reconciler))
-        (set-current-route! history update-route!)))
+      (pushy/start! history))
     (modules/require-route! modules
                             (:route (routes/current-route reconciler))
                             (fn [route]
@@ -146,7 +151,7 @@
                               (async/close! initial-module-loaded-chan)))
     (go
       (async/<! initial-module-loaded-chan)
-      (utils/init-state! reconciler send-fn (om/get-query router/Router))
+      (client.utils/init-state! reconciler send-fn (om/get-query router/Router))
       (async/<! initial-merge-chan)
       (debug "Adding reconciler to root.")
       (add-root! reconciler)

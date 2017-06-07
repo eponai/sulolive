@@ -2,6 +2,7 @@
   (:require
     [eponai.common.ui.common :as common]
     [eponai.common.ui.navbar :as nav]
+    [eponai.common.ui.search-bar :as search-bar]
     [eponai.web.ui.photo :as photo]
     [eponai.common.ui.product-item :as pi]
     [om.dom :as dom]
@@ -81,8 +82,7 @@
   Object
   (render [this]
     (let [{:keys [proxy/navbar query/featured-items query/featured-streams]
-           :query/keys [owned-store]} (om/props this)
-          {:keys [input-search]} (om/get-state this)]
+           :query/keys [owned-store]} (om/props this)]
 
       (dom/div #js {:id "sulo-index" :className "sulo-page"}
         (common/page-container
@@ -114,28 +114,19 @@
                             (css/add-class :search-container))
                        (div (->> (css/grid-column)
                                  (css/grid-column-size {:small 12 :medium 8}))
-                            (dom/input #js {:className   "drop-shadow"
-                                            :placeholder "What are you looking for?"
-                                            :type        "text"
-                                            :value       (or input-search "")
-                                            :onChange    #(do (debug " search " (.. % -target -value)) (om/update-state! this assoc :input-search (.. % -target -value)))
-                                            :onKeyDown   (fn [e]
-                                                           #?(:cljs
-                                                              (when (= 13 (.. e -keyCode))
-                                                                (let [search-string (.. e -target -value)]
-                                                                  (mixpanel/track "Search products" {:source        "index"
-                                                                                                     :search-string search-string})
-                                                                  (set! js/window.location (str "/products?search=" search-string))))))}))
+                            (search-bar/->SearchBar {:ref             (str ::search-bar-ref)
+                                                     :placeholder     "What are you looking for?"
+                                                     :mixpanel-source "index"
+                                                     :classes         [:drop-shadow]}))
                        (div (->> (css/grid-column)
                                  (css/grid-column-size {:small 4 :medium 3})
                                  (css/text-align :left))
                             (button/button
                               (->> (button/expanded {:onClick (fn []
-                                                                #?(:cljs
-                                                                   (do
-                                                                     (mixpanel/track "Search products" {:source        "index"
-                                                                                                        :search-string input-search})
-                                                                     (set! js/window.location (str "/products?search=" input-search)))))})
+                                                                (let [search-bar (om/react-ref this (str ::search-bar-ref))]
+                                                                  (when (nil? search-bar)
+                                                                    (error "NO SEARCH BAR :( " this))
+                                                                  (search-bar/trigger-search! search-bar)))})
                                    (css/add-classes [:search :drop-shadow]))
                               (dom/span nil "Search")))))))
 
