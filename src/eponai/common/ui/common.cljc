@@ -192,13 +192,16 @@
         {:keys [order-id store-id]} (:route-params current-route)]
     (grid/row-column
       nil
-      (dom/h3 nil "Order not found")
+      ;(dom/h1 nil "No such order")
       (callout/callout
         (->> (css/text-align :center)
              (css/add-class :not-found))
+        (dom/h1 nil "Not found")
         (dom/p nil (dom/i {:classes ["fa fa-times-circle fa-2x"]}))
         (dom/p nil
-               (dom/strong nil (str "Order #" order-id " was not found in "))
+               (dom/span nil "Order with number ")
+               (dom/strong nil (str "#" order-id))
+               (dom/span nil " was not found in ")
                (dom/a {:href return-href}
                       (dom/strong nil "your orders")))))))
 

@@ -698,6 +698,7 @@
                          wrap-server-parser-state
                          wrap-om-next-error-handler))
                    (fn [read state]
+
                      (-> read
                          read-returning-basis-t
                          wrap-server-read-auth

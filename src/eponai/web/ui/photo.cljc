@@ -39,7 +39,7 @@
            (let [image-large (js/Image.)
                  url (.large-image-url this)]
              (set! (.-onload image-large) #(do
-                                             (om/update-state! this assoc :loaded-main? true)))
+                                            (om/update-state! this assoc :loaded-main? true)))
              (set! (.-src image-large) url))))))
 
   (render [this]
@@ -128,9 +128,9 @@
   (let [photo-key (when-not src (or photo-id "static/storefront"))]
     (photo (-> (css/add-class :cover props)
                (assoc :style :style/cover)
-               (assoc :background? true)
+               ;(assoc :background? true)
                (assoc :photo-id photo-key))
-           content)))
+           (overlay nil content))))
 
 (defn header [props & content]
   (->Photo
@@ -164,6 +164,12 @@
     (circle (->> (assoc props :photo-id photo-id)
                  (css/add-class :store-photo))
             content)))
+
+(defn store-cover [store props & content]
+  (let [{cover-photo :store.profile/cover} (:store/profile store)]
+    (cover (merge props {:photo-id       (:photo/id cover-photo)
+                         :transformation :transformation/full})
+           content)))
 
 (defn user-photo [user props & content]
   (let [photo (get-in user [:user/profile :user.profile/photo])

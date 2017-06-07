@@ -85,13 +85,16 @@
                                                                      :items        items
                                                                      :shipping-fee shipping-fee
                                                                      :subtotal     (review/compute-item-price items)}
-                                                          :store-id (c/parse-long store-id)})])))))
+                                                          :store-id (c/parse-long store-id)})]))
+         (om/update-state! this assoc :loading/message "Placing your order..."))))
   (save-payment [this]
     #?(:cljs
        (let [{:checkout/keys [payment]} (om/get-state this)
              {:keys [source is-new-source?]} payment]
          (if is-new-source?
-           (msg/om-transact! this [(list 'stripe/update-customer {:source source})])
+           (do
+             (msg/om-transact! this [(list 'stripe/update-customer {:source source})])
+             (om/update-state! this assoc :loading/message "Validating card..."))
            (.place-order this payment)))))
 
   (save-shipping [this shipping]
@@ -131,31 +134,55 @@
            (.local-state-from-props this (om/props this))))
 
   (componentWillReceiveProps [this next-props]
-    (om/update-state! this merge (.local-state-from-props this next-props)))
+    (when-not (= (:query/stripe-customer next-props)
+                 (:query/stripe-customer (om/props this)))
+      (om/update-state! this merge (.local-state-from-props this next-props))))
 
   (componentDidUpdate [this _ _]
+
+    ;; Check response for creating a new card on the customer
+    ;; (this will only happen if the user added a new card when checking out)
     (when-let [customer-response (msg/last-message this 'stripe/update-customer)]
       (when (msg/final? customer-response)
         (let [message (msg/message customer-response)]
-          (debug "error message: " message)
-          (msg/clear-one-message! this 'stripe/update-customer)
-          (if (msg/success? customer-response)
-            (.place-order this {:source (:id (:new-card message))})
-            (om/update-state! this assoc :error-message message)))))
+          (msg/clear-messages! this 'stripe/update-customer)
 
+          ;; Response success if the card is valid and added to the customer's list of cards
+          (if (msg/success? customer-response)
+            ;; If we had a pending payment already, that means we've already added a new card and tried
+            ;; to charge it by placing an order. However, it was declined for some reason and has been
+            ;; successfully removed from the customer again. (we do this so the user doesn't end up with
+            ;; many added cards that didn't actually work)
+            (if (some? (:checkout/pending-payment (om/get-state this)))
+              (om/update-state! this dissoc :checkout/pending-payment :loading/message)
+              ;; The newly created card was successfully created and added to the customer, let's place the order and charge the card.
+              (let [pending-payment {:source (:id (:new-card message))}]
+                ;; We created a new card, so let's add it to pending to make sure it's successfully charged.
+                ;; If it's not, we'll remove it from the customer again.
+                (om/update-state! this assoc :checkout/pending-payment pending-payment)
+                (.place-order this pending-payment)))
+
+            ;; If card couldn't be added, (invalid or other error) show user what's wrong.
+            (om/update-state! this assoc :error-message message :loading/message nil)))))
+
+    ;; Checked response from placing an order.
     (when-let [response (msg/last-message this 'store/create-order)]
       (when (msg/final? response)
         (let [message (msg/message response)]
           (msg/clear-messages! this 'store/create-order)
           (if (msg/success? response)
+            ;; Successful order will re-route to user's orders.
             (let [{:query/keys [auth]} (om/props this)]
               (routes/set-url! this :user/order {:order-id (:db/id message) :user-id (:db/id auth)}))
-            (om/update-state! this assoc :error-message message))))))
+            ;; If order was unsuccessful, let's get the pending payment we added above and remove it from the customer.
+            (let [{:checkout/keys [pending-payment]} (om/get-state this)]
+              (msg/om-transact! this [(list 'stripe/update-customer {:remove-source (:source pending-payment)})])
+              (om/update-state! this assoc :error-message message :loading/message nil)))))))
 
   (render [this]
     (let [{:proxy/keys [navbar]
            :query/keys [checkout current-route stripe-customer countries]} (om/props this)
-          {:checkout/keys [shipping payment]
+          {:checkout/keys [shipping payment pending-payment]
            :keys          [open-section error-message]
            :shipping/keys [available-rates selected-rate]} (om/get-state this)
           {:keys [route]} current-route
@@ -167,9 +194,9 @@
 
       (common/page-container
         {:navbar navbar :id "sulo-checkout"}
-        (when (or (msg/pending? checkout-resp)
-                  (msg/pending? customer-resp))
-          (common/loading-spinner nil (dom/span nil "Placing your order...")))
+        (when-let [loading-message (:loading/message (om/get-state this))]
+          (common/loading-spinner nil (dom/span nil loading-message)))
+
         (grid/row
           (css/align :center)
           (grid/column
@@ -204,7 +231,7 @@
                 (dom/p nil "2. Delivery & Payment"))
               (dom/div
                 (when (or (not= open-section :payment)
-                           (empty? available-rates))
+                          (empty? available-rates))
                   (css/add-class :hide))
 
                 (dom/div
@@ -245,10 +272,10 @@
                 (dom/div
                   (css/add-class :subsection)
                   (dom/p (css/add-class :subsection-title) "Payment options")
-                  (pay/->CheckoutPayment (om/computed {:error          error-message
-                                                       :amount         grandtotal
-                                                       :default-source (:stripe/default-source stripe-customer)
-                                                       :sources        (:stripe/sources stripe-customer)}
+                  (pay/->CheckoutPayment (om/computed {:error               error-message
+                                                       :amount              grandtotal
+                                                       :default-source      (:stripe/default-source stripe-customer)
+                                                       :sources             (:stripe/sources stripe-customer)}
                                                       {:on-change #(do
                                                                     (debug "Got payment: " %)
                                                                     (om/update-state! this assoc :checkout/payment %)

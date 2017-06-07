@@ -33,7 +33,7 @@
                             {:follow-redirects false}))
          status)
       200 :coming-soon nil
-      red :user/profile {:user-id 123}
+      red :user-settings nil
       red :store-dashboard {:store-id 123})))
 
 (deftest test-authed-http
@@ -52,7 +52,7 @@
              (:status (http/get (util/endpoint-url *system* route route-params)
                                 {:follow-redirects false}))))
         200 :coming-soon nil
-        200 :user/profile {:user-id user-id}
-        red :user/profile {:user-id (dec user-id)}
+        200 :user-settings nil
+        ;red :user-settings {:user-id (dec user-id)}
         200 :store-dashboard {:store-id store-id}
         red :store-dashboard {:store-id (dec store-id)}))))

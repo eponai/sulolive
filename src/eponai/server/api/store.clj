@@ -152,12 +152,13 @@
         transaction-fee (* 0.029 total-amount)
         destination-amount (- total-amount (+ application-fee transaction-fee))
 
-        order (-> (f/order {:order/items    items
-                            :order/uuid     (db/squuid)
-                            :order/shipping shipping
-                            :order/user     (:user-id auth)
-                            :order/store    store-id
-                            :order/amount   (bigdec destination-amount)})
+        order (-> (f/order {:order/items      items
+                            :order/uuid       (db/squuid)
+                            :order/shipping   shipping
+                            :order/user       (:user-id auth)
+                            :order/store      store-id
+                            :order/amount     (bigdec destination-amount)
+                            :order/created-at (date/current-millis)})
                   (update :order/items conj {:order.item/type   :order.item.type/shipping
                                              :order.item/amount (bigdec shipping-fee)}))]
     (when (some? user-stripe)

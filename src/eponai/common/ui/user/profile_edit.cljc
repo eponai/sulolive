@@ -71,7 +71,7 @@
                                                  (om/update-state! this assoc :queue-photo {:src img-result}))
                               :on-photo-upload (fn [photo]
                                                  (msg/om-transact! this [(list 'photo/upload {:photo photo})
-                                                                         :query/user]))}))))))
+                                                                         :query/auth]))}))))))
                 (grid/column
                   (grid/column-size {:small 12 :medium 8 :large 9})
                   (dom/div

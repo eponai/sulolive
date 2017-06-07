@@ -93,7 +93,10 @@
         ["checkout/" :store-id]       checkout-routes
         "shopping-bag"                :shopping-bag
         "business"                    :business
-        ["user/" [#"\d+" :user-id]]   user-routes
+        "settings"                    :user-settings
+        "orders"                      {""                       :user/order-list
+                                       ["/" [#"\w+" :order-id]] :user/order}
+        ;["user/" [#"\d+" :user-id]]   user-routes
         "auth"                        :auth
         "login"                       :login
         "unauthorized"                :unauthorized}])
@@ -106,9 +109,8 @@
     ::auth/store-owner
     (= (namespace handler) "store-dashboard")
     ::auth/store-owner
-    (#{:user/profile :user/order :user/order-list} handler)
-    ::auth/exact-user
-    (= handler :checkout)
+
+    (#{:user/order :user/order-list :checkout} handler)
     ::auth/any-user
     :else
     ::auth/any-user))

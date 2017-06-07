@@ -1,0 +1,88 @@
+#sulo-order-receipt {
+	// .row {
+		max-width: $dashboard-content-width;
+		margin: 0 auto;
+	// }
+	.page-title {
+		font-size: 1.5rem;
+		padding-bottom: 1rem;
+		// border-bottom: $global-border;
+		.photo-container {
+			// margin: 0 auto;
+			max-width: 6rem;
+			min-width: 6rem;
+			margin-right: 1rem;
+		}
+		display: flex;
+		align-items: center;
+		p {
+			margin: 0;
+		}
+
+	}
+	h1 {
+		border-bottom: $global-border;
+	}
+	.callout {
+		border: none;
+		&.not-found {
+			p a {
+				color: $body-font-color;
+			}
+		}
+	}
+
+	.photo-container {
+		.photo.cover {
+			padding-top: 10%;
+		}
+		.overlay {
+			background: rgba($white, 0.75);
+		}
+	}
+
+	// .section-title {
+	// 	font-size: 120%;
+	// 	border-top: $global-border-secondary;
+	// 	padding-top: 1rem;
+	// }
+	.section-list {
+		// border: none;
+		// border-color: $light-gray;
+		padding-bottom: 0;
+		li:last-child {
+			padding: 0.5rem 0;
+			p {
+				margin: 0;
+			}
+		}
+		margin-bottom: 0.5rem;
+	}
+	.total-price {
+		font-size: 120%;
+	}
+
+	.section-list-item {
+		// border: none;
+		&.order-item {
+			// display: flex;
+			// justify-content: space-between;
+			.photo-container {
+				align-self: flex-start;
+				max-width: 4rem;
+				min-width: 4rem;
+				margin-right: 1rem;
+				flex: 0 0 auto;
+				@include breakpoint(large) {
+					max-width: 4rem;
+				}
+			}
+			.order-item-info {
+				display: flex;
+			}
+		}
+	}
+	.contact {
+		margin-top: 4rem;
+	}
+}

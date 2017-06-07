@@ -162,7 +162,7 @@
                  :order.item/type   :order.item.type/sku
                  :order.item/parent (:db/id sku)
                  :order.item/amount  (bigdec (get-in sku [:store.item/_skus :store.item/price]))})]
-    (-> (select-keys o [:db/id :order/uuid :order/shipping :order/user :order/store :order/items :order/amount])
+    (-> (select-keys o [:db/id :order/uuid :order/shipping :order/user :order/store :order/items :order/amount :order/created-at])
         (update :order/shipping shipping)
         (update :order/items #(map item* %))
         cf/add-tempid)))

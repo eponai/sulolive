@@ -45,8 +45,11 @@
   (-get-customer [this customer-id])
 
   (-create-card [this customer-id source])
+  (-delete-card [this customer-id card-id])
+
   ;; Charges
   (-create-charge [this params])
+  (-get-charge [this charge-id])
   (-create-refund [this params]))
 
 
@@ -77,6 +80,9 @@
   (debug "Create charge: " params)
   (-create-charge stripe params))
 
+(defn get-charge [stripe charge-id]
+  (-get-charge stripe charge-id))
+
 (defn create-refund [stripe params]
   (-create-refund stripe params))
 
@@ -89,16 +95,16 @@
 (defn create-card [stripe customer-id source]
   (-create-card stripe customer-id source))
 
+(defn delete-card [stripe customer-id card-id]
+  (-delete-card stripe customer-id card-id))
+
 (defn get-customer [stripe customer-id]
   (-get-customer stripe customer-id))
 
 ;; ############## Stripe record #################
 
-(defn stripe-endpoint [path & [id tail]]
-  (string/join "/" (remove nil? ["https://api.stripe.com/v1"
-                                 path
-                                 id
-                                 tail])))
+(defn stripe-endpoint [& path]
+  (string/join "/" (into ["https://api.stripe.com/v1"] (remove nil? path))))
 
 (defrecord StripeRecord [api-key]
   IStripeConnect
@@ -144,6 +150,13 @@
           ;(debug "Error response: " (clojure.walk/keywordize-keys body))
           (throw (ex-info (:message error) error))))))
 
+  (-delete-card [_ customer-id card-id]
+    ;https://api.stripe.com/v1/customers/{CUSTOMER_ID}/sources/{CARD_ID}
+    (debug "Stripe delete card-id: " card-id)
+    (let [deleted (json/read-str (:body (client/delete (stripe-endpoint "customers" customer-id "sources" card-id)
+                                                       {:basic-auth api-key})) :key-fn keyword)]
+      deleted))
+
   (-create-account [_ {:keys [country]}]
     (let [params {:country country :managed true}
           account (json/read-str (:body (client/post (stripe-endpoint "accounts") {:basic-auth api-key :form-params params})) :key-fn keyword)
@@ -154,8 +167,8 @@
 
   (-create-charge [_ params]
     (try+
-      (let [charge (json/read-str (:body (client/post (stripe-endpoint "charges") {:basic-auth       api-key
-                                                                                   :form-params      params})) :key-fn keyword)]
+      (let [charge (json/read-str (:body (client/post (stripe-endpoint "charges") {:basic-auth  api-key
+                                                                                   :form-params params})) :key-fn keyword)]
         {:charge/status (:status charge)
          :charge/id     (:id charge)
          :charge/paid?  (:paid charge)})
@@ -163,6 +176,16 @@
         (let [{:keys [body]} r
               {:keys [error]} (json/read-str body :key-fn keyword)]
           (throw (ex-info (:message error) error))))))
+
+  (-get-charge [_ charge-id]
+    (let [charge (json/read-str (:body (client/get (stripe-endpoint "charges" charge-id) {:basic-auth api-key})) :key-fn keyword)]
+      (debug "Charge fetched: " charge)
+      {:charge/status  (:status charge)
+       :charge/id      (:id charge)
+       :charge/source  (:source charge)
+       :charge/created (:created charge)
+       :charge/amount  (/ (:amount charge) 100)
+       :charge/paid?   (:paid charge)}))
 
   (-create-refund [_ {:keys [charge]}]
     (let [params {:charge           charge
@@ -268,6 +291,9 @@
           {:charge/status (:status charge)
            :charge/id     (:id charge)
            :charge/paid?  (:paid charge)}))
+
+      (-get-charge [_ charge-id]
+        )
 
       (-create-refund [this params]))))
 
