@@ -45,18 +45,46 @@
 
 (declare do-pull)
 
-(defn- singularize [s join-words]
-  (let [singular (inflections/singular s)]
-    (if (str/starts-with? s singular)
-      singular
-      (join-words s singular))))
+(defn- singularize
+  ([s join-words] (singularize s join-words identity))
+  ([s join-words term-fn]
+   (let [singular (inflections/singular s)]
+     (cond
+       (empty? singular)
+       (term-fn s)
+       ;; If there's a singular version of s, it's not empty and
+       ;; s starts with it, then we can replace s with the singular version.
+       (str/starts-with? s singular)
+       (term-fn singular)
+       ;; Otherwise, join both.
+       :else
+       (join-words (term-fn s) (term-fn singular))))))
+
+(defn- sanitized-needles
+  "returning multiple needles, split by spaces."
+  [needle]
+  (sequence
+    (comp
+      (map #(if (or (= % \space)
+                    #?(:clj (Character/isLetterOrDigit ^char %)
+                       :cljs (re-find #"[a-zA-Z0-9]" (str %))))
+              %
+              \space))
+      (partition-by #(= % \space))
+      (remove #(= (first %) \space))
+      (map #(apply str %)))
+    needle))
 
 (defn datomic-needle-fn [raw-needle]
   ;; Takes a needle and returns a datomic search
-  (->> (str/split raw-needle #" ")
-       (map #(singularize % (fn [s singular]
-                              (str "(" s " OR " singular ")"))))
-       (str/join " AND ")))
+  #?(:clj
+     (->> (sanitized-needles raw-needle)
+          (map #(singularize %
+                             (fn [s singular]
+                               (str "(" s " OR " singular ")"))
+                             (fn [term]
+                               (str term "*"))))
+          (str/join " AND "))))
 
 (defn- datomic-fulltext [{:keys [db attr arg return]}]
   (let [polished-needle '?eponai-db-fulltext-datomic-needle]
@@ -68,9 +96,10 @@
                       (comp
                         (map #(singularize % (fn [s singular] (str s "|" singular))))
                         (map #(re-pattern (str "(?i)" %))))
-                      (str/split raw-needle #" "))]
+                      (sanitized-needles raw-needle))]
     (fn [haystack]
       (every? #(re-find % haystack) needles))))
+
 
 (defn- datascript-fulltext [{:keys [db attr arg return]}]
   (let [[[eid value tx score]] return
