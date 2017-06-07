@@ -149,7 +149,7 @@
   (GET "/auth" request (auth/authenticate request (::m/conn request)))
 
   (GET "/logout" request (-> (auth/redirect request (or (get-in request [:params :redirect])
-                                                        (routes/path :coming-soon)))
+                                                        (routes/path :landing-page)))
                              (auth/remove-auth-cookie)))
 
   (GET "/devcards" request
@@ -160,6 +160,7 @@
 
   (GET "/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
   (GET "/sell/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
+  ;;  (GET "/enter" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
 
   ;; Websockets
   (GET "/ws/chat" {::m/keys [system] :as request}

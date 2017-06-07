@@ -91,7 +91,7 @@
 
             (photo/header
               (css/add-class :center {:photo-id "static/home-header-bg"
-                                      :transformation :transformation/full})
+                                      :transformation :transformation/cover})
               (div
                 (->> (css/grid-row)
                      (css/add-class :intro-header)

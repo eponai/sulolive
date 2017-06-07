@@ -213,6 +213,6 @@
                    ;; For now we send users to :coming-soon
                    ;; TODO: Prompt login then redirect back to where the user came from.
                    (nil? (:auth v))
-                   (redirect request (routes/path :coming-soon))
+                   (redirect request (routes/path :landing-page))
                    :else
                    (unauthorize request)))}))

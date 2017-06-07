@@ -15,6 +15,7 @@
     [eponai.web.ui.login]
     [eponai.web.ui.unauthorized]
     [eponai.web.ui.user.settings]
+    [eponai.web.ui.landing-page]
     #?(:cljs [eponai.web.chat])))
 
 ;; WARNING

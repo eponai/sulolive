@@ -107,7 +107,7 @@
         (debug "Live opene: " live-open?)
         (photo/header
           {:photo-id "static/coming-soon-sell-bg"
-           :transformation :transformation/full}
+           :transformation :transformation/cover}
 
           (callout-banner live-open?)
           (->ComingSoonContent
@@ -227,7 +227,7 @@
 
             (photo/header
               {:photo-id "static/home-header-bg"
-               :transformation :transformation/full}
+               :transformation :transformation/cover}
 
               (callout-banner live-open?)
               (->ComingSoonContent

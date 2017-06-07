@@ -30,7 +30,7 @@
 	}
 	position: absolute;
 	@include breakpoint(large) {
-		position: fixed;
+		// position: fixed;
 	}
 	width: 100%;
 	z-index: $navbar-zindex;
@@ -139,6 +139,7 @@
 	border-right: $global-border;
 	border-left: $global-border;
 	text-transform: uppercase;
+	letter-spacing: 1px;
 }
 #navbar-brand {
 	text-transform: uppercase;

@@ -1,0 +1,202 @@
+#sulo-landing {
+	.page-content {
+		padding: 0;
+	}
+	h3 {
+		text-transform: none;
+	}
+	h1 {
+		// font-size: 110%;
+		font-weight: $global-weight-bold;
+		// color: $white;
+		@include breakpoint(large) {
+			font-size: rem-calc(48);
+		}
+	}
+	.cover {
+		text-align: center;
+		text-shadow: 1px 1px 0 rgba(map-get($foundation-palette, search), 1);
+		color: $white;
+		// min-height: 100vh;
+		.overlay {
+			$background: map-get($foundation-palette, search);
+			background: rgba($background, 0.9);
+			// align-items: flex-start;
+			.content {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+			}
+		}
+		.photo {
+			padding-top: 100%;
+			@include breakpoint(medium) {
+				padding-top: 35%;
+			}
+			img {
+				// object-position: bottom center;
+			}
+			// background-position: bottom center;
+		}
+		p {
+			font-size: 110%;
+			@include breakpoint(medium) {
+				font-size: 130%;
+			}
+			font-weight: $global-weight-bold;
+			max-width: 30rem;
+		}
+	}
+
+	.column {
+		a.city-anchor {
+			// margin-bottom: 4rem;
+			display: block;
+			color: $white;
+			img {
+				background-size: 100%;
+				object-position: bottom center; 
+				transition: transform .25s ease-in-out;
+			}
+			.photo-container {
+				.photo {
+					padding-top: 50%;
+					@include breakpoint(medium) {
+						padding-top: 40%;
+					}
+				}
+				.overlay {
+					$background: map-get($foundation-palette, search);
+					background: rgba($primary-color, 0.25);
+					transition: background .25s ease-in-out;
+					
+					p {
+						transition: color .25s ease-in-out, text-shadow .25s ease-in-out;
+						position: absolute;
+						bottom: 0;
+						left: 0;
+						padding-left: 0.5rem;
+						margin: 0;
+						// color: $white;
+						// margin: 0 auto;
+					}
+					strong, p {
+						transition: color .25s ease-in-out, text-shadow .25s ease-in-out;
+						// text-shadow: 1px 1px 3px rgba($white, 0.5);
+						font-weight: $global-weight-bold;
+						font-size: 120%;
+						@include breakpoint(medium) {
+							font-size: 180%;
+						}
+						// text-transform: uppercase;
+						// color: $white;
+					}
+					strong {
+						text-transform: uppercase
+					}
+					&:hover {
+						
+					}
+				
+				}
+			}
+			&:hover {
+				color: $black;
+				.photo-container {
+					img {
+						transform: scale(1.02);
+					}
+					.overlay {
+						background: rgba($white, 0.5);
+						.content {
+							background: transparent;
+						}
+					}
+				}				
+			}
+		}
+
+		.section-title {
+			margin-top: 3rem;
+			@include breakpoint(large) {
+				margin-top: 10%;
+				margin-bottom: 5%;
+			}
+			h2 {
+				font-weight: $global-weight-bold;
+			}
+		}
+		// p {
+		// 	font-size: 150%:
+		// 	@include breakpoint(large) {
+		// 		font-size: 180%;
+		// 	}
+		// 	// color: $white;
+		// 	text-transform: uppercase;
+		// 	font-weight: $global-weight-bold;
+		// 	small {
+		// 		text-transform: none;
+		// 	}
+		// }
+	}
+
+	.suggest-location {
+		$background: map-get($foundation-palette, search);
+		background: $white;//rgba($primary-color, 0.1);
+		font-size: 1rem;
+		padding: 2rem 0;
+		// margin-top: 4rem;
+		margin-top: 3rem;
+		margin-bottom: 3rem;
+		@include breakpoint(large) {
+			margin-top: 5%;
+			margin-bottom: 5%;
+		}
+
+		.column {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
+		p {
+			color: $black;
+			font-size: 120%;
+			text-transform: none;
+			// font-weight: normal;
+		}
+		.input-container {
+			width: 100%;
+			padding: 0 1rem;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			// flex: 1;
+			flex-wrap: wrap;
+			@include breakpoint(medium) {
+				flex-direction: row;
+			}
+			input {
+				max-width: 100%;
+				width: 100%;
+				@include breakpoint(medium) {
+					width: 15rem;
+				}
+				flex: 1 0 auto;
+				margin-right: 1rem;
+			}
+			.button {
+				flex: 0 0 auto;
+				// margin-left: 1rem;
+			}
+		}
+	}
+
+	.sell-on-sulo {
+		// marg
+	}
+
+	// .footer {
+	// 	display: none;
+	// }
+}

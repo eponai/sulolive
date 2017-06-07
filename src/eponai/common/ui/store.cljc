@@ -193,7 +193,7 @@
                                         :href        store-url
                                         :description (:store.profile/name profile)
                                         :media       (photos/transform (:photo/id (:store.profile/photo profile))
-                                                                       :transformation/full)}))
+                                                                       :transformation/thumbnail)}))
                 ;(menu/item
                 ;  {:title "Share on email"}
                 ;  (social/share-button nil {:platform :social/email}))

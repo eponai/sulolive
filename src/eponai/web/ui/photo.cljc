@@ -97,9 +97,10 @@
       (css/add-class ::css/photo-overlay-content)
       content)))
 
-(defn photo [{:keys [status] :as props} & content]
+(defn photo [{:keys [status classes] :as props} & content]
   (dom/div
-    (css/add-classes [::css/photo-container status])
+    {:classes (conj classes ::css/photo-container status)}
+    ;(update props :classes into [::css/photo-container status]) ;(css/add-classes [::css/photo-container status])
     (->Photo props)
     (cond (= status :edit)
           (overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]}))
@@ -168,7 +169,7 @@
 (defn store-cover [store props & content]
   (let [{cover-photo :store.profile/cover} (:store/profile store)]
     (cover (merge props {:photo-id       (:photo/id cover-photo)
-                         :transformation :transformation/full})
+                         :transformation :transformation/cover})
            content)))
 
 (defn user-photo [user props & content]

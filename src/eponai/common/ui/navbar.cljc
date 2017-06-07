@@ -103,7 +103,7 @@
                 :href (routes/url :live)})]
     (menu/item-link
       (->> opts
-           (css/add-class ::css/highlight)
+           ;(css/add-class ::css/highlight)
            (css/add-class :navbar-live)
            (css/show-for :large))
       (dom/strong
@@ -122,8 +122,9 @@
      :id   "navbar-brand"}
     (or title
         (dom/span nil "Sulo"))
-    (or subtitle
-        (dom/small nil "Preview"))))
+    ;(or subtitle
+    ;    (dom/small nil "Preview"))
+    ))
 
 (defn coming-soon-navbar [component]
   (let [{:keys [right-menu on-live-click]} (om/get-computed component)]
@@ -152,7 +153,15 @@
 
       (dom/div
         {:classes ["top-bar-right"]}
-        right-menu))))
+        (menu/horizontal
+          nil
+          (menu/item
+            nil
+            (dom/a
+              {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
+              (dom/strong nil (dom/small nil "Sign in")))))
+        ;right-menu
+        ))))
 
 (defn help-navbar [component]
   (let [{:query/keys [auth owned-store]} (om/props component)]
@@ -179,8 +188,8 @@
                :href     "#"
                :onClick  #(.open-dropdown component :dropdown/user)}
               (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
-            (button/button
-              (button/hollow {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))})
+            (dom/a
+              {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
               (dom/span nil "Sign in"))))))))
 
 (def routes->titles
@@ -216,9 +225,9 @@
          (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
        (menu/item
          (css/show-for :large)
-         (button/button
-           (button/hollow {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))})
-           (dom/span nil "Sign in"))))
+         (dom/a
+           {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
+           (dom/strong nil (dom/small nil "Sign in")))))
      ;(when (some? auth)
      ;  (menu/item
      ;    (->> (css/hide-for :large)
@@ -259,7 +268,8 @@
             (css/show-for :large {:href (routes/url :store-dashboard (:route-params current-route))
                                   :id   "navbar-brand"})
             (dom/span nil "SULO")
-            (dom/small nil "Store preview"))
+            ;(dom/small nil "Store preview")
+            )
 
           (menu/item-text nil (dom/span nil (get routes->titles (:route current-route))))))
 
@@ -480,7 +490,7 @@
                      (or (= route :store-dashboard) (= (name :store-dashboard) (namespace route))))
                 (manage-store-navbar this)
 
-                (or (= route :coming-soon) (= route :coming-soon/sell))
+                (or (= route :coming-soon) (= route :coming-soon/sell) (= route :landing-page))
                 (coming-soon-navbar this)
 
                 (and (some? route) (= (namespace route) "help"))

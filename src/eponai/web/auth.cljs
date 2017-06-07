@@ -6,7 +6,7 @@
     [taoensso.timbre :refer [debug]]))
 
 (def urls-redirecting-to-index
-  (into #{} (map routes/url) [:login :coming-soon :coming-soon/sell]))
+  (into #{} (map routes/url) [:login :coming-soon :coming-soon/sell :landing-page]))
 
 (defn- redirect-to-after-login []
   (let [current-url (str js/window.location.pathname)]
