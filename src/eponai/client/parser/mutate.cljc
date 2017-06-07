@@ -4,7 +4,9 @@
     [eponai.common.format :as format]
     [eponai.common.auth :as auth]
     [eponai.client.chat :as chat]
+    [eponai.client.auth :as client.auth]
     [eponai.common.database :as db]
+    [eponai.common :as c]
     [taoensso.timbre :refer [debug warn]]))
 
 ;; ################ Remote mutations ####################
@@ -13,35 +15,44 @@
 ;; Local mutations should be defined in:
 ;;     eponai.<platform>.parser.mutate
 
-(defn logged-in-update-cart [state item]
-  (let [cart (db/one-with (db/db state) {:where '[[?e :user.cart/items]]})]
-    (db/transact-one state [:db/add cart :user.cart/items (:db/id item)])))
+(defn find-user-cart [db user-id]
+  (if (some? user-id)
+    [user-id (db/one-with db {:where   '[[?user :user/cart ?e]]
+                              :symbols {'?user user-id}})]
+    (some->> (seq (db/datoms db :aevt :user/cart))
+             (first)
+             ((juxt :e :v)))))
 
 (defmethod client-mutate 'shopping-bag/add-item
-  [{:keys [target state]} _ {:keys [item]}]
-  (if target
-    {:remote true}                                          ;(auth/is-logged-in?)
-    {:action (fn []
-               ;(let [cart (db/one-with (db/db state) {:where '[[?e :cart/items]]})]
-               ;  (db/transact-one state [:db/add cart :cart/items (:db/id item)]))
-
-               ;(if (auth/is-logged-in?)
-               ;  (logged-in-update-cart state item)
-               ;  (anon-update-cart item))
-               )}))
+  [{:keys [target db state]} _ {:keys [sku]}]
+  (let [user-id (client.auth/current-auth db)
+        logged-in? (some? user-id)]
+    (if target
+      (when logged-in?
+        {:remote true})
+      {:action (fn []
+                 (let [[user-id cart] (find-user-cart db user-id)
+                       sku-id (c/parse-long-safe sku)]
+                   (if (some? cart)
+                     (db/transact-one state [:db/add cart :user.cart/items sku-id])
+                     (let [new-cart {:db/id           (db/tempid :db.part/user)
+                                     :user.cart/items [sku-id]}]
+                       (db/transact state [new-cart
+                                           [:db/add (or user-id (db/tempid :db.part/user))
+                                            :user/cart (:db/id new-cart)]])))))})))
 
 (defmethod client-mutate 'shopping-bag/remove-item
-  [{:keys [target state]} _ {:keys [item]}]
-  (if target
-    {:remote true}                                          ;(auth/is-logged-in?)
-    {:action (fn []
-               ;(let [cart (db/one-with (db/db state) {:where '[[?e :cart/items]]})]
-               ;  (db/transact-one state [:db/add cart :cart/items (:db/id item)]))
-
-               ;(if (auth/is-logged-in?)
-               ;  (logged-in-update-cart state item)
-               ;  (anon-update-cart item))
-               )}))
+  [{:keys [target db state]} _ {:keys [sku]}]
+  (let [user-id (client.auth/current-auth db)
+        logged-in? (some? user-id)]
+    (if target
+      (when logged-in?
+        {:remote true})
+      {:action (fn []
+                 (let [[_ cart] (find-user-cart db user-id)
+                       sku-id (c/parse-long-safe sku)]
+                   (when (some? cart)
+                     (db/transact-one state [:db/retract cart :user.cart/items sku-id]))))})))
 
 (defmethod client-mutate 'search/search
   [{:keys [target]} _ {:keys [search-string]}]
