@@ -69,9 +69,9 @@
 ;----------API Routes
 
 (defn handle-parser-request
-  [{:keys [body] ::m/keys [conn parser system] :as request} read-basis-t-graph]
+  [{:keys [body] ::m/keys [conn parser-fn system] :as request} read-basis-t-graph]
   (debug "Handling parser request with query:" (:query body))
-  (parser
+  ((parser-fn)
     {::parser/read-basis-t-graph  (some-> read-basis-t-graph (atom))
      ::parser/chat-update-basis-t (::parser/chat-update-basis-t body)
      ::parser/auth-responder      (::parser/auth-responder request)
