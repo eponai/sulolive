@@ -211,7 +211,7 @@
   [{:keys [db db-history query]} _ {:keys [sku-ids]}]
   {:auth    ::auth/public
    :uniq-by [[:sku-id sku-ids]]}
-  {:value (query/one db db-history query
+  {:value (query/all db db-history query
                      {:where   '[[_ :store.item/skus ?e]]
                       :symbols {'[?e ...] sku-ids}})})
 
