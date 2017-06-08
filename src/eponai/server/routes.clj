@@ -69,9 +69,9 @@
 ;----------API Routes
 
 (defn handle-parser-request
-  [{:keys [body] ::m/keys [conn parser system] :as request} read-basis-t-graph]
+  [{:keys [body] ::m/keys [conn parser-fn system] :as request} read-basis-t-graph]
   (debug "Handling parser request with query:" (:query body))
-  (parser
+  ((parser-fn)
     {::parser/read-basis-t-graph  (some-> read-basis-t-graph (atom))
      ::parser/chat-update-basis-t (::parser/chat-update-basis-t body)
      ::parser/auth-responder      (::parser/auth-responder request)
@@ -106,7 +106,10 @@
       (do
         (debug "Has queried auth and client's auth doesn't match cookie's auth.")
         (debug "clients-auth: " clients-auth " cookie-auth: " cookie-auth)
-        (debug "request: " (into {} request))
+        (trace "request: " (into {} (remove (comp #{::m/empty-datascript-db
+                                                    ::m/system}
+                                                  key))
+                                 request))
         {:auth {:logout true}})
       (let [auth-responder (parser/stateful-auth-responder)
             ret (handle-parser-request (assoc request ::parser/auth-responder auth-responder)

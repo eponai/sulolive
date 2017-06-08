@@ -67,7 +67,7 @@
                (debug "Selected sku value: " selected-sku)
                (when (some? selected-sku)
                  (mixpanel/track "Add product to bag")
-                 (om/transact! this `[(shopping-bag/add-item ~{:sku selected-sku})
+                 (om/transact! this `[(shopping-bag/add-items ~{:skus [selected-sku]})
                                       :query/cart])
                  (om/update-state! this assoc :added-to-bag? true)))))
   (componentDidUpdate [this prev-props prev-state]

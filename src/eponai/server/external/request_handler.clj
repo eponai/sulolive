@@ -56,7 +56,8 @@
                         (m/wrap-state {::m/conn                conn
                                        ::m/in-production?      in-production?
                                        ::m/empty-datascript-db (m/init-datascript-db conn)
-                                       ::m/parser              (parser/server-parser)
+                                       ;; Construct a new parser each request.
+                                       ::m/parser-fn           #(parser/server-parser)
                                        ::m/cljs-build-id       (or cljs-build-id "dev")
                                        ::m/system              system})
                         ;; Places wrap-suspendable under wrap-js-files, so figwheel can get the
