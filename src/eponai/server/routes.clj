@@ -106,7 +106,7 @@
       (do
         (debug "Has queried auth and client's auth doesn't match cookie's auth.")
         (debug "clients-auth: " clients-auth " cookie-auth: " cookie-auth)
-        (debug "request: " (into {} (remove (comp #{::m/empty-datascript-db
+        (trace "request: " (into {} (remove (comp #{::m/empty-datascript-db
                                                     ::m/system}
                                                   key))
                                  request))

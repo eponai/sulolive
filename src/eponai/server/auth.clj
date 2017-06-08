@@ -36,9 +36,6 @@
   (auth/-redirect (::auth-responder request) path))
 
 (defn remove-auth-cookie [response]
-  (when (timbre/may-log? :debug)
-    (debug "Removing auth cookie! Stacktrace:")
-    (.printStackTrace (Exception.)))
   (assoc-in response [:cookies auth-token-cookie-name] {:value {:token auth-token-remove-value} :max-age 1}))
 
 (defrecord HttpAuthResponder []
@@ -87,8 +84,9 @@
                 ;    auth0-user)
                 )))
           (catch Exception e
-            (debug "Authenticate exception. Unable to authenticate data: " data
-                   " exception: " e)
+            (when (not= data auth-token-remove-value)
+              (debug "Authenticate exception. Unable to authenticate data: " data
+                     " exception: " e))
             (if-let [token-failure (when-let [data (ex-data e)]
                                      (let [{:keys [type cause]} data]
                                        (when (= type :validation)
