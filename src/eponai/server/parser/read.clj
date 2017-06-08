@@ -16,7 +16,8 @@
     [eponai.server.api.user :as user]
     [taoensso.timbre :as timbre]
     [clojure.data.json :as json]
-    [clojure.java.io :as io]))
+    [clojure.java.io :as io]
+    [eponai.common.format.date :as date]))
 
 (defmacro defread
   ""
@@ -249,17 +250,31 @@
 (defread query/featured-items
   [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
-  {:value (->> (query/all db db-history query {:where '[[?e :store.item/name]]})
-               (take 5)
-               (feature-all db-history :store.item))})
+  {:value (letfn [(add-time-to-all [time items]
+                    (map #(if (nil? (:store.item/created-at %))
+                           (assoc % :store.item/created-at time)
+                           %)
+                         items))]
+            (->> (query/all db db-history query {:where '[[?e :store.item/name]]})
+                 (add-time-to-all (date/current-millis))
+                 (sort-by :store.item/created-at <)
+                 (take 10)
+                 (feature-all db-history :store.item)))})
 
 (defread query/featured-stores
   [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
   ;; TODO: Come up with a way to feature stores.
-  {:value (->> (query/all db db-history query {:where '[[?e :store/profile]]})
-               (take 4)
-               (feature-all db-history :store))})
+  {:value (letfn [(add-time-to-all [time items]
+                    (map #(if (nil? (:store/created-at %))
+                           (assoc % :store/created-at time)
+                           %)
+                         items))]
+            (->> (query/all db db-history query {:where '[[?e :store/profile]]})
+                 (add-time-to-all (date/current-millis))
+                 (sort-by :store/created-at <)
+                 (take 4)
+                 (feature-all db-history :store)))})
 
 (defread query/stream-config
   [{:keys [db db-history query system]} k _]

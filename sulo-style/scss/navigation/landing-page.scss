@@ -6,23 +6,10 @@
 			}
 		}
 	}
-	.page-content {
-		// padding: 0;
-
-	}
-	h1, h2, h3 {
-		font-family: 'Montserrat', Helvetica, Arial, sans-serif
-	}
-	h3 {
-		text-transform: none;
-	}
-	h1 {
-		// font-size: 110%;
-		font-weight: $global-weight-bold;
-		// color: $white;
-		@include breakpoint(large) {
-			font-size: rem-calc(48);
-		}
+	
+	strong {
+		font-family: $header-font-family-sans-serif;//'Montserrat', Helvetica, Arial, sans-serif
+		font-weight: bold;
 	}
 	.cover {
 		text-align: center;
@@ -64,20 +51,12 @@
 		padding: 0.5rem;
 		margin-top: 2%;
 		.feature-item {
-			padding: 2%;
 			.icon {
 				width: auto;
 				height: auto;
 			}
-			i {
-				padding: 10% 0;
-				font-size: 2rem;
-			}
 			@include breakpoint(medium) {
 				text-align: center;
-				i {
-					font-size: 2.5rem;
-				}
 			}
 		}
 	}
@@ -177,6 +156,9 @@
 		// 	}
 		// }
 	}
+	.locations {
+		padding-bottom: 2rem;
+	}
 
 	.suggest-location {
 		$background: map-get($foundation-palette, banner);
@@ -190,7 +172,6 @@
 		}
 		h3 {
 			color: $white;
-			font-size: 120%;
 			text-transform: none;
 			font-weight: $global-weight-bold;
 		}
@@ -229,6 +210,8 @@
 	}
 
 	.sell-on-sulo {
+		margin: 0;
+		// max-width: 40rem;
 		// marg
 	}
 

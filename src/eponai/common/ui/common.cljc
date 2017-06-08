@@ -10,7 +10,8 @@
     [taoensso.timbre :refer [debug]]
     [om.next :as om]
     [eponai.web.ui.photo :as photo]
-    [eponai.web.social :as social]))
+    [eponai.web.social :as social]
+    [eponai.web.ui.button :as button]))
 
 (defn order-status-element [order]
   (let [status (:order/status order)]
@@ -82,28 +83,18 @@
   (dom/div
     (->> {:classes [class]}
          (css/add-class :section))
-    ;(div
-    ;  (->> (css/grid-row) css/grid-column))
-    (grid/row
-      (->> (css/add-class :section-header)
-           (css/add-class :small-unstack))
-      (grid/column
-        (css/add-class :middle-border))
-      (grid/column
-        (css/add-class :shrink)
-        (dom/h3 (css/add-class :header) header))
-      (grid/column
-        (css/add-class :middle-border))
-      )
+    (dom/div
+      (->> (css/add-class :section-title)
+           (css/text-align :center))
+      (dom/h2 (css/add-class :header) header))
 
     content
-    ;(when (not-empty footer))
-    (grid/row-column
-      (->> (css/add-class :section-footer)
-           (css/text-align :center))
-      (dom/a
-        (css/button-hollow {:href href}) footer))
-    ))
+    (when (not-empty footer)
+      (grid/row-column
+        (->> (css/add-class :section-footer)
+             (css/text-align :center))
+        (button/button
+          (css/add-classes [:hollow :sulo] {:href href}) footer)))))
 
 (defn footer [opts]
   (dom/div
@@ -115,8 +106,14 @@
         (grid/column
           nil
           (menu/vertical {}
-                         (menu/item-text nil (dom/span nil "Discover"))
-                         (menu/item-link nil (dom/span nil "Vancouver"))
+                         (menu/item-text nil (dom/span nil ""))
+                         (menu/item
+                           nil
+                           (dom/select {:defaultValue "Vancouver"}
+                                       (dom/option {:value "Vancouver"} "Vancouver")
+                                       (dom/option {:value "Toronto"
+                                                    :disabled true} "Toronto")))
+                         ;(menu/item-link nil (dom/span nil "Vancouver"))
                          ;(menu/item-link {:href (routes/url :browse/category {:top-category "home"})} (dom/span nil "HOME"))
                          ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "women"})} (dom/span nil "WOMEN"))
                          ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "men"})} (dom/span nil "MEN"))

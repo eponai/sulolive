@@ -72,7 +72,7 @@
   z-index: $navbar-zindex;
   top: $navbar-height;
   @include breakpoint(large) {
-    // position: fixed;
+    position: fixed;
   }
   height: 1px;
   background: map-get($foundation-palette, primary);

@@ -51,7 +51,7 @@
           {:photo-id "static/ashim-d-silva-89336"}
           (dom/h1 nil
                   (dom/span nil "Your local marketplace online"))
-          (dom/p nil "Shop from and hangout LIVE with your favorite local vendors and their community"))
+          (dom/p nil (dom/span nil "Shop and hang out LIVE with your favorite local brands")))
         (dom/div
           {:classes ["top-features"]}
           (grid/row
@@ -59,18 +59,18 @@
             (top-feature
               nil
               (icons/shopping-bag)
-              "Shop and Discover"
+              "Shop and discover"
               "Get lost in a marketplace filled with your local gems.")
             (top-feature
               nil
               (icons/video-camera)
-              "Watch, chat and follow"
-              "Hang out with your favourite local brands on SULO LIVE.")
+              "Watch and chat"
+              "Watch live streams from your favorite local brands.")
             (top-feature
               nil
               (icons/heart)
-              "Join the Community"
-              "Sign up to follow others and share your faves.")))
+              "Follow and share"
+              "Sign up to follow and share your faves.")))
 
         (grid/row-column
           (css/text-align :center)
@@ -78,7 +78,8 @@
             (css/add-class :section-title)
             (dom/h2 nil "Where are you local?"))
           (grid/row
-            (grid/columns-in-row {:small 1})
+            (->> (grid/columns-in-row {:small 1})
+                 (css/add-class :locations))
             (grid/column
               nil
               (dom/a
@@ -121,6 +122,16 @@
                               :placeholder "Your location"})
                   (dom/input {:type        "text"
                               :placeholder "Your email"})
-                  (button/button-small nil "Submit"))))))))))
+                  (button/button nil "Submit")))))
+
+          (dom/div
+            (css/add-class :section-title)
+            (dom/h2 nil "Sell on SULO"))
+          (dom/p (css/add-class :sell-on-sulo)
+                 (dom/span nil "Are you selling products locally? Tell your story and interact LIVE with your customers. ")
+                 (dom/br nil )
+                 (dom/span nil "Contact us at ")
+                 (dom/a nil "hello@sulo.live")
+                 (dom/span nil " to start a store. We'd love to hear from you!")))))))
 
 (router/register-component :landing-page LandingPage)
