@@ -256,7 +256,7 @@
                            %)
                          items))]
             (->> (query/all db db-history query {:where '[[?e :store.item/name]]})
-                 (add-time-to-all (date/current-millis))
+                 (add-time-to-all 0)
                  (sort-by :store.item/created-at <)
                  (take 10)
                  (feature-all db-history :store.item)))})
@@ -271,8 +271,8 @@
                            %)
                          items))]
             (->> (query/all db db-history query {:where '[[?e :store/profile]]})
-                 (add-time-to-all (date/current-millis))
-                 (sort-by :store/created-at <)
+                 (add-time-to-all 0)
+                 (sort-by :store/created-at >)
                  (take 4)
                  (feature-all db-history :store)))})
 

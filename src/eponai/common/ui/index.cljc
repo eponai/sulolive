@@ -72,40 +72,42 @@
                           {:store/owners [{:store.owner/user [:db/id]}]}]}])
   Object
   (render [this]
-    (let [{:keys [proxy/navbar query/featured-items query/featured-streams]
+    (let [{:keys       [proxy/navbar query/featured-items query/featured-streams]
            :query/keys [owned-store locations featured-stores]} (om/props this)]
+      (debug "Items: " featured-items)
+      (debug "Items: " featured-stores)
 
       (dom/div #js {:id "sulo-index" :className "sulo-page"}
         (common/page-container
           {:navbar navbar}
           (dom/div #js {:id "sulo-index-container" :onScroll #(debug "Did scroll page: " %)}
 
-(my-dom/div
-  (css/add-class :intro-header)
-  (grid/row
-    (css/align :middle)
-    (grid/column
-      (grid/column-size {:small 12 :medium 6})
-      (my-dom/h1
-        (css/add-class :header)
-        (dom/i #js {:className "fa fa-map-marker"})
-        (dom/span nil locations)))
-    (grid/column
-      nil
-      (my-dom/div
-        (css/add-class :input-container)
-        (search-bar/->SearchBar {:ref             (str ::search-bar-ref)
-                                 :placeholder     "What are you looking for?"
-                                 :mixpanel-source "index"
-                                 :classes         [:drop-shadow]})
-        (button/button
-          (->> (button/expanded {:onClick (fn []
-                                            (let [search-bar (om/react-ref this (str ::search-bar-ref))]
-                                              (when (nil? search-bar)
-                                                (error "NO SEARCH BAR :( " this))
-                                              (search-bar/trigger-search! search-bar)))})
-               (css/add-classes [ :drop-shadow]))
-          (dom/span nil "Search"))))))
+            (my-dom/div
+              (css/add-class :intro-header)
+              (grid/row
+                (css/align :middle)
+                (grid/column
+                  (grid/column-size {:small 12 :medium 6})
+                  (my-dom/h1
+                    (css/add-class :header)
+                    (dom/i #js {:className "fa fa-map-marker"})
+                    (dom/span nil locations)))
+                (grid/column
+                  nil
+                  (my-dom/div
+                    (css/add-class :input-container)
+                    (search-bar/->SearchBar {:ref             (str ::search-bar-ref)
+                                             :placeholder     "What are you looking for?"
+                                             :mixpanel-source "index"
+                                             :classes         [:drop-shadow]})
+                    (button/button
+                      (->> (button/expanded {:onClick (fn []
+                                                        (let [search-bar (om/react-ref this (str ::search-bar-ref))]
+                                                          (when (nil? search-bar)
+                                                            (error "NO SEARCH BAR :( " this))
+                                                          (search-bar/trigger-search! search-bar)))})
+                           (css/add-classes [:drop-shadow]))
+                      (dom/span nil "Search"))))))
 
 
             (common/content-section {:href  (routes/url :live)
@@ -208,7 +210,7 @@
               "See more stores")
 
             (common/content-section
-              {:href (routes/url :coming-soon/sell)
+              {:href    (routes/url :coming-soon/sell)
                :classes ["test"]}
               "Sell on SULO"
               (grid/row-column

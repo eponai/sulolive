@@ -83,7 +83,7 @@
             (grid/column
               nil
               (dom/a
-                (cond->> (css/add-class :city-anchor {:href    (routes/url :index)
+                (cond->> (css/add-class :city-anchor {:href    (if (some? auth) (routes/url :index) "")
                                                       :onClick #(.select-locality this "Vancouver, BC")})
                          (nil? auth)
                          (css/add-class :inactive))
@@ -96,7 +96,7 @@
                     (dom/div
                       (css/text-align :center)
                       (dom/strong nil "Vancouver, BC"))
-                    (dom/p (css/add-class :coming-soon) (dom/small nil "Coming soon. Summer 2017"))))))
+                    (dom/p (css/add-class :coming-soon) (dom/small nil "Coming soon - Summer 2017"))))))
             (grid/column
               nil
               (dom/a
@@ -110,7 +110,7 @@
                     (dom/div
                       (css/text-align :center)
                       (dom/strong nil "Toronto, ON"))
-                    (dom/p (css/add-class :coming-soon) (dom/small nil "Coming soon. Fall 2017"))))))
+                    (dom/p (css/add-class :coming-soon) (dom/small nil "Coming soon - Fall 2017"))))))
             (grid/column
               (css/add-classes [:suggest-location])
               (photo/cover
