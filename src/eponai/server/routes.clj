@@ -106,7 +106,10 @@
       (do
         (debug "Has queried auth and client's auth doesn't match cookie's auth.")
         (debug "clients-auth: " clients-auth " cookie-auth: " cookie-auth)
-        (debug "request: " (into {} request))
+        (debug "request: " (into {} (remove (comp #{::m/empty-datascript-db
+                                                    ::m/system}
+                                                  key))
+                                 request))
         {:auth {:logout true}})
       (let [auth-responder (parser/stateful-auth-responder)
             ret (handle-parser-request (assoc request ::parser/auth-responder auth-responder)

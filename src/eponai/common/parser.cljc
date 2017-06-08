@@ -223,7 +223,7 @@
      ([read-or-mutate filter-atom]
       (fn [{:keys [state auth] :as env} k p]
         (let [db (datomic/db state)
-              auth-filter (if-let [filter (when filter-atom @filter-atom)]
+              auth-filter (if-some [filter (some-> filter-atom deref)]
                             filter
                             (let [authed-user-id
                                   (when (:email auth)
@@ -235,6 +235,8 @@
                                                                      {:symbols {'?user authed-user-id}
                                                                       :find    '[[?store ...]]})))
                                   filter (filter/filter-authed authed-user-id authed-store-ids)]
+                              (debug "Setting filter using user-id: " authed-user-id
+                                     " auth: " auth)
                               (when filter-atom (reset! filter-atom filter))
                               filter))]
           (read-or-mutate (assoc env :db (datomic/filter db auth-filter)
@@ -267,8 +269,7 @@
   (fn [env query & [target]]
     (let [graph-atom (or (::read-basis-t-graph env)
                          (atom (util/graph-read-at-basis-t)))
-          env (assoc env ::filter-atom (atom nil)
-                         ::server? true
+          env (assoc env ::server? true
                          ::force-read-without-history (atom #{})
                          ::read-basis-t-graph graph-atom)
           ret (parser env query target)]

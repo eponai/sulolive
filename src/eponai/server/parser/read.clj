@@ -218,8 +218,7 @@
 (defread query/auth
   [{:keys [auth query db]} _ _]
   {:auth ::auth/any-user}
-  {:value (let [query (or query [:db/id])]
-            (db/pull db query (:user-id auth)))})
+  {:value (db/pull db query (:user-id auth))})
 
 (defread query/stream
   [{:keys [db db-history query]} _ {:keys [store-id]}]
