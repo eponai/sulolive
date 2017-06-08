@@ -25,7 +25,10 @@
     [eponai.common.shared :as shared]
     [eponai.client.chat :as client.chat]
     [cemerick.url :as url]
-    [medley.core :as medley]))
+    [medley.core :as medley]
+    [eponai.client.auth :as client.auth]
+    [eponai.common.database :as db]
+    [eponai.client.cart :as client.cart]))
 
 (defn add-root! [reconciler]
   (binding [parser/*parser-allow-remote* false]
@@ -140,7 +143,6 @@
                                        :shared/store-chat-listener ::shared/prod
                                        :shared/auth-lock           auth-lock
                                        :instrument                 (::plomber run-options)})]
-
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
       (pushy/start! history))
@@ -153,6 +155,9 @@
       (async/<! initial-module-loaded-chan)
       (client.utils/init-state! reconciler send-fn (om/get-query router/Router))
       (async/<! initial-merge-chan)
+      (when (not (client.auth/current-auth (db/to-db reconciler)))
+        (debug "User was not logged in. Restoring cart.")
+        (client.cart/restore-cart reconciler))
       (debug "Adding reconciler to root.")
       (add-root! reconciler)
       ;; Pre fetch all routes so the scroll doesn't freak out as much.
