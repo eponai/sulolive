@@ -69,7 +69,7 @@
 ;----------API Routes
 
 (defn handle-parser-request
-  [{:keys [body] ::m/keys [conn parser-fn system] :as request} read-basis-t-graph]
+  [{:keys [body cookies] ::m/keys [conn parser-fn system] :as request} read-basis-t-graph]
   (debug "Handling parser request with query:" (:query body))
   ((parser-fn)
     {::parser/read-basis-t-graph  (some-> read-basis-t-graph (atom))
@@ -78,7 +78,8 @@
      :state                       conn
      :auth                        (:identity request)
      :params                      (:params request)
-     :system                      system}
+     :system                      system
+     :locations                   (get-in cookies ["sulo.locality" :value])}
     (:query body)))
 
 (defn trace-parser-response-handlers
@@ -139,7 +140,9 @@
   member-routes
   ;; Hooks in bidi routes with compojure.
   ;; TODO: Cache the handlers for each route.
-  (GET "*" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler)))
+  (GET "*" request (if (nil? (get-in request [:cookies "sulo.locality" :value]))
+                     (r/redirect (routes/path :landing-page))
+                     (bidi.ring/make-handler common.routes/routes bidi-route-handler))))
 
 (defroutes
   site-routes
@@ -152,7 +155,7 @@
   (GET "/auth" request (auth/authenticate request (::m/conn request)))
 
   (GET "/logout" request (-> (auth/redirect request (or (get-in request [:params :redirect])
-                                                        (routes/path :coming-soon)))
+                                                        (routes/path :landing-page)))
                              (auth/remove-auth-cookie)))
 
   (GET "/devcards" request
@@ -163,6 +166,7 @@
 
   (GET "/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
   (GET "/sell/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
+  (GET "/enter" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
 
   ;; Websockets
   (GET "/ws/chat" {::m/keys [system] :as request}

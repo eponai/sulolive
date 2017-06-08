@@ -85,7 +85,7 @@
           (common/loading-spinner nil))
         (photo/header
           {:photo-id "static/coming-soon-sell-bg"
-           :transformation :transformation/full}
+           :transformation :transformation/cover}
           (dom/div
             nil
             ;(grid/row-column

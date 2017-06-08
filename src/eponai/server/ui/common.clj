@@ -102,10 +102,10 @@
     ;; Asset version is needed in our module urls.
     (dom/meta {:id "asset-version-meta" :name "asset-version" :content asset-version})
     (dom/meta {:name    "description"
-               :content "Watch and interact with your favorite local makers and artisans on Vancouver's online marketplace."})
+               :content "Shop local goods and hangout LIVE with your local vendors."})
     (comment (dom/meta {:http-equiv "Content-Type"
                         :content    "text/html; charset=utf-8"}))
-    (dom/title nil "Vancouver's local marketplace online - SULO Live")
+    (dom/title nil "Your local marketplace online, shop and hangout LIVE with your local vendors - SULO Live")
     (when (= cljs-build-id "devcards")
       (dom/link {:href "/bower_components/nvd3/build/nv.d3.css"
                  :rel  "stylesheet"}))

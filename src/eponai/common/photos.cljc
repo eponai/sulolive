@@ -2,19 +2,20 @@
   (:require
     #?(:clj [clj-http.client :as http]
        :cljs [cljs-http.client :as http])
-    [clojure.string :as string]
-    [taoensso.timbre :refer [debug]]))
+            [clojure.string :as string]
+            [taoensso.timbre :refer [debug]]))
 
 (def transformations
   {:transformation/micro           "micro"
    :transformation/thumbnail-tiny  "thumbnail-tiny"
    :transformation/thumbnail       "thumbnail"
    :transformation/thumbnail-large "thumbnail-large"
-   :transformation/preview         "preview"})
+   :transformation/preview         "preview"
+   :transformation/cover           "cover"})
 
 (def presets
   {:preset/product-photo "product-photo"
-   :preset/cover-photo "cover-photo"})
+   :preset/cover-photo   "cover-photo"})
 
 (def storage-host "https://res.cloudinary.com/sulolive")
 
@@ -30,7 +31,7 @@
 
 (defn transform [public-id & [transformation file-ext]]
   (let [ext (or file-ext "jpg")
-        t (when-not (= transformation :transformation/full)
+        t (when-not (= transformation :transformation/preview)
             (transformation-param transformation))
         url (string/join "/" (into [] (remove nil? [storage-host "image/upload" t (str public-id "." ext)])))]
     url))

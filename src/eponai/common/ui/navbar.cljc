@@ -103,7 +103,7 @@
                 :href (routes/url :live)})]
     (menu/item-link
       (->> opts
-           (css/add-class ::css/highlight)
+           ;(css/add-class ::css/highlight)
            (css/add-class :navbar-live)
            (css/show-for :large))
       (dom/strong
@@ -122,10 +122,36 @@
      :id   "navbar-brand"}
     (or title
         (dom/span nil "Sulo"))
-    (or subtitle
-        (dom/small nil "Preview"))))
+    ;(or subtitle
+    ;    (dom/small nil "Preview"))
+    ))
 
-(defn coming-soon-navbar [component]
+(defn user-menu-item [component]
+  (let [{:query/keys [auth owned-store]} (om/props component)]
+    [
+     (if (some? auth)
+       (menu/item-dropdown
+         (->> {:dropdown (user-dropdown component auth owned-store)
+               :classes  [:user-photo-item]
+               :href     "#"
+               :onClick  #(.open-dropdown component :dropdown/user)}
+              (css/show-for :large))
+         (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
+       (menu/item
+         (css/show-for :large)
+         (dom/a
+           {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
+           (dom/strong nil (dom/small nil "Sign in")))))
+     ;(when (some? auth)
+     ;  (menu/item
+     ;    (->> (css/hide-for :large)
+     ;         (css/add-class :user-photo-item))
+     ;    (dom/a
+     ;      {:href (routes/url :user {:user-id (:db/id auth)})}
+     ;      (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))))
+     ]))
+
+(defn landing-page-navbar [component]
   (let [{:keys [right-menu on-live-click]} (om/get-computed component)]
     (navbar-content
       nil
@@ -138,7 +164,7 @@
             (dom/a
               (css/hide-for :large {:onClick #(.open-sidebar component)})
               (dom/i {:classes ["fa fa-bars fa-fw"]})))
-          (navbar-brand (routes/url :coming-soon))
+          (navbar-brand (routes/url :landing-page))
 
           (live-link on-live-click)
           ;(menu/item-dropdown
@@ -152,7 +178,16 @@
 
       (dom/div
         {:classes ["top-bar-right"]}
-        right-menu))))
+        (user-menu-item component)
+        ;(menu/horizontal
+        ;  nil
+        ;  (menu/item
+        ;    nil
+        ;    (dom/a
+        ;      {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
+        ;      (dom/strong nil (dom/small nil "Sign in")))))
+        ;right-menu
+        ))))
 
 (defn help-navbar [component]
   (let [{:query/keys [auth owned-store]} (om/props component)]
@@ -179,8 +214,8 @@
                :href     "#"
                :onClick  #(.open-dropdown component :dropdown/user)}
               (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
-            (button/button
-              (button/hollow {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))})
+            (dom/a
+              {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
               (dom/span nil "Sign in"))))))))
 
 (def routes->titles
@@ -203,30 +238,7 @@
    :store-dashboard/settings#business    "Business"
    :store-dashboard/settings#payouts "Business"})
 
-(defn user-menu-item [component]
-  (let [{:query/keys [auth owned-store]} (om/props component)]
-    [
-     (if (some? auth)
-       (menu/item-dropdown
-         (->> {:dropdown (user-dropdown component auth owned-store)
-               :classes  [:user-photo-item]
-               :href     "#"
-               :onClick  #(.open-dropdown component :dropdown/user)}
-              (css/show-for :large))
-         (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
-       (menu/item
-         (css/show-for :large)
-         (button/button
-           (button/hollow {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))})
-           (dom/span nil "Sign in"))))
-     ;(when (some? auth)
-     ;  (menu/item
-     ;    (->> (css/hide-for :large)
-     ;         (css/add-class :user-photo-item))
-     ;    (dom/a
-     ;      {:href (routes/url :user {:user-id (:db/id auth)})}
-     ;      (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))))
-     ]))
+
 
 (defn manage-store-navbar [component]
   (let [{:query/keys [auth owned-store current-route]} (om/props component)
@@ -259,7 +271,8 @@
             (css/show-for :large {:href (routes/url :store-dashboard (:route-params current-route))
                                   :id   "navbar-brand"})
             (dom/span nil "SULO")
-            (dom/small nil "Store preview"))
+            ;(dom/small nil "Store preview")
+            )
 
           (menu/item-text nil (dom/span nil (get routes->titles (:route current-route))))))
 
@@ -288,7 +301,7 @@
         (dom/span nil title)))))
 
 (defn standard-navbar [component]
-  (let [{:query/keys [cart loading-bar current-route]} (om/props component)]
+  (let [{:query/keys [cart loading-bar current-route locations]} (om/props component)]
     (navbar-content
       nil
       (dom/div
@@ -300,7 +313,7 @@
             (dom/a
               (css/hide-for :large {:onClick #(.open-sidebar component)})
               (dom/i {:classes ["fa fa-bars fa-fw"]})))
-          (navbar-brand)
+          (navbar-brand (when (empty? locations) (routes/url :landing-page)))
           (live-link)
 
           (collection-links component false)
@@ -312,7 +325,7 @@
         {:classes ["top-bar-right"]}
         (menu/horizontal
           nil
-          (menu/item nil
+          (menu/item (css/add-class :search-input)
                      (dom/div
                        (css/show-for :medium)
                        (search-bar/->SearchBar {:placeholder     "Search on SULO..."
@@ -320,7 +333,7 @@
                                                 :mixpanel-source "navbar"})))
           (user-menu-item component)
           (menu/item
-            nil
+            (css/add-class :shopping-bag)
             (dom/a {:classes ["shopping-bag-icon"]
                     :href    (routes/url :shopping-bag)}
                    (icons/shopping-bag)
@@ -342,6 +355,7 @@
                    :user/email
                    {:user/stripe [:stripe/id]}
                    {:user/profile [{:user.profile/photo [:photo/path :photo/id]}]}]}
+         :query/locations
      {:query/owned-store [:db/id
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.
@@ -484,8 +498,8 @@
                      (or (= route :store-dashboard) (= (name :store-dashboard) (namespace route))))
                 (manage-store-navbar this)
 
-                (or (= route :coming-soon) (= route :coming-soon/sell))
-                (coming-soon-navbar this)
+                ;(or (= route :coming-soon) (= route :coming-soon/sell))
+                ;(landing-page-navbar this)
 
                 (and (some? route) (= (namespace route) "help"))
                 (help-navbar this)

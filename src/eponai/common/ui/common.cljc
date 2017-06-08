@@ -10,7 +10,8 @@
     [taoensso.timbre :refer [debug]]
     [om.next :as om]
     [eponai.web.ui.photo :as photo]
-    [eponai.web.social :as social]))
+    [eponai.web.social :as social]
+    [eponai.web.ui.button :as button]))
 
 (defn order-status-element [order]
   (let [status (:order/status order)]
@@ -81,31 +82,22 @@
 (defn content-section [{:keys [href class sizes]} header content footer]
   (dom/div
     (->> {:classes [class]}
-         (css/add-class :section))
-    ;(div
-    ;  (->> (css/grid-row) css/grid-column))
-    (grid/row
-      (->> (css/add-class :section-header)
-           (css/add-class :small-unstack))
-      (grid/column
-        (css/add-class :middle-border))
-      (grid/column
-        (css/add-class :shrink)
-        (dom/h3 (css/add-class :header) header))
-      (grid/column
-        (css/add-class :middle-border))
-      )
+         (css/add-class :section)
+         (css/text-align :center))
+    (dom/div
+      (->> (css/add-class :section-title)
+           (css/text-align :center))
+      (dom/h2 (css/add-class :header) header))
 
     content
-    ;(when (not-empty footer))
-    (grid/row-column
-      (->> (css/add-class :section-footer)
-           (css/text-align :center))
-      (dom/a
-        (css/button-hollow {:href href}) footer))
-    ))
+    (when (not-empty footer)
+      (grid/row-column
+        (->> (css/add-class :section-footer)
+             (css/text-align :center))
+        (button/button
+          (css/add-classes [:hollow :sulo] {:href href}) footer)))))
 
-(defn footer [opts]
+(defn page-footer [opts]
   (dom/div
     (css/add-class :footer {:key "footer"})
     (dom/footer
@@ -115,38 +107,50 @@
         (grid/column
           nil
           (menu/vertical {}
-                         (menu/item-text nil (dom/span nil "Discover"))
-                         (menu/item-link {:href (routes/url :browse/category {:top-category "home"})} (dom/span nil "HOME"))
-                         (menu/item-link {:href (routes/url :browse/gender {:sub-category "women"})} (dom/span nil "WOMEN"))
-                         (menu/item-link {:href (routes/url :browse/gender {:sub-category "men"})} (dom/span nil "MEN"))
-                         (menu/item-link {:href (routes/url :browse/gender {:sub-category "unisex-kids"})} (dom/span nil "KIDS"))))
+                         (menu/item-text nil (dom/span nil ""))
+                         (menu/item
+                           nil
+                           (dom/select {:defaultValue "Vancouver, BC"}
+                                       (dom/option {:value "Vancouver"} "Vancouver, BC")
+                                       (dom/option {:value "Toronto, ON"
+                                                    :disabled true} "Toronto, ON")))
+                         ;(menu/item-link nil (dom/span nil "Vancouver"))
+                         ;(menu/item-link {:href (routes/url :browse/category {:top-category "home"})} (dom/span nil "HOME"))
+                         ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "women"})} (dom/span nil "WOMEN"))
+                         ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "men"})} (dom/span nil "MEN"))
+                         ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "unisex-kids"})} (dom/span nil "KIDS"))
+                         ))
 
         (grid/column
           nil
           (menu/vertical {}
-                         (menu/item-text nil (dom/span nil "Learn More"))
-                         (menu/item-link {:href "https://blog.sulo.live/introducing-sulo-live-b3de8206a419"
-                                          :target "_blank"} (dom/span nil "About us"))
+                         (menu/item-text nil (dom/span nil "Learn more"))
+
                          (menu/item-link {:href "mailto:hello@sulo.live"} (dom/span nil "Contact"))
-                         (menu/item-link {:href (routes/url :help)} (dom/span nil "Help"))
-                         (menu/item-link nil (dom/span nil "Legal"))
+                         ;(menu/item-link {:href (routes/url :help)} (dom/span nil "Help"))
+                         (menu/item-link {:href      "//www.iubenda.com/privacy-policy/8010910"
+                                          :className "iubenda-nostyle no-brand iubenda-embed"
+                                          :title     "Privacy Policy"} (dom/span nil "Privacy policy"))
                          ;(menu/item-link nil (dom/span nil "Shipping & Returns"))
                          ))
         (grid/column
           nil
           (menu/vertical {}
                          (menu/item-text nil (dom/span nil "SULO"))
-                         (menu/item-link {:href (routes/url :sell)} (dom/span nil "Start a store"))
-                         (menu/item-link nil (dom/span nil "Sign up/Sign in"))
+                         ;(menu/item-link {:href (routes/url :sell)} (dom/span nil "Start a store"))
+                         ;(menu/item-link nil (dom/span nil "Sign up/Sign in"))
                          ;(menu/item-link nil (dom/span nil "Press"))
+                         (menu/item-link {:href "https://blog.sulo.live/introducing-sulo-live-b3de8206a419"
+                                          :target "_blank"} (dom/span nil "About us"))
                          (menu/item-link {:href "https://blog.sulo.live"
                                           :target "_blank"} (dom/span nil "Blog"))
-                         (menu/item-link nil (dom/span nil "FAQ"))))
+                         ;(menu/item-link nil (dom/span nil "FAQ"))
+                         ))
         (grid/column
           (->> (grid/column-size {:small 12 :medium 4})
                (css/add-class :social))
           (menu/vertical {}
-                         (menu/item-text nil (dom/span nil "Follow Us")))
+                         (menu/item-text nil (dom/span nil "Follow us")))
           (menu/horizontal
             {:key "social"}
             (menu/item nil (social/sulo-social-link :social/facebook))
@@ -162,7 +166,7 @@
         (menu/item nil (social/sulo-icon-attribution))
         (menu/item-text nil (social/sulo-copyright))))))
 
-(defn page-container [{:keys [navbar id class-name no-footer?]} & content]
+(defn page-container [{:keys [navbar id class-name no-footer? footer]} & content]
   (dom/div
     (css/add-class (str "sulo-page " class-name) {:id id})
     (dom/div
@@ -175,7 +179,24 @@
           (css/add-class :page-content)
           content))
       (when-not no-footer?
-        (footer nil)))))
+        (page-footer footer)))))
+
+(defn sell-on-sulo [component]
+  ;(content-section
+  ;  {:href    (routes/url :coming-soon/sell)}
+  ;  "Sell on SULO"
+  ;  (grid/row-column
+  ;    (css/text-align :center)
+  ;    (dom/p (css/add-class :sell-on-sulo)
+  ;           (dom/span nil "Are you selling products locally? Start a store to tell your story and interact LIVE with your customers. ")))
+  ;
+  ;  "Contact us")
+  (content-section
+    nil
+    "Sell on SULO"
+    (dom/p (css/add-class :sell-on-sulo)
+           (dom/span nil "Are you selling products locally? Start a store to tell your story and interact LIVE with your customers. "))
+    "Contact us"))
 
 
 (defn is-new-order? [component]

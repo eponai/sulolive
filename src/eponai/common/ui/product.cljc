@@ -200,7 +200,7 @@
                                             :href        item-url
                                             :description item-name
                                             :media       (photos/transform (get-in (first photos) [:store.item.photo/photo :photo/id])
-                                                                           :transformation/full)})))))))
+                                                                           :transformation/thumbnail)})))))))
 
           (grid/row-column
             (css/add-class :product-details)

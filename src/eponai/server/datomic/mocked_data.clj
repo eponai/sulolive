@@ -138,6 +138,7 @@
     :store/profile  {:store.profile/name  "ikcha"
                      :store.profile/photo (photo "mocked/isla_500x500.24111301_nvjpi6zo")
                      :store.profile/cover (photo "mocked/isbl_3360x840.20468865_f7kumdbt")}
+    :store/created-at 1
     :store/stripe   (stripe-account)
     :store/sections [{:db/id               (db/tempid :db.part/user -1000)
                       :store.section/path  "earrings"
@@ -187,6 +188,8 @@
     :store/profile {:store.profile/name  "MagicLinen"
                     :store.profile/cover (photo "mocked/isbl_3360x840.22956500_1bj341c6")
                     :store.profile/photo (photo "mocked/isla_500x500.17338368_6u0a6c4s")}
+    :store/created-at 2
+
     :store/items   [{:store.item/name     "Linen duvet cover - Woodrose"
                      :store.item/price    34.00M
                      :store.item/photos   [(item-photo "mocked/il_570xN.1142044641_1j6c")]
@@ -213,6 +216,8 @@
     :store/profile {:store.profile/name  "thislovesthat"
                     :store.profile/cover (photo "mocked/175704-27dcee8b2fd94212b2cc7dcbe43bb80c")
                     :store.profile/photo (photo "mocked/175704-27dcee8b2fd94212b2cc7dcbe43bb80c")}
+    :store/created-at 3
+
     :store/items   [{:store.item/name     "Glitter & Navy Blue Envelope Clutch"
                      :store.item/photos   [(item-photo "mocked/175704-f4b3f5a3acdd4997a3a4ea18186cca19")]
                      :store.item/price    34.00M
@@ -236,6 +241,7 @@
 
    ;; Nafsika
    {:db/id         (db/tempid :db.part/user)
+    :store/created-at 4
     :store/profile {:store.profile/name  "Nafsika"
 
                     :store.profile/photo (photo "mocked/isla_500x500.22177516_ath1ugrh")}

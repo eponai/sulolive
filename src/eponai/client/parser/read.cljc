@@ -342,6 +342,23 @@
                   user (client.auth/current-auth db)]
               (db/pull db query user))}))
 
+(defmethod client-read :query/locations
+  [{:keys [target db query]} _ _]
+  (if target
+    {:remote true}
+    {:value (-> (db/lookup-entity db [:ui/singleton :ui.singleton/auth])
+                :ui.singleton.auth/locations)})
+  ;(debug "Read query/auth: ")
+
+  ;#?(:cljs
+  ;   {:value (let [cookie-string (js/decodeURIComponent (.-cookie js/document))
+  ;                 key-vals (string/split cookie-string #";")
+  ;                 locality-str (some #(when (string/starts-with? (string/trim %) "locality=") %) key-vals)
+  ;                 locality (when locality-str
+  ;                            (second (string/split locality-str #"=")))]
+  ;             locality)})
+  )
+
 (defmethod client-read :query/stream
   [{:keys [db query target ast route-params] :as env} _ _]
   (when-let [store-id (c/parse-long-safe (:store-id route-params))]
@@ -357,7 +374,7 @@
     {:remote true}
     {:value (db/pull-all-with db query {:where '[[?e :stream/state :stream.state/live]]})}))
 
-; ### FEATURED ### ;
+; ### FEATURED ###  ;
 
 (defmethod client-read :query/featured-streams
   [{:keys [db query]} _ _]
@@ -370,8 +387,7 @@
   [{:keys [db query]} _ _]
   {:remote true
    :value  (let [items (db/all-with db {:where '[[?e :store.item/featured]]})]
-             (sort-by :db/id
-                      (db/pull-many db query items)))})
+             (sort-by :store.item/created-at > (db/pull-many db query items)))})
 
 (defmethod client-read :query/featured-stores
   [{:keys [db query]} _ _]
@@ -386,7 +402,8 @@
                                               (take 2))]
                        {:db/id                  store
                         :store/featured-img-src [img-1 (:store.profile/photo (:store/profile s)) img-2]}))]
-             (sort-by :db/id
+             (sort-by :store/created-at
+                      >
                       (into [] (comp (map photos-fn)
                                      (map #(merge % (db/pull db query (:db/id %)))))
                             (db/all-with db {:where '[[?e :store/featured]]}))))})

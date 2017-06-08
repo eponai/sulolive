@@ -17,18 +17,6 @@
     [eponai.web.ui.button :as button]
     [eponai.common.mixpanel :as mixpanel]))
 
-(defn top-feature [opts icon title text]
-  (dom/div #js {:className "feature-item column"}
-    (div
-      (->> (css/grid-row)
-           (css/add-class :align-middle))
-      (div (->> (css/grid-column)
-                (css/grid-column-size {:small 2 :medium 12}))
-           icon)
-      (div (css/grid-column)
-           (dom/strong #js {:className "feature-title"} title)
-           (dom/p nil text)))))
-
 (defn banner [{:keys [color align] :as opts} primary secondary]
   (let [align (or align :left)
         color (or color :default)]
@@ -52,23 +40,26 @@
      :classes [:full :category-photo]}
     (photo/photo {:photo-id photo-id}
                  (photo/overlay
-               nil(my-dom/div
-                          (->> (css/text-align :center))
-                          (dom/span nil title))))))
+                   nil (my-dom/div
+                         (->> (css/text-align :center))
+                         (dom/span nil title))))))
 
 (defui Index
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     :query/locations
      {:query/featured-items [:db/id
                              :store.item/name
                              :store.item/price
+                             :store.item/created-at
                              {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                   :store.item.photo/index]}
                              {:store/_items [{:store/profile [:store.profile/name]}]}]}
      {:query/featured-stores [:db/id
                               {:store/profile [:store.profile/name
                                                {:store.profile/photo [:photo/path :photo/id]}]}
+                              :store/created-at
                               :store/featured
                               :store/featured-img-src
                               {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
@@ -81,87 +72,60 @@
                           {:store/owners [{:store.owner/user [:db/id]}]}]}])
   Object
   (render [this]
-    (let [{:keys [proxy/navbar query/featured-items query/featured-streams]
-           :query/keys [owned-store]} (om/props this)]
+    (let [{:keys       [proxy/navbar query/featured-items query/featured-streams]
+           :query/keys [owned-store locations featured-stores]} (om/props this)]
+      (debug "Items: " featured-items)
+      (debug "Items: " featured-stores)
 
       (dom/div #js {:id "sulo-index" :className "sulo-page"}
         (common/page-container
           {:navbar navbar}
           (dom/div #js {:id "sulo-index-container" :onScroll #(debug "Did scroll page: " %)}
 
-            (photo/header
-              (css/add-class :center {:photo-id "static/home-header-bg"
-                                      :transformation :transformation/full})
-              (div
-                (->> (css/grid-row)
-                     (css/add-class :intro-header)
-                     (css/add-class :align-middle))
-
-                (div
-                  (->>
-                    (css/grid-column)
-                    (css/add-class :header-content)
-                    (css/text-align :center)
-                    (css/grid-column-offset {:large 5 :medium 2}))
-                  (div
-                    (css/text-align :left)
-                    (dom/h1 #js {:id "header-content" :className "show-for-sr"} "SULO")
-                    ;(dom/h1 nil "LO" (dom/small nil "CAL"))
-                    (dom/h2 #js {:className "header"} "Your local marketplace online")
-                    (dom/p nil (dom/strong nil (dom/i #js {:className "fa fa-map-marker fa-fw"}) "Vancouver, BC")))
-
-                  (div (->> (css/grid-row)
-                            (css/add-class :search-container))
-                       (div (->> (css/grid-column)
-                                 (css/grid-column-size {:small 12 :medium 8}))
-                            (search-bar/->SearchBar {:ref             (str ::search-bar-ref)
-                                                     :placeholder     "What are you looking for?"
-                                                     :mixpanel-source "index"
-                                                     :classes         [:drop-shadow]}))
-                       (div (->> (css/grid-column)
-                                 (css/grid-column-size {:small 4 :medium 3})
-                                 (css/text-align :left))
-                            (button/button
-                              (->> (button/expanded {:onClick (fn []
-                                                                (let [search-bar (om/react-ref this (str ::search-bar-ref))]
-                                                                  (when (nil? search-bar)
-                                                                    (error "NO SEARCH BAR :( " this))
-                                                                  (search-bar/trigger-search! search-bar)))})
-                                   (css/add-classes [:search :drop-shadow]))
-                              (dom/span nil "Search")))))))
-
-            (dom/div #js {:className "top-features"}
-              (dom/div #js {:className " row small-up-1 medium-up-3"}
-                (top-feature
+            (my-dom/div
+              (css/add-class :intro-header)
+              (grid/row
+                (css/align :middle)
+                (grid/column
+                  (grid/column-size {:small 12 :medium 6})
+                  (my-dom/h1
+                    (css/add-class :header)
+                    (dom/i #js {:className "fa fa-map-marker"})
+                    (dom/span nil locations)))
+                (grid/column
                   nil
-                  (icons/shopping-bag)
-                  "Shop and Discover"
-                  "Get lost in a marketplace filled with your local gems.")
-                (top-feature
-                  nil
-                  (icons/video-camera)
-                  "Watch, chat and follow"
-                  "Hang out with your favourite local brands on SULO LIVE.")
-                (top-feature
-                  nil
-                  (icons/heart)
-                  "Join the Community"
-                  "Sign up to follow others and share your faves.")))
+                  (my-dom/div
+                    (css/add-class :input-container)
+                    (search-bar/->SearchBar {:ref             (str ::search-bar-ref)
+                                             :placeholder     "What are you looking for?"
+                                             :mixpanel-source "index"
+                                             :classes         [:drop-shadow]})
+                    (button/button
+                      (->> (button/expanded {:onClick (fn []
+                                                        (let [search-bar (om/react-ref this (str ::search-bar-ref))]
+                                                          (when (nil? search-bar)
+                                                            (error "NO SEARCH BAR :( " this))
+                                                          (search-bar/trigger-search! search-bar)))})
+                           (css/add-classes [:drop-shadow]))
+                      (dom/span nil "Search"))))))
 
 
             (common/content-section {:href  (routes/url :live)
                                      :class "online-channels"}
                                     "Stores streaming right now"
                                     (grid/row
-                                      (css/add-class :collapse)
-                                      (grid/column
-                                        (css/add-class :online-streams)
-                                        (map (fn [c]
-                                               (my-dom/div
-                                                 (css/add-class :online-stream)
-                                                 (common/online-channel-element c)))
-                                             featured-streams)))
-                                    "See More")
+                                      (->>
+                                        (grid/columns-in-row {:small 2 :medium 4}))
+                                      ;(grid/column
+                                      ;  (css/add-class :online-streams))
+                                      (map (fn [c]
+                                             (grid/column
+                                               (css/add-class :online-stream)
+                                               (common/online-channel-element c)))
+                                           (if (<= 8 (count featured-streams))
+                                             (take 8 featured-streams)
+                                             (take 4 featured-streams))))
+                                    "More streams")
 
             (common/content-section {:class "collections"}
                                     "Shop by collection"
@@ -183,9 +147,9 @@
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
-                                             (collection-element {:href      (routes/url :browse/gender {:sub-category "men"})
-                                                                  :photo-id  "static/men"
-                                                                  :title     "Men"}))
+                                             (collection-element {:href     (routes/url :browse/gender {:sub-category "men"})
+                                                                  :photo-id "static/men"
+                                                                  :title    "Men"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
@@ -202,37 +166,50 @@
 
             (common/content-section {:href  (routes/url :browse/all-items)
                                      :class "new-arrivals"}
-                                    "New arrivals"
+                                    "New products"
                                     (grid/row
-                                      (css/add-class :collapse)
-                                      (grid/column
-                                        (css/add-class :new-arrivals-container)
-                                        (map
-                                          (fn [p]
-                                            (my-dom/div
-                                              (css/add-class :new-arrival-item)
-                                              (pi/product-element {:open-url? true} p)))
-                                          (take 4 featured-items))))
-                                    "See More")
-            ;(when-not (some? auth))
+                                      (->> (css/add-class :collapse)
+                                           (grid/columns-in-row {:small 2 :medium 4 :large 5}))
+                                      (map
+                                        (fn [p]
+                                          (grid/column
+                                            (css/add-class :new-arrival-item)
+                                            (pi/product-element {:open-url? true} p)))
+                                        (take 5 featured-items)))
+                                    "See more products")
 
-            (banner {:color :default}
-                    (dom/div nil
-                      (dom/h2 nil "Watch, shop and chat with your favorite vendors and artisans.")
-                      (dom/p nil "Follow and stay up-to-date on when they're online to meet you!")
-                      (button/button nil (dom/span nil "Join"))
-                      )
-                    (icons/heart-drawing))
+            (common/content-section
+              {:href  (routes/url :live)
+               :class "new-brands"}
+              "New stores"
+              ;(grid/row-column
+              ;  (css/text-align :center))
+              ;(dom/div
+              ;  (css/add-class :section-title)
+              ;  (dom/h2 nil "New brands"))
+              (my-dom/div
+                {:classes ["sulo-items-container"]}
+                (grid/row
+                  (grid/columns-in-row {:small 2 :medium 4})
+                  (map (fn [store]
+                         (let [store-name (get-in store [:store/profile :store.profile/name])]
+                           (grid/column
+                             nil
+                             (my-dom/div
+                               (->> (css/add-class :content-item)
+                                    (css/add-class :stream-item))
+                               (my-dom/a
+                                 {:href (routes/url :store {:store-id (:db/id store)})}
+                                 (photo/store-photo store {:transformation :transformation/thumbnail-large}))
+                               (my-dom/div
+                                 (->> (css/add-class :text)
+                                      (css/add-class :header))
+                                 (my-dom/a {:href (routes/url :store {:store-id (:db/id store)})}
+                                           (my-dom/strong nil store-name)))))))
+                       featured-stores)))
+              "See more stores")
 
-            (banner {:color :white
-                     :align :right}
-                    (dom/div nil
-                      (dom/h2 nil "Open your own store on SULO and tell your story to Vancouver.")
-                      (dom/p nil "Enjoy a community that lives for local.")
-                      (button/button
-                        (button/hollow {:href (routes/url :sell)})
-                        (dom/span nil "Start a store")))
-                    nil)))))))
+            (common/sell-on-sulo this)))))))
 
 
 (def ->Index (om/factory Index))

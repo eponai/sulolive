@@ -61,6 +61,10 @@ p a {
 }
 @include label-hollow;
 
+a.disabled {
+	pointer-events: none !important;
+}
+
 .switch-container {
 	display: flex;
 	.switch {
@@ -191,8 +195,8 @@ h1 {
 }
 
 h3 {
-	text-transform: uppercase;
-	margin-top: 4%;
+	// text-transform: uppercase;
+	// margin-top: 4%;
 }
 
 .button {
@@ -276,7 +280,7 @@ a {
 		color: $black;
 	}
 	.social {
-		border-left: 1px solid $black;
+		// border-left: 1px solid $black;
 		ul.menu:not(.vertical) {
 			li a {
 				color: $black;
