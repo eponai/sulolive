@@ -46,6 +46,11 @@
                   [:db/add [:ui/singleton :ui.singleton/auth] :ui.singleton.auth/user (:db/id val)]])
     db))
 
+(defn merge-locations [db key val]
+  (if (not-empty val)
+    (transact db [[:db/add [:ui/singleton :ui.singleton/auth] :ui.singleton.auth/locations val]])
+    db))
+
 ;;;;;;; API
 
 (defn merge-mutation [merge-fn db history-id key val]
@@ -90,6 +95,9 @@
 
       (= :query/auth key)
       (merge-auth db key val)
+
+      (= :query/locations key)
+      (merge-locations db key val)
 
 
       :else

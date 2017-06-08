@@ -276,6 +276,12 @@
                  (take 4)
                  (feature-all db-history :store)))})
 
+(defread query/locations
+  [{:keys [db db-history query locations]} _ _]
+  {:auth ::auth/public}
+  {:value locations})
+
+
 (defread query/stream-config
   [{:keys [db db-history query system]} k _]
   {:auth ::auth/public}

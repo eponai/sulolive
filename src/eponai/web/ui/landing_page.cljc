@@ -21,7 +21,8 @@
     (grid/row
       (css/add-class :align-middle)
       (grid/column
-        (grid/column-size {:small 2 :medium 12})
+        (->> (grid/column-size {:small 2 :medium 12})
+             (css/text-align :center))
         icon)
       (grid/column
         nil
@@ -39,7 +40,7 @@
   (select-locality [this locality]
     #?(:cljs
        (do
-         (set! (.-cookie js/document) (str "locality=" locality))
+         (set! (.-cookie js/document) (str "sulo.locality=" locality))
          (let [cookie-string (js/decodeURIComponent (.-cookie js/document))]
            (debug "Got cookie: " cookie-string)))))
   (render [this]
@@ -124,13 +125,6 @@
                               :placeholder "Your email"})
                   (button/button nil "Submit")))))
 
-          (dom/div
-            (css/add-class :section-title)
-            (dom/h2 nil "Sell on SULO"))
-          (dom/p (css/add-class :sell-on-sulo)
-                 (dom/span nil "Are you selling products locally? Start a store to tell your story and interact LIVE with your customers. "))
-          (button/button
-            (button/hollow {:classes ["sulo"]})
-            (dom/span nil "Contact us")))))))
+          (common/sell-on-sulo this))))))
 
 (router/register-component :landing-page LandingPage)

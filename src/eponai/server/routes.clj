@@ -69,7 +69,7 @@
 ;----------API Routes
 
 (defn handle-parser-request
-  [{:keys [body] ::m/keys [conn parser system] :as request} read-basis-t-graph]
+  [{:keys [body cookies] ::m/keys [conn parser system] :as request} read-basis-t-graph]
   (debug "Handling parser request with query:" (:query body))
   (parser
     {::parser/read-basis-t-graph  (some-> read-basis-t-graph (atom))
@@ -78,7 +78,8 @@
      :state                       conn
      :auth                        (:identity request)
      :params                      (:params request)
-     :system                      system}
+     :system                      system
+     :locations                   (get-in cookies ["sulo.locality" :value])}
     (:query body)))
 
 (defn trace-parser-response-handlers
@@ -136,7 +137,7 @@
   member-routes
   ;; Hooks in bidi routes with compojure.
   ;; TODO: Cache the handlers for each route.
-  (GET "*" request (if (nil? (get-in request [:cookies "locality" :value]))
+  (GET "*" request (if (nil? (get-in request [:cookies "sulo.locality" :value]))
                      (r/redirect (routes/path :landing-page))
                      (bidi.ring/make-handler common.routes/routes bidi-route-handler))))
 

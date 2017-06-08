@@ -209,49 +209,7 @@
                        featured-stores)))
               "See more stores")
 
-            (common/content-section
-              {:href    (routes/url :coming-soon/sell)
-               :classes ["test"]}
-              "Sell on SULO"
-              (grid/row-column
-                (css/text-align :center)
-                (dom/p (css/add-class :sell-on-sulo)
-                       (dom/span nil "Are you selling products locally? Start a store to tell your story and interact LIVE with your customers. ")))
-
-              "Contact us")
-
-            ;(grid/row-column
-            ;  (css/text-align :center)
-            ;  (dom/div
-            ;    (css/add-class :section-title)
-            ;    (dom/h2 nil "Sell on SULO"))
-            ;  (dom/p (css/add-class :sell-on-sulo)
-            ;         (dom/span nil "Are you selling products locally? Tell your story and interact LIVE with your customers. ")
-            ;         (dom/br nil)
-            ;         (dom/span nil "Contact us at ")
-            ;         (dom/a nil "hello@sulo.live")
-            ;         (dom/span nil " to start a store. We'd love to hear from you!")))
-
-            ;(when-not (some? auth))
-
-            ;(banner {:color :default}
-            ;        (dom/div nil
-            ;          (dom/h2 nil "Watch, shop and chat with your favorite vendors and artisans.")
-            ;          (dom/p nil "Follow and stay up-to-date on when they're online to meet you!")
-            ;          (button/button nil (dom/span nil "Join"))
-            ;          )
-            ;        (icons/heart-drawing))
-
-            ;(banner {:color :white
-            ;         :align :right}
-            ;        (dom/div nil
-            ;          (dom/h2 nil "Open your own store on SULO and tell your story to Vancouver.")
-            ;          (dom/p nil "Enjoy a community that lives for local.")
-            ;          (button/button
-            ;            (button/hollow {:href (routes/url :sell)})
-            ;            (dom/span nil "Start a store")))
-            ;        nil)
-            ))))))
+            (common/sell-on-sulo this)))))))
 
 
 (def ->Index (om/factory Index))

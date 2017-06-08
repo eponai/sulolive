@@ -53,7 +53,7 @@
                              (map (fn [remote]
                                     [remote (parse reconciler root-query remote)]))
                              (reconciler-remotes reconciler))]
-    (debug "Root-query: " root-query "Remote-queries: " remote-queries)
+    ;(debug "Root-query: " root-query "Remote-queries: " remote-queries)
     (send-fn remote-queries
              (fn send-cb
                [res & [query]]

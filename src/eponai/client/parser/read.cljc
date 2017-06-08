@@ -337,15 +337,20 @@
 
 (defmethod client-read :query/locations
   [{:keys [target db query]} _ _]
+  (if target
+    {:remote true}
+    {:value (-> (db/lookup-entity db [:ui/singleton :ui.singleton/auth])
+                :ui.singleton.auth/locations)})
   ;(debug "Read query/auth: ")
 
-  #?(:cljs
-     {:value (let [cookie-string (js/decodeURIComponent (.-cookie js/document))
-                   key-vals (string/split cookie-string #";")
-                   locality-str (some #(when (string/starts-with? (string/trim %) "locality=") %) key-vals)
-                   locality (when locality-str
-                              (second (string/split locality-str #"=")))]
-               locality)}))
+  ;#?(:cljs
+  ;   {:value (let [cookie-string (js/decodeURIComponent (.-cookie js/document))
+  ;                 key-vals (string/split cookie-string #";")
+  ;                 locality-str (some #(when (string/starts-with? (string/trim %) "locality=") %) key-vals)
+  ;                 locality (when locality-str
+  ;                            (second (string/split locality-str #"=")))]
+  ;             locality)})
+  )
 
 (defmethod client-read :query/stream
   [{:keys [db query target ast route-params] :as env} _ _]

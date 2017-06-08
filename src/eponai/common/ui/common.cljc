@@ -82,7 +82,8 @@
 (defn content-section [{:keys [href class sizes]} header content footer]
   (dom/div
     (->> {:classes [class]}
-         (css/add-class :section))
+         (css/add-class :section)
+         (css/text-align :center))
     (dom/div
       (->> (css/add-class :section-title)
            (css/text-align :center))
@@ -179,6 +180,23 @@
           content))
       (when-not no-footer?
         (page-footer footer)))))
+
+(defn sell-on-sulo [component]
+  ;(content-section
+  ;  {:href    (routes/url :coming-soon/sell)}
+  ;  "Sell on SULO"
+  ;  (grid/row-column
+  ;    (css/text-align :center)
+  ;    (dom/p (css/add-class :sell-on-sulo)
+  ;           (dom/span nil "Are you selling products locally? Start a store to tell your story and interact LIVE with your customers. ")))
+  ;
+  ;  "Contact us")
+  (content-section
+    nil
+    "Sell on SULO"
+    (dom/p (css/add-class :sell-on-sulo)
+           (dom/span nil "Are you selling products locally? Start a store to tell your story and interact LIVE with your customers. "))
+    "Contact us"))
 
 
 (defn is-new-order? [component]

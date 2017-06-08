@@ -151,7 +151,7 @@
      ;      (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))))
      ]))
 
-(defn coming-soon-navbar [component]
+(defn landing-page-navbar [component]
   (let [{:keys [right-menu on-live-click]} (om/get-computed component)]
     (navbar-content
       nil
@@ -301,7 +301,7 @@
         (dom/span nil title)))))
 
 (defn standard-navbar [component]
-  (let [{:query/keys [cart loading-bar current-route]} (om/props component)]
+  (let [{:query/keys [cart loading-bar current-route locations]} (om/props component)]
     (navbar-content
       nil
       (dom/div
@@ -313,7 +313,7 @@
             (dom/a
               (css/hide-for :large {:onClick #(.open-sidebar component)})
               (dom/i {:classes ["fa fa-bars fa-fw"]})))
-          (navbar-brand)
+          (navbar-brand (when (empty? locations) (routes/url :landing-page)))
           (live-link)
 
           (collection-links component false)
@@ -347,6 +347,7 @@
                                                           {:store.item/photos [:photo/path]}
                                                           :store.item/name
                                                           {:store/_items [{:store/profile [:store.profile/name]}]}]}]}]}
+     :query/locations
      {:query/auth [:db/id
                    :user/email
                    {:user/stripe [:stripe/id]}
@@ -493,8 +494,8 @@
                      (or (= route :store-dashboard) (= (name :store-dashboard) (namespace route))))
                 (manage-store-navbar this)
 
-                (or (= route :coming-soon) (= route :coming-soon/sell))
-                (coming-soon-navbar this)
+                ;(or (= route :coming-soon) (= route :coming-soon/sell))
+                ;(landing-page-navbar this)
 
                 (and (some? route) (= (namespace route) "help"))
                 (help-navbar this)
