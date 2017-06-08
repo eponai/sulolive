@@ -17,7 +17,12 @@
 (defui OrderList
   static om/IQuery
   (query [_]
-    [{:query/orders [:order/store :order/uuid :order/status {:order/items [:order.item/amount]} :order/amount]}
+    [{:query/orders [:order/store
+                     :order/uuid
+                     :order/status
+                     {:order/items [:order.item/amount :order.item/description]}
+                     :order/amount
+                     :order/created-at]}
      :query/current-route])
 
   static store-common/IDashboardNavbarContent

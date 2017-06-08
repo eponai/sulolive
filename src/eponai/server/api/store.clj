@@ -166,7 +166,7 @@
                             :order/shipping   shipping
                             :order/user       (:user-id auth)
                             :order/store      store-id
-                            :order/amount     total-amount
+                            :order/amount     (bigdec total-amount)
                             :order/created-at (date/current-millis)})
                   (update :order/items conj shipping-item sulo-fee-item))]
     (when (some? user-stripe)

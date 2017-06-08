@@ -53,18 +53,24 @@
 }
 
 #sulo-edit-order {
+	label {
+		text-align: left !important;
+	}
 	.shipping-address {
-		border: $global-border;
-		padding: 0.5rem;
+		// border: $global-border;
+		// padding: 0.5rem;
 		label {
 			text-align: left;
 		}
 	}
-	h2 {
-		small {
-			font-family: $header-font-family-sans-serif;
-		}
+	h3 {
+		color: $body-font-color;
 	}
+	// h2 {
+		// small {
+		// 	font-family: $header-font-family-sans-serif;
+		// }
+	// }
 	.callout > .row:first-child {
 		margin-bottom: 1rem;
 	}
@@ -94,49 +100,78 @@
 		}
 	}
 
-	.sl-OrderItemlist-row {
-		p {
-			margin-bottom: 0;
-		}
-		border: none;
-		.sl-OrderItemlist-cell--price {
-			font-weight: $global-weight-bold;
-		}
-		&.sl-OrderItemlist-row--shipping, 
-		&.sl-OrderItemlist-row--tax {
-			font-size: 85%;
-			border: none;
-		}
-		&.sl-OrderItemlist-row--shipping {
-			// border-top: $global-border-secondary;
-		}
-	}
-	.tfoot {
-		.sl-OrderItemlist-row {
-			border-bottom: $global-border;
-		}
-		.sl-OrderItemlist-row--fee {
-			font-weight: $global-weight-normal;
-			background: $white;
-			.td {
-				font-weight: inherit;
+	.section-list {
+		li {
+			padding: 0.5rem 0;
+			.order-item-info {
+				display: flex;
+				align-items: flex-start;
 			}
-			.dropdown-trigger {
-				display: inline-block;
-				&:hover, &:focus {
-					.dropdown-pane {
-						display: block;
-					}
-				}
+			.photo-container {
+				// flex: 0;
+				max-width: 3rem;
+				min-width: 3rem;
+				width: 3rem;
 			}
-			.dropdown-pane {
-				p {
-					display: flex;
-					justify-content: space-between;
-					margin-bottom: 0.2rem;
-				}
-				max-width: 90%;
+		}
+		li.secondary-items {
+			font-size: 80%;
+			padding: 0.5rem;
+			p {
+				margin: 0;
 			}
 		}
 	}
+
+	.total-price {
+		font-size: 120%;
+	}
+	.action-buttons {
+		
+	}
+	// .sl-OrderItemlist-row {
+	// 	p {
+	// 		margin-bottom: 0;
+	// 	}
+	// 	border: none;
+	// 	.sl-OrderItemlist-cell--price {
+	// 		font-weight: $global-weight-bold;
+	// 	}
+	// 	&.sl-OrderItemlist-row--shipping, 
+	// 	&.sl-OrderItemlist-row--tax {
+	// 		font-size: 85%;
+	// 		border: none;
+	// 	}
+	// 	&.sl-OrderItemlist-row--shipping {
+	// 		// border-top: $global-border-secondary;
+	// 	}
+	// }
+	// .tfoot {
+	// 	.sl-OrderItemlist-row {
+	// 		border-bottom: $global-border;
+	// 	}
+	// 	.sl-OrderItemlist-row--fee {
+	// 		font-weight: $global-weight-normal;
+	// 		background: $white;
+	// 		.td {
+	// 			font-weight: inherit;
+	// 		}
+	// 		.dropdown-trigger {
+	// 			display: inline-block;
+	// 			&:hover, &:focus {
+	// 				.dropdown-pane {
+	// 					display: block;
+	// 				}
+	// 			}
+	// 		}
+	// 		.dropdown-pane {
+	// 			p {
+	// 				display: flex;
+	// 				justify-content: space-between;
+	// 				margin-bottom: 0.2rem;
+	// 			}
+	// 			max-width: 90%;
+	// 		}
+	// 	}
+	// }
 }
