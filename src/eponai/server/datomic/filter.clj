@@ -191,6 +191,7 @@
      :order.item/amount              order-item-owner
      :order.item/description         order-item-owner
      :order.item/title               order-item-owner
+     :order.item/photo               order-item-owner
      :charge/id                      order-charge-owner
      ;; TODO Implement real filter-fn
      :shipping/rules                 public-attr

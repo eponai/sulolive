@@ -83,9 +83,10 @@
     content))
 
 (defn edit-order [component]
-  (let [{:keys [query/order]} (om/props component)
+  (let [{:query/keys [order current-route]} (om/props component)
         {:keys [dropdown]} (om/get-state component)
         {:order/keys [id amount currency items store]} order
+        {store-name :store.profile/name} (:store/profile store)
 
         skus (filter #(= :order.item.type/sku (:order.item/type %)) items)
         tax (some #(when (= :tax (:order.item/type %)) %) items)
@@ -106,33 +107,31 @@
       (order-status-modal component)
 
 
+      (grid/row-column
+        (css/add-class :go-back)
+        (dom/a
+          {:href (routes/url :store-dashboard/order-list (:route-params current-route))}
+          (dom/span nil "Back to order list")))
       (dom/div
         (css/add-class :section-title)
-        (dom/h2 nil
+        (dom/h1 nil
                 (dom/span nil "Order ")
                 (dom/small nil (str "#" (:db/id order)))))
       (callout/callout
         nil
-        (grid/row
+        (grid/row-column
           nil
-          (grid/column
-            nil
-            (dom/h3 nil (str "Order placed by " order-email))
-            (dom/a (css/button-hollow) (dom/i {:classes ["fa fa-envelope-o"]}) (dom/span nil "Contact shopper"))
-            (dom/label nil "Created")
-            (dom/p nil order-created))
-          (grid/column
-            nil
-            (dom/div
-              (css/add-classes [:order-status (name order-status)])
-              (cond (#{:order.status/paid} order-status)
-                    "New"
-                    (#{:order.status/fulfilled} order-status)
-                    "Shipped"
-                    (#{:order.status/returned} order-status)
-                    "Returned"
-                    (#{:order.status/canceled} order-status)
-                    "Canceled"))))
+          (dom/h2 nil
+                  (common/order-status-element order)
+                  (dom/span nil (:shipping/name (:order/shipping order))))
+          ;(dom/p nil (dom/span nil order-email))
+          (dom/a
+            (->> (css/button-hollow {:href (str "mailto:" order-email "?subject=SULO Live order #" (:db/id order) " from " store-name)})
+                 (css/add-class :small))
+            (dom/i {:classes ["fa fa-envelope-o"]})
+            (dom/span nil "Contact shopper"))
+          (dom/label nil "Created")
+          (dom/p nil order-created))
         (let [shipping (:order/shipping order)
               address (:shipping/address shipping)]
           (grid/row
@@ -160,7 +159,14 @@
                                    (:shipping.address/region address)
                                    ))
                        (dom/br nil)
-                       (dom/span nil (:shipping.address/country address)))))
+                       (dom/span nil (:shipping.address/country address))))
+              (dom/label nil "Shipping option")
+              (dom/p nil (dom/span nil (:order.item/title delivery))
+                     (dom/br nil)
+                     (dom/small
+                       nil
+                       (dom/strong nil "Note to customer: ")
+                       (dom/span nil (:order.item/description delivery)))))
             (grid/column
               nil
               (dom/div
@@ -191,7 +197,7 @@
         nil
         (grid/row-column
           nil
-          (dom/h3 nil "Products")
+          (dom/h2 nil "Products")
           (menu/vertical
             (css/add-class :section-list)
             (map (fn [oi]
@@ -204,7 +210,7 @@
                          (grid/column
                            (->> (grid/column-size {:small 4 :medium 6})
                                 (css/add-class :order-item-info))
-                           (photo/square {:photo-id       (get-in oi [:order.item/photo :photo/id])
+                           (photo/product-photo {:photo-id       (get-in oi [:order.item/photo :photo/id])
                                           :transformation :transformation/thumbnail})
                            (dom/p nil (dom/span nil (:db/id product))
                                   (dom/br nil)
@@ -223,6 +229,16 @@
 
             (menu/item
               (css/add-class :secondary-items)
+              (grid/row
+                nil
+                (grid/column (grid/column-size {:small 4 :medium 6}))
+                (grid/column
+                  (grid/column-size {:small 4 :medium 3})
+                  (dom/p nil "Subtotal"))
+                (grid/column
+                  (->> (grid/column-size {:small 4 :medium 3})
+                       (css/text-align :right))
+                  (dom/p nil (ui-utils/two-decimal-price (apply + (map :order.item/amount (filter #(= (:order.item/type %) :order.item.type/sku) items)))))))
               (grid/row
                 nil
                 (grid/column (grid/column-size {:small 4 :medium 6})
@@ -263,6 +279,12 @@
               (->> (grid/column-size {:small 4 :medium 3})
                    (css/text-align :right))
               (dom/strong nil (ui-utils/two-decimal-price (- (:order/amount order) (:order.item/amount sulo-fee))))))))
+
+      (grid/row-column
+        (css/add-class :go-back)
+        (dom/a
+          {:href (routes/url :store-dashboard/order-list (:route-params current-route))}
+          (dom/span nil "Back to order list")))
 
       ;(grid/row
       ;  (css/align :bottom)

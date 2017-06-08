@@ -253,6 +253,7 @@ $show-header-for-stacked: false !default;
 	}
 	.tr {
 		display: table-row;
+    transition: background .25s ease-in-out;
 	}
 	.td, .th {
 		display: table-cell;

@@ -161,7 +161,7 @@
       (common/page-container
         {:navbar navbar
          :id     "sulo-store-dashboard"}
-        (sub-navbar this)
+        ;(sub-navbar this)
 
         (let [{:keys [component computed-fn factory]} (get route-map (parse-route route))
               factory (or factory (om/factory component))

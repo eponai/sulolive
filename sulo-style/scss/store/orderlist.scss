@@ -1,0 +1,114 @@
+
+
+#sl-order-list {
+	.callout.submenu {
+		padding: 1rem 0;
+		li {
+			font-size: 90%;
+			a {
+				color: $medium-gray;
+				transition: color .25s ease-in-out;
+				font-weight: $global-weight-bold;
+			}
+			&.is-active, &:hover {
+				a {
+					color: $body-font-color;
+				}
+			}
+			&.search-input {
+				padding: 0 1rem;
+				flex: 1;
+			}
+		}
+	}
+	.menu.sl-orderlist {
+		li {
+			transition: background .25s ease-in-out;
+			a {
+				padding: 0;
+				display: block;
+				.row {
+					width: 100%;
+					&:first-child {
+						margin-bottom: 0.5rem;
+					}
+					p {
+						margin-bottom: 0;
+					}
+				}
+				flex: 1;
+				width: 100%;
+				color: $body-font-color;
+				i {
+					margin-left: 0.5rem;
+					color: $medium-gray;
+				}
+			}
+			&:hover {
+				background: rgba($light-gray, 0.2);
+			}
+		}
+	}
+	.table, .tbody, .thead {
+		border: none;
+	}
+	.tr {
+		border-right: none;
+		border-left: none;
+	}
+
+	.sl-orderlist {
+		.th {
+			font-size: 80%;
+			color: $dark-gray;
+			&.text-right {
+				text-align: right;
+			}
+		}
+	// $action-color: map-get($foundation-palette, action);
+		.sl-orderlist-row {
+			.sl-orderlist-cell--id {
+				font-size: 90%;
+				width: 12rem;
+			}
+			.sl-orderlist-cell--date {
+				font-size: 90%;
+				width: 10rem;
+				letter-spacing: 1px;
+				// font-family: $header-font-family-sans-serif;
+				// color: $action-color;
+				// font-weight: $global-weight-bold;
+			}
+			.sl-orderlist-cell--price, 
+			.sl-orderlist-cell--status {
+				text-align: right;
+			}
+			.sl-orderlist-cell--name {
+				font-weight: $global-weight-bold;
+				width: 30%;
+			}
+			.sl-orderlist-cell--status {
+
+			}
+			&.sl-orderlist-row--returned, 
+			&.sl-orderlist-row--canceled {
+				color: $dark-gray;
+				.sl-orderlist-cell--price,
+				.sl-orderlist-cell--icon {
+					color: inherit;
+				}
+			}
+			&:hover {
+				color: darken($primary-color, 10%);
+				.sl-orderlist-cell--price,
+				.sl-orderlist-cell--icon {
+					// color: inherit;
+				}
+				.sl-orderstatus {
+					// color: inherit;
+					// border-color: darken($primary-color, 10%);;
+				}
+			}
+		}
+	}
+}

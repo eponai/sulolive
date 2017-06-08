@@ -11,6 +11,9 @@
 			text-align: right;
 		}
 	}
+	.callout {
+		border: none;
+	}
 	.footer {
 		display: none;
 	}
@@ -138,9 +141,9 @@
 	}
 
 	.page-content {
-		padding-top: 5rem;
+		// padding-top: 5rem;
 		@include breakpoint(large) {
-			padding-top: 5rem;
+			// padding-top: 5rem;
 		}
 		.wip-label {
 			margin-top: -2.5rem;
