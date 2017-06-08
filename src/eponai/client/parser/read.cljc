@@ -175,6 +175,11 @@
     (let [user-id (client.auth/current-auth db)
           [_ cart] (client.cart/find-user-cart db user-id)]
       {:value (db/pull db query cart)})))
+
+(defmethod client-read :query/skus
+  [{:keys [target]}]
+  (when target
+    {:remote true}))
 ;(common.read/compute-cart-price cart)
 
 (defmethod client-read :query/checkout

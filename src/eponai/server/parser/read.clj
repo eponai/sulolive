@@ -207,6 +207,14 @@
   {:value (db/pull-one-with db query {:where   '[[?e :category/path ?p]]
                                       :symbols {'?p (or category (:category route-params))}})})
 
+(defread query/skus
+  [{:keys [db db-history query]} _ {:keys [sku-ids]}]
+  {:auth    ::auth/public
+   :uniq-by [[:sku-id sku-ids]]}
+  {:value (query/one db db-history query
+                     {:where   '[[_ :store.item/skus ?e]]
+                      :symbols {'[?e ...] sku-ids}})})
+
 (defread query/item
   [{:keys [db db-history query]} _ {:keys [product-id]}]
   {:auth    ::auth/public

@@ -71,16 +71,30 @@
         (error "Error when transacting route: " e)))))
 
 (defn init-user-cart! [reconciler]
-  (if (client.auth/current-auth (db/to-db reconciler))
-    (when-let [skus (seq (client.cart/get-skus reconciler))]
-      (debug "User is logged in and there's a cart."
-             " Remove cart and transact skus.")
-      ;; Clearing the cart first just in case something bad happens
-      ;; and we don't want to continously transact the items
-      (client.cart/remove-cart reconciler)
-      (om/transact! reconciler `[(shopping-bag/add-items ~{:skus (vec skus)})]))
-    (do (debug "User was not logged in. Restoring cart.")
-        (client.cart/restore-cart reconciler))))
+  (let [skus (client.cart/get-skus reconciler)]
+    (if (client.auth/current-auth (db/to-db reconciler))
+      (when (seq skus)
+        (debug "User is logged in and there's a cart."
+               " Remove cart and transact skus.")
+        ;; Clearing the cart first just in case something bad happens
+        ;; and we don't want to continously transact the items
+        (client.cart/remove-cart reconciler)
+        (binding [parser/*parser-allow-local-read* false]
+          (om/transact! reconciler `[(shopping-bag/add-items ~{:skus (vec skus)}) :query/cart])))
+      (do (debug "User was not logged in. Restoring cart.")
+          (client.cart/restore-cart reconciler)
+          (when (seq skus)
+            (debug "Transacting skus: " skus)
+            (binding [parser/*parser-allow-local-read* false]
+              (om/transact!
+                reconciler `[({:query/skus [{:store.item/_skus
+                                             [:store.item/price
+                                              {:store.item/photos [:photo/path]}
+                                              :store.item/name
+                                              {:store/_items
+                                               [{:store/profile
+                                                 [:store.profile/name]}]}]}]}
+                               ~{:sku-ids (vec skus)})])))))))
 
 (defn apply-once [f]
   (let [appliced? (atom false)]
@@ -167,8 +181,8 @@
       (async/<! initial-module-loaded-chan)
       (client.utils/init-state! reconciler send-fn (om/get-query router/Router))
       (async/<! initial-merge-chan)
-      (init-user-cart! reconciler)
       (debug "Adding reconciler to root.")
+      (init-user-cart! reconciler)
       (add-root! reconciler)
       ;; Pre fetch all routes so the scroll doesn't freak out as much.
       (run! #(modules/prefetch-route modules %) [:index :store :browse]))))
