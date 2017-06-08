@@ -31,8 +31,7 @@
 
 (defn transform [public-id & [transformation file-ext]]
   (let [ext (or file-ext "jpg")
-        t (when-not (= transformation :transformation/preview)
-            (transformation-param transformation))
+        t (transformation-param transformation)
         url (string/join "/" (into [] (remove nil? [storage-host "image/upload" t (str public-id "." ext)])))]
     url))
 

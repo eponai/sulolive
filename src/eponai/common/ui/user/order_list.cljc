@@ -97,6 +97,9 @@
                      :order/status
                      :order/amount
                      {:order/items [:order.item/type
+                                    :order.item/amount
+                                    :order.item/description
+                                    :order.item/title
                                     {:order.item/parent [:store.item.sku/variation
                                                          {:store.item/_skus [:store.item/name
                                                                              :store.item/price
@@ -166,12 +169,12 @@
                                            (dom/div
                                              (css/add-class :info-photo)
                                              (photo/product-preview product {:transformation :transformation/thumbnail}))
-                                           (dom/p nil (dom/small nil (:store.item/name product))
+                                           (dom/p nil (dom/small nil (:order.item/title oi))
                                                   (dom/br nil)
-                                                  (dom/small nil (:store.item.sku/variation sku))))
+                                                  (dom/small nil (:order.item/description oi))))
                                          (dom/div
                                            (css/add-classes [:shrink :sl-order-items-list-item--price])
-                                           (dom/small nil (ui-utils/two-decimal-price (:store.item/price product))))
+                                           (dom/small nil (ui-utils/two-decimal-price (:order.item/amount oi))))
                                          )))
                                    (filter #(= (:order.item/type %) :order.item.type/sku) (:order/items o))))
 

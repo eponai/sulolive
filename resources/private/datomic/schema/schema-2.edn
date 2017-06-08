@@ -112,4 +112,27 @@
   :db/cardinality        :db.cardinality/one
   :db/doc                "Timestamp of when the order was created."
   :db.install/_attribute :db.part/db}
+
+
+ ;; Order item
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :order.item/title
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Order item title"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :order.item/description
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Order item description"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :order.item/photo
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Order item photo, if any"
+  :db.install/_attribute :db.part/db}
  ]
