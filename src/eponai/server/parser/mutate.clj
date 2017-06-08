@@ -46,19 +46,21 @@
   (db/one-with (db/db state) {:where   '[[?e :user/email ?email]]
                               :symbols {'?email (:email auth)}}))
 
-(defmutation shopping-bag/add-item
-  [{:keys [state auth] :as env} _ {:keys [sku]}]
+(defmutation shopping-bag/add-items
+  [{:keys [state auth] :as env} _ {:keys [skus]}]
   {:auth ::auth/any-user
    :resp {:success "Item added to bag"
           :error   "Did not add that item, sorry"}}
   {:action (fn []
              (let [{:keys [user-id]} auth
                    cart (db/one-with (db/db state) {:where   '[[?u :user/cart ?e]]
-                                                    :symbols {'?u user-id}})]
+                                                    :symbols {'?u user-id}})
+                   sku-ids (into [] (map c/parse-long-safe) skus)]
                (if (some? cart)
-                 (db/transact-one state [:db/add cart :user.cart/items (c/parse-long sku)])
+                 (db/transact state (into [] (map #(vector :db/add cart :user.cart/items %))
+                                          sku-ids))
                  (let [new-cart {:db/id           (db/tempid :db.part/user)
-                                 :user.cart/items [(c/parse-long sku)]}]
+                                 :user.cart/items sku-ids}]
                    (db/transact state [new-cart
                                        [:db/add user-id :user/cart (:db/id new-cart)]])))))})
 

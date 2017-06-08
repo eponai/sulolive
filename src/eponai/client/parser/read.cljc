@@ -11,10 +11,10 @@
     [eponai.common.ui.router :as router]
     [eponai.common :as c]
     [taoensso.timbre :as timbre :refer [debug warn]]
-    [eponai.client.auth :as auth]
+    [eponai.client.auth :as client.auth]
     [eponai.common.api.products :as products]
     [medley.core :as medley]
-    [clojure.string :as string]))
+    [eponai.client.cart :as client.cart]))
 
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.
@@ -81,7 +81,7 @@
       {:value (if (some? store-id)
                 (db/pull-all-with db query {:where   '[[?e :order/store ?s]]
                                             :symbols {'?s store-id}})
-                (when-let [user-id (auth/current-auth db)]
+                (when-let [user-id (client.auth/current-auth db)]
                   (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
                                               :symbols {'?u user-id}})))})))
 
@@ -140,7 +140,7 @@
   [{:keys [ast target db query]} _ _]
   (if target
     {:remote true}
-    {:value (when-let [user-id (auth/current-auth db)]
+    {:value (when-let [user-id (client.auth/current-auth db)]
               (db/pull-one-with db query {:where   '[[?u :user/stripe ?e]]
                                           :symbols {'?u user-id}}))}))
 
@@ -172,7 +172,14 @@
   [{:keys [db query target ast]} _ _]
   (if target
     {:remote true}
-    {:value (db/pull-one-with db query {:where '[[?e :user.cart/items]]})}))
+    (let [user-id (client.auth/current-auth db)
+          [_ cart] (client.cart/find-user-cart db user-id)]
+      {:value (db/pull db query cart)})))
+
+(defmethod client-read :query/skus
+  [{:keys [target]}]
+  (when target
+    {:remote true}))
 ;(common.read/compute-cart-price cart)
 
 (defmethod client-read :query/checkout
@@ -205,7 +212,7 @@
   [{:keys [db target query]} _ _]
   (if target
     {:remote true}
-    (when-let [user-id (auth/current-auth db)]
+    (when-let [user-id (client.auth/current-auth db)]
       {:value (db/pull-one-with db query {:where   '[[?owners :store.owner/user ?user]
                                                      [?e :store/owners ?owners]]
                                           :symbols {'?user user-id}})})))
@@ -332,7 +339,7 @@
   (if target
     {:remote true}
     {:value (let [query (or query [:db/id])
-                  user (auth/current-auth db)]
+                  user (client.auth/current-auth db)]
               (db/pull db query user))}))
 
 (defmethod client-read :query/locations

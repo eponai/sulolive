@@ -103,6 +103,15 @@
       :else
       (transact db val))))
 
+;; Returns a seq of keys to dispatch re-reads from.
+;; Enables us to return different keys than the one queried.
+(defmulti multiply-key (fn [k] k))
+(defmethod multiply-key :default [_] [])
+
+;; If we query for :query/skus, we want to re-read :query/cart.
+(defmethod multiply-key :query/skus [_] [:query/cart])
+
+
 (defn merge-novelty-by-key
   "Merges server response for each [k v] in novelty. Returns the next db and the keys to re-read."
   [merge-fn db novelty history-id]
@@ -123,9 +132,11 @@
                   (update :keys conj :query/messages)))
           (-> m
               (assoc :next (merge-read merge-fn next key value))
-              (update :keys into (if (parser/is-special-key? key)
-                                   (map (fn [[k _]] k) value)
-                                   [key])))))
+              (update :keys into
+                      (mapcat (fn [k] (cons k (multiply-key k))))
+                      (if (parser/is-special-key? key)
+                        (map (fn [[k _]] k) value)
+                        [key])))))
       {:keys [] :next db}
       ordered-novelty)))
 
