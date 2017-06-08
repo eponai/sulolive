@@ -70,6 +70,14 @@
       (catch :default e
         (error "Error when transacting route: " e)))))
 
+(def skus-pattern [{:store.item/_skus
+                    [:store.item/price
+                     {:store.item/photos [:photo/path]}
+                     :store.item/name
+                     {:store/_items
+                      [{:store/profile
+                        [:store.profile/name]}]}]}])
+
 (defn init-user-cart! [reconciler]
   (let [skus (client.cart/get-skus reconciler)]
     (if (client.auth/current-auth (db/to-db reconciler))
@@ -80,21 +88,15 @@
         ;; and we don't want to continously transact the items
         (client.cart/remove-cart reconciler)
         (binding [parser/*parser-allow-local-read* false]
-          (om/transact! reconciler `[(shopping-bag/add-items ~{:skus (vec skus)}) :query/cart])))
+          (om/transact! reconciler `[(shopping-bag/add-items ~{:skus (vec skus)})
+                                     {:query/cart [{:user.cart/items ~skus-pattern}]}])))
       (do (debug "User was not logged in. Restoring cart.")
           (client.cart/restore-cart reconciler)
           (when (seq skus)
             (debug "Transacting skus: " skus)
             (binding [parser/*parser-allow-local-read* false]
               (om/transact!
-                reconciler `[({:query/skus [{:store.item/_skus
-                                             [:store.item/price
-                                              {:store.item/photos [:photo/path]}
-                                              :store.item/name
-                                              {:store/_items
-                                               [{:store/profile
-                                                 [:store.profile/name]}]}]}]}
-                               ~{:sku-ids (vec skus)})])))))))
+                reconciler `[({:query/skus ~skus-pattern} ~{:sku-ids (vec skus)})])))))))
 
 (defn apply-once [f]
   (let [appliced? (atom false)]
