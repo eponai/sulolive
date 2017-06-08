@@ -17,8 +17,8 @@
 ;; Local mutations should be defined in:
 ;;     eponai.<platform>.parser.mutate
 
-(defmethod client-mutate 'shopping-bag/add-item
-  [{:keys [target db state reconciler]} _ {:keys [sku]}]
+(defmethod client-mutate 'shopping-bag/add-items
+  [{:keys [target db state reconciler]} _ {:keys [skus]}]
   (let [user-id (client.auth/current-auth db)
         logged-in? (some? user-id)]
     (if target
@@ -26,11 +26,13 @@
         {:remote true})
       {:action (fn []
                  (let [[user-id cart] (client.cart/find-user-cart db user-id)
-                       sku-id (c/parse-long-safe sku)]
+                       sku-ids (into [] (map c/parse-long-safe) skus)]
                    (if (some? cart)
-                     (db/transact-one state [:db/add cart :user.cart/items sku-id])
+                     (db/transact state (into []
+                                              (map #(vector :db/add cart :user.cart/items %))
+                                              sku-ids))
                      (let [new-cart {:db/id           (db/tempid :db.part/user)
-                                     :user.cart/items [sku-id]}]
+                                     :user.cart/items sku-ids}]
                        (db/transact state [new-cart
                                            [:db/add (or user-id (db/tempid :db.part/user))
                                             :user/cart (:db/id new-cart)]])))

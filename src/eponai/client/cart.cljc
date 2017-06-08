@@ -25,12 +25,18 @@
   (local-storage/remove-item! (shared/by-key reconciler :shared/local-storage)
                               ::anonymous-cart))
 
+(defn- get-cart [reconciler]
+  (local-storage/get-item (shared/by-key reconciler :shared/local-storage)
+                          ::anonymous-cart))
+
+(defn get-skus [reconciler]
+  (into #{} (map :db/id) (:user.cart/items (get-cart reconciler))))
+
 (defn restore-cart [reconciler]
   (let [state (get-in reconciler [:config :state])
         _ (assert (db/connection? state) "Couldn't get state from reconciler")
         [user-id cart] (find-user-cart (db/db state) nil)
-        cart-items (local-storage/get-item (shared/by-key reconciler :shared/local-storage)
-                                           ::anonymous-cart)]
+        cart-items (get-cart reconciler)]
     (when (some? cart-items)
       (assert (map? cart-items)
               (str "cart items was not a map. Was: " cart-items))

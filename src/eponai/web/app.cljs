@@ -70,6 +70,18 @@
       (catch :default e
         (error "Error when transacting route: " e)))))
 
+(defn init-user-cart! [reconciler]
+  (if (client.auth/current-auth (db/to-db reconciler))
+    (when-let [skus (seq (client.cart/get-skus reconciler))]
+      (debug "User is logged in and there's a cart."
+             " Remove cart and transact skus.")
+      ;; Clearing the cart first just in case something bad happens
+      ;; and we don't want to continously transact the items
+      (client.cart/remove-cart reconciler)
+      (om/transact! reconciler `[(shopping-bag/add-items ~{:skus (vec skus)})]))
+    (do (debug "User was not logged in. Restoring cart.")
+        (client.cart/restore-cart reconciler))))
+
 (defn apply-once [f]
   (let [appliced? (atom false)]
     (fn [x]
@@ -155,9 +167,7 @@
       (async/<! initial-module-loaded-chan)
       (client.utils/init-state! reconciler send-fn (om/get-query router/Router))
       (async/<! initial-merge-chan)
-      (when (not (client.auth/current-auth (db/to-db reconciler)))
-        (debug "User was not logged in. Restoring cart.")
-        (client.cart/restore-cart reconciler))
+      (init-user-cart! reconciler)
       (debug "Adding reconciler to root.")
       (add-root! reconciler)
       ;; Pre fetch all routes so the scroll doesn't freak out as much.
