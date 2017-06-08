@@ -84,9 +84,9 @@
               nil
               (dom/a
                 (cond->> (css/add-class :city-anchor {:href    (routes/url :index)
-                                                      :onClick #(.select-locality this "Vancouver")})
+                                                      :onClick #(.select-locality this "Vancouver, BC")})
                          (nil? auth)
-                         (css/add-class :disabled))
+                         (css/add-class :inactive))
 
                 (photo/photo
                   {:photo-id       "s--U-6w3ubU--/v1496874165/static/gabriel-santiago-1595_pepu5p"
@@ -100,7 +100,7 @@
             (grid/column
               nil
               (dom/a
-                (css/add-classes [:city-anchor :disabled] {:onClick #(auth/show-lock (shared/by-key this :shared/auth-lock))})
+                (css/add-classes [:city-anchor :inactive] nil)
 
                 (photo/photo
                   {:photo-id       "s--1wUD_bGi--/v1496873909/static/alex-shutin-228917"
@@ -128,10 +128,9 @@
             (css/add-class :section-title)
             (dom/h2 nil "Sell on SULO"))
           (dom/p (css/add-class :sell-on-sulo)
-                 (dom/span nil "Are you selling products locally? Tell your story and interact LIVE with your customers. ")
-                 (dom/br nil )
-                 (dom/span nil "Contact us at ")
-                 (dom/a nil "hello@sulo.live")
-                 (dom/span nil " to start a store. We'd love to hear from you!")))))))
+                 (dom/span nil "Are you selling products locally? Start a store to tell your story and interact LIVE with your customers. "))
+          (button/button
+            (button/hollow {:classes ["sulo"]})
+            (dom/span nil "Contact us")))))))
 
 (router/register-component :landing-page LandingPage)

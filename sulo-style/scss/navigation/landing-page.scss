@@ -1,4 +1,7 @@
 #sulo-landing {
+	.page-content {
+		padding-bottom: 4rem;
+	}
 	#sulo-navbar {
 		.menu {
 			.shopping-bag, .search-input {
@@ -71,6 +74,7 @@
 				object-position: bottom center; 
 				transition: transform .25s ease-in-out;
 			}
+
 			.photo-container {
 				.photo {
 					padding-top: 50%;
@@ -82,14 +86,22 @@
 					$background: map-get($foundation-palette, search);
 					background: rgba($primary-color, 0.25);
 					transition: background .25s ease-in-out;
+					.content {
+						flex: 1;
+						display: flex;
+						flex-direction: column;
+						align-items: center;
+					}
 					
 					p {
 						transition: color .25s ease-in-out, text-shadow .25s ease-in-out;
 						position: absolute;
-						bottom: 0;
-						left: 0;
-						padding-left: 0.5rem;
-						margin: 0;
+						// bottom: 0;
+						// vertical-align: middle;
+						// left: 0;
+						margin-top: 2rem;
+						// padding-left: 0.5rem;
+						// margin: 0;
 						font-family: 'Montserrat', Helvetica, Arial, sans-serif
 						// color: $white;
 						// margin: 0 auto;
@@ -116,7 +128,7 @@
 				
 				}
 			}
-			&:hover {
+			&:hover, &.inactive {
 				color: $black;
 				.photo-container {
 					img {
@@ -129,6 +141,13 @@
 						}
 					}
 				}				
+			}
+			&.inactive {
+				cursor: default;
+				.photo-container .overlay {
+					background: rgba($white, 0.75);
+				}
+				color: rgba($black, 0.75);
 			}
 		}
 
@@ -210,7 +229,8 @@
 	}
 
 	.sell-on-sulo {
-		margin: 0;
+		margin-bottom: 1rem;
+		
 		// max-width: 40rem;
 		// marg
 	}

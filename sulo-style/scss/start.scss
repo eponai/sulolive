@@ -55,7 +55,7 @@ $section-footer-color: $primary-color;
 			}
 		// font-size: 2rem;
 			@include breakpoint(large) {
-				font-size: rem-calc(36);
+				font-size: rem-calc(32);
 			}
 		}
 		.icon {
@@ -74,6 +74,16 @@ $section-footer-color: $primary-color;
 		
 		.button {
 			font-weight: $global-weight-bold;
+		}
+		.input-container {
+			display: flex;
+			input {
+				margin: 0;
+			}
+			.button {
+				margin: 0;
+				flex: 0;
+			}
 		}
 	}
 	.photo-container.cover {

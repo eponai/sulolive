@@ -130,7 +130,8 @@
     (photo (-> (css/add-class :cover props)
                (assoc :style :style/cover)
                ;(assoc :background? true)
-               (assoc :photo-id photo-key))
+               (assoc :photo-id photo-key)
+               (assoc :transformation :transformation/cover))
            (overlay nil content))))
 
 (defn header [props & content]

@@ -136,7 +136,9 @@
   member-routes
   ;; Hooks in bidi routes with compojure.
   ;; TODO: Cache the handlers for each route.
-  (GET "*" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler)))
+  (GET "*" request (if (nil? (get-in request [:cookies "locality" :value]))
+                     (r/redirect (routes/path :landing-page))
+                     (bidi.ring/make-handler common.routes/routes bidi-route-handler))))
 
 (defroutes
   site-routes
@@ -160,7 +162,7 @@
 
   (GET "/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
   (GET "/sell/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
-  ;;  (GET "/enter" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
+  (GET "/enter" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
 
   ;; Websockets
   (GET "/ws/chat" {::m/keys [system] :as request}

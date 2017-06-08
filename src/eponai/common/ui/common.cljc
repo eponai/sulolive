@@ -96,7 +96,7 @@
         (button/button
           (css/add-classes [:hollow :sulo] {:href href}) footer)))))
 
-(defn footer [opts]
+(defn page-footer [opts]
   (dom/div
     (css/add-class :footer {:key "footer"})
     (dom/footer
@@ -109,10 +109,10 @@
                          (menu/item-text nil (dom/span nil ""))
                          (menu/item
                            nil
-                           (dom/select {:defaultValue "Vancouver"}
-                                       (dom/option {:value "Vancouver"} "Vancouver")
-                                       (dom/option {:value "Toronto"
-                                                    :disabled true} "Toronto")))
+                           (dom/select {:defaultValue "Vancouver, BC"}
+                                       (dom/option {:value "Vancouver"} "Vancouver, BC")
+                                       (dom/option {:value "Toronto, ON"
+                                                    :disabled true} "Toronto, ON")))
                          ;(menu/item-link nil (dom/span nil "Vancouver"))
                          ;(menu/item-link {:href (routes/url :browse/category {:top-category "home"})} (dom/span nil "HOME"))
                          ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "women"})} (dom/span nil "WOMEN"))
@@ -165,7 +165,7 @@
         (menu/item nil (social/sulo-icon-attribution))
         (menu/item-text nil (social/sulo-copyright))))))
 
-(defn page-container [{:keys [navbar id class-name no-footer?]} & content]
+(defn page-container [{:keys [navbar id class-name no-footer? footer]} & content]
   (dom/div
     (css/add-class (str "sulo-page " class-name) {:id id})
     (dom/div
@@ -178,7 +178,7 @@
           (css/add-class :page-content)
           content))
       (when-not no-footer?
-        (footer nil)))))
+        (page-footer footer)))))
 
 
 (defn is-new-order? [component]

@@ -36,7 +36,7 @@
           nil
           (grid/column
             nil
-            (my-dom/h1 nil (.toUpperCase "Live"))))
+            (my-dom/h1 nil "LIVE")))
         (grid/row
           nil
           (grid/column

@@ -208,19 +208,15 @@
               "See more stores")
 
             (common/content-section
-              {:href "#"
+              {:href (routes/url :coming-soon/sell)
                :classes ["test"]}
               "Sell on SULO"
               (grid/row-column
                 (css/text-align :center)
                 (dom/p (css/add-class :sell-on-sulo)
-                       (dom/span nil "Are you selling products locally? Tell your story and interact LIVE with your customers. ")
-                       (dom/br nil)
-                       (dom/span nil "Contact us at ")
-                       (dom/a nil "hello@sulo.live")
-                       (dom/span nil " to start a store. We'd love to hear from you!")))
+                       (dom/span nil "Are you selling products locally? Start a store to tell your story and interact LIVE with your customers. ")))
 
-              nil)
+              "Contact us")
 
             ;(grid/row-column
             ;  (css/text-align :center)
