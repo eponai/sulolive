@@ -50,7 +50,7 @@
         entities))
 
 (defn matches
-  "Returns tuples of [<word> [<ref> ...]] matching the search."
+  "Returns tuples of [<word> [<ref-id> ...]] matching the search."
   [db search]
   (let [indexed-val (limit-depth (str/lower-case search))]
     ;; Start from the largest indexed value
@@ -71,11 +71,14 @@
                  (map :e)
                  (mapcat #(db/datoms db :eavt % :search/matches))
                  (map :v)
-                 (map #(db/entity db %))
-                 ;; Keep only matches that start with the search (which might be
-                 ;; longer than indexed depth).
-                 (filter #(str/starts-with? (:search.match/word %) search))
-                 (map (juxt :search.match/word :search.match/refs)))))))
+                 ;; Get the matches word
+                 (map (fn [search-match]
+                        (first (db/datoms db :eavt search-match :search.match/word))))
+                 ;; Keep only matches that start with the search. Searches might be
+                 ;; longer than indexed depth, so we need to do this check.
+                 (filter (fn [search-match-datom]
+                           (str/starts-with? (:v search-match-datom) search)))
+                 (map (juxt :v #(into [] (map :v) (db/datoms db :eavt (:e %) :search.match/refs)))))))))
 
 (comment
   (def stuff (let [lines (->> (slurp "/usr/share/dict/web2a")
