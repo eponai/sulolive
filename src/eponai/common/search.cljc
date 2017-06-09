@@ -12,6 +12,7 @@
    :search/matches    {:db/valueType   :db.type/ref
                        :db/index       true
                        :db/cardinality :db.cardinality/many}
+   :search.match/word {:db/unique :db.unique/identity}
    :search.match/refs {:db/valueType   :db.type/ref
                        :db/cardinality :db.cardinality/many
                        :db/index       true}})
@@ -48,27 +49,33 @@
               (str/split (get e attr) #" "))))
         entities))
 
-(defn matches [db search]
-  (let [search (str/lower-case search)
-        query {:find    '[?word (count ?refs)]
-               :where   '[[?search :search/letters ?input]
-                          [?search :search/matches ?match]
-                          [?match :search.match/word ?word]
-                          [?match :search.match/refs ?refs]]}]
-    (letfn [(match-short-str [s]
-              (let [entity (db/lookup-entity db [:search/letters s])
-                    matches (into []
-                                  (filter (fn [[word _]] (str/starts-with? word search)))
-                                  (db/find-with db (db/merge-query
-                                                     query
-                                                     {:symbols {'?input s}})))]
-                (into matches
-                      (comp (map :search/letters)
-                            (mapcat match-short-str))
-                      (:search/_parent entity))))]
-      (->> (match-short-str (limit-depth search))
-           (sort-by second)))))
-
+(defn matches
+  "Returns tuples of [<word> [<ref> ...]] matching the search."
+  [db search]
+  (let [indexed-val (limit-depth (str/lower-case search))]
+    ;; Start from the largest indexed value
+    (->> (db/datoms db :avet :search/letters indexed-val)
+         ;; Navigate children if necessary (i.e. search "a", wanting everything starting with "a").
+         (iterate (fn [datoms]
+                    (mapcat #(db/datoms db :avet :search/parent (:e %)) datoms)))
+         ;; This transducer almost equal to
+         ;{:find  '[?word [?refs ...]]
+         ; :where '[[?search :search/letters ?input]
+         ;          [?search :search/matches ?match]
+         ;          [?match :search.match/word ?word]
+         ;          [?match :search.match/refs ?refs]]}
+         (into []
+               (comp
+                 (take-while seq)
+                 cat
+                 (map :e)
+                 (mapcat #(db/datoms db :eavt % :search/matches))
+                 (map :v)
+                 (map #(db/entity db %))
+                 ;; Keep only matches that start with the search (which might be
+                 ;; longer than indexed depth).
+                 (filter #(str/starts-with? (:search.match/word %) search))
+                 (map (juxt :search.match/word :search.match/refs)))))))
 
 (comment
   (def stuff (let [lines (->> (slurp "/usr/share/dict/web2a")
