@@ -7,13 +7,6 @@
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store.profile/shipping-fee
-  :db/valueType          :db.type/bigdec
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Store's base shipping fee"
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
   :db/ident              :store/shipping
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one

@@ -1,26 +1,6 @@
 
 
 #sl-order-list {
-	.callout.submenu {
-		padding: 1rem 0;
-		li {
-			font-size: 90%;
-			a {
-				color: $medium-gray;
-				transition: color .25s ease-in-out;
-				font-weight: $global-weight-bold;
-			}
-			&.is-active, &:hover {
-				a {
-					color: $body-font-color;
-				}
-			}
-			&.search-input {
-				padding: 0 1rem;
-				flex: 1;
-			}
-		}
-	}
 	.menu.sl-orderlist {
 		li {
 			transition: background .25s ease-in-out;
@@ -58,6 +38,7 @@
 	}
 
 	.sl-orderlist {
+		// font-size: 90%;
 		.th {
 			font-size: 80%;
 			color: $dark-gray;
@@ -65,16 +46,18 @@
 				text-align: right;
 			}
 		}
+		.tbody {
+			font-size: 90%;
+		}
 	// $action-color: map-get($foundation-palette, action);
 		.sl-orderlist-row {
 			.sl-orderlist-cell--id {
-				font-size: 90%;
 				width: 12rem;
+				letter-spacing: 0.5px;
 			}
 			.sl-orderlist-cell--date {
-				font-size: 90%;
 				width: 10rem;
-				letter-spacing: 1px;
+				letter-spacing: 0.5px;
 				// font-family: $header-font-family-sans-serif;
 				// color: $action-color;
 				// font-weight: $global-weight-bold;
@@ -82,6 +65,7 @@
 			.sl-orderlist-cell--price, 
 			.sl-orderlist-cell--status {
 				text-align: right;
+				letter-spacing: 0.5px;
 			}
 			.sl-orderlist-cell--name {
 				font-weight: $global-weight-bold;

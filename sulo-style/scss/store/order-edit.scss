@@ -4,7 +4,7 @@
 	// border: $global-border;
 	$color: map-get($foundation-palette, warning);
 	// padding: 0.25rem 0.5rem;
-	font-size: 90%;
+	// font-size: 90%;
 	&.sl-orderstatus--canceled, 
 	&.sl-orderstatus--returned {
 		color: $dark-gray;

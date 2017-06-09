@@ -62,6 +62,43 @@
 #sulo-product-list {
 	max-width: $global-width;
 	margin: 0 auto;
+	.callout.warning {
+		// box-sizing: border-box;
+		overflow: hidden;
+		transition: opacity .25s ease-in-out;
+		display: flex;
+		align-items: center;
+		opacity: 1;
+		&.sl-invisible {
+			opacity: 0;
+		}
+	}
+
+	.callout.submenu {
+		.button-item {
+			flex: 1;
+			text-align: right;
+			// margin-bottom: 1rem;
+		}
+		.button {
+			// flex: 0 0 auto;
+			margin-bottom: 0;
+			margin-left: 1rem;
+			// display: block;
+		}
+		input {
+			margin: 0;
+		}
+		li.search-input {
+			padding-right: 0;
+		}
+		@include breakpoint(small only) {
+			.menu {
+				margin-bottom: 1rem;
+			}
+		}
+	}
+
 	.row {
 		max-width: $dashboard-content-width;
 		&.expanded {
@@ -73,10 +110,22 @@
 			display: flex;
 		}
 	}
-	input {
-		margin-right: 1rem;
-		width: auto;
-		flex: 1; 
+	.table, .tbody, .thead {
+		border: none;
+	}
+	.tbody {
+		font-size: 90%;
+	}
+	.tr {
+		border-right: none;
+		border-left: none;
+	}
+	.th {
+		font-size: 80%;
+		color: $dark-gray;
+		&.text-right {
+			text-align: right;
+		}
 	}
 	.td:first-child {
 		$width: 4rem;
