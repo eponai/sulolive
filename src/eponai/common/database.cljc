@@ -15,7 +15,7 @@
      (:import [clojure.lang ExceptionInfo]
               [datomic Connection]
               [datomic.db Db]
-              [datascript.db DB])))
+              [datascript.db DB FilteredDB])))
 
 ;; Defines common apis for datascript and datomic
 
@@ -60,7 +60,7 @@
        :else
        (join-words (term-fn s) (term-fn singular))))))
 
-(defn- sanitized-needles
+(defn sanitized-needles
   "returning multiple needles, split by spaces."
   [needle]
   (sequence
@@ -145,8 +145,22 @@
              (pull* [db pattern eid] (do-pull datascript/pull db pattern eid))
              (pull-many* [db pattern eids] (do-pull datascript/pull-many db pattern eids))
              (datoms* [db index args] (datascript-datoms db index args))
+             (fulltext-search [_ fulltext] (datascript-fulltext fulltext))
+             FilteredDB
+             (q* [db query args] (apply datascript/q query db args))
+             (entity* [db eid] (datascript/entity db eid))
+             (pull* [db pattern eid] (do-pull datascript/pull db pattern eid))
+             (pull-many* [db pattern eids] (do-pull datascript/pull-many db pattern eids))
+             (datoms* [db index args] (datascript-datoms db index args))
              (fulltext-search [_ fulltext] (datascript-fulltext fulltext))]
       :cljs [datascript.db/DB
+             (q* [db query args] (apply datascript/q query db args))
+             (entity* [db eid] (datascript/entity db eid))
+             (pull* [db pattern eid] (do-pull datascript/pull db pattern eid))
+             (pull-many* [db pattern eids] (do-pull datascript/pull-many db pattern eids))
+             (datoms* [db index args] (datascript-datoms db index args))
+             (fulltext-search [_ fulltext] (datascript-fulltext fulltext))
+             datascript.db/FilteredDB
              (q* [db query args] (apply datascript/q query db args))
              (entity* [db eid] (datascript/entity db eid))
              (pull* [db pattern eid] (do-pull datascript/pull db pattern eid))

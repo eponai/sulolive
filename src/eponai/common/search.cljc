@@ -2,7 +2,9 @@
   (:require
     [eponai.common.database :as db]
     [datascript.core :as datascript]
-    [clojure.string :as str]))
+    [clojure.string :as str]
+    [clojure.set :as set]
+    [taoensso.timbre :refer [debug]]))
 
 (def search-schema
   {:search/letters    {:db/index  true
@@ -49,8 +51,8 @@
               (str/split (get e attr) #" "))))
         entities))
 
-(defn matches
-  "Returns tuples of [<word> [<ref-id> ...]] matching the search."
+(defn match-word
+  "Returns tuples of [<word> #{<ref-id> ...}] matching the search."
   [db search]
   (let [indexed-val (limit-depth (str/lower-case search))]
     ;; Start from the largest indexed value
@@ -78,7 +80,47 @@
                  ;; longer than indexed depth, so we need to do this check.
                  (filter (fn [search-match-datom]
                            (str/starts-with? (:v search-match-datom) search)))
-                 (map (juxt :v #(into [] (map :v) (db/datoms db :eavt (:e %) :search.match/refs)))))))))
+                 (map (juxt :v #(into #{}
+                                      (map :v)
+                                      (db/datoms db :eavt (:e %) :search.match/refs)))))))))
+
+(defn match-ref [db search ref]
+  (let [indexed-val (limit-depth (str/lower-case search))]))
+
+(defn match-string
+  "Takes a string and finds it in the database.
+
+  Warning: Quadratic. Can we use the matches from the first find?"
+  [db s]
+  (->> (db/sanitized-needles s)
+       (sort-by count #(compare %2 %1))
+       (reduce (fn [{:keys [raw-db filtered-db matches] :as step} needle]
+                 (let [match (match-word filtered-db needle)
+                       matches'
+                       (cond (empty? match)
+                             nil
+                             (empty? matches)
+                             match
+                             :else
+                             (filter some?
+                                     (for [[word refs] matches
+                                           [word' refs'] match]
+                                       (when-let [refs'' (not-empty (set/intersection refs refs'))]
+                                         [(str word " " word') refs'']))))]
+                   (if (nil? matches')
+                     (reduced nil)
+                     (assoc step
+                       :matches matches'
+                       :filtered-db
+                       (cond-> raw-db
+                               (seq matches')
+                               (datascript/filter (fn [db datom]
+                                                    (if (= :search.match/refs (:a datom))
+                                                      (some (fn [[_ refs]] (contains? refs (:v datom)))
+                                                            matches')
+                                                      true))))))))
+               {:raw-db db :filtered-db db :matches []})
+       :matches))
 
 (comment
   (def stuff (let [lines (->> (slurp "/usr/share/dict/web2a")
