@@ -85,7 +85,20 @@
                                       (db/datoms db :eavt (:e %) :search.match/refs)))))))))
 
 (defn match-ref [db search ref]
-  (let [indexed-val (limit-depth (str/lower-case search))]))
+  (let [indexed-val (limit-depth (str/lower-case search))]
+    (->> (db/datoms db :avet :search.match/refs ref)
+         (transduce (comp
+                      ;; search.match
+                      (map :e)
+                      (mapcat #(db/datoms db :avet :search/matches %))
+                      ;;search
+                      (map :e)
+                      (mapcat #(db/datoms db :eavt % :search/letters))
+                      (map :v)
+                      (filter #(str/starts-with? % indexed-val)))
+                    (completing (fn [_ x] (reduced x)))
+                    nil)
+         (some?))))
 
 (defn match-string
   "Takes a string and finds it in the database.
@@ -134,3 +147,4 @@
                                  (entities-by-attr-tx :name))
                    indexed-db (datascript/db-with db index-tx)]
                {:db indexed-db :tx index-tx :lines lines})))
+
