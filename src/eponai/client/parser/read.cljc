@@ -189,7 +189,7 @@
       {:value (db/pull db query cart)})))
 
 (defmethod client-read :query/skus
-  [{:keys [target]}]
+  [{:keys [target]} _ _]
   (when target
     {:remote true}))
 ;(common.read/compute-cart-price cart)
