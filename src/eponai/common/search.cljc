@@ -90,15 +90,41 @@
          (transduce (comp
                       ;; search.match
                       (map :e)
-                      (mapcat #(db/datoms db :avet :search/matches %))
-                      ;;search
-                      (map :e)
-                      (mapcat #(db/datoms db :eavt % :search/letters))
-                      (map :v)
-                      (filter #(str/starts-with? % indexed-val)))
-                    (completing (fn [_ x] (reduced x)))
-                    nil)
-         (some?))))
+                      (map (juxt
+                             ;; search.match/word
+                             (comp :v first #(db/datoms db :eavt % :search.match/word))
+                             ;; search
+                             #(db/datoms db :avet :search/matches %)))
+                      (filter (fn [[word searches]]
+                                (some #(str/starts-with? % indexed-val)
+                                      (sequence (comp (map :e)
+                                                      (mapcat #(db/datoms db :eavt % :search/letters))
+                                                      (map :v))
+                                                searches)))))
+                    (completing (fn [_ [word]] (reduced word)))
+                    nil))))
+
+
+(defn match-string2 [db s]
+  (let [[needle & needles] (->> (db/sanitized-needles s)
+                                (sort-by count #(compare %2 %1)))]
+    (reduce (fn [match needle]
+              (if (empty? match)
+                (reduced nil)
+                (mapcat (fn [[word refs]]
+                          (->> (transduce
+                                 (comp (map (fn [ref]
+                                              (when-let [w (match-ref db needle ref)]
+                                                [w ref])))
+                                       (filter some?))
+                                 (completing (fn [m [w ref]]
+                                               (update m w (fnil conj #{}) ref)))
+                                 {}
+                                 refs)
+                               (map (fn [[w refs]] [(str word " " w) refs]))))
+                        match)))
+            (match-word db needle)
+            needles)))
 
 (defn match-string
   "Takes a string and finds it in the database.
