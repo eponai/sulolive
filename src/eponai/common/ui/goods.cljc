@@ -15,8 +15,9 @@
     [eponai.common.api.products :as products]
     [clojure.string :as str]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [debug]]
-    [eponai.web.ui.button :as button]))
+    [taoensso.timbre :refer [debug error]]
+    [eponai.web.ui.button :as button]
+    [eponai.common.ui.search-bar :as search-bar]))
 
 (def sorting-vals
   {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
@@ -82,6 +83,7 @@
      {:query/browse-items (om/get-query product/Product)}
      {:query/navigation [:category/name :category/label :category/path :category/href]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
+     :query/locations
      :query/current-route])
   Object
   (initLocalState [_]
@@ -89,13 +91,14 @@
      :filters-open? false})
   (render [this]
     (let [{:proxy/keys [navbar product-filters]
-           :query/keys [browse-items navigation selected-navigation]} (om/props this)
+           :query/keys [browse-items navigation selected-navigation locations]} (om/props this)
           {:keys [sorting filters-open?]} (om/get-state this)
           [top-category sub-category :as categories] (category-seq this)
           items browse-items]
 
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse"}
+        (common/city-banner this locations)
         (when filters-open?
           (dom/div
             {:id "sl-product-filters"}

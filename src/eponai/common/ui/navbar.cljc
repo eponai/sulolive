@@ -325,12 +325,13 @@
         {:classes ["top-bar-right"]}
         (menu/horizontal
           nil
-          (menu/item (css/add-class :search-input)
-                     (dom/div
-                       (css/show-for :medium)
-                       (search-bar/->SearchBar {:placeholder     "Search on SULO..."
-                                                :default-value   (or (get-in current-route [:query-params :search]) "")
-                                                :mixpanel-source "navbar"})))
+          ;(menu/item (css/add-class :search-input)
+          ;           (dom/div
+          ;             (css/show-for :medium)
+          ;             (search-bar/->SearchBar {:placeholder     "Search on SULO..."
+          ;                                      :default-value   (or (get-in current-route [:query-params :search]) "")
+          ;                                      :mixpanel-source "navbar"})
+          ;             ))
           (user-menu-item component)
           (menu/item
             (css/add-class :shopping-bag)

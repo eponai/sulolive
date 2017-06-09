@@ -162,9 +162,6 @@
         (grid/row-column
           nil
           (dom/h1 nil "Shopping bag")
-          (callout/callout-small
-            (css/add-class :warning)
-            (dom/small nil "Purchases are disabled until we finish work on the payment integration. Hang tight, we're almost there!"))
           (if (not-empty items)
             (dom/div nil
                      (store-items-element this skus-by-store))

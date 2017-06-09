@@ -68,11 +68,11 @@
   }
 }
 .sl-global-spinner {
-  position: absolute;
+  position: fixed;
   z-index: $navbar-zindex;
-  top: $navbar-height;
+  top: 0;//$navbar-height;
   @include breakpoint(large) {
-    position: fixed;
+    // position: fixed;
   }
   height: 1px;
   background: map-get($foundation-palette, primary);

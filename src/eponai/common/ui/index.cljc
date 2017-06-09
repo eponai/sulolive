@@ -82,32 +82,33 @@
           {:navbar navbar}
           (dom/div #js {:id "sulo-index-container" :onScroll #(debug "Did scroll page: " %)}
 
-            (my-dom/div
-              (css/add-class :intro-header)
-              (grid/row
-                (css/align :middle)
-                (grid/column
-                  (grid/column-size {:small 12 :medium 6})
-                  (my-dom/h1
-                    (css/add-class :header)
-                    (dom/i #js {:className "fa fa-map-marker"})
-                    (dom/span nil locations)))
-                (grid/column
-                  nil
-                  (my-dom/div
-                    (css/add-class :input-container)
-                    (search-bar/->SearchBar {:ref             (str ::search-bar-ref)
-                                             :placeholder     "What are you looking for?"
-                                             :mixpanel-source "index"
-                                             :classes         [:drop-shadow]})
-                    (button/button
-                      (->> (button/expanded {:onClick (fn []
-                                                        (let [search-bar (om/react-ref this (str ::search-bar-ref))]
-                                                          (when (nil? search-bar)
-                                                            (error "NO SEARCH BAR :( " this))
-                                                          (search-bar/trigger-search! search-bar)))})
-                           (css/add-classes [:drop-shadow]))
-                      (dom/span nil "Search"))))))
+            (common/city-banner this locations)
+            ;(my-dom/div
+            ;  (css/add-class :intro-header)
+            ;  (grid/row
+            ;    (css/align :middle)
+            ;    (grid/column
+            ;      (grid/column-size {:small 12 :medium 6})
+            ;      (my-dom/h1
+            ;        (css/add-class :header)
+            ;        (dom/i #js {:className "fa fa-map-marker"})
+            ;        (dom/span nil locations)))
+            ;    (grid/column
+            ;      nil
+            ;      (my-dom/div
+            ;        (css/add-class :input-container)
+            ;        (search-bar/->SearchBar {:ref             (str ::search-bar-ref)
+            ;                                 :placeholder     "What are you looking for?"
+            ;                                 :mixpanel-source "index"
+            ;                                 :classes         [:drop-shadow]})
+            ;        (button/button
+            ;          (->> (button/expanded {:onClick (fn []
+            ;                                            (let [search-bar (om/react-ref this (str ::search-bar-ref))]
+            ;                                              (when (nil? search-bar)
+            ;                                                (error "NO SEARCH BAR :( " this))
+            ;                                              (search-bar/trigger-search! search-bar)))})
+            ;               (css/add-classes [:drop-shadow]))
+            ;          (dom/span nil "Search"))))))
 
 
             (common/content-section {:href  (routes/url :live)
@@ -164,20 +165,6 @@
                                     ""
                                     )
 
-            (common/content-section {:href  (routes/url :browse/all-items)
-                                     :class "new-arrivals"}
-                                    "New products"
-                                    (grid/row
-                                      (->> (css/add-class :collapse)
-                                           (grid/columns-in-row {:small 2 :medium 4 :large 5}))
-                                      (map
-                                        (fn [p]
-                                          (grid/column
-                                            (css/add-class :new-arrival-item)
-                                            (pi/product-element {:open-url? true} p)))
-                                        (take 5 featured-items)))
-                                    "See more products")
-
             (common/content-section
               {:href  (routes/url :live)
                :class "new-brands"}
@@ -208,6 +195,22 @@
                                            (my-dom/strong nil store-name)))))))
                        featured-stores)))
               "See more stores")
+
+            (common/content-section {:href  (routes/url :browse/all-items)
+                                     :class "new-arrivals"}
+                                    "New products"
+                                    (grid/row
+                                      (->> (css/add-class :collapse)
+                                           (grid/columns-in-row {:small 2 :medium 4 :large 5}))
+                                      (map
+                                        (fn [p]
+                                          (grid/column
+                                            (css/add-class :new-arrival-item)
+                                            (pi/product-element {:open-url? true} p)))
+                                        (take 5 featured-items)))
+                                    "See more products")
+
+
 
             (common/sell-on-sulo this)))))))
 
