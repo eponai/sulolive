@@ -378,3 +378,9 @@
                     :country/continent {:continent/code (:continent country)
                                         :continent/name (get continents (keyword (:continent country)))}})
                  (:countries country-data)))})
+
+(defread query/product-search
+  [{:keys [db-history system]} _ _]
+  {:auth ::auth/public}
+  {:value (when-not db-history
+            (db/db (:search-conn (:system/product-search system))))})

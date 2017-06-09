@@ -27,6 +27,7 @@
                   :placeholder  placeholder
                   :type         "text"
                   :value        (or input-search default-value "")
+                  :onFocus      prn
                   :onChange     #(do (debug " search " (.. % -target -value))
                                      (om/update-state! this assoc :input-search (.. % -target -value)))
                   :onKeyDown    (fn [e]

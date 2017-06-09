@@ -32,24 +32,25 @@
       {:search/parent (merge {:search/letters parent}
                             (search-parents parent))})))
 
-(defn entities-by-attr-tx [attr entities]
-  {:pre [(every? (every-pred (comp number? :db/id)
-                             (comp string? #(get % attr)))
-                 entities)]}
-  (into []
-        (mapcat
-          (fn [e]
-            (sequence
-              (comp
-                (map str/lower-case)
-                (map (fn [word]
-                       (let [letters (limit-depth word)]
-                         (merge {:search/letters letters
-                                 :search/matches [{:search.match/word word
-                                                   :search.match/refs [{:db/id (:db/id e)}]}]}
-                                (search-parents letters))))))
-              (str/split (get e attr) #" "))))
-        entities))
+(defn entities-by-attr-tx
+  ([attr]
+   (mapcat
+     (fn [e]
+       (sequence
+         (comp
+           (map str/lower-case)
+           (map (fn [word]
+                  (let [letters (limit-depth word)]
+                    (merge {:search/letters letters
+                            :search/matches [{:search.match/word word
+                                              :search.match/refs [{:db/id (:db/id e)}]}]}
+                           (search-parents letters))))))
+         (str/split (get e attr) #" ")))))
+  ([attr entities]
+   {:pre [(every? (every-pred (comp number? :db/id)
+                              (comp string? #(get % attr)))
+                  entities)]}
+   (sequence (entities-by-attr-tx attr) entities)))
 
 (defn match-word
   "Returns tuples of [<word> #{<ref-id> ...}] matching the search."

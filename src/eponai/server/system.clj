@@ -13,6 +13,7 @@
     [eponai.server.external.auth0 :as auth0]
     [eponai.server.websocket :as websocket]
     [eponai.server.external.wowza :as wowza]
+    [eponai.server.external.product-search :as product-search]
     [eponai.server.external.mailchimp :as mailchimp]
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.aws-s3 :as s3]
@@ -33,6 +34,7 @@
                    :system/mailchimp
                    :system/server-address
                    :system/stripe
+                   :system/product-search
                    :system/wowza
                    :system/email})
 
@@ -61,6 +63,8 @@
                             {:db-url           (:db-url env)
                              :provided-conn    (::provided-conn config)
                              :add-mocked-data? true})
+   :system/product-search (c/using (product-search/map->ProductSearch {})
+                                   {:datomic :system/datomic})
    :system/server-address (c/using (server-address/map->ServerAddress {:schema (:server-url-schema env)
                                                                        :host   (:server-url-host env)})
                                    {:aws-elb :system/aws-elb})})

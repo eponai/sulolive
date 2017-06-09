@@ -1,6 +1,7 @@
 (ns eponai.client.parser.merge
   (:require [datascript.core :as d]
             [datascript.db :as db]
+            [eponai.common.database :as common.db]
             [eponai.common.parser :as parser]
             [eponai.common.parser.util :as p.util]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug error trace warn]]
@@ -17,14 +18,6 @@
   (error "error on key:" key "error:" val ". Doing nothing with it.")
   db)
 
-(defn merge-schema [db _ datascript-schema]
-  (let [current-schema (:schema db)
-        current-entities (d/q '[:find [(pull ?e [*]) ...] :where [?e]] db)
-        new-schema (merge-with merge current-schema datascript-schema)
-        new-conn (d/create-conn new-schema)]
-    (d/transact new-conn current-entities)
-    (d/db new-conn)))
-
 (defn merge-mutation-message [db history-id key val message-type]
   (let [message (get-in val [::parser/mutation-message message-type])]
     (debug "Mutation message-type" message-type "for :" key " message: " message)
@@ -40,16 +33,46 @@
                                 (map #(vector :db.fn/retractEntity %)))
                        [::parser/read-basis-t-graph]))))
 
-(defn merge-auth [db key val]
+(defmulti client-merge (fn [db k v] k))
+(defmethod client-merge :default
+  [db k val]
+  (transact db val))
+
+(defmethod client-merge :datascript/schema
+  [db _ datascript-schema]
+  (let [current-schema (:schema db)
+        current-entities (d/q '[:find [(pull ?e [*]) ...] :where [?e]] db)
+        new-schema (merge-with merge current-schema datascript-schema)
+        new-conn (d/create-conn new-schema)]
+    (d/transact new-conn current-entities)
+    (d/db new-conn)))
+
+(defmethod client-merge :query/auth
+  [db _ val]
   (if (some? (:db/id val))
     (transact db [val
                   [:db/add [:ui/singleton :ui.singleton/auth] :ui.singleton.auth/user (:db/id val)]])
     db))
 
-(defn merge-locations [db key val]
+(defmethod client-merge :query/locations
+  [db k val]
   (if (not-empty val)
     (transact db [[:db/add [:ui/singleton :ui.singleton/auth] :ui.singleton.auth/locations val]])
     db))
+
+(defmethod client-merge :query/product-search
+  [db k val]
+  (letfn [(set-search-db [search-db]
+            (transact db [[:db/add [:ui/singleton :ui.singleton/product-search] :ui.singleton.product-search/db search-db]]))]
+    (if (common.db/database? val)
+      (set-search-db val)
+      (if-some [new-search-db (some-> (common.db/lookup-entity db [:ui/singleton :ui.singleton/product-search])
+                                      :ui.singleton.product-search/db
+                                      (transact val))]
+        (set-search-db new-search-db)
+        (do
+          (debug "No new search db with merge value: " val)
+          db)))))
 
 ;;;;;;; API
 
@@ -82,7 +105,6 @@
                db
                val)
     (cond
-
       (when merge-fn (contains? (methods merge-fn) key))
       (merge-fn db key val)
 
@@ -90,18 +112,8 @@
           (some? (:om.next/error val)))
       (merge-error db key val)
 
-      (= :datascript/schema key)
-      (merge-schema db key val)
-
-      (= :query/auth key)
-      (merge-auth db key val)
-
-      (= :query/locations key)
-      (merge-locations db key val)
-
-
       :else
-      (transact db val))))
+      (client-merge db key val))))
 
 ;; Returns a seq of keys to dispatch re-reads from.
 ;; Enables us to return different keys than the one queried.
