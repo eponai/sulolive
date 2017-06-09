@@ -84,47 +84,60 @@
                                       (map :v)
                                       (db/datoms db :eavt (:e %) :search.match/refs)))))))))
 
-(defn match-ref [db search ref]
-  (let [indexed-val (limit-depth (str/lower-case search))]
-    (->> (db/datoms db :avet :search.match/refs ref)
-         (transduce (comp
-                      ;; search.match
-                      (map :e)
-                      (map (juxt
-                             ;; search.match/word
-                             (comp :v first #(db/datoms db :eavt % :search.match/word))
-                             ;; search
-                             #(db/datoms db :avet :search/matches %)))
-                      (filter (fn [[word searches]]
-                                (some #(str/starts-with? % indexed-val)
-                                      (sequence (comp (map :e)
-                                                      (mapcat #(db/datoms db :eavt % :search/letters))
-                                                      (map :v))
-                                                searches)))))
-                    (completing (fn [_ [word]] (reduced word)))
-                    nil))))
-
+(defn partial-match-ref [db indexed-val search-id]
+  (let [xf (comp
+             ;; search.match
+             (map :e)
+             (map (juxt
+                    ;; search.match/word
+                    identity
+                    ;; search
+                    (if (some? search-id)
+                      #(db/datoms db :eavt search-id :search/matches %)
+                      #(db/datoms db :avet :search/matches %))))
+             (filter (fn [[search-match searches]]
+                       (some #(str/starts-with? % indexed-val)
+                             (sequence (comp (map :e)
+                                             (mapcat #(db/datoms db :eavt % :search/letters))
+                                             (map :v)
+                                             (distinct))
+                                       searches)))))]
+    (fn [ref]
+      (transduce
+        xf
+        (completing (fn [_ [search-match]]
+                      (reduced (:v (first (db/datoms db :eavt search-match :search.match/word))))))
+        nil
+        (db/datoms db :avet :search.match/refs ref)))))
 
 (defn match-string [db s]
   (let [[needle & needles] (->> (db/sanitized-needles s)
                                 (sort-by count #(compare %2 %1)))]
-    (reduce (fn [match needle]
-              (if (empty? match)
-                (reduced nil)
-                (mapcat (fn [[word refs]]
-                          (->> (transduce
-                                 (comp (map (fn [ref]
-                                              (when-let [w (match-ref db needle ref)]
-                                                [w ref])))
-                                       (filter some?))
-                                 (completing (fn [m [w ref]]
-                                               (update m w (fnil conj #{}) ref)))
-                                 {}
-                                 refs)
-                               (map (fn [[w refs]] [(str word " " w) refs]))))
-                        match)))
-            (match-word db needle)
-            needles)))
+    (transduce
+      (comp (map str/lower-case)
+            (map limit-depth))
+      (completing
+        (fn [match needle]
+          (if (empty? match)
+            (reduced nil)
+            (let [needle-search-id (when (== index-depth (count needle))
+                                     (:e (first (db/datoms db :avet :search/letters needle))))
+                  match-ref-fn (partial-match-ref db needle needle-search-id)]
+              (mapcat (fn [[word refs]]
+                        (transduce
+                          (comp (map (fn [ref]
+                                       (when-let [w (match-ref-fn ref)]
+                                         [(str word " " w) ref])))
+                                (filter some?))
+                          (completing (fn [m [k ref]]
+                                        (assoc! m k (conj (get m k #{}) ref)))
+                                      persistent!)
+                          (transient {})
+                          refs))
+                      match))))
+        vec)
+      (match-word db needle)
+      needles)))
 
 (comment
   (def stuff (let [lines (->> (slurp "/usr/share/dict/web2a")

@@ -60,12 +60,14 @@
        :else
        (join-words (term-fn s) (term-fn singular))))))
 
+(def allowed-special-chars #{\space \. \- \,})
+
 (defn sanitized-needles
   "returning multiple needles, split by spaces."
   [needle]
   (sequence
     (comp
-      (map #(if (or (= % \space)
+      (map #(if (or (contains? allowed-special-chars %)
                     #?(:clj (Character/isLetterOrDigit ^char %)
                        :cljs (re-find #"[a-zA-Z0-9]" (str %))))
               %
