@@ -29,7 +29,7 @@
                         :shipping     {:shipping/address {:shipping.address/country "se"}}
                         :source       "payment-source"
                         :subtotal     0
-                        :shipping-fee 0}
+                        :shipping-rate {:amount 0 :title "title" :description "desc"}}
           ;; Create new order
           new-order (api/create-order {:state  conn
                                        :system {:system/stripe (stripe-test-payment-succeeded stripe-chan)}
@@ -66,7 +66,7 @@
           order-params {:items    [db-sku]
                         :shipping {:shipping/address {:shipping.address/country "se"}}
                         :source   "payment-source"
-                        :subtotal 0 :shipping-fee 0}
+                        :subtotal 0 :shipping-rate {:amount 0 :title "title" :description "desc"}}
           ;; Create new order
           new-order (api/create-order {:state  conn
                                        :system {:system/stripe (stripe-test-payment-failed stripe-chan)}
