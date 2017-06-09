@@ -170,7 +170,8 @@
                 (let [{:charge/keys [source]} order-payment]
                   (dom/p nil
                          (dom/strong nil (:brand source))
-                         (dom/small nil (str " ending in " (:last4 source)))
+                         (dom/br nil)
+                         (dom/span nil (str "ending in " (:last4 source)))
                          (dom/br nil)
                          (dom/small nil (str "Charged on " (date/date->string (* 1000 (:charge/created order-payment)) "MMMM dd, YYYY"))))))
               )
@@ -195,7 +196,7 @@
                 (dom/label nil "Delivery")
                 (dom/p nil (dom/strong nil (:order.item/title delivery))
                        (dom/br nil)
-                       (dom/span nil (:order.item/description delivery))))
+                       (dom/small nil (:order.item/description delivery))))
               )
 
 

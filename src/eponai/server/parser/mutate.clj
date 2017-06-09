@@ -357,13 +357,21 @@
                      "Something went wrong!")}}
   {:action (fn []
              (debug "Stripe update customer: " params)
-             (let [{:stripe/keys [id]} (stripe/pull-user-stripe (db/db state) (:user-id auth))
+             (let [{:user/keys          [email]
+                    {:stripe/keys [id]} :user/stripe} (db/pull (db/db state) [:user/email {:user/stripe [:stripe/id]}] (:user-id auth))
                    new-card (when source (stripe/create-card (:system/stripe system) id source))
-                   remove-source (when remove-source (stripe/delete-card (:system/stripe system) id remove-source))]
+                   remove-source (when remove-source (stripe/delete-card (:system/stripe system) id remove-source))
+                   customer-id (or id
+                                    (:stripe/id (stripe/create-customer (:system/stripe system) {:email email})))]
+               (when (and (nil? id) (some? customer-id))
+                 (let [db-customer (f/add-tempid {:stripe/id customer-id})]
+                   (debug "Created new customer: " db-customer)
+                   (db/transact state [db-customer
+                                       [:db/add (:user-id auth) :user/stripe (:db/id db-customer)]])))
                (when shipping
                  (let [address (:shipping/address shipping)]
                    (stripe/update-customer (:system/stripe system)
-                                           id
+                                           customer-id
                                            {:shipping {:name    (:shipping/name shipping)
                                                        :address {:line1       (:shipping.address/street address)
                                                                  :line2       (:shipping.address/street2 address)

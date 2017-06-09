@@ -344,7 +344,7 @@
                                           (some? photo-upload)
                                           (conj (list 'photo/upload {:photo photo-upload}))
                                           :else
-                                          (conj :query/auth))))
+                                          (conj :query/auth :query/stripe-customer))))
          (om/update-state! this assoc :profile/input-validation validation))))
   (componentDidUpdate [this _ _]
     (let [info-msg (msg/last-message this 'user.info/update)
