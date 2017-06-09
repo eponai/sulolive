@@ -106,7 +106,7 @@
                                                           :shipping.address/country]}]}
                     :order/created-at
                     :order/user
-                    {:order/charge [:charge/id]}
+                    {:order/charge [:db/id :charge/id]}
                     {:order/store [{:store/profile [{:store.profile/photo [:photo/id]}
                                                     {:store.profile/cover [:photo/id]}
                                                     :store.profile/tagline
@@ -122,17 +122,19 @@
           {:order/keys [store created-at]} order
           {:store.profile/keys [tagline]
            store-name          :store.profile/name} (:store/profile store)
-          delivery (some #(when (= (:order.item/type %) :order.item.type/shipping) %) (:order/items order))]
+          delivery (some #(when (= (:order.item/type %) :order.item.type/shipping) %) (:order/items order))
+          skus (filter #(= (:order.item/type %) :order.item.type/sku) (:order/items order))]
       (debug "Order receipt:  " order)
       (debug "Order charge:  " order-payment)
       (dom/div
         {:id "sulo-order-receipt"}
         ;(dom/h1 (css/show-for-sr) "Order receipt")
 
-        (menu/breadcrumbs
-          nil
-          (menu/item nil (dom/a {:href (routes/url :user/order-list route-params)} (dom/span nil "Purchases")))
-          (menu/item nil (dom/span nil "Order")))
+        (grid/row-column
+          (css/add-class :go-back)
+          (dom/a
+            {:href (routes/url :user/order-list (:route-params current-route))}
+            (dom/span nil "Back to purchases")))
 
         (if (common/is-order-not-found? this)
           (common/order-not-found this (routes/url :user/order-list route-params))
@@ -224,13 +226,22 @@
                                   (css/add-class :order-item-price))
                              (dom/p nil
                                     (ui-utils/two-decimal-price (:order.item/amount oi))))))))
-                   (filter #(= (:order.item/type %) :order.item.type/sku) (:order/items order)))
+                   skus)
 
               (menu/item nil
                          (grid/row
                            nil
-                           (grid/column (grid/column-size {:small 4 :medium 6})
-                                        (dom/p nil (dom/span nil (:order.item/title delivery))))
+                           (grid/column (grid/column-size {:small 4 :medium 6}))
+                           (grid/column
+                             (grid/column-size {:small 4 :medium 3})
+                             (dom/p nil "Subtotal"))
+                           (grid/column
+                             (->> (grid/column-size {:small 4 :medium 3})
+                                  (css/text-align :right))
+                             (dom/p nil (ui-utils/two-decimal-price (apply + (map :order.item/amount skus))))))
+                         (grid/row
+                           nil
+                           (grid/column (grid/column-size {:small 4 :medium 6}))
                            (grid/column
                              (grid/column-size {:small 4 :medium 3})
                              (dom/p nil "Shipping"))
@@ -264,7 +275,11 @@
               (dom/p nil
                      (dom/span nil "Still have questions? Contact the shop at ")
                      (dom/a nil (dom/span nil "milena@aakasha.com"))
-                     (dom/span nil ".")))
-            ))))))
+                     (dom/span nil ".")))))
+        (grid/row-column
+          (css/add-class :go-back)
+          (dom/a
+            {:href (routes/url :user/order-list (:route-params current-route))}
+            (dom/span nil "Back to purchases")))))))
 
 (def ->Order (om/factory Order))

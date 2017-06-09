@@ -328,10 +328,12 @@
       (debug "Got props: " (om/props this))
       (dom/div
         {:id "sulo-shipping-settings"}
-        (dom/h1 (css/show-for-sr) "Shipping settings")
         (dom/div
           (css/add-class :section-title)
-          (dom/h2 nil "Shipping address"))
+          (dom/h1 nil "Shipping settings"))
+        (dom/div
+          (css/add-class :section-title)
+          (dom/h2 nil "From address"))
         (callout/callout
           (css/add-classes [:section-container :section-container--shipping-address])
           (grid/row
@@ -347,7 +349,7 @@
                 (dom/span nil "Add shipping address")))))
         (dom/div
           (css/add-class :section-title)
-          (dom/h2 nil "Shipping rules"))
+          (dom/h2 nil "Rules"))
         (when (some? modal)
           (add-shipping-rule-modal this))
         (callout/callout
