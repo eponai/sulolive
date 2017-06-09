@@ -597,3 +597,11 @@ $topbar-unstack-breakpoint: small;
 $dashboard-background: rgba($light-gray, 0.35);
 $dashboard-max-width: 100%;
 $dashboard-content-width: 54rem;
+
+// 38. Z-index 
+// --------------
+$navbar-zindex: 4;
+// $subnavbar-zindex: 3;
+$dropdown-zindex: 4;
+$modal-zindex: 5;
+$loading-zindex: 6;

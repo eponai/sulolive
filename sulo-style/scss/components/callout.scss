@@ -36,7 +36,11 @@
 	}
 }
 
+.reveal-overlay {
+	z-index: $modal-zindex;
+}
 .reveal {
+	z-index: $modal-zindex;
 	.button {
 		// margin-bottom: 0 !important; 
 	}

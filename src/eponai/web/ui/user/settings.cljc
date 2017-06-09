@@ -64,7 +64,7 @@
 
 (defn edit-profile-modal [component]
   (let [{:query/keys [auth]} (om/props component)
-        {:keys [photo-upload queue-photo]
+        {:keys         [photo-upload queue-photo]
          :profile/keys [input-validation]} (om/get-state component)
         user-profile (:user/profile auth)
         is-loading? (.is-loading? component)
@@ -99,7 +99,7 @@
                     #?(:cljs
                        (pu/->PhotoUploader
                          (om/computed
-                           {:id              "profile-photo-upload"}
+                           {:id "profile-photo-upload"}
                            {:on-photo-queue  (fn [img-result]
                                                (om/update-state! component assoc :queue-photo {:src img-result}))
                             :on-photo-upload (fn [photo]
@@ -108,13 +108,13 @@
                                                                              (-> s
                                                                                  (assoc :photo-upload photo)
                                                                                  (dissoc :queue-photo))))
-                                                        ;(msg/om-transact! this [(list 'photo/upload {:photo photo})
-                                                        ;                        :query/user])
-                                                        )})))))
+                                               ;(msg/om-transact! this [(list 'photo/upload {:photo photo})
+                                               ;                        :query/user])
+                                               )})))))
                 (v/input {:type         "text"
-                            :placeholder "Name"
-                            :id           (:user.info/name form-inputs)
-                            :defaultValue (:user.profile/name user-profile)}
+                          :placeholder  "Name"
+                          :id           (:user.info/name form-inputs)
+                          :defaultValue (:user.profile/name user-profile)}
                          input-validation)
                 (dom/p nil (dom/small nil "This name will be visible to other users in chats.")))))
           )
@@ -140,7 +140,8 @@
         shipping (:stripe/shipping stripe-customer)         ;[{:brand "American Express" :last4 1234 :exp-year 2018 :exp-month 4}]
         address (:stripe.shipping/address shipping)
         {:shipping/keys [input-validation]} (om/get-state component)
-        on-close #(om/update-state! component dissoc :modal)]
+        on-close #(do (mixpanel/track "Close shipping info")
+                      (om/update-state! component dissoc :modal))]
     (common/modal
       {:on-close on-close
        :size     :full}
@@ -157,11 +158,11 @@
               (grid/column
                 nil
                 (v/input {:id           (:shipping/name form-inputs)
-                            :type         "text"
-                            :defaultValue (:stripe.shipping/name shipping)
-                            :name         "name"
-                            :autoComplete "name"
-                            :placeholder  "Full name"}
+                          :type         "text"
+                          :defaultValue (:stripe.shipping/name shipping)
+                          :name         "name"
+                          :autoComplete "name"
+                          :placeholder  "Full name"}
                          input-validation))))
 
           (dom/div
@@ -184,47 +185,47 @@
               (grid/column
                 (grid/column-size {:small 12 :medium 8})
                 (v/input {:id           (:shipping.address/street form-inputs)
-                            :type         "text"
-                            :defaultValue (:stripe.shipping.address/street address)
-                            :name         "ship-address"
-                            :autoComplete "shipping address-line1"
-                            :placeholder  "Street"}
+                          :type         "text"
+                          :defaultValue (:stripe.shipping.address/street address)
+                          :name         "ship-address"
+                          :autoComplete "shipping address-line1"
+                          :placeholder  "Street"}
                          input-validation))
               (grid/column
                 nil
                 (v/input {:id           (:shipping.address/street2 form-inputs)
-                            :type         "text"
-                            :defaultValue (:stripe.shipping.address/street2 address)
-                            :placeholder  "Apt/Suite/Other"}
+                          :type         "text"
+                          :defaultValue (:stripe.shipping.address/street2 address)
+                          :placeholder  "Apt/Suite/Other"}
                          input-validation)))
             (grid/row
               nil
               (grid/column
                 (grid/column-size {:small 12 :medium 4})
                 (v/input {:id           (:shipping.address/postal form-inputs)
-                            :type         "text"
-                            :defaultValue (:stripe.shipping.address/postal address)
-                            :name         "ship-zip"
-                            :autoComplete "shipping postal-code"
-                            :placeholder  "Postal code"}
+                          :type         "text"
+                          :defaultValue (:stripe.shipping.address/postal address)
+                          :name         "ship-zip"
+                          :autoComplete "shipping postal-code"
+                          :placeholder  "Postal code"}
                          input-validation))
               (grid/column
                 (grid/column-size {:small 12 :medium 4})
                 (v/input {:id           (:shipping.address/locality form-inputs)
-                            :type         "text"
-                            :defaultValue (:stripe.shipping.address/city address)
-                            :name         "ship-city"
-                            :autoComplete "shipping locality"
-                            :placeholder  "City"}
+                          :type         "text"
+                          :defaultValue (:stripe.shipping.address/city address)
+                          :name         "ship-city"
+                          :autoComplete "shipping locality"
+                          :placeholder  "City"}
                          input-validation))
               (grid/column
                 (grid/column-size {:small 12 :medium 4})
-                (v/input {:id (:shipping.address/region form-inputs)
-                            :type         "text"
-                            :defaultValue (:stripe.shipping.address/state address)
-                            :name         "ship-state"
-                            :autoComplete "shipping region"
-                            :placeholder  "Province/State"}
+                (v/input {:id           (:shipping.address/region form-inputs)
+                          :type         "text"
+                          :defaultValue (:stripe.shipping.address/state address)
+                          :name         "ship-state"
+                          :autoComplete "shipping region"
+                          :placeholder  "Province/State"}
                          input-validation)))))
         ;(callout/callout-small
         ;  (css/add-class :warning))
@@ -233,15 +234,16 @@
           (css/add-class :action-buttons)
           (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))
           (button/user-setting-cta
-            {:onClick #(do
-                        (.save-shipping-info component)
-                        )}
+            {:onClick #(.save-shipping-info component)}
             (dom/span nil "Save")))))))
 
 (defn payment-info-modal [component]
   (let [{:query/keys [stripe-customer]} (om/props component)
+        {:payment/keys [selected-card]} (om/get-state component)
         cards (:stripe/sources stripe-customer)             ;[{:brand "American Express" :last4 1234 :exp-year 2018 :exp-month 4}]
-        on-close #(om/update-state! component dissoc :modal)]
+        on-close #(do (mixpanel/track "Close payment info")
+                      (om/update-state! component dissoc :modal))]
+    (debug "Selected card: " selected-card)
     (common/modal
       {:on-close on-close
        :size     :full}
@@ -260,44 +262,46 @@
              (dom/div (css/add-classes [:section-title :text-left])
                       (dom/small nil "Default"))
              (let [default-card (some #(when (= (:stripe.card/id %) (:stripe/default-source stripe-customer)) %) (:stripe/sources stripe-customer))]
+               (debug "Default card: " default-card)
                (menu/vertical
                  (css/add-classes [:section-list :section-list--cards])
                  (map-indexed (fn [i c]
-                                (let [{:stripe.card/keys [brand last4]} c]
-                                  (let [{:stripe.card/keys [brand last4 id]} c]
-                                    (menu/item
-                                      (css/add-class :section-list-item--card)
-                                      (dom/a
-                                        nil                 ;{:onClick #(om/update-state! this assoc :selected-source id)}
-                                        (dom/input {:type "radio"
-                                                    :name "sulo-select-cc"
-                                                    })
-                                        (dom/div
-                                          (css/add-class :payment-card)
-                                          (dom/div {:classes ["icon" (get {"Visa"             "icon-cc-visa"
-                                                                           "American Express" "icon-cc-amex"
-                                                                           "MasterCard"       "icon-cc-mastercard"
-                                                                           "Discover"         "icon-cc-discover"
-                                                                           "JCB"              "icon-cc-jcb"
-                                                                           "Diners Club"      "icon-cc-diners"
-                                                                           "Unknown"          "icon-cc-unknown"} brand "icon-cc-unknown ")]})
-                                          (dom/p nil
-                                                 (dom/span (css/add-class :payment-brand) brand)
-                                                 (dom/small (css/add-class :payment-last4) (str "ending in " last4))
-                                                 )))
+                                (let [{:stripe.card/keys [brand last4 id]} c]
+                                  (menu/item
+                                    (css/add-class :section-list-item--card)
+                                    (dom/a
+                                      {:onClick #(om/update-state! component assoc :payment/selected-card id)}
+                                      (dom/input {:type    "radio"
+                                                  :name    "sulo-select-cc"
+                                                  :checked (if (some? selected-card)
+                                                             (= id selected-card)
+                                                             (= id (:stripe.card/id default-card)))})
                                       (dom/div
+                                        (css/add-class :payment-card)
+                                        (dom/div {:classes ["icon" (get {"Visa"             "icon-cc-visa"
+                                                                         "American Express" "icon-cc-amex"
+                                                                         "MasterCard"       "icon-cc-mastercard"
+                                                                         "Discover"         "icon-cc-discover"
+                                                                         "JCB"              "icon-cc-jcb"
+                                                                         "Diners Club"      "icon-cc-diners"
+                                                                         "Unknown"          "icon-cc-unknown"} brand "icon-cc-unknown ")]})
+                                        (dom/p nil
+                                               (dom/span (css/add-class :payment-brand) brand)
+                                               (dom/small (css/add-class :payment-last4) (str "ending in " last4))
+                                               )))
+                                    (dom/div
+                                      nil
+                                      (button/user-setting-default
                                         nil
-                                        (button/user-setting-default
-                                          nil
-                                          (dom/span nil "Remove")))))))
+                                        (dom/span nil "Remove"))))))
                               cards)))
              (dom/p nil (dom/small nil "New cards are saved at checkout.")))
            (dom/div
              (css/add-class :action-buttons)
-             (button/user-setting-default {:onClick #(do
-                                                      (mixpanel/track "Close shipping info")
-                                                      (on-close))} (dom/span nil "Close"))
-             (button/user-setting-cta {:onClick #(do (mixpanel/track "Save payment info"))} (dom/span nil "Save")))])))))
+             (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))
+             (button/user-setting-cta {:onClick #(do
+                                                  (mixpanel/track "Save payment info")
+                                                  (.save-payment-info component))} (dom/span nil "Save")))])))))
 (defui UserSettings
   static om/IQuery
   (query [_]
@@ -331,6 +335,18 @@
            (msg/om-transact! this [(list 'stripe/update-customer {:shipping shipping-map})
                                    :query/stripe-customer]))
          (om/update-state! this assoc :shipping/input-validation validation))))
+  (save-payment-info [this]
+    #?(:cljs
+       (let [{:query/keys [stripe-customer]} (om/props this)
+             {:payment/keys [selected-card]} (om/get-state this)
+             default-card (some #(when (= (:stripe.card/id %) (:stripe/default-source stripe-customer)) %) (:stripe/sources stripe-customer))]
+
+         (mixpanel/track "Save payment info")
+         (if-not (= selected-card (:stripe.card/id default-card))
+           (msg/om-transact! this [(list 'stripe/update-customer {:default-source selected-card})
+                                   :query/stripe-customer])
+           (om/update-state! this dissoc :modal)))))
+
   (save-user-info [this]
     #?(:cljs
        (let [input-name (utils/input-value-by-id (:user.info/name form-inputs))
@@ -371,17 +387,22 @@
   ;  {:modal :modal/shipping-info})
   (is-loading? [this]
     (let [info-msg (msg/last-message this 'user.info/update)
-          photo-msg (msg/last-message this 'photo/upload)]
+          photo-msg (msg/last-message this 'photo/upload)
+          stripe-msg (msg/last-message this 'stripe/update-customer)]
       (or (msg/pending? info-msg)
-          (msg/pending? photo-msg))))
+          (msg/pending? photo-msg)
+          (msg/pending? stripe-msg))))
   (render [this]
     (let [{:proxy/keys [navbar]
            :query/keys [auth current-route stripe-customer]} (om/props this)
           {:keys [modal photo-upload queue-photo]} (om/get-state this)
           {user-profile :user/profile} auth
-          {:keys [route-params]} current-route]
+          {:keys [route-params]} current-route
+          is-loading? (.is-loading? this)]
       (common/page-container
         {:navbar navbar :id "sulo-user-settings"}
+        (when is-loading?
+          (common/loading-spinner nil))
         (grid/row-column
           nil
           (dom/h1 nil "Settings")
@@ -495,7 +516,7 @@
                                (dom/span nil name)
                                (dom/br nil)
                                (dom/small nil (str street ", " city " " postal))
-                               (dom/br nil )
+                               (dom/br nil)
                                (dom/small nil (string/join ", " [state country])))
                         ))
                     (dom/p nil (dom/small nil (dom/i nil "No saved address")))

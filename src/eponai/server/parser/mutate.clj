@@ -104,8 +104,8 @@
 (defmutation photo/upload
   [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ params]
   {:auth ::auth/any-user
-   :resp {:success "Photo uploaded"
-          :error   "Could not upload photo :("}}
+   :resp {:success "Your photo was successfully uploaded."
+          :error   "Sorry, your photo failed to upload. Try again later."}}
   {:action (fn []
              (let [old-profile (db/one-with (db/db state) {:where   '[[?u :user/profile ?e]]
                                                            :symbols {'?u (:user-id auth)}})
@@ -123,8 +123,8 @@
 (defmutation user.info/update
   [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ {:keys [:user/name]}]
   {:auth ::auth/any-user
-   :resp {:success "Photo uploaded"
-          :error   "Could not upload photo :("}}
+   :resp {:success "Your info was successfully updated."
+          :error   "Sorry, your info could not be updated. Try again later."}}
   {:action (fn []
              (let [old-profile (db/one-with (db/db state) {:where   '[[?u :user/profile ?e]]
                                                            :symbols {'?u (:user-id auth)}})
@@ -138,8 +138,8 @@
 (defmutation store.photo/upload
   [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ {:keys [photo photo-key store-id] :as p}]
   {:auth {::auth/store-owner store-id}
-   :resp {:success "Photo uploaded"
-          :error   "Could not upload photo :("}}
+   :resp {:success "Your photo was successfully uploaded."
+          :error   "Sorry, your photo failed to upload. Try again later."}}
   {:action (fn []
              (debug "Photo upload Store with params: " p)
              (when (keyword? photo-key)
@@ -258,8 +258,8 @@
 (defmutation store/update-info
   [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [store/profile] :as store}]
   {:auth {::auth/store-owner (:db/id store)}
-   :resp {:success "Your store info was updated"
-          :error   "Could not update store info"}}
+   :resp {:success "Your store info was successfully updated."
+          :error   "Sorry, your info could not be updated. Try again later."}}
   {:action (fn []
              (let [db-store (db/pull (db/db state) [:store/profile] (:db/id store))
                    s (-> (select-keys profile [:store.profile/name :store.profile/description :store.profile/tagline :store.profile/return-policy])
@@ -278,8 +278,8 @@
 (defmutation store/update-product-order
   [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [items store-id]}]
   {:auth {::auth/store-owner store-id}
-   :resp {:success "Your store info was updated"
-          :error   "Could not update store info"}}
+   :resp {:success "Your product layout was updated."
+          :error   "Sorry, could not update product order. Try again later."}}
   {:action (fn []
              (db/transact state (map (fn [p]
                                        [:db/add (:db/id p) :store.item/index (:store.item/index p)])
@@ -297,8 +297,8 @@
 (defmutation store/save-shipping-rule
   [env _ {:keys [store-id] :as p}]
   {:auth {::auth/store-owner store-id}
-   :resp {:success "Your store sections were updated"
-          :error   "Could not update store sections."}}
+   :resp {:success "Your shipping rule was successfully created."
+          :error   "Sorry, failed to create shipping rule. Try again later."}}
   {:action (fn []
              (debug "store/update-sections with params: " p)
              (store/create-shipping-rule env (c/parse-long store-id) p))})
@@ -306,8 +306,8 @@
 (defmutation store/update-shipping-rule
   [env _ {:keys [store-id shipping-rule] :as p}]
   {:auth {::auth/store-owner store-id}
-   :resp {:success "Your store sections were updated"
-          :error   "Could not update store sections."}}
+   :resp {:success "Your shipping rule was successfully updated."
+          :error   "Sorry, failed to update shipping rule. Try again later."}}
   {:action (fn []
              (debug "store/update-shipping-rule with params: " p)
              (store/update-shipping-rule env (:db/id shipping-rule) shipping-rule))})
@@ -349,7 +349,7 @@
                (stripe/update-account (:system/stripe system) id account-params)))})
 
 (defmutation stripe/update-customer
-  [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [shipping source remove-source] :as params}]
+  [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [shipping default-source source remove-source] :as params}]
   {:auth {::auth/any-user true}
    :resp {:success return
           :error   (if (some? exception)
@@ -362,25 +362,32 @@
                    new-card (when source (stripe/create-card (:system/stripe system) id source))
                    remove-source (when remove-source (stripe/delete-card (:system/stripe system) id remove-source))
                    customer-id (or id
-                                    (:stripe/id (stripe/create-customer (:system/stripe system) {:email email})))]
+                                   (:stripe/id (stripe/create-customer (:system/stripe system) {:email email})))
+
+                   address (:shipping/address shipping)
+                   stripe-params (cond-> {}
+                                         (some? shipping)
+                                         (assoc :shipping {:name    (:shipping/name shipping)
+                                                           :address {:line1       (:shipping.address/street address)
+                                                                     :line2       (:shipping.address/street2 address)
+                                                                     :postal_code (:shipping.address/postal address)
+                                                                     :city        (:shipping.address/locality address)
+                                                                     :state       (:shipping.address/region address)
+                                                                     :country     (:shipping.address/country address)}})
+
+                                         (some? default-source)
+                                         (assoc :default_source default-source))]
                (when (and (nil? id) (some? customer-id))
                  (let [db-customer (f/add-tempid {:stripe/id customer-id})]
-                   (debug "Created new customer: " db-customer)
                    (db/transact state [db-customer
                                        [:db/add (:user-id auth) :user/stripe (:db/id db-customer)]])))
-               (when shipping
-                 (let [address (:shipping/address shipping)]
-                   (stripe/update-customer (:system/stripe system)
-                                           customer-id
-                                           {:shipping {:name    (:shipping/name shipping)
-                                                       :address {:line1       (:shipping.address/street address)
-                                                                 :line2       (:shipping.address/street2 address)
-                                                                 :postal_code (:shipping.address/postal address)
-                                                                 :city        (:shipping.address/locality address)
-                                                                 :state       (:shipping.address/region address)
-                                                                 :country     (:shipping.address/country address)}}})))
-               {:new-card     new-card
-                :deleted-card remove-source}))})
+               (when (not-empty stripe-params)
+                 (stripe/update-customer (:system/stripe system) customer-id stripe-params))
+
+               {:new-card       new-card
+                :shipping       shipping
+                :default-source default-source
+                :deleted-card   remove-source}))})
 
 (defmutation store/create
   [{:keys [state ::parser/return ::parser/exception auth system] :as env} _ params]
@@ -398,8 +405,8 @@
 (defmutation store/create-product
   [env _ {:keys [product store-id] :as p}]
   {:auth {::auth/store-owner store-id}
-   :resp {:success "Your account was created"
-          :error   "Could not create Stripe account"}}
+   :resp {:success "Your product was created."
+          :error   "Sorry, could not create your product. Try again later."}}
   {:action (fn []
              (debug "store/create-product with params: " p)
              (store/create-product env (c/parse-long store-id) product))})
@@ -407,8 +414,8 @@
 (defmutation store/update-product
   [env _ {:keys [product store-id product-id] :as p}]
   {:auth {::auth/store-owner store-id}
-   :resp {:success "Your account was created"
-          :error   "Could not create Stripe account"}}
+   :resp {:success "Your product was updated."
+          :error   "Sorry, could not update your product. Try again later."}}
   {:action (fn []
              (debug "store/update-product with params: " p)
              (store/update-product env (c/parse-long product-id) product))})
@@ -416,8 +423,8 @@
 (defmutation store/delete-product
   [env _ {:keys [product store-id]}]
   {:auth {::auth/store-owner store-id}
-   :resp {:success "Product deleted"
-          :error   "Could not delete product"}}
+   :resp {:success "Your product was deleted."
+          :error   "Sorry, could not delete your product. Try again later."}}
   {:action (fn []
              (store/delete-product env (:db/id product)))})
 
@@ -445,7 +452,7 @@
 (defmutation store/update-order
   [env _ {:keys [order-id store-id params] :as p}]
   {:auth {::auth/store-owner store-id}
-   :resp {:success "Order created"
-          :error   "Could not create order"}}
+   :resp {:success "Order was updated"
+          :error   "Sorry, could not update order. Try again later."}}
   {:action (fn []
              (store/update-order env (c/parse-long store-id) (c/parse-long order-id) params))})
