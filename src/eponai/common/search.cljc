@@ -19,7 +19,7 @@
                        :db/cardinality :db.cardinality/many
                        :db/index       true}})
 
-(def index-depth 3)
+(def index-depth 2)
 
 (defn limit-depth [s]
   (if (> (count s) index-depth)
