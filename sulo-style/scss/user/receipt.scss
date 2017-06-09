@@ -3,6 +3,16 @@
 		max-width: $dashboard-content-width;
 		margin: 0 auto;
 	// }
+	.row.column {
+		> .row {
+			// .column {
+				// text-align: center;
+			// }
+		}
+	}
+	.section-title {
+		letter-spacing: 0;
+	}
 	.page-title {
 		font-size: 1.5rem;
 		padding-bottom: 1rem;
@@ -49,7 +59,8 @@
 	.section-list {
 		// border: none;
 		// border-color: $light-gray;
-		padding-bottom: 0;
+		// padding-bottom: 0;
+		// margin-bottom: 2rem;
 		li:last-child {
 			padding: 0.5rem 0;
 			p {
@@ -60,6 +71,7 @@
 	}
 	.total-price {
 		font-size: 120%;
+		margin-bottom: 4rem;
 	}
 
 	.section-list-item {

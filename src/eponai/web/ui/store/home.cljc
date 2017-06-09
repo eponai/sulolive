@@ -96,7 +96,10 @@
       (dom/div
         {:id "sulo-main-dashboard"}
 
-        (dom/h1 (css/show-for-sr) "Dashboard")
+        (dom/div
+          (css/add-class :section-title)
+          (dom/h1 nil "Home"))
+
         (dom/div
           (css/add-class :section-title)
           (dom/h2 nil "Your store"))

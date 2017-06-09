@@ -72,19 +72,23 @@
     [this payment]
     #?(:cljs
        (let [{:query/keys [current-route checkout]} (om/props this)
-             {:checkout/keys [shipping]} (om/get-state this)
-             shipping-fee (get-in (first checkout) [:store.item/_skus :store/_items :store/profile :store.profile/shipping-fee] 0)
+             {:checkout/keys [shipping]
+              :shipping/keys [selected-rate]} (om/get-state this)
+             shipping-fee (compute-shipping-fee selected-rate checkout)
+             ;shipping-fee (get-in (first checkout) [:store.item/_skus :store/_items :store/profile :store.profile/shipping-fee] 0)
              {:keys [source]} payment
              {:keys [route-params]} current-route
              {:keys [store-id]} route-params]
          (let [items checkout]
            (msg/om-transact! this `[(store/create-order ~{:order    {
                                                                      ;:customer     (:stripe/id stripe-customer)
-                                                                     :source       source
-                                                                     :shipping     shipping
-                                                                     :items        items
-                                                                     :shipping-fee shipping-fee
-                                                                     :subtotal     (review/compute-item-price items)}
+                                                                     :source        source
+                                                                     :shipping      shipping
+                                                                     :items         items
+                                                                     :shipping-rate {:amount      shipping-fee
+                                                                                     :title       (:shipping.rate/title selected-rate)
+                                                                                     :description (:shipping.rate/info selected-rate)}
+                                                                     :subtotal      (review/compute-item-price items)}
                                                           :store-id (c/parse-long store-id)})]))
          (om/update-state! this assoc :loading/message "Placing your order..."))))
   (save-payment [this]
@@ -272,10 +276,10 @@
                 (dom/div
                   (css/add-class :subsection)
                   (dom/p (css/add-class :subsection-title) "Payment options")
-                  (pay/->CheckoutPayment (om/computed {:error               error-message
-                                                       :amount              grandtotal
-                                                       :default-source      (:stripe/default-source stripe-customer)
-                                                       :sources             (:stripe/sources stripe-customer)}
+                  (pay/->CheckoutPayment (om/computed {:error          error-message
+                                                       :amount         grandtotal
+                                                       :default-source (:stripe/default-source stripe-customer)
+                                                       :sources        (:stripe/sources stripe-customer)}
                                                       {:on-change #(do
                                                                     (debug "Got payment: " %)
                                                                     (om/update-state! this assoc :checkout/payment %)

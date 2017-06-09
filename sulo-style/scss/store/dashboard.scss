@@ -1,5 +1,39 @@
 
 #sulo-store-dashboard {
+	.callout.submenu {
+		padding: 1rem;
+		li {
+			font-size: 90%;
+			a:not(.button) {
+				color: $medium-gray;
+				transition: color .25s ease-in-out;
+				font-weight: $global-weight-bold;
+			}
+			&.is-active, &:hover {
+				// color: $body-font-color;
+				a:not(.button) {
+					color: $body-font-color;
+				}
+			}
+			&.search-input {
+				padding: 0 1rem;
+				flex: 1;
+			}
+		}
+	}
+	.go-back {
+		padding-top: 1rem;
+		padding-left: 0.5rem;
+		font-weight: $global-weight-bold;
+		font-size: 90%;
+		a {
+			transition: color .25s ease-in-out;
+			color: $dark-gray;
+			&:hover  {
+				color: $body-font-color;
+			}
+		}
+	}
 	.page-container {
 		background: $dashboard-background;
 	}
@@ -11,6 +45,9 @@
 			text-align: right;
 		}
 	}
+	.callout {
+		border: none;
+	}
 	.footer {
 		display: none;
 	}
@@ -20,7 +57,7 @@
 	}
 	h2 {
 		// font-family: $header-font-family-serif;
-		color: $dark-gray;
+		// color: $dark-gray;
 		// text-transform: uppercase;
 		margin-bottom: 0.5rem;
 	}
@@ -35,6 +72,7 @@
 	}
 	.section-title {
 		margin-left: 0.5rem;
+		letter-spacing: 0.5px;
 	}
 	#sulo-navbar .navbar-container {
 		box-shadow: none;
@@ -138,9 +176,9 @@
 	}
 
 	.page-content {
-		padding-top: 5rem;
+		// padding-top: 5rem;
 		@include breakpoint(large) {
-			padding-top: 5rem;
+			// padding-top: 5rem;
 		}
 		.wip-label {
 			margin-top: -2.5rem;

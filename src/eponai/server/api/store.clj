@@ -139,28 +139,36 @@
   (let [store (db/lookup-entity (db/db state) store-id)]
     (assoc o :order/store store :order/user user-id)))
 
-(defn create-order [{:keys [state system auth]} store-id {:keys [items shipping source subtotal shipping-fee]}]
+(defn create-order [{:keys [state system auth]} store-id {:keys [items shipping source subtotal shipping-rate]}]
   (let [
         {:keys [stripe/id]} (stripe/pull-stripe (db/db state) store-id)
         user-stripe (stripe/pull-user-stripe (db/db state) (:user-id auth))
         {:keys [user/cart]} (db/pull (db/db state) [{:user/cart [:db/id]}] (:user-id auth))
         {:keys [shipping/address]} shipping
-        shipping-fee (or shipping-fee 0)
+        shipping-fee (:amount shipping-rate 0)
 
         total-amount (+ subtotal shipping-fee)
         application-fee (* 0.2 subtotal)                    ;Convert to cents for Stripe
         transaction-fee (* 0.029 total-amount)
-        destination-amount (- total-amount (+ application-fee transaction-fee))
+        sulo-fee (+ application-fee transaction-fee)
+        destination-amount (- total-amount sulo-fee)
 
+        shipping-item (cf/remove-nil-keys {:order.item/type        :order.item.type/shipping
+                                           :order.item/amount      (bigdec shipping-fee)
+                                           :order.item/title       (:title shipping-rate)
+                                           :order.item/description (:description shipping-rate)})
+        sulo-fee-item (cf/remove-nil-keys {:order.item/type        :order.item.type/sulo-fee
+                                           :order.item/amount      (bigdec sulo-fee)
+                                           ;:order.item/title       "SULO Live fee"
+                                           :order.item/description "Service fee"})
         order (-> (f/order {:order/items      items
                             :order/uuid       (db/squuid)
                             :order/shipping   shipping
                             :order/user       (:user-id auth)
                             :order/store      store-id
-                            :order/amount     (bigdec destination-amount)
+                            :order/amount     (bigdec total-amount)
                             :order/created-at (date/current-millis)})
-                  (update :order/items conj {:order.item/type   :order.item.type/shipping
-                                             :order.item/amount (bigdec shipping-fee)}))]
+                  (update :order/items conj shipping-item sulo-fee-item))]
     (when (some? user-stripe)
       (let [charge (stripe/create-charge (:system/stripe system) {:amount      (int (* 100 total-amount)) ;Convert to cents for Stripe
                                                                   ;:application_fee (int (+ application-fee transaction-fee))

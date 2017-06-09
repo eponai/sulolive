@@ -63,7 +63,7 @@
                          (dom/div
                            (css/add-class :info-photo)
                            (photo/product-preview product {:transformation :transformation/thumbnail}))
-                         (dom/p nil (dom/small nil (:store.item/name product))
+                         (dom/p nil (dom/small nil (:order.item/title oi))
                                 (dom/br nil)
                                 (dom/small nil (:store.item.sku/variation sku))))
                        (dom/div
@@ -91,6 +91,9 @@
                     :order/status
                     :order/amount
                     {:order/items [:order.item/type
+                                   :order.item/amount
+                                   :order.item/description
+                                   :order.item/title
                                    {:order.item/parent [{:store.item/_skus [:store.item/name
                                                                             :store.item/price
                                                                             {:store.item/photos [{:store.item.photo/photo [:photo/id]}
@@ -118,7 +121,8 @@
           {:keys [route route-params]} current-route
           {:order/keys [store created-at]} order
           {:store.profile/keys [tagline]
-           store-name          :store.profile/name} (:store/profile store)]
+           store-name          :store.profile/name} (:store/profile store)
+          delivery (some #(when (= (:order.item/type %) :order.item.type/shipping) %) (:order/items order))]
       (debug "Order receipt:  " order)
       (debug "Order charge:  " order-payment)
       (dom/div
@@ -167,9 +171,12 @@
                          (dom/small nil (str " ending in " (:last4 source)))
                          (dom/br nil)
                          (dom/small nil (str "Charged on " (date/date->string (* 1000 (:charge/created order-payment)) "MMMM dd, YYYY"))))))
+              )
+            (grid/row
+              (grid/columns-in-row {:small 1 :medium 2})
               (grid/column
                 nil
-                (dom/label nil "Shipping")
+                (dom/label nil "Ship to")
                 (let [{:shipping/keys [name address]} (:order/shipping order)]
                   (dom/p nil
                          (dom/strong nil name)
@@ -180,11 +187,19 @@
                                                                        (:shipping.address/postal address)
                                                                        (:shipping.address/region address)])))
                          (dom/br nil)
-                         (dom/span nil (:shipping.address/country address))))))
+                         (dom/span nil (:shipping.address/country address)))))
+              (grid/column
+                nil
+                (dom/label nil "Delivery")
+                (dom/p nil (dom/strong nil (:order.item/title delivery))
+                       (dom/br nil)
+                       (dom/span nil (:order.item/description delivery))))
+              )
+
 
             (dom/div
               (css/add-class :section-title)
-              (dom/p nil "Order details"))
+              (dom/label nil "Details"))
             (menu/vertical
               (css/add-class :section-list)
               (map (fn [oi]
@@ -199,39 +214,40 @@
                                   (css/add-class :order-item-info))
                              (photo/product-preview product {:transformation :transformation/thumbnail})
                              (dom/p nil
-                                    (dom/span nil (:store.item/name product))
+                                    (dom/span nil (:order.item/title oi))
                                     (dom/br nil)
-                                    (dom/small nil (:store.item.sku/variation sku))))
+                                    (dom/small nil (:order.item/description oi))))
                            ;(grid/column (grid/column-size {:small 4 :medium 3}))
                            (grid/column
                              (->> (grid/column-size {:small 4 :medium 6})
                                   (css/text-align :right)
                                   (css/add-class :order-item-price))
                              (dom/p nil
-                                    (ui-utils/two-decimal-price (:store.item/price product))))))))
+                                    (ui-utils/two-decimal-price (:order.item/amount oi))))))))
                    (filter #(= (:order.item/type %) :order.item.type/sku) (:order/items order)))
-              (let [shipping (some #(when (= (:order-type %) :order.item.type/shipping) %) (:order/items order))]
-                (menu/item nil
-                           (grid/row
-                             nil
-                             (grid/column (grid/column-size {:small 4 :medium 6}))
-                             (grid/column
-                               (grid/column-size {:small 4 :medium 3})
-                               (dom/p nil "Shipping"))
-                             (grid/column
-                               (->> (grid/column-size {:small 4 :medium 3})
-                                    (css/text-align :right))
-                               (dom/p nil (ui-utils/two-decimal-price shipping))))
-                           (grid/row
-                             nil
-                             (grid/column (grid/column-size {:small 4 :medium 6}))
-                             (grid/column
-                               (grid/column-size {:small 4 :medium 3})
-                               (dom/p nil "Tax"))
-                             (grid/column
-                               (->> (grid/column-size {:small 4 :medium 3})
-                                    (css/text-align :right))
-                               (dom/p nil (ui-utils/two-decimal-price 0)))))))
+
+              (menu/item nil
+                         (grid/row
+                           nil
+                           (grid/column (grid/column-size {:small 4 :medium 6})
+                                        (dom/p nil (dom/span nil (:order.item/title delivery))))
+                           (grid/column
+                             (grid/column-size {:small 4 :medium 3})
+                             (dom/p nil "Shipping"))
+                           (grid/column
+                             (->> (grid/column-size {:small 4 :medium 3})
+                                  (css/text-align :right))
+                             (dom/p nil (ui-utils/two-decimal-price (:order.item/amount delivery)))))
+                         (grid/row
+                           nil
+                           (grid/column (grid/column-size {:small 4 :medium 6}))
+                           (grid/column
+                             (grid/column-size {:small 4 :medium 3})
+                             (dom/p nil "Tax"))
+                           (grid/column
+                             (->> (grid/column-size {:small 4 :medium 3})
+                                  (css/text-align :right))
+                             (dom/p nil (ui-utils/two-decimal-price 0))))))
             (grid/row
               (css/add-class :total-price)
               (grid/column (grid/column-size {:small 4 :medium 6}))
@@ -241,6 +257,8 @@
                 (->> (grid/column-size {:small 4 :medium 3})
                      (css/text-align :right))
                 (dom/strong nil (ui-utils/two-decimal-price (:charge/amount order-payment)))))
+
+
             (dom/div
               (css/add-class :contact)
               (dom/p nil

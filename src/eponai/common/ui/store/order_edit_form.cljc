@@ -13,10 +13,12 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.format.date :as date]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.utils :refer [two-decimal-price]]
+    [eponai.common.ui.utils :as ui-utils]
     [eponai.web.ui.store.common :as store-common]
     [eponai.common.ui.elements.table :as table]
-    [eponai.common.ui.elements.menu :as menu]))
+    [eponai.common.ui.elements.menu :as menu]
+    [eponai.web.ui.button :as button]
+    [eponai.web.ui.photo :as photo]))
 
 (def form-elements
   {:input-currency "oef-input-currency"
@@ -81,239 +83,223 @@
     content))
 
 (defn edit-order [component]
-  (let [{:keys [query/order]} (om/props component)
+  (let [{:query/keys [order current-route]} (om/props component)
         {:keys [dropdown]} (om/get-state component)
         {:order/keys [id amount currency items store]} order
+        {store-name :store.profile/name} (:store/profile store)
 
         skus (filter #(= :order.item.type/sku (:order.item/type %)) items)
         tax (some #(when (= :tax (:order.item/type %)) %) items)
         shipping (some #(when (= :shipping (:order.item/type %)) %) items)
-        order-created (when-some [created (:order/created order)]
-                        (date/date->string (* 1000 created) "MMM dd yyyy HH:mm"))
+        order-created (when-some [created (:order/created-at order)]
+                        (date/date->string created "MMMM dd YYYY"))
         grouped-orders (group-by :order.item/type items)
         subtotal (reduce + 0 (map :order.item/amount (:order.item.type/sku grouped-orders)))
 
         ;order (assoc order :order/status :order.status/returned)
         order-email (get-in order [:order/user :user/email])
         total-amount (reduce + 0 (map :order.item/amount items))
-        order-status (:order/status order)]
+        order-status (:order/status order)
+        delivery (some #(when (= (:order.item/type %) :order.item.type/shipping) %) (:order/items order))
+        sulo-fee (some #(when (= (:order.item/type %) :order.item.type/sulo-fee) %) (:order/items order))]
     (dom/div
       nil
       (order-status-modal component)
 
 
+      (grid/row-column
+        (css/add-class :go-back)
+        (dom/a
+          {:href (routes/url :store-dashboard/order-list (:route-params current-route))}
+          (dom/span nil "Back to order list")))
       (dom/div
         (css/add-class :section-title)
-        (dom/h2 nil
+        (dom/h1 nil
                 (dom/span nil "Order ")
                 (dom/small nil (str "#" (:db/id order)))))
       (callout/callout
         nil
-        (grid/row
-          (css/add-class :collapse)
-          (grid/column
-            (grid/column-size {:small 12 :large 6})
-            (dom/div
-              (css/add-class :order-action)
+        (grid/row-column
+          nil
+          (dom/h2 nil
+                  (common/order-status-element order)
+                  (dom/span nil (:shipping/name (:order/shipping order))))
+          ;(dom/p nil (dom/span nil order-email))
+          (dom/a
+            (->> (css/button-hollow {:href (str "mailto:" order-email "?subject=SULO Live order #" (:db/id order) " from " store-name)})
+                 (css/add-class :small))
+            (dom/i {:classes ["fa fa-envelope-o"]})
+            (dom/span nil "Contact shopper"))
+          (dom/label nil "Created")
+          (dom/p nil order-created))
+        (let [shipping (:order/shipping order)
+              address (:shipping/address shipping)]
+          (grid/row
+            (->> (grid/columns-in-row {:small 1 :medium 2})
+                 (css/align :bottom))
+            (grid/column
+              nil
               (dom/div
-                nil
-                (if (or (= order-status :order.status/returned)
-                        (= order-status :order.status/canceled))
-                  (dom/i {:classes ["fa fa-rotate-left fa-fw fa-2x"]})
-                  (dom/i {:classes ["fa fa-credit-card fa-fw fa-2x"]}))
-                (cond (or (= order-status :order.status/paid)
-                          (= order-status :order.status/fulfilled))
-                      (dom/span nil "Payment accepted")
-
-                      (= order-status :order.status/created)
-                      (dom/span nil "Payment pending")
-
-                      (or (= order-status :order.status/returned)
-                          (= order-status :order.status/canceled))
-                      (dom/span nil "Payment refunded")))))
-          (grid/column
-            (grid/column-size {:small 12 :large 6})
-            (dom/div
-              (css/add-class :order-action)
-              (dom/div nil
-                       (dom/i {:classes ["fa fa-truck fa-fw fa-2x"]})
-                       (cond (= order-status :order.status/fulfilled)
-                             (dom/span nil "Items fulfilled")
-                             :else
-                             (dom/span nil "Fulfill items")))
-              (cond
-                (= order-status :order.status/fulfilled)
-                (dom/a
-                  (css/button-hollow {:onClick #(om/update-state! component assoc :modal :modal/mark-as-returned?)})
-                  "Return Items")
-                (= order-status :order.status/returned)
-                (dom/a nil "")
-                :else
-                (dom/a (cond->> (css/button {:onClick #(om/update-state! component assoc :modal :modal/mark-as-fulfilled?)})
-                                (not= (:order/status order) :order.status/paid)
-                                (css/add-class :disabled))
-                       (dom/span nil "Fulfill Items")))))))
-
-      ;(dom/div
-      ;  (css/add-class :section-title)
-      ;  (dom/h2 nil "Details"))
+                (css/add-class :shipping-address)
+                (dom/label nil "Ship to: ")
+                (dom/p nil (dom/strong nil (:shipping/name shipping))
+                       (dom/br nil)
+                       (dom/span nil (:shipping.address/street address))
+                       (dom/br nil)
+                       (when (not-empty (:shipping.address/street2 address))
+                         [
+                          (dom/span nil (:shipping.address/street2 address))
+                          (dom/br nil)])
+                       (dom/span nil
+                                 (str
+                                   (:shipping.address/locality address)
+                                   ", "
+                                   (:shipping.address/postal address)
+                                   " "
+                                   (:shipping.address/region address)
+                                   ))
+                       (dom/br nil)
+                       (dom/span nil (:shipping.address/country address))))
+              (dom/label nil "Shipping option")
+              (dom/p nil (dom/span nil (:order.item/title delivery))
+                     (dom/br nil)
+                     (dom/small
+                       nil
+                       (dom/strong nil "Note to customer: ")
+                       (dom/span nil (:order.item/description delivery)))))
+            (grid/column
+              nil
+              (dom/div
+                (css/add-class :action-buttons)
+                (cond
+                  (= order-status :order.status/fulfilled)
+                  (dom/a
+                    (css/button-hollow {:onClick #(om/update-state! component assoc :modal :modal/mark-as-returned?)})
+                    "Mark as returned")
+                  (= order-status :order.status/returned)
+                  (dom/a nil "")
+                  :else
+                  (dom/a (cond->> (css/button {:onClick #(om/update-state! component assoc :modal :modal/mark-as-fulfilled?)})
+                                  (not= (:order/status order) :order.status/paid)
+                                  (css/add-class :disabled))
+                         (dom/span nil "Mark as shipped")))
+                (when (or (= order-status :order.status/created)
+                          (= order-status :order.status/paid))
+                  (dom/div
+                    nil
+                    (dom/a
+                      (->> (css/button-hollow {:onClick #(om/update-state! component assoc :modal :modal/mark-as-canceled?)})
+                           (css/add-classes [:secondary])) "Cancel order"))))
+              )))
+        )
 
       (callout/callout
         nil
-        (grid/row
-          (css/add-class :collapse)
-          (grid/column
-            nil
-            (grid/row
-              nil
-              (label-column nil (dom/label nil "ID: "))
-              (grid/column
-                nil
-                (dom/p nil (:db/id order))))
-            (grid/row
-              nil
-              (label-column nil (dom/label nil "Created: "))
-              (grid/column
-                nil
-                (dom/p nil order-created)))
-            (grid/row
-              nil
-              (label-column nil (dom/label nil "Email: "))
-              (grid/column
-                nil
-                (dom/p nil (dom/a {:href (str "mailto:" order-email "?subject=" (:store.profile/name (:store/profile store)) " Order #" (:db/id order) "")} order-email))))
-            (grid/row
-              nil
-              (label-column nil (dom/label nil "Status: "))
-              (grid/column
-                nil
-                (dom/p nil (common/order-status-element order)))
-              ))
-          (grid/column
-            (grid/column-size {:small 12 :medium 6})
-            (let [shipping (:order/shipping order)
-                  address (:shipping/address shipping)]
-
-              (dom/div
-                (css/add-class :shipping-address)
-                (dom/p nil (dom/label nil "Ship to: "))
-                (dom/p nil (:shipping/name shipping))
-                (dom/div nil (dom/span nil (:shipping.address/street address)))
-                (dom/div nil (dom/span nil (:shipping.address/street2 address)))
-                (dom/div nil
-                         (dom/span nil
-                                   (str
-                                     (:shipping.address/locality address)
-                                     ", "
-                                     (:shipping.address/postal address)
-                                     " "
-                                     (:shipping.address/region address)
-                                     )))
-                (dom/div nil (dom/span nil (:shipping.address/country address)))))))
-
-        (callout/callout
+        (grid/row-column
           nil
-          (table/table
-            (->> (css/add-class :unstriped)
-                 (css/add-class :stack))
-            (table/thead
-              nil
-              (table/thead-row
-                nil
-                (table/th nil "ID")
-                (table/th nil "Description")
-                (table/th nil "Variation")
-                (table/th nil "Price")))
-            (table/tbody
-              nil
-              (map
-                (fn [oi]
-                  (let [sku (:order.item/parent oi)
-                        product (:store.item/_skus sku)]
-                    (table/thead-row
-                      (->> (css/add-class :sl-OrderItemlist-row)
-                           (css/add-class :sl-OrderItemlist-row--sku))
-                      (item-cell
-                        (css/add-class :sl-OrderItemlist-cell--id)
-                        (dom/p nil
-                               (dom/a {:href (routes/url :product {:product-id (:db/id product)})}
-                                      (dom/span nil (:db/id product)))))
-                      (item-cell
-                        (css/add-class :sl-OrderItemlist-cell--description)
-                        (dom/span nil (:store.item/name product)))
-                      (item-cell
-                        (css/add-class :sl-OrderItemlist-cell--variation)
-                        (dom/span nil (:store.item.sku/variation sku)))
-                      (item-cell
-                        (css/add-class :sl-OrderItemlist-cell--price)
-                        (dom/span nil (two-decimal-price (:store.item/price product)))))))
-                (:order.item.type/sku grouped-orders))
-              (let [shipping-item (first (:order.item.type/shipping grouped-orders))]
-                (table/thead-row
-                  (->> (css/add-class :sl-OrderItemlist-row)
-                       (css/add-class :sl-OrderItemlist-row--shipping))
-                  (item-cell (css/add-class :sl-OrderItemlist-cell--id) (dom/span nil "Shipping"))
-                  (item-cell (css/add-class :sl-OrderItemlist-cell--description) )
-                  (item-cell nil)
-                  (item-cell (css/add-class :sl-OrderItemlist-cell--price) (dom/span nil (two-decimal-price (:order.item/amount shipping-item))))))
-              (table/thead-row
-                (->> (css/add-class :sl-OrderItemlist-row)
-                     (css/add-class :sl-OrderItemlist-row--tax))
-                (item-cell (css/add-class :sl-OrderItemlist-cell--id) (dom/span nil "Tax"))
-                (item-cell (css/add-class :sl-OrderItemlist-cell--description) )
-                (item-cell nil)
-                (item-cell (css/add-class :sl-OrderItemlist-cell--price) (dom/span nil (two-decimal-price 0)))))
-            (table/tfoot
-              nil
-              (table/thead-row
-                (->> (css/add-class :sl-OrderItemlist-row)
-                     (css/add-class :sl-OrderItemlist-row--fee))
-                (item-cell (css/add-class :sl-OrderItemlist-cell--id)
-                           (dom/div nil
-                                    (dom/span nil "Fee")
-                                    (dom/div
-                                      (css/add-class :dropdown-trigger)
-                                      (dom/a
-                                        nil
-                                        ;{:onClick #(.open-dropdown component :dropdown/sulo-fee)}
-                                        (dom/i {:classes ["fa fa-question-circle-o fa-fw"]}))
-                                      (dom/div
-                                        (cond->> (css/add-class :dropdown-pane)
-                                                 (= dropdown :dropdown/sulo-fee)
-                                                 (css/add-class :is-open))
-                                        (dom/p nil
-                                               (dom/small nil "SULO Live service fee: ")
-                                               (dom/small nil (two-decimal-price (* 0.2 subtotal))))
-                                        (dom/p nil
-                                               (dom/small nil "Stripe transaction fee: ")
-                                               (dom/small nil (two-decimal-price (* 0.029 total-amount))))))))
-                (item-cell (css/add-class :sl-OrderItemlist-cell--description)
-                           ;(dom/span nil "SULO Live fee")
-                           (dom/p nil (dom/span nil "Service fee"))
-                           )
-                (item-cell nil)
-                (item-cell (css/add-class :sl-OrderItemlist-cell--price) (dom/span nil (two-decimal-price (+ (* 0.029 total-amount) (* 0.2 subtotal))))))
-              (table/thead-row
-                (->> (css/add-class :sl-OrderItemlist-row)
-                     (css/add-class :sl-OrderItemlist-row--total))
-                (item-cell (css/add-class :sl-OrderItemlist-cell--id) (dom/span nil "Total"))
-                (item-cell nil)
-                (item-cell nil)
-                (item-cell (css/add-class :sl-OrderItemlist-cell--price) (dom/span nil (two-decimal-price (:order/amount order)))))))))
+          (dom/h2 nil "Products")
+          (menu/vertical
+            (css/add-class :section-list)
+            (map (fn [oi]
+                   (let [sku (:order.item/parent oi)
+                         product (:store.item/_skus sku)]
+                     (menu/item
+                       (css/add-classes [:section-list-item :order-item])
+                       (grid/row
+                         nil
+                         (grid/column
+                           (->> (grid/column-size {:small 4 :medium 6})
+                                (css/add-class :order-item-info))
+                           (photo/product-photo {:photo-id       (get-in oi [:order.item/photo :photo/id])
+                                          :transformation :transformation/thumbnail})
+                           (dom/p nil (dom/span nil (:db/id product))
+                                  (dom/br nil)
+                                  (dom/small nil (:order.item/title oi))))
+                         ;(grid/column
+                         ;  (css/add-class :order-item-info)
 
-      (grid/row
-        (css/align :bottom)
-        ;(grid/column
-        ;  nil
-        ;  ;(dom/h3 nil (dom/span nil "Edit product - ") (dom/small nil item-name))
-        ;  (dom/h3 nil (dom/span nil "Order - ") (dom/small nil (str "#" (:db/id order)))))
-        (grid/column
-          nil
-          (when (or (= order-status :order.status/created)
-                    (= order-status :order.status/paid))
-            (dom/a
-              (->> (css/button-hollow {:onClick #(om/update-state! component assoc :modal :modal/mark-as-canceled?)})
-                   (css/add-class :alert)) "Cancel Order")))))))
+                         ;  (dom/p nil (dom/span nil (:order.item/title oi))))
+                         (grid/column nil (dom/p nil (dom/span nil (:order.item/description oi))))
+                         (grid/column
+                           (->> (css/text-align :right)
+                                (css/add-class :order-item-price))
+                           (dom/p nil
+                                  (ui-utils/two-decimal-price (:order.item/amount oi))))))))
+                 (filter #(= (:order.item/type %) :order.item.type/sku) (:order/items order)))
+
+            (menu/item
+              (css/add-class :secondary-items)
+              (grid/row
+                nil
+                (grid/column (grid/column-size {:small 4 :medium 6}))
+                (grid/column
+                  (grid/column-size {:small 4 :medium 3})
+                  (dom/p nil "Subtotal"))
+                (grid/column
+                  (->> (grid/column-size {:small 4 :medium 3})
+                       (css/text-align :right))
+                  (dom/p nil (ui-utils/two-decimal-price (apply + (map :order.item/amount (filter #(= (:order.item/type %) :order.item.type/sku) items)))))))
+              (grid/row
+                nil
+                (grid/column (grid/column-size {:small 4 :medium 6})
+                             (dom/p nil (dom/span nil (:order.item/title delivery))))
+                (grid/column
+                  (grid/column-size {:small 4 :medium 3})
+                  (dom/p nil "Shipping"))
+                (grid/column
+                  (->> (grid/column-size {:small 4 :medium 3})
+                       (css/text-align :right))
+                  (dom/p nil (ui-utils/two-decimal-price (:order.item/amount delivery)))))
+              (grid/row
+                nil
+                (grid/column (grid/column-size {:small 4 :medium 6}))
+                (grid/column
+                  (grid/column-size {:small 4 :medium 3})
+                  (dom/p nil "Tax"))
+                (grid/column
+                  (->> (grid/column-size {:small 4 :medium 3})
+                       (css/text-align :right))
+                  (dom/p nil (ui-utils/two-decimal-price 0))))
+              (grid/row
+                nil
+                (grid/column (grid/column-size {:small 4 :medium 6}))
+                (grid/column
+                  (grid/column-size {:small 4 :medium 3})
+                  (dom/p nil (:order.item/description sulo-fee)))
+                (grid/column
+                  (->> (grid/column-size {:small 4 :medium 3})
+                       (css/text-align :right))
+                  (dom/p nil (str "-" (ui-utils/two-decimal-price (:order.item/amount sulo-fee))))))))
+          (grid/row
+            (css/add-class :total-price)
+            (grid/column (grid/column-size {:small 4 :medium 6}))
+            (grid/column (grid/column-size {:small 4 :medium 3})
+                         (dom/strong nil "Total"))
+            (grid/column
+              (->> (grid/column-size {:small 4 :medium 3})
+                   (css/text-align :right))
+              (dom/strong nil (ui-utils/two-decimal-price (- (:order/amount order) (:order.item/amount sulo-fee))))))))
+
+      (grid/row-column
+        (css/add-class :go-back)
+        (dom/a
+          {:href (routes/url :store-dashboard/order-list (:route-params current-route))}
+          (dom/span nil "Back to order list")))
+
+      ;(grid/row
+      ;  (css/align :bottom)
+      ;  ;(grid/column
+      ;  ;  nil
+      ;  ;  ;(dom/h3 nil (dom/span nil "Edit product - ") (dom/small nil item-name))
+      ;  ;  (dom/h3 nil (dom/span nil "Order - ") (dom/small nil (str "#" (:db/id order)))))
+      ;  (grid/column
+      ;    nil
+      ;    (when (or (= order-status :order.status/created)
+      ;              (= order-status :order.status/paid))
+      ;      (dom/a
+      ;        (->> (css/button-hollow {:onClick #(om/update-state! component assoc :modal :modal/mark-as-canceled?)})
+      ;             (css/add-class :alert)) "Cancel Order"))))
+      )))
 
 (defn create-order [component]
   (let [{:keys [products]} (om/get-computed component)]
@@ -366,10 +352,12 @@
      {:query/order [:db/id
                     {:order/items [:order.item/type
                                    :order.item/amount
+                                   :order.item/description
+                                   :order.item/title
                                    {:order.item/parent [:store.item.sku/variation {:store.item/_skus [:db/id :store.item/name :store.item/price]}]}]}
                     :order/amount
                     :order/status
-                    :order/subtotal
+                    :order/created-at
                     {:order/charge [:charge/id
                                     :charge/amount]}
                     {:order/user [:user/email]}

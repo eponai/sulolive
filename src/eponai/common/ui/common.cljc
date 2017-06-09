@@ -19,7 +19,14 @@
       (dom/span
         (->> (css/add-class :sl-orderstatus)
              (css/add-class (str "sl-orderstatus--" (name status))))
-        (name status)))))
+        (cond (#{:order.status/paid :order.status/created} status)
+              "New"
+              (#{:order.status/fulfilled} status)
+              "Shipped"
+              (#{:order.status/returned} status)
+              "Returned"
+              (#{:order.status/canceled} status)
+              "Canceled")))))
 
 (defn follow-button [opts]
   (dom/a

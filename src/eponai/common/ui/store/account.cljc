@@ -20,7 +20,8 @@
     [eponai.client.routes :as routes]
     [eponai.client.parser.message :as msg]
     [eponai.common.ui.elements.callout :as callout]
-    [eponai.web.ui.store.common :as store-common]))
+    ;[eponai.web.ui.store.common :as store-common]
+    ))
 
 (defn tabs-panel [is-active? & content]
   (dom/div
@@ -56,21 +57,21 @@
      :query/current-route
      :query/messages])
 
-  static store-common/IDashboardNavbarContent
-  (render-subnav [_ current-route]
-    (let [{:keys [route-params route]} current-route]
-      (menu/horizontal
-        (css/align :center)
-        (menu/item
-          (when (= route :store-dashboard/settings#payouts)
-            (css/add-class :is-active))
-          (dom/a {:href (routes/url :store-dashboard/settings#payouts route-params)}
-                 (dom/span nil "Finances")))
-        (menu/item
-          (when (= route :store-dashboard/settings#business)
-            (css/add-class :is-active))
-          (dom/a {:href (routes/url :store-dashboard/settings#business route-params)}
-                 (dom/span nil "Business info"))))))
+  ;static store-common/IDashboardNavbarContent
+  ;(render-subnav [_ current-route]
+  ;  (let [{:keys [route-params route]} current-route]
+  ;    (menu/horizontal
+  ;      (css/align :center)
+  ;      (menu/item
+  ;        (when (= route :store-dashboard/settings#payouts)
+  ;          (css/add-class :is-active))
+  ;        (dom/a {:href (routes/url :store-dashboard/settings#payouts route-params)}
+  ;               (dom/span nil "Finances")))
+  ;      (menu/item
+  ;        (when (= route :store-dashboard/settings#business)
+  ;          (css/add-class :is-active))
+  ;        (dom/a {:href (routes/url :store-dashboard/settings#business route-params)}
+  ;               (dom/span nil "Business info"))))))
 
   Object
 

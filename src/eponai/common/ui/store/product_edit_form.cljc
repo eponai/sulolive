@@ -200,7 +200,7 @@
 
   (render [this]
     (let [{:keys [uploaded-photos queue-photo did-mount? sku-count selected-section store-sections]} (om/get-state this)
-          {:query/keys [navigation]} (om/props this)
+          {:query/keys [navigation current-route]} (om/props this)
           {:keys [product-id store-id]} (get-route-params this)
           {:keys [product store]} (om/get-computed this)
           {:store.item/keys [price photos skus description]
@@ -225,10 +225,18 @@
         ;                        "Products"))
         ;  (menu/item nil (dom/span nil
         ;                           (if (is-new-product? this) "New" "Edit"))))
-        (dom/h1 (css/show-for-sr) (if product-id "Edit product" "New product"))
+
+        (grid/row-column
+          (css/add-class :go-back)
+          (dom/a
+            {:href (routes/url :store-dashboard/product-list (:route-params current-route))}
+            (dom/span nil "Back to product list")))
 
         (dom/div
           nil
+          (dom/div
+            (css/add-class :section-title)
+            (dom/h1 nil (if product-id "Edit product" "New product")))
           (dom/div
             (css/add-class :section-title)
             (dom/h2 nil "Photos"))
@@ -473,6 +481,11 @@
                    (css/button))
               (if is-loading?
                 (dom/i {:classes ["fa fa-spinner fa-spin"]})
-                (dom/span nil "Save product")))))))))
+                (dom/span nil "Save product")))))
+        (grid/row-column
+          (css/add-class :go-back)
+          (dom/a
+            {:href (routes/url :store-dashboard/product-list (:route-params current-route))}
+            (dom/span nil "Back to product list")))))))
 
 (def ->ProductEditForm (om/factory ProductEditForm))

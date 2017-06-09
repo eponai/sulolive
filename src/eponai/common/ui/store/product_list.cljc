@@ -22,7 +22,8 @@
     [clojure.string :as string]
     [eponai.client.parser.message :as msg]
     [eponai.web.ui.button :as button]
-    [eponai.common.mixpanel :as mixpanel]))
+    [eponai.common.mixpanel :as mixpanel]
+    [eponai.common.ui.elements.menu :as menu]))
 
 (defn products->grid-layout [component products]
   (let [num-cols 3
@@ -81,7 +82,7 @@
         (css/add-class :text)
         (dom/strong nil (utils/two-decimal-price price))))))
 
-(def row-heights {:xxlarge 350
+(def row-heights {:xxlarge 370
                   :xlarge  350
                   :large   400
                   :medium  350
@@ -93,6 +94,7 @@
   (query [_]
     [{:query/inventory [:store.item/name
                         :store.item/description
+                        :store.item/index
                         {:store.item/photos [{:store.item.photo/photo [:photo/path]}
                                              :store.item.photo/index]}]}
      :query/messages
@@ -140,7 +142,7 @@
          )))
   (initLocalState [this]
     {:cols                    {:xxlarge 3 :xlarge 3 :large 3 :medium 3 :small 2 :tiny 2}
-     :products/listing-layout :products/grid})
+     :products/listing-layout :products/list})
   (render [this]
     (let [{:keys [query/inventory]} (om/props this)
           {:keys          [search-input cols layout grid-element grid-editable? breakpoint]
@@ -153,43 +155,82 @@
                               inventory))]
       (dom/div
         {:id "sulo-product-list"}
-        (dom/h1
-          (css/show-for-sr) "Products")
+
         (dom/div
           (css/add-class :section-title)
-          (dom/h2 nil "Products")
-          (dom/a (css/button {:href    (routes/url :store-dashboard/create-product
-                                                   {:store-id (:store-id route-params)
-                                                    :action   "create"})
-                              :onClick #(mixpanel/track "Store: Add product")})
-                 "Add product"))
+          (dom/h1 (css/show-for-sr) "Products"))
+
+
+        (dom/div
+          (css/add-class :section-title)
+          (dom/h1 nil "Products"))
         (callout/callout
-          nil
-          (grid/row
-            (css/add-classes [:expanded :collapse])
-            (grid/column
+          (css/add-class :submenu)
+
+          (dom/div
+            (css/hide-for :medium)
+            (menu/horizontal
               nil
+              (menu/item
+                (when (= listing-layout :products/list)
+                  (css/add-class :is-active))
+                (dom/a
+                  {:onClick #(om/update-state! this assoc :products/listing-layout :products/list)}
+                  (dom/i {:classes ["fa fa-list"]})
+                  (dom/span (css/show-for-sr) "List")))
+              (menu/item
+                (when (= listing-layout :products/grid)
+                  (css/add-class :is-active))
+                (dom/a
+                  {:onClick #(om/update-state! this assoc :products/listing-layout :products/grid)}
+                  (dom/i {:classes ["fa fa-th"]})
+                  (dom/span (css/show-for-sr) "Grid")))
+              (menu/item
+                (css/add-class :button-item)
+                (dom/div
+                  (css/text-align :right)
+                  (dom/a (css/button {:href    (routes/url :store-dashboard/create-product
+                                                           {:store-id (:store-id route-params)
+                                                            :action   "create"})
+                                      :onClick #(mixpanel/track "Store: Add product")})
+                         "Add product"))))
+            (dom/input {:value       (or search-input "")
+                        :onChange    #(om/update-state! this assoc :search-input (.. % -target -value))
+                        :placeholder "Search Products..."
+                        :type        "text"}))
+
+          (menu/horizontal
+            (css/show-for :medium)
+            (menu/item
+              (when (= listing-layout :products/list)
+                (css/add-class :is-active))
+              (dom/a
+                {:onClick #(om/update-state! this assoc :products/listing-layout :products/list)}
+                (dom/i {:classes ["fa fa-list"]})))
+            (menu/item
+              (when (= listing-layout :products/grid)
+                (css/add-class :is-active))
+              (dom/a
+                {:onClick #(om/update-state! this assoc :products/listing-layout :products/grid)}
+                (dom/i {:classes ["fa fa-th"]})))
+            (menu/item
+              (css/add-class :search-input)
               (dom/input {:value       (or search-input "")
                           :onChange    #(om/update-state! this assoc :search-input (.. % -target -value))
                           :placeholder "Search Products..."
                           :type        "text"}))
-            (grid/column
-              (->> (css/add-class :shrink)
-                   (css/text-align :right))
-              (dom/a
-                (cond->> (->> (css/button {:onClick #(om/update-state! this assoc :products/listing-layout :products/list)})
-                              (css/add-class :secondary))
-                         (not= listing-layout :products/list)
-                         (css/add-class :hollow))
-                (dom/i {:classes ["fa fa-list"]}))
-              (dom/a
-                (cond->> (->> (css/button {:onClick #(om/update-state! this assoc :products/listing-layout :products/grid)})
-                              (css/add-class :secondary))
-                         (not= listing-layout :products/grid)
-                         (css/add-class :hollow))
-                (dom/i {:classes ["fa fa-th"]})))
-            )
-          (if (= listing-layout :products/list)
+            (menu/item
+              nil
+              (dom/a (css/button {:href    (routes/url :store-dashboard/create-product
+                                                       {:store-id (:store-id route-params)
+                                                        :action   "create"})
+                                  :onClick #(mixpanel/track "Store: Add product")})
+                     "Add product"))))
+
+
+        (if (= listing-layout :products/list)
+          (callout/callout
+            nil
             (table/table
               (css/add-class :hover)
               (dom/div
@@ -197,13 +238,10 @@
                 (dom/div
                   (css/add-class :tr)
                   (dom/span (css/add-class :th) (dom/span nil ""))
-                  (dom/span (css/add-class :th) "Product Name")
+                  (dom/span (css/add-class :th) "Product name")
                   (dom/span
                     (->> (css/add-class :th)
-                         (css/text-align :right)) "Price")
-                  (dom/span
-                    (->> (css/add-class :th)
-                         (css/show-for :medium)) "Last Updated")))
+                         (css/text-align :right)) "Price")))
               (dom/div
                 (css/add-class :tbody)
                 (map (fn [p]
@@ -225,62 +263,72 @@
                                   (css/show-for :medium))
                              (when (:store.item/updated p)
                                (date/date->string (* 1000 (:store.item/updated p)) "MMM dd yyyy HH:mm"))))))
-                     products)))
+                     products))))
 
-            #?(:cljs
-               (dom/div
-                 nil
-                 (if grid-editable?
-                   [(dom/div
+          (callout/callout
+            nil
+            (grid/row
+              (css/add-class :expanded)
+              (grid/column
+                nil
+                (when grid-editable?
+                  (callout/callout-small
+                    (cond->> (css/add-class :warning)
+                             (not grid-editable?)
+                             (css/add-class :sl-invisible))
+                    (dom/small nil "This is how your products will appear in your store. Try moving them around and find a layout you like and save when you're done."))))
+              (grid/column
+                (css/add-class :shrink)
+                (dom/div
+                  (css/text-align :right)
+                  (if grid-editable?
+                    (dom/div
                       nil
                       (button/save {:onClick #(.save-product-order this)})
                       (button/cancel {:onClick #(do
-                                                              (.update-layout this)
-                                                              (om/update-state! this assoc :grid-editable? false))}))
-                    (callout/callout-small
-                      (css/add-class :warning)
-                      (dom/small nil "This is how your products will appear in your store. Try moving them around and find a layout you like. Don't forget to save when you're done!"))]
-                   (button/edit
-                     {:onClick #(om/update-state! this assoc :grid-editable? true)}
-                     (dom/span nil "Edit layout")))
-                 (grid/row
-                   (css/add-class :collapse)
-                   (grid/column
-                     nil
-                     (when (and (some? layout) (some? grid-element) (not-empty products))
-                       (do
-                         (debug "Creating grid layout with row-hweight: " (get row-heights breakpoint) " breakpoint " breakpoint)
-                         (.createElement
-                           (.-React js/window)
-                           grid-element
-                           (clj->js {:className          (if grid-editable? "layout editable animate" "layout"),
-                                     :draggableHandle    ".product-move"
-                                     :layouts            {:xxlarge layout :xlarge layout :large layout :medium layout :small layout :tiny layout}
-                                     :breakpoints        {:xxlarge 1440, :xlarge 1200, :large 1024, :medium 750, :small 460 :tiny 0}
-                                     :rowHeight          (get row-heights breakpoint)
-                                     :cols               cols
-                                     :useCSSTransforms   true
-                                     :isDraggable        grid-editable?
-                                     :isResizable        false
-                                     :verticalCompact    true
-                                     :onBreakpointChange #(.on-breakpoint-change this %)
-                                     ;:onResizeStart    #(.edit-start this)
-                                     ;:onResizeStop     #(.edit-stop this nil %)
-                                     ;:onDragStart        #(.edit-start this)
-                                     ;:onDrag           #(.on-item-drag this %)
-                                     :onDragStop         #(.on-drag-stop this %)
-                                     })
-                           (into-array
-                             (map (fn [p]
-                                    (dom/div
-                                      {:key (str (:db/id p))}
-                                      (product-element this p)))
-                                  products))))))))
-               :clj
+                                                 (.update-layout this)
+                                                 (om/update-state! this assoc :grid-editable? false))}))
 
-               (grid/products
-                 products
-                 (fn [p]
-                   (product-element this p))))))))))
+                    (button/edit
+                      {:onClick #(om/update-state! this assoc :grid-editable? true)}
+                      (dom/span nil "Edit layout"))))))
+            (dom/div
+              nil
+
+              #?(:cljs
+                 (when (and grid-editable? (some? layout) (some? grid-element) (not-empty products))
+                   (do
+                     (debug "Creating grid layout with row-hweight: " (get row-heights breakpoint) " breakpoint " breakpoint)
+                     (.createElement
+                       (.-React js/window)
+                       grid-element
+                       (clj->js {:className          (if grid-editable? "layout editable animate" "layout"),
+                                 :draggableHandle    ".product-move"
+                                 :layouts            {:xxlarge layout :xlarge layout :large layout :medium layout :small layout :tiny layout}
+                                 :breakpoints        {:xxlarge 1440, :xlarge 1200, :large 1024, :medium 750, :small 460 :tiny 0}
+                                 :rowHeight          (get row-heights breakpoint)
+                                 :cols               cols
+                                 :useCSSTransforms   true
+                                 :isDraggable        grid-editable?
+                                 :isResizable        false
+                                 :verticalCompact    true
+                                 :onBreakpointChange #(.on-breakpoint-change this %)
+                                 ;:onResizeStart    #(.edit-start this)
+                                 ;:onResizeStop     #(.edit-stop this nil %)
+                                 ;:onDragStart        #(.edit-start this)
+                                 ;:onDrag           #(.on-item-drag this %)
+                                 :onDragStop         #(.on-drag-stop this %)
+                                 })
+                       (into-array
+                         (map (fn [p]
+                                (dom/div
+                                  {:key (str (:db/id p))}
+                                  (product-element this p)))
+                              products)))))))
+            (when-not grid-editable?
+              (grid/products
+                products
+                (fn [p]
+                  (product-element this p))))))))))
 
 (def ->ProductList (om/factory ProductList))

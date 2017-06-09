@@ -361,14 +361,12 @@
        (let [{:editor/keys [shipping-policy] :as state} (om/get-state this)
              {:keys [store]} (om/get-computed this)
              store-shipping-policy (when shipping-policy (quill/get-HTML shipping-policy))
-             shipping-fee (utils/input-value-or-nil-by-id (:field.shipping/fee form-inputs))
              text-lentgh (or (when shipping-policy (.getLength shipping-policy)) 0)]
          (if (< text-lentgh (:text-max/shipping-policy state))
            (do
              (mixpanel/track "Store: Save shipping policy" {:length text-lentgh})
              (msg/om-transact! this [(list 'store/update-info {:db/id         (:db/id store)
-                                                               :store/profile {:store.profile/shipping-policy store-shipping-policy
-                                                                               :store.profile/shipping-fee shipping-fee}})
+                                                               :store/profile {:store.profile/shipping-policy store-shipping-policy}})
                                      :query/store])
              (om/update-state! this assoc :edit/shipping-policy false))
            (om/update-state! this assoc :error/shipping-policy "Sorry, your return policy is too long.")))))
@@ -407,7 +405,7 @@
      :products/selected-section                :all})
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
-          {{:store.profile/keys [return-policy shipping-policy shipping-fee]} :store/profile} store
+          {{:store.profile/keys [return-policy shipping-policy]} :store/profile} store
           {:query/keys [current-route countries]} (om/props this)
           {:keys [store-id]} (:route-params current-route)
           {:return-policy/keys [on-editor-create on-editor-change] :as state} (om/get-state this)]
@@ -416,7 +414,9 @@
         {:id "sulo-store-edit"}
         (grid/row-column
           {:id "sulo-store" :classes ["edit-store"]}
-          (dom/h1 (css/show-for-sr) "Edit store")
+          (dom/div
+            (css/add-class :section-title)
+            (dom/h1 nil "Store info"))
           (edit-about-section this)
 
           (dom/div
@@ -488,23 +488,6 @@
                     (css/add-class :warning)
                     (dom/small nil
                                "We're not quite ready with the work on shipping settings, so this section cannot be saved yet. We're working on it, hang in there!")))
-                (dom/div
-                  (->> (css/add-class :shipping-fee))
-                  ;(grid/column
-                  ;  (css/add-class :shrink)
-                  ;  (dom/label nil "Fee"))
-                  ;(grid/column
-                  ;  nil)
-                  (dom/label nil "Fee")
-                  (dom/input
-                    (cond-> {:id           (:field.shipping/fee form-inputs)
-                             :type         "number"
-                             :defaultValue (or shipping-fee 0)
-                             :step         0.01}
-                            (not (:edit/shipping-policy state))
-                            (assoc :readOnly true)))
-                  (dom/small nil "Your base shipping fee that will be added to all orders. Additional cost can also be specified for each product."))
-
                 (if (:edit/shipping-policy state)
                   (dom/div
                     (css/text-align :right)

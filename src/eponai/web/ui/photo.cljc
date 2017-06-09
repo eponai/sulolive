@@ -99,7 +99,7 @@
 
 (defn photo [{:keys [status classes] :as props} & content]
   (dom/div
-    {:classes (conj classes ::css/photo-container status)}
+    {:classes (disj (set (conj classes ::css/photo-container status)) :thumbnail)}
     ;(update props :classes into [::css/photo-container status]) ;(css/add-classes [::css/photo-container status])
     (->Photo props)
     (cond (= status :edit)

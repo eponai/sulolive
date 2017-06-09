@@ -118,7 +118,7 @@
                        (store-path store-ids [:order/_shipping :order/store])))
           (shipping-address-owner [user-id store-ids]
             (filter-or (user-path user-id [:shipping/_address :order/_shipping :order/user])
-                       (store-path store-ids [:shipping/_address  :order/_shipping :order/store])))
+                       (store-path store-ids [:shipping/_address :order/_shipping :order/store])))
           (order-charge-owner [user-id store-ids]
             (filter-or (user-path user-id [:order/_charge :order/user])
                        (store-path store-ids [:order/_charge :order/store])))]
@@ -189,6 +189,9 @@
      :order.item/parent              order-item-owner
      :order.item/type                order-item-owner
      :order.item/amount              order-item-owner
+     :order.item/description         order-item-owner
+     :order.item/title               order-item-owner
+     :order.item/photo               order-item-owner
      :charge/id                      order-charge-owner
      ;; TODO Implement real filter-fn
      :shipping/rules                 public-attr
@@ -203,7 +206,7 @@
      :country/name                   public-attr
      :continent/code                 public-attr
      :continent/name                 public-attr
-     :order/created-at public-attr
+     :order/created-at               public-attr
      ;; TODO End of Implement real filter-fn
      :shipping/name                  shipping-owner
      :shipping/address               shipping-owner

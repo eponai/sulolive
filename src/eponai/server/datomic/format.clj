@@ -158,10 +158,18 @@
 
 (defn order [o]
   (let [item* (fn [sku]
-                {:db/id             (db/tempid :db.part/user)
-                 :order.item/type   :order.item.type/sku
-                 :order.item/parent (:db/id sku)
-                 :order.item/amount  (bigdec (get-in sku [:store.item/_skus :store.item/price]))})]
+                (let [product (:store.item/_skus sku)
+                      photo (-> (sort-by :store.item.photo/index (:store.item/photos product))
+                                first
+                                :store.item.photo/photo)]
+                  (cf/remove-nil-keys
+                    {:db/id                  (db/tempid :db.part/user)
+                     :order.item/type        :order.item.type/sku
+                     :order.item/parent      (:db/id sku)
+                     :order.item/description (:store.item.sku/variation sku)
+                     :order.item/photo       photo
+                     :order.item/title       (get-in sku [:store.item/_skus :store.item/name])
+                     :order.item/amount      (bigdec (get-in sku [:store.item/_skus :store.item/price]))})))]
     (-> (select-keys o [:db/id :order/uuid :order/shipping :order/user :order/store :order/items :order/amount :order/created-at])
         (update :order/shipping shipping)
         (update :order/items #(map item* %))
