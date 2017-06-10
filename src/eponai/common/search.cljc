@@ -85,58 +85,58 @@
                                       (map :v)
                                       (db/datoms db :eavt (:e %) :search.match/refs)))))))))
 
-(defn partial-match-ref [db indexed-val search-id]
+(defn partial-match-ref [db needle indexed-val search-id]
   (let [xf (comp
              ;; search.match
              (map :e)
              (map (juxt
                     ;; search.match/word
-                    identity
+                    #(delay (:v (first (db/datoms db :eavt % :search.match/word))))
                     ;; search
                     (if (some? search-id)
                       #(db/datoms db :eavt search-id :search/matches %)
                       #(db/datoms db :avet :search/matches %))))
-             (filter (fn [[search-match searches]]
+             (filter (fn [[_ searches]]
                        (some #(str/starts-with? % indexed-val)
                              (sequence (comp (map :e)
                                              (mapcat #(db/datoms db :eavt % :search/letters))
                                              (map :v)
                                              (distinct))
-                                       searches)))))]
+                                       searches))))
+             (filter (fn [[delayed-word]]
+                       (str/starts-with? (force delayed-word) needle))))]
     (fn [ref]
       (transduce
         xf
-        (completing (fn [_ [search-match]]
-                      (reduced (:v (first (db/datoms db :eavt search-match :search.match/word))))))
+        (completing (fn [_ [delayed-word]]
+                      (reduced (force delayed-word))))
         nil
         (db/datoms db :avet :search.match/refs ref)))))
 
 (defn match-string [db s]
-  (let [[needle & needles] (->> (db/sanitized-needles s)
-                                (sort-by count #(compare %2 %1)))]
-    (transduce
-      (comp (map str/lower-case)
-            (map limit-depth))
-      (completing
-        (fn [match needle]
-          (if (empty? match)
-            (reduced nil)
-            (let [needle-search-id (when (== index-depth (count needle))
-                                     (:e (first (db/datoms db :avet :search/letters needle))))
-                  match-ref-fn (partial-match-ref db needle needle-search-id)]
-              (mapcat (fn [[word refs]]
-                        (transduce
-                          (comp (map (fn [ref]
-                                       (when-let [w (match-ref-fn ref)]
-                                         [(str word " " w) ref])))
-                                (filter some?))
-                          (completing (fn [m [k ref]]
-                                        (assoc! m k (conj (get m k #{}) ref)))
-                                      persistent!)
-                          (transient {})
-                          refs))
-                      match))))
-        vec)
+  (let [sanitized-needles (db/sanitized-needles s)
+        needle-order (into {} (map-indexed #(vector %2 %1)) sanitized-needles)
+        [needle & needles] (sort-by count #(compare %2 %1) sanitized-needles)]
+    (reduce
+      (fn [match needle]
+        (if (empty? match)
+          (reduced nil)
+          (let [index-needle (limit-depth (str/lower-case needle))
+                needle-search-id (when (== index-depth (count index-needle))
+                                   (:e (first (db/datoms db :avet :search/letters index-needle))))
+                match-ref-fn (partial-match-ref db needle index-needle needle-search-id)]
+            (mapcat (fn [[word refs]]
+                      (transduce
+                        (comp (map (fn [ref]
+                                     (when-let [w (match-ref-fn ref)]
+                                       [(str word " " w) ref])))
+                              (filter some?))
+                        (completing (fn [m [k ref]]
+                                      (assoc! m k (conj (get m k #{}) ref)))
+                                    persistent!)
+                        (transient {})
+                        refs))
+                    match))))
       (match-word db needle)
       needles)))
 

@@ -20,6 +20,11 @@
 
     :else nil))
 
+;; TODO: Get rid of this garbage?
+(defmethod response-handler :query/product-search
+  [_ k v]
+  v)
+
 (defn remove-mutation-tx-reports
   "Removes :db-after, :db-before and :tx-data from our
   mutations' return values."

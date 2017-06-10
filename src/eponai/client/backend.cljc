@@ -9,6 +9,7 @@
             [datascript.core :as d]
             [clojure.set :as set]
             [clojure.walk :as walk]
+            [datascript.transit]
             [taoensso.timbre :as timbre :refer [debug error trace warn info]]
     #?@(:clj
         [
@@ -69,15 +70,17 @@
 (defn send [send-fn url opts]
   (let [transit-opts {:transit-opts
                       {:encoding-opts
-                       {:handlers {#?(:clj Entity :cljs e/Entity)    DatascriptEntityAsMap
+                       {:handlers {#?(:clj Entity :cljs e/Entity)                            DatascriptEntityAsMap
                                    #?(:clj GraphReadAtBasisT :cljs p.util/GraphReadAtBasisT) GraphReadAtBasisTAsMap}}
                        :decoding-opts
                        ;; favor ClojureScript UUIDs instead of Transit UUIDs
                        ;; https://github.com/cognitect/transit-cljs/pull/10
-                       {:handlers {"u" (transit/read-handler #?(:clj  #(UUID/fromString %)
-                                                                :cljs uuid))
-                                   "n" (transit/read-handler reader/read-string)
-                                   "f" (transit/read-handler reader/read-string)}}}}
+                       {:handlers (merge
+                                    {"u" (transit/read-handler #?(:clj  #(UUID/fromString %)
+                                                                 :cljs uuid))
+                                    "n" (transit/read-handler reader/read-string)
+                                    "f" (transit/read-handler reader/read-string)}
+                                    datascript.transit/read-handlers)}}}
         ;; http-clj/cljs has different apis to their http.client/post method.
         #?@(:clj  [params (-> transit-opts
 

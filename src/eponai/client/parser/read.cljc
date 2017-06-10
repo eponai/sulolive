@@ -474,3 +474,8 @@
   (if target
     {:remote true}
     {:value (db/pull-all-with db query {:where '[[?e :country/code _]]})}))
+
+(defmethod client-read :query/product-search
+  [{:keys [target]} _ _]
+  (when target
+    {:remote true}))
