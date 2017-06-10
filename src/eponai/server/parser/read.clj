@@ -227,7 +227,10 @@
 (defread query/auth
   [{:keys [auth query db]} _ _]
   {:auth ::auth/any-user}
-  {:value (db/pull db query (:user-id auth))})
+  {:value (let [can-open-store? (boolean (get-in auth [:user_metadata :can_open_store]))
+                authed-user (db/pull db query (:user-id auth))]
+            (when authed-user
+              (assoc authed-user :user/can-open-store? can-open-store?)))})
 
 (defread query/stream
   [{:keys [db db-history query]} _ {:keys [store-id]}]

@@ -19,7 +19,7 @@
   (show-lock [this]
     (.show this (clj->js {:allowedConnections ["Username-Password-Authentication"]
                           :auth               {:params {:state (redirect-to-after-login)
-                                                        :scope "openid email"}}}))))
+                                                        :scope "openid email profile"}}}))))
 
 (defn auth0-lock []
   (new js/Auth0Lock

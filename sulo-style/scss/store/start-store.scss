@@ -1,15 +1,17 @@
 #sulo-start-store {
+	$color: map-get($foundation-palette, sulo);
 	h1 {
 		font-family: $header-font-family-sans-serif;
 		font-weight: $global-weight-bold;
 		text-transform: none;
 		font-size: 250%;
-		text-shadow: 1px 1px 0 rgba($white, 0.75);
+		color: $white;
+		// text-shadow: 1px 1px 0 rgba($white, 0.75);
 
 		strong {
 			font-style: normal;
 			font-weight: bold;
-			color: map-get($foundation-palette, primary);
+			color: $white;
 		}
 	}
 	.page-content-container {
@@ -17,21 +19,39 @@
 		flex-direction: column;
 	}
 	.page-content {
-		padding-bottom: 0;
+		// padding-bottom: 0;
 		// height: 100%;
 		flex: 1 0 auto;
 		display: flex;
 		flex-direction: column;
 	}
-	.photo.cover {
-		padding: 0;
-		flex: 1 0 auto;
-		background-position: center top;
+	.photo-container.cover {
+		flex: 0;
+		// display: flex;
+		// flex-direction: column;
+		.overlay {
+			background: rgba($color, 0.9);
+		}
+		.photo {
+			// flex: 1;
+			padding-top: 15%;
+		}
 		img {
-			display: none;
-			// object-position: 50% 0%;
+			// padding: 0;
+			// right: 0;
+			// bottom: 0;
+			// width: 100%;
 		}
 	}
+	// .photo.cover {
+	// 	// padding: 0;
+	// 	// flex: 1 0 auto;
+	// 	background-position: center top;
+	// 	img {
+	// 		// display: none;
+	// 		// object-position: 50% 0%;
+	// 	}
+	// }
 	.photo.header {
 		display: flex;
 		flex-direction: column;
@@ -47,10 +67,10 @@
 	}
 
 	.callout {
-		background: rgba($white, 0.9);
+		// background: $color;//rgba($white, 0.9);
 		border: none;
 		input, select {
-			margin-bottom: 0.2rem;
+			// margin-bottom: 0.2rem;
 		}
 	}
 }
