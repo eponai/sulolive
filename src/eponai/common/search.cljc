@@ -91,26 +91,17 @@
                          (into #{}
                                (map :v)
                                (db/datoms db :eavt search-id :search/matches)))
-        xf (comp
-             ;; search.match
-             (map :e)
-             (filter (if (seq search-matches)
-                       #(contains? search-matches %)
-                       identity))
-             (map #(:v (first (db/datoms db :eavt % :search.match/word))))
-             (filter (if (some? needle)
-                       (fn [word]
-                         (str/starts-with? word needle))
-                       identity)))]
+        xf (cond-> (map :e)
+                   ;; search.match
+                   (seq search-matches)
+                   (comp (filter #(contains? search-matches %)))
+                   :always
+                   (comp (map #(:v (first (db/datoms db :eavt % :search.match/word)))))
+                   (some? needle)
+                   (comp (filter (fn [word]
+                                   (str/starts-with? word needle)))))]
     (fn [ref]
-      (transduce
-        xf
-        (completing (fn [words word]
-                      (if (some? needle)
-                        (reduced word)
-                        ((fnil conj []) words word))))
-        nil
-        (db/datoms db :avet :search.match/refs ref)))))
+      (into [] xf (db/datoms db :avet :search.match/refs ref)))))
 
 (defn match-string [db s]
   (let [sanitized-needles (db/sanitized-needles s)
@@ -128,10 +119,10 @@
                      word-position (get needle-order needle)]
                  (mapcat (fn [[words refs]]
                            (transduce
-                             (comp (map (fn [ref]
-                                          (when-let [w (match-ref-fn ref)]
-                                            [(assoc words word-position w) ref])))
-                                   (filter some?))
+                             (comp (mapcat (fn [ref]
+                                             (map (fn [w]
+                                                    [(assoc words word-position w) ref])
+                                                  (match-ref-fn ref)))))
                              (completing (fn [m [k ref]]
                                            (assoc! m k (conj (get m k #{}) ref)))
                                          persistent!)
@@ -148,11 +139,11 @@
 (defn match-next-word [db matches]
   (let [match-ref-fn (partial-match-ref db nil nil)]
     (->> (for [[word refs] matches
-               :let [taken-words (into #{} (str/split word #" "))]
+               :let [used-words (into #{} (str/split word #" "))]
                ref refs
                :let [words (match-ref-fn ref)]
                w words
-               :when (and (some? w) (not (contains? taken-words w)))]
+               :when (and (some? w) (not (contains? used-words w)))]
            [word [w ref]])
          (reduce (fn [m [word [w ref]]]
                    (assoc! m [word w] ((fnil conj #{}) (get m [word w]) ref)))
@@ -174,10 +165,11 @@
                    indexed-db (datascript/db-with db index-tx)]
                {:db indexed-db :tx index-tx :lines lines}))
 
-  (run!
-    (fn [search]
-      (prn "Running search: " search)
-      (time (debug "count: " (count (match-string (:db stuff) search)))))
+  (into []
+        (map (juxt identity
+                   (fn [search]
+                     (prn "Running search: " search)
+                     (time (count (match-string (:db stuff) search))))))
     ["acid"
      "acid bath"
      "ac bath"
