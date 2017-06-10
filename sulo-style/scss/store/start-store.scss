@@ -4,9 +4,10 @@
 		font-family: $header-font-family-sans-serif;
 		font-weight: $global-weight-bold;
 		text-transform: none;
-		font-size: 250%;
+		@include breakpoint(large) {
+			font-size: 250%;
+		}
 		color: $white;
-		// text-shadow: 1px 1px 0 rgba($white, 0.75);
 
 		strong {
 			font-style: normal;
@@ -19,58 +20,39 @@
 		flex-direction: column;
 	}
 	.page-content {
-		// padding-bottom: 0;
-		// height: 100%;
 		flex: 1 0 auto;
 		display: flex;
 		flex-direction: column;
 	}
 	.photo-container.cover {
 		flex: 0;
-		// display: flex;
-		// flex-direction: column;
 		.overlay {
 			background: rgba($color, 0.9);
 		}
 		.photo {
-			// flex: 1;
-			padding-top: 15%;
-		}
-		img {
-			// padding: 0;
-			// right: 0;
-			// bottom: 0;
-			// width: 100%;
-		}
-	}
-	// .photo.cover {
-	// 	// padding: 0;
-	// 	// flex: 1 0 auto;
-	// 	background-position: center top;
-	// 	img {
-	// 		// display: none;
-	// 		// object-position: 50% 0%;
-	// 	}
-	// }
-	.photo.header {
-		display: flex;
-		flex-direction: column;
-		flex: 1;
-		.content {
-			padding: 4rem 0;
-			@include breakpoint(large) {
-				padding: 10rem 0;
+			padding-top: 50%;
+			@include breakpoint(medium) {
+				padding-top: 30%;
 			}
-			flex: 1 0 auto;
-			background: rgba($white, 0.5);
+			@include breakpoint(large) {
+				padding-top: 15%;
+			}
 		}
 	}
-
 	.callout {
-		// background: $color;//rgba($white, 0.9);
 		border: none;
-		input, select {
-			// margin-bottom: 0.2rem;
-		}
+	}
+	.success-message {
+		color: darken(map-get($foundation-palette, success), 10%);
+		// padding: 0.5rem;
+		// font-weight: $global-weight-bold;
+		// letter-spacing: 0.5px;
+		font-weight: $global-weight-bold;
+		font-size: 90%;
+		// color: $dark-gray;
+		text-align: center;
+	}
+	textarea {
+		height: 8rem;
 	}
 }

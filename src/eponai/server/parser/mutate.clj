@@ -19,7 +19,8 @@
     [eponai.common.format :as f]
     [eponai.common.ui.om-quill :as quill]
     [eponai.common.auth :as auth]
-    [eponai.server.external.cloudinary :as cloudinary]))
+    [eponai.server.external.cloudinary :as cloudinary]
+    [eponai.server.external.email :as email]))
 
 (defmacro defmutation
   "Creates a message and mutate defmethod at the same time.
@@ -456,3 +457,15 @@
           :error   "Sorry, could not update order. Try again later."}}
   {:action (fn []
              (store/update-order env (c/parse-long store-id) (c/parse-long order-id) params))})
+
+(defmutation user/request-store-access
+  [{:keys [system auth state]} _ params]
+  {:auth ::auth/public
+   :resp {:success "Thank you! Your request has been sent to us and we'll get in touch shortly."
+          :error   "Sorry, your request couldn't be sent. Try again later."}}
+  {:action (fn []
+             (debug "AUTH: " auth)
+             (let [user-id (when (some? (:email auth))
+                             (db/one-with (db/db state) {:where   '[[?e :user/email ?email]]
+                                                         :symbols {'?email (:email auth)}}))]
+               (email/-send-store-access-request (:system/email system) (assoc params :user-id user-id))))})

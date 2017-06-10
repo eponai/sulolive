@@ -57,6 +57,62 @@
     [:img {:src   "http://res.cloudinary.com/sulolive/image/upload/static/logo.png"
            :style "width: 50px; height: 50px;"}]]])
 
+(defn open-store-request [{:field/keys [locality website email brand message]
+                           user-id :user-id}]
+  (container
+    (str "SULO Live user - Request to open store")
+    (table-column
+      [:tr
+       [:td {:align "center"}
+        [:p {:style "font-size: 1.2em; padding-bottom:1em;margin-bottom:0em;"}
+         (if (some? user-id)
+           [:span "Existing SULO Live user has requested to open a store"]
+           [:span "A visitor has requested to open a store"])]]]
+      (when (some? user-id)
+        [:tr
+         [:td {:align "center"}
+          [:p {:style "font-size: 1.2em; padding-bottom:1em;margin-bottom:0em;"}
+           [:span "User id: "]
+           [:strong user-id]]]])
+      (table-column
+        [:tr
+         [:td {:align "right" :style "padding: 0.5em;"}
+          [:label {:style "font-size:1.1em;margin-top:1em;margin:0;"}
+           "Brand: "]]
+         [:td {:style "padding: 0.5em;"}
+          [:p {:style "font-size:1.1em;margin-top:1em;margin:0;"}
+           brand]]]
+        [:tr
+         [:td {:align "right" :style "padding: 0.5em;"}
+          [:label {:style "font-size:1.1em;margin-top:1em;margin:0;"}
+           "Website: "]]
+         [:td {:style "padding: 0.5em;"}
+          [:p {:style "font-size:1.1em;margin-top:1em;margin:0;"}
+           website]]]
+        [:tr
+         [:td {:align "right" :style "padding: 0.5em;"}
+          [:label {:style "font-size:1.1em;margin-top:1em;margin:0;"}
+           "Locality: "]]
+         [:td {:style "padding: 0.5em;"}
+          [:p {:style "font-size:1.1em;margin-top:1em;margin:0;"}
+           locality]]]
+        [:tr
+         [:td {:align "right" :style "padding: 0.5em;"}
+          [:label {:style "font-size:1.1em;margin-top:1em;margin:0;"}
+           "Email: "]]
+         [:td {:style "padding: 0.5em;"}
+          [:p {:style "font-size:1.1em;margin-top:1em;margin:0;"}
+           email]]])
+      [:tr
+       [:td
+        [:p {:style "font-size:1.1em;margin-top:1em;"}
+         [:strong
+          "Message:"]]]]
+      [:tr
+       [:td
+        [:p {:style "font-size:1.1em;margin-top:1em;;"}
+         message]]])))
+
 (defn receipt [{:keys [charge order]}]
   (let [{:keys [source created amount]} charge
         {:keys [last4 brand]} source
