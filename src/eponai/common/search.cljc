@@ -98,13 +98,17 @@
                        #(contains? search-matches %)
                        identity))
              (map #(:v (first (db/datoms db :eavt % :search.match/word))))
-             (filter (fn [word]
-                       (str/starts-with? word needle))))]
+             (filter (if (some? needle)
+                       (fn [word]
+                         (str/starts-with? word needle))
+                       identity)))]
     (fn [ref]
       (transduce
         xf
-        (completing (fn [_ word]
-                      (reduced word)))
+        (completing (fn [words word]
+                      (if (some? needle)
+                        (reduced word)
+                        ((fnil conj []) words word))))
         nil
         (db/datoms db :avet :search.match/refs ref)))))
 
@@ -139,7 +143,23 @@
          ;; Join the words in the order they appears in the string
          (into []
                (map (fn [[words refs]]
-                      [(str/join " " (vals words)) refs]))))))
+                      [(str/join " " (distinct (vals words))) refs]))))))
+
+(defn match-next-word [db matches]
+  (let [match-ref-fn (partial-match-ref db nil nil)]
+    (->> (for [[word refs] matches
+               :let [taken-words (into #{} (str/split word #" "))]
+               ref refs
+               :let [words (match-ref-fn ref)]
+               w words
+               :when (and (some? w) (not (contains? taken-words w)))]
+           [word [w ref]])
+         (reduce (fn [m [word [w ref]]]
+                   (assoc! m [word w] ((fnil conj #{}) (get m [word w]) ref)))
+                 (transient {}))
+         (persistent!)
+         (into [] (map (fn [[words refs]]
+                         [(str/join " " words) refs]))))))
 
 (comment
   (def stuff (let [lines (->> (slurp "/usr/share/dict/web2a")
