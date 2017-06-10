@@ -227,11 +227,12 @@
             (dom/a
               (css/show-for :large {:onClick toggle-inline-sidebar})
               (dom/i {:classes ["fa fa-bars fa-fw"]})))
+          ;(navbar-brand)
           (menu/item-link
             (css/show-for :large {:href (routes/url :store-dashboard (:route-params current-route))
                                   :id   "navbar-brand"})
             (dom/span nil "SULO")
-            ;(dom/small nil "Store preview")
+            ;(dom/small nil "Store")
             )
 
           (menu/item-text nil (dom/span nil (get routes->titles (:route current-route))))))
@@ -522,8 +523,8 @@
                      (css/add-class :back)
                      (dom/a {:href    (routes/url :index nil)
                              :onClick #(mixpanel/track "Store: Go back to marketplace")}
-                            (dom/i {:classes ["fa fa-chevron-left fa-fw"]})
-                            (dom/span nil "SULO Live")))))
+                            ;(dom/i {:classes ["fa fa-chevron-left fa-fw"]})
+                            (dom/strong nil (dom/small nil "Back to marketplace"))))))
                (when (some? owned-store)
                  [
                   (menu/item

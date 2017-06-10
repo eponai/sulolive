@@ -23,7 +23,8 @@
     [eponai.client.parser.message :as msg]
     [eponai.web.ui.button :as button]
     [eponai.common.mixpanel :as mixpanel]
-    [eponai.common.ui.elements.menu :as menu]))
+    [eponai.common.ui.elements.menu :as menu]
+    [eponai.common.ui.common :as common]))
 
 (defn products->grid-layout [component products]
   (let [num-cols 3
@@ -82,6 +83,54 @@
         (css/add-class :text)
         (dom/strong nil (utils/two-decimal-price price))))))
 
+(defn edit-sections-modal [component]
+  (let [{:products/keys [edit-sections]} (om/get-state component)
+        {:query/keys [store]} (om/props component)]
+    (when (some? edit-sections)
+      (common/modal
+        {:on-close #(om/update-state! component dissoc :products/edit-sections)}
+        (let [items-by-section (group-by #(get-in % [:store.item/section :db/id]) (:store/items store))]
+          (dom/div
+            nil
+            (dom/p (css/add-class :header) "Edit sections")
+            (menu/vertical
+              (css/add-class :edit-sections-menu)
+              (map-indexed
+                (fn [i s]
+                  (let [no-items (count (get items-by-section (:db/id s)))]
+                    (menu/item (css/add-class :edit-sections-item)
+                               ;(dom/a nil (dom/i {:classes ["fa "]}))
+                               (dom/input
+                                 {:type        "text"
+                                  :id          (str "input.section-" i)
+                                  :placeholder "New section"
+                                  :value       (:store.section/label s "")
+                                  :onChange    #(om/update-state! component update :products/edit-sections
+                                                                  (fn [sections]
+                                                                    (let [old (get sections i)
+                                                                          new (assoc old :store.section/label (.-value (.-target %)))]
+                                                                      (assoc sections i new))))})
+                               (if (= 1 no-items)
+                                 (dom/small nil (str no-items " item"))
+                                 (dom/small nil (str no-items " items")))
+                               (button/user-setting-default
+                                 {:onClick #(om/update-state! component update :products/edit-sections
+                                                              (fn [sections]
+                                                                (into [] (remove nil? (assoc sections i nil)))))}
+                                 (dom/span nil "Remove")))))
+                edit-sections)
+              (menu/item
+                (css/add-class :edit-sections-item)
+                (button/user-setting-default
+                  {:onClick #(om/update-state! component update :products/edit-sections conj {})}
+                  (dom/span nil "Add section..."))))
+
+            (dom/div
+              (->> (css/text-align :right)
+                   (css/add-class :action-buttons))
+              (button/cancel {:onClick #(om/update-state! component dissoc :products/edit-sections)})
+              (button/save {:onClick #(.save-sections component)}))))))))
+
 (def row-heights {:xxlarge 370
                   :xlarge  350
                   :large   400
@@ -95,8 +144,11 @@
     [{:query/inventory [:store.item/name
                         :store.item/description
                         :store.item/index
+                        {:store.item/section [:db/id]}
                         {:store.item/photos [{:store.item.photo/photo [:photo/path]}
                                              :store.item.photo/index]}]}
+     {:query/store [{:store/sections [:db/id
+                                      :store.section/label]}]}
      :query/messages
      :query/current-route])
 
@@ -125,6 +177,14 @@
                                                                  :store-id (get-in current-route [:route-params :store-id])})
                               :query/inventory])
       (om/update-state! this assoc :grid-editable? false)))
+  (save-sections [this]
+    (let [{:products/keys [edit-sections]} (om/get-state this)
+          {:query/keys [current-route]} (om/props this)
+          new-sections (filter #(not-empty (string/trim (:store.section/label % ""))) edit-sections)]
+      (msg/om-transact! this [(list 'store/update-sections {:sections new-sections
+                                                            :store-id (get-in current-route [:route-params :store-id])})
+                              :query/store])
+      (om/update-state! this dissoc :products/edit-sections)))
 
   (componentDidMount [this]
     (debug "State component did mount")
@@ -141,25 +201,72 @@
            (.update-layout this))
          )))
   (initLocalState [this]
-    {:cols                    {:xxlarge 3 :xlarge 3 :large 3 :medium 3 :small 2 :tiny 2}
-     :products/listing-layout :products/list})
+    {:cols                      {:xxlarge 3 :xlarge 3 :large 3 :medium 3 :small 2 :tiny 2}
+     :products/listing-layout   :products/list
+     :products/selected-section :all})
   (render [this]
-    (let [{:keys [query/inventory]} (om/props this)
+    (let [{:query/keys [store inventory]} (om/props this)
           {:keys          [search-input cols layout grid-element grid-editable? breakpoint]
            :products/keys [selected-section edit-sections listing-layout]} (om/get-state this)
-          {:keys [route-params store]} (om/get-computed this)
-          products (sort-by :store.item/index
-                            (if (not-empty search-input)
+          {:keys [route-params]} (om/get-computed this)
+          products (if grid-editable?
+                     (sort-by :store.item/index inventory)
+                     (cond->> (sort-by :store.item/index inventory)
+                              (not= selected-section :all)
+                              (filter #(= selected-section (get-in % [:store.item/section :db/id])))
+                              (not-empty search-input)
                               (filter #(clojure.string/includes? (.toLowerCase (:store.item/name %))
-                                                                 (.toLowerCase search-input)) inventory)
-                              inventory))]
+                                                                 (.toLowerCase search-input)))))
+          ;(sort-by :store.item/index
+          ;                  (if (not-empty search-input)
+          ;                    (filter #(clojure.string/includes? (.toLowerCase (:store.item/name %))
+          ;                                                       (.toLowerCase search-input)) inventory)
+          ;                    inventory)
+          ;                                                                                            )
+          ]
+      ;(cond->> (sort-by :store.item/index items)
+      ;         (not= selected-section :all)
+      ;         (filter #(= selected-section (get-in % [:store.item/section :db/id])))
+      ;         (not-empty search-input)
+      ;         (filter #(clojure.string/includes? (.toLowerCase (:store.item/name %))
+      ;                                            (.toLowerCase search-input))))
       (dom/div
         {:id "sulo-product-list"}
 
-
+        (edit-sections-modal this)
         (dom/div
           (css/add-class :section-title)
           (dom/h1 nil "Products"))
+
+        (callout/callout
+          (css/add-class :edit-sections-callout)
+          (grid/row
+            (css/add-classes [:collapse :expanded])
+            (grid/column
+              nil
+              (menu/horizontal
+                (css/add-class :product-section-menu)
+                (menu/item
+                  (when (= selected-section :all)
+                    (css/add-class :is-active))
+                  (dom/a
+                    {:onClick #(om/update-state! this assoc :products/selected-section :all)}
+                    (dom/span nil "All items")))
+                (map (fn [s]
+                       (menu/item
+                         (when (= selected-section (:db/id s))
+                           (css/add-class :is-active))
+                         (dom/a {:onClick #(om/update-state! this assoc :products/selected-section (:db/id s))}
+                                (dom/span nil (string/capitalize (:store.section/label s))))))
+                     (:store/sections store))))
+            (grid/column
+              (->> (css/text-align :right)
+                   (grid/column-size {:small 12 :medium 3 :large 2}))
+              (button/edit {:onClick #(do
+                                       (mixpanel/track "Store: Edit product sections")
+                                       (om/update-state! this assoc :products/edit-sections (into [] (:store/sections store))))}
+                           (dom/span nil "Edit sections")))))
+
         (callout/callout
           (css/add-class :submenu)
 
@@ -201,7 +308,7 @@
               (when (= listing-layout :products/list)
                 (css/add-class :is-active))
               (dom/a
-                {:onClick #(om/update-state! this assoc :products/listing-layout :products/list)}
+                {:onClick #(om/update-state! this assoc :products/listing-layout :products/list :grid-editable? false)}
                 (dom/i {:classes ["fa fa-list"]})))
             (menu/item
               (when (= listing-layout :products/grid)
@@ -222,6 +329,8 @@
                                                         :action   "create"})
                                   :onClick #(mixpanel/track "Store: Add product")})
                      "Add product"))))
+
+
 
 
         (if (= listing-layout :products/list)
@@ -266,28 +375,30 @@
             (grid/row
               (css/add-class :expanded)
               (grid/column
+                (css/add-class :shrink)
+                (dom/div
+                  nil
+                  (if grid-editable?
+                    (dom/div
+                      (css/add-class :action-buttons)
+                      (button/save
+                        (css/add-class :small {:onClick #(.save-product-order this)}))
+                      (button/cancel
+                        (css/add-class :small {:onClick #(do
+                                                          (.update-layout this)
+                                                          (om/update-state! this assoc :grid-editable? false))})))
+
+                    (button/edit
+                      (css/add-class :small {:onClick #(om/update-state! this assoc :grid-editable? true :products/selected-section :all)})
+                      (dom/span nil "Edit layout")))))
+              (grid/column
                 nil
                 (when grid-editable?
                   (callout/callout-small
                     (cond->> (css/add-class :warning)
                              (not grid-editable?)
                              (css/add-class :sl-invisible))
-                    (dom/small nil "This is how your products will appear in your store. Try moving them around and find a layout you like and save when you're done."))))
-              (grid/column
-                (css/add-class :shrink)
-                (dom/div
-                  (css/text-align :right)
-                  (if grid-editable?
-                    (dom/div
-                      nil
-                      (button/save {:onClick #(.save-product-order this)})
-                      (button/cancel {:onClick #(do
-                                                 (.update-layout this)
-                                                 (om/update-state! this assoc :grid-editable? false))}))
-
-                    (button/edit
-                      {:onClick #(om/update-state! this assoc :grid-editable? true)}
-                      (dom/span nil "Edit layout"))))))
+                    (dom/small nil "This is how your products will appear in your store. Try moving them around and find a layout you like and save when you're done.")))))
             (dom/div
               nil
 
