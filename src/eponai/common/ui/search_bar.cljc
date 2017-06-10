@@ -31,11 +31,7 @@
                             :ui.singleton.product-search/db)
           search-matches (when (and (string? input-search) (seq (str/trim input-search)))
                            (some-> search-db
-                                   (common.search/match-string input-search)))
-          search-matches (when (seq search-matches)
-                           (cond->> search-matches
-                                    (str/ends-with? input-search \space)
-                                    (common.search/match-next-word search-db)))]
+                                   (common.search/match-string input-search)))]
       (assert (some? mixpanel-source) "missing required props :mixpanel-source to SearchBar.")
       (dom/div nil
                (dom/input {:classes     classes
@@ -64,16 +60,21 @@
                      (dom/label nil (dom/small nil "Products"))
                      (menu/vertical
                        nil
-                       (->> search-matches
-                            (sort-by (comp count #(nth % 1)) #(compare %2 %1))
-                            (take 4)
-                            (map (fn [[word refs]]
-                                   (menu/item-link
-                                     {:href    (routes/url :browse/all-items nil {:search word})
-                                      :onClick #(mixpanel/track "Search products"
-                                                                {:source        mixpanel-source
-                                                                 :search-string word})}
-                                     (dom/span nil word)))
-                                 ))))))))))
+                       (into []
+                             (comp
+                               (take-while seq)
+                               (mapcat (fn [matches]
+                                         (sort-by (comp count #(nth % 1))
+                                                  #(compare %2 %1)
+                                                  matches)))
+                               (take 4)
+                               (map (fn [[word refs]]
+                                      (menu/item-link
+                                        {:href    (routes/url :browse/all-items nil {:search word})
+                                         :onClick #(mixpanel/track "Search products"
+                                                                   {:source        mixpanel-source
+                                                                    :search-string word})}
+                                        (dom/span nil word)))))
+                             (iterate #(common.search/match-next-word search-db %) search-matches))))))))))
 
 (def ->SearchBar (om/factory SearchBar))
