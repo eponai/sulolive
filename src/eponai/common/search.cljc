@@ -85,31 +85,25 @@
                                       (map :v)
                                       (db/datoms db :eavt (:e %) :search.match/refs)))))))))
 
-(defn partial-match-ref [db needle indexed-val search-id]
-  (let [xf (comp
+(defn partial-match-ref [db needle search-id]
+  (let [search-matches (when (some? search-id)
+                         (into #{}
+                               (map :v)
+                               (db/datoms db :eavt search-id :search/matches)))
+        xf (comp
              ;; search.match
              (map :e)
-             (map (juxt
-                    ;; search.match/word
-                    #(delay (:v (first (db/datoms db :eavt % :search.match/word))))
-                    ;; search
-                    (if (some? search-id)
-                      #(db/datoms db :eavt search-id :search/matches %)
-                      #(db/datoms db :avet :search/matches %))))
-             (filter (fn [[_ searches]]
-                       (some #(str/starts-with? % indexed-val)
-                             (sequence (comp (map :e)
-                                             (mapcat #(db/datoms db :eavt % :search/letters))
-                                             (map :v)
-                                             (distinct))
-                                       searches))))
-             (filter (fn [[delayed-word]]
-                       (str/starts-with? (force delayed-word) needle))))]
+             (filter (if (seq search-matches)
+                       #(contains? search-matches %)
+                       identity))
+             (map #(:v (first (db/datoms db :eavt % :search.match/word))))
+             (filter (fn [word]
+                       (str/starts-with? word needle))))]
     (fn [ref]
       (transduce
         xf
-        (completing (fn [_ [delayed-word]]
-                      (reduced (force delayed-word))))
+        (completing (fn [_ word]
+                      (reduced word)))
         nil
         (db/datoms db :avet :search.match/refs ref)))))
 
@@ -124,7 +118,7 @@
           (let [index-needle (limit-depth (str/lower-case needle))
                 needle-search-id (when (== index-depth (count index-needle))
                                    (:e (first (db/datoms db :avet :search/letters index-needle))))
-                match-ref-fn (partial-match-ref db needle index-needle needle-search-id)]
+                match-ref-fn (partial-match-ref db needle needle-search-id)]
             (mapcat (fn [[word refs]]
                       (transduce
                         (comp (map (fn [ref]
@@ -151,5 +145,18 @@
                                                 (map #(db/entity (db/db conn) %))))
                                  (entities-by-attr-tx :name))
                    indexed-db (datascript/db-with db index-tx)]
-               {:db indexed-db :tx index-tx :lines lines})))
+               {:db indexed-db :tx index-tx :lines lines}))
 
+  (run!
+    (fn [search]
+      (prn "Running search: " search)
+      (time (debug "count: " (count (match-string (:db stuff) search)))))
+    ["acid"
+     "acid bath"
+     "ac bath"
+     "a bat"
+     "a ba"
+     "a b"
+     "a b c"
+     "a b c d"])
+  )
