@@ -53,8 +53,8 @@
    (sequence (entities-by-attr-tx attr) entities)))
 
 (defn match-word
-  "Returns tuples of [<word> #{<ref-id> ...}] matching the search."
-  [db search]
+  "Returns tuples of [(word-fn <word>) #{<ref-id> ...}] matching the search."
+  [db search word-fn]
   (let [indexed-val (limit-depth (str/lower-case search))]
     ;; Start from the largest indexed value
     (->> (db/datoms db :avet :search/letters indexed-val)
@@ -81,9 +81,10 @@
                  ;; longer than indexed depth, so we need to do this check.
                  (filter (fn [search-match-datom]
                            (str/starts-with? (:v search-match-datom) search)))
-                 (map (juxt :v #(into #{}
-                                      (map :v)
-                                      (db/datoms db :eavt (:e %) :search.match/refs)))))))))
+                 (map (juxt (comp word-fn :v)
+                            #(into #{}
+                                   (map :v)
+                                   (db/datoms db :eavt (:e %) :search.match/refs)))))))))
 
 (defn partial-match-ref [db needle search-id]
   (let [search-matches (when (some? search-id)
@@ -111,28 +112,34 @@
   (let [sanitized-needles (db/sanitized-needles s)
         needle-order (into {} (map-indexed #(vector %2 %1)) sanitized-needles)
         [needle & needles] (sort-by count #(compare %2 %1) sanitized-needles)]
-    (reduce
-      (fn [match needle]
-        (if (empty? match)
-          (reduced nil)
-          (let [index-needle (limit-depth (str/lower-case needle))
-                needle-search-id (when (== index-depth (count index-needle))
-                                   (:e (first (db/datoms db :avet :search/letters index-needle))))
-                match-ref-fn (partial-match-ref db needle needle-search-id)]
-            (mapcat (fn [[word refs]]
-                      (transduce
-                        (comp (map (fn [ref]
-                                     (when-let [w (match-ref-fn ref)]
-                                       [(str word " " w) ref])))
-                              (filter some?))
-                        (completing (fn [m [k ref]]
-                                      (assoc! m k (conj (get m k #{}) ref)))
-                                    persistent!)
-                        (transient {})
-                        refs))
-                    match))))
-      (match-word db needle)
-      needles)))
+    (->> needles
+         (reduce
+           (fn [match needle]
+             (if (empty? match)
+               (reduced nil)
+               (let [index-needle (limit-depth (str/lower-case needle))
+                     needle-search-id (when (== index-depth (count index-needle))
+                                        (:e (first (db/datoms db :avet :search/letters index-needle))))
+                     match-ref-fn (partial-match-ref db needle needle-search-id)
+                     word-position (get needle-order needle)]
+                 (mapcat (fn [[words refs]]
+                           (transduce
+                             (comp (map (fn [ref]
+                                          (when-let [w (match-ref-fn ref)]
+                                            [(assoc words word-position w) ref])))
+                                   (filter some?))
+                             (completing (fn [m [k ref]]
+                                           (assoc! m k (conj (get m k #{}) ref)))
+                                         persistent!)
+                             (transient {})
+                             refs))
+                         match))))
+           (match-word db needle (fn [word]
+                                   (sorted-map (get needle-order needle) word))))
+         ;; Join the words in the order they appears in the string
+         (into []
+               (map (fn [[words refs]]
+                      [(str/join " " (vals words)) refs]))))))
 
 (comment
   (def stuff (let [lines (->> (slurp "/usr/share/dict/web2a")
