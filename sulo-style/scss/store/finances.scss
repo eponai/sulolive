@@ -1,0 +1,166 @@
+#sulo-store-finances {
+	max-width: $dashboard-content-width;
+	margin: 0 auto;
+	padding-top: $subnav-height;
+
+	.section-list {
+		border: none;
+		// padding: 0;
+		li {
+			padding: 0;
+		}
+		&.section-list--bank-accounts {
+			li {
+				border-bottom: $global-border;
+			}
+		}
+	}
+	.payout-schedule {
+		p {
+			margin-bottom: 0.5rem;
+		}
+	}
+	.action-buttons {
+		.button {
+			margin-bottom: 0;
+		}
+	}
+
+	.table {
+		border: none;
+		.tbody, .tr {
+			border: none;
+		}
+		.tr {
+			border-top: $global-border-secondary;
+			border-bottom: $global-border-secondary;
+			&:first-child {
+				// border-top: none;
+			}
+		}
+		.td {
+			// padding: 0.5rem 0.5rem;
+			p, .button {
+				margin-bottom: 0;
+			}
+			&.bank-detail--icon {
+				// display: flex;
+				// align-items: center;
+				// justify-content: center;
+				font-size: 90%;
+				width: 2rem;
+				color: $dark-gray;
+			}
+			&.bank-detail--location {
+				width: 2rem;
+				font-size: 90%;
+				p {
+					display: flex;
+					align-items: center;
+					color: $dark-gray;
+				}
+				.currency {
+					text-transform: uppercase;
+					margin-right: 0.5rem;
+					color: $dark-gray;
+					// font-size: 80%;
+					// letter-spacing: 1px
+				}
+				.country {
+					// font-size: 80%;
+					letter-spacing: 1px;
+				}
+			}
+			&.bank-detail--account {
+				font-size: 90%;
+				small {
+					color: $dark-gray;
+					margin-left: 0.5rem;
+				}
+			}
+		}	
+	}
+
+	.bank-list {
+		li {
+			border-bottom: $global-border-secondary;
+			padding: 0.5rem 0;
+			display: flex;
+			align-items:center;
+			justify-content: space-between;
+			.bank-detail--location {
+				color: $dark-gray;
+				text-transform: uppercase;
+			}
+			p {
+				font-size: 90%;
+				.currency {
+					margin-right: 0.5rem;
+				}
+				.country {
+					letter-spacing: 1px;
+				}
+			}
+			&:first-child {
+				border-top: $global-border-secondary;
+			}
+			i {
+				color: $dark-gray;
+				margin-right: 0.5rem;
+			}
+		}
+	}
+
+	// .bank-account-container {
+	// 	margin-bottom: 0.5rem;
+	// }
+	// .bank-account {
+	// 	display: flex;
+	// 	// padding: 0.5rem 1rem;
+	// 	align-items: center;
+
+	// 	.bank-detail {
+	// 		margin-right: 0.5rem;
+	// 		&:last-child, &:first-child {
+	// 			margin-right: 0;
+	// 		}
+	// 		flex: 0 1 auto;
+	// 		min-width: 0;
+	// 		@include breakpoint(medium) {
+	// 			margin-right: 1rem;
+	// 			&:first-child {
+	// 				margin-right: 1rem;
+	// 			}
+	// 		}
+	// 		font-size: 90%;
+	// 		.label {
+	// 			background: $white;
+	// 			color: $primary-color;
+	// 			// border: $global-border;
+	// 			border: 1px solid $primary-color;
+	// 		}
+	// 		i {
+	// 			color: $primary-color;
+	// 			display: none;
+	// 			@include breakpoint(medium) {
+	// 				display: block;
+	// 			}
+	// 		}
+	// 		&.currency {
+	// 			font-weight: $global-weight-bold;
+	// 			text-transform: uppercase;
+	// 		}
+	// 		&.account {
+	// 			color: $dark-gray;
+	// 			flex: 1 0 auto;
+	// 		}
+	// 		&.country {
+	// 			text-transform: uppercase;
+	// 		}
+	// 		&.bank-name {
+	// 			text-transform: uppercase;
+	// 			@include wrap-text;
+	// 		}
+	// 	}
+	// }
+}

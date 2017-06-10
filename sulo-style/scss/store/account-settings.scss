@@ -14,7 +14,7 @@
 	// 		flex-direction: row;
 	// 	}
 	// }
-	
+
 	.menu.submenu {
 
 		li {
@@ -85,83 +85,33 @@
 		}
 	}
 
-	.bank-account-container {
-		margin-bottom: 0.5rem;
-	}
-	.bank-account {
-		display: flex;
-		// padding: 0.5rem 1rem;
-		align-items: center;
-
-		.bank-detail {
-			margin-right: 0.5rem;
-			&:last-child, &:first-child {
-				margin-right: 0;
-			}
-			flex: 0 1 auto;
-			min-width: 0;
-			@include breakpoint(medium) {
-				margin-right: 1rem;
-				&:first-child {
-					margin-right: 1rem;
-				}
-			}
-			font-size: 90%;
-			.label {
-				background: $white;
-				color: $primary-color;
-				// border: $global-border;
-				border: 1px solid $primary-color;
-			}
-			i {
-				color: $primary-color;
-				display: none;
-				@include breakpoint(medium) {
-					display: block;
-				}
-			}
-			&.currency {
-				font-weight: $global-weight-bold;
-				text-transform: uppercase;
-			}
-			&.account {
-				color: $dark-gray;
-				flex: 1 0 auto;
-			}
-			&.country {
-				text-transform: uppercase;
-			}
-			&.bank-name {
-				text-transform: uppercase;
-				@include wrap-text;
-			}
-		}
-	}
-	.payout-schedule-container {
+	
+	
+	// .payout-schedule-container {
 		// margin: 1rem 0;
-		font-size: 95%;
+		// font-size: 95%;
 		// font-weight: $global-weight-bold;
-		.button {
-			margin: 0;
-		}
+	// 	.button {
+	// 		margin: 0;
+	// 	}
 
-	}
+	// }
 	.payout-schedule, .bank-account, .default-currency {
-		padding: 0.5rem;
+		// padding: 0.5rem;
 		@include breakpoint(medium) {
-			padding: 0.5rem 1rem;
+			// padding: 0.5rem 1rem;
 		}
-		border: $global-border;
+		// border: $global-border;
 	}
-	.payout-schedule {
-		@include wrap-text;
-		border-radius: $global-radius;
-		select {
-			max-width: 100%;
-			margin-bottom: 0;
-		}
-		// margin-bottom: 1rem;
-	}
+	// .payout-schedule {
+	// 	@include wrap-text;
+	// 	border-radius: $global-radius;
+	// 	select {
+	// 		max-width: 100%;
+	// 		margin-bottom: 0;
+	// 	}
+	// 	// margin-bottom: 1rem;
+	// }
 }
 
 #sulo-activate-account-form {

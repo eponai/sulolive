@@ -47,11 +47,11 @@
 	.navbar, footer, .footer .row, .row {
 		max-width: $dashboard-max-width;
 	}
-	.callout label {
-		@include breakpoint(large) {
-			text-align: right;
-		}
-	}
+	// .callout label {
+	// 	@include breakpoint(large) {
+	// 		text-align: right;
+	// 	}
+	// }
 	.callout {
 		border: none;
 	}

@@ -20,6 +20,7 @@
     [eponai.client.routes :as routes]
     [eponai.client.parser.message :as msg]
     [eponai.common.ui.elements.callout :as callout]
+    [eponai.web.ui.store.finances :as finances]
     [eponai.web.ui.store.common :as store-common]
     ))
 
@@ -52,8 +53,9 @@
                              :stripe/payout-schedule
                              :stripe/details-submitted?]}
      {:proxy/activate-account (om/get-query activate/Activate)}
-     {:proxy/payouts (om/get-query payouts/Payouts)}
-     {:proxy/general (om/get-query general/General)}
+     ;{:proxy/payouts (om/get-query payouts/Payouts)}
+     ;{:proxy/general (om/get-query general/General)}
+     {:proxy/finances (om/get-query finances/StoreFinances)}
      :query/current-route
      :query/messages])
 
@@ -88,13 +90,14 @@
     {:active-tab :payouts})
   (render [this]
     (let [{:query/keys [stripe-account current-route]
-           :proxy/keys [activate-account payouts general]} (om/props this)
+           :proxy/keys [activate-account payouts general finances]} (om/props this)
           {:keys [store]} (om/get-computed this)
           {:keys [active-tab]} (om/get-state this)
           accepted-tos? (not (some #(clojure.string/starts-with? % "tos_acceptance") (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed])))
           {:keys [route route-params]} current-route
           ]
 
+      (debug "Finances: " finances)
       (dom/div
         {:id "sulo-account-settings"}
         (dom/div
@@ -129,39 +132,7 @@
         (cond
 
               (= route :store-dashboard/settings#payouts)
-
-              (dom/div
-                nil
-
-                (dom/div
-                  (css/add-class :section-title)
-                  (dom/h2 nil "Summary"))
-
-                (callout/callout
-                  nil
-                  (grid/row
-                    (css/text-align :center)
-                    (grid/column
-                      nil
-                      (dom/h3 nil "Current balance")
-                      (dom/span (css/add-class :stat)
-                                (two-decimal-price 0)))
-                    (grid/column
-                      nil
-                      (dom/h3 nil "Next deposit")
-                      (dom/div
-                        (css/add-class :empty-container)
-                        (dom/span (css/add-class :shoutout) "No planned")))))
-
-                (dom/div
-                  (css/add-class :section-title)
-                  (dom/h2 nil "Deposits"))
-
-                (callout/callout
-                  nil
-                  (payouts/->Payouts (om/computed payouts
-                                                  {:store          store
-                                                   :stripe-account stripe-account}))))
+              (finances/->StoreFinances finances)
 
               (= route :store-dashboard/settings#business)
 

@@ -73,7 +73,7 @@
   (let [account (f/input->account-params params)]
     (debug "Update account params: " params)
     (debug "Update account: " account)
-    (s/assert :ext.stripe.params/update-account account)
+    ;(s/assert :ext.stripe.params/update-account account)
     (-update-account stripe account-id account)))
 
 (defn create-charge [stripe params]

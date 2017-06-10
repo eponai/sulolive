@@ -27,7 +27,8 @@
     [eponai.web.ui.button :as button]
     [eponai.common.mixpanel :as mixpanel]
     [eponai.web.ui.store.shipping :as shipping]
-    [eponai.web.ui.store.home :as home]))
+    [eponai.web.ui.store.home :as home]
+    [eponai.web.ui.store.finances :as finances]))
 
 (defn find-product [store product-id]
   (let [product-id (c/parse-long product-id)]
@@ -57,6 +58,8 @@
                                                        :computed-fn compute-store}
                 :store-dashboard/settings             {:component   as/AccountSettings
                                                        :computed-fn compute-store}
+                :store-dashboard/finances             {:component finances/StoreFinances
+                                                       :computed-fn compute-route-params}
                 :store-dashboard/product-list         {:component   pl/ProductList
                                                        :computed-fn compute-route-params}
                 :store-dashboard/create-product       {:component   pef/ProductEditForm

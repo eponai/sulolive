@@ -178,27 +178,6 @@
               {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
               (dom/span nil "Sign in"))))))))
 
-(def routes->titles
-  {:store-dashboard                      "Dashboard"
-   :store-dashboard/profile              "Store info"
-   :store-dashboard/stream               "Live stream"
-   :store-dashboard/product-list         "Products"
-   :store-dashboard/product              "Products"
-   :store-dashboard/create-product       "Products"
-   :store-dashboard/order-list           "Orders"
-   :store-dashboard/order-list-new       "Orders"
-   :store-dashboard/order-list-fulfilled "Orders"
-   :store-dashboard/order                "Order"
-   :store-dashboard/shipping "Shipping"
-   :store-dashboard/settings             "Business"
-   :store-dashboard/settings#payments    "Business"
-   :store-dashboard/settings#general     "Business"
-   :store-dashboard/settings#shipping    "Business"
-   :store-dashboard/settings#activate    "Business"
-   :store-dashboard/settings#business    "Business"
-   :store-dashboard/settings#payouts "Business"})
-
-
 
 (defn manage-store-navbar [component]
   (let [{:query/keys [auth owned-store current-route]} (om/props component)
@@ -590,7 +569,14 @@
                     (dom/a {:href    (routes/url :store-dashboard/settings#payouts {:store-id (:db/id owned-store)})
                             :onClick #(track-event ::mixpanel/go-to-business)}
                            (dom/div {:classes ["icon icon-business"]})
-                           (dom/span nil "Business")))]))
+                           (dom/span nil "Business")))
+                  (menu/item
+                    (when (or (= :store-dashboard/settings#payouts (:route current-route)))
+                      (css/add-class :is-active))
+                    (dom/a {:href    (routes/url :store-dashboard/finances {:store-id (:db/id owned-store)})
+                            :onClick #(track-event ::mixpanel/go-to-business)}
+                           (dom/div {:classes ["icon icon-business"]})
+                           (dom/span nil "Finances")))]))
              (menu/vertical
                (css/add-class :footer-menu)
                (menu/item

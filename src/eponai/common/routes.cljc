@@ -10,6 +10,8 @@
                  "/profile"  :store-dashboard/profile
                  "/policies" :store-dashboard/policies
                  "/shipping" :store-dashboard/shipping
+                 "/finances" {""          :store-dashboard/finances
+                              "/settings" :store-dashboard/finances#settings}
                  "/settings" {""          :store-dashboard/settings
                               "/payments" :store-dashboard/settings#payments
                               "/payouts"  :store-dashboard/settings#payouts
