@@ -9,7 +9,8 @@
             [taoensso.timbre :refer [debug]]
             [eponai.common.mixpanel :as mixpanel]
             [eponai.client.routes :as routes]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [eponai.common.ui.elements.grid :as grid]))
 
 (defprotocol ISearchBar
   (trigger-search! [this]))
@@ -74,7 +75,12 @@
                                          :onClick #(mixpanel/track "Search products"
                                                                    {:source        mixpanel-source
                                                                     :search-string word})}
-                                        (dom/span nil word)))))
+                                        (grid/row
+                                          {:style {:width "100%"}}
+                                          (grid/column (grid/column-size {:small 10})
+                                                       (dom/span nil word))
+                                          (grid/column (grid/column-size {:small 2})
+                                                       (dom/span nil (str (count refs)))))))))
                              (iterate #(common.search/match-next-word search-db %) search-matches))))))))))
 
 (def ->SearchBar (om/factory SearchBar))
