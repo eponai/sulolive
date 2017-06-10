@@ -18,6 +18,10 @@
 
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.
+(defmethod client-read :query/ui-state
+  [{:keys [db query target ast route-params] :as env} _ _]
+  {:value (db/pull-one-with db query {:where '[[?e :ui/singleton :ui.singleton/state]]})})
+
 
 ;; ################ Remote reads ####################
 ;; Remote reads goes here. We share these reads

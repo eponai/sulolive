@@ -149,6 +149,7 @@
                                              :store.item.photo/index]}]}
      {:query/store [{:store/sections [:db/id
                                       :store.section/label]}]}
+     {:query/ui-state [:ui.singleton.state/product-view]}
      :query/messages
      :query/current-route])
 
@@ -186,6 +187,12 @@
                               :query/store])
       (om/update-state! this dissoc :products/edit-sections)))
 
+  (change-product-view [this view]
+    (debug "Transacting new product view: " view)
+    (om/transact! this [(list 'dashboard/change-product-view {:product-view view})
+                        :query/ui-state])
+    (om/update-state! this assoc :grid-editable? false))
+
   (componentDidMount [this]
     (debug "State component did mount")
     (.update-layout this))
@@ -205,9 +212,10 @@
      :products/listing-layout   :products/list
      :products/selected-section :all})
   (render [this]
-    (let [{:query/keys [store inventory]} (om/props this)
+    (let [{:query/keys [store inventory ui-state]} (om/props this)
           {:keys          [search-input cols layout grid-element grid-editable? breakpoint]
-           :products/keys [selected-section edit-sections listing-layout]} (om/get-state this)
+           :products/keys [selected-section edit-sections]} (om/get-state this)
+          product-view (:ui.singleton.state/product-view ui-state)
           {:keys [route-params]} (om/get-computed this)
           products (if grid-editable?
                      (sort-by :store.item/index inventory)
@@ -275,17 +283,17 @@
             (menu/horizontal
               nil
               (menu/item
-                (when (= listing-layout :products/list)
+                (when (= product-view :products/list)
                   (css/add-class :is-active))
                 (dom/a
-                  {:onClick #(om/update-state! this assoc :products/listing-layout :products/list)}
+                  {:onClick #(.change-product-view this :products/list)}
                   (dom/i {:classes ["fa fa-list"]})
                   (dom/span (css/show-for-sr) "List")))
               (menu/item
-                (when (= listing-layout :products/grid)
+                (when (= product-view :products/grid)
                   (css/add-class :is-active))
                 (dom/a
-                  {:onClick #(om/update-state! this assoc :products/listing-layout :products/grid)}
+                  {:onClick #(.change-product-view this :products/grid)}
                   (dom/i {:classes ["fa fa-th"]})
                   (dom/span (css/show-for-sr) "Grid")))
               (menu/item
@@ -305,16 +313,16 @@
           (menu/horizontal
             (css/show-for :medium)
             (menu/item
-              (when (= listing-layout :products/list)
+              (when (= product-view :products/list)
                 (css/add-class :is-active))
               (dom/a
-                {:onClick #(om/update-state! this assoc :products/listing-layout :products/list :grid-editable? false)}
+                {:onClick #(.change-product-view this :products/list)}
                 (dom/i {:classes ["fa fa-list"]})))
             (menu/item
-              (when (= listing-layout :products/grid)
+              (when (= product-view :products/grid)
                 (css/add-class :is-active))
               (dom/a
-                {:onClick #(om/update-state! this assoc :products/listing-layout :products/grid)}
+                {:onClick #(.change-product-view this :products/grid)}
                 (dom/i {:classes ["fa fa-th"]})))
             (menu/item
               (css/add-class :search-input)
@@ -333,7 +341,7 @@
 
 
 
-        (if (= listing-layout :products/list)
+        (if (= product-view :products/list)
           (callout/callout
             nil
             (table/table

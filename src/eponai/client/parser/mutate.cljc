@@ -11,6 +11,13 @@
     [eponai.common :as c]
     [taoensso.timbre :refer [debug warn]]))
 
+; Local mutations
+
+(defmethod client-mutate 'dashboard/change-product-view
+  [{:keys [target db state reconciler]} _ {:keys [product-view]}]
+  {:action (db/transact-one state {:ui/singleton :ui.singleton/state
+                               :ui.singleton.state/product-view product-view})})
+
 ;; ################ Remote mutations ####################
 ;; Remote mutations goes here. We share these mutations
 ;; with all client platforms (web, ios, android).
