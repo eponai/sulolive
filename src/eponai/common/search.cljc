@@ -62,8 +62,10 @@
 
 
 (defn retract-ref-tx [db ref]
-  (map (fn [[e]] [:db/retract e :search.match/refs ref])
-       (db/datoms db :avet :search.match/refs ref)))
+  (let [refs (db/datoms db :avet :search.match/refs ref)]
+    (map (fn [[e]]
+           [:db/retract e :search.match/refs ref])
+         refs)))
 
 (defn expand-transactions [db txs]
   (mapcat (fn [tx]
@@ -81,6 +83,44 @@
     (if (db/connection? x)
       (db/transact x expanded)
       (datascript/db-with x expanded))))
+
+(defn gc
+  "Takes a db and retracts search.match and search entities that have
+  no more refs."
+  [db]
+  (let [matches-missing-refs
+        (sequence
+          (comp
+            (map :e)
+            (filter (fn [match]
+                      (empty?
+                        (db/datoms db :eavt match :search.match/refs)))))
+          (db/datoms db :aevt :search.match/word))
+        empty-matches-by-search
+        (->> (db/find-with db {:find    '[?search ?match]
+                               :where   '[[?search :search/matches ?match]]
+                               :symbols {'[?match ...] matches-missing-refs}})
+             (reduce (fn [m [search match]]
+                       (assoc! m search ((fnil conj []) (get m search) match)))
+                     (transient {}))
+             (persistent!))
+        db-empty-matches-gced
+        (datascript/db-with
+          db
+          (sequence
+            (comp cat
+                  (distinct)
+                  (map (fn [match] [:db.fn/retractEntity match])))
+            (vals empty-matches-by-search)))
+        retract-searches
+        (sequence (comp
+                    (filter (fn [search]
+                              (empty?
+                                (db/datoms db-empty-matches-gced :eavt search :search/matches))))
+                    (map (fn [search]
+                           [:db.fn/retractEntity search])))
+                  (keys empty-matches-by-search))]
+    (datascript/db-with db-empty-matches-gced retract-searches)))
 
 ;; ##############
 ;; ## Searching
