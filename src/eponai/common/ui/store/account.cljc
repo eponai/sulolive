@@ -9,8 +9,8 @@
     [eponai.common.ui.utils :refer [two-decimal-price]]
     [eponai.common.ui.store.account.activate :as activate]
     [eponai.common.ui.store.account.business :as business]
-    [eponai.common.ui.store.account.general :as general]
-    [eponai.common.ui.store.account.payouts :as payouts]
+    ;[eponai.common.ui.store.account.general :as general]
+    ;[eponai.common.ui.store.account.payouts :as payouts]
     #?(:cljs
        [eponai.web.utils :as utils])
     [om.next :as om :refer [defui]]

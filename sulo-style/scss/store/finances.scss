@@ -3,11 +3,21 @@
 	margin: 0 auto;
 	padding-top: $subnav-height;
 
+
 	.section-list {
 		border: none;
 		// padding: 0;
+		label {
+			font-size: 110%;
+		}
 		li {
-			padding: 0;
+			// padding: 0;
+			&:first-child {
+				padding-top: 0;
+			}
+			p {
+				margin-bottom: 0.5rem;
+			}
 		}
 		&.section-list--bank-accounts {
 			li {
@@ -27,6 +37,7 @@
 	}
 
 	.table {
+		margin-top: 1rem;
 		border: none;
 		.tbody, .tr {
 			border: none;
@@ -39,7 +50,13 @@
 			}
 		}
 		.td {
-			// padding: 0.5rem 0.5rem;
+			padding: 0.5rem;
+			&:first-child {
+				padding-left: 1rem;
+			}
+			&:last-child {
+				padding-right: 1rem;
+			}
 			p, .button {
 				margin-bottom: 0;
 			}
@@ -80,11 +97,15 @@
 			}
 		}	
 	}
+	.bank-accounts-container {
+		padding: 0;
+	}
 
 	.bank-list {
+		margin-top: 1rem;
 		li {
 			border-bottom: $global-border-secondary;
-			padding: 0.5rem 0;
+			padding: 0.5rem;
 			display: flex;
 			align-items:center;
 			justify-content: space-between;

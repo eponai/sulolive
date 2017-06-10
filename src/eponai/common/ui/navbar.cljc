@@ -575,7 +575,7 @@
                       (css/add-class :is-active))
                     (dom/a {:href    (routes/url :store-dashboard/finances {:store-id (:db/id owned-store)})
                             :onClick #(track-event ::mixpanel/go-to-business)}
-                           (dom/div {:classes ["icon icon-business"]})
+                           (dom/div {:classes ["icon icon-finances"]})
                            (dom/span nil "Finances")))]))
              (menu/vertical
                (css/add-class :footer-menu)

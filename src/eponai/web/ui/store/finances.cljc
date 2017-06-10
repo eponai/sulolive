@@ -6,7 +6,8 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.callout :as callout]
     [om.next :as om :refer [defui]]
-    [eponai.common.ui.store.account.payouts :as payouts]
+    ;[eponai.common.ui.store.account.payouts :as payouts]
+    [eponai.web.ui.store.finances.settings :as settings]
     [eponai.common.ui.common :as common]
     [eponai.web.ui.store.common :as store-common]
     [eponai.common.ui.navbar :as nav]
@@ -17,7 +18,7 @@
 (defui StoreFinances
   static om/IQuery
   (query [_]
-    [{:proxy/payouts (om/get-query payouts/Payouts)}
+    [{:proxy/settings (om/get-query settings/FinancesSettings)}
      ;{:proxy/navbar (om/get-query nav/Navbar)}
      ;{:query/store [:store/profile]}
      :query/current-route])
@@ -26,7 +27,7 @@
 
   Object
   (render [this]
-    (let [{:proxy/keys [payouts]
+    (let [{:proxy/keys [settings]
            :query/keys [current-route]} (om/props this)
           {:keys [route route-params]} current-route
           {:keys [stripe-account]} (om/get-computed this)]
@@ -86,15 +87,6 @@
                    (dom/span (css/add-class :shoutout) "No deposits made")))]
 
               (= route :store-dashboard/finances#settings)
-
-              [
-               (dom/div
-                 (css/show-for-sr (css/add-class :section-title))
-                 (dom/h1 nil "Deposit settings"))
-               (dom/div
-                 (css/add-class :section-title)
-                 (dom/h2 nil "Deposit schedule"))
-               (payouts/->Payouts payouts (om/computed payouts
-                                                       {:stripe-account stripe-account}))])))))
+              (settings/->FinancesSettings settings settings))))))
 
 (def ->StoreFinances (om/factory StoreFinances))
