@@ -89,6 +89,7 @@
   no more refs."
   [db]
   (let [matches-missing-refs
+        ;; Finds any search.match that has no refs
         (sequence
           (comp
             (map :e)
@@ -97,6 +98,7 @@
                         (db/datoms db :eavt match :search.match/refs)))))
           (db/datoms db :aevt :search.match/word))
         empty-matches-by-search
+        ;; Groups matches by their search, if we need to retract searches later.
         (->> (db/find-with db {:find    '[?search ?match]
                                :where   '[[?search :search/matches ?match]]
                                :symbols {'[?match ...] matches-missing-refs}})
@@ -104,6 +106,7 @@
                        (assoc! m search ((fnil conj []) (get m search) match)))
                      (transient {}))
              (persistent!))
+        ;; Retracts the search.matches
         db-empty-matches-gced
         (datascript/db-with
           db
@@ -113,10 +116,14 @@
                   (map (fn [match] [:db.fn/retractEntity match])))
             (vals empty-matches-by-search)))
         retract-searches
+        ;; Retracts search entities if they're not pointing to anything
+        ;; and no one is pointing to it.
         (sequence (comp
                     (filter (fn [search]
-                              (empty?
-                                (db/datoms db-empty-matches-gced :eavt search :search/matches))))
+                              (and (empty?
+                                     (db/datoms db-empty-matches-gced :eavt search :search/matches))
+                                   (empty?
+                                     (db/datoms db-empty-matches-gced :avet :search/parent search)))))
                     (map (fn [search]
                            [:db.fn/retractEntity search])))
                   (keys empty-matches-by-search))]
