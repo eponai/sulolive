@@ -52,7 +52,13 @@
        (delayed-queue #(om/transact! reconciler (reads-fn)))))))
 
 ;; "Takes a route and its route-params and returns an url"
-(def url routes/path)
+(defn url
+  ([route] (url route nil))
+  ([route route-params] (url route route-params nil))
+  ([route route-params query-params]
+   (cond-> (routes/path route route-params)
+           (not (empty? query-params))
+           (str "?" (url/map->query query-params)))))
 
 (defn set-url!
   "Sets the URL which will propagate the route changes, reads and everything else.
@@ -70,14 +76,12 @@
   ([component route route-params] (set-url! component route route-params nil))
   ([component route route-params query-params]
    {:pre [(om/component? component)]}
-   (if-let [bidi-url (url route route-params)]
-     (let [url (cond-> bidi-url
-                       (not (empty? query-params))
-                       (str "?" (url/map->query query-params)))]
-       (debug "Will set url: " url " created with " {:route        route
-                                                     :route-params route-params
-                                                     :query-params query-params})
-       (set-url! component url))
+   (if-let [bidi-url (url route route-params query-params)]
+     (do
+       (debug "Will set url: " bidi-url " created with " {:route        route
+                                                          :route-params route-params
+                                                          :query-params query-params})
+       (set-url! component bidi-url))
      (warn "Unable to create a url with route: " route " route-params: " route-params))))
 
 (defn current-route [x]
