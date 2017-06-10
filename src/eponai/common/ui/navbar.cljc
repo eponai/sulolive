@@ -81,30 +81,28 @@
          (css/add-class :top-bar))
     content))
 
-(defn collection-links [component disabled?]
-  (map
-    (fn [{:category/keys [href name path] :as a}]
-      (let [opts (if (not disabled?)
-                   {:href    href
+(defn collection-links [component]
+  (let [{:query/keys [auth]} (om/props component)]
+    (map
+      (fn [{:category/keys [href name path] :as a}]
+        (let [opts {:href    (when (some? auth) href)
+                    :classes (when (nil? auth) [:unauthed])
                     :onClick #(mixpanel/track-key ::mixpanel/shop-by-category {:source   "navbar"
-                                                                               :category path})})]
-        (menu/item-link
-          (->> opts
-               (css/add-class :category)
-               (css/show-for :large))
-          (dom/span nil (s/capitalize name)))))
-    (:query/navigation (om/props component))))
+                                                                               :category path})}]
+          (menu/item-link
+            (->> opts
+                 (css/add-class :category)
+                 (css/show-for :large))
+            (dom/span nil (s/capitalize name)))))
+      (:query/navigation (om/props component)))))
 
-(defn live-link [& [on-click title]]
-  (let [opts (if on-click
-               {:key     "nav-live"
-                :onClick on-click}
-               {:key  "nav-live"
-                :href (routes/url :live)})]
+(defn live-link [component]
+  (let [{:query/keys [auth]} (om/props component)
+        href (when (some? auth)
+               (routes/url :live))]
     (menu/item-link
-      (->> opts
-           ;(css/add-class ::css/highlight)
-           (css/add-class :navbar-live)
+      (->> (css/add-class :navbar-live {:href    href
+                                        :classes (when (nil? auth) [:unauthed])})
            (css/show-for :large))
       (dom/strong
         nil
@@ -151,44 +149,6 @@
      ;      (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))))
      ]))
 
-(defn landing-page-navbar [component]
-  (let [{:keys [right-menu on-live-click]} (om/get-computed component)]
-    (navbar-content
-      nil
-      (dom/div
-        {:classes ["top-bar-left"]}
-        (menu/horizontal
-          nil
-          (menu/item
-            nil
-            (dom/a
-              (css/hide-for :large {:onClick #(.open-sidebar component)})
-              (dom/i {:classes ["fa fa-bars fa-fw"]})))
-          (navbar-brand (routes/url :landing-page))
-
-          (live-link on-live-click)
-          ;(menu/item-dropdown
-          ;  (->> {:dropdown (category-dropdown component)
-          ;        :onClick  #(.open-dropdown component :dropdown/collection)}
-          ;       (css/hide-for :large)
-          ;       (css/add-class :category))
-          ;  (dom/span nil "Shop"))
-
-          (collection-links component true)))
-
-      (dom/div
-        {:classes ["top-bar-right"]}
-        (user-menu-item component)
-        ;(menu/horizontal
-        ;  nil
-        ;  (menu/item
-        ;    nil
-        ;    (dom/a
-        ;      {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
-        ;      (dom/strong nil (dom/small nil "Sign in")))))
-        ;right-menu
-        ))))
-
 (defn help-navbar [component]
   (let [{:query/keys [auth owned-store]} (om/props component)]
     (navbar-content
@@ -198,7 +158,7 @@
         (menu/horizontal
           nil
           (navbar-brand)
-          (live-link)
+          (live-link component)
           (menu/item nil
                      (dom/input {:type        "text"
                                  :placeholder "Search on SULO Live Help..."}))))
@@ -301,7 +261,7 @@
         (dom/span nil title)))))
 
 (defn standard-navbar [component]
-  (let [{:query/keys [cart loading-bar current-route locations]} (om/props component)]
+  (let [{:query/keys [cart loading-bar current-route locations auth]} (om/props component)]
     (navbar-content
       nil
       (dom/div
@@ -313,10 +273,13 @@
             (dom/a
               (css/hide-for :large {:onClick #(.open-sidebar component)})
               (dom/i {:classes ["fa fa-bars fa-fw"]})))
-          (navbar-brand (when (empty? locations) (routes/url :landing-page)))
-          (live-link)
+          (navbar-brand (if (and (not-empty locations)
+                                 (some? auth))
+                          (routes/url :index)
+                          (routes/url :landing-page)))
+          (live-link component)
 
-          (collection-links component false)
+          (collection-links component)
           (when (:ui.singleton.loading-bar/show? loading-bar)
             ;; TODO: Do a pretty loading bar somwhere in this navbar.
             ;; (menu/item nil "Loading...")

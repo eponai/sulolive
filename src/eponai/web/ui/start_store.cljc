@@ -119,9 +119,7 @@
       (common/page-container
         {:navbar navbar :id "sulo-start-store"}
         (cond (msg/pending? message)
-              (common/loading-spinner nil (dom/span nil "Starting store..."))
-              (msg/pending? request-message)
-              (common/loading-spinner nil (dom/span nil "Sending request...")))
+              (common/loading-spinner nil (dom/span nil "Starting store...")))
         ;(common/city-banner this locations)
         (photo/cover
           {:photo-id       "static/coming-soon-sell-bg"
@@ -198,45 +196,48 @@
               (css/align :center)
               (grid/column
                 (grid/column-size {:small 12 :medium 8 :large 6})
-                (when (msg/final? request-message)
-                  (if (msg/success? request-message)
-                    (callout/callout-small
-                      (css/add-class :success)
-                      (dom/p (css/add-class :success-message) (msg/message request-message)))))
                 (callout/callout
                   (css/add-class :request-access-form)
                   (dom/label nil "Name")
                   (validate/input
                     {:type "email" :placeholder "Your brand" :id (:field/brand form-inputs)}
                     input-validation)
-                  (dom/label nil "Email (where we can contact you)")
+                  (dom/label nil "Email")
                   (validate/input
                     {:type "email" :placeholder "youremail@example.com" :id (:field/email form-inputs) :defaultValue (:user/email auth)}
                     input-validation)
-                  (dom/label nil "Website (optional)")
-                  (dom/input {:type "text" :placeholder "yourwebsite.com" :id (:field/website form-inputs)})
 
                   (dom/label nil "Where are you local?")
                   (validate/input
                     {:type "text" :placeholder "e.g. Vancouver" :id (:field/locality form-inputs)}
                     input-validation)
 
+                  (dom/label nil "Website")
+                  (dom/input {:type "text" :placeholder "yourwebsite.com (optional)" :id (:field/website form-inputs)})
+
                   (dom/label nil "Message")
-                  (dom/textarea {:placeholder "Anything else you'd like us to know?"
+                  (dom/textarea {:placeholder "Anything else you'd like us to know? (optional)"
                                  :id          (:field/message form-inputs)})
 
                   (dom/div
                     (css/add-class :text-center)
-                    (button/button
-                      {:onClick #(.request-access this)}
-                      (dom/span nil "Get me access!"))
                     (dom/p nil
                            (dom/small nil
                                       (dom/span nil "By submitting up you accept our ")
                                       (dom/a {:href    "//www.iubenda.com/privacy-policy/8010910"
                                               :classes ["iubenda-nostyle no-brand iubenda-embed"]
                                               :title   "Privacy Policy"}
-                                             (dom/span nil "Privacy Policy"))))))))
+                                             (dom/span nil "Privacy Policy"))))
+                    (button/button
+                      {:onClick #(.request-access this)}
+                      (dom/span nil "Get me access!"))
+                    (cond (msg/pending? request-message)
+                          (dom/p nil (dom/small nil (dom/i {:classes ["fa fa-spinner fa-spin"]})))
+                          (msg/final? request-message)
+                          (if (msg/success? request-message)
+                            (callout/callout-small
+                              (css/add-class :success)
+                              (dom/p (css/add-class :success-message) (msg/message request-message)))))))))
 
             ;(grid/row
             ;  (css/align :middle)

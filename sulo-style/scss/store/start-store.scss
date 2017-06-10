@@ -55,4 +55,13 @@
 	textarea {
 		height: 8rem;
 	}
+	li.shopping-bag {
+		display: none;
+	}
+	li > a.unauthed {
+		pointer-events: none;
+	}
+	// li > a.category, li > a.navbar-live {
+	// 	pointer-events: none;
+	// }
 }

@@ -111,23 +111,23 @@
     (dom/footer
       (css/clearfix)
       (grid/row
-        (grid/columns-in-row {:small 2 :medium 3 :large 4})
-        (grid/column
-          nil
-          (menu/vertical {}
-                         (menu/item-text nil (dom/span nil ""))
-                         (menu/item
-                           nil
-                           (dom/select {:defaultValue "Vancouver, BC"}
-                                       (dom/option {:value "Vancouver"} "Vancouver, BC")
-                                       (dom/option {:value "Toronto, ON"
-                                                    :disabled true} "Toronto, ON")))
-                         ;(menu/item-link nil (dom/span nil "Vancouver"))
-                         ;(menu/item-link {:href (routes/url :browse/category {:top-category "home"})} (dom/span nil "HOME"))
-                         ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "women"})} (dom/span nil "WOMEN"))
-                         ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "men"})} (dom/span nil "MEN"))
-                         ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "unisex-kids"})} (dom/span nil "KIDS"))
-                         ))
+        (grid/columns-in-row {:small 2 :medium 3})
+        ;(grid/column
+        ;  nil
+        ;  (menu/vertical {}
+        ;                 (menu/item-text nil (dom/span nil ""))
+        ;                 ;(menu/item
+        ;                 ;  nil
+        ;                 ;  (dom/select {:defaultValue "Vancouver, BC"}
+        ;                 ;              (dom/option {:value "Vancouver"} "Vancouver, BC")
+        ;                 ;              (dom/option {:value "Toronto, ON"
+        ;                 ;                           :disabled true} "Toronto, ON")))
+        ;                 ;(menu/item-link nil (dom/span nil "Vancouver"))
+        ;                 ;(menu/item-link {:href (routes/url :browse/category {:top-category "home"})} (dom/span nil "HOME"))
+        ;                 ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "women"})} (dom/span nil "WOMEN"))
+        ;                 ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "men"})} (dom/span nil "MEN"))
+        ;                 ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "unisex-kids"})} (dom/span nil "KIDS"))
+        ;                 ))
 
         (grid/column
           nil
@@ -229,7 +229,7 @@
   ;
   ;  "Contact us")
   (content-section
-    nil
+    {:href (routes/url :sell)}
     "Sell on SULO"
     (dom/p (css/add-class :sell-on-sulo)
            (dom/span nil "Are you selling products locally? Start a SULO store to tell your story and interact LIVE with your customers. "))

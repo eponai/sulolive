@@ -52,8 +52,8 @@
                                                    :charge?   (some? charge)
                                                    :shipping? (some? shipping)
                                                    :store?    (some? store)})))
-    (-send-store-access-request [_ {:field/keys [brand] :as params}]
-      (info "Fake email - send user request: " {:from    "SULO Live User <hello@sulo.live>"
+    (-send-store-access-request [_ {:field/keys [brand user-id] :as params}]
+      (info "Fake email - send user request: " {:from    (str (if (some? user-id) "SULO Live User" "SULO Live Visitor") " <hello@sulo.live>")
                                                  :to      "hello@sulo.live"
                                                  :subject (str "Request start store access - " brand)
                                                  :params  params}))))
