@@ -33,8 +33,7 @@
           search-matches (when (and (string? input-search) (seq (str/trim input-search)))
                            (some-> search-db
                                    (common.search/match-string input-search)))]
-      (assert (some? mixpanel-source) "missing required props :mixpanel-source to SearchBar.")
-      (dom/div nil
+      (dom/div (css/add-class :sulo-search-bar)
                (dom/input {:classes     classes
                            :placeholder placeholder
                            :type        "text"
@@ -50,12 +49,11 @@
                                              (when (= 13 (.. e -keyCode))
                                                (trigger-search! this))))})
                (dom/div
-                 (cond->> (->> (css/add-class :dropdown-pane)
-                               (css/add-class :user-dropdown))
+                 (cond->> (css/add-class :dropdown-pane)
                           (seq search-matches)
                           (css/add-class :is-open))
                  (menu/vertical
-                   (css/add-class :search-dropdown-menu)
+                   nil
                    (menu/item
                      nil
                      (dom/label nil (dom/small nil "Products"))
@@ -76,11 +74,13 @@
                                                                    {:source        mixpanel-source
                                                                     :search-string word})}
                                         (grid/row
-                                          {:style {:width "100%"}}
+                                          (css/add-class :suggestion-row)
                                           (grid/column (grid/column-size {:small 10})
                                                        (dom/span nil word))
                                           (grid/column (grid/column-size {:small 2})
                                                        (dom/span nil (str (count refs)))))))))
                              (iterate #(common.search/match-next-word search-db %) search-matches))))))))))
 
-(def ->SearchBar (om/factory SearchBar))
+(def ->SearchBar (om/factory SearchBar {:validator (fn [props]
+                                                     (every? #(contains? props %)
+                                                             [:mixpanel-source]))}))
