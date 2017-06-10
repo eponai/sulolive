@@ -20,6 +20,7 @@ $sidenav-width: 75%;
 
 	li {
 		label {
+			margin-top: 0.5rem;
 			font-size: 80%;
 			letter-spacing: 1px;
 		}
@@ -126,7 +127,13 @@ $sidenav-width: 75%;
 	z-index: $sidebar-zindex;
 }
 
-@include breakpoint(xlarge) {
+#sulo-store-dashboard {
+	.sidebar {
+		// padding-top: $navbar-height;
+	}
+}
+
+@include breakpoint(large) {
 	#sulo-store-dashboard {
 		$sidebar-width: 15rem;
 		.page-content-container {
@@ -156,7 +163,7 @@ $sidenav-width: 75%;
 				bottom: 0;
 				// z-index: 0;
 				// margin: 0;
-				// margin-top: $navbar-height;
+				margin-top: $navbar-height;
 				background: transparent;
 				box-shadow: none;
 				

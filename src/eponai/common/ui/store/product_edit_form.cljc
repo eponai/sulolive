@@ -202,7 +202,7 @@
     (let [{:keys [uploaded-photos queue-photo did-mount? sku-count selected-section store-sections]} (om/get-state this)
           {:query/keys [navigation current-route]} (om/props this)
           {:keys [product-id store-id]} (get-route-params this)
-          {:keys [product store]} (om/get-computed this)
+          {:keys [product]} (om/get-computed this)
           {:store.item/keys [price photos skus description]
            item-name        :store.item/name} product
           message-pending-fn (fn [m] (when m (msg/pending? m)))

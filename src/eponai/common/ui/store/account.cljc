@@ -95,7 +95,30 @@
       (dom/div
         {:id "sulo-account-settings"}
 
-        (dom/h1 (css/show-for-sr) "Account settings")
+        (menu/horizontal
+          (css/add-class :submenu)
+          (menu/item
+            (when (= route :store-dashboard/settings#business)
+              (css/add-class :is-active))
+            (dom/a {:href (routes/url :store-dashboard/settings#business route-params)}
+                   (dom/span nil "Verify account")))
+          (menu/item
+            (when (= route :store-dashboard/settings#payouts)
+              (css/add-class :is-active))
+            (dom/a {:href (routes/url :store-dashboard/settings#payouts route-params)}
+                   (dom/span nil "Finances")))
+          (menu/item
+            (when (= route :store-dashboard/settings#payouts)
+              (css/add-class :is-active))
+            (dom/a {:href (routes/url :store-dashboard/settings#payouts route-params)}
+                   (dom/span nil "Finances"))))
+        (dom/div
+          (css/add-class :section-title)
+          (dom/h1 nil "Business")
+          )
+        ;(callout/callout
+        ;  nil)
+
 
         (cond
 

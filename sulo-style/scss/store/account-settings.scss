@@ -1,11 +1,49 @@
 
-a.disabled {
-	pointer-events: none !important;
-}
 
 #sulo-account-settings {
 	max-width: $dashboard-content-width;
 	margin: 0 auto;
+	// .section-title {
+	// 	display: flex;
+	// 	// text-align: left;
+	// 	// justify-content: space-between;
+	// 	align-items: flex-start !important;
+	// 	flex-direction: column;
+	// 	@include breakpoint(medium) {
+	// 		flex-direction: row;
+	// 	}
+	// }
+
+	.menu.submenu {
+	
+		li {
+			// margin: 0 0.5rem;
+			// border-bottom: 2px solid transparent;
+			transition: background .25s ease-in-out;
+			a {
+				// padding: 0.5rem;
+				color: $dark-gray;
+				transition: color .25s ease-in-out;
+			}
+			&:hover, &.is-active {
+				a {
+					color: $body-font-color;
+				}
+				background: $light-gray;
+			}
+			&.is-active {
+				a {
+					font-weight: $global-weight-bold;
+				}
+			}
+			// &.is-active {
+			// 	a {
+
+			// 	}
+			// 	border-bottom: 2px solid $primary-color;
+			// }
+		}
+	}
 	label.text-left {
 		text-align: left;
 	}
@@ -35,16 +73,6 @@ a.disabled {
 			margin-bottom: 1.5rem;
 		}
 	}
-	// .row .row {
-	// 	margin-bottom: 1rem;
-	// }
-
-	// input.tagline-input {
-	// 	font-style: italic;
-		// &::placeholder {
-			// font-style: italic;
-		// }
-	// }
 	.icon {
 		$size: 32px;
 		margin-right: 0.5rem;
@@ -54,17 +82,11 @@ a.disabled {
 			width: $size;
 			height: $size;
 		}
-		// max-width: 2rem;
 	}
-	// .external-account-list {
-		// margin-bottom: 1rem;
-	// }
 
-.bank-account-container {
-	// border: $global-border;
-	// border-radius: $global-radius;
-	margin-bottom: 0.5rem;
-}
+	.bank-account-container {
+		margin-bottom: 0.5rem;
+	}
 	.bank-account {
 		display: flex;
 		// padding: 0.5rem 1rem;

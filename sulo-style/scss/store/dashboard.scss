@@ -60,12 +60,8 @@
 	}
 	.page-content .callout .callout {
 		border: none;
-		// padding: 0;
 	}
 	h2 {
-		// font-family: $header-font-family-serif;
-		// color: $dark-gray;
-		// text-transform: uppercase;
 		margin-bottom: 0.5rem;
 	}
 	h3 {
@@ -84,19 +80,7 @@
 	#sulo-navbar .navbar-container {
 		box-shadow: none;
 		border-bottom: $global-border-secondary;
-		// background: map-get($foundation-palette, action);
 	}
-	#sulo-navbar, #store-navbar {
-		li.menu-text {
-			color: $dark-gray;
-			font-weight: normal;
-			font-size: 90%;
-			@include breakpoint(medium) {
-				font-size: 120%;
-			}
-		}
-	}
-
 	#sulo-navbar {
 		.top-bar {
 			ul {
@@ -108,21 +92,14 @@
 					}
 				}
 		}
-		// position: absolute;
 		.top-bar-left {
 			ul {
-				// font-size: 120%;
 				li {
 					border: none;
-					.store-name {
-						// font-size: 120%;
-					}
+					border-left: $global-border;
 				}
 				li:first-child {
-					border-right: $global-border;
-				}
-				li:last-child {
-					border-left: $global-border;
+					border: none;
 				}
 			}
 		}

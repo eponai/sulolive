@@ -235,7 +235,13 @@
             ;(dom/small nil "Store")
             )
 
-          (menu/item-text nil (dom/span nil (get routes->titles (:route current-route))))))
+          (menu/item
+            nil
+            (dom/a {:href (routes/url :index)
+                    :onClick #(mixpanel/track "Store: Go back to marketplace" {:source "navbar"})}
+                   (dom/strong nil (dom/small nil "Back to marketplace"))))
+          ;(menu/item-text nil (dom/span nil (get routes->titles (:route current-route))))
+          ))
 
       (dom/div
         (css/add-class :top-bar-right)
@@ -257,8 +263,7 @@
                                 (= (:route current-route route) :coming-soon/sell))
                          (when on-live-click
                            (on-live-click))
-                         (routes/set-url! component route route-params))}
-             (css/add-class ::css/highlight))
+                         (routes/set-url! component route route-params))})
         (dom/span nil title)))))
 
 (defn standard-navbar [component]
@@ -368,6 +373,7 @@
                    {:keys [on-close-sidebar-fn]} (om/get-state this)]
                (utils/add-class-to-element body "sidebar-open")
                (.addEventListener js/document "click" on-close-sidebar-fn)
+               (.addEventListener js/document "touchend" on-close-sidebar-fn)
                ;(.addEventListener js/document "touchstart" on-close-sidebar-fn)
                (om/update-state! this assoc :sidebar-open? true)
                )))
@@ -377,6 +383,7 @@
                    {:keys [on-close-sidebar-fn]} (om/get-state this)]
                (utils/remove-class-to-element body "sidebar-open")
                (.removeEventListener js/document "click" on-close-sidebar-fn)
+               (.removeEventListener js/document "touchend" on-close-sidebar-fn)
                ;(.removeEventListener js/document "touchstart" on-close-sidebar-fn)
                (om/update-state! this assoc :sidebar-open? false)
                )))
@@ -516,15 +523,16 @@
              (menu/vertical
                nil
                (menu/item
-                 nil
+                 (css/hide-for :large)
                  (menu/vertical
                    nil
                    (menu/item
                      (css/add-class :back)
                      (dom/a {:href    (routes/url :index nil)
-                             :onClick #(mixpanel/track "Store: Go back to marketplace")}
+                             :onClick #(mixpanel/track "Store: Go back to marketplace" {:source "sidebar"})}
                             ;(dom/i {:classes ["fa fa-chevron-left fa-fw"]})
-                            (dom/strong nil (dom/small nil "Back to marketplace"))))))
+                            (dom/strong nil (dom/small nil "Back to marketplace")))
+                     )))
                (when (some? owned-store)
                  [
                   (menu/item
@@ -612,11 +620,7 @@
                  (dom/label nil "Explore")
                  (menu/vertical
                    nil
-                   (sidebar-highlight this :live nil "LIVE")))
-               (menu/item
-                 nil (dom/label nil "Shop by category")
-                 (menu/vertical
-                   nil
+                   (sidebar-highlight this :live nil "LIVE")
                    (map
                      (fn [{:category/keys [name path href]}]
                        (menu/item
@@ -628,6 +632,21 @@
                        ;(sidebar-category this href (s/capitalize name))
                        )
                      navigation)))
+               ;(menu/item
+               ;  nil (dom/label nil "Shop by category")
+               ;  (menu/vertical
+               ;    nil
+               ;    (map
+               ;      (fn [{:category/keys [name path href]}]
+               ;        (menu/item
+               ;          (css/add-class :category)
+               ;          (dom/a {:href    href
+               ;                  :onClick #(mixpanel/track-key ::mixpanel/shop-by-category {:source   "sidebar"
+               ;                                                                             :category path})}
+               ;                 (dom/span nil (s/capitalize name))))
+               ;        ;(sidebar-category this href (s/capitalize name))
+               ;        )
+               ;      navigation)))
                (when (some? owned-store)
                  (menu/item
                    nil
@@ -655,14 +674,14 @@
                                   (css/add-class :is-active))
                                 (dom/a {:href    (routes/url :user/order-list {:user-id (:db/id auth)})
                                         :onClick #(track-event ::mixpanel/go-to-purchases)}
-                                       (dom/div {:classes ["icon icon-order"]})
+                                       ;(dom/div {:classes ["icon icon-order"]})
                                        (dom/span nil "Purchases")))
                               (menu/item
                                 (when (= route (:route current-route))
                                   (css/add-class :is-active))
-                                (dom/a {:href    (routes/url :user/order-list {:user-id (:db/id auth)})
+                                (dom/a {:href    (routes/url :user-settings {:user-id (:db/id auth)})
                                         :onClick #(track-event ::mixpanel/go-to-settings)}
-                                       (dom/div {:classes ["icon icon-settings"]})
+                                       ;(dom/div {:classes ["icon icon-settings"]})
                                        (dom/span nil "Settings"))))))
                ;(when (and (some? auth)
                ;           (nil? owned-store))
