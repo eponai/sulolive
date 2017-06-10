@@ -112,6 +112,9 @@
 (defn input [opts & content]
   (element dom/input opts content))
 
+(defn textarea [opts & content]
+  (element dom/textarea opts content))
+
 (defn form [opts & content]
   (element dom/form opts content))
 

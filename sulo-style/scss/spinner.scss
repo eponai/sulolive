@@ -46,7 +46,7 @@
   left: 0;
   // margin-left: auto;
   // margin-right: auto; 
-  z-index: 5;
+  z-index: $loading-zindex;
   .sl-spinner {
     margin-bottom: 1rem;
   }
@@ -68,11 +68,11 @@
   }
 }
 .sl-global-spinner {
-  position: absolute;
+  position: fixed;
   z-index: $navbar-zindex;
-  top: $navbar-height;
+  top: 0;//$navbar-height;
   @include breakpoint(large) {
-    position: fixed;
+    // position: fixed;
   }
   height: 1px;
   background: map-get($foundation-palette, primary);

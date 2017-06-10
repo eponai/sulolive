@@ -1,5 +1,12 @@
 
 #sulo-store-dashboard {
+	#sulo-navbar, .sl-global-spinner  {
+		position: fixed;
+	}
+	.sl-global-spinner {
+		  top: $navbar-height;
+	}
+
 	.callout.submenu {
 		padding: 1rem;
 		li {

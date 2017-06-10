@@ -267,3 +267,9 @@
     {:action (fn []
                (db/transact state [{:ui/singleton                   :ui.singleton/loading-bar
                                     :ui.singleton.loading-bar/show? false}]))}))
+
+(defmethod client-mutate 'user/request-store-access
+  [{:keys [state target]} _ _]
+  (when target
+    {:remote true}))
+

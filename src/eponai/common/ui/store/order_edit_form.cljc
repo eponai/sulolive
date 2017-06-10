@@ -141,7 +141,7 @@
               nil
               (dom/div
                 (css/add-class :shipping-address)
-                (dom/label nil "Ship to: ")
+                (dom/label nil "Ship to")
                 (dom/p nil (dom/strong nil (:shipping/name shipping))
                        (dom/br nil)
                        (dom/span nil (:shipping.address/street address))

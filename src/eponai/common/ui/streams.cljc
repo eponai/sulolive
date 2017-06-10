@@ -25,13 +25,16 @@
                      {:stream/_store [:stream/state]}
                      {:store/profile [:store.profile/name
                                       {:store.profile/photo [:photo/path
-                                                             :photo/id]}]}]}])
+                                                             :photo/id]}]}]}
+     :query/locations])
   Object
   (render [this]
-    (let [{:keys [query/streams query/stores proxy/navbar]} (om/props this)]
+    (let [{:keys [query/streams query/stores proxy/navbar]
+           :query/keys [locations]} (om/props this)]
       (debug "Live props: " (om/props this))
       (common/page-container
         {:navbar navbar :id "sulo-live" :class-name "sulo-browse"}
+        (common/city-banner this locations)
         (grid/row
           nil
           (grid/column

@@ -156,10 +156,6 @@
       (dom/div
         {:id "sulo-product-list"}
 
-        (dom/div
-          (css/add-class :section-title)
-          (dom/h1 (css/show-for-sr) "Products"))
-
 
         (dom/div
           (css/add-class :section-title)

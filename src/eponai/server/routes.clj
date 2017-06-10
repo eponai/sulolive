@@ -71,6 +71,7 @@
 (defn handle-parser-request
   [{:keys [body cookies] ::m/keys [conn parser-fn system] :as request} read-basis-t-graph]
   (debug "Handling parser request with query:" (:query body))
+  (debug "Handling parser request with cookies:" cookies)
   ((parser-fn)
     {::parser/read-basis-t-graph  (some-> read-basis-t-graph (atom))
      ::parser/chat-update-basis-t (::parser/chat-update-basis-t body)
@@ -170,23 +171,17 @@
 
   ;; Websockets
   (GET "/ws/chat" {::m/keys [system] :as request}
-    (websocket/handle-get-request (:system/chat-websocket system)
-                                  request))
+    (websocket/handle-get-request (:system/chat-websocket system) request))
   (POST "/ws/chat" {::m/keys [system] :as request}
-    (websocket/handler-post-request (:system/chat-websocket system)
-                                    request))
+    (websocket/handler-post-request (:system/chat-websocket system) request))
 
   ;; Webhooks
-  (POST "/stripe/connected" request (do
-                                      (debug "Webhook connected")
-                                      (r/response (stripe/webhook {:state  (::m/conn request)
-                                                                   :type :connected
-                                                                     :system (::m/system request)} (:body request)))))
-  (POST "/stripe" request (do
-                            (debug "Webhook account")
-                            (r/response (stripe/webhook {:state  (::m/conn request)
-                                                         :type :account
-                                                           :system (::m/system request)} (:body request)))))
+  (POST "/stripe/connected" request (r/response (stripe/webhook {:state  (::m/conn request)
+                                                                 :type :connected
+                                                                 :system (::m/system request)} (:body request))))
+  (POST "/stripe" request (r/response (stripe/webhook {:state  (::m/conn request)
+                                                       :type :account
+                                                       :system (::m/system request)} (:body request))))
 
   (context "/" [:as request]
     member-routes

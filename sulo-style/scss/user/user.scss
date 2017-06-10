@@ -2,6 +2,19 @@ $user-dashboard-max-width: 44rem;
 
 #sulo-user {
 
+	.go-back {
+		padding: 1rem 0;
+		padding-left: 0.5rem;
+		font-weight: $global-weight-bold;
+		font-size: 90%;
+		a {
+			transition: color .25s ease-in-out;
+			color: $dark-gray;
+			&:hover  {
+				color: $body-font-color;
+			}
+		}
+	}
 	.page-content-container {
 		.user-profile-photo {
 			margin: 1.75rem auto;

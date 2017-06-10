@@ -131,15 +131,15 @@
                      [:store-id store-id]
                      [:user-id (hash (:email auth))])] [:order-id order-id]]}
   {:value (when-let [charge (if (some? store-id)
-                              (db/pull-one-with db [:charge/id] {:where   '[[?o :order/store ?s]
-                                                                            [?o :order/charge ?e]]
-                                                                 :symbols {'?o order-id
-                                                                           '?s store-id}})
-                              (db/pull-one-with db [:charge/id] {:where   '[[?o :order/user ?u]
-                                                                            [?o :order/charge ?e]]
-                                                                 :symbols {'?o order-id
-                                                                           '?u (:user-id auth)}}))]
-            (stripe/get-charge (:system/stripe system) (:charge/id charge)))})
+                              (db/pull-one-with db [:db/id :charge/id] {:where   '[[?o :order/store ?s]
+                                                                                   [?o :order/charge ?e]]
+                                                                        :symbols {'?o order-id
+                                                                                  '?s store-id}})
+                              (db/pull-one-with db [:db/id :charge/id] {:where   '[[?o :order/user ?u]
+                                                                                   [?o :order/charge ?e]]
+                                                                        :symbols {'?o order-id
+                                                                                  '?u (:user-id auth)}}))]
+            (assoc (stripe/get-charge (:system/stripe system) (:charge/id charge)) :db/id (:db/id charge)))})
 
 (defread query/stripe-account
   [env _ {:keys [store-id]}]
@@ -227,7 +227,10 @@
 (defread query/auth
   [{:keys [auth query db]} _ _]
   {:auth ::auth/any-user}
-  {:value (db/pull db query (:user-id auth))})
+  {:value (let [can-open-store? (boolean (get-in auth [:user_metadata :can_open_store]))
+                authed-user (db/pull db query (:user-id auth))]
+            (when authed-user
+              (assoc authed-user :user/can-open-store? can-open-store?)))})
 
 (defread query/stream
   [{:keys [db db-history query]} _ {:keys [store-id]}]

@@ -7,11 +7,12 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.navbar :as nav]
-    [taoensso.timbre :refer [debug]]
+    [taoensso.timbre :refer [debug error]]
     [om.next :as om]
     [eponai.web.ui.photo :as photo]
     [eponai.web.social :as social]
-    [eponai.web.ui.button :as button]))
+    [eponai.web.ui.button :as button]
+    [eponai.common.ui.search-bar :as search-bar]))
 
 (defn order-status-element [order]
   (let [status (:order/status order)]
@@ -75,11 +76,11 @@
       (dom/a
         {:href store-link}
         (photo/stream-photo store))
-      (dom/div
-        (->> (css/add-class :text)
-             (css/add-class :header))
-        (dom/a {:href store-link}
-               (dom/span nil stream-name)))
+      ;(dom/div
+      ;  (->> (css/add-class :text)
+      ;       (css/add-class :header))
+      ;  (dom/a {:href store-link}
+      ;         (dom/span nil stream-name)))
 
       (dom/div
         (css/add-class :text)
@@ -110,23 +111,23 @@
     (dom/footer
       (css/clearfix)
       (grid/row
-        (grid/columns-in-row {:small 2 :medium 3 :large 4})
-        (grid/column
-          nil
-          (menu/vertical {}
-                         (menu/item-text nil (dom/span nil ""))
-                         (menu/item
-                           nil
-                           (dom/select {:defaultValue "Vancouver, BC"}
-                                       (dom/option {:value "Vancouver"} "Vancouver, BC")
-                                       (dom/option {:value "Toronto, ON"
-                                                    :disabled true} "Toronto, ON")))
-                         ;(menu/item-link nil (dom/span nil "Vancouver"))
-                         ;(menu/item-link {:href (routes/url :browse/category {:top-category "home"})} (dom/span nil "HOME"))
-                         ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "women"})} (dom/span nil "WOMEN"))
-                         ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "men"})} (dom/span nil "MEN"))
-                         ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "unisex-kids"})} (dom/span nil "KIDS"))
-                         ))
+        (grid/columns-in-row {:small 2 :medium 3})
+        ;(grid/column
+        ;  nil
+        ;  (menu/vertical {}
+        ;                 (menu/item-text nil (dom/span nil ""))
+        ;                 ;(menu/item
+        ;                 ;  nil
+        ;                 ;  (dom/select {:defaultValue "Vancouver, BC"}
+        ;                 ;              (dom/option {:value "Vancouver"} "Vancouver, BC")
+        ;                 ;              (dom/option {:value "Toronto, ON"
+        ;                 ;                           :disabled true} "Toronto, ON")))
+        ;                 ;(menu/item-link nil (dom/span nil "Vancouver"))
+        ;                 ;(menu/item-link {:href (routes/url :browse/category {:top-category "home"})} (dom/span nil "HOME"))
+        ;                 ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "women"})} (dom/span nil "WOMEN"))
+        ;                 ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "men"})} (dom/span nil "MEN"))
+        ;                 ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "unisex-kids"})} (dom/span nil "KIDS"))
+        ;                 ))
 
         (grid/column
           nil
@@ -173,6 +174,35 @@
         (menu/item nil (social/sulo-icon-attribution))
         (menu/item-text nil (social/sulo-copyright))))))
 
+(defn city-banner [component locations]
+  (debug "City locations: " locations)
+  (dom/div
+    (css/add-class :intro-header {:id "sulo-city-banner"})
+    (grid/row
+      (css/align :middle)
+      (grid/column
+        (grid/column-size {:small 12 :medium 6})
+        (dom/h1
+          (css/add-class :header)
+          (dom/i {:className "fa fa-map-marker"})
+          (dom/span nil locations)))
+      (grid/column
+        nil
+        (dom/div
+          (css/add-class :input-container)
+          (search-bar/->SearchBar {:ref             (str ::search-bar-ref)
+                                   :placeholder     "What are you looking for?"
+                                   :mixpanel-source "index"
+                                   :classes         [:drop-shadow]})
+          (button/button
+            (->> (button/expanded {:onClick (fn []
+                                              (let [search-bar (om/react-ref component (str ::search-bar-ref))]
+                                                (when (nil? search-bar)
+                                                  (error "NO SEARCH BAR :( " component))
+                                                (search-bar/trigger-search! search-bar)))})
+                 (css/add-classes [:drop-shadow]))
+            (dom/span nil "Search")))))))
+
 (defn page-container [{:keys [navbar id class-name no-footer? footer]} & content]
   (dom/div
     (css/add-class (str "sulo-page " class-name) {:id id})
@@ -199,10 +229,10 @@
   ;
   ;  "Contact us")
   (content-section
-    nil
+    {:href (routes/url :sell)}
     "Sell on SULO"
     (dom/p (css/add-class :sell-on-sulo)
-           (dom/span nil "Are you selling products locally? Start a store to tell your story and interact LIVE with your customers. "))
+           (dom/span nil "Are you selling products locally? Start a SULO store to tell your story and interact LIVE with your customers. "))
     "Contact us"))
 
 

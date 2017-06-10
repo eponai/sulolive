@@ -14,14 +14,19 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 	}
 
 	&.stream-item {
+		a {
+			color: $body-font-color;
+		}
 		.photo-container {
 			.overlay {
+				transition: background .25s ease-in-out;
 				.content {
 					padding: $global-padding;
+					// align-items: center;
 					.video {
 						$color: $white;
 						background: rgba($color, 0.85);
-						box-shadow: $box-shadow;
+						// box-shadow: $box-shadow;
 						border-radius: 50%;
 						height: 4rem;
 						width: 4rem;
@@ -29,13 +34,17 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 						align-items: center;
 						justify-content: center;
 						transition: all .25s ease-in-out;
+						font-size: 1.5rem;
 					}
 				}
 				&:hover {
+					background: rgba($white, 0.75);
 					.video {
+						background: transparent;
+						box-shadow: none;
 						height: 5rem;
 						width: 5rem;
-						font-size: 1.5rem;
+						font-size: 3rem;
 					}
 				}
 			}
@@ -43,6 +52,9 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 	}
 
 	&.collection-item {
+		a {
+			color: $body-font-color;
+		}
 		.photo-container {
 			margin: 0;
 			.overlay {
@@ -50,8 +62,9 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 				justify-content: center;
 				> div {
 					padding: 0.2rem 1rem;
+					transition: background .25s ease-in;
 					background: rgba($white, 0.75);
-					box-shadow: $box-shadow;
+					// box-shadow: $box-shadow;
 					span {
 						// margin-bottom: 0;
 						font-weight: $global-weight-bold;
@@ -61,8 +74,11 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 				}
 				transition: all .2s ease-in;
 				&:hover {
-					// background: rgba($black, 0.5);
+					background: rgba($white, 0.75);
 					font-size: 125%;
+					> div {
+						background: transparent;
+					}
 				}
 			}
 		}

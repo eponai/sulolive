@@ -1,15 +1,18 @@
 #sulo-start-store {
+	$color: map-get($foundation-palette, sulo);
 	h1 {
 		font-family: $header-font-family-sans-serif;
 		font-weight: $global-weight-bold;
 		text-transform: none;
-		font-size: 250%;
-		text-shadow: 1px 1px 0 rgba($white, 0.75);
+		@include breakpoint(large) {
+			font-size: 250%;
+		}
+		color: $white;
 
 		strong {
 			font-style: normal;
 			font-weight: bold;
-			color: map-get($foundation-palette, primary);
+			color: $white;
 		}
 	}
 	.page-content-container {
@@ -17,40 +20,48 @@
 		flex-direction: column;
 	}
 	.page-content {
-		padding-bottom: 0;
-		// height: 100%;
 		flex: 1 0 auto;
 		display: flex;
 		flex-direction: column;
 	}
-	.photo.cover {
-		padding: 0;
-		flex: 1 0 auto;
-		background-position: center top;
-		img {
-			display: none;
-			// object-position: 50% 0%;
+	.photo-container.cover {
+		flex: 0;
+		.overlay {
+			background: rgba($color, 0.9);
 		}
-	}
-	.photo.header {
-		display: flex;
-		flex-direction: column;
-		flex: 1;
-		.content {
-			padding: 4rem 0;
-			@include breakpoint(large) {
-				padding: 10rem 0;
+		.photo {
+			padding-top: 50%;
+			@include breakpoint(medium) {
+				padding-top: 30%;
 			}
-			flex: 1 0 auto;
-			background: rgba($white, 0.5);
+			@include breakpoint(large) {
+				padding-top: 15%;
+			}
 		}
 	}
-
 	.callout {
-		background: rgba($white, 0.9);
 		border: none;
-		input, select {
-			margin-bottom: 0.2rem;
-		}
 	}
+	.success-message {
+		color: darken(map-get($foundation-palette, success), 10%);
+		// padding: 0.5rem;
+		// font-weight: $global-weight-bold;
+		// letter-spacing: 0.5px;
+		font-weight: $global-weight-bold;
+		font-size: 90%;
+		// color: $dark-gray;
+		text-align: center;
+	}
+	textarea {
+		height: 8rem;
+	}
+	li.shopping-bag {
+		display: none;
+	}
+	li > a.unauthed {
+		pointer-events: none;
+	}
+	// li > a.category, li > a.navbar-live {
+	// 	pointer-events: none;
+	// }
 }

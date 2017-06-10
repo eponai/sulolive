@@ -20,14 +20,6 @@ $section-footer-color: $primary-color;
 			font-size: rem-calc(28);
 		} 
 	}
-	// .icon {
-	// 	padding: 1rem;
-	// 	display: flex;
-	// 	justify-content: center;
-	// }
-	// h1, h2, h3, h4, h5, h6 {
-	// 	font-family: $header-font-family-sans-serif;
-	// }
 	.page-content {
 		padding-bottom: 0;
 	}
@@ -36,56 +28,7 @@ $section-footer-color: $primary-color;
 			padding-top: 25%;
 		}
 	}
-	.intro-header {
-		padding: 1rem 0;
-		background: $primary-color;
-		input {
-			margin: 0;
-		}
-		// min-height: 30rem;
-		// height: 75vh;
-		color: $white;
-		h1 {
-			margin: 0;
-			display: flex;
-			align-items: center;
-			i {
-				font-size: 80%;
-				margin-right: 0.5rem;
-			}
-		// font-size: 2rem;
-			@include breakpoint(large) {
-				font-size: rem-calc(32);
-			}
-		}
-		.icon {
-			font-size: 120%;
-			opacity: 1;
-			display: inline-block;
-			margin-right: 0.5rem;
-			width: 50px;
-			height:50px;
-			padding: 0;
-		}
-		.header {
-			// text-transform: uppercase;
-			// font-weight: bold;
-		}
-		
-		.button {
-			font-weight: $global-weight-bold;
-		}
-		.input-container {
-			display: flex;
-			input {
-				margin: 0;
-			}
-			.button {
-				margin: 0;
-				flex: 0;
-			}
-		}
-	}
+	
 	.photo-container.cover {
 		.overlay {
 			background: rgba($primary-color, 0.7);
@@ -134,40 +77,20 @@ $section-footer-color: $primary-color;
 		}
 
 		&.online-channels {
-			// .online-streams {
-			// 	display: flex;
-			// 	flex-wrap: nowrap;
-			// 	overflow-x: auto;
-			// 	&::-webkit-scrollbar {
-	  //    			width: 0;
-			// 	}
-			// 	&::-webkit-scrollbar-track {
-	  //     			background: transparent;
-			// 	}
-			// 	&::-webkit-scrollbar-thumb {
-	  //     			background: transparent;
-			// 	}
-				.online-stream {
-					// width: $global-width / 6;
-					// min-width: $global-width / 6;
-					// @include breakpoint(medium) {
-					// 	width: $global-width / 4;
-					// 	min-width: $global-width / 4;
-					// }
-					@include breakpoint(small only) {
-						padding: 0 0.5rem;
-						&:nth-child(even) {
-							padding-right: 0;
-						}
-						&:nth-child(odd) {
-							padding-left: 0;
-						}
+			.online-stream {
+				@include breakpoint(small only) {
+					padding: 0 0.5rem;
+					&:nth-child(even) {
+						padding-right: 0;
 					}
-					@include breakpoint(medium) {
-						padding: 0.5rem;
+					&:nth-child(odd) {
+						padding-left: 0;
 					}
 				}
-			// }
+				@include breakpoint(medium) {
+					padding: 0.5rem;
+				}
+			}
 		}
 
 		&.collections {
@@ -185,41 +108,20 @@ $section-footer-color: $primary-color;
 			}
 		}
 		&.new-arrivals {
-			margin-bottom: 4rem;
-			// .new-arrivals-container {
-				// display: flex;
-				// flex-wrap: nowrap;
-				// overflow-x: auto;
-				&::-webkit-scrollbar {
-	     			width: 0;
-				}
-				&::-webkit-scrollbar-track {
-	      			background: transparent;
-				}
-				&::-webkit-scrollbar-thumb {
-	      			background: transparent;
-				}
-				.new-arrival-item {
-					@include breakpoint(small only) {
-						padding: 0 0.5rem;
-						&:nth-child(even) {
-							padding-right: 0;
-						}
-						&:nth-child(odd) {
-							padding-left: 0;
-						}
+			.new-arrival-item {
+				@include breakpoint(small only) {
+					padding: 0 0.5rem;
+					&:nth-child(even) {
+						padding-right: 0;
 					}
-					@include breakpoint(medium) {
-						padding: 0.5rem;
+					&:nth-child(odd) {
+						padding-left: 0;
 					}
-					// width: $global-width / 6;
-					// min-width: $global-width / 6;
-					// @include breakpoint(medium) {
-					// 	width: $global-width / 4;
-					// 	min-width: $global-width / 4;
-					// }
 				}
-			// }
+				@include breakpoint(medium) {
+					padding: 0.5rem;
+				}
+			}
 		}
 	}
 }

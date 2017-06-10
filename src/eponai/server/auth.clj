@@ -163,7 +163,7 @@
         old-user (db/lookup-entity (db/db conn) [:user/email (:email profile)])
         user (if-not (some? old-user)
                (let [new-user (f/auth0->user profile)
-                     _ (info "Auth - authenticated user did not exist, creating new user.")
+                     _ (info "Auth - authenticated user did not exist, creating new user: " new-user)
                      result (db/transact-one conn new-user)]
                  (debug "Auth - new user: " new-user)
                  (db/lookup-entity (:db-after result) [:user/email (:email profile)]))
