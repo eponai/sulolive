@@ -32,25 +32,58 @@
       {:search/parent (merge {:search/letters parent}
                             (search-parents parent))})))
 
+;; ##############
+;; ## Indexing
+
 (defn entities-by-attr-tx
   ([attr]
    (mapcat
      (fn [e]
-       (sequence
-         (comp
-           (map str/lower-case)
-           (map (fn [word]
-                  (let [letters (limit-depth word)]
-                    (merge {:search/letters letters
-                            :search/matches [{:search.match/word word
-                                              :search.match/refs [{:db/id (:db/id e)}]}]}
-                           (search-parents letters))))))
-         (str/split (get e attr) #" ")))))
+       (if (false? (:added e))
+         ;; Remove all refs to e. We need to do this given what's already in the
+         ;; database.
+         [[::retract-ref (:db/id e)]]
+         ;; Add a ref to e and
+         (sequence
+           (comp
+             (map str/lower-case)
+             (map (fn [word]
+                    (let [letters (limit-depth word)]
+                      (merge {:search/letters letters
+                              :search/matches [{:search.match/word word
+                                                :search.match/refs [{:db/id (:db/id e)}]}]}
+                             (search-parents letters))))))
+           (str/split (get e attr) #" "))))))
   ([attr entities]
    {:pre [(every? (every-pred (comp number? :db/id)
                               (comp string? #(get % attr)))
                   entities)]}
    (sequence (entities-by-attr-tx attr) entities)))
+
+
+(defn retract-ref-tx [db ref]
+  (map (fn [[e]] [:db/retract e :search.match/refs ref])
+       (db/datoms db :avet :search.match/refs ref)))
+
+(defn expand-transactions [db txs]
+  (mapcat (fn [tx]
+            (if (and (vector? tx) (= ::retract-ref (first tx)))
+              (retract-ref-tx db (second tx))
+              [tx]))
+          txs))
+
+(defn transact
+  "Helper function for transacting search txs."
+  [x txs]
+  {:pre [(or (db/connection? x) (db/database? x))]}
+  (let [db (cond-> x (db/connection? x) (db/db))
+        expanded (expand-transactions db txs)]
+    (if (db/connection? x)
+      (db/transact x expanded)
+      (datascript/db-with x expanded))))
+
+;; ##############
+;; ## Searching
 
 (defn match-word
   "Returns tuples of [(word-fn <word>) #{<ref-id> ...}] matching the search."

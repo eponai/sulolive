@@ -1,6 +1,7 @@
 (ns eponai.client.parser.merge
   (:require [datascript.core :as d]
             [datascript.db :as db]
+            [eponai.common.search :as common.search]
             [eponai.common.database :as common.db]
             [eponai.common.parser :as parser]
             [eponai.common.parser.util :as p.util]
@@ -68,7 +69,7 @@
       (set-search-db val)
       (if-some [new-search-db (some-> (common.db/lookup-entity db [:ui/singleton :ui.singleton/product-search])
                                       :ui.singleton.product-search/db
-                                      (transact val))]
+                                      (common.search/transact val))]
         (set-search-db new-search-db)
         (do
           (debug "No new search db with merge value: " val)

@@ -13,10 +13,11 @@
       this
       (let [datomic-db (db/db (:conn datomic))
             ds-conn (datascript/create-conn search/search-schema)
-            _ (db/transact ds-conn (into []
-                                         (comp (map #(db/entity datomic-db %))
-                                               (search/entities-by-attr-tx :store.item/name))
-                                         (db/all-with datomic-db {:where '[[?e :store.item/name]]})))]
+            _ (search/transact ds-conn
+                               (sequence
+                                 (comp (map #(db/entity datomic-db %))
+                                       (search/entities-by-attr-tx :store.item/name))
+                                 (db/all-with datomic-db {:where '[[?e :store.item/name]]})))]
         (assoc this :search-conn ds-conn))))
   (stop [this]
     (cond-> this (some? (:search-conn this)) (assoc :search-conn nil))))

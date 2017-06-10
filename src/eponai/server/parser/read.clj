@@ -17,7 +17,8 @@
     [taoensso.timbre :as timbre]
     [clojure.data.json :as json]
     [clojure.java.io :as io]
-    [eponai.common.format.date :as date]))
+    [eponai.common.format.date :as date]
+    [eponai.common.search :as common.search]))
 
 (defmacro defread
   ""
@@ -260,37 +261,40 @@
 (defread query/featured-streams
   [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
-  {:value (->> (query/all db db-history query {:where '[[?e :stream/store]]})
-               (feature-all db-history :stream))})
+  {:value (when-not db-history
+            (->> (query/all db db-history query {:where '[[?e :stream/store]]})
+                 (feature-all db-history :stream)))})
 
 (defread query/featured-items
   [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
-  {:value (letfn [(add-time-to-all [time items]
-                    (map #(if (nil? (:store.item/created-at %))
-                           (assoc % :store.item/created-at time)
-                           %)
-                         items))]
-            (->> (query/all db db-history query {:where '[[?e :store.item/name]]})
-                 (add-time-to-all 0)
-                 (sort-by :store.item/created-at <)
-                 (take 10)
-                 (feature-all db-history :store.item)))})
+  {:value (when-not db-history
+            (letfn [(add-time-to-all [time items]
+                     (map #(if (nil? (:store.item/created-at %))
+                             (assoc % :store.item/created-at time)
+                             %)
+                          items))]
+             (->> (query/all db db-history query {:where '[[?e :store.item/name]]})
+                  (add-time-to-all 0)
+                  (sort-by :store.item/created-at <)
+                  (take 10)
+                  (feature-all db-history :store.item))))})
 
 (defread query/featured-stores
   [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
   ;; TODO: Come up with a way to feature stores.
-  {:value (letfn [(add-time-to-all [time items]
-                    (map #(if (nil? (:store/created-at %))
-                           (assoc % :store/created-at time)
-                           %)
-                         items))]
-            (->> (query/all db db-history query {:where '[[?e :store/profile]]})
-                 (add-time-to-all 0)
-                 (sort-by :store/created-at >)
-                 (take 4)
-                 (feature-all db-history :store)))})
+  {:value (when-not db-history
+            (letfn [(add-time-to-all [time items]
+                      (map #(if (nil? (:store/created-at %))
+                              (assoc % :store/created-at time)
+                              %)
+                           items))]
+              (->> (query/all db db-history query {:where '[[?e :store/profile]]})
+                   (add-time-to-all 0)
+                   (sort-by :store/created-at >)
+                   (take 4)
+                   (feature-all db-history :store))))})
 
 (defread query/locations
   [{:keys [db db-history query locations]} _ _]
@@ -382,5 +386,11 @@
 (defread query/product-search
   [{:keys [db-history system]} _ _]
   {:auth ::auth/public}
-  {:value (when-not db-history
-            (db/db (:search-conn (:system/product-search system))))})
+  {:value (if-not db-history
+            (db/db (:search-conn (:system/product-search system)))
+            (into []
+                  (comp
+                    (map (fn [{:keys [e v added]}]
+                           {:db/id e :store.item/name v :added (boolean added)}))
+                    (common.search/entities-by-attr-tx :store.item/name))
+                  (db/datoms db-history :aevt :store.item/name)))})
