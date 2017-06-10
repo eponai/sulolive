@@ -20,7 +20,7 @@
     [eponai.client.routes :as routes]
     [eponai.client.parser.message :as msg]
     [eponai.common.ui.elements.callout :as callout]
-    ;[eponai.web.ui.store.common :as store-common]
+    [eponai.web.ui.store.common :as store-common]
     ))
 
 (defn tabs-panel [is-active? & content]
@@ -57,7 +57,10 @@
      :query/current-route
      :query/messages])
 
-  ;static store-common/IDashboardNavbarContent
+  static store-common/IDashboardNavbarContent
+  (has-subnav? [this current-route]
+    (debug "Has subnav...")
+    true)
   ;(render-subnav [_ current-route]
   ;  (let [{:keys [route-params route]} current-route]
   ;    (menu/horizontal
@@ -94,28 +97,31 @@
 
       (dom/div
         {:id "sulo-account-settings"}
-
-        (menu/horizontal
-          (css/add-class :submenu)
-          (menu/item
-            (when (= route :store-dashboard/settings#business)
-              (css/add-class :is-active))
-            (dom/a {:href (routes/url :store-dashboard/settings#business route-params)}
-                   (dom/span nil "Verify account")))
-          (menu/item
-            (when (= route :store-dashboard/settings#payouts)
-              (css/add-class :is-active))
-            (dom/a {:href (routes/url :store-dashboard/settings#payouts route-params)}
-                   (dom/span nil "Finances")))
-          (menu/item
-            (when (= route :store-dashboard/settings#payouts)
-              (css/add-class :is-active))
-            (dom/a {:href (routes/url :store-dashboard/settings#payouts route-params)}
-                   (dom/span nil "Finances"))))
         (dom/div
-          (css/add-class :section-title)
-          (dom/h1 nil "Business")
-          )
+          (->> {:id "store-navbar"}
+               (css/add-class :navbar-container))
+          (dom/nav
+            (->> (css/add-class :navbar)
+                 (css/add-class :top-bar))
+            (menu/horizontal
+              (css/align :center)
+              (menu/item
+                (when (= route :store-dashboard/settings#business)
+                  (css/add-class :is-active))
+                (dom/a {:href (routes/url :store-dashboard/settings#business route-params)}
+                       (dom/span nil "Verify account")))
+              (menu/item
+                (when (= route :store-dashboard/settings#payouts)
+                  (css/add-class :is-active))
+                (dom/a {:href (routes/url :store-dashboard/settings#payouts route-params)}
+                       (dom/span nil "Finances"))))
+            ))
+
+
+        ;(dom/div
+        ;  (css/add-class :section-title))
+        (dom/h1 (css/show-for-sr) "Business")
+
         ;(callout/callout
         ;  nil)
 

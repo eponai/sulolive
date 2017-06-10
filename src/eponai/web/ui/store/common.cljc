@@ -33,7 +33,8 @@
 ;    (dom/span nil "Cancel")))
 
 (defprotocol IDashboardNavbarContent
-  (render-subnav [this current-route] "Return the component's content for the sub navbar in store dashboard"))
+  (render-subnav [this current-route] "Return the component's content for the sub navbar in store dashboard")
+  (has-subnav? [this current-route] "Return the component's content for the sub navbar in store dashboard"))
 
 
 ;(defn edit-sections-modal [component {:keys [edit-sections items]}]

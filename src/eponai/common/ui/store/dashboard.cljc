@@ -88,21 +88,29 @@
         path (clojure.string/split subroute #"#")]
     (keyword ns (first path))))
 
-(defn sub-navbar [component]
+;(defn sub-navbar [component]
+;  (let [{:query/keys [current-route]} (om/props component)
+;        {:keys [route route-params]} current-route
+;        {:keys [component computed-fn factory]} (get route-map (parse-route route))
+;        store-id (:store-id route-params)
+;        nav-breakpoint :medium]
+;    (dom/div
+;      (->> {:id "store-navbar"}
+;           (css/add-class :navbar-container))
+;      (dom/nav
+;        (->> (css/add-class :navbar)
+;             (css/add-class :top-bar))
+;        (when (satisfies? store-common/IDashboardNavbarContent component)
+;          (store-common/render-subnav component current-route))
+;        ))))
+
+(defn has-subnav? [component]
   (let [{:query/keys [current-route]} (om/props component)
         {:keys [route route-params]} current-route
-        {:keys [component computed-fn factory]} (get route-map (parse-route route))
-        store-id (:store-id route-params)
-        nav-breakpoint :medium]
-    (dom/div
-      (->> {:id "store-navbar"}
-           (css/add-class :navbar-container))
-      (dom/nav
-        (->> (css/add-class :navbar)
-             (css/add-class :top-bar))
-        (when (satisfies? store-common/IDashboardNavbarContent component)
-          (store-common/render-subnav component current-route))
-        ))))
+        {:keys [component computed-fn factory]} (get route-map (parse-route route))]
+    (if (satisfies? store-common/IDashboardNavbarContent component)
+      (store-common/has-subnav? component current-route)
+      false)))
 
 (defui Dashboard
   static om/IQuery
@@ -159,8 +167,9 @@
           stream-state (or (-> store :stream/_store first :stream/state) :stream.state/offline)]
 
       (common/page-container
-        {:navbar navbar
-         :id     "sulo-store-dashboard"}
+        {:navbar     navbar
+         :id         "sulo-store-dashboard"
+         :class-name (when (has-subnav? this) "has-subnav")}
         ;(sub-navbar this)
 
         (let [{:keys [component computed-fn factory]} (get route-map (parse-route route))

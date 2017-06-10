@@ -3,7 +3,7 @@ $primary-color: map-get($foundation-palette, primary);
 $navbar-background-color: rgba($white, 1);
 $navbar-font-color: $primary-color;
 
-$subnav-height: $navbar-height;
+$subnav-height: rem-calc(44);//$navbar-height;
 $subnav-background-color: $navbar-background-color;//map-get($foundation-palette, nude);
 $subnav-font-color: map-get($foundation-palette, primary);//rgba($black, 0.5);
 
@@ -12,10 +12,6 @@ $footer-header-color: map-get($foundation-palette, banner);
 $footer-font-color: $white;
 $footer-height-small: 6rem;
 $footer-height: 4rem;
-
-$navbar-zindex: 4;
-$subnavbar-zindex: 3;
-$dropdown-zindex: 4;
 
 $chat-width-large: rem-calc(400);
 $chat-width-small: rem-calc(200);

@@ -135,6 +135,7 @@ $sidenav-width: 75%;
 
 @include breakpoint(large) {
 	#sulo-store-dashboard {
+
 		$sidebar-width: 15rem;
 		.page-content-container {
 			display: flex;
@@ -163,7 +164,8 @@ $sidenav-width: 75%;
 				bottom: 0;
 				// z-index: 0;
 				// margin: 0;
-				margin-top: $navbar-height;
+				margin-top: 0;
+				// transition: margin-top .25s ease-in-out;
 				background: transparent;
 				box-shadow: none;
 				
@@ -199,6 +201,11 @@ $sidenav-width: 75%;
 						background: transparent;
 					}
 				}
+			}
+		}
+		&.has-subnav {
+			.sidebar {
+				margin-top: $subnav-height;
 			}
 		}
 		.page-container {

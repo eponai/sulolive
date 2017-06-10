@@ -3,6 +3,7 @@
 #sulo-account-settings {
 	max-width: $dashboard-content-width;
 	margin: 0 auto;
+	padding-top: $navbar-height;
 	// .section-title {
 	// 	display: flex;
 	// 	// text-align: left;
@@ -13,9 +14,9 @@
 	// 		flex-direction: row;
 	// 	}
 	// }
-
-	.menu.submenu {
 	
+	.menu.submenu {
+
 		li {
 			// margin: 0 0.5rem;
 			// border-bottom: 2px solid transparent;

@@ -121,7 +121,7 @@
 		@include breakpoint(large) {
 			position: fixed;
 			top: $navbar-height;
-			z-index: $subnavbar-zindex;
+			z-index: $navbar-zindex;
 		}
 		.navbar {
 			max-width: $dashboard-max-width;
