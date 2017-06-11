@@ -65,43 +65,24 @@
     (if (::started? this)
       this
       (let [store-id-chan (async/chan (async/sliding-buffer 1000))
-            control-chan (async/chan)
-            tx-report-queue (d/tx-report-queue (:conn chat-datomic))]
-        (async/thread
-          (try
-            (loop []
-              (let [tx-report (.take tx-report-queue)]
-                (when-not (= ::finished tx-report)
-                  (try
-                    (doseq [store-id (updated-store-ids tx-report)]
-                      (async/put! store-id-chan {:event-type :store-id
-                                                 :store-id   store-id
-                                                 :basis-t    (d/basis-t (:db-after tx-report))}))
-                    (catch Throwable e
-                      (error "Error in DatomicChat thread reading tx-report-queue: " e)
-                      (async/put! store-id-chan {:exception  e
-                                                 :event-type :exception})))
-                  (recur))))
-            (catch InterruptedException e
-              (error "Error in DatomicChat thread reading tx-report-queue: " e)))
-          (debug "Exiting DatomicChat async/thread..")
-          (async/close! control-chan))
+            listener (datomic/add-tx-listener
+                       chat-datomic
+                       (fn [tx-report]
+                         (doseq [store-id (updated-store-ids tx-report)]
+                           (async/put! store-id-chan {:event-type :store-id
+                                                      :store-id   store-id
+                                                      :basis-t    (d/basis-t (:db-after tx-report))})))
+                       (fn [error]
+                         (async/put! store-id-chan {:exception  error
+                                                    :event-type :exception})))]
         (assoc this ::started? true
-                    :tx-report-queue tx-report-queue
-                    :control-chan control-chan
+                    :listener listener
                     :store-id-chan store-id-chan))))
   (stop [this]
     (when (::started? this)
-      (d/remove-tx-report-queue (:conn chat-datomic))
-      ;; Adding ::finished to will eventually close the control-chan
-      (.add (:tx-report-queue this) ::finished)
-      (let [[v c] (async/alts!! [(:control-chan this) (async/timeout 1000)])]
-        (if (= c (:control-chan this))
-          (debug "DatomicChat successfully stopped.")
-          (debug "DatomicChat timedout when stopping.")))
-      ;; Closing :store-id-chan once we've closed the tx-report stuff.
+      (datomic/remove-tx-listener chat-datomic (:listener this))
       (async/close! (:store-id-chan this)))
-    (dissoc this ::started? :tx-report-queue :control-chan :store-id-chan))
+    (dissoc this ::started? :listener :store-id-chan))
 
   IWriteStoreChat
   (write-message [this store user message]
