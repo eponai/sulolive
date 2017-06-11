@@ -27,7 +27,8 @@
     [eponai.web.ui.button :as button]
     [eponai.common.mixpanel :as mixpanel]
     [eponai.web.ui.store.shipping :as shipping]
-    [eponai.web.ui.store.home :as home]))
+    [eponai.web.ui.store.home :as home]
+    [eponai.web.ui.store.finances :as finances]))
 
 (defn find-product [store product-id]
   (let [product-id (c/parse-long product-id)]
@@ -57,6 +58,8 @@
                                                        :computed-fn compute-store}
                 :store-dashboard/settings             {:component   as/AccountSettings
                                                        :computed-fn compute-store}
+                :store-dashboard/finances             {:component finances/StoreFinances
+                                                       :computed-fn compute-route-params}
                 :store-dashboard/product-list         {:component   pl/ProductList
                                                        :computed-fn compute-route-params}
                 :store-dashboard/create-product       {:component   pef/ProductEditForm
@@ -88,21 +91,29 @@
         path (clojure.string/split subroute #"#")]
     (keyword ns (first path))))
 
-(defn sub-navbar [component]
+;(defn sub-navbar [component]
+;  (let [{:query/keys [current-route]} (om/props component)
+;        {:keys [route route-params]} current-route
+;        {:keys [component computed-fn factory]} (get route-map (parse-route route))
+;        store-id (:store-id route-params)
+;        nav-breakpoint :medium]
+;    (dom/div
+;      (->> {:id "store-navbar"}
+;           (css/add-class :navbar-container))
+;      (dom/nav
+;        (->> (css/add-class :navbar)
+;             (css/add-class :top-bar))
+;        (when (satisfies? store-common/IDashboardNavbarContent component)
+;          (store-common/render-subnav component current-route))
+;        ))))
+
+(defn has-subnav? [component]
   (let [{:query/keys [current-route]} (om/props component)
         {:keys [route route-params]} current-route
-        {:keys [component computed-fn factory]} (get route-map (parse-route route))
-        store-id (:store-id route-params)
-        nav-breakpoint :medium]
-    (dom/div
-      (->> {:id "store-navbar"}
-           (css/add-class :navbar-container))
-      (dom/nav
-        (->> (css/add-class :navbar)
-             (css/add-class :top-bar))
-        (when (satisfies? store-common/IDashboardNavbarContent component)
-          (store-common/render-subnav component current-route))
-        ))))
+        {:keys [component computed-fn factory]} (get route-map (parse-route route))]
+    (if (satisfies? store-common/IDashboardNavbarContent component)
+      (store-common/has-subnav? component current-route)
+      false)))
 
 (defui Dashboard
   static om/IQuery
@@ -159,8 +170,9 @@
           stream-state (or (-> store :stream/_store first :stream/state) :stream.state/offline)]
 
       (common/page-container
-        {:navbar navbar
-         :id     "sulo-store-dashboard"}
+        {:navbar     navbar
+         :id         "sulo-store-dashboard"
+         :class-name (when (has-subnav? this) "has-subnav")}
         ;(sub-navbar this)
 
         (let [{:keys [component computed-fn factory]} (get route-map (parse-route route))

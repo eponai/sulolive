@@ -18,6 +18,10 @@
 
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.
+(defmethod client-read :query/ui-state
+  [{:keys [db query target ast route-params] :as env} _ _]
+  {:value (db/pull-one-with db query {:where '[[?e :ui/singleton :ui.singleton/state]]})})
+
 
 ;; ################ Remote reads ####################
 ;; Remote reads goes here. We share these reads
@@ -129,6 +133,14 @@
                                             :symbols {'?o order-id}})}))))
 
 (defmethod client-read :query/stripe-account
+  [{:keys [route-params ast target db query]} _ _]
+  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
+    (if target
+      {:remote (assoc-in ast [:params :store-id] store-id)}
+      {:value (db/pull-one-with db query {:where   '[[?s :store/stripe ?e]]
+                                          :symbols {'?s store-id}})})))
+
+(defmethod client-read :query/stripe-balance
   [{:keys [route-params ast target db query]} _ _]
   (when-let [store-id (c/parse-long-safe (:store-id route-params))]
     (if target

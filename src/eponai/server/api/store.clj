@@ -234,3 +234,8 @@
   (let [{:keys [stripe/id] :as s} (stripe/pull-stripe (db/db state) store-id)]
     (when (some? id)
       (assoc (stripe/get-account (:system/stripe system) id) :db/id (:db/id s)))))
+
+(defn balance [{:keys [state system]} store-id]
+  (let [{:keys [stripe/id stripe/secret] :as s} (stripe/pull-stripe (db/db state) store-id)]
+    (when (some? id)
+      (assoc (stripe/get-balance (:system/stripe system) id secret) :db/id (:db/id s)))))

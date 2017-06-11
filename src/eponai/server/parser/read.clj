@@ -147,6 +147,12 @@
    :uniq-by [[:store-id store-id]]}
   {:value (store/account env store-id)})
 
+(defread query/stripe-balance
+  [env _ {:keys [store-id]}]
+  {:auth    {::auth/store-owner store-id}
+   :uniq-by [[:store-id store-id]]}
+  {:value (store/balance env store-id)})
+
 (defread query/stripe-customer
   [env _ _]
   {:auth ::auth/any-user}

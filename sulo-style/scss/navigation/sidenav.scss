@@ -13,13 +13,14 @@ $sidenav-width: 75%;
 	top: 0;
 	left: -$sidenav-width;
 	transition: box-shadow .25s ease-in-out, left .25s ease-in-out;
-	z-index: 10;
+	z-index: $sidebar-zindex;
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
 
 	li {
 		label {
+			margin-top: 0.5rem;
 			font-size: 80%;
 			letter-spacing: 1px;
 		}
@@ -41,7 +42,7 @@ $sidenav-width: 75%;
 	> ul {
 		flex: 0 0 auto;
 		> li {
-			padding: 0.25rem 1rem;
+			padding: 0.1rem;
 			border-bottom: $global-border-secondary;
 			&:last-child {
 				// border-bottom: none;
@@ -95,7 +96,7 @@ $sidenav-width: 75%;
 	height: 100%;
 	width: 100%;
 	background: rgba($primary-color, 0.5);
-	z-index: 9;
+	z-index: $sidebar-zindex;
 	visibility: hidden;
 	opacity: 0;
 	transition: visibility 0s ease-in-out, opacity .25s ease-in-out;
@@ -123,11 +124,18 @@ $sidenav-width: 75%;
 }
 .sidebar-container {
 	position: fixed;
-	z-index: 10;
+	z-index: $sidebar-zindex;
 }
 
-@include breakpoint(xlarge) {
+#sulo-store-dashboard {
+	.sidebar {
+		// padding-top: $navbar-height;
+	}
+}
+
+@include breakpoint(large) {
 	#sulo-store-dashboard {
+
 		$sidebar-width: 15rem;
 		.page-content-container {
 			display: flex;
@@ -156,7 +164,8 @@ $sidenav-width: 75%;
 				bottom: 0;
 				// z-index: 0;
 				// margin: 0;
-				// margin-top: $navbar-height;
+				margin-top: 1px;
+				// transition: margin-top .25s ease-in-out;
 				background: transparent;
 				box-shadow: none;
 				
@@ -192,6 +201,11 @@ $sidenav-width: 75%;
 						background: transparent;
 					}
 				}
+			}
+		}
+		&.has-subnav {
+			.sidebar {
+				margin-top: $subnav-height;
 			}
 		}
 		.page-container {

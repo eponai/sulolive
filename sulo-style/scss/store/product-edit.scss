@@ -135,22 +135,33 @@
 	.react-grid-layout {
 		.react-grid-item {
 			background: $white;
-		}
-		&.editable {
-			.react-grid-item {
-				padding-top: 0.5rem;
-				box-shadow: 0 1px 4px 0 rgba($black, 0.2);
-			}
-
-			.content-item {
-				cursor: move;
-			}
-		}
-		.content-item {
-			padding-top: 0;
-			max-width: rem-calc(250);
+			padding: 1rem;
+			overflow: hidden;
 			@include breakpoint(medium) {
-				max-width: rem-calc(250);
+				// padding: 2rem;
+			}
+			display: flex;
+			flex-direction: column;
+			box-shadow: 0 1px 4px 0 rgba($black, 0.2);
+		}
+		// &.editable {
+		// 	.react-grid-item {
+		// 		// padding-top: 0.5rem;
+		// 	}
+
+		// 	.content-item {
+		// 		cursor: move;
+		// 	}
+		// }
+		.content-item {
+			// flex: 0 0 auto;
+			cursor: move;
+			max-width: 100%;
+			width: 100%;
+			// padding-top: 0;
+			// max-width: rem-calc(250);
+			@include breakpoint(medium) {
+				padding: 1rem;
 			}
 			.button {
 				// background: rgba($light-gray, 0.9);
@@ -158,6 +169,71 @@
 				box-shadow: 0 1px 3px 0 rgba($black, 0.2);
 			}
 
+		}
+	}
+	.action-buttons {
+		.button {
+			margin-bottom: 0;
+		}
+	}
+	.edit-sections-callout {
+		.row {
+			// flex-direction: column;
+		}
+		.button {
+			margin: 0;
+		}
+		.edit-sections-menu {
+			// margin-right: 0.5rem;
+			// margin-bottom: 1rem;
+		}
+	}
+	.product-section-menu {
+		flex-wrap: wrap;
+		// margin-right: 0.5rem;
+		margin-bottom:  1rem;
+		@include breakpoint(medium) {
+			margin-bottom: 0;
+			margin-right: 1rem;
+		}
+		li {
+			&:first-child {
+				border-right: $global-border;
+			}
+			a {
+				color: $medium-gray;
+				transition: color .25s ease-in-out;
+
+				&:hover {
+					color: $black;
+				}
+			}
+			&.is-active {
+				a {
+					color: $black;
+					font-weight: $global-weight-bold;
+				}
+			}
+		}
+	}
+	.edit-sections-menu {
+		margin-bottom: 1rem;
+		.edit-sections-item {
+			border-bottom: $global-border-secondary;
+			&:first-child {
+				border-top: $global-border-secondary;
+			}
+			padding: 1rem 0;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			> * {
+				flex: 0 0 auto;
+			}
+			input {
+				width: 15rem;
+				max-width: 50%;
+			}
 		}
 	}
 }

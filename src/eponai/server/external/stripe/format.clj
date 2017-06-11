@@ -115,6 +115,15 @@
        :stripe/default-source (:default_source customer)
        :stripe/shipping       (shipping* (:shipping customer))})))
 
+(defn stripe->balance [b id]
+  (letfn [(balance* [a]
+            {:stripe.balance/currency (:currency a)
+             :stripe.balance/amount   (bigdec (with-precision 10 (/ (:amount a) 100)))})]
+    (f/remove-nil-keys
+      {:stripe/id      id
+       :stripe/balance {:stripe.balance/available (map balance* (:available b))
+                        :stripe.balance/pending   (map balance* (:pending b))}})))
+
 (defn input->legal-entity [legal-entity]
   (let [{:field.legal-entity/keys [type address business-name business-tax-id first-name last-name dob personal-id-number]} legal-entity
         {:field.legal-entity.address/keys [line1 postal city state]} address

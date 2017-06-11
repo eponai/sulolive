@@ -600,8 +600,9 @@ $dashboard-content-width: 54rem;
 
 // 38. Z-index 
 // --------------
-$navbar-zindex: 4;
-// $subnavbar-zindex: 3;
-$dropdown-zindex: 4;
+$navbar-zindex: 3;
+$subnav-zindex: 2;
+$sidebar-zindex: 4;
+$dropdown-zindex: 3;
 $modal-zindex: 5;
 $loading-zindex: 6;

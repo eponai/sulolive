@@ -1,4 +1,4 @@
-(ns eponai.common.ui.store.account.payouts
+(ns eponai.web.ui.store.finances.settings
   (:require
     [clojure.string :as string]
     [eponai.common.ui.common :as common]
@@ -50,129 +50,101 @@
         week-anchor (or week-anchor (:stripe.payout-schedule/week-anchor payout-schedule) "monday")
         month-anchor (or month-anchor (:stripe.payout-schedule/month-anchor payout-schedule) "1")]
 
-    (when (= modal :payout-schedule)
-      (common/modal
-        {:on-close #(om/update-state! component dissoc :modal)
-         :size "tiny"}
+    (common/modal
+      {:on-close #(om/update-state! component dissoc :modal)
+       :size     "tiny"}
+      (dom/div
+        nil
+        (dom/h4 (css/add-class :header) "Change deposit schedule")
+        (dom/p nil (dom/small nil (payout-schedule-info interval week-anchor month-anchor delay-days)))
+
+        (dom/label nil "Deposit interval")
+        (dom/select {:defaultValue interval
+                     :onChange     #(om/update-state! component (fn [s]
+                                                                  (let [{:payout-schedule/keys [month-anchor week-anchor]} s
+                                                                        interval (.. % -target -value)]
+                                                                    (cond-> (assoc s :payout-schedule/interval interval)
+                                                                            (and (= interval "weekly")
+                                                                                 (nil? week-anchor))
+                                                                            (assoc :payout-schedule/week-anchor "monday")
+                                                                            (and (= interval "monthly")
+                                                                                 (nil? month-anchor))
+                                                                            (assoc :payout-schedule/month-anchor "1")))))}
+                    (dom/option {:value "daily"} "Daily")
+                    (dom/option {:value "weekly"} "Weekly")
+                    (dom/option {:value "monthly"} "Monthly"))
+        (cond (= interval "weekly")
+              [(dom/label nil "Deposit day")
+               (dom/select {:defaultValue week-anchor
+                            :onChange     #(om/update-state! component assoc :payout-schedule/week-anchor (.. % -target -value))}
+                           (dom/option {:value "monday"} "Monday")
+                           (dom/option {:value "tuesday"} "Tuesday")
+                           (dom/option {:value "wednesday"} "Wednesday")
+                           (dom/option {:value "thursday"} "Thursday")
+                           (dom/option {:value "friday"} "Friday")
+                           (dom/option {:value "saturday"} "Saturday")
+                           (dom/option {:value "sunday"} "Sunday"))]
+              (= interval "monthly")
+              [(dom/label nil "Deposit day")
+               (dom/select {:defaultValue month-anchor
+                            :onChange     #(om/update-state! component assoc :payout-schedule/month-anchor (.. % -target -value))}
+                           (map (fn [i]
+                                  (let [day (str (inc i))]
+                                    (dom/option {:value day} day)))
+                                (range 31)))])
         (dom/div
-          nil
-          (dom/h4 (css/add-class :header) "Change deposit schedule")
-          (dom/p nil (dom/small nil (payout-schedule-info interval week-anchor month-anchor delay-days)))
+          (css/add-class :action-buttons)
+          (button/user-setting-default
+            {:onClick #(om/update-state! component dissoc :modal)}
+            (dom/span nil "Cancel"))
+          (button/user-setting-cta
+            {:onClick #(do
+                        (.update-payout-schedule component interval week-anchor month-anchor)
+                        (om/update-state! component dissoc :modal))}
+            (dom/span nil "Save")))))))
 
-          (dom/label nil "Deposit interval")
-          (dom/select {:defaultValue interval
-                       :onChange     #(om/update-state! component (fn [s]
-                                                                    (let [{:payout-schedule/keys [month-anchor week-anchor]} s
-                                                                          interval (.. % -target -value)]
-                                                                      (cond-> (assoc s :payout-schedule/interval interval)
-                                                                              (and (= interval "weekly")
-                                                                                   (nil? week-anchor))
-                                                                              (assoc :payout-schedule/week-anchor "monday")
-                                                                              (and (= interval "monthly")
-                                                                                   (nil? month-anchor))
-                                                                              (assoc :payout-schedule/month-anchor "1")))))}
-                      (dom/option {:value "daily"} "Daily")
-                      (dom/option {:value "weekly"} "Weekly")
-                      (dom/option {:value "monthly"} "Monthly"))
-          (cond (= interval "weekly")
-                [(dom/label nil "Deposit day")
-                 (dom/select {:defaultValue week-anchor
-                              :onChange     #(om/update-state! component assoc :payout-schedule/week-anchor (.. % -target -value))}
-                             (dom/option {:value "monday"} "Monday")
-                             (dom/option {:value "tuesday"} "Tuesday")
-                             (dom/option {:value "wednesday"} "Wednesday")
-                             (dom/option {:value "thursday"} "Thursday")
-                             (dom/option {:value "friday"} "Friday")
-                             (dom/option {:value "saturday"} "Saturday")
-                             (dom/option {:value "sunday"} "Sunday"))]
-                (= interval "monthly")
-                [(dom/label nil "Deposit day")
-                 (dom/select {:defaultValue month-anchor
-                              :onChange     #(om/update-state! component assoc :payout-schedule/month-anchor (.. % -target -value))}
-                             (map (fn [i]
-                                    (let [day (str (inc i))]
-                                      (dom/option {:value day} day)))
-                                  (range 31)))])
-          (dom/div
-            (css/add-class :action-buttons)
-            (button/user-setting-default
-              {:onClick #(om/update-state! component dissoc :modal)}
-              (dom/span nil "Cancel"))
-            (button/user-setting-cta
-              {:onClick #(do
-                          (.update-payout-schedule component interval week-anchor month-anchor)
-                          (om/update-state! component dissoc :modal))}
-              (dom/span nil "Save"))))))))
-
-(defn default-currency-section [component]
+(defn default-currency-modal [component]
   (let [{:keys [modal]} (om/get-state component)
-        {:keys [stripe-account]} (om/get-computed component)
-        {:query/keys [stripe-country-spec]} (om/props component)
+        ;{:keys [stripe-account]} (om/get-computed component)
+        {:query/keys [stripe-country-spec stripe-account]} (om/props component)
         {:country-spec/keys [supported-bank-account-currencies]} stripe-country-spec
-        {:stripe/keys [default-currency external-accounts]} stripe-account]
-    (debug "Country spec: " stripe-country-spec)
-    (dom/div
-      nil
-      (grid/row
-        (->> (css/align :top))
-        (grid/column
-          (grid/column-size {:small 12 :large 2})
-          (dom/label nil "Default currency"))
+        {:stripe/keys [default-currency external-accounts]} stripe-account
+        currencies-with-account (map :stripe.external-account/currency external-accounts)]
+    (debug "Currencies with accounts: " currencies-with-account)
+    (common/modal
+      {:on-close #(om/update-state! component dissoc :modal)
+       :size "tiny"}
+      (dom/div
+        nil
+        (dom/h4 (css/add-class :header) "Change default currency")
+        (dom/p nil (dom/small nil "Change the default currency for your account"))
 
-        (grid/column
-          nil
-          (grid/row-column
-            (css/add-class :payout-schedule-container)
-            (grid/row
-              (css/align :middle)
-              (grid/column
-                nil
-                (dom/div
-                  (->> (css/add-class :currency)
-                       (css/add-class :default-currency))
-                  (dom/span (->> (css/add-class :label)
-                                 (css/add-class ::css/color-secondary))
-                            default-currency)))
+        (dom/select
+          (->> {:defaultValue default-currency
+                :id           "sulo-default-currency-select"}
+               (css/add-class :currency))
+          (map (fn [c]
+                 (let [code (key c)
+                       is-disabled? (not (contains? (set currencies-with-account) (name code)))]
+                   (dom/option
+                     (cond-> {:value    code}
+                             is-disabled?
+                             (assoc :disabled true))
+                     (if is-disabled?
+                       (str (string/upper-case (name code)) " (no bank account)")
+                       (string/upper-case (name code))))))
+               supported-bank-account-currencies))
 
-              (grid/column
-                (css/add-class :shrink)
-                (dom/a
-                  (->> {:onClick #(om/update-state! component assoc :modal :default-currency)}
-                       (css/button-hollow)
-                       (css/add-class :small))
-
-                  (dom/span nil "Change default currency"))
-                ))))
-        (when (= modal :default-currency)
-          (common/modal
-            {:on-close #(om/update-state! component dissoc :modal)}
-            (dom/div
-              nil
-              (dom/h4 (css/add-class :header) "Change default currency")
-              (dom/p nil (dom/small nil "Change the default currency for your account"))
-
-              (dom/select
-                (->> {:defaultValue default-currency
-                      :id           "sulo-default-currency-select"}
-                     (css/add-class :currency))
-                (map (fn [c]
-                       (let [code (key c)]
-                         (dom/option
-                           {:value code} (name code))))
-                     supported-bank-account-currencies))
-              (dom/div
-                (css/callout)
-                (dom/p (css/add-class :header))
-                (dom/div
-                  (css/text-align :right)
-                  (button/user-setting-default
-                    {:onClick #(om/update-state! component dissoc :modal)}
-                    (dom/span nil "Cancel"))
-                  (button/user-setting-cta
-                    {:onClick #(do
-                                (.update-default-currency component)
-                                (om/update-state! component dissoc :modal))}
-                    (dom/span nil "Save")))))))))))
+        (dom/div
+          (css/add-class :action-buttons)
+          (button/user-setting-default
+            {:onClick #(om/update-state! component dissoc :modal)}
+            (dom/span nil "Cancel"))
+          (button/user-setting-cta
+            {:onClick #(do
+                        (.update-default-currency component)
+                        (om/update-state! component dissoc :modal))}
+            (dom/span nil "Save")))))))
 
 (defui Payouts-no-loader
   static om/IQuery
@@ -250,9 +222,8 @@
           month-anchor (or month-anchor (:stripe.payout-schedule/month-anchor payout-schedule) "1")
           message (msg/last-message this 'stripe/update-account)]
       (debug "Stripe account: " stripe-account)
-
       (dom/div
-        nil
+        {:id "sulo-finances-settings"}
         (cond (msg/pending? message)
               (common/loading-spinner nil)
               (msg/final? message)
@@ -263,14 +234,20 @@
                        (css/add-class ::css/color-alert))
                   (dom/p nil (msg/message message)))))
 
-        ;(callout/callout-small
-        ;  (css/add-class :warning)
-        ;  (dom/p nil (dom/small nil "Deposit settings are disabled until we finish our Stripe integration. Soon, just sooon!")))
-        ;(callout/header nil "Deposit settings")
-        ;(dom/div
-        ;  (css/add-class :section-title)
-        ;  (dom/h2 nil "Settings"))
-        (payout-schedule-modal this)
+        (dom/div
+          (css/show-for-sr (css/add-class :section-title))
+          (dom/h1 nil "Deposit settings"))
+
+        (cond (= modal :default-currency)
+              (default-currency-modal this)
+              (= modal :payout-schedule)
+              (payout-schedule-modal this))
+
+
+        (dom/div
+          (css/add-class :section-title)
+          (dom/h2 nil "Deposit settings"))
+
         (callout/callout
           nil
           (menu/vertical
@@ -283,22 +260,37 @@
               (menu/item
                 nil
                 (grid/row
-                  (css/add-class :collapse)
+                  (->> (css/add-class :collapse)
+                       (css/align :middle))
                   (grid/column
-                    nil
-                    (dom/p nil
-                           (dom/span nil (str (string/capitalize (or interval ""))))
+                    (grid/column-size {:small 12 :medium 6})
+                    (dom/label nil "Deposit schedule")
+                    (dom/p nil (dom/small nil (payout-schedule-info interval week-anchor month-anchor delay-days))))
+                  (grid/column
+                    (css/text-align :right)
+                    (dom/p nil (dom/span nil (str (string/capitalize (or interval ""))))
                            (when anchor
                              (dom/span nil (str " (" anchor ")")))
-                           (dom/span nil (str " - " delay-days " day rolling basis"))
                            (dom/br nil)
-                           (dom/small nil (payout-schedule-info interval week-anchor month-anchor delay-days))))
-                  (grid/column
-                    (->> (css/text-align :right)
-                         (grid/column-size {:small 12 :medium 3}))
+                           (dom/small nil (str delay-days " day rolling basis")))
                     (button/user-setting-default
                       {:onClick #(om/update-state! this assoc :modal :payout-schedule)}
-                      (dom/span nil "Change schedule"))))))))
+                      (dom/span nil "Change schedule"))))))
+            (menu/item
+              nil
+              (grid/row
+                (->> (css/add-class :collapse)
+                     (css/align :middle))
+                (grid/column
+                  (grid/column-size {:small 12 :medium 6})
+                  (dom/label nil "Default currency")
+                  (dom/p nil (dom/small nil "Charges for a currency without a bank account will be converted to your default currency, ")))
+                (grid/column
+                  (css/text-align :right)
+                  (dom/p nil (dom/strong nil (string/upper-case (or default-currency ""))))
+                  (button/user-setting-default
+                    {:onClick #(om/update-state! this assoc :modal :default-currency)}
+                    (dom/span nil "Change currency")))))))
         ;(callout/callout
         ;  nil
         ;  (default-currency-section this))
@@ -307,7 +299,7 @@
           (css/add-class :section-title)
           (dom/h2 nil "Bank accounts"))
         (callout/callout
-          nil
+          (css/add-class :bank-accounts-container)
 
           ;(menu/vertical
           ;  (css/add-classes [:section-list :section-list--bank-accounts]))
@@ -323,7 +315,7 @@
                        (dom/div
                          nil
                          (dom/p (css/add-class :bank-detail--account)
-                                (dom/i {:classes ["fa fa-bank -fa-fw"]})
+                                ;(dom/i {:classes ["fa fa-bank -fa-fw"]})
                                 (dom/span nil bank-name)
                                 (dom/small nil (str "•••• " last4)))
                          (dom/p (css/add-class :bank-detail--location)
@@ -336,7 +328,7 @@
                                         (= currency default-currency))
                            (button/button
                              (->> {:onClick #(om/update-state! this assoc :modal :delete-account)}
-                                  (css/add-classes [:tiny :alert :hollow]))
+                                  (css/add-classes [:small :alert :hollow]))
                              (dom/span nil "Delete")))
                          (button/user-setting-default
                            {:onClick #(om/update-state! this assoc :modal :bank-account :modal-object bank-acc)}
@@ -351,9 +343,9 @@
                      (let [{:stripe.external-account/keys [bank-name currency last4 country default-for-currency?]} bank-acc]
                        (table/tbody-row
                          nil
-                         (table/td
-                           (css/add-class :bank-detail--icon)
-                           (dom/i {:classes ["fa fa-bank -fa-fw"]}))
+                         ;(table/td
+                         ;  (css/add-class :bank-detail--icon)
+                         ;  (dom/i {:classes ["fa fa-bank -fa-fw"]}))
                          (table/td
                            (css/add-class :bank-detail--location)
                            (dom/p nil
@@ -377,19 +369,19 @@
                                           (= currency default-currency))
                              (button/button
                                (->> {:onClick #(om/update-state! this assoc :modal :delete-account)}
-                                    (css/add-classes [:tiny :alert :hollow]))
+                                    (css/add-classes [:small :alert :hollow]))
                                (dom/span nil "Delete")))
-                           (button/button
-                             (->> {:onClick #(om/update-state! this assoc :modal :bank-account :modal-object bank-acc)}
-                                  (css/add-classes [:hollow :secondary :tiny]))
+                           (button/user-setting-default
+                             {:onClick #(om/update-state! this assoc :modal :bank-account :modal-object bank-acc)}
                              (dom/span nil "Edit"))
 
                            ))))
                    external-accounts)))]
-            (menu/item
+            (dom/div
               nil
+              (dom/p nil (dom/small nil "No bank accounts saved"))
               (button/user-setting-default
-                (css/add-class :disabled)
+                nil
                 (dom/span nil "Add bank account...")))))
         ;(payout-schedule this)
 

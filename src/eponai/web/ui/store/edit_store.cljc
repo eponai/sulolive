@@ -298,15 +298,6 @@
      {:query/countries [{:country/continent [:continent/code]}]}])
 
   Object
-  (save-sections [this]
-    (let [{:products/keys [edit-sections]} (om/get-state this)
-          {:query/keys [current-route]} (om/props this)
-          new-sections (filter #(not-empty (string/trim (:store.section/label % ""))) edit-sections)]
-      (msg/om-transact! this [(list 'store/update-sections {:sections new-sections
-                                                            :store-id (get-in current-route [:route-params :store-id])})
-                              :query/store])
-      (om/update-state! this dissoc :products/edit-sections)))
-
   (save-store [this]
     #?(:cljs
        (let [{uploaded-photo :profile/upload
@@ -503,25 +494,6 @@
                                                    :placeholder "No shipping policy"}
                                                   {:on-editor-created (:shipping-policy/on-editor-create state)
                                                    :on-text-change    (:shipping-policy/on-editor-change state)}))
-                )))
-
-          (dom/div
-            (css/add-class :product-sections-container)
-            (dom/div
-              (css/add-class :section-title)
-              (dom/h2 nil "Product sections")
-              (dom/div
-                (css/text-align :right)
-                (button/edit {:onClick #(do
-                                         (mixpanel/track "Store: Edit product sections")
-                                         (om/update-state! this assoc :products/edit-sections (into [] (:store/sections store))))})
-                (button/default-hollow
-                  {:href    (routes/url :store-dashboard/product-list {:store-id (:db/id store)})
-                   :onClick #(mixpanel/track-key ::mixpanel/go-to-products {:source "store-info"})}
-                  (dom/span nil "Products")
-                  (dom/i {:classes ["fa fa-chevron-right"]}))
-                ))
-
-            (products-section this)))))))
+                ))))))))
 
 (def ->EditStore (om/factory EditStore))
