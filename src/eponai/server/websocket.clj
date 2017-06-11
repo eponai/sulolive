@@ -34,8 +34,8 @@
                          :db/retract (when-let [[sub store] (-> db
                                                                 (db/find-with
                                                                   {:find    '[?sub ?store]
-                                                                   :where   '[[?sub :subscriber/uid ?uid]
-                                                                              [?store :store/id ?store-id]
+                                                                   :where   '[[?store :store/id ?store-id]
+                                                                              [?sub :subscriber/uid ?uid]
                                                                               [?sub :subscriber/subscriptions ?store]]
                                                                    :symbols {'?uid      uid
                                                                              '?store-id store-id}})
@@ -54,8 +54,8 @@
     (update-subscriber this store-id uid :db/retract))
   (get-subscribers [this store-id]
     (db/all-with db {:where   '[[?store :store/id ?store-id]
-                                [?sub :subscriber/subscriptions ?store]
-                                [?sub :subscriber/uid ?e]]
+                                [?sub :subscriber/uid ?e]
+                                [?sub :subscriber/subscriptions ?store]]
                      :symbols {'?store-id store-id}}))
   (remove-subscriber [this uid]
     (debug "Removing :uid: " uid)
@@ -66,8 +66,10 @@
               (update :db d/db-with [[:db.fn/retractEntity sub]])))))
 
 (defn datascript-subscription-store []
-  (-> (d/create-conn {:store/id                 {:db/unique :db.unique/identity}
-                      :subscriber/uid           {:db/unique :db.unique/identity}
+  (-> (d/create-conn {:store/id                 {:db/index true
+                                                 :db/unique :db.unique/identity}
+                      :subscriber/uid           {:db/unique :db.unique/identity
+                                                 :db/index true}
                       :subscriber/subscriptions {:db/cardinality :db.cardinality/many
                                                  :db/valueType   :db.type/ref}})
       (d/db)
