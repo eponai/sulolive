@@ -272,7 +272,7 @@
                            (when anchor
                              (dom/span nil (str " (" anchor ")")))
                            (dom/br nil)
-                           (dom/small nil (str "- " delay-days " day rolling basis")))
+                           (dom/small nil (str delay-days " day rolling basis")))
                     (button/user-setting-default
                       {:onClick #(om/update-state! this assoc :modal :payout-schedule)}
                       (dom/span nil "Change schedule"))))))

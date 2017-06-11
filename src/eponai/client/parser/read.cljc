@@ -140,6 +140,14 @@
       {:value (db/pull-one-with db query {:where   '[[?s :store/stripe ?e]]
                                           :symbols {'?s store-id}})})))
 
+(defmethod client-read :query/stripe-balance
+  [{:keys [route-params ast target db query]} _ _]
+  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
+    (if target
+      {:remote (assoc-in ast [:params :store-id] store-id)}
+      {:value (db/pull-one-with db query {:where   '[[?s :store/stripe ?e]]
+                                          :symbols {'?s store-id}})})))
+
 (defmethod client-read :query/stripe-customer
   [{:keys [ast target db query]} _ _]
   (if target

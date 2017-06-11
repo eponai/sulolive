@@ -571,7 +571,8 @@
                            (dom/div {:classes ["icon icon-business"]})
                            (dom/span nil "Business")))
                   (menu/item
-                    (when (or (= :store-dashboard/settings#payouts (:route current-route)))
+                    (when (#{:store-dashboard/finances
+                             :store-dashboard/finances#settings} (:route current-route))
                       (css/add-class :is-active))
                     (dom/a {:href    (routes/url :store-dashboard/finances {:store-id (:db/id owned-store)})
                             :onClick #(track-event ::mixpanel/go-to-business)}

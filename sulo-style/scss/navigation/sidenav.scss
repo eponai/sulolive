@@ -42,7 +42,7 @@ $sidenav-width: 75%;
 	> ul {
 		flex: 0 0 auto;
 		> li {
-			padding: 0.25rem 1rem;
+			padding: 0.1rem;
 			border-bottom: $global-border-secondary;
 			&:last-child {
 				// border-bottom: none;
@@ -164,7 +164,7 @@ $sidenav-width: 75%;
 				bottom: 0;
 				// z-index: 0;
 				// margin: 0;
-				margin-top: 0;
+				margin-top: 1px;
 				// transition: margin-top .25s ease-in-out;
 				background: transparent;
 				box-shadow: none;

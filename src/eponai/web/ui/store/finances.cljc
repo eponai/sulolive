@@ -13,12 +13,14 @@
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.client.routes :as routes]
+    [eponai.common :as c]
     [taoensso.timbre :refer [debug]]))
 
 (defui StoreFinances
   static om/IQuery
   (query [_]
     [{:proxy/settings (om/get-query settings/FinancesSettings)}
+     {:query/stripe-balance [:stripe/balance]}
      ;{:proxy/navbar (om/get-query nav/Navbar)}
      ;{:query/store [:store/profile]}
      :query/current-route])
@@ -28,12 +30,13 @@
   Object
   (render [this]
     (let [{:proxy/keys [settings]
-           :query/keys [current-route]} (om/props this)
+           :query/keys [current-route stripe-balance]} (om/props this)
           {:keys [route route-params]} current-route
           {:keys [stripe-account]} (om/get-computed this)]
       ;(common/page-container
       ;  {:navbar navbar :id "sulo-store-finances"})
       (debug "Current route: " route)
+      (debug "BalanceL " stripe-balance)
       (dom/div
         {:id "sulo-store-finances"}
 
@@ -62,21 +65,25 @@
                  (css/add-class :section-title)
                  (dom/h2 nil "Summary"))
 
-               (callout/callout
-                 nil
-                 (grid/row
-                   (css/text-align :center)
-                   (grid/column
-                     nil
-                     (dom/h3 nil "Current balance")
-                     (dom/span (css/add-class :stat)
-                               (ui-utils/two-decimal-price 0)))
-                   (grid/column
-                     nil
-                     (dom/h3 nil "Next deposit")
-                     (dom/div
-                       (css/add-class :empty-container)
-                       (dom/span (css/add-class :shoutout) "No planned")))))
+               (let [balance (:stripe/balance stripe-balance)
+                     available (some #(when (= (:stripe.balance/currency %) "cad") %) (:stripe.balance/available balance))
+                     pending (some #(when (= (:stripe.balance/currency %) "cad") %) (:stripe.balance/pending balance))]
+                 (callout/callout
+                   nil
+                   (grid/row
+                     (css/text-align :center)
+                     (grid/column
+                       nil
+                       (dom/h3 nil "Available for deposit")
+                       (dom/div
+                         (css/add-class :empty-container)
+                         (dom/span (css/add-class :stat)
+                                   (c/price->str (:stripe.balance/amount available)))))
+                     (grid/column
+                       nil
+                       (dom/h3 nil "Current balance")
+                       (dom/span (css/add-class :stat)
+                                 (c/price->str (:stripe.balance/amount pending)))))))
                (dom/div
                  (css/add-class :section-title)
                  (dom/h2 nil "Deposits"))
