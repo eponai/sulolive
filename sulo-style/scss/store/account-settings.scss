@@ -159,6 +159,27 @@
 			margin-bottom: 0;
 		}
 	}
+	.document-upload-container {
+		label {
+			text-align: left;
+		}
+		p {
+			margin-bottom: 0;
+		}
+	}
+		.document-uploader {
+			label {
+				@include button;
+				@include button-hollow;
+				@include button-hollow-style($secondary-color);
+				margin-right: 1rem;
+				// @extend .button;
+				flex: 0;
+				text-align: left;
+				border: 1px solid $secondary-color;
+			}
+		}
+	// }
 	// p a {
 	// 	text-decoration: underline; 
 	// }

@@ -39,6 +39,8 @@
    :field.legal-entity/last-name          "legal_entity.last_name"
    :field.legal-entity/personal-id-number "legal_entity.personal_id_number"
 
+   :field.legal-entity/document           "legal_entity.verification.document"
+
    :field/external-account                "external_account"})
 
 (def form-inputs
@@ -227,7 +229,7 @@
                          input-validation)))))))))])))
 
 (defn personal-details [component]
-  (let [{:keys [input-validation entity-type]} (om/get-state component)
+  (let [{:keys [input-validation entity-type document-upload]} (om/get-state component)
         all-required-fields (set (required-fields component))
         personal-fields (into #{}
                               (filter #(some? (get all-required-fields (get form-inputs %)))
@@ -236,7 +238,10 @@
                                        :field.legal-entity.dob/day
                                        :field.legal-entity.dob/month
                                        :field.legal-entity.dob/year
-                                       :field.legal-entity/personal-id-number]))]
+                                       :field.legal-entity/personal-id-number
+                                       :field.legal-entity/document]))]
+    (debug "Personal fields: " personal-fields)
+    (debug "Document: " document-upload)
     (when (not-empty personal-fields)
       [(dom/p (css/add-class :section-title) (if (= entity-type :individual)
                                                "Your personal details"
@@ -310,7 +315,32 @@
                     :placeholder ""
                     :id          (:field.legal-entity/personal-id-number form-inputs)}
                    input-validation)
-                 (dom/small nil "Stripe require identification to confirm you are a representative of this business, and don't use this for any other purpose."))))))])))
+                 (dom/small nil "Stripe require identification to confirm you are a representative of this business, and don't use this for any other purpose.")))))
+         (when (get personal-fields :field.legal-entity/document)
+           (menu/item
+             (css/add-class :document-upload-container )
+             (grid/row
+               nil
+               (grid/column
+                 (css/add-class :shrink)
+                 (dom/label nil "Verification document")
+                 (dom/p nil (dom/small nil "This should be a photo of your identifying document, such as a passport or driver’s license."))))
+             (grid/row
+               nil
+               (grid/column
+                 (css/add-class :document-uploader )
+                 (dom/input
+                   (css/show-for-sr {:type        "file"
+                                     :placeholder "First"
+                                     :accept      "image/png,image/jpeg"
+                                     :onChange    #(.select-document component %)
+                                     :id          (:field.legal-entity/document form-inputs)}))
+                 (dom/div
+                   nil
+                   (dom/label
+                     {:htmlFor (:field.legal-entity/document form-inputs)}
+                     "Upload file")
+                   (dom/span nil (str document-upload))))))))])))
 
 (defn external-account [component]
   (let [{:query/keys [stripe-country-spec]} (om/props component)
@@ -457,6 +487,11 @@
                                       :query/stripe-account])))
 
          (om/update-state! this assoc :input-validation validation))))
+  (select-document [this e]
+    #?(:cljs
+       (let [^js/Event event e
+             ^js/File file (first (array-seq (.. event -target -files)))]
+         (om/update-state! this assoc :document-upload (.-name file)))))
   (initLocalState [this]
     {:entity-type :individual})
 
