@@ -11,6 +11,7 @@
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.wowza :as wowza]
     [eponai.server.external.chat :as chat]
+    [eponai.server.external.product-search :as product-search]
     [eponai.server.api.store :as store]
     [eponai.common.api.products :as products]
     [eponai.server.api.user :as user]
@@ -388,9 +389,4 @@
   {:auth ::auth/public}
   {:value (if-not db-history
             (db/db (:search-conn (:system/product-search system)))
-            (into []
-                  (comp
-                    (map (fn [{:keys [e v added]}]
-                           {:db/id e :store.item/name v :added (boolean added)}))
-                    (common.search/entities-by-attr-tx :store.item/name))
-                  (db/datoms db-history :aevt :store.item/name)))})
+            (product-search/changes-since db-history :store.item/name))})
