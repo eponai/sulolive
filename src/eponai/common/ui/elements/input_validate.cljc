@@ -17,24 +17,12 @@
 
 (defn select
   [opts error & children]
-  (debug "SELECT  OPTS: " opts)
   (let [is-invalid-input? (some #(= % (:id opts)) (:invalid-paths error))]
     (my-dom/select
       (cond->> opts
                is-invalid-input?
                (css/add-class :is-invalid-input))
-      children)
-
-    ;(dom/div nil
-    ;  (dom/label
-    ;    #js {:className (when is-invalid-input? "is-invalid-label")}
-    ;    label)
-    ;  (my-dom/select
-    ;    (cond-> opts
-    ;            is-invalid-input?
-    ;            (update :classes conj "is-invalid-input"))
-    ;    children))
-    ))
+      children)))
 
 (defn input
   ([opts error]
@@ -50,3 +38,13 @@
        (cond->> opts
                 is-invalid-input?
                 (css/add-class :is-invalid-input))))))
+
+(defn validate
+  [spec m form-inputs]
+  (when-let [err (s/explain-data spec m)]
+    (let [problems (::s/problems err)
+          invalid-paths (map (fn [p]
+                               (some #(get form-inputs %) p))
+                             (into (map :path problems) (map :via problems)))]
+      {:explain-data  err
+       :invalid-paths invalid-paths})))

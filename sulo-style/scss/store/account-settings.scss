@@ -66,14 +66,14 @@
 		flex-direction: row;
 	}
 
-	.callout {
-		.header {
-			font-weight: $global-weight-bold;
-			border-bottom: $global-border;
-			padding-bottom: 0.1rem;
-			margin-bottom: 1.5rem;
-		}
-	}
+	// .callout {
+		// .header {
+		// 	font-weight: $global-weight-bold;
+		// 	border-bottom: $global-border;
+		// 	padding-bottom: 0.1rem;
+		// 	margin-bottom: 1.5rem;
+		// }
+	// }
 	.icon {
 		$size: 32px;
 		margin-right: 0.5rem;
@@ -115,29 +115,65 @@
 }
 
 #sulo-activate-account-form {
+	label {
+		font-size: 90%; 
+		color: $dark-gray;
+		@include breakpoint(medium) {
+			text-align: right;
+		}
+	}
 	input, select {
-		// max-width: 20rem;
-		margin: 0;
+		max-width: 25rem;
+		// margin: 0;
 		&[disabled] {
 			background: $white;
 			font-weight: $global-weight-bold;
 		}
 	}
-	p a {
-		text-decoration: underline; 
+	select {
+		max-width: 10rem;
 	}
-	.business-type {
-		label {
-			color: $black;
-			font-weight: $global-weight-normal;
+	.section-title {
+		&:first-child {
+			margin-top: 0;
 		}
+		// font-weight: $global-weight-bold;
 	}
-	.callout > .row {
-		margin-bottom: 1rem;
-		.row {
+	.menu.section-list {
+		margin-bottom: 4rem;
+		&:last-child {
 			margin-bottom: 1rem;
 		}
+		li {
+			border: none;
+		}
+		.row {
+			margin-top: 1rem;
+			&:first-child {
+				margin-top: 0;
+			}
+		}
 	}
+	.action-buttons {
+		.button {
+			margin-bottom: 0;
+		}
+	}
+	// p a {
+	// 	text-decoration: underline; 
+	// }
+	// .business-type {
+	// 	label {
+	// 		color: $black;
+	// 		font-weight: $global-weight-normal;
+	// 	}
+	// }
+	// .callout > .row {
+	// 	margin-bottom: 1rem;
+	// 	.row {
+	// 		margin-bottom: 1rem;
+	// 	}
+	// }
 	.callout.alert {
 		padding: 1rem;
 	}
