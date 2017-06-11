@@ -53,13 +53,8 @@
     (if (:search-conn this)
       this
       (let [datomic-db (db/db (:conn datomic))
-            ds-conn (datascript/create-conn common.search/search-schema)
-            _ (common.search/transact
-                ds-conn
-                (sequence
-                  (comp (map #(db/entity datomic-db %))
-                        (common.search/entities-by-attr-tx :store.item/name))
-                  (db/all-with datomic-db {:where '[[?e :store.item/name]]})))
+            ds-conn (common.search/conn-with-index datomic-db
+                                                   :store.item/name)
             listener (server.datomic/add-tx-listener datomic
                                                      (index-item-name-changes-fn ds-conn)
                                                      (fn [error]

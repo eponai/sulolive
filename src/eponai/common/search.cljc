@@ -84,6 +84,16 @@
       (db/transact x expanded)
       (datascript/db-with x expanded))))
 
+(defn conn-with-index [db attr]
+  {:pre [(db/database? db) (keyword? attr)]
+   :post [(db/connection? %)]}
+  (let [conn (datascript/create-conn search-schema)]
+    (transact conn (sequence
+                     (comp (map #(db/entity db %))
+                           (entities-by-attr-tx attr))
+                     (db/all-with db {:where [['?e attr]]})))
+    conn))
+
 (defn gc
   "Takes a db and retracts search.match and search entities that have
   no more refs."
@@ -120,10 +130,8 @@
         ;; and no one is pointing to it.
         (sequence (comp
                     (filter (fn [search]
-                              (and (empty?
-                                     (db/datoms db-empty-matches-gced :eavt search :search/matches))
-                                   (empty?
-                                     (db/datoms db-empty-matches-gced :avet :search/parent search)))))
+                              (and (empty? (db/datoms db-empty-matches-gced :eavt search :search/matches))
+                                   (empty? (db/datoms db-empty-matches-gced :avet :search/parent search)))))
                     (map (fn [search]
                            [:db.fn/retractEntity search])))
                   (keys empty-matches-by-search))]
@@ -132,7 +140,7 @@
 ;; ##############
 ;; ## Searching
 
-(defn match-word
+(defn- match-word
   "Returns tuples of [(word-fn <word>) #{<ref-id> ...}] matching the search."
   [db search word-fn]
   (let [indexed-val (limit-depth (str/lower-case search))]
@@ -166,7 +174,7 @@
                                    (map :v)
                                    (db/datoms db :eavt (:e %) :search.match/refs)))))))))
 
-(defn partial-match-ref [db needle search-id]
+(defn- partial-match-ref [db needle search-id]
   (let [search-matches (when (some? search-id)
                          (into #{}
                                (map :v)
