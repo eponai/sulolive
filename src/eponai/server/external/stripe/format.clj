@@ -16,10 +16,24 @@
      :country-spec/verification-fields               (stripe->verification-fields (:verification_fields country-spec))}))
 
 (defn stripe->verification [verification]
-  (f/remove-nil-keys
-    {:stripe.verification/fields-needed   (:fields_needed verification)
-     :stripe.verification/due-by          (:due_by verification)
-     :stripe.verification/disabled-reason (:disabled_reason verification)}))
+  (let [fields ["legal_entity.address.line1" "legal_entity.address.postal_code" "legal_entity.address.city"
+                "legal_entity.address.state"
+                "legal_entity.type"
+                "legal_entity.business_name"
+                "legal_entity.business_tax_id"
+                "legal_entity.dob.day"
+                "legal_entity.dob.month"
+                "legal_entity.dob.year"
+                "legal_entity.first_name"
+                "legal_entity.last_name"
+                "legal_entity.personal_id_number"
+                "external_account"
+                "tos_acceptance.date"
+                "tos_acceptance.ip"]]
+    (f/remove-nil-keys
+      {:stripe.verification/fields-needed   (:fields_needed verification)
+       :stripe.verification/due-by          (:due_by verification)
+       :stripe.verification/disabled-reason (:disabled_reason verification)})))
 
 
 (defn stripe->legal-entity [legal-entity]

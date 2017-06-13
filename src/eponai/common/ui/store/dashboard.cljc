@@ -28,7 +28,8 @@
     [eponai.common.mixpanel :as mixpanel]
     [eponai.web.ui.store.shipping :as shipping]
     [eponai.web.ui.store.home :as home]
-    [eponai.web.ui.store.finances :as finances]))
+    [eponai.web.ui.store.finances :as finances]
+    [eponai.web.ui.store.business :as business]))
 
 (defn find-product [store product-id]
   (let [product-id (c/parse-long product-id)]
@@ -56,7 +57,7 @@
                                                        :computed-fn compute-store}
                 :store-dashboard/stream               {:component   ss/StreamSettings
                                                        :computed-fn compute-store}
-                :store-dashboard/settings             {:component   as/AccountSettings
+                :store-dashboard/business             {:component   business/AccountSettings
                                                        :computed-fn compute-store}
                 :store-dashboard/finances             {:component finances/StoreFinances
                                                        :computed-fn compute-route-params}

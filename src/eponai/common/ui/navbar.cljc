@@ -563,10 +563,9 @@
                            (dom/div {:classes ["icon icon-truck"]})
                            (dom/span nil "Shipping")))
                   (menu/item
-                    (when (or (= :store-dashboard/settings#payouts (:route current-route))
-                              (= :store-dashboard/settings#business (:route current-route)))
+                    (when (#{:store-dashboard/business} (:route current-route))
                       (css/add-class :is-active))
-                    (dom/a {:href    (routes/url :store-dashboard/settings#payouts {:store-id (:db/id owned-store)})
+                    (dom/a {:href    (routes/url :store-dashboard/business {:store-id (:db/id owned-store)})
                             :onClick #(track-event ::mixpanel/go-to-business)}
                            (dom/div {:classes ["icon icon-business"]})
                            (dom/span nil "Business")))

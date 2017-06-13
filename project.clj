@@ -73,7 +73,7 @@
                                        eponai.common.ui.store.product-edit-form
                                        eponai.common.ui.store.product-list
                                        eponai.common.ui.store.stream-settings
-                                       eponai.common.ui.store.account.activate
+                                       ;eponai.common.ui.store.account.activate
                                        eponai.common.ui.store.account.business
                                        eponai.common.ui.store.account.general
                                        eponai.common.ui.store.account.payments
@@ -82,6 +82,7 @@
                                        eponai.common.ui.store.account.validate
                                        eponai.web.ui.store.common
                                        eponai.web.ui.store.edit-store
+                                       eponai.web.ui.store.business.verify
                                        cljsjs.react-grid-layout]}})))
 
 (defproject budget "0.1.0-SNAPSHOT"

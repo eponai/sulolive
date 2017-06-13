@@ -12,11 +12,13 @@
                  "/shipping" :store-dashboard/shipping
                  "/finances" {""          :store-dashboard/finances
                               "/settings" :store-dashboard/finances#settings}
-                 "/settings" {""          :store-dashboard/settings
-                              "/payments" :store-dashboard/settings#payments
-                              "/payouts"  :store-dashboard/settings#payouts
-                              "/business" :store-dashboard/settings#business
-                              "/activate" :store-dashboard/settings#activate}
+                 "/business" {"" :store-dashboard/business
+                              "/verify" :store-dashboard/business#verify}
+                 ;"/settings" {""          :store-dashboard/settings
+                 ;             "/payments" :store-dashboard/settings#payments
+                 ;             "/payouts"  :store-dashboard/settings#payouts
+                 ;             "/business" :store-dashboard/settings#business
+                 ;             "/activate" :store-dashboard/settings#activate}
                  "/products" {""                                :store-dashboard/product-list
                               "/create"                         :store-dashboard/create-product
                               ["/" [#"(\d|\w|-)+" :product-id]] :store-dashboard/product}
