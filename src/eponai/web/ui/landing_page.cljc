@@ -52,7 +52,12 @@
           {:photo-id "static/ashim-d-silva-89336"}
           (dom/h1 nil
                   (dom/span nil "Your local marketplace online"))
-          (dom/p nil (dom/span nil "Shop and hang out LIVE with your favorite local brands")))
+          (dom/p nil (dom/span nil "Shop and hang out LIVE with your favorite local brands"))
+          (when (some? auth)
+            (dom/div
+              (css/add-class :select-location)
+              (dom/select {:defaultValue "Vancouver"}
+                          (dom/option {:value "Vancouver"} "Vancouver")))))
         (dom/div
           {:classes ["top-features"]}
           (grid/row
@@ -74,7 +79,7 @@
               "Sign up to follow and share your faves.")))
 
         (grid/row-column
-          (css/text-align :center)
+          (css/text-align :center {:id "sulo-locations"})
           (dom/div
             (css/add-class :section-title)
             (dom/h2 nil "Where are you local?"))
@@ -98,25 +103,25 @@
                       (css/text-align :center)
                       (dom/strong nil "Vancouver, BC"))
                     (dom/p (css/add-class :coming-soon) (dom/small nil "Coming soon - Summer 2017"))))))
-            (grid/column
-              nil
-              (dom/a
-                (css/add-classes [:city-anchor :inactive] nil)
-
-                (photo/photo
-                  {:photo-id       "s--1wUD_bGi--/v1496873909/static/alex-shutin-228917"
-                   :transformation :transformation/preview}
-                  (photo/overlay
-                    nil
-                    (dom/div
-                      (css/text-align :center)
-                      (dom/strong nil "Toronto, ON"))
-                    (dom/p (css/add-class :coming-soon) (dom/small nil "Coming soon - Fall 2017"))))))
+            ;(grid/column
+            ;  nil
+            ;  (dom/a
+            ;    (css/add-classes [:city-anchor :inactive] nil)
+            ;
+            ;    (photo/photo
+            ;      {:photo-id       "s--1wUD_bGi--/v1496873909/static/alex-shutin-228917"
+            ;       :transformation :transformation/preview}
+            ;      (photo/overlay
+            ;        nil
+            ;        (dom/div
+            ;          (css/text-align :center)
+            ;          (dom/strong nil "Toronto, ON"))
+            ;        (dom/p (css/add-class :coming-soon) (dom/small nil "Coming soon - Fall 2017"))))))
             (grid/column
               (css/add-classes [:suggest-location])
               (photo/cover
                 nil
-                (dom/h3 nil "Don't see your location? Let us know where we should go next!")
+                (dom/h3 nil "Local somewhere else? Let us know where we should go next!")
                 (dom/div
                   (css/add-class :input-container)
                   (dom/input {:type        "text"

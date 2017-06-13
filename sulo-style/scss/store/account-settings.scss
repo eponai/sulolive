@@ -115,6 +115,9 @@
 }
 
 #sulo-activate-account-form {
+	small {
+		color: $body-font-color;
+	}
 	label {
 		font-size: 90%; 
 		color: $dark-gray;
@@ -170,8 +173,8 @@
 		.document-uploader {
 			label {
 				@include button;
-				@include button-hollow;
-				@include button-hollow-style($secondary-color);
+				// @include button-hollow;
+				// @include button-hollow-style($secondary-color);
 				margin-right: 1rem;
 				// @extend .button;
 				flex: 0;

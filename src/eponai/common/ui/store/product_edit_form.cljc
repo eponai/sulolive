@@ -123,18 +123,18 @@
     [:query/current-route
      :query/messages
      {:query/navigation [:category/name :category/label :category/path :category/href]}])
-  static store-common/IDashboardNavbarContent
+  ;static store-common/IDashboardNavbarContent
 
-  (render-subnav [_ current-route]
-    (menu/breadcrumbs
-      nil
-      (menu/item nil (dom/a {:href (routes/url :store-dashboard/product-list (:route-params current-route))}
-                            "Products"))
-      (menu/item nil (dom/span nil
-                               (cond (= (:route current-route) :store-dashboard/create-product)
-                                     "New"
-                                     (= (:route current-route) :store-dashboard/product)
-                                     "Edit")))))
+  ;(render-subnav [_ current-route]
+  ;  (menu/breadcrumbs
+  ;    nil
+  ;    (menu/item nil (dom/a {:href (routes/url :store-dashboard/product-list (:route-params current-route))}
+  ;                          "Products"))
+  ;    (menu/item nil (dom/span nil
+  ;                             (cond (= (:route current-route) :store-dashboard/create-product)
+  ;                                   "New"
+  ;                                   (= (:route current-route) :store-dashboard/product)
+  ;                                   "Edit")))))
 
   Object
   (componentDidUpdate [this _ _]

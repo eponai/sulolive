@@ -82,14 +82,30 @@
          (css/add-class :top-bar))
     content))
 
+(defn scroll-to [el d]
+  #?(:cljs
+     (when (< 0 d)
+       (let [
+             el-top (.-top (.getBoundingClientRect el))
+             body (.-body js/document)
+             diff (- el-top (.-scrollTop el))
+             per-tick (* 10 (/ diff d))]
+         (js/setTimeout (fn []
+                          (set! (.-scrollTop body) (+ (.-scrollTop body) per-tick))
+                          (scroll-to el (- d 10))))))))
+
 (defn collection-links [component]
-  (let [{:query/keys [auth]} (om/props component)]
+  (let [{:query/keys [auth locations]} (om/props component)]
     (map
       (fn [{:category/keys [href name path] :as a}]
-        (let [opts {:href    (when (some? auth) href)
+        (let [opts {:href    (when (and (some? auth) (not-empty locations)) href)
                     :classes (when (nil? auth) [:unauthed])
-                    :onClick #(mixpanel/track-key ::mixpanel/shop-by-category {:source   "navbar"
-                                                                               :category path})}]
+                    :onClick #(do (mixpanel/track-key ::mixpanel/shop-by-category {:source   "navbar"
+                                                                                   :category path})
+                                  (when (empty? locations)
+                                    #?(:cljs
+                                       (when-let [locs (utils/element-by-id "sulo-locations")]
+                                         (scroll-to locs 250)))))}]
           (menu/item-link
             (->> opts
                  (css/add-class :category)
@@ -98,22 +114,21 @@
       (:query/navigation (om/props component)))))
 
 (defn live-link [component]
-  (let [{:query/keys [auth]} (om/props component)
-        href (when (some? auth)
-               (routes/url :live))]
+  (let [{:query/keys [auth locations]} (om/props component)]
     (menu/item-link
-      (->> (css/add-class :navbar-live {:href    href
+      (->> (css/add-class :navbar-live {:href    (when (and (some? auth) (not-empty locations)) (routes/url :live))
+                                        :onClick #(do
+                                                   (mixpanel/track-key ::mixpanel/shop-live {:source   "navbar"})
+                                                   (when (empty? locations)
+                                                     #?(:cljs
+                                                        (when-let [locs (utils/element-by-id "sulo-locations")]
+                                                          (scroll-to locs 250)))))
                                         :classes (when (nil? auth) [:unauthed])})
            (css/show-for :large))
       (dom/strong
         nil
-        ;(css/show-for :medium)
         ;; Wrap in span for server and client to render the same html
-        (dom/span nil "Live"))
-      ;(my-dom/div
-      ;  (css/hide-for :medium)
-      ;  (dom/i #js {:className "fa fa-video-camera fa-fw"}))
-      )))
+        (dom/span nil "Live")))))
 
 (defn navbar-brand [& [href title subtitle]]
   (menu/item-link
@@ -217,7 +232,7 @@
 
           (menu/item
             nil
-            (dom/a {:href (routes/url :index)
+            (dom/a {:href    (routes/url :index)
                     :onClick #(mixpanel/track "Store: Go back to marketplace" {:source "navbar"})}
                    (dom/strong nil (dom/small nil "Back to marketplace"))))
           ;(menu/item-text nil (dom/span nil (get routes->titles (:route current-route))))
@@ -355,7 +370,7 @@
                    :user/email
                    {:user/stripe [:stripe/id]}
                    {:user/profile [{:user.profile/photo [:photo/path :photo/id]}]}]}
-         :query/locations
+     :query/locations
      {:query/owned-store [:db/id
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.
@@ -572,7 +587,7 @@
                   (menu/item
                     (when (contains? #{:store-dashboard/shipping} (:route current-route))
                       (css/add-class :is-active))
-                    (dom/a {:href    (routes/url :store-dashboard/shipping {:store-id (:db/id owned-store)})
+                    (dom/a {:href (routes/url :store-dashboard/shipping {:store-id (:db/id owned-store)})
                             ;:onClick #(track-event ::mixpanel/go-to-orders)
                             }
                            (dom/div {:classes ["icon icon-truck"]})
