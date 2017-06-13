@@ -14,7 +14,8 @@
     [eponai.client.auth :as auth]
     [eponai.common.shared :as shared]
     [eponai.client.routes :as routes]
-    [eponai.common.ui.icons :as icons]))
+    [eponai.common.ui.icons :as icons]
+    [eponai.web.social :as social]))
 
 (defn top-feature [opts icon title text]
   (grid/column
@@ -126,8 +127,22 @@
                               :placeholder "Your location"})
                   (dom/input {:type        "text"
                               :placeholder "Your email"})
-                  (button/button nil "Submit")))))
+                  (button/button nil "Submit"))))))
+        (common/sell-on-sulo this)
+        (dom/div
+          (css/add-class :instagram-feed)
+          (common/content-section
+            {:href   (:social/instagram social/profiles)
+             :target "_blank"}
+            ""
+            (dom/div
+              (css/add-class "powr-instagram-feed" {:id "0c4b9f24_1497385671"})
+              ;(dom/i {:classes ["fa fa-spinner fa-spin"]} )
+              )
+            "@sulolive on Instagram"))
 
-          (common/sell-on-sulo this))))))
+
+        ;<div class="powr-instagram-feed" id="0c4b9f24_1497385671"></div>
+        ))))
 
 (router/register-component :landing-page LandingPage)

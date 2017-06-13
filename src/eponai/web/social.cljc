@@ -70,14 +70,18 @@
     (dom/span (css/add-class :sl-tooltip-text)
               (str "Share on " (get socials platform)))))
 
+(def profiles
+  {:social/instagram "https://www.instagram.com/sulolive/"
+   :social/facebook "https://www.facebook.com/live.sulo"})
+
 (defn sulo-social-link [platform]
   (condp = platform
     :social/instagram
-    (dom/a {:href   "https://www.instagram.com/sulolive"
+    (dom/a {:href   (:social/instagram profiles)
             :target "_blank"}
            (dom/span {:classes ["icon icon-instagram"]}))
     :social/facebook
-    (dom/a {:href   "https://www.facebook.com/live.sulo"
+    (dom/a {:href   (:social/facebook profiles)
             :target "_blank"}
            (dom/span {:classes ["icon icon-facebook"]}))))
 

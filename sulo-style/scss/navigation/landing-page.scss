@@ -1,6 +1,32 @@
+// #0c4b9f24_1497385671 {
+// 	#appView {
+// 		.socialFeed {
+// 			opacity: 0;
+// 		}
+// 		.powrMark {
+// 			// display: none !important;
+// 		}
+// 	}
+// }
 #sulo-landing {
+	.instagram-feed {
+		// margin: 0 auto;
+	}
+	.section {
+		padding-bottom: 3rem;
+	}
+	.powr-instagram-feed {
+		// i {
+		// 	transition: opacity
+		// }
+		&.powrLoaded {
+			i {
+				opacity: 0;
+			}
+		}
+	}
 	.page-content {
-		padding-bottom: 4rem;
+		padding-bottom: 0;
 	}
 	#sulo-navbar {
 		.menu {
