@@ -11,7 +11,11 @@
 	// }
 	h2 {
 		font-weight: $global-weight-bold;
-		color: $dark-gray;
+		// color: $dark-gray;
+	}
+	.empty-container {
+		padding: 4rem 0;
+		margin-bottom: 4rem;
 	}
 
 	.section-title {

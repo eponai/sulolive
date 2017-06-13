@@ -277,7 +277,7 @@
                           items))]
              (->> (query/all db db-history query {:where '[[?e :store.item/name]]})
                   (add-time-to-all 0)
-                  (sort-by :store.item/created-at <)
+                  (sort-by :store.item/created-at >)
                   (take 10)
                   (feature-all db-history :store.item))))})
 
