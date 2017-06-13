@@ -43,6 +43,9 @@ $sidenav-width: 75%;
 		flex: 0 0 auto;
 		> li {
 			padding: 0.1rem;
+			label {
+				margin-left: 0.5rem;
+			}
 			border-bottom: $global-border-secondary;
 			&:last-child {
 				// border-bottom: none;

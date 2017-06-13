@@ -38,12 +38,9 @@
      {:query/auth [:db/id]}
      :query/messages])
   Object
-  (select-locality [this locality]
+  (select-locality [_ locality]
     #?(:cljs
-       (do
-         (set! (.-cookie js/document) (str "sulo.locality=" locality))
-         (let [cookie-string (js/decodeURIComponent (.-cookie js/document))]
-           (debug "Got cookie: " cookie-string)))))
+       (web-utils/set-locality locality)))
   (componentDidMount [this]
     (let [{:query/keys [current-route]} (om/props this)]
       #?(:cljs
@@ -57,8 +54,7 @@
         {:navbar navbar :id "sulo-landing"}
         (photo/cover
           {:photo-id "static/ashim-d-silva-89336"}
-          (dom/h1 nil
-                  (dom/span nil "Your local marketplace online"))
+          (dom/h1 nil (dom/span nil "Your local marketplace online"))
           (dom/p nil (dom/span nil "Shop and hang out LIVE with your favorite local brands")))
         (dom/div
           {:classes ["top-features"]}
