@@ -189,7 +189,7 @@
       {:value (db/pull db query cart)})))
 
 (defmethod client-read :query/skus
-  [{:keys [target]}]
+  [{:keys [target]} _ _]
   (when target
     {:remote true}))
 ;(common.read/compute-cart-price cart)
@@ -474,3 +474,8 @@
   (if target
     {:remote true}
     {:value (db/pull-all-with db query {:where '[[?e :country/code _]]})}))
+
+(defmethod client-read :query/product-search
+  [{:keys [target]} _ _]
+  (when target
+    {:remote true}))

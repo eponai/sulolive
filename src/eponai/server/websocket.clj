@@ -1,6 +1,6 @@
 (ns eponai.server.websocket
   (:require
-    [clojure.core.async :as a :refer [go <! go-loop]]
+    [clojure.core.async :as async :refer [go <! go-loop]]
     [eponai.server.external.chat :as chat]
     [com.stuartsierra.component :as component]
     [taoensso.sente :as sente]
@@ -34,8 +34,8 @@
                          :db/retract (when-let [[sub store] (-> db
                                                                 (db/find-with
                                                                   {:find    '[?sub ?store]
-                                                                   :where   '[[?sub :subscriber/uid ?uid]
-                                                                              [?store :store/id ?store-id]
+                                                                   :where   '[[?store :store/id ?store-id]
+                                                                              [?sub :subscriber/uid ?uid]
                                                                               [?sub :subscriber/subscriptions ?store]]
                                                                    :symbols {'?uid      uid
                                                                              '?store-id store-id}})
@@ -54,8 +54,8 @@
     (update-subscriber this store-id uid :db/retract))
   (get-subscribers [this store-id]
     (db/all-with db {:where   '[[?store :store/id ?store-id]
-                                [?sub :subscriber/subscriptions ?store]
-                                [?sub :subscriber/uid ?e]]
+                                [?sub :subscriber/uid ?e]
+                                [?sub :subscriber/subscriptions ?store]]
                      :symbols {'?store-id store-id}}))
   (remove-subscriber [this uid]
     (debug "Removing :uid: " uid)
@@ -66,8 +66,10 @@
               (update :db d/db-with [[:db.fn/retractEntity sub]])))))
 
 (defn datascript-subscription-store []
-  (-> (d/create-conn {:store/id                 {:db/unique :db.unique/identity}
-                      :subscriber/uid           {:db/unique :db.unique/identity}
+  (-> (d/create-conn {:store/id                 {:db/index true
+                                                 :db/unique :db.unique/identity}
+                      :subscriber/uid           {:db/unique :db.unique/identity
+                                                 :db/index true}
                       :subscriber/subscriptions {:db/cardinality :db.cardinality/many
                                                  :db/valueType   :db.type/ref}})
       (d/db)
@@ -85,7 +87,7 @@
                             (catch Error e
                               (.printStackTrace e)
                               (error "Error in " handler-name ": " e)
-                              (a/put! control-chan e))))
+                              (async/put! control-chan e))))
         sente-event-handler
         (fn [{:keys [event uid client-id] :as v}]
           (let [[event-id event-data] event]
@@ -129,21 +131,24 @@
                       (debug "uid was no longer connected to the server: " uid " for " store-id)
                       (swap! subscription-store unsubscribe-from-store store-id uid))))))))]
 
-    (go-loop []
-      (let [[v c] (a/alts! [ch-recv store-id-stream control-chan])]
-        (condp = c
-          control-chan
-          (debug "Exiting chat websocket due to value on control-channel: " v)
-          ch-recv
-          (do
-            (handler-wrapper sente-event-handler "chat-websocket" v)
-            (recur))
-          store-id-stream
-          (if-not v
-            (debug "store-id-stream closed. Bailing out.")
+    (async/thread
+      (loop []
+        (let [[v c] (async/alts!! [ch-recv store-id-stream control-chan])]
+          (condp = c
+            control-chan
+            (debug "Exiting chat websocket due to value on control-channel: " v)
+
+            ch-recv
             (do
-              (handler-wrapper store-id-stream-handler "store-stream-handler" v)
-              (recur))))))))
+              (handler-wrapper sente-event-handler "chat-websocket" v)
+              (recur))
+
+            store-id-stream
+            (if-not v
+              (debug "store-id-stream closed. Bailing out.")
+              (do
+                (handler-wrapper store-id-stream-handler "store-stream-handler" v)
+                (recur)))))))))
 
 (defrecord StoreChatWebsocket [chat]
   component/Lifecycle
@@ -161,7 +166,7 @@
                                                          ;; all users for some reason with this code:
                                                          ;; (get-in ring-req [:identity :email])
                                                          )})
-            control-chan (a/chan 1)
+            control-chan (async/chan 1)
             subscription-store (atom (datascript-subscription-store))
             sends-chan (<send-store-ids-to-clients sente control-chan (chat/chat-update-stream chat) subscription-store)]
         (assoc this ::started? true
@@ -169,13 +174,13 @@
                     :subscription-store subscription-store
                     :ch-recv ch-recv
                     :sends-chan sends-chan
-                    :stop-fn #(a/close! control-chan)))))
+                    :stop-fn #(async/close! control-chan)))))
   (stop [this]
     (when (::started? this)
       ((:stop-fn this))
-      (a/close! (:ch-recv this))
+      (async/close! (:ch-recv this))
       (let [sends (:sends-chan this)
-            [_ c] (a/alts!! [sends (a/timeout 3000)])]
+            [_ c] (async/alts!! [sends (async/timeout 3000)])]
         (if (= c sends)
           (debug "Stopped StoreChatWebsocket successfully")
           (debug "Timed out stopping StoreChatWebsocket..."))))

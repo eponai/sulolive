@@ -15,6 +15,7 @@
     [ring.middleware.json :as ring-json]
     [ring.middleware.ssl :as ssl]
     [ring.middleware.transit :as ring-transit]
+    [datascript.transit]
     [taoensso.timbre :refer [debug error trace]]
     [eponai.client.utils :as client.utils]
     [eponai.common.parser.util :as parser.util]
@@ -99,7 +100,8 @@
                 (ring-transit/transit-response
                      response request
                      (#'ring-transit/transit-response-options
-                       {:opts     {:handlers {EntityMap datomic-transit}}
+                       {:opts     {:handlers (merge {EntityMap datomic-transit}
+                                                    datascript.transit/write-handlers)}
                         :encoding :json})))))]
     (-> handler
         (ring-transit/wrap-transit-body)

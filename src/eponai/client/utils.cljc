@@ -29,7 +29,9 @@
    {:ui/singleton :ui.singleton/stream-config}
    {:ui/singleton :ui.singleton/loading-bar}
    {:ui/singleton :ui.singleton/state
-    :ui.singleton.state/product-view :products/list}])
+    :ui.singleton.state/product-view :products/list}
+   {:ui/singleton :ui.singleton/product-search}
+   ])
 
 (defn create-conn []
   (let [conn (d/create-conn (common.datascript/ui-schema))]
