@@ -35,6 +35,16 @@
           new-classname (clojure.string/replace old-classname (str " " class) " ")]
       (set! (.-className el) (clojure.string/trim new-classname)))))
 
+(defn scroll-to [el d]
+  (when (< 0 d)
+    (let [el-top (.-top (.getBoundingClientRect el))
+          body (.-body js/document)
+          diff (- el-top (.-scrollTop el))
+          per-tick (* 10 (/ diff d))]
+      (js/setTimeout (fn []
+                       (set! (.-scrollTop body) (+ (.-scrollTop body) per-tick))
+                       (scroll-to el (- d 10)))))))
+
 (defn elements-by-class
   ([classname]
     (elements-by-class js/document classname))

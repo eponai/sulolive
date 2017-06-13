@@ -12,7 +12,7 @@
                  "/shipping" :store-dashboard/shipping
                  "/finances" {""          :store-dashboard/finances
                               "/settings" :store-dashboard/finances#settings}
-                 "/business" {"" :store-dashboard/business
+                 "/business" {""        :store-dashboard/business
                               "/verify" :store-dashboard/business#verify}
                  ;"/settings" {""          :store-dashboard/settings
                  ;             "/payments" :store-dashboard/settings#payments
@@ -86,6 +86,7 @@
 (def routes
   ["/" {""                            :index
         "enter"                       :landing-page
+        "enter/l"                     :landing-page/locality
         "coming-soon"                 :coming-soon
         "sell/coming-soon"            :coming-soon/sell
         "sell"                        :sell

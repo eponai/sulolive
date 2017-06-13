@@ -82,30 +82,25 @@
          (css/add-class :top-bar))
     content))
 
-(defn scroll-to [el d]
-  #?(:cljs
-     (when (< 0 d)
-       (let [
-             el-top (.-top (.getBoundingClientRect el))
-             body (.-body js/document)
-             diff (- el-top (.-scrollTop el))
-             per-tick (* 10 (/ diff d))]
-         (js/setTimeout (fn []
-                          (set! (.-scrollTop body) (+ (.-scrollTop body) per-tick))
-                          (scroll-to el (- d 10))))))))
+(defn navbar-route [component href]
+  (let [{:query/keys [auth locations]} (om/props component)]
+    (when (some? auth)
+      (if (empty? locations)
+        (routes/url :landing-page/locality)
+        href))))
 
 (defn collection-links [component]
   (let [{:query/keys [auth locations]} (om/props component)]
     (map
       (fn [{:category/keys [href name path] :as a}]
-        (let [opts {:href    (when (and (some? auth) (not-empty locations)) href)
+        (let [opts {:href    (navbar-route component href)
                     :classes (when (nil? auth) [:unauthed])
                     :onClick #(do (mixpanel/track-key ::mixpanel/shop-by-category {:source   "navbar"
                                                                                    :category path})
                                   (when (empty? locations)
                                     #?(:cljs
                                        (when-let [locs (utils/element-by-id "sulo-locations")]
-                                         (scroll-to locs 250)))))}]
+                                         (utils/scroll-to locs 250)))))}]
           (menu/item-link
             (->> opts
                  (css/add-class :category)
@@ -116,13 +111,13 @@
 (defn live-link [component]
   (let [{:query/keys [auth locations]} (om/props component)]
     (menu/item-link
-      (->> (css/add-class :navbar-live {:href    (when (and (some? auth) (not-empty locations)) (routes/url :live))
+      (->> (css/add-class :navbar-live {:href    (navbar-route component (routes/url :live))
                                         :onClick #(do
                                                    (mixpanel/track-key ::mixpanel/shop-live {:source   "navbar"})
                                                    (when (empty? locations)
                                                      #?(:cljs
                                                         (when-let [locs (utils/element-by-id "sulo-locations")]
-                                                          (scroll-to locs 250)))))
+                                                          (utils/scroll-to locs 250)))))
                                         :classes (when (nil? auth) [:unauthed])})
            (css/show-for :large))
       (dom/strong

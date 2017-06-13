@@ -9,6 +9,7 @@
     [taoensso.timbre :refer [debug]]
     [eponai.web.ui.photo :as photo]
     [eponai.common.ui.elements.grid :as grid]
+    #?(:cljs [eponai.web.utils :as web-utils])
     [eponai.web.ui.button :as button]
     [eponai.client.auth :as auth]
     [eponai.common.shared :as shared]
@@ -43,6 +44,12 @@
          (set! (.-cookie js/document) (str "sulo.locality=" locality))
          (let [cookie-string (js/decodeURIComponent (.-cookie js/document))]
            (debug "Got cookie: " cookie-string)))))
+  (componentDidMount [this]
+    (let [{:query/keys [current-route]} (om/props this)]
+      #?(:cljs
+         (when (= (:route current-route) :landing-page/locality)
+           (when-let [locs (web-utils/element-by-id "sulo-locations")]
+             (web-utils/scroll-to locs 250))))))
   (render [this]
     (let [{:proxy/keys [navbar]
            :query/keys [auth]} (om/props this)]
@@ -52,12 +59,7 @@
           {:photo-id "static/ashim-d-silva-89336"}
           (dom/h1 nil
                   (dom/span nil "Your local marketplace online"))
-          (dom/p nil (dom/span nil "Shop and hang out LIVE with your favorite local brands"))
-          (when (some? auth)
-            (dom/div
-              (css/add-class :select-location)
-              (dom/select {:defaultValue "Vancouver"}
-                          (dom/option {:value "Vancouver"} "Vancouver")))))
+          (dom/p nil (dom/span nil "Shop and hang out LIVE with your favorite local brands")))
         (dom/div
           {:classes ["top-features"]}
           (grid/row
