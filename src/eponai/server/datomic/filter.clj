@@ -147,9 +147,11 @@
      :store.profile/name             public-attr
      :store.profile/description      public-attr
      :store.profile/return-policy    public-attr
+     :store.profile/shipping-policy  public-attr
      :store.profile/tagline          public-attr
      :store.profile/photo            public-attr
      :store.profile/cover            public-attr
+     :store.profile/email            public-attr
      :store.section/label            public-attr
      :store.section/path             public-attr
      :store.owner/user               public-attr
@@ -202,20 +204,16 @@
      :shipping.rate/first            public-attr
      :shipping.rate/additional       public-attr
      :shipping.rate/free-above       public-attr
-     :country/code                   public-attr
-     :country/name                   public-attr
-     :continent/code                 public-attr
-     :continent/name                 public-attr
      :order/created-at               public-attr
      ;; TODO End of Implement real filter-fn
-     :shipping/name                  shipping-owner
-     :shipping/address               shipping-owner
-     :shipping.address/street        shipping-address-owner
-     :shipping.address/street2       shipping-address-owner
-     :shipping.address/postal        shipping-address-owner
-     :shipping.address/locality      shipping-address-owner
-     :shipping.address/region        shipping-address-owner
-     :shipping.address/country       shipping-address-owner
+     :shipping/name                  public-attr            ;shipping-owner
+     :shipping/address               public-attr            ;shipping-owner
+     :shipping.address/street        public-attr            ;shipping-address-owner
+     :shipping.address/street2       public-attr            ;shipping-address-owner
+     :shipping.address/postal        public-attr            ;shipping-address-owner
+     :shipping.address/locality      public-attr            ;shipping-address-owner
+     :shipping.address/region        public-attr            ;shipping-address-owner
+     :shipping.address/country       public-attr            ;shipping-address-owner
      :category/path                  public-attr
      :category/name                  public-attr
      :category/label                 public-attr
@@ -224,7 +222,13 @@
      :store/created-at               public-attr
      :store.item/created-at          public-attr
      :store.item/index               public-attr
-     :photo/id                       public-attr}))
+     :photo/id                       public-attr
+
+     :country/code                   public-attr
+     :country/name                   public-attr
+     :country/continent              public-attr
+     :continent/code                 public-attr
+     :continent/name                 public-attr}))
 
 (defn filter-authed [authed-user-id authed-store-ids]
   (let [authed-store-ids (set authed-store-ids)

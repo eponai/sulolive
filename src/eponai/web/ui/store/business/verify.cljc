@@ -17,7 +17,9 @@
     [eponai.common.ui.script-loader :as script-loader]
     [eponai.common.format.date :as date]
     [clojure.string :as string]
-    [eponai.common.ui.elements.menu :as menu]))
+    [eponai.common.ui.elements.menu :as menu]
+    #?(:cljs
+       [cljs-http.client :as http])))
 
 (def stripe-key "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")
 
@@ -51,6 +53,7 @@
           :field.external-account/institution-number "external_account.institution_number"
           :field.external-account/account-number     "external_account.account_number"
 
+          :field.general/email                       "general.email"
           :field.general/store-name                  "general.store-name"
           :field.general/store-tagline               "general.store-tagline"}))
 
@@ -64,21 +67,6 @@
         (get-in spec [:country-spec/verification-fields :country-spec.verification-fields/individual :country-spec.verification-fields.individual/minimum])
         (= type :company)
         (get-in spec [:country-spec/verification-fields :country-spec.verification-fields/company :country-spec.verification-fields.company/minimum])))
-
-(defn field-required? [component k]
-  (let [{:query/keys [stripe-country-spec]} (om/props component)
-        {:keys [entity-type input-validation]} (om/get-state component)
-        {:keys [stripe-account]} (om/get-computed component)
-        fields-needed-for-country (minimum-fields stripe-country-spec entity-type)
-        fields-needed-for-account (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed])
-        id (get stripe-fields k)
-        is-needed-for-country? (boolean (some #(when (= % id) %) fields-needed-for-country))
-        is-needed-for-account? (boolean (some #(when (= % id) %) fields-needed-for-account))]
-    ;; If user submitted details already, this means we are probably here because someone entered the URL, or more info is needed.
-    ;; Check the account verification for that, to show the appropriate form
-    (if (:stripe/details-submitted? stripe-account)
-      is-needed-for-account?
-      is-needed-for-country?)))
 
 (defn required-fields [component]
   (let [{:query/keys [stripe-country-spec]} (om/props component)
@@ -195,11 +183,18 @@
                    (grid/row
                      nil
                      (grid/column
-                       nil
+                       (grid/column-size {:small 12 :medium 8})
                        (v/input
                          {:type        "text"
                           :placeholder "Street"
                           :id          (:field.legal-entity.address/line1 form-inputs)}
+                         input-validation))
+                     (grid/column
+                       nil
+                       (v/input
+                         {:type        "text"
+                          :placeholder "Apt/Suite/Other"
+                          :id          (:field.legal-entity.address/line2 form-inputs)}
                          input-validation))))
                  (grid/row
                    nil
@@ -240,8 +235,8 @@
                                        :field.legal-entity.dob/year
                                        :field.legal-entity/personal-id-number
                                        :field.legal-entity/document]))]
-    (debug "Personal fields: " personal-fields)
-    (debug "Document: " document-upload)
+
+
     (when (not-empty personal-fields)
       [(dom/p (css/add-class :section-title) (if (= entity-type :individual)
                                                "Your personal details"
@@ -318,29 +313,31 @@
                  (dom/small nil "Stripe require identification to confirm you are a representative of this business, and don't use this for any other purpose.")))))
          (when (get personal-fields :field.legal-entity/document)
            (menu/item
-             (css/add-class :document-upload-container )
+             (css/add-class :document-upload-container)
              (grid/row
                nil
                (grid/column
-                 (css/add-class :shrink)
+                 nil
                  (dom/label nil "Verification document")
-                 (dom/p nil (dom/small nil "This should be a photo of your identifying document, such as a passport or driver’s license."))))
-             (grid/row
-               nil
+                 (dom/p nil (dom/small nil "Upload a photo copy of your identifying document, such as a passport or driver’s license.")))
                (grid/column
-                 (css/add-class :document-uploader )
+                 (->> (css/add-class :document-uploader)
+                      (css/text-align :right))
                  (dom/input
                    (css/show-for-sr {:type        "file"
                                      :placeholder "First"
                                      :accept      "image/png,image/jpeg"
                                      :onChange    #(.select-document component %)
                                      :id          (:field.legal-entity/document form-inputs)}))
+                 (dom/p nil
+                        (if (not-empty document-upload)
+                          (dom/small nil (str (:name document-upload)))
+                          (dom/small nil (dom/i nil "No file selected"))))
                  (dom/div
                    nil
                    (dom/label
                      {:htmlFor (:field.legal-entity/document form-inputs)}
-                     "Upload file")
-                   (dom/span nil (str document-upload))))))))])))
+                     "Upload file")))))))])))
 
 (defn external-account [component]
   (let [{:query/keys [stripe-country-spec]} (om/props component)
@@ -420,7 +417,7 @@
     #?(:cljs
        (let [{:query/keys [stripe-country-spec]} (om/props this)
              {:keys [store stripe-account]} (om/get-computed this)
-             {:keys [entity-type]} (om/get-state this)
+             {:keys [entity-type document-upload]} (om/get-state this)
              street (utils/input-value-by-id (:field.legal-entity.address/line1 form-inputs))
              postal (utils/input-value-by-id (:field.legal-entity.address/postal form-inputs))
              city (utils/input-value-by-id (:field.legal-entity.address/city form-inputs))
@@ -460,6 +457,7 @@
                                                      :field.external-account/account-number     account})})
              validation (v/validate :account/activate input-map form-inputs)]
          (debug "Validation: " validation)
+
          (when (nil? validation)
            (if (some? (:field/external-account input-map))
              (do
@@ -491,7 +489,9 @@
     #?(:cljs
        (let [^js/Event event e
              ^js/File file (first (array-seq (.. event -target -files)))]
-         (om/update-state! this assoc :document-upload (.-name file)))))
+         (when file
+           (om/update-state! this assoc :document-upload {:name (.-name file)
+                                                          :file file})))))
   (initLocalState [this]
     {:entity-type :individual})
 
@@ -539,10 +539,10 @@
                                 (dom/small nil "Learn more"))
                          (dom/br nil) (dom/br nil)
                          (dom/small nil "We don't use this information for any other purpose than to pass along to Stripe and let you manage your account. Your provided account details are reviewed by Stripe to ensure they comply with their terms of service. If there's a problem, we'll get in touch right away to resolve it as quickly as possible.")))))))
+
         (callout/callout-small
           (css/add-class :warning)
           (dom/p nil (dom/small nil "We still have work to do on the integration with Stripe, and have disabled the functionality to verity the account. Don't worry, we're getting there!")))
-
         (dom/div
           nil
           (account-details this)
@@ -550,6 +550,7 @@
           (personal-details this)
           (external-account this))
 
+        (dom/hr nil)
         (dom/div
           (css/text-align :right)
           (dom/div
@@ -557,7 +558,8 @@
             (dom/a
               (->> {:onClick #(.activate-account this)}
                    (css/button)
-                   (css/add-class :disabled))
+                   (css/add-class :disabled)
+                   )
               (dom/span nil "Submit")))
           (dom/p nil (dom/small nil "By submitting, you agree to our Services Agreement.")))))))
 

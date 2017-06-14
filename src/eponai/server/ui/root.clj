@@ -39,6 +39,10 @@
                        :async true
                        :defer true
                        :type common/text-javascript})
+          (dom/script {:src "//www.powr.io/powr.js"
+                       :external-type "html"})
+          ;<script src="//www.powr.io/powr.js" external-type="html"></script>
+
           (dom/script {:src  (common/budget-js-path)
                        :type common/text-javascript})
 

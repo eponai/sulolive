@@ -59,7 +59,7 @@
         (dom/h2 nil "About")
         (if (:edit/info state)
           (dom/div
-            nil
+            (css/add-class :action-buttons)
             (button/cancel {:onClick #(do
                                        (mixpanel/track "Store: Cancel edit about info")
                                        (om/update-state! component assoc :edit/info false))})
@@ -175,120 +175,6 @@
                                                     :placeholder "No description"}
                                                    {:on-editor-created on-editor-create-desc
                                                     :on-text-change    on-editor-change-desc})))))))
-
-(defn products-section [component]
-  (let [{:query/keys [current-route]} (om/props component)
-        {:keys [store]} (om/get-computed component)
-        {:products/keys                [selected-section search-input edit-sections]
-         :products.edit-sections?/keys [new-section-count]} (om/get-state component)
-        {:store/keys [items]} store
-        items (cond->> (sort-by :store.item/index items)
-                       (not= selected-section :all)
-                       (filter #(= selected-section (get-in % [:store.item/section :db/id])))
-                       (not-empty search-input)
-                       (filter #(clojure.string/includes? (.toLowerCase (:store.item/name %))
-                                                          (.toLowerCase search-input))))]
-    (dom/div
-      nil
-      (when (some? edit-sections)
-        (common/modal
-          {:on-close #(om/update-state! component dissoc :products/edit-sections)}
-          (let [items-by-section (group-by #(get-in % [:store.item/section :db/id]) (:store/items store))]
-            (dom/div
-              nil
-              (dom/p (css/add-class :header) "Edit sections")
-              (menu/vertical
-                (css/add-class :edit-sections-menu)
-                (map-indexed
-                  (fn [i s]
-                    (let [no-items (count (get items-by-section (:db/id s)))]
-                      (menu/item (css/add-class :edit-sections-item)
-                                 ;(dom/a nil (dom/i {:classes ["fa "]}))
-                                 (dom/input
-                                   {:type        "text"
-                                    :id          (str "input.section-" i)
-                                    :placeholder "New section"
-                                    :value       (:store.section/label s "")
-                                    :onChange    #(om/update-state! component update :products/edit-sections
-                                                                    (fn [sections]
-                                                                      (let [old (get sections i)
-                                                                            new (assoc old :store.section/label (.-value (.-target %)))]
-                                                                        (assoc sections i new))))})
-                                 (if (= 1 no-items)
-                                   (dom/small nil (str no-items " item"))
-                                   (dom/small nil (str no-items " items")))
-                                 (button/user-setting-default
-                                   {:onClick #(om/update-state! component update :products/edit-sections
-                                                                (fn [sections]
-                                                                  (into [] (remove nil? (assoc sections i nil)))))}
-                                   (dom/span nil "Remove")))))
-                  edit-sections)
-                (menu/item
-                  (css/add-class :edit-sections-item)
-                  (button/user-setting-default
-                    {:onClick #(om/update-state! component update :products/edit-sections conj {})}
-                    (dom/span nil "Add section..."))))
-
-              (dom/div
-                (->> (css/text-align :right)
-                     (css/add-class :action-buttons))
-                (button/cancel {:onClick #(om/update-state! component dissoc :products/edit-sections)})
-                (button/save {:onClick #(.save-sections component)}))))))
-      (callout/callout-small
-        nil
-        (menu/horizontal
-          (css/add-class :product-section-menu)
-          (menu/item
-            (when (= selected-section :all)
-              (css/add-class :is-active))
-            (dom/a
-              {:onClick #(om/update-state! component assoc :products/selected-section :all)}
-              (dom/span nil "All items")))
-          (map (fn [s]
-                 (menu/item
-                   (when (= selected-section (:db/id s))
-                     (css/add-class :is-active))
-                   (dom/a {:onClick #(om/update-state! component assoc :products/selected-section (:db/id s))}
-                          (dom/span nil (string/capitalize (:store.section/label s))))))
-               (:store/sections store)))
-
-        ;(dom/input
-        ;  {:key         "profile.products.search"
-        ;   :value       (or search-input "")
-        ;   :onChange    #(om/update-state! component assoc :products/search-input (.. % -target -value))
-        ;   :placeholder "Search Products..."
-        ;   :type        "text"})
-        (grid/products items
-                       (fn [p]
-                         (let [{:store.item/keys [price]
-                                item-name        :store.item/name} p]
-                           (dom/a
-                             (->> {:href (routes/url :store-dashboard/product (assoc (:route-params current-route) :product-id (:db/id p)))}
-                                  (css/add-class :content-item)
-                                  (css/add-class :product-item))
-                             (dom/div
-                               (->>
-                                 (css/add-class :primary-photo))
-                               (photo/product-preview p))
-
-                             (dom/div
-                               (->> (css/add-class :header)
-                                    (css/add-class :text))
-                               (dom/div
-                                 nil
-                                 (dom/span nil item-name)))
-                             (dom/div
-                               (css/add-class :text)
-                               (dom/strong nil (two-decimal-price price)))
-                             ;(menu/horizontal
-                             ;  (css/add-class :edit-item-menu)
-                             ;  (menu/item nil
-                             ;             (dom/a {:href (routes/url :store-dashboard/product
-                             ;                                       {:product-id (:db/id p)
-                             ;                                        :store-id   (:db/id store)})}
-                             ;                    (dom/i {:classes ["fa fa-pencil fa-fw"]})
-                             ;                    (dom/span nil "Go to edit"))))
-                             ))))))))
 
 (defui EditStore
   static om/IQuery
@@ -406,7 +292,7 @@
         (grid/row-column
           {:id "sulo-store" :classes ["edit-store"]}
           (dom/div
-            (css/add-class :section-title)
+            (css/show-for-sr)
             (dom/h1 nil "Store info"))
           (edit-about-section this)
 
@@ -421,7 +307,7 @@
                 (dom/h2 nil "Return policy")
                 (if (:edit/return-policy state)
                   (dom/div
-                    nil
+                    (css/add-class :action-buttons)
                     (button/cancel {:onClick #(do
                                                (mixpanel/track "Store: Cancel edit return policy.")
                                                (om/update-state! this assoc :edit/return-policy false)
@@ -458,27 +344,28 @@
                 (dom/h2 nil "Shipping policy")
                 (if (:edit/shipping-policy state)
                   (dom/div
-                    nil
+                    (css/add-class :action-buttons)
                     (button/cancel {:onClick #(do
                                                (mixpanel/track "Store: Cancel edit shipping policy")
                                                (om/update-state! this assoc :edit/shipping-policy false)
                                                (quill/set-content (:editor/shipping-policy state) (f/bytes->str shipping-policy)))})
                     (button/save {:onClick #(do
                                              (mixpanel/track "Store: Save shipping policy")
-                                             ;(.save-shipping-policy this)
+                                             (.save-shipping-policy this)
                                              )}))
                   (button/edit {:onClick #(do
                                            (mixpanel/track "Store: Edit shipping policy")
                                            (om/update-state! this assoc :edit/shipping-policy true))})))
               (callout/callout-small
                 (css/add-classes [:store-info-policy :store-info-policy--shipping])
-                (when (:edit/shipping-policy state)
-                  (dom/p nil
-                         (dom/small nil "Bas"))
-                  (callout/callout-small
-                    (css/add-class :warning)
-                    (dom/small nil
-                               "We're not quite ready with the work on shipping settings, so this section cannot be saved yet. We're working on it, hang in there!")))
+                ;(when (:edit/shipping-policy state)
+                ;  (dom/p nil
+                ;         (dom/small nil "Bas"))
+                ;  (callout/callout-small
+                ;    (css/add-class :warning)
+                ;    (dom/small nil
+                ;               "We're not quite ready with the work on shipping settings, so this section cannot be saved yet. We're working on it, hang in there!"))
+                ;  )
                 (if (:edit/shipping-policy state)
                   (dom/div
                     (css/text-align :right)

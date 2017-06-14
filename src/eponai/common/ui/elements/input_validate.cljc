@@ -40,11 +40,11 @@
                 (css/add-class :is-invalid-input))))))
 
 (defn validate
-  [spec m form-inputs]
+  [spec m form-inputs & [prefix-key]]
   (when-let [err (s/explain-data spec m)]
     (let [problems (::s/problems err)
           invalid-paths (map (fn [p]
-                               (some #(get form-inputs %) p))
+                               (str prefix-key (some #(get form-inputs %) p)))
                              (into (map :path problems) (map :via problems)))]
       {:explain-data  err
-       :invalid-paths invalid-paths})))
+       :invalid-paths (set invalid-paths)})))

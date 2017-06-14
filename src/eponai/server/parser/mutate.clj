@@ -263,18 +263,32 @@
           :error   "Sorry, your info could not be updated. Try again later."}}
   {:action (fn []
              (let [db-store (db/pull (db/db state) [:store/profile] (:db/id store))
-                   s (-> (select-keys profile [:store.profile/name :store.profile/description :store.profile/tagline :store.profile/return-policy])
+                   s (-> (select-keys profile [:store.profile/name
+                                               :store.profile/description
+                                               :store.profile/tagline
+                                               :store.profile/return-policy
+                                               :store.profile/shipping-policy
+                                               :store.profile/email])
                          (update :store.profile/description #(f/str->bytes (quill/sanitize-html %)))
                          (update :store.profile/return-policy #(f/str->bytes (quill/sanitize-html %)))
                          ;(update :store.profile/shipping-fee #(if (not-empty %)
                          ;                                      (when-let [fee (c/parse-long-safe %)]
                          ;                                        (bigdec fee))
                          ;                                      (bigdec 0)))
-                         ;(update :store.profile/shipping-policy #(f/str->bytes (quill/sanitize-html %)))
+                         (update :store.profile/shipping-policy #(f/str->bytes (quill/sanitize-html %)))
                          f/remove-nil-keys
                          (assoc :db/id (:db/id (:store/profile db-store))))]
                (debug "store/update-info with params: " s)
                (db/transact-one state s)))})
+
+(defmutation store/update-shipping
+  [{:keys [state ::parser/return ::parser/exception auth system] :as env} _ {:keys [shipping store-id]}]
+  {:auth {::auth/store-owner store-id}
+   :resp {:success "Your store info was successfully updated."
+          :error   "Sorry, your info could not be updated. Try again later."}}
+  {:action (fn []
+             (debug "Update shipping: " shipping)
+             (store/update-shipping env (c/parse-long store-id) shipping))})
 
 (defmutation store/update-product-order
   [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [items store-id]}]

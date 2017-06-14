@@ -1,8 +1,8 @@
-$editor-font-family: $header-font-family-sans-serif;//$header-font-family-serif;
+$editor-font-family: $body-font-family;//$header-font-family-serif;
 .ql-editor, .sl-quill-editor-container .ql-editor {
 	font-family: $editor-font-family;
 	strong {
-		// font-weight: bold;
+		font-weight: bold;//$global-weight-bold;
 	}
 	.ql-size-large {
 		font-size: 1.25rem;
@@ -60,7 +60,7 @@ $editor-font-family: $header-font-family-sans-serif;//$header-font-family-serif;
 		transition: opacity .25s ease-in-out, visibility 0s linear;
 		border: none;
 		border-bottom: $global-border;
-		font-family: $editor-font-family;
+		// font-family: $editor-font-family;
 
 	}
 	.ql-bubble {

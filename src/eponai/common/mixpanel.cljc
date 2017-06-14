@@ -58,6 +58,7 @@
    ::go-to-start-store     "Go to start store"
 
    ::shop-by-category "Shop by category"
+   ::shop-live "Browse live"
    ::upload-photo          "Upload photo"})
 
 (defn track-key [k & [properties]]

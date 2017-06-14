@@ -270,10 +270,11 @@
             (grid/column
               (->> (css/text-align :right)
                    (grid/column-size {:small 12 :medium 3 :large 2}))
-              (button/edit {:onClick #(do
-                                       (mixpanel/track "Store: Edit product sections")
-                                       (om/update-state! this assoc :products/edit-sections (into [] (:store/sections store))))}
-                           (dom/span nil "Edit sections")))))
+              (button/user-setting-default
+                {:onClick #(do
+                            (mixpanel/track "Store: Edit product sections")
+                            (om/update-state! this assoc :products/edit-sections (into [] (:store/sections store))))}
+                (dom/span nil "Edit sections")))))
 
         (callout/callout
           (css/add-class :submenu)
@@ -300,11 +301,12 @@
                 (css/add-class :button-item)
                 (dom/div
                   (css/text-align :right)
-                  (dom/a (css/button {:href    (routes/url :store-dashboard/create-product
-                                                           {:store-id (:store-id route-params)
-                                                            :action   "create"})
-                                      :onClick #(mixpanel/track "Store: Add product")})
-                         "Add product"))))
+                  (button/button-small
+                    {:href    (routes/url :store-dashboard/create-product
+                                          {:store-id (:store-id route-params)
+                                           :action   "create"})
+                     :onClick #(mixpanel/track "Store: Add product")}
+                    "Add product"))))
             (dom/input {:value       (or search-input "")
                         :onChange    #(om/update-state! this assoc :search-input (.. % -target -value))
                         :placeholder "Search Products..."
@@ -332,11 +334,12 @@
                           :type        "text"}))
             (menu/item
               nil
-              (dom/a (css/button {:href    (routes/url :store-dashboard/create-product
-                                                       {:store-id (:store-id route-params)
-                                                        :action   "create"})
-                                  :onClick #(mixpanel/track "Store: Add product")})
-                     "Add product"))))
+              (button/button-small
+                {:href    (routes/url :store-dashboard/create-product
+                                      {:store-id (:store-id route-params)
+                                       :action   "create"})
+                 :onClick #(mixpanel/track "Store: Add product")}
+                "Add product"))))
 
 
 

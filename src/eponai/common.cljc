@@ -35,3 +35,9 @@
         decimal-long (or (parse-long-safe (subs decimals 0 2)) 0)]
     (str (cl-format nil "$~:D" (int n))
          (cl-format nil ".~2'0D" (int decimal-long)))))
+
+(defn ordinal-number [n]
+  (let [formatted-str (cl-format nil "~:r" n)
+        length (count formatted-str)]
+    (str n
+         (subs formatted-str (- length 2) length))))

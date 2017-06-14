@@ -61,8 +61,12 @@
   [{:keys [db db-history query]} _ {:keys [store-id]}]
   {:auth    ::auth/public
    :uniq-by [[:store-id store-id]]}
-  {:value (query/one db db-history query {:where   '[[?e :store/profile]]
-                                          :symbols {'?e store-id}})})
+  {:value (let [store (query/one db db-history query {:where   '[[?e :store/profile]]
+                                                  :symbols {'?e store-id}})]
+            ;(debug "Query: " query)
+            ;(debug "Got store shipping: " (:store/shipping store))
+
+            store)})
 
 (defread query/stores
   [{:keys [db db-history query]} _ _]
@@ -277,7 +281,7 @@
                           items))]
              (->> (query/all db db-history query {:where '[[?e :store.item/name]]})
                   (add-time-to-all 0)
-                  (sort-by :store.item/created-at <)
+                  (sort-by :store.item/created-at >)
                   (take 10)
                   (feature-all db-history :store.item))))})
 
@@ -376,15 +380,7 @@
 (defread query/countries
   [{:keys [db db-history auth query]} _ _]
   {:auth ::auth/any-user}
-  {:value (let [country-data (json/read-str (slurp (io/resource "private/country-data.json")) :key-fn keyword)
-                continents (:continents country-data)]
-            (debug "Countries: " (:continents country-data))
-            (map (fn [[code country]]
-                   {:country/code      (name code)
-                    :country/name      (:name country)
-                    :country/continent {:continent/code (:continent country)
-                                        :continent/name (get continents (keyword (:continent country)))}})
-                 (:countries country-data)))})
+  {:value (query/all db db-history query {:where '[[?e :country/code _]]})})
 
 (defread query/product-search
   [{:keys [db-history system]} _ _]

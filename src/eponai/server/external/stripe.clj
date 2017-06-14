@@ -10,7 +10,8 @@
     [taoensso.timbre :refer [debug error info]]
     [eponai.server.external.stripe.webhooks :as webhooks]
     [clojure.data.json :as json]
-    [clojure.string :as string])
+    [clojure.string :as string]
+    [eponai.common.format.date :as date])
   (:import (clojure.lang ExceptionInfo)))
 
 (defn pull-stripe [db store-id]
@@ -124,9 +125,15 @@
       (f/stripe->account account)))
 
   (-update-account [_ account-id params]
-    (let [updated (json/read-str (:body (client/post (stripe-endpoint "accounts" account-id) {:basic-auth api-key :form-params params})) :key-fn keyword)]
-      (debug "STRIPE - updated account: " updated)
-      (f/stripe->account updated)))
+    (try+
+      (let [updated (json/read-str (:body (client/post (stripe-endpoint "accounts" account-id) {:basic-auth api-key :form-params params})) :key-fn keyword)]
+        (debug "STRIPE - updated account: " updated)
+        (f/stripe->account updated))
+      (catch [:status 400] r
+        (let [{:keys [body]} r
+              {:keys [error]} (json/read-str body :key-fn keyword)]
+          ;(debug "Error response: " (clojure.walk/keywordize-keys body))
+          (throw (ex-info (:message error) error))))))
 
   (-get-balance [_ account-id secret]
     (let [balance (json/read-str (:body (client/get (stripe-endpoint "balance") {:basic-auth secret})) :key-fn keyword)]
@@ -264,7 +271,9 @@
                                                                      :default_for_currency true
                                                                      :bank_name            "Wells Fargo"
                                                                      :last4                "1234"
-                                                                     :country              "CA"}]}))
+                                                                     :country              "CA"}]})
+                                  :always
+                                  (update :legal_entity merge (:legal_entity account)))
               stripe-account (stub/add-account-verifications new-account)]
           (debug "Updated fake Stripe account: " stripe-account)
           (swap! state update :accounts assoc account-id stripe-account)
@@ -313,8 +322,11 @@
            :charge/paid?  (:paid charge)}))
 
       (-get-charge [_ charge-id]
-        )
+        {:charge/amount  100
+         :charge/created (date/current-secs)})
 
+      (-create-card [_ customer-id card]
+        )
       (-create-refund [this params]))))
 
 (defn webhook [{:keys [type] :as env} event]

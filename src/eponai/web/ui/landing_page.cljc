@@ -9,11 +9,13 @@
     [taoensso.timbre :refer [debug]]
     [eponai.web.ui.photo :as photo]
     [eponai.common.ui.elements.grid :as grid]
+    #?(:cljs [eponai.web.utils :as web-utils])
     [eponai.web.ui.button :as button]
     [eponai.client.auth :as auth]
     [eponai.common.shared :as shared]
     [eponai.client.routes :as routes]
-    [eponai.common.ui.icons :as icons]))
+    [eponai.common.ui.icons :as icons]
+    [eponai.web.social :as social]))
 
 (defn top-feature [opts icon title text]
   (grid/column
@@ -37,12 +39,15 @@
      {:query/auth [:db/id]}
      :query/messages])
   Object
-  (select-locality [this locality]
+  (select-locality [_ locality]
     #?(:cljs
-       (do
-         (set! (.-cookie js/document) (str "sulo.locality=" locality))
-         (let [cookie-string (js/decodeURIComponent (.-cookie js/document))]
-           (debug "Got cookie: " cookie-string)))))
+       (web-utils/set-locality locality)))
+  (componentDidMount [this]
+    (let [{:query/keys [current-route]} (om/props this)]
+      #?(:cljs
+         (when (= (:route current-route) :landing-page/locality)
+           (when-let [locs (web-utils/element-by-id "sulo-locations")]
+             (web-utils/scroll-to locs 250))))))
   (render [this]
     (let [{:proxy/keys [navbar]
            :query/keys [auth]} (om/props this)]
@@ -50,8 +55,7 @@
         {:navbar navbar :id "sulo-landing"}
         (photo/cover
           {:photo-id "static/ashim-d-silva-89336"}
-          (dom/h1 nil
-                  (dom/span nil "Your local marketplace online"))
+          (dom/h1 nil (dom/span nil "Your local marketplace online"))
           (dom/p nil (dom/span nil "Shop and hang out LIVE with your favorite local brands")))
         (dom/div
           {:classes ["top-features"]}
@@ -74,7 +78,7 @@
               "Sign up to follow and share your faves.")))
 
         (grid/row-column
-          (css/text-align :center)
+          (css/text-align :center {:id "sulo-locations"})
           (dom/div
             (css/add-class :section-title)
             (dom/h2 nil "Where are you local?"))
@@ -97,34 +101,49 @@
                     (dom/div
                       (css/text-align :center)
                       (dom/strong nil "Vancouver, BC"))
-                    (dom/p (css/add-class :coming-soon) (dom/small nil "Coming soon - Summer 2017"))))))
-            (grid/column
-              nil
-              (dom/a
-                (css/add-classes [:city-anchor :inactive] nil)
-
-                (photo/photo
-                  {:photo-id       "s--1wUD_bGi--/v1496873909/static/alex-shutin-228917"
-                   :transformation :transformation/preview}
-                  (photo/overlay
-                    nil
-                    (dom/div
-                      (css/text-align :center)
-                      (dom/strong nil "Toronto, ON"))
-                    (dom/p (css/add-class :coming-soon) (dom/small nil "Coming soon - Fall 2017"))))))
+                    (when (nil? auth)
+                      (dom/p (css/add-class :coming-soon) (dom/small nil "Coming soon - Summer 2017")))))))
+            ;(grid/column
+            ;  nil
+            ;  (dom/a
+            ;    (css/add-classes [:city-anchor :inactive] nil)
+            ;
+            ;    (photo/photo
+            ;      {:photo-id       "s--1wUD_bGi--/v1496873909/static/alex-shutin-228917"
+            ;       :transformation :transformation/preview}
+            ;      (photo/overlay
+            ;        nil
+            ;        (dom/div
+            ;          (css/text-align :center)
+            ;          (dom/strong nil "Toronto, ON"))
+            ;        (dom/p (css/add-class :coming-soon) (dom/small nil "Coming soon - Fall 2017"))))))
             (grid/column
               (css/add-classes [:suggest-location])
               (photo/cover
                 nil
-                (dom/h3 nil "Don't see your location? Let us know where we should go next!")
+                (dom/h3 nil "Local somewhere else? Let us know where we should go next!")
                 (dom/div
                   (css/add-class :input-container)
                   (dom/input {:type        "text"
                               :placeholder "Your location"})
                   (dom/input {:type        "text"
                               :placeholder "Your email"})
-                  (button/button nil "Submit")))))
+                  (button/button nil "Submit"))))))
+        (common/sell-on-sulo this)
+        (dom/div
+          (css/add-class :instagram-feed)
+          (common/content-section
+            {:href   (:social/instagram social/profiles)
+             :target "_blank"}
+            ""
+            (dom/div
+              (css/add-class "powr-instagram-feed" {:id "0c4b9f24_1497385671"})
+              ;(dom/i {:classes ["fa fa-spinner fa-spin"]} )
+              )
+            "@sulolive on Instagram"))
 
-          (common/sell-on-sulo this))))))
+
+        ;<div class="powr-instagram-feed" id="0c4b9f24_1497385671"></div>
+        ))))
 
 (router/register-component :landing-page LandingPage)

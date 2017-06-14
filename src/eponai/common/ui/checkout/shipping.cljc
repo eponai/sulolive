@@ -144,6 +144,7 @@
                :name         "ship-country"
                :autoComplete "shipping country"
                ;:defaultValue (or (:shipping.address/country address) "CA")
+               ;:onChange     #(on-country-change (.-value (.-target %)))
                }
               (map (fn [c]
                      (dom/option {:value (:country/code c)} (:country/name c)))
@@ -248,38 +249,42 @@
                                                                      :on-change  (fn [place]
                                                                                    (prefill-address-form place))})]
          (om/update-state! this assoc :autocomplete autocomplete)
-         (let [{:keys [shipping]} (om/props this)]
-           (when (some? shipping)
-             (let [address (:shipping/address shipping)
-                   {:shipping.address/keys [street street2 postal locality region country]
-                    :shipping/keys         [name]} form-inputs]
+         (let [{:keys [shipping]} (om/props this)
+               {:shipping.address/keys [street street2 postal locality region country]
+                :shipping/keys         [name]} form-inputs]
+           (if (some? shipping)
+             (let [address (:shipping/address shipping)]
+               (debug "Setting mount country: " (:shipping.address/country address "CA"))
                (set! (.-value (web-utils/element-by-id name)) (:shipping/name shipping))
                (set! (.-value (web-utils/element-by-id street)) (:shipping.address/street address))
                (set! (.-value (web-utils/element-by-id street2)) (:shipping.address/street2 address))
                (set! (.-value (web-utils/element-by-id postal)) (:shipping.address/postal address))
                (set! (.-value (web-utils/element-by-id locality)) (:shipping.address/locality address))
                (set! (.-value (web-utils/element-by-id country)) (:shipping.address/country address))
-               (set! (.-value (web-utils/element-by-id region)) (:shipping.address/region address))))
+               (set! (.-value (web-utils/element-by-id region)) (:shipping.address/region address)))
+             (set! (.-value (web-utils/element-by-id country)) "CA"))
            )
          )))
   (componentDidUpdate [this prev-props _]
     #?(:cljs
-       (let [{:keys [shipping]} (om/props this)]
-         (when-not (= shipping (:shipping prev-props))
-           (let [address (:shipping/address shipping)
-                 {:shipping.address/keys [street street2 postal locality region country]
-                  :shipping/keys         [name]} form-inputs]
+       (let [{:keys [shipping]} (om/props this)
+             {:shipping.address/keys [street street2 postal locality region country]
+              :shipping/keys         [name]} form-inputs]
+         (if-not (= shipping (:shipping prev-props))
+           (let [address (:shipping/address shipping)]
+             (debug "Setting update country: " (:shipping.address/country address "CA"))
              (set! (.-value (web-utils/element-by-id name)) (:shipping/name shipping))
              (set! (.-value (web-utils/element-by-id street)) (:shipping.address/street address))
              (set! (.-value (web-utils/element-by-id street2)) (:shipping.address/street2 address))
              (set! (.-value (web-utils/element-by-id postal)) (:shipping.address/postal address))
              (set! (.-value (web-utils/element-by-id locality)) (:shipping.address/locality address))
              (set! (.-value (web-utils/element-by-id country)) (:shipping.address/country address))
-             (set! (.-value (web-utils/element-by-id region)) (:shipping.address/region address))))
+             (set! (.-value (web-utils/element-by-id region)) (:shipping.address/region address)))
+           (set! (.-value (web-utils/element-by-id country)) "CA"))
          )))
-  (componentWillReceiveProps [this next-props]
-    )
+
   (render [this]
+    (debug "Shipping props " (om/props this))
     (render-checkout-shipping this
                               (om/props this)
                               (om/get-computed this)

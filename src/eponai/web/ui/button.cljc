@@ -30,19 +30,20 @@
 (defn default-hollow [opts & content]
   (default (css/add-class :hollow opts) content))
 
-(defn edit [opts & content]
-  (default-hollow opts (or content
-                           [(dom/i {:classes ["fa fa-pencil fa-fw"]}) (dom/span nil "Edit")])))
-
-(defn save [opts & content]
-  (default opts (or content (dom/span nil "Save"))))
-
-(defn cancel [opts & content]
-  (default-hollow opts (or content (dom/span nil "Cancel"))))
 
 (defn user-setting-default [opts & content]
   (button (css/add-classes [:secondary :small :hollow] opts) content))
 
 (defn user-setting-cta [opts & content]
   (button (css/add-classes [:secondary :small] opts) content))
+
+(defn edit [opts & content]
+  (user-setting-default opts (or content
+                                 [(dom/i {:classes ["fa fa-pencil fa-fw"]}) (dom/span nil "Edit")])))
+
+(defn cancel [opts & content]
+  (user-setting-default opts (or content (dom/span nil "Cancel"))))
+
+(defn save [opts & content]
+  (user-setting-cta opts (or content (dom/span nil "Save"))))
 

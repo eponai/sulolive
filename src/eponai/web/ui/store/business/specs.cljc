@@ -1,7 +1,8 @@
 (ns eponai.web.ui.store.business.specs
   (:require
     [clojure.spec :as s]
-    [eponai.common :as c]))
+    [eponai.common :as c]
+    [eponai.client.utils :as client-utils]))
 
 (s/def :field.legal-entity.address/line1 (s/and string? #(not-empty %)))
 (s/def :field.legal-entity.address/postal (s/and string? #(not-empty %)))
@@ -25,6 +26,7 @@
 (s/def :field.legal-entity/personal-id-number (s/and string? #(not-empty %)))
 (s/def :field.legal-entity/type (s/and keyword? #(contains? #{:individual :company} %)))
 
+(s/def :field.general/email #(client-utils/valid-email? %))
 (s/def :field/legal-entity (s/keys :opt [:field.legal-entity/address
                                          :field.legal-entity/dob
                                          :field.legal-entity/first-name

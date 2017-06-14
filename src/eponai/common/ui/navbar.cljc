@@ -28,6 +28,7 @@
 
 (defn user-dropdown [component user owned-store]
   (let [{:keys [dropdown-key]} (om/get-state component)
+        {:query/keys [locations]} (om/props component)
         track-event (fn [k & [p]] (mixpanel/track-key k (merge p {:source "nav-dropdown"})))]
     (dom/div
       (cond->> (->> (css/add-class :dropdown-pane)
@@ -45,8 +46,10 @@
               (let [store-name (get-in owned-store [:store/profile :store.profile/name])]
                 (menu/item-link
                   {:href    (routes/url :store-dashboard {:store-id (:db/id owned-store)})
-                   :onClick #(track-event ::mixpanel/go-to-manage-store {:store-id   (:db/id owned-store)
-                                                                         :store-name store-name})}
+                   :onClick #(do (track-event ::mixpanel/go-to-manage-store {:store-id   (:db/id owned-store)
+                                                                             :store-name store-name})
+                                 #?(:cljs (when (empty? locations)
+                                            (utils/set-locality))))}
                   (dom/span nil store-name)))))
           (menu/item
             (css/add-class :my-stores)
@@ -82,14 +85,25 @@
          (css/add-class :top-bar))
     content))
 
+(defn navbar-route [component href]
+  (let [{:query/keys [auth locations]} (om/props component)]
+    (when (some? auth)
+      (if (empty? locations)
+        (routes/url :landing-page/locality)
+        href))))
+
 (defn collection-links [component]
-  (let [{:query/keys [auth]} (om/props component)]
+  (let [{:query/keys [auth locations]} (om/props component)]
     (map
       (fn [{:category/keys [href name path] :as a}]
-        (let [opts {:href    (when (some? auth) href)
+        (let [opts {:href    (navbar-route component href)
                     :classes (when (nil? auth) [:unauthed])
-                    :onClick #(mixpanel/track-key ::mixpanel/shop-by-category {:source   "navbar"
-                                                                               :category path})}]
+                    :onClick #(do (mixpanel/track-key ::mixpanel/shop-by-category {:source   "navbar"
+                                                                                   :category path})
+                                  (when (empty? locations)
+                                    #?(:cljs
+                                       (when-let [locs (utils/element-by-id "sulo-locations")]
+                                         (utils/scroll-to locs 250)))))}]
           (menu/item-link
             (->> opts
                  (css/add-class :category)
@@ -98,22 +112,21 @@
       (:query/navigation (om/props component)))))
 
 (defn live-link [component]
-  (let [{:query/keys [auth]} (om/props component)
-        href (when (some? auth)
-               (routes/url :live))]
+  (let [{:query/keys [auth locations]} (om/props component)]
     (menu/item-link
-      (->> (css/add-class :navbar-live {:href    href
+      (->> (css/add-class :navbar-live {:href    (navbar-route component (routes/url :live))
+                                        :onClick #(do
+                                                   (mixpanel/track-key ::mixpanel/shop-live {:source "navbar"})
+                                                   (when (empty? locations)
+                                                     #?(:cljs
+                                                        (when-let [locs (utils/element-by-id "sulo-locations")]
+                                                          (utils/scroll-to locs 250)))))
                                         :classes (when (nil? auth) [:unauthed])})
            (css/show-for :large))
       (dom/strong
         nil
-        ;(css/show-for :medium)
         ;; Wrap in span for server and client to render the same html
-        (dom/span nil "Live"))
-      ;(my-dom/div
-      ;  (css/hide-for :medium)
-      ;  (dom/i #js {:className "fa fa-video-camera fa-fw"}))
-      )))
+        (dom/span nil "Live")))))
 
 (defn navbar-brand [& [href title subtitle]]
   (menu/item-link
@@ -217,7 +230,7 @@
 
           (menu/item
             nil
-            (dom/a {:href (routes/url :index)
+            (dom/a {:href    (routes/url :index)
                     :onClick #(mixpanel/track "Store: Go back to marketplace" {:source "navbar"})}
                    (dom/strong nil (dom/small nil "Back to marketplace"))))
           ;(menu/item-text nil (dom/span nil (get routes->titles (:route current-route))))
@@ -281,11 +294,17 @@
           ;                                      :default-value   (or (get-in current-route [:query-params :search]) "")
           ;                                      :mixpanel-source "navbar"})
           ;             ))
+
+          ;(menu/item
+          ;  nil
+          ;  (dom/a nil
+          ;         (dom/span (css/add-classes ["icon icon-heart"]))))
           (user-menu-item component)
           (menu/item
             (css/add-class :shopping-bag)
             (dom/a {:classes ["shopping-bag-icon"]
                     :href    (routes/url :shopping-bag)}
+                   ;(dom/span (css/add-class ["icon icon-shopping-bag"]))
                    (icons/shopping-bag)
                    (when (< 0 (count (:user.cart/items cart)))
                      (dom/span (css/add-class :badge) (count (:user.cart/items cart)))))))))))
@@ -355,7 +374,7 @@
                    :user/email
                    {:user/stripe [:stripe/id]}
                    {:user/profile [{:user.profile/photo [:photo/path :photo/id]}]}]}
-         :query/locations
+     :query/locations
      {:query/owned-store [:db/id
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.
@@ -500,7 +519,7 @@
     )
   Object
   (render [this]
-    (let [{:query/keys [auth owned-store navigation current-route]} (om/props this)
+    (let [{:query/keys [auth owned-store navigation current-route locations]} (om/props this)
           {:keys [route]} current-route
           track-event (fn [k & [p]] (mixpanel/track-key k (merge p {:source "sidebar"})))]
       (dom/div
@@ -572,7 +591,7 @@
                   (menu/item
                     (when (contains? #{:store-dashboard/shipping} (:route current-route))
                       (css/add-class :is-active))
-                    (dom/a {:href    (routes/url :store-dashboard/shipping {:store-id (:db/id owned-store)})
+                    (dom/a {:href (routes/url :store-dashboard/shipping {:store-id (:db/id owned-store)})
                             ;:onClick #(track-event ::mixpanel/go-to-orders)
                             }
                            (dom/div {:classes ["icon icon-truck"]})
@@ -658,8 +677,10 @@
                        (menu/item
                          nil
                          (dom/a {:href    (routes/url :store-dashboard {:store-id (:db/id owned-store)})
-                                 :onClick #(track-event ::mixpanel/go-to-manage-store {:store-id   (:db/id owned-store)
-                                                                                       :store-name store-name})}
+                                 :onClick #(do (track-event ::mixpanel/go-to-manage-store {:store-id   (:db/id owned-store)
+                                                                                           :store-name store-name})
+                                               #?(:cljs (when (empty? locations)
+                                                          (utils/set-locality))))}
                                 (dom/div {:classes ["icon icon-shop"]})
                                 (dom/span nil store-name)))))))
                (when (some? auth)

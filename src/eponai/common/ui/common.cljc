@@ -41,15 +41,15 @@
          (dom/span nil "Contact")))
 
 (defn modal [opts & content]
-  (let [{:keys [on-close size]} opts]
+  (let [{:keys [classes on-close size require-close?]} opts]
     (dom/div
       (->> {:id      "reveal-overlay"
             :onClick #(when (= "reveal-overlay" (.-id (.-target %)))
-                       (when on-close
+                       (when (and on-close (not require-close?))
                          (on-close)))}
            (css/add-class :reveal-overlay))
       (dom/div
-        (css/add-class (str "reveal " (when (some? size) (name size))))
+        (css/add-class (str "reveal " (when (some? size) (name size))) {:classes classes})
         (when on-close
           (dom/a
             (css/add-class :close-button {:onClick on-close})
@@ -87,7 +87,7 @@
         (dom/a {:href store-link}
                (dom/strong nil store-name))))))
 
-(defn content-section [{:keys [href class sizes]} header content footer]
+(defn content-section [{:keys [href target class sizes]} header content footer]
   (dom/div
     (->> {:classes [class]}
          (css/add-class :section)
@@ -103,7 +103,9 @@
         (->> (css/add-class :section-footer)
              (css/text-align :center))
         (button/button
-          (css/add-classes [:hollow :sulo] {:href href}) footer)))))
+          (css/add-classes [:hollow :sulo] (cond-> {:href href}
+                                                   (some? target)
+                                                   (assoc :target target))) footer)))))
 
 (defn page-footer [opts]
   (dom/div
