@@ -34,10 +34,11 @@
 
 (defn send-message [component has-message]
   (let [chat-message (get-chat-message has-message)]
+    (reset-chat-message! has-message)
     (when-not (str/blank? chat-message)
       (mixpanel/track "Send chat message" {:message  chat-message
                                            :store-id (get-store-id component)})
-      (reset-chat-message! has-message)
+
       (om/transact! component `[(chat/send-message
                                   ~{:store (select-keys (get-store component) [:db/id])
                                     :text  chat-message})
