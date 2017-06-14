@@ -17,7 +17,9 @@
     [clojure.string :as string]
     [eponai.common.ui.elements.table :as table]
     [eponai.common.ui.elements.input-validate :as v]
-    [eponai.common :as c]))
+    [eponai.common :as c]
+    [eponai.common.mixpanel :as mixpanel]
+    [eponai.common.format :as f]))
 
 (def form-inputs
   {:shipping.rate/title       "shipping.rate.title"
@@ -25,7 +27,14 @@
    :shipping.rate/first       "shipping.rate.first"
    :shipping.rate/additional  "shipping.rate.additional"
    :shipping.rate/offer-free? "shipping.rate.offer-free?"
-   :shipping.rate/free-above  "shipping.rate.free-above"})
+   :shipping.rate/free-above  "shipping.rate.free-above"
+
+   :shipping.address/street   "shipping.address.street"
+   :shipping.address/street2  "shipping.address.street2"
+   :shipping.address/locality "shipping.address.locality"
+   :shipping.address/postal   "shipping.address.postal"
+   :shipping.address/region   "shipping.address.region"
+   :shipping.address/country  "shipping.address.country"})
 
 (s/def :shipping.rate/title (s/and string? #(not-empty %)))
 (s/def :shipping.rate/title (s/or :value #(string? (not-empty %)) :empty nil?))
@@ -36,7 +45,24 @@
 (s/def :shipping.rule/rate (s/keys :req [:shipping.rate/first :shipping.rate/additional :shipping.rate/title]
                                    :opt [:shipping.rate/free-above]))
 (s/def :shipping.rule/rates (s/coll-of :shipping.rule/rate))
-(s/def ::shipping (s/keys :req [:shipping.rule/rates]))
+(s/def :shipping/rule (s/keys :req [:shipping.rule/rates]))
+
+(s/def :shipping/name (s/and string? #(not-empty %)))
+(s/def :shipping.address/street (s/and string? #(not-empty %)))
+(s/def :shipping.address/street2 (s/or :value string? :empty nil?))
+(s/def :shipping.address/postal (s/and string? #(not-empty %)))
+(s/def :shipping.address/locality (s/and string? #(not-empty %)))
+(s/def :shipping.address/region (s/or :value #(string? (not-empty %)) :empty nil?))
+(s/def :shipping.address/country (s/and string? #(re-matches #"\w{2}" %)))
+
+(s/def :shipping/address (s/keys :req [:shipping.address/country
+                                       :shipping.address/locality
+                                       :shipping.address/postal
+                                       :shipping.address/street]
+                                 :opt [:shipping.address/region
+                                       :shipping.address/street2]))
+(s/def ::shipping (s/keys :opt [:shipping/rule
+                                :shipping/address]))
 
 (defn validate
   [spec m]
@@ -72,6 +98,97 @@
                                                                                 (:country/code country))
                                                                             cs)))))
 
+(defn shipping-address-modal [component]
+  (let [{:query/keys [store countries]} (om/props component)
+        shipping (:store/shipping store)                    ;[{:brand "American Express" :last4 1234 :exp-year 2018 :exp-month 4}]
+        address (:shipping/address shipping)
+        {:keys [input-validation]} (om/get-state component)
+        on-close #(do (mixpanel/track "Store: Close shipping info")
+                      (om/update-state! component dissoc :modal))]
+    (common/modal
+      (css/add-class :shipping-address-modal {:on-close       on-close
+                                              :require-close? true})
+      (dom/h4 (css/add-class :header) "Shipping address")
+      ;(dom/p nil (dom/small nil "Shipping address to use at checkout."))
+      (dom/div
+        nil
+        (dom/label nil "Full name")
+        (v/input {:id           (:shipping/name form-inputs)
+                  :type         "text"
+                  :defaultValue (:shipping/name shipping)
+                  :name         "name"
+                  :autoComplete "name"
+                  :placeholder  ""}
+                 input-validation)
+        (dom/label nil "Country")
+        (dom/select
+          {:id           (:shipping.address/country form-inputs)
+           :name         "ship-country"
+           :autoComplete "shipping country"
+           :defaultValue (:shipping.address/country address "CA")}
+          ;input-validation
+          (map (fn [c]
+                 (dom/option {:value (:country/code c)} (:country/name c)))
+               (sort-by :country/name countries)))
+
+        (dom/label nil "Address")
+        (grid/row
+          (css/add-class :collapse)
+          (grid/column
+            (grid/column-size {:small 12 :medium 8})
+            (v/input {:id           (:shipping.address/street form-inputs)
+                      :type         "text"
+                      :defaultValue (:shipping.address/street address)
+                      :name         "ship-address"
+                      :autoComplete "shipping address-line1"
+                      :placeholder  "Street"}
+                     input-validation))
+          (grid/column
+            nil
+            (v/input {:id           (:shipping.address/street2 form-inputs)
+                      :type         "text"
+                      :defaultValue (:shipping.address/street2 address)
+                      :placeholder  "Apt/Suite/Other"}
+                     input-validation)))
+        (grid/row
+          (css/add-class :collapse)
+          (grid/column
+            (grid/column-size {:small 12 :medium 4})
+            (v/input {:id           (:shipping.address/postal form-inputs)
+                      :type         "text"
+                      :defaultValue (:shipping.address/postal address)
+                      :name         "ship-zip"
+                      :autoComplete "shipping postal-code"
+                      :placeholder  "Postal code"}
+                     input-validation))
+          (grid/column
+            (grid/column-size {:small 12 :medium 4})
+            (v/input {:id           (:shipping.address/locality form-inputs)
+                      :type         "text"
+                      :defaultValue (:shipping.address/locality address)
+                      :name         "ship-city"
+                      :autoComplete "shipping locality"
+                      :placeholder  "City"}
+                     input-validation))
+          (grid/column
+            (grid/column-size {:small 12 :medium 4})
+            (v/input {:id           (:shipping.address/region form-inputs)
+                      :type         "text"
+                      :defaultValue (:shipping.address/region address)
+                      :name         "ship-state"
+                      :autoComplete "shipping region"
+                      :placeholder  "Province/State"}
+                     input-validation))))
+      ;(callout/callout-small
+      ;  (css/add-class :warning))
+      ;(dom/p nil (dom/small nil "Shipping address cannot be saved yet. We're working on this."))
+      (dom/div
+        (css/add-class :action-buttons)
+        (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))
+        (button/user-setting-cta
+          {:onClick #(.save-shipping-address component)}
+          (dom/span nil "Save"))))))
+
 (defn add-shipping-rule-modal [component]
   (let [on-close #(om/update-state! component (fn [st]
                                                 (-> st
@@ -85,8 +202,8 @@
          :shipping-rule/keys [section offer-free? edit-rule]} (om/get-state component)
         used-country-codes (set (map :country/code used-countries))]
     (common/modal
-      {:on-close       on-close
-       :require-close? true}
+      (css/add-class :shipping-rules-modal {:on-close       on-close
+                                            :require-close? true})
       (dom/div
         (css/add-class :section-title)
         (cond (and (= section :shipping-rule.section/destinations)
@@ -253,11 +370,18 @@
                                                                                :shipping.rate/first
                                                                                :shipping.rate/additional
                                                                                :shipping.rate/free-above]}
-                                                        {:shipping.rule/destinations [:country/code :country/name]}]}]}]}])
+                                                        {:shipping.rule/destinations [:country/code :country/name]}]}
+                                      {:shipping/address [:shipping.address/street
+                                                          :shipping.address/street2
+                                                          :shipping.address/postal
+                                                          :shipping.address/locality
+                                                          :shipping.address/region
+                                                          :shipping.address/country]}]}]}])
   Object
   (initLocalState [_]
     {:selected-countries    []
-     :shipping-rule/section :shipping-rule.section/destinations})
+     :shipping-rule/section :shipping-rule.section/destinations
+     :modal                 :modal/add-shipping-address})
   (save-shipping-rule [this]
     #?(:cljs
        (let [rate-first (utils/input-value-by-id (:shipping.rate/first form-inputs))
@@ -276,10 +400,41 @@
                                                       :shipping.rate/info       rate-info
                                                       :shipping.rate/additional rate-additional
                                                       :shipping.rate/free-above free-above}]}
-             input-validation (validate ::shipping input-map)]
+             input-validation (validate :shipping/rule input-map)]
          (when (nil? input-validation)
            (msg/om-transact! this [(list 'store/save-shipping-rule {:shipping-rule input-map
                                                                     :store-id      (:store-id (:route-params current-route))})
+                                   :query/store]))
+         (om/update-state! this assoc :input-validation input-validation))))
+
+  (save-shipping-address [this]
+    #?(:cljs
+       (let [street (utils/input-value-by-id (:shipping.address/street form-inputs))
+             street2 (utils/input-value-or-nil-by-id (:shipping.address/street2 form-inputs))
+             locality (utils/input-value-by-id (:shipping.address/locality form-inputs))
+             postal (utils/input-value-by-id (:shipping.address/postal form-inputs))
+             region (utils/input-value-or-nil-by-id (:shipping.address/region form-inputs))
+             country (utils/input-value-by-id (:shipping.address/country form-inputs))
+
+
+             ;rate-title (utils/input-value-by-id (:shipping.rate/title form-inputs))
+             ;rate-info (utils/input-value-or-nil-by-id (:shipping.rate/info form-inputs))
+             {:query/keys [current-route store]} (om/props this)
+             {:keys [selected-countries]} (om/get-state this)
+
+             input-map {:shipping/address (f/remove-nil-keys
+                                            {:shipping.address/street   street
+                                             :shipping.address/street2  street2
+                                             :shipping.address/locality locality
+                                             :shipping.address/postal   postal
+                                             :shipping.address/region   region
+                                             :shipping.address/country  country})}
+             input-validation (v/validate ::shipping input-map form-inputs)]
+         (debug "Validation map: " input-map)
+         (debug "validation: " input-validation)
+         (when (nil? input-validation)
+           (msg/om-transact! this [(list 'store/update-shipping {:shipping input-map
+                                                                 :store-id (:store-id (:route-params current-route))})
                                    :query/store]))
          (om/update-state! this assoc :input-validation input-validation))))
   (save-shipping-rate [this]
@@ -327,12 +482,17 @@
                                             :shipping-rule/section :shipping-rule.section/destinations)))))))
   (render [this]
     (let [{:keys [modal selected-countries]} (om/get-state this)
-          {:query/keys [store]} (om/props this)]
+          {:query/keys [store]} (om/props this)
+          {:store/keys [shipping]} store]
       (debug "Got props: " (om/props this))
       (dom/div
         {:id "sulo-shipping-settings"}
-        (when (some? modal)
-          (add-shipping-rule-modal this))
+        (cond (= modal :modal/add-shipping-rule)
+              (add-shipping-rule-modal this)
+              (= modal :modal/add-shipping-rate)
+              (add-shipping-rule-modal this)
+              (= modal :modal/add-shipping-address)
+              (shipping-address-modal this))
         (dom/div
           (css/show-for-sr)
           (dom/h1 nil "Shipping"))
@@ -343,21 +503,33 @@
           (css/add-classes [:section-container :section-container--shipping-address])
           (menu/vertical
             (css/add-class :section-list)
-            (menu/item
-              nil
-              (grid/row
-                (->> (css/add-class :collapse)
-                     (css/align :middle))
-                (grid/column
-                  (grid/column-size {:small 12 :medium 6})
-                  (dom/label nil "Shipping address")
-                  (dom/p nil (dom/small nil "This is the address from which your products will ship.")))
-                (grid/column
-                  (css/text-align :right)
-                  ;(dom/p nil (dom/strong nil (string/upper-case (or default-currency ""))))
-                  (button/user-setting-default
-                    {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-rule)}
-                    (dom/span nil "Add shipping address")))))))
+
+            (let [{:shipping/keys [address]
+                   shipping-name  :shipping/name} shipping
+                  {:shipping.address/keys [street street2 locality postal region country]} address]
+              (menu/item
+                nil
+                (grid/row
+                  (->> (css/add-class :collapse)
+                       (css/align :middle))
+                  (grid/column
+                    (grid/column-size {:small 12 :medium 6})
+                    (dom/label nil "Shipping address")
+                    (dom/p nil (dom/small nil "This is the address from which your products will ship.")))
+                  (grid/column
+                    (css/text-align :right)
+
+                    (if (some? address)
+                      (dom/p nil
+                             (dom/span nil shipping-name)
+                             (dom/br nil)
+                             (dom/small nil street)
+                             (dom/br nil)
+                             (dom/small nil (string/join ", " [locality postal region country])))
+                      (dom/p nil (dom/small nil (dom/i nil "No saved address"))))
+                    (button/user-setting-default
+                      {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-address)}
+                      (dom/span nil "Add shipping address"))))))))
         (dom/div
           (css/add-class :content-section)
           (dom/div
@@ -369,7 +541,7 @@
                      (dom/small nil "Create shipping rules to define where you will ship your products and shipping rates for these orders. ")
                      (dom/a nil (dom/small nil "Learn more")))
               (button/button
-                (button/hollow (button/secondary {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-rule)}))
+                (button/small {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-rule)})
                 (dom/span nil "Add shipping rule"))))
           ;(grid/row
           ;  nil

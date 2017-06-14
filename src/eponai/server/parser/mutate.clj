@@ -280,6 +280,15 @@
                (debug "store/update-info with params: " s)
                (db/transact-one state s)))})
 
+(defmutation store/update-shipping
+  [{:keys [state ::parser/return ::parser/exception auth system] :as env} _ {:keys [shipping store-id]}]
+  {:auth {::auth/store-owner store-id}
+   :resp {:success "Your store info was successfully updated."
+          :error   "Sorry, your info could not be updated. Try again later."}}
+  {:action (fn []
+             (debug "Update shipping: " shipping)
+             (store/update-shipping env (c/parse-long store-id) shipping))})
+
 (defmutation store/update-product-order
   [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [items store-id]}]
   {:auth {::auth/store-owner store-id}

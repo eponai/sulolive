@@ -132,6 +132,17 @@
         rule-rates-txs (into rule-txs (edit-many-txs rule-id :shipping.rule/rates old-rates new-rates))]
     (db/transact state rule-rates-txs)))
 
+(defn update-shipping [{:keys [state]} store-id shipping]
+  (let [{old-shipping :store/shipping} (db/pull (db/db state) [{:store/shipping [:db/id]}] store-id)
+        new-shipping (cond-> (f/shipping shipping)
+                             (some? (:db/id old-shipping))
+                             (assoc :db/id (:db/id old-shipping)))
+        txs (cond-> [new-shipping]
+                    (db/tempid? (:db/id new-shipping))
+                    (conj [:db/add store-id :store/shipping (:db/id new-shipping)]))]
+    (debug "Transacting shipping: " txs)
+    (debug "TranactedL " (db/transact state txs))))
+
 (defn delete-product [{:keys [state]} product-id]
   (db/transact state [[:db.fn/retractEntity product-id]]))
 

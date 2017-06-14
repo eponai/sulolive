@@ -81,7 +81,7 @@
 (defn render-checkout-shipping [this props computed state]
   (let [{:keys [input-validation]} state
         {:keys [collapse? shipping countries]} props
-        {:keys [on-open on-country-change]} computed
+        {:keys [on-open]} computed
         {:shipping/keys [address]} shipping]
     (debug "Render shipping: " shipping)
     (dom/div
@@ -144,7 +144,7 @@
                :name         "ship-country"
                :autoComplete "shipping country"
                ;:defaultValue (or (:shipping.address/country address) "CA")
-               :onChange     #(on-country-change (.-value (.-target %)))
+               ;:onChange     #(on-country-change (.-value (.-target %)))
                }
               (map (fn [c]
                      (dom/option {:value (:country/code c)} (:country/name c)))
