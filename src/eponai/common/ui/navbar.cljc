@@ -18,7 +18,8 @@
     [eponai.common.ui.router :as router]
     [eponai.web.social :as social]
     [eponai.web.ui.button :as button]
-    [eponai.common.mixpanel :as mixpanel]))
+    [eponai.common.mixpanel :as mixpanel]
+    [eponai.client.utils :as client.utils]))
 
 (def dropdown-elements
   {:dropdown/user       "sl-user-dropdown"
@@ -289,6 +290,56 @@
                    (when (< 0 (count (:user.cart/items cart)))
                      (dom/span (css/add-class :badge) (count (:user.cart/items cart)))))))))))
 
+(defui LoadingBar
+  static om/IQuery
+  (query [this] [{:query/loading-bar [:ui.singleton.loading-bar/show?]}])
+  Object
+  (initLocalState [this]
+    #?(:cljs
+       {:on-transition-iteration-fn (fn []
+                                      (let [{:query/keys [loading-bar]} (om/props this)
+                                            is-loading? (:ui.singleton.loading-bar/show? loading-bar)]
+                                        (when-let [spinner (utils/element-by-id "sl-global-spinner")]
+                                          (when-not is-loading?
+                                            (utils/remove-class-to-element spinner "is-active")))
+                                        ))}))
+  (componentWillUnmount [this]
+    #?(:cljs
+       (let [{:keys [on-transition-iteration-fn]} (om/get-state this)
+             spinner (utils/element-by-id "sl-global-spinner")]
+         (when spinner
+           (.removeEventListener spinner "webkitAnimationIteration" on-transition-iteration-fn)
+           (.removeEventListener spinner "animationiteration" on-transition-iteration-fn)))))
+  (componentDidMount [this]
+    #?(:cljs
+       (let [{:keys [on-transition-iteration-fn]} (om/get-state this)
+             spinner (utils/element-by-id "sl-global-spinner")]
+         (when spinner
+           (.addEventListener spinner "webkitAnimationIteration" on-transition-iteration-fn)
+           (.addEventListener spinner "animationiteration" on-transition-iteration-fn)))))
+  (componentWillReceiveProps [this next-props]
+    (let [{:query/keys [loading-bar]} next-props]
+      #?(:cljs
+         (when-let [spinner (utils/element-by-id "sl-global-spinner")]
+           (let [is-loading? (:ui.singleton.loading-bar/show? loading-bar)
+                 spinner-active? (string/includes? (.-className spinner) "is-active")]
+             (if is-loading?
+               (when-not spinner-active?
+                 (debug "ADD LOADER ACTIVE")
+                 (utils/add-class-to-element spinner "is-active"))
+               (when spinner-active?
+                 (debug "REMOVE LOADER ACTIVE")
+                 (utils/remove-class-to-element spinner "is-active"))))))))
+  (render [this]
+    #?(:cljs
+       (dom/div
+         (css/add-class :sl-global-spinner {:id "sl-global-spinner"}))
+       :clj
+        (dom/div
+          (css/add-classes [:sl-global-spinner :is-active] {:id "sl-global-spinner"})))))
+
+(def ->LoadingBar (om/factory LoadingBar))
+
 (defui Navbar
   static om/IQuery
   (query [_]
@@ -310,7 +361,7 @@
                           ;; to be able to query the store on the client side.
                           {:store/owners [{:store.owner/user [:db/id]}]}]}
      {:query/navigation [:category/name :category/label :category/path :category/href]}
-     {:query/loading-bar [:ui.singleton.loading-bar/show?]}
+     {:proxy/loading-bar (om/get-query LoadingBar)}
      :query/current-route])
   Object
   #?(:cljs
@@ -375,35 +426,11 @@
      :inline-sidebar-hidden? false
      #?@(:cljs [:on-click-event-fn #(.close-dropdown this %)
                 :on-close-sidebar-fn #(.close-sidebar this)
-                :on-transition-iteration-fn (fn []
-                                              (let [{:query/keys [loading-bar]} (om/props this)
-                                                    is-loading? (:ui.singleton.loading-bar/show? loading-bar)]
-                                                (when-let [spinner (utils/element-by-id "sl-global-spinner")]
-                                                  (when-not is-loading?
-                                                    (utils/remove-class-to-element spinner "is-active")))
-                                                ))])})
+                ])})
   (componentWillUnmount [this]
     #?(:cljs
-       (let [{:keys [lock on-click-event-fn on-transition-iteration-fn]} (om/get-state this)
-             spinner (utils/element-by-id "sl-global-spinner")]
-         (.removeEventListener js/document "click" on-click-event-fn)
-         (when spinner
-           (.removeEventListener spinner "webkitAnimationIteration" on-transition-iteration-fn)
-           (.removeEventListener spinner "animationiteration" on-transition-iteration-fn)))))
-
-  (componentWillReceiveProps [this next-props]
-    (let [{:query/keys [loading-bar]} next-props]
-      #?(:cljs
-         (when-let [spinner (utils/element-by-id "sl-global-spinner")]
-           (let [is-loading? (:ui.singleton.loading-bar/show? loading-bar)
-                 spinner-active? (string/includes? (.-className spinner) "is-active")]
-             (if is-loading?
-               (when-not spinner-active?
-                 (debug "ADD LOADER ACTIVE")
-                 (utils/add-class-to-element spinner "is-active"))
-               (when spinner-active?
-                 (debug "REMOVE LOADER ACTIVE")
-                 (utils/remove-class-to-element spinner "is-active"))))))))
+       (let [{:keys [lock on-click-event-fn]} (om/get-state this)]
+         (.removeEventListener js/document "click" on-click-event-fn))))
 
 
   (componentDidMount [this]
@@ -412,20 +439,12 @@
     ;             (let [lock (new js/Auth0LockPasswordless "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh" "sulo.auth0.com")]
     ;               (om/update-state! this assoc :lock lock)))
     ;           (om/update-state! this assoc :did-mount? true)))
-    #?(:cljs
-       (let [{:keys [on-transition-iteration-fn]} (om/get-state this)
-             spinner (utils/element-by-id "sl-global-spinner")]
-         (when spinner
-           (.addEventListener spinner "webkitAnimationIteration" on-transition-iteration-fn)
-           (.addEventListener spinner "animationiteration" on-transition-iteration-fn)))
-       )
     )
 
   (render [this]
-    (let [
-          {:query/keys [current-route loading-bar]} (om/props this)
-          {:keys [route]} current-route
-          {:keys [loading-spinner]} (om/get-state this)]
+    (let [{:query/keys [current-route]
+           :proxy/keys [loading-bar]} (om/props this)
+          {:keys [route]} current-route]
 
       (dom/div
         nil
@@ -458,12 +477,8 @@
                 :else
                 (standard-navbar this)))))
         ;(let [is-loading? (:ui.singleton.loading-bar/show? loading-bar)])
-        #?(:cljs
-           (dom/div
-             (css/add-class :sl-global-spinner {:id "sl-global-spinner"}))
-           :clj
-           (dom/div
-             (css/add-classes [:sl-global-spinner :is-active] {:id "sl-global-spinner"})))))))
+        (->LoadingBar loading-bar)))))
+
 (def ->Navbar (om/factory Navbar))
 
 (defn navbar [props]
