@@ -49,6 +49,10 @@
         interval (or interval (:stripe.payout-schedule/interval payout-schedule) "daily")
         week-anchor (or week-anchor (:stripe.payout-schedule/week-anchor payout-schedule) "monday")
         month-anchor (or month-anchor (:stripe.payout-schedule/month-anchor payout-schedule) "1")]
+    (debug "State: " (om/get-state component))
+    (debug "Anchors:  " {:interval interval
+                        :weekly week-anchor
+                        :monthly month-anchor})
 
     (when (= modal :payout-schedule)
       (common/modal
@@ -250,6 +254,10 @@
           month-anchor (or month-anchor (:stripe.payout-schedule/month-anchor payout-schedule) "1")
           message (msg/last-message this 'stripe/update-account)]
       (debug "Stripe account: " stripe-account)
+      (debug "State: " (om/get-state this))
+      (debug "Anchors:  " {:interval interval
+                           :weekly week-anchor
+                           :monthly month-anchor})
 
       (dom/div
         nil

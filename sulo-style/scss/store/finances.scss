@@ -4,27 +4,7 @@
 	padding-top: $subnav-height;
 
 
-	.section-list {
-		border: none;
-		// padding: 0;
-		label {
-			font-size: 110%;
-		}
-		li {
-			// padding: 0;
-			&:first-child {
-				padding-top: 0;
-			}
-			p {
-				margin-bottom: 0.5rem;
-			}
-		}
-		&.section-list--bank-accounts {
-			li {
-				border-bottom: $global-border;
-			}
-		}
-	}
+	
 	.payout-schedule {
 		p {
 			margin-bottom: 0.5rem;

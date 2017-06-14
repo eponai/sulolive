@@ -14,6 +14,38 @@
 	// 		flex-direction: row;
 	// 	}
 	// }
+	p {
+		margin-bottom: 0.5rem;
+	}
+	label[for] {
+		color: $body-font-color;
+	}
+	.reveal {
+		.column {
+			padding-right: 1rem;
+			&:last-child  {
+				padding: 0;
+			}
+		}
+		label:not([for]) {
+			margin-top: 1rem;
+		}
+	}
+	.action-buttons {
+		margin-top: 1rem;
+		.button {
+			margin-bottom: 0;
+		}
+	}
+	.menu.section-list {
+		border: none;
+		li:first-child {
+			padding-top: 0;
+		}
+		li:last-child {
+			padding-bottom: 0;
+		}
+	}
 
 	.menu.submenu {
 
@@ -52,6 +84,7 @@
 		&[disabled] {
 			background-color: darken($white, 5%);
 		}	
+
 	}
 	.currency {
 		text-transform: uppercase;
@@ -115,16 +148,17 @@
 }
 
 #sulo-activate-account-form {
-	small {
-		color: $body-font-color;
+	p small {
+		color: $dark-gray;
 	}
-	label {
+	label, .section-list label {
 		font-size: 90%; 
 		color: $dark-gray;
 		@include breakpoint(medium) {
 			text-align: right;
 		}
 	}
+
 	input, select {
 		max-width: 25rem;
 		// margin: 0;
@@ -144,6 +178,11 @@
 	}
 	.menu.section-list {
 		margin-bottom: 4rem;
+		border-top: $global-border;
+
+		li:first-child {
+			padding-top: 1rem;
+		}
 		&:last-child {
 			margin-bottom: 1rem;
 		}
@@ -166,17 +205,24 @@
 		label {
 			text-align: left;
 		}
-		p {
-			margin-bottom: 0;
-		}
 	}
 		.document-uploader {
+			display: flex;
+			flex-direction: column;
+			small {
+				color: $body-font-color;
+			}
+
 			label {
 				@include button;
+				@include button-hollow;
+				@include button-hollow-style($secondary-color);
+				font-size: 80%;
 				// @include button-hollow;
 				// @include button-hollow-style($secondary-color);
-				margin-right: 1rem;
+				// margin-right: 1rem;
 				// @extend .button;
+				margin: 0;
 				flex: 0;
 				text-align: left;
 				border: 1px solid $secondary-color;
@@ -200,5 +246,10 @@
 	// }
 	.callout.alert {
 		padding: 1rem;
+	}
+	.callout.warning {
+		small {
+			color: $body-font-color;
+		}
 	}
 }

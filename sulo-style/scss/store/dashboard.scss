@@ -7,6 +7,31 @@
 		  top: $navbar-height;
 	}
 
+	.section-list {
+		border: none;
+		// padding: 0;
+		label {
+			font-size: 110%;
+		}
+		li {
+			// padding: 0;
+			&:first-child {
+				padding-top: 0;
+			}
+			&:last-child {
+				padding-bottom: 0;
+			}
+			p {
+				margin-bottom: 0.5rem;
+			}
+		}
+		&.section-list--bank-accounts {
+			li {
+				border-bottom: $global-border;
+			}
+		}
+	}
+
 	.callout.submenu {
 		padding: 1rem;
 		li {

@@ -322,25 +322,27 @@
              (grid/row
                nil
                (grid/column
-                 (css/add-class :shrink)
+                 nil
                  (dom/label nil "Verification document")
-                 (dom/p nil (dom/small nil "This should be a photo of your identifying document, such as a passport or driver’s license."))))
-             (grid/row
-               nil
+                 (dom/p nil (dom/small nil "Upload a photo copy of your identifying document, such as a passport or driver’s license.")))
                (grid/column
-                 (css/add-class :document-uploader )
+                 (->> (css/add-class :document-uploader)
+                      (css/text-align :right))
                  (dom/input
                    (css/show-for-sr {:type        "file"
                                      :placeholder "First"
                                      :accept      "image/png,image/jpeg"
                                      :onChange    #(.select-document component %)
                                      :id          (:field.legal-entity/document form-inputs)}))
+                 (dom/p nil
+                        (if (not-empty document-upload)
+                          (dom/small nil (str document-upload))
+                          (dom/small nil (dom/i nil "No file selected"))))
                  (dom/div
                    nil
                    (dom/label
                      {:htmlFor (:field.legal-entity/document form-inputs)}
-                     "Upload file")
-                   (dom/span nil (str document-upload))))))))])))
+                     "Upload file")))))))])))
 
 (defn external-account [component]
   (let [{:query/keys [stripe-country-spec]} (om/props component)
@@ -539,10 +541,10 @@
                                 (dom/small nil "Learn more"))
                          (dom/br nil) (dom/br nil)
                          (dom/small nil "We don't use this information for any other purpose than to pass along to Stripe and let you manage your account. Your provided account details are reviewed by Stripe to ensure they comply with their terms of service. If there's a problem, we'll get in touch right away to resolve it as quickly as possible.")))))))
+
         (callout/callout-small
           (css/add-class :warning)
           (dom/p nil (dom/small nil "We still have work to do on the integration with Stripe, and have disabled the functionality to verity the account. Don't worry, we're getting there!")))
-
         (dom/div
           nil
           (account-details this)
@@ -550,6 +552,7 @@
           (personal-details this)
           (external-account this))
 
+        (dom/hr nil)
         (dom/div
           (css/text-align :right)
           (dom/div

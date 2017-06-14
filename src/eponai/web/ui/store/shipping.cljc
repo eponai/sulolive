@@ -330,7 +330,7 @@
         {:id "sulo-shipping-settings"}
         (dom/div
           (css/add-class :section-title)
-          (dom/h1 nil "Shipping settings"))
+          (dom/h1 nil "Shipping"))
         (dom/div
           (css/add-class :section-title)
           (dom/h2 nil "From address"))

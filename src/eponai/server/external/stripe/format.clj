@@ -145,6 +145,7 @@
     (f/remove-nil-keys
       {:first_name         first-name
        :last_name          last-name
+       :business_name      business-name
        :dob                (f/remove-nil-keys
                              {:day   day
                               :month month

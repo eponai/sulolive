@@ -16,7 +16,8 @@
     [eponai.common.ui.elements.callout :as callout]
     [eponai.web.ui.button :as button]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.elements.table :as table]))
+    [eponai.common.ui.elements.table :as table]
+    [eponai.common :as c]))
 (def prefix-key "payouts-details-")
 
 (def stripe-key "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")
@@ -38,7 +39,7 @@
           (str "Every week, all available payments will be deposited in your account on " capitalized ". (Your available balance will include payments made in the week prior to the previous " capitalized ".) ")
 
           (= interval "monthly")
-          (str "Every month, all available payments will be deposited in your account on the " month-anchor " day of the month. (Your available balance will include payments made " delay-days " days before your scheduled transfer day.)"))))
+          (str "Every month, all available payments will be deposited in your account on the " (c/ordinal-number month-anchor) " day of the month. (Your available balance will include payments made " delay-days " days before your scheduled transfer day.)"))))
 
 (defn payout-schedule-modal [component]
   (let [{:keys                 [modal]
@@ -50,6 +51,11 @@
         week-anchor (or week-anchor (:stripe.payout-schedule/week-anchor payout-schedule) "monday")
         month-anchor (or month-anchor (:stripe.payout-schedule/month-anchor payout-schedule) "1")]
 
+    (debug "Stripe account: " stripe-account)
+    (debug "State: " (om/get-state component))
+    (debug "Anchors:  " {:interval interval
+                         :weekly week-anchor
+                         :monthly month-anchor})
     (common/modal
       {:on-close #(om/update-state! component dissoc :modal)
        :size     "tiny"}
@@ -59,7 +65,7 @@
         (dom/p nil (dom/small nil (payout-schedule-info interval week-anchor month-anchor delay-days)))
 
         (dom/label nil "Deposit interval")
-        (dom/select {:defaultValue interval
+        (dom/select {:value interval
                      :onChange     #(om/update-state! component (fn [s]
                                                                   (let [{:payout-schedule/keys [month-anchor week-anchor]} s
                                                                         interval (.. % -target -value)]
@@ -75,7 +81,7 @@
                     (dom/option {:value "monthly"} "Monthly"))
         (cond (= interval "weekly")
               [(dom/label nil "Deposit day")
-               (dom/select {:defaultValue week-anchor
+               (dom/select {:value week-anchor
                             :onChange     #(om/update-state! component assoc :payout-schedule/week-anchor (.. % -target -value))}
                            (dom/option {:value "monday"} "Monday")
                            (dom/option {:value "tuesday"} "Tuesday")
@@ -86,11 +92,11 @@
                            (dom/option {:value "sunday"} "Sunday"))]
               (= interval "monthly")
               [(dom/label nil "Deposit day")
-               (dom/select {:defaultValue month-anchor
+               (dom/select {:value month-anchor
                             :onChange     #(om/update-state! component assoc :payout-schedule/month-anchor (.. % -target -value))}
                            (map (fn [i]
-                                  (let [day (str (inc i))]
-                                    (dom/option {:value day} day)))
+                                  (let [day (inc i)]
+                                    (dom/option {:value (str day)} (c/ordinal-number day))))
                                 (range 31)))])
         (dom/div
           (css/add-class :action-buttons)
@@ -270,7 +276,7 @@
                     (css/text-align :right)
                     (dom/p nil (dom/span nil (str (string/capitalize (or interval ""))))
                            (when anchor
-                             (dom/span nil (str " (" anchor ")")))
+                             (dom/span nil (str " (" (c/ordinal-number anchor) ")")))
                            (dom/br nil)
                            (dom/small nil (str delay-days " day rolling basis")))
                     (button/user-setting-default
