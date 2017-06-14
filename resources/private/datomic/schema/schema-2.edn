@@ -98,6 +98,29 @@
   :db/doc                "Country name"
   :db.install/_attribute :db.part/db}
 
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :country/continent
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Country continent"
+  :db.install/_attribute :db.part/db}
+
+ ;; Continents
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :continent/code
+  :db/valueType          :db.type/string
+  :db/unique             :db.unique/identity
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Continent code"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :continent/name
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Conetinent name"
+  :db.install/_attribute :db.part/db}
+
  ;; Order
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :order/created-at

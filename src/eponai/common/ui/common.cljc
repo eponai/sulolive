@@ -41,11 +41,11 @@
          (dom/span nil "Contact")))
 
 (defn modal [opts & content]
-  (let [{:keys [on-close size]} opts]
+  (let [{:keys [on-close size require-close?]} opts]
     (dom/div
       (->> {:id      "reveal-overlay"
             :onClick #(when (= "reveal-overlay" (.-id (.-target %)))
-                       (when on-close
+                       (when (and on-close (not require-close?))
                          (on-close)))}
            (css/add-class :reveal-overlay))
       (dom/div

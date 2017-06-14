@@ -101,7 +101,8 @@
                     (dom/div
                       (css/text-align :center)
                       (dom/strong nil "Vancouver, BC"))
-                    (dom/p (css/add-class :coming-soon) (dom/small nil "Coming soon - Summer 2017"))))))
+                    (when (nil? auth)
+                      (dom/p (css/add-class :coming-soon) (dom/small nil "Coming soon - Summer 2017")))))))
             ;(grid/column
             ;  nil
             ;  (dom/a

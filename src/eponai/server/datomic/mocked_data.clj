@@ -5,7 +5,9 @@
     [clojure.string :as str]
     [taoensso.timbre :refer [debug]]
     [medley.core :as medley]
-    [clojure.walk :as walk]))
+    [clojure.walk :as walk]
+    [clojure.java.io :as io]
+    [clojure.data.json :as json]))
 
 (defn missing-personal-id-account []
   {:stripe/id     "acct_19k3ozC0YaFL9qxh"
@@ -24,7 +26,7 @@
 
 (defn photo [id]
   {:db/id      (db/tempid :db.part/user)
-   :photo/id id
+   :photo/id   id
    :photo/path (str "http://res.cloudinary.com/sulolive/image/upload/" id ".jpg")})
 (defn sku [& [v]]
   (cond-> {:store.item.sku/inventory {:store.item.sku.inventory/type  :store.item.inventory.type/bucket
@@ -66,52 +68,52 @@
                :children (vals (women-fn unisex-adult))}])
 
 (defn leaf [& name-parts]
-  #:category{:name  (str/join products/category-name-separator name-parts)
-             :label (str/capitalize (str/join " " name-parts))})
+  #:category {:name  (str/join products/category-name-separator name-parts)
+              :label (str/capitalize (str/join " " name-parts))})
 
 (defn hash-map-by [f coll]
   (into {} (map (juxt f identity)) coll))
 
 (def cats
-  [#:category{:name     "clothing"
-              :label    "Clothing"
-              :children (fn []
-                          (adult-category "Clothing" {:unisex-adult {"pants" (leaf "pants")}
-                                                      :women-fn     #(-> %
-                                                                         (assoc "skirts" (leaf "skirts"))
-                                                                         (assoc "dresses" (leaf "dresses")))}))}
-   #:category{:name     "shoes"
-              :label    "Shoes"
-              :children (fn []
-                          (adult-category "Shoes" {:unisex-adult {"boots" (leaf "boots")}}))}
-   #:category{:name     "jewelry"
-              :label    "Jewelry"
-              :children (fn []
-                          (adult-category "Jewelry" {:unisex-adult (hash-map-by :category/name
-                                                                                [(leaf "earrings")
-                                                                                 (leaf "rings")
-                                                                                 (leaf "necklaces")])}))}
-   #:category{:name  "home"
-              :label "Home"}
-   #:category{:name     "accessories"
-              :label    "Accessories"
-              :children (fn []
-                          (let [unisex-cats (hash-map-by :category/name
-                                                         [(leaf "hats")
-                                                          (leaf "keychains")
-                                                          (leaf "watches")])]
-                            (into
-                              [#:category{:name     "childrens"
-                                          :label    "Children's Accessories"
-                                          :children (-> unisex-cats
-                                                        (assoc "socks" (leaf "socks"))
-                                                        (vals))}]
-                              (adult-category "Accessories" {:unisex-adult unisex-cats
-                                                             :men-fn       #(assoc % "socks" (leaf "socks"))
-                                                             :women-fn     #(-> %
-                                                                                (assoc "handbag" (leaf "handbag" "accessories"))
-                                                                                (assoc "socks" (leaf "socks"))
-                                                                                (assoc "wallets" (leaf "wallets")))}))))}])
+  [#:category {:name     "clothing"
+               :label    "Clothing"
+               :children (fn []
+                           (adult-category "Clothing" {:unisex-adult {"pants" (leaf "pants")}
+                                                       :women-fn     #(-> %
+                                                                          (assoc "skirts" (leaf "skirts"))
+                                                                          (assoc "dresses" (leaf "dresses")))}))}
+   #:category {:name     "shoes"
+               :label    "Shoes"
+               :children (fn []
+                           (adult-category "Shoes" {:unisex-adult {"boots" (leaf "boots")}}))}
+   #:category {:name     "jewelry"
+               :label    "Jewelry"
+               :children (fn []
+                           (adult-category "Jewelry" {:unisex-adult (hash-map-by :category/name
+                                                                                 [(leaf "earrings")
+                                                                                  (leaf "rings")
+                                                                                  (leaf "necklaces")])}))}
+   #:category {:name  "home"
+               :label "Home"}
+   #:category {:name     "accessories"
+               :label    "Accessories"
+               :children (fn []
+                           (let [unisex-cats (hash-map-by :category/name
+                                                          [(leaf "hats")
+                                                           (leaf "keychains")
+                                                           (leaf "watches")])]
+                             (into
+                               [#:category {:name     "childrens"
+                                            :label    "Children's Accessories"
+                                            :children (-> unisex-cats
+                                                          (assoc "socks" (leaf "socks"))
+                                                          (vals))}]
+                               (adult-category "Accessories" {:unisex-adult unisex-cats
+                                                              :men-fn       #(assoc % "socks" (leaf "socks"))
+                                                              :women-fn     #(-> %
+                                                                                 (assoc "handbag" (leaf "handbag" "accessories"))
+                                                                                 (assoc "socks" (leaf "socks"))
+                                                                                 (assoc "wallets" (leaf "wallets")))}))))}])
 
 (defn category-path [& path-parts]
   (str/join products/category-path-separator path-parts))
@@ -134,138 +136,138 @@
 (defn mock-stores []
   [
    ;; ikcha
-   {:db/id          (db/tempid :db.part/user)
-    :store/profile  {:store.profile/name  "ikcha"
-                     :store.profile/photo (photo "mocked/isla_500x500.24111301_nvjpi6zo")
-                     :store.profile/cover (photo "mocked/isbl_3360x840.20468865_f7kumdbt")}
+   {:db/id            (db/tempid :db.part/user)
+    :store/profile    {:store.profile/name  "ikcha"
+                       :store.profile/photo (photo "mocked/isla_500x500.24111301_nvjpi6zo")
+                       :store.profile/cover (photo "mocked/isbl_3360x840.20468865_f7kumdbt")}
     :store/created-at 1
-    :store/stripe   (stripe-account)
-    :store/sections [{:db/id               (db/tempid :db.part/user -1000)
-                      :store.section/path  "earrings"
-                      :store.section/label "Earrings"}
-                     {:db/id               (db/tempid :db.part/user -1001)
-                      :store.section/path  "necklaces"
-                      :store.section/label "Necklaces"}
-                     {:db/id               (db/tempid :db.part/user -1002)
-                      :store.section/path  "rings"
-                      :store.section/label "Rings"}]
-    :store/items    [{:store.item/name     "Rutilated Quartz & Yellow Citrine Sterling Silver Cocktail Ring - Bohemian"
-                      :store.item/price    318.00M
-                      :store.item/photos   [(item-photo "mocked/il_570xN.883668651_pp7m")]
-                      :store.item/category [:category/path (category-path "jewelry" "women" "rings")]
-                      :store.item/section  (db/tempid :db.part/user -1002)
-                      :store.item/uuid     #uuid "58a4b30e-3c8b-49c4-ab08-796c05b4275b"
-                      :store.item/skus     [(sku "S")
-                                            (sku "M")
-                                            (sku "L")]}
-                     {:store.item/name     "Emerald silver choker"
-                      :store.item/price    219.00M
-                      :store.item/photos   [(item-photo "mocked/il_570xN.1122315115_m1kt")]
-                      :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
-                      :store.item/uuid     #uuid "58a4b2b8-4489-4661-9580-c0fe2d132966"
-                      :store.item/skus     [(sku)]
-                      :store.item/section  (db/tempid :db.part/user -1001)}
-                     {:store.item/name     "Ear Floral Cuff in Sterling Silver"
-                      :store.item/section  (db/tempid :db.part/user -1000)
-                      :store.item/price    68.00M
-                      :store.item/photos   [(item-photo "mocked/il_570xN.883522367_34xx")]
-                      :store.item/category [:category/path (category-path "jewelry" "women")]
-                      :store.item/uuid     #uuid "58a4b270-fd5d-4cd9-a5ec-ee6c683c679b"
-                      :store.item/skus     [(sku "M")]}
-                     {:store.item/name     "Sun Stone geometrical Sterling Silver Ring"
-                      :store.item/section  (db/tempid :db.part/user -1002)
-                      :store.item/price    211.00M
-                      :store.item/photos   [(item-photo "mocked/il_570xN.883902058_swjc")]
-                      :store.item/category [:category/path (category-path "jewelry" "women" "rings")]}]
-    :store/owners   {:store.owner/user {:db/id        (db/tempid :db.part/user)
-                                        :user/email   test-user-email
-                                        :user/profile {:user.profile/photo (photo "static/men")
-                                                       :user.profile/name  "Diana"}
-                                        :user/stripe  {:stripe/id "cus_A9paOisnJJQ0wS"}}
-                     :store.owner/role :store.owner.role/admin}}
+    :store/stripe     (stripe-account)
+    :store/sections   [{:db/id               (db/tempid :db.part/user -1000)
+                        :store.section/path  "earrings"
+                        :store.section/label "Earrings"}
+                       {:db/id               (db/tempid :db.part/user -1001)
+                        :store.section/path  "necklaces"
+                        :store.section/label "Necklaces"}
+                       {:db/id               (db/tempid :db.part/user -1002)
+                        :store.section/path  "rings"
+                        :store.section/label "Rings"}]
+    :store/items      [{:store.item/name     "Rutilated Quartz & Yellow Citrine Sterling Silver Cocktail Ring - Bohemian"
+                        :store.item/price    318.00M
+                        :store.item/photos   [(item-photo "mocked/il_570xN.883668651_pp7m")]
+                        :store.item/category [:category/path (category-path "jewelry" "women" "rings")]
+                        :store.item/section  (db/tempid :db.part/user -1002)
+                        :store.item/uuid     #uuid "58a4b30e-3c8b-49c4-ab08-796c05b4275b"
+                        :store.item/skus     [(sku "S")
+                                              (sku "M")
+                                              (sku "L")]}
+                       {:store.item/name     "Emerald silver choker"
+                        :store.item/price    219.00M
+                        :store.item/photos   [(item-photo "mocked/il_570xN.1122315115_m1kt")]
+                        :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
+                        :store.item/uuid     #uuid "58a4b2b8-4489-4661-9580-c0fe2d132966"
+                        :store.item/skus     [(sku)]
+                        :store.item/section  (db/tempid :db.part/user -1001)}
+                       {:store.item/name     "Ear Floral Cuff in Sterling Silver"
+                        :store.item/section  (db/tempid :db.part/user -1000)
+                        :store.item/price    68.00M
+                        :store.item/photos   [(item-photo "mocked/il_570xN.883522367_34xx")]
+                        :store.item/category [:category/path (category-path "jewelry" "women")]
+                        :store.item/uuid     #uuid "58a4b270-fd5d-4cd9-a5ec-ee6c683c679b"
+                        :store.item/skus     [(sku "M")]}
+                       {:store.item/name     "Sun Stone geometrical Sterling Silver Ring"
+                        :store.item/section  (db/tempid :db.part/user -1002)
+                        :store.item/price    211.00M
+                        :store.item/photos   [(item-photo "mocked/il_570xN.883902058_swjc")]
+                        :store.item/category [:category/path (category-path "jewelry" "women" "rings")]}]
+    :store/owners     {:store.owner/user {:db/id        (db/tempid :db.part/user)
+                                          :user/email   test-user-email
+                                          :user/profile {:user.profile/photo (photo "static/men")
+                                                         :user.profile/name  "Diana"}
+                                          :user/stripe  {:stripe/id "cus_A9paOisnJJQ0wS"}}
+                       :store.owner/role :store.owner.role/admin}}
    ;; MagicLinen
-   {:db/id         (db/tempid :db.part/user)
-    :store/profile {:store.profile/name  "MagicLinen"
-                    :store.profile/cover (photo "mocked/isbl_3360x840.22956500_1bj341c6")
-                    :store.profile/photo (photo "mocked/isla_500x500.17338368_6u0a6c4s")}
+   {:db/id            (db/tempid :db.part/user)
+    :store/profile    {:store.profile/name  "MagicLinen"
+                       :store.profile/cover (photo "mocked/isbl_3360x840.22956500_1bj341c6")
+                       :store.profile/photo (photo "mocked/isla_500x500.17338368_6u0a6c4s")}
     :store/created-at 2
 
-    :store/items   [{:store.item/name     "Linen duvet cover - Woodrose"
-                     :store.item/price    34.00M
-                     :store.item/photos   [(item-photo "mocked/il_570xN.1142044641_1j6c")]
-                     :store.item/category [:category/path "home"]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Linen pillowcases with ribbons"
-                     :store.item/price    52.00M
-                     :store.item/photos   [(item-photo "mocked/il_570xN.1003284712_ip5e")]
-                     :store.item/category [:category/path "home"]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Stone washed linen duvet cover"
-                     :store.item/price    134.00M
-                     :store.item/photos   [(item-photo "mocked/il_570xN.915745904_opjr")]
-                     :store.item/category [:category/path "home"]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Linen fitted sheet - Aquamarine"
-                     :store.item/price    34.00M
-                     :store.item/photos   [(item-photo "mocked/il_570xN.1098073811_5ca0")]
-                     :store.item/category [:category/path "home"]
-                     :store.item/skus     [(sku)]}]}
+    :store/items      [{:store.item/name     "Linen duvet cover - Woodrose"
+                        :store.item/price    34.00M
+                        :store.item/photos   [(item-photo "mocked/il_570xN.1142044641_1j6c")]
+                        :store.item/category [:category/path "home"]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Linen pillowcases with ribbons"
+                        :store.item/price    52.00M
+                        :store.item/photos   [(item-photo "mocked/il_570xN.1003284712_ip5e")]
+                        :store.item/category [:category/path "home"]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Stone washed linen duvet cover"
+                        :store.item/price    134.00M
+                        :store.item/photos   [(item-photo "mocked/il_570xN.915745904_opjr")]
+                        :store.item/category [:category/path "home"]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Linen fitted sheet - Aquamarine"
+                        :store.item/price    34.00M
+                        :store.item/photos   [(item-photo "mocked/il_570xN.1098073811_5ca0")]
+                        :store.item/category [:category/path "home"]
+                        :store.item/skus     [(sku)]}]}
 
    ;; thislovesthat
-   {:db/id         (db/tempid :db.part/user)
-    :store/profile {:store.profile/name  "thislovesthat"
-                    :store.profile/cover (photo "mocked/175704-27dcee8b2fd94212b2cc7dcbe43bb80c")
-                    :store.profile/photo (photo "mocked/175704-27dcee8b2fd94212b2cc7dcbe43bb80c")}
+   {:db/id            (db/tempid :db.part/user)
+    :store/profile    {:store.profile/name  "thislovesthat"
+                       :store.profile/cover (photo "mocked/175704-27dcee8b2fd94212b2cc7dcbe43bb80c")
+                       :store.profile/photo (photo "mocked/175704-27dcee8b2fd94212b2cc7dcbe43bb80c")}
     :store/created-at 3
 
-    :store/items   [{:store.item/name     "Glitter & Navy Blue Envelope Clutch"
-                     :store.item/photos   [(item-photo "mocked/175704-f4b3f5a3acdd4997a3a4ea18186cca19")]
-                     :store.item/price    34.00M
-                     :store.item/category [:category/path (category-path "accessories" "men")]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Mint Green & Gold Scallop Canvas Clutch"
-                     :store.item/photos   [(item-photo "mocked/175704-78f7ed01cfc44fa690640e04ee83a81e")]
-                     :store.item/price    52.00M
-                     :store.item/category [:category/path (category-path "accessories" "men")]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Modern Geometric Wood Bead Necklace"
-                     :store.item/price    134.00M
-                     :store.item/photos   [(item-photo "mocked/175704-bae48bd385d64dc0bb6ebad3190cc317")]
-                     :store.item/category [:category/path (category-path "jewelry" "men" "necklaces")]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Modern Wood Teardrop Stud Earrings"
-                     :store.item/price    34.00M
-                     :store.item/photos   [(item-photo "mocked/175704-ba70e3b49b0f4a9084ce14f569d1cf60")]
-                     :store.item/category [:category/path (category-path "jewelry" "men" "earrings")]
-                     :store.item/skus     [(sku)]}]}
+    :store/items      [{:store.item/name     "Glitter & Navy Blue Envelope Clutch"
+                        :store.item/photos   [(item-photo "mocked/175704-f4b3f5a3acdd4997a3a4ea18186cca19")]
+                        :store.item/price    34.00M
+                        :store.item/category [:category/path (category-path "accessories" "men")]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Mint Green & Gold Scallop Canvas Clutch"
+                        :store.item/photos   [(item-photo "mocked/175704-78f7ed01cfc44fa690640e04ee83a81e")]
+                        :store.item/price    52.00M
+                        :store.item/category [:category/path (category-path "accessories" "men")]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Modern Geometric Wood Bead Necklace"
+                        :store.item/price    134.00M
+                        :store.item/photos   [(item-photo "mocked/175704-bae48bd385d64dc0bb6ebad3190cc317")]
+                        :store.item/category [:category/path (category-path "jewelry" "men" "necklaces")]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Modern Wood Teardrop Stud Earrings"
+                        :store.item/price    34.00M
+                        :store.item/photos   [(item-photo "mocked/175704-ba70e3b49b0f4a9084ce14f569d1cf60")]
+                        :store.item/category [:category/path (category-path "jewelry" "men" "earrings")]
+                        :store.item/skus     [(sku)]}]}
 
    ;; Nafsika
-   {:db/id         (db/tempid :db.part/user)
+   {:db/id            (db/tempid :db.part/user)
     :store/created-at 4
-    :store/profile {:store.profile/name  "Nafsika"
+    :store/profile    {:store.profile/name  "Nafsika"
 
-                    :store.profile/photo (photo "mocked/isla_500x500.22177516_ath1ugrh")}
-    :store/items   [{:store.item/name     "Silver Twig Ring Milky"
-                     :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1094898766_ewls"
-                                                                            "mocked/il_570xN.1094898750_jnvm"])
-                     :store.item/price    34.00M
-                     :store.item/category [:category/path (category-path "jewelry" "women" "rings")]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Bunny Charm Necklace"
-                     :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1116392641_6zg2"])
-                     :store.item/price    52.00M
-                     :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Red Moss Planter Fall Cube Necklace"
-                     :store.item/photos   [(item-photo "mocked/il_570xN.988546292_nvbz")]
-                     :store.item/price    134.00M
-                     :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Elvish Twig Ring"
-                     :store.item/photos   [(item-photo "mocked/il_570xN.987968604_8ix5")]
-                     :store.item/price    34.00M
-                     :store.item/category [:category/path (category-path "jewelry" "women" "rings")]
-                     :store.item/skus     [(sku)]}]}
+                       :store.profile/photo (photo "mocked/isla_500x500.22177516_ath1ugrh")}
+    :store/items      [{:store.item/name     "Silver Twig Ring Milky"
+                        :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1094898766_ewls"
+                                                                               "mocked/il_570xN.1094898750_jnvm"])
+                        :store.item/price    34.00M
+                        :store.item/category [:category/path (category-path "jewelry" "women" "rings")]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Bunny Charm Necklace"
+                        :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1116392641_6zg2"])
+                        :store.item/price    52.00M
+                        :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Red Moss Planter Fall Cube Necklace"
+                        :store.item/photos   [(item-photo "mocked/il_570xN.988546292_nvbz")]
+                        :store.item/price    134.00M
+                        :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Elvish Twig Ring"
+                        :store.item/photos   [(item-photo "mocked/il_570xN.987968604_8ix5")]
+                        :store.item/price    34.00M
+                        :store.item/category [:category/path (category-path "jewelry" "women" "rings")]
+                        :store.item/skus     [(sku)]}]}
 
    ;; FlowerRainbowNJ
    {:db/id         (db/tempid :db.part/user)
@@ -366,6 +368,19 @@
                      :store.item/skus     [(sku)]}]}
    ])
 
+(defn countries []
+  (let [country-data (json/read-str (slurp (io/resource "private/country-data.json")) :key-fn keyword)
+        continents (:continents country-data)]
+    (debug "Countries: " (:continents country-data))
+    (map (fn [[code country]]
+           {:db/id             (db/tempid :db.part/user)
+            :country/code      (name code)
+            :country/name      (:name country)
+            :country/continent {:db/id          (db/tempid :db.part/user)
+                                :continent/code (:continent country)
+                                :continent/name (get continents (keyword (:continent country)))}})
+         (:countries country-data))))
+
 (defn mock-chats [stores]
   (vec (map (fn [s]
               {:chat/store (:db/id s)})
@@ -392,10 +407,11 @@
         chats (mock-chats stores)
         live-streams (mock-streams (take 4 stores) :stream.state/offline)
         streams (mock-streams (drop 4 stores) :stream.state/offline)
+        countries (countries)
         ;storeless-user (user-no-store)
         ]
     (db/transact conn categories)
     ;(db/transact-one conn storeless-user)
     (debug "Categories added")
-    (db/transact conn (concat stores live-streams streams chats))
+    (db/transact conn (concat stores live-streams streams chats countries))
     (debug "Stores with items, chats and streams added")))

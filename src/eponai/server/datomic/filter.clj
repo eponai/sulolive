@@ -203,10 +203,6 @@
      :shipping.rate/first            public-attr
      :shipping.rate/additional       public-attr
      :shipping.rate/free-above       public-attr
-     :country/code                   public-attr
-     :country/name                   public-attr
-     :continent/code                 public-attr
-     :continent/name                 public-attr
      :order/created-at               public-attr
      ;; TODO End of Implement real filter-fn
      :shipping/name                  shipping-owner
@@ -225,7 +221,13 @@
      :store/created-at               public-attr
      :store.item/created-at          public-attr
      :store.item/index               public-attr
-     :photo/id                       public-attr}))
+     :photo/id                       public-attr
+
+     :country/code                   public-attr
+     :country/name                   public-attr
+     :country/continent              public-attr
+     :continent/code                 public-attr
+     :continent/name                 public-attr}))
 
 (defn filter-authed [authed-user-id authed-store-ids]
   (let [authed-store-ids (set authed-store-ids)

@@ -72,12 +72,27 @@
 		padding: 0.5rem;
 		margin-top: 5%;
 		.feature-item {
+			.column {
+				padding: 0;
+				&:last-child {
+					margin-left: 1rem;
+				}
+			}
 			.icon {
 				width: auto;
 				height: auto;
+				svg {
+					width: 100%;
+				}
 			}
 			@include breakpoint(medium) {
 				text-align: center;
+				.column {
+					padding: 0 1rem;
+				}
+				.column:last-child {
+					margin: 0;
+				}
 			}
 		}
 	}
@@ -116,7 +131,7 @@
 						transition: color .25s ease-in-out, text-shadow .25s ease-in-out;
 						position: absolute;
 						vertical-align: middle;
-						margin-top: 2rem;
+						bottom: 0;
 						width: 100%;
 						font-family: $header-font-family-sans-serif;
 					}
@@ -193,6 +208,11 @@
 		}
 		img {
 			display: none;
+		}
+		.photo-container .photo {
+			@include breakpoint(small only) {
+				padding-top: 90%;
+			}	
 		}
 		.input-container {
 			width: 100%;

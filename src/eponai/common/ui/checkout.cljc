@@ -219,8 +219,9 @@
               (ship/->CheckoutShipping (om/computed {:collapse? (not= open-section :shipping)
                                                      :shipping  shipping
                                                      :countries countries}
-                                                    {:on-change #(.save-shipping this %)
-                                                     :on-open   #(om/update-state! this assoc :open-section :shipping)}))
+                                                    {:on-change         #(.save-shipping this %)
+                                                     ;:on-country-change #(.save-shipping this {:shipping/address {:shipping.address/country %}})
+                                                     :on-open           #(om/update-state! this assoc :open-section :shipping)}))
               (when (and (some? shipping) (empty? available-rates))
                 (let [store (:store/_items (:store.item/_skus (first checkout)))]
                   (callout/callout-small

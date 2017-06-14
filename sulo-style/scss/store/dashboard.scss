@@ -6,6 +6,14 @@
 	.sl-global-spinner {
 		  top: $navbar-height;
 	}
+	.action-buttons {
+		.button {
+			&:nth-child(2) {
+				margin-left: 0.5rem;
+			}
+			margin-bottom: 0;
+		}
+	}
 
 	.section-list {
 		border: none;

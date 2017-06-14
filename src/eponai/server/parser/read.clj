@@ -376,15 +376,7 @@
 (defread query/countries
   [{:keys [db db-history auth query]} _ _]
   {:auth ::auth/any-user}
-  {:value (let [country-data (json/read-str (slurp (io/resource "private/country-data.json")) :key-fn keyword)
-                continents (:continents country-data)]
-            (debug "Countries: " (:continents country-data))
-            (map (fn [[code country]]
-                   {:country/code      (name code)
-                    :country/name      (:name country)
-                    :country/continent {:continent/code (:continent country)
-                                        :continent/name (get continents (keyword (:continent country)))}})
-                 (:countries country-data)))})
+  {:value (query/all db db-history query {:where '[[?e :country/code _]]})})
 
 (defread query/product-search
   [{:keys [db-history system]} _ _]
