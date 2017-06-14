@@ -4,6 +4,7 @@
     [eponai.common.ui.help.first-stream :as first-stream]
     [eponai.common.ui.help.mobile-stream :as mobile-stream]
     [eponai.common.ui.help.quality :as stream-quality]
+    [eponai.web.ui.help.shipping-rules :as shipping-rules]
     [eponai.common.ui.help.faq :as faq]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.grid :as grid]
@@ -16,21 +17,24 @@
     [eponai.client.routes :as routes]))
 
 (def guides
-  {:help/first-stream  {:guide ::live-stream
-                        :anchor-text "Setup your first stream"
-                        :factory     first-stream/->FirstStream}
-   :help/mobile-stream {:guide ::live-stream
-                        :anchor-text "Stream via your mobile device"
-                        :factory     mobile-stream/->MobileStream}
-   :help/quality       {:guide ::live-stream
-                        :anchor-text "Stream quality recommendations"
-                        :factory     stream-quality/->StreamQuality}
-   :help/faq           {:guide ::general
-                        :anchor-text "Frequently Asked Questions"
-                        :factory     faq/->FAQ}
-   :help/fees          {:guide ::general
-                        :anchor-text "SULO Live service fee"
-                        :factory     nil}})
+  {:help/first-stream   {:guide       ::live-stream
+                         :anchor-text "Setup your first stream"
+                         :factory     first-stream/->FirstStream}
+   :help/mobile-stream  {:guide       ::live-stream
+                         :anchor-text "Stream via your mobile device"
+                         :factory     mobile-stream/->MobileStream}
+   :help/quality        {:guide       ::live-stream
+                         :anchor-text "Stream quality recommendations"
+                         :factory     stream-quality/->StreamQuality}
+   :help/faq            {:guide       ::general
+                         :anchor-text "Frequently Asked Questions"
+                         :factory     faq/->FAQ}
+   :help/fees           {:guide       ::general
+                         :anchor-text "SULO Live service fee"
+                         :factory     nil}
+   :help/shipping-rules {:guide       ::general
+                         :anchor-text "Shipping rules"
+                         :factory     shipping-rules/->ShippingRules}})
 
 (defn render-guide [route]
   (let [{:keys [guide anchor-text factory]} (get guides route)]
@@ -66,7 +70,7 @@
             (dom/a
               {:href (routes/url :help)}
               (dom/span nil "SULO Live help")))
-          (if (contains? #{:help/first-stream :help/mobile-stream :help/faq :help/quality} route)
+          (if (contains? #{:help/first-stream :help/mobile-stream :help/faq :help/quality :help/shipping-rules} route)
             (render-guide route)
             (callout/callout
               nil
@@ -101,7 +105,8 @@
                                         (dom/p nil
                                                (dom/a {:href (when factory (routes/url route))}
                                                       ((if factory dom/span dom/s) nil anchor-text))))))
-                                  [:help/fees
+                                  [:help/shipping-rules
+                                   :help/fees
                                    :help/faq]))))
 
               (dom/h2 nil "Contact us")

@@ -19,7 +19,8 @@
     [eponai.common.ui.elements.input-validate :as v]
     [eponai.common :as c]
     [eponai.common.mixpanel :as mixpanel]
-    [eponai.common.format :as f]))
+    [eponai.common.format :as f]
+    [eponai.client.routes :as routes]))
 
 (def form-inputs
   {:shipping.rate/title       "shipping.rate.title"
@@ -538,7 +539,9 @@
               (css/add-class :subtitle)
               (dom/p nil
                      (dom/small nil "Create shipping rules to define where you will ship your products and shipping rates for these orders. ")
-                     ;(dom/a nil (dom/small nil "Learn more"))
+                     (dom/a {:href    (routes/url :help/shipping-rules)
+                             :target  "_blank"
+                             :onClick #(mixpanel/track "Store: See help for shipping rules")} (dom/small nil "Learn more"))
                      )
               (button/button
                 (button/small {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-rule)})

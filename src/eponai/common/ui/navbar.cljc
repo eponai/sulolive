@@ -490,7 +490,7 @@
                 ;(or (= route :coming-soon) (= route :coming-soon/sell))
                 ;(landing-page-navbar this)
 
-                (and (some? route) (= (namespace route) "help"))
+                (and (some? route) (or (= route :help) (= (namespace route) "help")))
                 (help-navbar this)
 
                 :else
