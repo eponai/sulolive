@@ -115,15 +115,18 @@
                   shipping-price 0]
               (grid/column
                 nil
-                (dom/p nil
+                (dom/p (css/add-class :total-price)
                        (dom/span nil "Total: ")
                        (dom/strong nil (utils/two-decimal-price (+ item-price shipping-price))))
-                (dom/a
-                  (->> {:href    (routes/url :checkout {:store-id (:db/id s)})
-                        :onClick #(mixpanel/track "Checkout shopping bag" {:store-id   (:db/id s)
-                                                                           :store-name (get-in s [:store/profile :store.profile/name])
-                                                                           :item-count (count skus)})}
-                       (css/button)) "Checkout"))))))
+                (button/button
+                  {:href    nil                        ;(routes/url :checkout {:store-id (:db/id s)})
+                   :onClick #(mixpanel/track "Checkout shopping bag" {:store-id   (:db/id s)
+                                                                      :store-name (get-in s [:store/profile :store.profile/name])
+                                                                      :item-count (count skus)})}
+                  (dom/span nil "Checkout")))))
+          (callout/callout-small
+            (css/add-class :warning)
+            (dom/p nil (dom/strong nil (dom/small nil "Note: ")) (dom/small nil "Checkout is disabled until work on payments is finished. We're pretty close!")))))
       skus-by-store)))
 
 (defui ShoppingBag

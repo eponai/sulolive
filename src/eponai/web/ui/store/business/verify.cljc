@@ -542,7 +542,7 @@
 
         (callout/callout-small
           (css/add-class :warning)
-          (dom/p nil (dom/small nil "We still have work to do on the integration with Stripe, and have disabled the functionality to verity the account. Don't worry, we're getting there!")))
+          (dom/p nil (dom/small nil (dom/strong nil "Note: ")) (dom/small nil "This information cannot be saved while we work on the Stripe integration.")))
         (dom/div
           nil
           (account-details this)

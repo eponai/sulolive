@@ -1,5 +1,9 @@
 
-
+.callout.warning {
+	p {
+		margin-bottom:  0 !important;
+	}
+}
 #sulo-account-settings {
 	max-width: $dashboard-content-width;
 	margin: 0 auto;
@@ -7,9 +11,10 @@
 	p {
 		margin-bottom: 0.5rem;
 	}
-	label[for] {
-		// color: $body-font-color;
+	[type="radio"]+label[for] {
+		color: $body-font-color;
 	}
+
 	.reveal {
 		.column {
 			padding-right: 1rem;
