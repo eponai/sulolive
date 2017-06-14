@@ -5,7 +5,7 @@
     [eponai.common]
     [eponai.common.database :as db]
     [eponai.common.parser :as parser]
-    [eponai.common.parser.util :as p.util]
+    [eponai.common.parser.util :as parser.util]
     [taoensso.timbre :refer [warn debug error]]))
 
 (defprotocol IStoreChatListener
@@ -22,7 +22,7 @@
 (defn chat-basis-t [db store-id]
   (try
     (some-> (read-basis-t-graph db)
-            (p.util/get-basis-t :query/chat {:store-id store-id})
+            (parser.util/get-basis-t :query/chat {:store-id store-id})
             ;; Basis-t for query/chat consists of two basis-t. Once
             ;; for each db (:chat-db and :sulo-db).
             (:chat-db))
@@ -60,11 +60,11 @@
 
 (def focus-chat-message-user-query
   (memoize (fn [query]
-             (p.util/focus-subquery query [:chat/messages :chat.message/user]))))
+             (parser.util/focus-subquery query [:chat/messages :chat.message/user]))))
 
 (def focus-chat-message-query
   (memoize (fn [query]
-             (p.util/focus-subquery query [:chat/messages]))))
+             (parser.util/focus-subquery query [:chat/messages]))))
 
 (defn datomic-chat-entity-query [store]
   {:where   '[[?e :chat/store ?store-id]]
@@ -88,7 +88,7 @@
                     {}
                     chat-messages)
         pulled-messages (db/pull-many chat-db (focus-chat-message-query query) chat-messages)
-        pulled-chat (db/pull chat-db (p.util/remove-query-key :chat/messages query) chat-id)
+        pulled-chat (db/pull chat-db (parser.util/remove-query-key :chat/messages query) chat-id)
         ;; TODO: Get :chat/modes from chat-db or sulo-db.
         user-pattern (focus-chat-message-user-query query)
         user-data (db/pull-many sulo-db user-pattern (seq (keys users)))]

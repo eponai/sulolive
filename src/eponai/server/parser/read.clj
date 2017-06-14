@@ -324,14 +324,13 @@
         {:value (parser/value-with-basis-t {} {:chat-db (:chat-db read-basis-t-for-this-key)
                                                :sulo-db (datomic/basis-t db)})})
     (let [chat (:system/chat system)
-          {:keys [chat-db sulo-db]} read-basis-t-for-this-key]
-      (when chat-update-basis-t
-        (chat/sync-up-to! chat chat-update-basis-t))
+          _ (when chat-update-basis-t
+              (chat/sync-up-to! chat chat-update-basis-t))
+          chat-reader (chat/store-chat-reader chat)]
       {:value (-> (if (nil? read-basis-t-for-this-key)
-                    (chat/initial-read chat store query)
-                    (chat/read-messages chat store query chat-db sulo-db))
-                  (parser/value-with-basis-t {:chat-db (chat/last-read chat)
-                                              :sulo-db (datomic/basis-t db)}))})))
+                    (chat/initial-read chat-reader store query)
+                    (chat/read-messages chat-reader store query read-basis-t-for-this-key))
+                  (parser/value-with-basis-t (chat/last-read chat-reader)))})))
 
 (defread query/browse-items
   [{:keys [db db-history query]} _ {{:keys [top-category sub-category] :as categories} :route-params

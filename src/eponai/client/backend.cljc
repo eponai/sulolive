@@ -1,7 +1,7 @@
 (ns eponai.client.backend
   (:require [eponai.common.database :as db]
             [eponai.client.utils :as client.utils]
-            [eponai.common.parser.util :as p.util]
+            [eponai.common.parser.util :as parser.util]
             [eponai.common.ui.loading-bar :as loading-bar]
             [datascript.impl.entity :as e]
             [om.next :as om]
@@ -70,8 +70,8 @@
 (defn send [send-fn url opts]
   (let [transit-opts {:transit-opts
                       {:encoding-opts
-                       {:handlers {#?(:clj Entity :cljs e/Entity)                            DatascriptEntityAsMap
-                                   #?(:clj GraphReadAtBasisT :cljs p.util/GraphReadAtBasisT) GraphReadAtBasisTAsMap}}
+                       {:handlers {#?(:clj Entity :cljs e/Entity)                                 DatascriptEntityAsMap
+                                   #?(:clj GraphReadAtBasisT :cljs parser.util/GraphReadAtBasisT) GraphReadAtBasisTAsMap}}
                        :decoding-opts
                        ;; favor ClojureScript UUIDs instead of Transit UUIDs
                        ;; https://github.com/cognitect/transit-cljs/pull/10

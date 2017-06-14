@@ -4,7 +4,7 @@
             [eponai.common.search :as common.search]
             [eponai.common.database :as db]
             [eponai.common.parser :as parser]
-            [eponai.common.parser.util :as p.util]
+            [eponai.common.parser.util :as parser.util]
             [eponai.client.chat :as client.chat]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug error trace warn]]
             [eponai.client.auth :as auth]
@@ -192,10 +192,10 @@
 (defn merge-meta [db novelty-meta]
   {:post [(datascript.db/db? %)]}
   (let [new-graph (some-> (::parser/read-basis-t novelty-meta)
-                          (p.util/graph-read-at-basis-t true))
+                          (parser.util/graph-read-at-basis-t true))
         old-graph (::parser/read-basis-t-graph
                     (d/entity db [:ui/singleton ::parser/read-basis-t]))
-        merged-graph (p.util/merge-graphs old-graph new-graph)]
+        merged-graph (parser.util/merge-graphs old-graph new-graph)]
     (cond-> db
             (not= old-graph merged-graph)
             (db-with {:ui/singleton                ::parser/read-basis-t

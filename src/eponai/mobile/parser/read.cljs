@@ -2,7 +2,6 @@
   (:require [datascript.core :as d]
             [eponai.common.database :as db]
             [eponai.common.parser :refer [client-read]]
-            [eponai.common.parser.util :as p.util]
             [eponai.client.parser.read]
             [eponai.client.auth :as auth]
             [taoensso.timbre :as timbre :refer-macros [debug]]))
