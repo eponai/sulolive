@@ -1,5 +1,6 @@
 (ns eponai.client.chat
   (:require
+    [datascript.core :as datascript]
     [eponai.client.routes :as routes]
     [eponai.common]
     [eponai.common.database :as db]
@@ -71,9 +72,31 @@
                     (:chat/messages chat-messages))
         ;; TODO: Get :chat/modes from chat-db or sulo-db.
         user-pattern (parse-chat-message-user-query query)
-        user-data (db/pull-many sulo-db user-pattern (seq users))
-        ret {:sulo-db-tx user-data
-         :chat-db-tx chat-messages}]
-    (debug "read-chat chat-db: " chat-db)
-    (debug "read-chat ret: " ret)
-    ret))
+        user-data (db/pull-many sulo-db user-pattern (seq users))]
+    {:sulo-db-tx user-data
+     :chat-db-tx chat-messages}))
+
+;; #######################
+;; ## Message management
+
+;; Messages stored on the client
+(def message-limit 50)
+
+(defn trim-chat-messages [db chat-limit]
+  (let [chat-datoms (into []
+                          (remove (fn [[e]]
+                                    (contains? (db/entity db e) :chat.message/client-side-message?)))
+                          (db/datoms db :aevt :chat.message/text))
+        trim-messages (fn [db limit]
+                        (datascript/db-with
+                          db
+                          (sequence
+                            (comp
+                              (take limit)
+                              (mapcat (fn [[e]]
+                                        (db/checked-retract-entity db e :chat/messages))))
+                            (sort-by :tx chat-datoms))))
+        messages (count chat-datoms)]
+    (cond-> db
+            (> messages chat-limit)
+            (trim-messages (- messages chat-limit)))))

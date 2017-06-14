@@ -327,7 +327,6 @@
           {:keys [chat-db sulo-db]} read-basis-t-for-this-key]
       (when chat-update-basis-t
         (chat/sync-up-to! chat chat-update-basis-t))
-      (debug "QUERY_CHAT: read-basis-t-for-this-key: " read-basis-t-for-this-key)
       {:value (-> (if (nil? read-basis-t-for-this-key)
                     (chat/initial-read chat store query)
                     (chat/read-messages chat store query chat-db sulo-db))

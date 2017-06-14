@@ -16,7 +16,7 @@
     'login/verify (let [login-verified? (<= 200 (:status params) 299)
                         _ (when-not login-verified?
                             (error "User not logged in. Mutation:" k " params: " params))]
-                    (m/transact db [(mutate/set-route-tx (if login-verified? :route/transactions :route/login))
+                    (m/db-with db [(mutate/set-route-tx (if login-verified? :route/transactions :route/login))
                                     {:ui/singleton                         :ui.singleton/configuration
                                      :ui.singleton.configuration/logged-in login-verified?}]))))
 
@@ -25,5 +25,5 @@
   (debug "Merging " k " with params: " params)
   db
   (let [login-verified? (get-in params [:result :auth])]
-    (m/transact db {:ui/singleton :ui.singleton/configuration
+    (m/db-with db {:ui/singleton                          :ui.singleton/configuration
                     :ui.singleton.configuration/logged-in login-verified?})))

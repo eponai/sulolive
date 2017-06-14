@@ -494,3 +494,22 @@
           [[om/component? om/get-reconciler]
            [om/reconciler? om/app-state]
            [connection? db]]))
+
+(defn checked-retract-entity
+  "Like [:db.fn/retractEntity <e>] but it only retracts parent datoms
+  that matches parent-attr."
+  [db e parent-attr]
+  (let [is-ref? (memoize (fn [attr] (datascript.db/ref? db attr)))
+        e-datoms (datoms db :eavt e)
+        v-datoms (mapcat (fn [{:keys [a]}]
+                           (when (is-ref? a)
+                             (sequence (filter (fn [datom]
+                                                 (contains? (entity db (:e datom))
+                                                            parent-attr)))
+                                       (datoms db :avet a e))))
+                         e-datoms)
+        retract-xf (map (fn [[e a v]]
+                          [:db/retract e a v]))]
+    (-> []
+        (into retract-xf e-datoms)
+        (into retract-xf v-datoms))))
