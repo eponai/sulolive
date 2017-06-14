@@ -3,7 +3,7 @@
     [eponai.common.parser :as parser :refer [client-mutate client-auth-role]]
     [eponai.common.format :as format]
     [eponai.common.auth :as auth]
-    [eponai.client.chat :as chat]
+    [eponai.client.chat :as client.chat]
     [eponai.client.auth :as client.auth]
     [eponai.client.cart :as client.cart]
     [eponai.common.shared :as shared]
@@ -232,21 +232,20 @@
     (if target
       {:remote/chat (assoc-in ast [:params :user :db/id] user-id)}
       {:action (fn []
-                 (when-let [chat-db (db/singleton-value db :ui.singleton.chat-config/chat-db)]
+                 (when-let [chat-db (client.chat/get-chat-db db)]
                    (let [tx (format/chat-message chat-db store {:db/id user-id} text)
                          message-id (::format/message-id (meta tx))
                          chat-db (datascript/db-with chat-db (conj tx {:db/id                             message-id
                                                                        :chat.message/client-side-message? true}))]
-                     (db/transact state [{:ui/singleton                     :ui.singleton/chat-config
-                                          :ui.singleton.chat-config/chat-db chat-db}]))))})))
+                     (db/transact state (client.chat/set-chat-db-tx chat-db)))))})))
 
 (defmethod client-mutate 'chat/queue-update
   [{:keys [state target]} k {:keys [store-id basis-t]}]
   (when-not target
     {:action (fn []
-               (let [last-basis-t (chat/queued-basis-t (db/db state) store-id)]
+               (let [last-basis-t (client.chat/queued-basis-t (db/db state) store-id)]
                  (when (or (nil? last-basis-t) (< last-basis-t basis-t))
-                   (db/transact state (chat/queue-basis-t-tx store-id basis-t)))))}))
+                   (db/transact state (client.chat/queue-basis-t-tx store-id basis-t)))))}))
 
 (defmethod client-mutate 'stream/go-live
   [{:keys [state target]} _ {:keys [store-id]}]

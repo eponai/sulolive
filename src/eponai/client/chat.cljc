@@ -70,9 +70,8 @@
   {:where   '[[?e :chat/store ?store-id]]
    :symbols {'?store-id (:db/id store)}})
 
-(defn read-chat [chat-db sulo-db query store limit]
-  (let [chat-id (db/one-with chat-db (datomic-chat-entity-query store))
-        chat-messages (if (nil? limit)
+(defn- read-chat-messages [chat-db sulo-db query chat-id limit]
+  (let [chat-messages (if (nil? limit)
                         (mapv :v (db/datoms chat-db :eavt chat-id :chat/messages))
                         (into []
                               (comp (map :v) (take limit))
@@ -80,13 +79,13 @@
                                        #(compare %2 %1)
                                        (db/datoms chat-db :eavt chat-id :chat/messages))))
         users (transduce
-                    (comp (map #(db/entity chat-db %))
-                          (map :chat.message/user)
-                          (map (juxt :db/id identity)))
-                    (completing (fn [m [id e]]
-                                  (update m id (fnil conj []) (into {:db/id id} e))))
-                    {}
-                    chat-messages)
+                (comp (map #(db/entity chat-db %))
+                      (map :chat.message/user)
+                      (map (juxt :db/id identity)))
+                (completing (fn [m [id e]]
+                              (update m id (fnil conj []) (into {:db/id id} e))))
+                {}
+                chat-messages)
         pulled-messages (db/pull-many chat-db (focus-chat-message-query query) chat-messages)
         pulled-chat (db/pull chat-db (parser.util/remove-query-key :chat/messages query) chat-id)
         ;; TODO: Get :chat/modes from chat-db or sulo-db.
@@ -95,14 +94,20 @@
     {:sulo-db-tx user-data
      :chat-db-tx (assoc pulled-chat :chat/messages pulled-messages)}))
 
-;; #######################
-;; ## Message management
+(defn read-chat [chat-db sulo-db query store limit]
+  (if-let [chat-id (db/one-with chat-db (datomic-chat-entity-query store))]
+    (read-chat-messages chat-db sulo-db query chat-id limit)
+    {:sulo-db-tx []
+     :chat-db-tx {}}))
 
-(defn trim-chat-messages [db chat-limit]
+;; #######################
+;; ## DB management
+
+(defn trim-chat-messages [chat-db chat-limit]
   (let [chat-datoms (into []
                           (remove (fn [[e]]
-                                    (contains? (db/entity db e) :chat.message/client-side-message?)))
-                          (db/datoms db :aevt :chat.message/text))
+                                    (contains? (db/entity chat-db e) :chat.message/client-side-message?)))
+                          (db/datoms chat-db :aevt :chat.message/text))
         trim-messages (fn [db limit]
                         (datascript/db-with
                           db
@@ -113,6 +118,19 @@
                                         (db/checked-retract-entity db e :chat/messages))))
                             (sort-by :tx chat-datoms))))
         messages (count chat-datoms)]
-    (cond-> db
+    (cond-> chat-db
             (> messages chat-limit)
             (trim-messages (- messages chat-limit)))))
+
+(defn get-chat-db [db]
+  (db/singleton-value db :ui.singleton.chat-config/chat-db))
+
+(defn get-or-create-chat-db [db]
+  {:pre [(:schema db)]}
+  (if-some [chat-db (get-chat-db db)]
+    chat-db
+    (db/db (datascript/create-conn (:schema db)))))
+
+(defn set-chat-db-tx [chat-db]
+  [{:ui/singleton                     :ui.singleton/chat-config
+    :ui.singleton.chat-config/chat-db chat-db}])

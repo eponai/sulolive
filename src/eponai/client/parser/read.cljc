@@ -452,7 +452,7 @@
   (when-let [store-id (c/parse-long-safe (:store-id route-params))]
     (if (some? target)
       {:remote/chat (assoc-in ast [:params :store :db/id] store-id)}
-      {:value (when-let [chat-db (db/singleton-value db :ui.singleton.chat-config/chat-db)]
+      {:value (when-let [chat-db (client.chat/get-chat-db db)]
                 (let [{:keys [sulo-db-tx chat-db-tx]}
                       (client.chat/read-chat chat-db
                                              db
@@ -467,14 +467,16 @@
                   ;;  (comp (mapcat :chat/messages)
                   ;; (map :chat.message/user)
                   ;; (map :db/id))
-                  (update chat-db-tx :chat/messages
-                          (fn [messages]
-                            (into []
-                                  (map (fn [message]
-                                         (update message :chat.message/user
-                                                 (fn [{:keys [db/id]}]
-                                                   (assoc (get users-by-id id) :db/id id)))))
-                                  messages)))))})))
+                  (cond-> chat-db-tx
+                          (contains? chat-db-tx :chat/messages)
+                          (update :chat/messages
+                                  (fn [messages]
+                                    (into []
+                                          (map (fn [message]
+                                                 (update message :chat.message/user
+                                                         (fn [{:keys [db/id]}]
+                                                           (assoc (get users-by-id id) :db/id id)))))
+                                          messages))))))})))
 
 (defmethod client-read :query/loading-bar
   [{:keys [db query target]} _ _]

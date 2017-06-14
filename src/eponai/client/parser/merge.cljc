@@ -42,14 +42,20 @@
   [db k val]
   (db-with db val))
 
-(defmethod client-merge :datascript/schema
-  [db _ datascript-schema]
+(defn- merge-schema [db schema]
   (let [current-schema (:schema db)
         current-entities (d/q '[:find [(pull ?e [*]) ...] :where [?e]] db)
-        new-schema (merge-with merge current-schema datascript-schema)
+        new-schema (merge-with merge current-schema schema)
         new-conn (d/create-conn new-schema)]
     (d/transact new-conn current-entities)
     (d/db new-conn)))
+
+(defmethod client-merge :datascript/schema
+  [db _ datascript-schema]
+  (let [new-db (merge-schema db datascript-schema)
+        chat-db (-> (client.chat/get-or-create-chat-db new-db)
+                    (merge-schema (:schema new-db)))]
+    (db-with new-db (client.chat/set-chat-db-tx chat-db))))
 
 (defmethod client-merge :query/auth
   [db _ val]
@@ -78,12 +84,6 @@
           (debug "No new search db with merge value: " val)
           db)))))
 
-(defn- get-chat-db [db]
-  {:pre [(:schema db)]}
-  (if-some [chat-db (db/singleton-value db :ui.singleton.chat-config/chat-db)]
-    chat-db
-    (db/db (datascript/create-conn (:schema db)))))
-
 (defn- placeholder-refs
   "Returns transactions that adds {:placeholder :workaround} for every entity that has attr."
   [db attr]
@@ -98,7 +98,7 @@
 
 (defmethod client-merge :query/chat
   [db k {:keys [sulo-db-tx chat-db-tx]}]
-  (let [chat-db (-> (get-chat-db db)
+  (let [chat-db (-> (client.chat/get-or-create-chat-db db)
                     (db-with chat-db-tx)
                     (client.chat/trim-chat-messages client.chat/message-limit))
         ;; datascript can't have refs without having the ref in the same database. Lame.
@@ -107,8 +107,7 @@
         ;; https://github.com/tonsky/datascript/blob/master/src/datascript/pull_api.cljc#L155
         chat-db (db-with chat-db (placeholder-refs chat-db :chat.message/user))
         db (db-with db sulo-db-tx)]
-    (db-with db [{:ui/singleton                      :ui.singleton/chat-config
-                   :ui.singleton.chat-config/chat-db chat-db}])))
+    (db-with db (client.chat/set-chat-db-tx chat-db))))
 
 ;;;;;;; API
 
