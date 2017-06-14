@@ -84,15 +84,15 @@
           messages (query/all db db-history query (client.chat/datomic-chat-entity-query store))
 
           sulo-db (db/db (:conn sulo-datomic))
-          sulo-db-history (d/since (d/history (db/db (:conn sulo-datomic))) last-read-sulo-db)
-          user-data (query/all sulo-db sulo-db-history
-                               (client.chat/parse-chat-message-user-query query)
-                               {:where   '[[$ ?chat :chat/store ?store-id]
-                                           [$db-hist ?chat :chat/messages ?msgs]
-                                           [$ ?msgs :chat.message/user ?e]]
-                                :symbols {'?store-id (:db/id store)
-                                          '$chat     db
-                                          '$db-hist  db-history}})]
+          user-data (db/pull-all-with sulo-db
+                                      (client.chat/parse-chat-message-user-query query)
+                                      {:where   '[[$chat ?chat :chat/store ?store-id]
+                                                  [$db-hist ?chat :chat/messages ?msgs]
+                                                  [$chat ?msgs :chat.message/user ?e]
+                                                  [$ ?e :user/profile]]
+                                       :symbols {'?store-id (:db/id store)
+                                                 '$chat     db
+                                                 '$db-hist  db-history}})]
       {:sulo-db-tx user-data
        :chat-db-tx messages}))
   (last-read [this]
