@@ -166,9 +166,10 @@
        :weekly_anchor  week-anchor})))
 
 (defn input->account-params [account-params]
-  (let [{:field/keys [legal-entity external-account tos-acceptance default-currency payout-schedule]} account-params]
+  (let [{:field/keys [legal-entity external-account tos-acceptance default-currency payout-schedule support-email]} account-params]
     (f/remove-nil-keys
-      {:legal_entity     (input->legal-entity legal-entity)
+      {:support_email    support-email
+       :legal_entity     (input->legal-entity legal-entity)
        :external_account external-account
        :tos_acceptance   (f/remove-nil-keys
                            {:date (:field.tos-acceptance/date tos-acceptance)

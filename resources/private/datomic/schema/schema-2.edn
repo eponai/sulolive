@@ -136,4 +136,12 @@
   :db/cardinality        :db.cardinality/one
   :db/doc                "Time chat message was created."
   :db.install/_attribute :db.part/db}
+
+ ;; Store
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store.profile/email
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Store contact email"
+  :db.install/_attribute :db.part/db}
  ]

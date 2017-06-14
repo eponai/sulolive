@@ -53,6 +53,7 @@
           :field.external-account/institution-number "external_account.institution_number"
           :field.external-account/account-number     "external_account.account_number"
 
+          :field.general/email                       "general.email"
           :field.general/store-name                  "general.store-name"
           :field.general/store-tagline               "general.store-tagline"}))
 
@@ -312,7 +313,7 @@
                  (dom/small nil "Stripe require identification to confirm you are a representative of this business, and don't use this for any other purpose.")))))
          (when (get personal-fields :field.legal-entity/document)
            (menu/item
-             (css/add-class :document-upload-container )
+             (css/add-class :document-upload-container)
              (grid/row
                nil
                (grid/column

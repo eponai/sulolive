@@ -263,7 +263,11 @@
           :error   "Sorry, your info could not be updated. Try again later."}}
   {:action (fn []
              (let [db-store (db/pull (db/db state) [:store/profile] (:db/id store))
-                   s (-> (select-keys profile [:store.profile/name :store.profile/description :store.profile/tagline :store.profile/return-policy])
+                   s (-> (select-keys profile [:store.profile/name
+                                               :store.profile/description
+                                               :store.profile/tagline
+                                               :store.profile/return-policy
+                                               :store.profile/email])
                          (update :store.profile/description #(f/str->bytes (quill/sanitize-html %)))
                          (update :store.profile/return-policy #(f/str->bytes (quill/sanitize-html %)))
                          ;(update :store.profile/shipping-fee #(if (not-empty %)

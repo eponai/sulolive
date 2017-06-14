@@ -109,6 +109,7 @@
                     {:order/charge [:db/id :charge/id]}
                     {:order/store [{:store/profile [{:store.profile/photo [:photo/id]}
                                                     {:store.profile/cover [:photo/id]}
+                                                    :store.profile/email
                                                     :store.profile/tagline
                                                     :store.profile/name]}]}]}
      {:query/order-payment [:charge/id
@@ -275,7 +276,7 @@
               (css/add-class :contact)
               (dom/p nil
                      (dom/span nil "Still have questions? Contact the shop at ")
-                     (dom/a nil (dom/span nil "milena@aakasha.com"))
+                     (dom/a nil (dom/span nil (get-in store [:store/profile :store.profile/email])))
                      (dom/span nil ".")))))
         (grid/row-column
           (css/add-class :go-back)

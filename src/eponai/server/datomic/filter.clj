@@ -150,6 +150,7 @@
      :store.profile/tagline          public-attr
      :store.profile/photo            public-attr
      :store.profile/cover            public-attr
+     :store.profile/email            public-attr
      :store.section/label            public-attr
      :store.section/path             public-attr
      :store.owner/user               public-attr

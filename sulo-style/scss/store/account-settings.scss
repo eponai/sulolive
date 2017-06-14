@@ -4,16 +4,6 @@
 	max-width: $dashboard-content-width;
 	margin: 0 auto;
 	padding-top: $navbar-height;
-	// .section-title {
-	// 	display: flex;
-	// 	// text-align: left;
-	// 	// justify-content: space-between;
-	// 	align-items: flex-start !important;
-	// 	flex-direction: column;
-	// 	@include breakpoint(medium) {
-	// 		flex-direction: row;
-	// 	}
-	// }
 	p {
 		margin-bottom: 0.5rem;
 	}
@@ -48,13 +38,9 @@
 	}
 
 	.menu.submenu {
-
 		li {
-			// margin: 0 0.5rem;
-			// border-bottom: 2px solid transparent;
 			transition: background .25s ease-in-out;
 			a {
-				// padding: 0.5rem;
 				color: $dark-gray;
 				transition: color .25s ease-in-out;
 			}
@@ -69,12 +55,6 @@
 					font-weight: $global-weight-bold;
 				}
 			}
-			// &.is-active {
-			// 	a {
-
-			// 	}
-			// 	border-bottom: 2px solid $primary-color;
-			// }
 		}
 	}
 	label.text-left {
@@ -85,6 +65,23 @@
 			background-color: darken($white, 5%);
 		}	
 
+	}
+	.email-editor {
+		display: flex;
+		align-items: flex-end;
+		flex-direction: column;
+		input {
+			text-align: right;
+			margin-bottom: 0.5rem;
+			max-width: 20rem;
+		}
+		.action-buttons {
+			margin-top: 0;
+		}
+	}
+	input.uneditable {
+		border: none;
+		pointer-events: none;
 	}
 	.currency {
 		text-transform: uppercase;
@@ -98,15 +95,6 @@
 		display: flex;
 		flex-direction: row;
 	}
-
-	// .callout {
-		// .header {
-		// 	font-weight: $global-weight-bold;
-		// 	border-bottom: $global-border;
-		// 	padding-bottom: 0.1rem;
-		// 	margin-bottom: 1.5rem;
-		// }
-	// }
 	.icon {
 		$size: 32px;
 		margin-right: 0.5rem;
@@ -117,34 +105,6 @@
 			height: $size;
 		}
 	}
-
-	
-	
-	// .payout-schedule-container {
-		// margin: 1rem 0;
-		// font-size: 95%;
-		// font-weight: $global-weight-bold;
-	// 	.button {
-	// 		margin: 0;
-	// 	}
-
-	// }
-	.payout-schedule, .bank-account, .default-currency {
-		// padding: 0.5rem;
-		@include breakpoint(medium) {
-			// padding: 0.5rem 1rem;
-		}
-		// border: $global-border;
-	}
-	// .payout-schedule {
-	// 	@include wrap-text;
-	// 	border-radius: $global-radius;
-	// 	select {
-	// 		max-width: 100%;
-	// 		margin-bottom: 0;
-	// 	}
-	// 	// margin-bottom: 1rem;
-	// }
 }
 
 #sulo-activate-account-form {
