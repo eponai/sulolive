@@ -17,8 +17,6 @@
       (map module)
       `{
         ;; Extra groupings
-        :react-select    {:entries [eponai.common.ui.components.select
-                                    cljsjs.react-select]}
         :stream+chat     {:entries [eponai.common.ui.stream
                                     eponai.common.stream
                                     eponai.common.ui.chat
@@ -63,8 +61,7 @@
                           :depends-on [:photo-uploader]}
         :user-settings   {:entries    [eponai.web.ui.user.settings]
                           :depends-on [:photo-uploader]}
-        :store-dashboard {:depends-on [:react-select
-                                       :stream+chat
+        :store-dashboard {:depends-on [:stream+chat
                                        :photo-uploader]
                           :entries    [eponai.common.ui.store.dashboard
                                        eponai.common.ui.store.account

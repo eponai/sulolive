@@ -42,6 +42,3 @@
                (assoc :id id))))))))
 
 (def ->SelectOne (om/factory SelectOne))
-
-#?(:cljs
-   (modules/set-loaded! :react-select))
