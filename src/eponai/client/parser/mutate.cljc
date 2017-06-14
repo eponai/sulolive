@@ -8,6 +8,7 @@
     [eponai.client.cart :as client.cart]
     [eponai.common.shared :as shared]
     [eponai.common.database :as db]
+    [datascript.core :as datascript]
     [eponai.common :as c]
     [taoensso.timbre :refer [debug warn]]))
 
@@ -223,10 +224,13 @@
     (if target
       {:remote/chat (assoc-in ast [:params :user :db/id] user-id)}
       {:action (fn []
-                 (let [tx (format/chat-message db store {:db/id user-id} text)
-                       message-id (::format/message-id (meta tx))]
-                   (db/transact state (conj tx {:db/id                             message-id
-                                                :chat.message/client-side-message? true}))))})))
+                 (let [chat-db (db/singleton-value db :ui.singleton.chat-config/chat-db)
+                       tx (format/chat-message chat-db store {:db/id user-id} text)
+                       message-id (::format/message-id (meta tx))
+                       chat-db (datascript/db-with chat-db (conj tx {:db/id                             message-id
+                                                                     :chat.message/client-side-message? true}))]
+                   (db/transact state [{:ui/singleton                     :ui.singleton/chat-config
+                                        :ui.singleton.chat-config/chat-db chat-db}])))})))
 
 (defmethod client-mutate 'chat/queue-update
   [{:keys [state target]} k {:keys [store-id basis-t]}]
