@@ -114,10 +114,12 @@
             (filter-or (user-path user-id [:order/_items :order/user])
                        (store-path store-ids [:order/_items :order/store])))
           (shipping-owner [user-id store-ids]
-            (filter-or (user-path user-id [:order/_shipping :order/user])
+            (filter-or (store-path store-ids [:store/_shipping])
+                       (user-path user-id [:order/_shipping :order/user])
                        (store-path store-ids [:order/_shipping :order/store])))
           (shipping-address-owner [user-id store-ids]
-            (filter-or (user-path user-id [:shipping/_address :order/_shipping :order/user])
+            (filter-or (store-path store-ids [:shipping/_address :store/_shipping])
+                       (user-path user-id [:shipping/_address :order/_shipping :order/user])
                        (store-path store-ids [:shipping/_address :order/_shipping :order/store])))
           (order-charge-owner [user-id store-ids]
             (filter-or (user-path user-id [:order/_charge :order/user])
@@ -245,6 +247,7 @@
           (if-let [filter (get-filter db (:a datom))]
             (filter db datom)
             (let [attr (datomic/attribute db (:a datom))]
+              (debug (str "Database filter not implemented for attribute: " (:ident attr)))
               (throw (ex-info (str "Database filter not implemented for attribute: " (:ident attr))
                               {:datom     datom
                                :attribute attr}))))))))
