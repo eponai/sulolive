@@ -37,11 +37,11 @@
     (when-not (str/blank? chat-message)
       (mixpanel/track "Send chat message" {:message  chat-message
                                            :store-id (get-store-id component)})
+      (reset-chat-message! has-message)
       (om/transact! component `[(chat/send-message
                                   ~{:store (select-keys (get-store component) [:db/id])
                                     :text  chat-message})
-                                :query/chat])))
-  (reset-chat-message! has-message))
+                                :query/chat]))))
 
 (defui ChatInput
   IHasChatMessage
