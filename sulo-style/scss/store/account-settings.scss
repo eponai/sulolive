@@ -154,7 +154,10 @@
 	label, .section-list label {
 		font-size: 90%; 
 		color: $dark-gray;
-		@include breakpoint(medium) {
+		&[for] {
+			color: $body-font-color;
+		}
+		@include breakpoint(large) {
 			text-align: right;
 		}
 	}

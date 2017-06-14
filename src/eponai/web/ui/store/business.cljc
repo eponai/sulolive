@@ -357,27 +357,32 @@
                            (css/align :middle))
                       (grid/column
                         (grid/column-size {:small 12 :medium 6})
-                        (if (= type :company)
-                          (dom/label nil "Company")
-                          (dom/label nil "Individual business"))
+                        (cond (= type :company)
+                              (dom/label nil "Company")
+                              (= type :individual)
+                              (dom/label nil "Individual business")
+                              :else
+                              (dom/label nil "Business details"))
                         (dom/p nil (dom/small nil "Edit your business details such as legal name, business type and address.")))
                       (grid/column
                         (css/text-align :right)
-                        (dom/p nil
+                        (if (some some? [business-name line1 city postal state])
+                          (dom/p nil
 
-                               (when (= type :company)
-                                 [(dom/span nil (str business-name))
-                                  (dom/br nil)]
-                                 ;[(dom/span nil (str last-name ", " first-name))
-                                 ; (dom/br nil)]
+                                 (when (= type :company)
+                                   [(dom/span nil (str business-name))
+                                    (dom/br nil)]
+                                   ;[(dom/span nil (str last-name ", " first-name))
+                                   ; (dom/br nil)]
+                                   )
+                                 (dom/small nil line1)
+                                 (dom/br nil)
+                                 (dom/small nil (str city ", " postal ", " state))
+                                 ;(when anchor
+                                 ;  (dom/span nil (str " (" (c/ordinal-number anchor) ")")))
+
                                  )
-                               (dom/small nil line1)
-                               (dom/br nil)
-                               (dom/small nil (str city ", " postal ", " state))
-                               ;(when anchor
-                               ;  (dom/span nil (str " (" (c/ordinal-number anchor) ")")))
-
-                               )
+                          (dom/p nil (dom/small nil (dom/i nil "No saved info"))))
                         (button/user-setting-default
                           {:onClick #(om/update-state! this assoc :modal :modal/edit-info)}
                           (dom/span nil "Edit business")))))
@@ -388,28 +393,29 @@
                            (css/align :middle))
                       (grid/column
                         (grid/column-size {:small 12 :medium 6})
-                        (if (= type :individual)
-                          (dom/label nil "Personal details")
-                          (dom/label nil "Company representative"))
-                        (if (= type :individual)
-                          (dom/p nil (dom/small nil "Your personal details as the owner of the business."))
-                          (dom/p nil (dom/small nil "Your personal details as the representative of your company."))))
+                        (if (= type :company)
+                          [(dom/label nil "Company representative")
+                           (dom/p nil (dom/small nil "Your personal details as the representative of your company."))]
+                          [(dom/label nil "Personal details")
+                           (dom/p nil (dom/small nil "Your personal details as the owner of the business."))]))
                       (grid/column
                         (css/text-align :right)
-                        (dom/p nil
-                               (dom/span nil (str last-name ", " first-name))
-                               (dom/br nil)
-                               (let [{:stripe.legal-entity.dob/keys [year month day]} dob]
-                                 (dom/small nil (dom/strong nil "DOB: ")
-                                            (dom/span nil (date/date->string (str year "-" month "-" day)))))
+                        (if (some some? [last-name first-name dob])
+                          (dom/p nil
+                                 (dom/span nil (str last-name ", " first-name))
+                                 (dom/br nil)
+                                 (let [{:stripe.legal-entity.dob/keys [year month day]} dob]
+                                   (dom/small nil (dom/strong nil "DOB: ")
+                                              (dom/span nil (date/date->string (str year "-" month "-" day)))))
 
-                               ;(dom/small nil line1)
-                               ;(dom/br nil)
-                               ;(dom/small nil (str city ", " postal ", " state))
-                               ;(when anchor
-                               ;  (dom/span nil (str " (" (c/ordinal-number anchor) ")")))
+                                 ;(dom/small nil line1)
+                                 ;(dom/br nil)
+                                 ;(dom/small nil (str city ", " postal ", " state))
+                                 ;(when anchor
+                                 ;  (dom/span nil (str " (" (c/ordinal-number anchor) ")")))
 
-                               )
+                                 )
+                          (dom/p nil (dom/small nil (dom/i nil "No saved info"))))
                         (button/user-setting-default
                           {:onClick #(om/update-state! this assoc :modal :modal/edit-personal)}
                           (dom/span nil "Edit details")))))

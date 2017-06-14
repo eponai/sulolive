@@ -41,6 +41,67 @@
           (= interval "monthly")
           (str "Every month, all available payments will be deposited in your account on the " (c/ordinal-number month-anchor) " day of the month. (Your available balance will include payments made " delay-days " days before your scheduled transfer day.)"))))
 
+(defn bank-account-modal [component]
+  (let [on-close #(om/update-state! component dissoc :modal :modal-object :stripe-validation)
+        {:keys [modal-object input-validation stripe-validation]} (om/get-state component)
+        {:stripe.external-account/keys [currency country]} modal-object
+        country (or country "CA")
+        currency (or currency "CAD")]
+    (common/modal
+      {:on-close on-close
+       :size "tiny"}
+      (dom/div
+        nil
+        (dom/h4 (css/add-class :header) "Your bank account")
+
+        (dom/p nil (dom/small nil "Your bank account must be a checking account."))
+        (dom/label nil "Currency")
+        (dom/select
+          (->> {:value    currency
+                :disabled true
+                :id       (prefixed-id :field.external-account/currency)}
+               (css/add-class :currency))
+          (dom/option {:value currency} currency))
+
+        (dom/label nil "Bank country")
+        (dom/select {:value    country
+                     :disabled true
+                     :id       (prefixed-id :field.external-account/country)}
+                    (dom/option {:value country} country))
+
+        (dom/label nil "Transit number")
+        (validate/input
+          {:placeholder "12345"
+           :type        "text"
+           :id          (prefixed-id :field.external-account/transit-number)}
+          input-validation)
+
+        (dom/label nil "Institution number")
+        (validate/input
+          {:placeholder "000"
+           :type        "text"
+           :id          (prefixed-id :field.external-account/institution-number)}
+          input-validation)
+
+        (dom/label nil "Account number")
+        (validate/input
+          {:type "text"
+           :id   (prefixed-id :field.external-account/account-number)}
+          input-validation)
+
+        (dom/div
+          (css/add-class :error-message)
+          (dom/p nil (dom/small nil (when stripe-validation (.-message stripe-validation)))))
+        (dom/div
+          (css/add-class :action-buttons)
+          (button/user-setting-default
+            {:onClick on-close}
+            (dom/span nil "Cancel"))
+          (button/user-setting-cta
+            {:onClick #(do
+                        (.update-bank-account component on-close))}
+            (dom/span nil "Save")))))))
+
 (defn payout-schedule-modal [component]
   (let [{:keys                 [modal]
          :payout-schedule/keys [interval month-anchor week-anchor]} (om/get-state component)
@@ -247,7 +308,9 @@
         (cond (= modal :default-currency)
               (default-currency-modal this)
               (= modal :payout-schedule)
-              (payout-schedule-modal this))
+              (payout-schedule-modal this)
+              (= modal :modal/bank-account)
+              (bank-account-modal this))
 
 
         (dom/div
@@ -304,20 +367,21 @@
         (dom/div
           (css/add-class :section-title)
           (dom/h2 nil "Bank accounts"))
-        (callout/callout
-          (css/add-class :bank-accounts-container)
 
-          ;(menu/vertical
-          ;  (css/add-classes [:section-list :section-list--bank-accounts]))
-          (if (not-empty external-accounts)
-            [
+
+        ;(menu/vertical
+        ;  (css/add-classes [:section-list :section-list--bank-accounts]))
+        (if (not-empty external-accounts)
+          [
+           (callout/callout
+             (css/add-class :bank-accounts-container)
              (menu/vertical
                (->> (css/add-classes [:bank-list :section-list]) (css/hide-for :medium))
                (map
                  (fn [bank-acc]
                    (let [{:stripe.external-account/keys [bank-name currency last4 country default-for-currency?]} bank-acc]
                      (menu/item
-                       (css/add-classes [:bank-account ])
+                       (css/add-classes [:bank-account])
                        (dom/div
                          nil
                          (dom/p (css/add-class :bank-detail--account)
@@ -330,129 +394,71 @@
 
                        (dom/div
                          (css/text-align :right)
-                         (when-not (and default-for-currency?
-                                        (= currency default-currency))
-                           (button/button
-                             (->> {:onClick #(om/update-state! this assoc :modal :delete-account)}
-                                  (css/add-classes [:small :alert :hollow]))
-                             (dom/span nil "Delete")))
+                         ;(when-not (and default-for-currency?
+                         ;               (= currency default-currency))
+                         ;  (button/button
+                         ;    (->> {:onClick #(om/update-state! this assoc :modal :delete-account)}
+                         ;         (css/add-classes [:small :alert :hollow]))
+                         ;    (dom/span nil "Delete")))
                          (button/user-setting-default
-                           {:onClick #(om/update-state! this assoc :modal :bank-account :modal-object bank-acc)}
+                           {:onClick #(om/update-state! this assoc :modal :modal/bank-account :modal-object bank-acc)}
                            (dom/span nil "Edit"))))))
-                 external-accounts))
-             (table/table
-               (css/show-for :medium)
-               (table/tbody
-                 nil
-                 (map
-                   (fn [bank-acc]
-                     (let [{:stripe.external-account/keys [bank-name currency last4 country default-for-currency?]} bank-acc]
-                       (table/tbody-row
-                         nil
-                         ;(table/td
-                         ;  (css/add-class :bank-detail--icon)
-                         ;  (dom/i {:classes ["fa fa-bank -fa-fw"]}))
-                         (table/td
-                           (css/add-class :bank-detail--location)
-                           (dom/p nil
-                                  (dom/strong (css/add-class :currency) currency)
-                                  (dom/span (css/add-class :country) (str "(" country ")")))
-                           ;(dom/div {:classes ["bank-detail currency"]}
-                           ;         (dom/span nil currency))
-                           ;(dom/div {:classes ["bank-detail country"]}
-                           ;         (dom/span nil country))
-                           )
-                         (table/td
-                           (css/add-class :bank-detail--account)
-                           (dom/div
-                             {:classes [:bank-account]})
-                           (dom/p nil
-                                  (dom/span nil bank-name)
-                                  (dom/small nil (str "•••• " last4))))
-                         (table/td
-                           (css/text-align :right)
-                           (when-not (and default-for-currency?
-                                          (= currency default-currency))
-                             (button/button
-                               (->> {:onClick #(om/update-state! this assoc :modal :delete-account)}
-                                    (css/add-classes [:small :alert :hollow]))
-                               (dom/span nil "Delete")))
-                           (button/user-setting-default
-                             {:onClick #(om/update-state! this assoc :modal :bank-account :modal-object bank-acc)}
-                             (dom/span nil "Edit"))
+                 external-accounts)))
+           (table/table
+             (css/show-for :medium)
+             (table/tbody
+               nil
+               (map
+                 (fn [bank-acc]
+                   (let [{:stripe.external-account/keys [bank-name currency last4 country default-for-currency?]} bank-acc]
+                     (table/tbody-row
+                       nil
+                       ;(table/td
+                       ;  (css/add-class :bank-detail--icon)
+                       ;  (dom/i {:classes ["fa fa-bank -fa-fw"]}))
+                       (table/td
+                         (css/add-class :bank-detail--location)
+                         (dom/p nil
+                                (dom/strong (css/add-class :currency) currency)
+                                (dom/span (css/add-class :country) (str "(" country ")")))
+                         ;(dom/div {:classes ["bank-detail currency"]}
+                         ;         (dom/span nil currency))
+                         ;(dom/div {:classes ["bank-detail country"]}
+                         ;         (dom/span nil country))
+                         )
+                       (table/td
+                         (css/add-class :bank-detail--account)
+                         (dom/div
+                           {:classes [:bank-account]})
+                         (dom/p nil
+                                (dom/span nil bank-name)
+                                (dom/small nil (str "•••• " last4))))
+                       (table/td
+                         (css/text-align :right)
+                         ;(when-not (and default-for-currency?
+                         ;               (= currency default-currency))
+                         ;  (button/button
+                         ;    (->> {:onClick #(om/update-state! this assoc :modal :delete-account)}
+                         ;         (css/add-classes [:small :alert :hollow]))
+                         ;    (dom/span nil "Delete")))
+                         (button/user-setting-default
+                           {:onClick #(om/update-state! this assoc :modal :modal/bank-account :modal-object bank-acc)}
+                           (dom/span nil "Edit"))
 
-                           ))))
-                   external-accounts)))]
-            (dom/div
+                         ))))
+                 external-accounts)))]
+          (grid/row
+            nil
+            (grid/column
               nil
-              (dom/p nil (dom/small nil "No bank accounts saved"))
               (button/user-setting-default
-                nil
+                {:onClick #(om/update-state! this assoc :modal :modal/bank-account :modal-object nil)}
                 (dom/span nil "Add bank account...")))))
         ;(payout-schedule this)
 
         ;(when (< 1 (count external-accounts)))
 
-        (grid/row
-          (css/add-class :external-account-list)
-
-          (when (= modal :bank-account)
-            (let [on-close #(om/update-state! this dissoc :modal :modal-object :stripe-validation)
-                  {:stripe.external-account/keys [bank-name currency last4 country default-for-currency?]} modal-object]
-              (common/modal
-                {:on-close on-close
-                 :size "tiny"}
-                (dom/div
-                  nil
-                  (dom/h4 (css/add-class :header) "Your bank account")
-
-                  (dom/p nil (dom/small nil "Your bank account must be a checking account."))
-                  (dom/label nil "Currency")
-                  (dom/select
-                    (->> {:value    currency
-                          :disabled true
-                          :id       (prefixed-id :field.external-account/currency)}
-                         (css/add-class :currency))
-                    (dom/option {:value currency} currency))
-
-                  (dom/label nil "Bank country")
-                  (dom/select {:value    country
-                               :disabled true
-                               :id       (prefixed-id :field.external-account/country)}
-                              (dom/option {:value country} country))
-
-                  (dom/label nil "Transit number")
-                  (validate/input
-                    {:placeholder "12345"
-                     :type        "text"
-                     :id          (prefixed-id :field.external-account/transit-number)}
-                    input-validation)
-
-                  (dom/label nil "Institution number")
-                  (validate/input
-                    {:placeholder "000"
-                     :type        "text"
-                     :id          (prefixed-id :field.external-account/institution-number)}
-                    input-validation)
-
-                  (dom/label nil "Account number")
-                  (validate/input
-                    {:type "text"
-                     :id   (prefixed-id :field.external-account/account-number)}
-                    input-validation)
-
-                  (dom/div
-                    (css/add-class :error-message)
-                    (dom/p nil (dom/small nil (when stripe-validation (.-message stripe-validation)))))
-                  (dom/div
-                    (css/add-class :action-buttons)
-                    (button/user-setting-default
-                      {:onClick on-close}
-                      (dom/span nil "Cancel"))
-                    (button/user-setting-cta
-                      {:onClick #(do
-                                  (.update-bank-account this on-close))}
-                      (dom/span nil "Save"))))))))))))
+        ))))
 
 (def FinancesSettings (script-loader/stripe-loader Payouts-no-loader))
 

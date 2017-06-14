@@ -182,11 +182,18 @@
                    (grid/row
                      nil
                      (grid/column
-                       nil
+                       (grid/column-size {:small 12 :medium 8})
                        (v/input
                          {:type        "text"
                           :placeholder "Street"
                           :id          (:field.legal-entity.address/line1 form-inputs)}
+                         input-validation))
+                     (grid/column
+                       nil
+                       (v/input
+                         {:type        "text"
+                          :placeholder "Apt/Suite/Other"
+                          :id          (:field.legal-entity.address/line2 form-inputs)}
                          input-validation))))
                  (grid/row
                    nil

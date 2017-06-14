@@ -270,7 +270,9 @@
                                                                      :default_for_currency true
                                                                      :bank_name            "Wells Fargo"
                                                                      :last4                "1234"
-                                                                     :country              "CA"}]}))
+                                                                     :country              "CA"}]})
+                                  :always
+                                  (update :legal_entity merge (:legal_entity account)))
               stripe-account (stub/add-account-verifications new-account)]
           (debug "Updated fake Stripe account: " stripe-account)
           (swap! state update :accounts assoc account-id stripe-account)
