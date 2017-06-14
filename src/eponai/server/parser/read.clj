@@ -5,7 +5,7 @@
     [eponai.common.parser :as parser]
     [eponai.server.datomic.query :as query]
     [environ.core :as env]
-    [datomic.api :as d]
+    [datomic.api :as datomic]
     [taoensso.timbre :refer [error debug trace warn]]
     [eponai.common.auth :as auth]
     [eponai.server.external.stripe :as stripe]
@@ -315,20 +315,24 @@
                :ui.singleton.stream-config/publisher-url  (wowza/publisher-url wowza)}})))
 
 (defread query/chat
-  [{:keys         [db-history query system]
+  [{:keys         [db query system]
     ::parser/keys [read-basis-t-for-this-key chat-update-basis-t]} k {:keys [store] :as params}]
   {:auth    ::auth/public
    :uniq-by [[:store-id (:db/id store)]]}
-  (let [chat (:system/chat system)]
-    (when chat-update-basis-t
-      (chat/sync-up-to! chat chat-update-basis-t))
-    (if (nil? (:db/id store))
-      (do (warn "No store :db/id passed in params for read: " k " with params: " params)
-          {:value (parser/value-with-basis-t {} read-basis-t-for-this-key)})
-      {:value (-> (if (nil? db-history)
+  (if (nil? (:db/id store))
+    (do (warn "No store :db/id passed in params for read: " k " with params: " params)
+        {:value (parser/value-with-basis-t {} {:chat-db (:chat-db read-basis-t-for-this-key)
+                                               :sulo-db (datomic/basis-t db)})})
+    (let [chat (:system/chat system)
+          {:keys [chat-db sulo-db]} read-basis-t-for-this-key]
+      (when chat-update-basis-t
+        (chat/sync-up-to! chat chat-update-basis-t))
+      (debug "QUERY_CHAT: read-basis-t-for-this-key: " read-basis-t-for-this-key)
+      {:value (-> (if (nil? read-basis-t-for-this-key)
                     (chat/initial-read chat store query)
-                    (chat/read-messages chat store query read-basis-t-for-this-key))
-                  (parser/value-with-basis-t (chat/last-read chat)))})))
+                    (chat/read-messages chat store query chat-db sulo-db))
+                  (parser/value-with-basis-t {:chat-db (chat/last-read chat)
+                                              :sulo-db (datomic/basis-t db)}))})))
 
 (defread query/browse-items
   [{:keys [db db-history query]} _ {{:keys [top-category sub-category] :as categories} :route-params

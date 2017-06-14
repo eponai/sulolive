@@ -14,7 +14,8 @@
     [eponai.client.auth :as client.auth]
     [eponai.common.api.products :as products]
     [medley.core :as medley]
-    [eponai.client.cart :as client.cart]))
+    [eponai.client.cart :as client.cart]
+    [eponai.client.chat :as client.chat]))
 
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.
@@ -456,8 +457,28 @@
   (when-let [store-id (c/parse-long-safe (:store-id route-params))]
     (if (some? target)
       {:remote/chat (assoc-in ast [:params :store :db/id] store-id)}
-      {:value (db/pull-one-with db query {:where   '[[?e :chat/store ?store-id]]
-                                          :symbols {'?store-id store-id}})})))
+      {:value (when-let [chat-db (db/singleton-value db :ui.singleton.chat-config/chat-db)]
+                (let [{:keys [sulo-db-tx chat-db-tx]}
+                      (client.chat/read-chat chat-db
+                                             db
+                                             query
+                                             {:db/id store-id})
+                      _ (when (seq sulo-db-tx)
+                          (assert (every? #(contains? % :db/id) sulo-db-tx)
+                                  (str "sulo-db-tx (users) did not have :db/id's in them. Was: " sulo-db-tx)))
+                      users-by-id (into {} (map (juxt :db/id identity)) sulo-db-tx)]
+                  ;; This would be a perfect time for specter
+                  ;;  (comp (mapcat :chat/messages)
+                  ;; (map :chat.message/user)
+                  ;; (map :db/id))
+                  (update chat-db-tx :chat/messages
+                          (fn [messages]
+                            (into []
+                                  (map (fn [message]
+                                         (update message :chat.message/user
+                                                 (fn [{:keys [db/id]}]
+                                                   (assoc (get users-by-id id) :db/id id)))))
+                                  messages)))))})))
 
 (defmethod client-read :query/loading-bar
   [{:keys [db query target]} _ _]

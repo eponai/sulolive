@@ -1,6 +1,7 @@
 (ns eponai.common.parser.util
   (:refer-clojure :exclude [proxy])
   (:require [taoensso.timbre :refer [debug error]]
+            [om.next :as om]
             [cognitect.transit :as transit]))
 
 (defn get-time []
@@ -182,3 +183,21 @@
     (if (and a b)
       (->GraphReadAtBasisT (deep-merge (:graph a) (:graph b)))
       (or a b (graph-read-at-basis-t)))))
+
+
+(defn focus-subquery
+  "Takes a query and a path through joins in the query and returns the pattern
+  of the last join in the query path.
+  Example: (focus-subquery [{:chat/messages [{:chat.message/user [:user/email]}]}]
+                           [:chat/messages :chat.message/user])
+           ;;=> [:user/email]
+  "
+  [query query-path]
+  (letfn [(subquery-for-key [query key]
+            (let [query-parser (om/parser {:mutate (constantly nil)
+                                           :read   (fn [env k p]
+                                                     (when (= k key)
+                                                       {:value (:query env)}))})]
+              (-> (query-parser {} query)
+                  (get key))))]
+    (reduce subquery-for-key query query-path)))

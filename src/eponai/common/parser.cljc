@@ -421,7 +421,10 @@
                        (dissoc env :db-history))
                      (assoc env
                        ::read-basis-t-for-this-key basis-t-for-this-key
-                       :db-history (when basis-t-for-this-key
+                       ;; basis-t can be customized by reads to return whatever they want.
+                       ;; for example: :query/chat wants to use two basis-t, one for each db.
+                       :db-history (when (and (some? basis-t-for-this-key)
+                                              (not (coll? basis-t-for-this-key)))
                                      (datomic/since (datomic/history db)
                                                     basis-t-for-this-key))))
                ret (read env k p)

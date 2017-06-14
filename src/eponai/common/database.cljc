@@ -472,6 +472,19 @@
 
 ;; Helper fn
 
+(defn singleton-value
+  "Given a :ui.singleton.<singleton>/<key>, returns the value by looking up the
+  singleton by naming convention."
+  [db singleton-key]
+  (let [singleton-key-ns (namespace singleton-key)
+        last-dot (str/last-index-of singleton-key-ns \.)
+        singleton (keyword (subs singleton-key-ns 0 last-dot)
+                           (subs singleton-key-ns (inc last-dot) (count singleton-key-ns)))
+        singleton-entity (lookup-entity db [:ui/singleton singleton])]
+    (when (nil? (get singleton-entity singleton-key))
+      (warn "Singleton was nil for singleton-key: " singleton-key " singleton: " singleton))
+    (get singleton-entity singleton-key)))
+
 (defn to-db
   "Transforms, components, reconcilers or connections to a database."
   [x]
