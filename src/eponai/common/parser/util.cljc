@@ -201,3 +201,9 @@
               (-> (query-parser {} query)
                   (get key))))]
     (reduce subquery-for-key query query-path)))
+
+(defn remove-query-key
+  "Removes a key from a query. Single level, does not walk the query."
+  ([k] (comp (remove k) (remove #(and (map? %) (some k (keys %))))))
+  ([k query]
+   (into [] (remove-query-key k) query)))

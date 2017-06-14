@@ -55,32 +55,48 @@
 ;; ###########
 ;; ## Query
 
-(def parse-chat-message-user-query
+;; Messages stored on the client
+(def message-limit 50)
+
+(def focus-chat-message-user-query
   (memoize (fn [query]
              (p.util/focus-subquery query [:chat/messages :chat.message/user]))))
+
+(def focus-chat-message-query
+  (memoize (fn [query]
+             (p.util/focus-subquery query [:chat/messages]))))
 
 (defn datomic-chat-entity-query [store]
   {:where   '[[?e :chat/store ?store-id]]
    :symbols {'?store-id (:db/id store)}})
 
-(defn read-chat [chat-db sulo-db query store]
-  (let [chat-messages (db/pull-one-with chat-db
-                                        query
-                                        (datomic-chat-entity-query store))
-        users (into #{} (comp (map :chat.message/user)
-                              (map :db/id))
-                    (:chat/messages chat-messages))
+(defn read-chat [chat-db sulo-db query store limit]
+  (let [chat-id (db/one-with chat-db (datomic-chat-entity-query store))
+        chat-messages (if (nil? limit)
+                        (mapv :v (db/datoms chat-db :eavt chat-id :chat/messages))
+                        (into []
+                              (comp (map :v) (take limit))
+                              (sort-by :tx
+                                       #(compare %2 %1)
+                                       (db/datoms chat-db :eavt chat-id :chat/messages))))
+        users (transduce
+                    (comp (map #(db/entity chat-db %))
+                          (map :chat.message/user)
+                          (map (juxt :db/id identity)))
+                    (completing (fn [m [id e]]
+                                  (update m id (fnil conj []) (into {:db/id id} e))))
+                    {}
+                    chat-messages)
+        pulled-messages (db/pull-many chat-db (focus-chat-message-query query) chat-messages)
+        pulled-chat (db/pull chat-db (p.util/remove-query-key :chat/messages query) chat-id)
         ;; TODO: Get :chat/modes from chat-db or sulo-db.
-        user-pattern (parse-chat-message-user-query query)
-        user-data (db/pull-many sulo-db user-pattern (seq users))]
+        user-pattern (focus-chat-message-user-query query)
+        user-data (db/pull-many sulo-db user-pattern (seq (keys users)))]
     {:sulo-db-tx user-data
-     :chat-db-tx chat-messages}))
+     :chat-db-tx (assoc pulled-chat :chat/messages pulled-messages)}))
 
 ;; #######################
 ;; ## Message management
-
-;; Messages stored on the client
-(def message-limit 50)
 
 (defn trim-chat-messages [db chat-limit]
   (let [chat-datoms (into []

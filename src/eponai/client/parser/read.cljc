@@ -230,11 +230,6 @@
                                                      [?e :store/owners ?owners]]
                                           :symbols {'?user user-id}})})))
 
-(defn remove-query-key
-  ([k] (comp (remove k) (remove #(and (map? %) (some k (keys %))))))
-  ([k query]
-   (into [] (remove-query-key k) query)))
-
 (defn- add-all-hrefs [category params->route-handler param-order]
   (letfn [(with-hrefs [category parent-names]
             (let [names (conj parent-names (:category/name category))
@@ -266,7 +261,7 @@
 (defn navigate-gender [db query gender]
   (let [gender-query (products/category-names-query {:sub-category gender})]
     (when (db/one-with db (db/merge-query gender-query {:where '[[(identity ?sub) ?e]]}))
-     (let [query-without-children (into [:db/id] (remove-query-key :category/children) query)
+     (let [query-without-children (into [:db/id] (parser.util/remove-query-key :category/children) query)
            ;; Since our query is flat, it's faster to just select keys from the entity.
            entity-pull (comp (map #(db/entity db %))
                              (map #(select-keys % query-without-children)))]
@@ -289,7 +284,7 @@
 
 (defn navigate-category [db query category-name]
   (some-> (db/pull-one-with db (into [{:category/children '...}]
-                                     (remove-query-key :category/children)
+                                     (parser.util/remove-query-key :category/children)
                                      query)
                             (db/merge-query (products/category-names-query {:top-category category-name})
                                             {:where '[[(identity ?top) ?e]]}))
@@ -462,7 +457,8 @@
                       (client.chat/read-chat chat-db
                                              db
                                              query
-                                             {:db/id store-id})
+                                             {:db/id store-id}
+                                             nil)
                       _ (when (seq sulo-db-tx)
                           (assert (every? #(contains? % :db/id) sulo-db-tx)
                                   (str "sulo-db-tx (users) did not have :db/id's in them. Was: " sulo-db-tx)))

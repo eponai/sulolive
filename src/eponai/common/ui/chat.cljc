@@ -17,8 +17,9 @@
 
 (defn get-messages [component]
   (let [messages (get-in (om/props component) [:query/chat :chat/messages])
-        {client-side true server-side false} (group-by (comp true? :chat.message/client-side-message?) messages)]
-    (concat server-side client-side)))
+        {client-side true server-side false} (group-by (comp true? :chat.message/client-side-message?) messages)
+        msgs (into [] (concat (sort-by :chat.message/created-at server-side) client-side))]
+    msgs))
 
 (defn- get-store [component-or-props]
   (get-in (om/get-computed component-or-props) [:store]))
@@ -82,7 +83,7 @@
                                                          {:user/profile [{:user.profile/photo [:photo/id]}
                                                                          :user.profile/name]}]}
                                     :chat.message/text
-                                    :chat.message/timestamp]}]}])
+                                    :chat.message/created-at]}]}])
   client.chat/IStoreChatListener
   (start-listening! [this store-id]
     (debug "Will start listening to store-id: " store-id)

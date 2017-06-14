@@ -77,7 +77,8 @@
     (client.chat/read-chat (chat-db this)
                            (db/db (:conn sulo-datomic))
                            query
-                           store))
+                           store
+                           client.chat/message-limit))
   (read-messages [this store query last-read-chat-db last-read-sulo-db]
     (let [db (chat-db this)
           db-history (d/since (d/history db) last-read-chat-db)
@@ -85,7 +86,7 @@
 
           sulo-db (db/db (:conn sulo-datomic))
           user-data (db/pull-all-with sulo-db
-                                      (client.chat/parse-chat-message-user-query query)
+                                      (client.chat/focus-chat-message-user-query query)
                                       {:where   '[[$chat ?chat :chat/store ?store-id]
                                                   [$db-hist ?chat :chat/messages ?msgs]
                                                   [$chat ?msgs :chat.message/user ?e]

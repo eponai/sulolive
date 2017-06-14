@@ -499,14 +499,9 @@
   "Like [:db.fn/retractEntity <e>] but it only retracts parent datoms
   that matches parent-attr."
   [db e parent-attr]
-  (let [is-ref? (memoize (fn [attr] (datascript.db/ref? db attr)))
-        e-datoms (datoms db :eavt e)
-        v-datoms (mapcat (fn [{:keys [a]}]
-                           (when (is-ref? a)
-                             (sequence (filter (fn [datom]
-                                                 (contains? (entity db (:e datom))
-                                                            parent-attr)))
-                                       (datoms db :avet a e))))
+  (let [e-datoms (datoms db :eavt e)
+        v-datoms (mapcat (fn [[e]]
+                           (datoms db :avet parent-attr e))
                          e-datoms)
         retract-xf (map (fn [[e a v]]
                           [:db/retract e a v]))]

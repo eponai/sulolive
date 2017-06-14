@@ -224,13 +224,13 @@
     (if target
       {:remote/chat (assoc-in ast [:params :user :db/id] user-id)}
       {:action (fn []
-                 (let [chat-db (db/singleton-value db :ui.singleton.chat-config/chat-db)
-                       tx (format/chat-message chat-db store {:db/id user-id} text)
-                       message-id (::format/message-id (meta tx))
-                       chat-db (datascript/db-with chat-db (conj tx {:db/id                             message-id
-                                                                     :chat.message/client-side-message? true}))]
-                   (db/transact state [{:ui/singleton                     :ui.singleton/chat-config
-                                        :ui.singleton.chat-config/chat-db chat-db}])))})))
+                 (when-let [chat-db (db/singleton-value db :ui.singleton.chat-config/chat-db)]
+                   (let [tx (format/chat-message chat-db store {:db/id user-id} text)
+                         message-id (::format/message-id (meta tx))
+                         chat-db (datascript/db-with chat-db (conj tx {:db/id                             message-id
+                                                                       :chat.message/client-side-message? true}))]
+                     (db/transact state [{:ui/singleton                     :ui.singleton/chat-config
+                                          :ui.singleton.chat-config/chat-db chat-db}]))))})))
 
 (defmethod client-mutate 'chat/queue-update
   [{:keys [state target]} k {:keys [store-id basis-t]}]

@@ -128,4 +128,12 @@
   :db/cardinality        :db.cardinality/one
   :db/doc                "Order item photo, if any"
   :db.install/_attribute :db.part/db}
+
+ ;; Chat Message
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :chat.message/created-at
+  :db/valueType          :db.type/long
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Time chat message was created."
+  :db.install/_attribute :db.part/db}
  ]
