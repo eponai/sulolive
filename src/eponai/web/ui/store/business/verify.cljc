@@ -17,7 +17,9 @@
     [eponai.common.ui.script-loader :as script-loader]
     [eponai.common.format.date :as date]
     [clojure.string :as string]
-    [eponai.common.ui.elements.menu :as menu]))
+    [eponai.common.ui.elements.menu :as menu]
+    #?(:cljs
+       [cljs-http.client :as http])))
 
 (def stripe-key "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")
 
@@ -64,21 +66,6 @@
         (get-in spec [:country-spec/verification-fields :country-spec.verification-fields/individual :country-spec.verification-fields.individual/minimum])
         (= type :company)
         (get-in spec [:country-spec/verification-fields :country-spec.verification-fields/company :country-spec.verification-fields.company/minimum])))
-
-(defn field-required? [component k]
-  (let [{:query/keys [stripe-country-spec]} (om/props component)
-        {:keys [entity-type input-validation]} (om/get-state component)
-        {:keys [stripe-account]} (om/get-computed component)
-        fields-needed-for-country (minimum-fields stripe-country-spec entity-type)
-        fields-needed-for-account (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed])
-        id (get stripe-fields k)
-        is-needed-for-country? (boolean (some #(when (= % id) %) fields-needed-for-country))
-        is-needed-for-account? (boolean (some #(when (= % id) %) fields-needed-for-account))]
-    ;; If user submitted details already, this means we are probably here because someone entered the URL, or more info is needed.
-    ;; Check the account verification for that, to show the appropriate form
-    (if (:stripe/details-submitted? stripe-account)
-      is-needed-for-account?
-      is-needed-for-country?)))
 
 (defn required-fields [component]
   (let [{:query/keys [stripe-country-spec]} (om/props component)
@@ -240,8 +227,8 @@
                                        :field.legal-entity.dob/year
                                        :field.legal-entity/personal-id-number
                                        :field.legal-entity/document]))]
-    (debug "Personal fields: " personal-fields)
-    (debug "Document: " document-upload)
+
+
     (when (not-empty personal-fields)
       [(dom/p (css/add-class :section-title) (if (= entity-type :individual)
                                                "Your personal details"
@@ -336,7 +323,7 @@
                                      :id          (:field.legal-entity/document form-inputs)}))
                  (dom/p nil
                         (if (not-empty document-upload)
-                          (dom/small nil (str document-upload))
+                          (dom/small nil (str (:name document-upload)))
                           (dom/small nil (dom/i nil "No file selected"))))
                  (dom/div
                    nil
@@ -422,7 +409,7 @@
     #?(:cljs
        (let [{:query/keys [stripe-country-spec]} (om/props this)
              {:keys [store stripe-account]} (om/get-computed this)
-             {:keys [entity-type]} (om/get-state this)
+             {:keys [entity-type document-upload]} (om/get-state this)
              street (utils/input-value-by-id (:field.legal-entity.address/line1 form-inputs))
              postal (utils/input-value-by-id (:field.legal-entity.address/postal form-inputs))
              city (utils/input-value-by-id (:field.legal-entity.address/city form-inputs))
@@ -462,6 +449,7 @@
                                                      :field.external-account/account-number     account})})
              validation (v/validate :account/activate input-map form-inputs)]
          (debug "Validation: " validation)
+
          (when (nil? validation)
            (if (some? (:field/external-account input-map))
              (do
@@ -493,7 +481,9 @@
     #?(:cljs
        (let [^js/Event event e
              ^js/File file (first (array-seq (.. event -target -files)))]
-         (om/update-state! this assoc :document-upload (.-name file)))))
+         (when file
+           (om/update-state! this assoc :document-upload {:name (.-name file)
+                                                          :file file})))))
   (initLocalState [this]
     {:entity-type :individual})
 
@@ -560,7 +550,8 @@
             (dom/a
               (->> {:onClick #(.activate-account this)}
                    (css/button)
-                   (css/add-class :disabled))
+                   (css/add-class :disabled)
+                   )
               (dom/span nil "Submit")))
           (dom/p nil (dom/small nil "By submitting, you agree to our Services Agreement.")))))))
 

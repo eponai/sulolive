@@ -35,8 +35,8 @@
 (defn edit-personal-modal [component]
   (let [
         ;{:keys [store]} (om/get-computed thi)
-        on-close #(om/update-state! component dissoc :modal :input-validation)
-        {:keys [input-validation entity-type]} (om/get-state component)
+        on-close #(om/update-state! component dissoc :modal :input-validation :error-message)
+        {:keys [input-validation entity-type error-message]} (om/get-state component)
         {:query/keys [stripe-account]} (om/props component)
         legal-entity (:stripe/legal-entity stripe-account)
         {:stripe.legal-entity/keys [address type first-name last-name business-name dob]} legal-entity
@@ -90,6 +90,7 @@
                     :id           (prefixed-id :field.legal-entity.dob/year)
                     :placeholder  "Year"}
                    input-validation)))
+      (dom/p (css/add-class :text-alert) (dom/small nil error-message))
       (dom/div
         (css/add-class :action-buttons)
         (button/user-setting-default
@@ -102,8 +103,8 @@
 (defn edit-business-modal [component]
   (let [
         ;{:keys [store]} (om/get-computed thi)
-        on-close #(om/update-state! component dissoc :modal :input-validation)
-        {:keys [input-validation entity-type]} (om/get-state component)
+        on-close #(om/update-state! component dissoc :modal :input-validation :error-message)
+        {:keys [input-validation entity-type error-message]} (om/get-state component)
         {:query/keys [stripe-account]} (om/props component)
         legal-entity (:stripe/legal-entity stripe-account)
         {:stripe.legal-entity/keys [address type first-name last-name business-name]} legal-entity
@@ -175,6 +176,7 @@
              :defaultValue state
              :placeholder  "Province"}
             input-validation)))
+      (dom/p (css/add-class :text-alert) (dom/small nil error-message))
       (dom/div
         (css/add-class :action-buttons)
         (button/user-setting-default
@@ -218,10 +220,7 @@
         (msg/om-transact! this [(list 'stripe/update-account {:account-params {:field/legal-entity le}
                                                               :store-id       (:db/id store)})
                                 :query/stripe-account]))
-      (om/update-state! this (fn [s]
-                               (cond-> (assoc s :input-validation validation)
-                                       (nil? validation)
-                                       (dissoc :modal))))))
+      (om/update-state! this assoc :input-validation validation)))
   (save-business-info [this]
     #?(:cljs
        (let [{:keys [entity-type]} (om/get-state this)
@@ -256,6 +255,14 @@
                                                         :field.legal-entity.dob/day   day}}]
          (.save-legal-entity this input-map))))
 
+  (componentDidUpdate [this _ _]
+    (let [last-message (msg/last-message this 'stripe/update-account)]
+      (when (msg/final? last-message)
+        (msg/clear-messages! this 'stripe/update-account)
+        (if (msg/success? last-message)
+          (om/update-state! this dissoc :modal)
+          (om/update-state! this assoc :error-message (msg/message last-message))))))
+
   (initLocalState [_]
     {:active-tab :payouts})
   (render [this]
@@ -266,6 +273,7 @@
           {:stripe/keys [verification]} stripe-account
           accepted-tos? (not (some #(clojure.string/starts-with? % "tos_acceptance") (:stripe.verification/fields-needed verification)))
           {:keys [route route-params]} current-route
+          last-message (msg/last-message this 'stripe/update-account)
           ]
 
       (debug "Finances: " finances)
@@ -291,6 +299,8 @@
                        (dom/span nil "Business info")))
               )
             ))
+        (when (msg/pending? last-message)
+          (common/loading-spinner nil (dom/span nil "Saving info...")))
 
         (cond (= modal :modal/edit-info)
               (edit-business-modal this)
@@ -405,28 +415,29 @@
                           (dom/span nil "Edit details")))))
                   )))
 
-            (dom/div
-              (css/add-class :section-title)
-              (dom/h2 nil "Public information"))
-            (callout/callout
-              nil
-              (menu/vertical
-                (css/add-class :section-list)
-                (menu/item
-                  nil
-                  (grid/row
-                    (->> (css/add-class :collapse)
-                         (css/align :middle))
-                    (grid/column
-                      (grid/column-size {:small 12 :medium 6})
-                      (dom/label nil "Your email")
-                      (dom/p nil (dom/small nil "Email shown to your customers where they can contact you.")))
-                    (grid/column
-                      (css/text-align :right)
-                      (dom/p nil (dom/span nil "dev @sulo.live"))
-                      (button/user-setting-default
-                        {:onClick #(om/update-state! this assoc :modal :modal/edit-info)}
-                        (dom/span nil "Edit"))))))))
+            ;(dom/div
+            ;  (css/add-class :section-title)
+            ;  (dom/h2 nil "Public information"))
+            ;(callout/callout
+            ;  nil
+            ;  (menu/vertical
+            ;    (css/add-class :section-list)
+            ;    (menu/item
+            ;      nil
+            ;      (grid/row
+            ;        (->> (css/add-class :collapse)
+            ;             (css/align :middle))
+            ;        (grid/column
+            ;          (grid/column-size {:small 12 :medium 6})
+            ;          (dom/label nil "Your email")
+            ;          (dom/p nil (dom/small nil "Email shown to your customers where they can contact you.")))
+            ;        (grid/column
+            ;          (css/text-align :right)
+            ;          (dom/p nil (dom/span nil "dev @sulo.live"))
+            ;          (button/user-setting-default
+            ;            {:onClick #(om/update-state! this assoc :modal :modal/edit-info)}
+            ;            (dom/span nil "Edit")))))))
+            )
 
           (= route :store-dashboard/business#verify)
 

@@ -124,9 +124,15 @@
       (f/stripe->account account)))
 
   (-update-account [_ account-id params]
-    (let [updated (json/read-str (:body (client/post (stripe-endpoint "accounts" account-id) {:basic-auth api-key :form-params params})) :key-fn keyword)]
-      (debug "STRIPE - updated account: " updated)
-      (f/stripe->account updated)))
+    (try+
+      (let [updated (json/read-str (:body (client/post (stripe-endpoint "accounts" account-id) {:basic-auth api-key :form-params params})) :key-fn keyword)]
+        (debug "STRIPE - updated account: " updated)
+        (f/stripe->account updated))
+      (catch [:status 400] r
+        (let [{:keys [body]} r
+              {:keys [error]} (json/read-str body :key-fn keyword)]
+          ;(debug "Error response: " (clojure.walk/keywordize-keys body))
+          (throw (ex-info (:message error) error))))))
 
   (-get-balance [_ account-id secret]
     (let [balance (json/read-str (:body (client/get (stripe-endpoint "balance") {:basic-auth secret})) :key-fn keyword)]
