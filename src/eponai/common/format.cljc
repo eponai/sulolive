@@ -184,7 +184,8 @@
           :chat/store (:db/id store)}
          {:db/id             message-id
           :chat.message/user (select-keys user [:db/id])
-          :chat.message/text text}
+          :chat.message/text text
+          :chat.message/created-at (date/current-millis)}
          [:db/add chat-id :chat/messages message-id]]
         (with-meta {::message-id message-id
                     ::chat-id    chat-id}))))

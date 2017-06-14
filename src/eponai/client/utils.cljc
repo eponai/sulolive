@@ -31,6 +31,7 @@
    {:ui/singleton :ui.singleton/state
     :ui.singleton.state/product-view :products/list}
    {:ui/singleton :ui.singleton/product-search}
+   {:ui/singleton :ui.singleton/chat-config}
    ])
 
 (defn create-conn []

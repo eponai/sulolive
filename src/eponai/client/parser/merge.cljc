@@ -1,15 +1,18 @@
 (ns eponai.client.parser.merge
   (:require [datascript.core :as d]
-            [datascript.db :as db]
+            [datascript.db]
             [eponai.common.search :as common.search]
-            [eponai.common.database :as common.db]
+            [eponai.common.database :as db]
             [eponai.common.parser :as parser]
-            [eponai.common.parser.util :as p.util]
+            [eponai.common.parser.util :as parser.util]
+            [eponai.client.chat :as client.chat]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug error trace warn]]
             [eponai.client.auth :as auth]
-            [cemerick.url :as url]))
+            [cemerick.url :as url]
+            [datascript.core :as datascript]
+            [clojure.string :as str]))
 
-(defn transact [db tx]
+(defn db-with [db tx]
   (if (empty? tx)
     db
     (let [tx (if (sequential? tx) tx [tx])]
@@ -30,14 +33,14 @@
             (into []
                   (map :e)
                   (d/datoms db :aevt attr)))]
-    (transact db (into [] (comp (mapcat all-entities-with-attr)
-                                (map #(vector :db.fn/retractEntity %)))
-                       [::parser/read-basis-t-graph]))))
+    (db-with db (into [] (comp (mapcat all-entities-with-attr)
+                               (map #(vector :db.fn/retractEntity %)))
+                      [::parser/read-basis-t-graph]))))
 
 (defmulti client-merge (fn [db k v] k))
 (defmethod client-merge :default
   [db k val]
-  (transact db val))
+  (db-with db val))
 
 (defmethod client-merge :datascript/schema
   [db _ datascript-schema]
@@ -51,37 +54,69 @@
 (defmethod client-merge :query/auth
   [db _ val]
   (if (some? (:db/id val))
-    (transact db [val
+    (db-with db [val
                   [:db/add [:ui/singleton :ui.singleton/auth] :ui.singleton.auth/user (:db/id val)]])
     db))
 
 (defmethod client-merge :query/locations
   [db k val]
   (if (not-empty val)
-    (transact db [[:db/add [:ui/singleton :ui.singleton/auth] :ui.singleton.auth/locations val]])
+    (db-with db [[:db/add [:ui/singleton :ui.singleton/auth] :ui.singleton.auth/locations val]])
     db))
 
 (defmethod client-merge :query/product-search
   [db k val]
   (letfn [(set-search-db [search-db]
-            (transact db [[:db/add [:ui/singleton :ui.singleton/product-search] :ui.singleton.product-search/db search-db]]))]
-    (if (common.db/database? val)
+            (db-with db [[:db/add [:ui/singleton :ui.singleton/product-search] :ui.singleton.product-search/db search-db]]))]
+    (if (db/database? val)
       (set-search-db val)
-      (if-some [new-search-db (some-> (common.db/lookup-entity db [:ui/singleton :ui.singleton/product-search])
-                                      :ui.singleton.product-search/db
+      (if-some [new-search-db (some-> db
+                                      (db/singleton-value :ui.singleton.product-search/db)
                                       (common.search/transact val))]
         (set-search-db new-search-db)
         (do
           (debug "No new search db with merge value: " val)
           db)))))
 
+(defn- get-chat-db [db]
+  {:pre [(:schema db)]}
+  (if-some [chat-db (db/singleton-value db :ui.singleton.chat-config/chat-db)]
+    chat-db
+    (db/db (datascript/create-conn (:schema db)))))
+
+(defn- placeholder-refs
+  "Returns transactions that adds {:placeholder :workaround} for every entity that has attr."
+  [db attr]
+  (sequence
+    (comp (map :v)
+          (distinct)
+          (remove (fn [user-id]
+                    (seq (db/datoms db :eavt user-id :placeholder :workaround))))
+          (map (fn [user-id]
+                 {:db/id user-id :placeholder :workaround})))
+    (db/datoms db :aevt attr)))
+
+(defmethod client-merge :query/chat
+  [db k {:keys [sulo-db-tx chat-db-tx]}]
+  (let [chat-db (-> (get-chat-db db)
+                    (db-with chat-db-tx)
+                    (client.chat/trim-chat-messages client.chat/message-limit))
+        ;; datascript can't have refs without having the ref in the same database. Lame.
+        ;; so we put an entity with the same db/id in the database.
+        ;; Pretty sure it's this line:
+        ;; https://github.com/tonsky/datascript/blob/master/src/datascript/pull_api.cljc#L155
+        chat-db (db-with chat-db (placeholder-refs chat-db :chat.message/user))
+        db (db-with db sulo-db-tx)]
+    (db-with db [{:ui/singleton                      :ui.singleton/chat-config
+                   :ui.singleton.chat-config/chat-db chat-db}])))
+
 ;;;;;;; API
 
 (defn merge-mutation [merge-fn db history-id key val]
   {:pre  [(or (nil? merge-fn) (methods merge-fn))
-          (db/db? db)
+          (datascript.db/db? db)
           (symbol? key)]
-   :post [(db/db? %)]}
+   :post [(datascript.db/db? %)]}
 
   ;; Passing db to all functions for mutate.
   ;; We may want to do this for merge-read also.
@@ -96,8 +131,8 @@
           (merge-mutation-message history-id key (:result val) ::parser/success-message)))
 
 (defn merge-read [merge-fn db key val]
-  {:pre  [(or (nil? merge-fn) (methods merge-fn)) (db/db? db)]
-   :post [(db/db? %)]}
+  {:pre  [(or (nil? merge-fn) (methods merge-fn)) (datascript.db/db? db)]
+   :post [(datascript.db/db? %)]}
 
   ;; Dispatch proxy first, so our merge-fn doesn't have to
   ;; implement that themselves.
@@ -128,12 +163,13 @@
 (defn merge-novelty-by-key
   "Merges server response for each [k v] in novelty. Returns the next db and the keys to re-read."
   [merge-fn db novelty history-id]
-  {:pre  [(or (nil? merge-fn) (methods merge-fn)) (db/db? db)]
-   :post [(:keys %) (db/db? (:next %))]}
+  {:pre  [(or (nil? merge-fn) (methods merge-fn)) (datascript.db/db? db)]
+   :post [(:keys %) (datascript.db/db? (:next %))]}
   ;; Merge :datascript/schema first if it exists
-  (let [keys-to-merge-first (select-keys novelty [:datascript/schema])
+  (let [keys-to-merge-first [:datascript/schema]
+        prio-novelty (select-keys novelty keys-to-merge-first)
         other-novelty (apply dissoc novelty keys-to-merge-first)
-        ordered-novelty (concat keys-to-merge-first other-novelty)]
+        ordered-novelty (concat prio-novelty other-novelty)]
     (reduce
       (fn [{:keys [next] :as m} [key value]]
         #?(:cljs (debug "Merging response for key:" key "value:" value))
@@ -154,15 +190,15 @@
       ordered-novelty)))
 
 (defn merge-meta [db novelty-meta]
-  {:post [(db/db? %)]}
+  {:post [(datascript.db/db? %)]}
   (let [new-graph (some-> (::parser/read-basis-t novelty-meta)
-                          (p.util/graph-read-at-basis-t true))
+                          (parser.util/graph-read-at-basis-t true))
         old-graph (::parser/read-basis-t-graph
                     (d/entity db [:ui/singleton ::parser/read-basis-t]))
-        merged-graph (p.util/merge-graphs old-graph new-graph)]
+        merged-graph (parser.util/merge-graphs old-graph new-graph)]
     (cond-> db
             (not= old-graph merged-graph)
-            (transact {:ui/singleton                            ::parser/read-basis-t
+            (db-with {:ui/singleton                ::parser/read-basis-t
                        ::parser/read-basis-t-graph merged-graph}))))
 
 (defn- logout-with-redirect! [auth]

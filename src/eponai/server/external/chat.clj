@@ -4,24 +4,56 @@
             [eponai.common.database :as db]
             [eponai.server.datomic.query :as query]
             [com.stuartsierra.component :as component]
-            [suspendable.core :as suspendable]
-            [om.next :as om]
             [clojure.core.async :as async]
             [taoensso.timbre :refer [debug error]]
-            [eponai.server.external.datomic :as datomic]))
+            [eponai.server.external.datomic :as datomic]
+            [eponai.client.chat :as client.chat]))
 
 (defprotocol IWriteStoreChat
   (write-message [this store user message] "write a message from a user to a store's chat."))
 
+(defprotocol IReadStoreChatRef
+  (store-chat-reader [this] "Returns an IReadStoreChat 'value'. One with db values and not connections.")
+  (sync-up-to! [this t])
+  (chat-update-stream [this] "Stream of store-id's which have new messages"))
+
 (defprotocol IReadStoreChat
-  (initial-read [this store query] "Initial call to get chat entity and (maybe?) some of its messages.")
-  (read-messages [this store query last-read] "Read messages from last time.")
-  (last-read [this] "Some identifier that can be used in read-messages to only get what's changed.")
-  (chat-update-stream [this] "Stream of store-id's which have new messages")
-  (sync-up-to! [this t]))
+  (initial-read [this store query]
+    "Initial call to get chat entity and (maybe?) some of its messages. Returns map with keys #{:sulo-db-tx :chat-db-tx}")
+  (read-messages [this store query last-read]
+    "Read messages from last time. Returns map with keys #{:sulo-db-tx :chat-db-tx}")
+  (last-read [this] "Some identifier that can be used in read-messages to only get what's changed."))
 
 ;; #############################
 ;; ### Datomic implementation
+
+(defrecord StoreChatReader [chat-db sulo-db]
+  IReadStoreChat
+  (initial-read [this store query]
+    (client.chat/read-chat chat-db
+                           sulo-db
+                           query
+                           store
+                           client.chat/message-limit))
+  (read-messages [this store query last-read]
+    (let [{:keys [last-read-chat-db]} last-read
+          db-history (d/since (d/history chat-db) last-read-chat-db)
+          messages (query/all chat-db db-history query (client.chat/datomic-chat-entity-query store))
+
+          user-data (db/pull-all-with sulo-db
+                                      (client.chat/focus-chat-message-user-query query)
+                                      {:where   '[[$chat ?chat :chat/store ?store-id]
+                                                  [$db-hist ?chat :chat/messages ?msgs]
+                                                  [$chat ?msgs :chat.message/user ?e]
+                                                  [$ ?e :user/profile]]
+                                       :symbols {'?store-id (:db/id store)
+                                                 '$chat     chat-db
+                                                 '$db-hist  db-history}})]
+      {:sulo-db-tx user-data
+       :chat-db-tx messages}))
+  (last-read [this]
+    {:last-read-chat-db (d/basis-t chat-db)
+     :last-read-sulo-db (d/basis-t sulo-db)}))
 
 (defn- updated-store-ids [{:keys [db-after] :as tx-report}]
   (let [ret (d/q '{:find  [[?store-id ...]]
@@ -34,27 +66,6 @@
                  (:id (d/attribute db-after :chat/store)))]
     (debug "Found store-ids: " ret " in tx-report: " tx-report)
     ret))
-
-(defn datomic-chat-entity-query [store]
-  {:where   '[[?e :chat/store ?store-id]]
-   :symbols {'?store-id (:db/id store)}})
-
-(defn- parse-chat-message-user-query*
-  "Gets the pattern for :chat.message/user from a :query/chat pattern"
-  [query]
-  (letfn [(subquery-for-key [query key]
-            (let [query-parser (om/parser {:mutate (constantly nil)
-                                           :read   (fn [env k p]
-                                                     (when (= k key)
-                                                       {:value (:query env)}))})]
-              (-> (query-parser {} query)
-                  (get key))))]
-    (-> query
-        (subquery-for-key :chat/messages)
-        (subquery-for-key :chat.message/user))))
-
-(def parse-chat-message-user-query
-  (memoize parse-chat-message-user-query*))
 
 (defn chat-db [chat]
   (d/db (:conn (:chat-datomic chat))))
@@ -89,45 +100,14 @@
     (let [tx (format/chat-message (chat-db this) store user message)]
       (db/transact (:conn chat-datomic) tx)))
 
-  IReadStoreChat
-  (initial-read [this store query]
-    (let [chat-messages (db/pull-one-with (chat-db this)
-                                          query
-                                          (datomic-chat-entity-query store))
-          users (into #{} (comp (mapcat :chat/messages)
-                                (map :chat.message/user)
-                                (map :db/id))
-                      [chat-messages])
-          user-pattern (parse-chat-message-user-query query)
-          _ (debug "Parsed user pattern: " user-pattern)
-          user-data (db/pull-many (db/db (:conn sulo-datomic))
-                                  user-pattern
-                                  (seq users))]
-      (conj (or user-data []) chat-messages)))
-  (read-messages [this store query last-read]
-    (let [db (chat-db this)
-          db-history (d/since (d/history db) last-read)
-          messages (query/all db db-history query (datomic-chat-entity-query store))
-          user-data (->> (db/find-with db {:find    '[[?user ...]]
-                                           :where   '[[$ ?chat :chat/store ?store-id]
-                                                      [$db-hist ?chat :chat/messages ?msgs]
-                                                      [$ ?msgs :chat.message/user ?user]]
-                                           :symbols {'?store-id (:db/id store)
-                                                     '$chat     db
-                                                     '$db-hist  db-history}})
-
-                         (db/pull-many (db/db (:conn sulo-datomic))
-                                       (parse-chat-message-user-query query)))]
-      (if (> (count messages) (count user-data))
-        (into messages user-data)
-        (into user-data messages))))
-  (last-read [this]
-    (d/basis-t (chat-db this)))
-  (chat-update-stream [this]
-    (:store-id-chan this))
+  IReadStoreChatRef
+  (store-chat-reader [this]
+    (->StoreChatReader (chat-db this) (db/db (:conn sulo-datomic))))
   (sync-up-to! [this basis-t]
     (when basis-t
       (debug "Syncing chat up to basis-t: " basis-t)
-      (deref (d/sync (:conn chat-datomic) basis-t) 1000 nil))))
+      (deref (d/sync (:conn chat-datomic) basis-t) 1000 nil)))
+  (chat-update-stream [this]
+    (:store-id-chan this)))
 
 ;; ### Datomic implementation END

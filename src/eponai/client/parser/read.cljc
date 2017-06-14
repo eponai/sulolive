@@ -14,7 +14,8 @@
     [eponai.client.auth :as client.auth]
     [eponai.common.api.products :as products]
     [medley.core :as medley]
-    [eponai.client.cart :as client.cart]))
+    [eponai.client.cart :as client.cart]
+    [eponai.client.chat :as client.chat]))
 
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.
@@ -229,11 +230,6 @@
                                                      [?e :store/owners ?owners]]
                                           :symbols {'?user user-id}})})))
 
-(defn remove-query-key
-  ([k] (comp (remove k) (remove #(and (map? %) (some k (keys %))))))
-  ([k query]
-   (into [] (remove-query-key k) query)))
-
 (defn- add-all-hrefs [category params->route-handler param-order]
   (letfn [(with-hrefs [category parent-names]
             (let [names (conj parent-names (:category/name category))
@@ -265,7 +261,7 @@
 (defn navigate-gender [db query gender]
   (let [gender-query (products/category-names-query {:sub-category gender})]
     (when (db/one-with db (db/merge-query gender-query {:where '[[(identity ?sub) ?e]]}))
-     (let [query-without-children (into [:db/id] (remove-query-key :category/children) query)
+     (let [query-without-children (into [:db/id] (parser.util/remove-query-key :category/children) query)
            ;; Since our query is flat, it's faster to just select keys from the entity.
            entity-pull (comp (map #(db/entity db %))
                              (map #(select-keys % query-without-children)))]
@@ -288,7 +284,7 @@
 
 (defn navigate-category [db query category-name]
   (some-> (db/pull-one-with db (into [{:category/children '...}]
-                                     (remove-query-key :category/children)
+                                     (parser.util/remove-query-key :category/children)
                                      query)
                             (db/merge-query (products/category-names-query {:top-category category-name})
                                             {:where '[[(identity ?top) ?e]]}))
@@ -456,8 +452,29 @@
   (when-let [store-id (c/parse-long-safe (:store-id route-params))]
     (if (some? target)
       {:remote/chat (assoc-in ast [:params :store :db/id] store-id)}
-      {:value (db/pull-one-with db query {:where   '[[?e :chat/store ?store-id]]
-                                          :symbols {'?store-id store-id}})})))
+      {:value (when-let [chat-db (db/singleton-value db :ui.singleton.chat-config/chat-db)]
+                (let [{:keys [sulo-db-tx chat-db-tx]}
+                      (client.chat/read-chat chat-db
+                                             db
+                                             query
+                                             {:db/id store-id}
+                                             nil)
+                      _ (when (seq sulo-db-tx)
+                          (assert (every? #(contains? % :db/id) sulo-db-tx)
+                                  (str "sulo-db-tx (users) did not have :db/id's in them. Was: " sulo-db-tx)))
+                      users-by-id (into {} (map (juxt :db/id identity)) sulo-db-tx)]
+                  ;; This would be a perfect time for specter
+                  ;;  (comp (mapcat :chat/messages)
+                  ;; (map :chat.message/user)
+                  ;; (map :db/id))
+                  (update chat-db-tx :chat/messages
+                          (fn [messages]
+                            (into []
+                                  (map (fn [message]
+                                         (update message :chat.message/user
+                                                 (fn [{:keys [db/id]}]
+                                                   (assoc (get users-by-id id) :db/id id)))))
+                                  messages)))))})))
 
 (defmethod client-read :query/loading-bar
   [{:keys [db query target]} _ _]

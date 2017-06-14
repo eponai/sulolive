@@ -1,10 +1,11 @@
 (ns eponai.client.chat
   (:require
+    [datascript.core :as datascript]
     [eponai.client.routes :as routes]
     [eponai.common]
     [eponai.common.database :as db]
     [eponai.common.parser :as parser]
-    [eponai.common.parser.util :as p.util]
+    [eponai.common.parser.util :as parser.util]
     [taoensso.timbre :refer [warn debug error]]))
 
 (defprotocol IStoreChatListener
@@ -21,7 +22,10 @@
 (defn chat-basis-t [db store-id]
   (try
     (some-> (read-basis-t-graph db)
-            (p.util/get-basis-t :query/chat {:store-id store-id}))
+            (parser.util/get-basis-t :query/chat {:store-id store-id})
+            ;; Basis-t for query/chat consists of two basis-t. Once
+            ;; for each db (:chat-db and :sulo-db).
+            (:chat-db))
     (catch #?@(:clj [Exception e] :cljs [:default e])
            (error "Error getting current basis-t for chat: " e)
       ;; TODO: We should be able to display some kind of "something went wrong"
@@ -47,3 +51,68 @@
   (some-> (routes/current-route x)
           (get-in [:route-params :store-id])
           (eponai.common/parse-long)))
+
+;; ###########
+;; ## Query
+
+;; Messages stored on the client
+(def message-limit 50)
+
+(def focus-chat-message-user-query
+  (memoize (fn [query]
+             (parser.util/focus-subquery query [:chat/messages :chat.message/user]))))
+
+(def focus-chat-message-query
+  (memoize (fn [query]
+             (parser.util/focus-subquery query [:chat/messages]))))
+
+(defn datomic-chat-entity-query [store]
+  {:where   '[[?e :chat/store ?store-id]]
+   :symbols {'?store-id (:db/id store)}})
+
+(defn read-chat [chat-db sulo-db query store limit]
+  (let [chat-id (db/one-with chat-db (datomic-chat-entity-query store))
+        chat-messages (if (nil? limit)
+                        (mapv :v (db/datoms chat-db :eavt chat-id :chat/messages))
+                        (into []
+                              (comp (map :v) (take limit))
+                              (sort-by :tx
+                                       #(compare %2 %1)
+                                       (db/datoms chat-db :eavt chat-id :chat/messages))))
+        users (transduce
+                    (comp (map #(db/entity chat-db %))
+                          (map :chat.message/user)
+                          (map (juxt :db/id identity)))
+                    (completing (fn [m [id e]]
+                                  (update m id (fnil conj []) (into {:db/id id} e))))
+                    {}
+                    chat-messages)
+        pulled-messages (db/pull-many chat-db (focus-chat-message-query query) chat-messages)
+        pulled-chat (db/pull chat-db (parser.util/remove-query-key :chat/messages query) chat-id)
+        ;; TODO: Get :chat/modes from chat-db or sulo-db.
+        user-pattern (focus-chat-message-user-query query)
+        user-data (db/pull-many sulo-db user-pattern (seq (keys users)))]
+    {:sulo-db-tx user-data
+     :chat-db-tx (assoc pulled-chat :chat/messages pulled-messages)}))
+
+;; #######################
+;; ## Message management
+
+(defn trim-chat-messages [db chat-limit]
+  (let [chat-datoms (into []
+                          (remove (fn [[e]]
+                                    (contains? (db/entity db e) :chat.message/client-side-message?)))
+                          (db/datoms db :aevt :chat.message/text))
+        trim-messages (fn [db limit]
+                        (datascript/db-with
+                          db
+                          (sequence
+                            (comp
+                              (take limit)
+                              (mapcat (fn [[e]]
+                                        (db/checked-retract-entity db e :chat/messages))))
+                            (sort-by :tx chat-datoms))))
+        messages (count chat-datoms)]
+    (cond-> db
+            (> messages chat-limit)
+            (trim-messages (- messages chat-limit)))))
