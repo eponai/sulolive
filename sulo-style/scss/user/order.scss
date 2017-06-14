@@ -1,77 +1,50 @@
 #sulo-user-order-list {
-	// .row {
-		// .page-content {
-			padding-top: 1rem;
-		// }
+	padding-top: $global-padding;
+	.row {
 		max-width: $dashboard-content-width;
 		margin: 0 auto;
-	// }
-	// h1 {
-	// 	margin-top: 2rem;
-	// }
-	h2 {
-		font-weight: $global-weight-bold;
-		// color: $dark-gray;
 	}
+
 	.empty-container {
 		padding: 4rem 0;
 		margin-bottom: 4rem;
 	}
 
 	.section-title {
-		margin-top: 2rem;
 		letter-spacing: 0;
-		margin-bottom: 0.2rem;
 		display: flex;
 		justify-content: space-between;
 		align-items: flex-start;
 		p {
 			margin: 0;
 		}
-		small {
-			color: $dark-gray;
-			// line-height: 1;
-			font-weight: $global-weight-bold;
-		}
-		// font-weight: $global-weight-bold;
-		// margin-bottom: 1rem;
 	}
 
 	.sl-order-card {
-		// border-top: $global-border-secondary;
-		// border-bottom: $global-border;
-		// border-top: $global-border;
 		border: $global-border;
-		// box-shadow: 0 1px 3px 0 rgba($black, 0.1);
-		// padding: 0.5rem;
 		margin-bottom: 4rem;
 		&:last-child {
 			margin-bottom: 10rem;
 		}
 		.sl-order-card-subtitle {
-			// display: flex;
-			// justify-content: space-between;
-			padding: 0.5rem;
-			// text-transform: uppercase;
+			padding: $global-padding;
+			p {
+				margin: 0;
+			}
 		}
 		.sl-order-card-title {
-			// background: rgba($light-gray, 0.5);
 			margin: 0;
-			padding: 1rem;
-			// border-bottom: $global-border-secondary;
-			// margin-bottom: 0.5rem;
+			padding: $global-padding;
 			.button {
 				margin-bottom: 0;
-				margin-top: 0.5rem;
+				margin-top: $global-margin-small;
 			}
 			align-items: center;
 			.sl-order-card-title--store {
 				display: flex;
 				align-items: center;
-				// margin-right: 1rem;
-				// margin-top: 0.5rem;
 				p {
-					margin-left: 1rem;
+					margin-left: $global-margin;
 					font-size: 110%;
 				}
 				a {
@@ -87,77 +60,51 @@
 			.sl-order-card-title--number {
 				text-align: right;
 				flex: 0 0 auto;
-				// margin-left: 0.5rem;
 				small {
-					// color: $dark-gray;
 					font-weight: $global-weight-bold;
-					// letter-spacing: 1px;
 				}
 			}
 		}
 		.sl-order-card-content {
-			// display: flex;
-			// padding: 0.5rem;
 			.sl-order-card-content--status {
 				border-top: $global-border-secondary;
 				display: flex;
 				justify-content: space-between;
 				align-items: center;
-				padding: 1rem;
-				// padding-top: 0;
+				padding: $global-padding;
 				.button {
 					margin: 0;
 				}
-				// background: rgba($light-gray, 0.3);
 			}
 			.menu {
-				// margin-bottom: 1rem;
-				padding: 0 1rem;
-				// padding-top: 0;
+				padding: 0 $global-padding;
 				li {
 					display: flex;
 					border-bottom: $global-border-secondary;
 					&:first-child {
 						border-top: $global-border-secondary;
 					}
-					padding: 0.5rem 0;
+					padding: $global-padding-small 0;
 					justify-content: space-between;
 					a {
 						padding: 0;
 						justify-content: space-between;
 						align-items: center;
 					}
-					// align-items: flex-start;
-					// margin-right: 1rem;
 					p {
 						margin: 0;
-					}
-					&:hover {
-						// background: rgba($light-gray, 0.2);
 					}
 					.photo-container {
 						min-width: 2.5rem;
 						max-width: 2.5rem;
-						margin-right: 1rem;
+						margin-right: $global-margin;
 						width: 3rem;
 					}
 					.sl-order-items-list-item--info {
-						// display: flex;
-						// align-items: flex-start;
-						// .info-photo {
-						// 	padding: 0.5rem 0;
-						// }
-						margin-right: 0.5rem;
+						margin-right: $global-margin-small;
 						p {
 							line-height: 1.1;
 						}
-					}
-					// .sl-order-items-list-item--price {
-					// 	text-align: right;
-					// }
-
-					p {
-						// color: $dark-gray;
 					}
 				}
 			}

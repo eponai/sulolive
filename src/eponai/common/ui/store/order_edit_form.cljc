@@ -33,19 +33,24 @@
    :modal/mark-as-canceled?  :order.status/canceled})
 
 (def modal-title
-  {:modal/mark-as-fulfilled? "Fulfill items"
+  {:modal/mark-as-fulfilled? "Mark as shipped"
    :modal/mark-as-returned?  "Return order"
    :modal/mark-as-canceled?  "Cancel order"})
 
 (def modal-message
-  {:modal/mark-as-fulfilled? "Do you want to fulfill items for this order?"
-   :modal/mark-as-returned?  "Do you want to mark items as returned to customer? The payment will be returned in full to the customer."
-   :modal/mark-as-canceled?  "Do you want to cancel this order? The payment will be returned in full to the customer."})
+  {:modal/mark-as-fulfilled? "Do you want to mark order as shipped?"
+   :modal/mark-as-returned?  "Do you want to mark items as returned to customer?"
+   :modal/mark-as-canceled?  "Do you want to cancel this order?"})
+
+(def modal-submessage
+  {:modal/mark-as-fulfilled? "Your customer will be notified that their items are on their way."
+   :modal/mark-as-returned?  "Your customer will be notified and their payment returned in full."
+   :modal/mark-as-canceled?  "Your customer will be notified and their payment returned in full."})
 
 (def confirm-message
-  {:modal/mark-as-fulfilled? "Yes, fullfill items!"
-   :modal/mark-as-returned?  "Yes, return order!"
-   :modal/mark-as-canceled?  "Yes, cancel order!"})
+  {:modal/mark-as-fulfilled? "Yes, mark as shipped"
+   :modal/mark-as-returned?  "Yes, return order"
+   :modal/mark-as-canceled?  "Yes, cancel order"})
 
 (def dropdowns
   {:dropdown/sulo-fee "dropdown-sulo-fee"})
@@ -59,22 +64,23 @@
         on-close #(om/update-state! component dissoc :modal)]
     (when modal
       (common/modal
-        {:on-close on-close}
-        (dom/div nil
-                 (dom/h4 (css/add-class :header) (get modal-title modal))
-                 (callout/callout
-                   nil
-                   (dom/p nil (get modal-message modal))
-                   (callout/header nil))
-                 (dom/div (css/text-align :right)
-                          (dom/a
-                            (css/button-hollow {:onClick on-close})
-                            (dom/span nil "Oops, no thanks"))
-                          (dom/a
-                            (css/button {:onClick #(do
-                                                    (on-close)
-                                                    (.update-order component {:order/status order-status}))})
-                            (dom/span nil (get confirm-message modal)))))))))
+        {:on-close on-close
+         :size "tiny"}
+        (dom/h4 (css/add-class :header) (get modal-message modal))
+        (dom/p nil
+               ;(dom/span nil (get modal-message modal))
+               ;(dom/br nil)
+               (dom/small nil (get modal-submessage modal)))
+        (dom/div
+          (css/add-class :action-buttons)
+          (button/user-setting-default
+            (css/button-hollow {:onClick on-close})
+            (dom/span nil "No thanks"))
+          (button/user-setting-cta
+            (css/button {:onClick #(do
+                                    (on-close)
+                                    (.update-order component {:order/status order-status}))})
+            (dom/span nil (get confirm-message modal))))))))
 
 (defn label-column [opts & content]
   (grid/column
@@ -211,7 +217,7 @@
                            (->> (grid/column-size {:small 4 :medium 6})
                                 (css/add-class :order-item-info))
                            (photo/product-photo {:photo-id       (get-in oi [:order.item/photo :photo/id])
-                                          :transformation :transformation/thumbnail})
+                                                 :transformation :transformation/thumbnail})
                            (dom/p nil (dom/span nil (:db/id product))
                                   (dom/br nil)
                                   (dom/small nil (:order.item/title oi))))

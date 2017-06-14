@@ -30,6 +30,11 @@
   Object
   (initLocalState [_]
     {:selected-tab :inbox})
+  (componentDidMount [this]
+    (let [{:keys [query/orders query/current-route]} (om/props this)
+          new-orders (filter #(#{:order.status/created :order.status/paid} (:order/status %)) orders)]
+      (when (empty? new-orders)
+        (om/update-state! this assoc :selected-tab :all))))
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
           {:keys [query/orders query/current-route]} (om/props this)
@@ -37,12 +42,13 @@
           new-orders (filter #(#{:order.status/created :order.status/paid} (:order/status %)) orders)
 
           filtered-orders (cond (not-empty search-input)
-                       (filter #(clojure.string/starts-with? (str (:db/id %))
-                                                         search-input) orders)
-                       (= selected-tab :inbox)
-                       new-orders
-                       :else
-                       orders)]
+                                (filter #(clojure.string/starts-with? (str (:db/id %))
+                                                                      search-input) orders)
+                                (= selected-tab :inbox)
+                                new-orders
+                                :else
+                                orders)]
+      (debug "Selected tab: " selected-tab)
       (dom/div
         {:id "sl-order-list"}
 

@@ -7,6 +7,19 @@
 			margin: 0 auto;
 			margin-bottom: 1rem;
 		}
+		> .row.collapse {
+			@include breakpoint(medium) {
+				> .column {
+					margin: 0 1rem;
+					&:last-child {
+						margin-right: 0;
+					}
+					&:first-child {
+						margin-left: 0;
+					}
+				}
+			}
+		}
 
 		.section-info {
 			.store-info-menu {
@@ -35,39 +48,41 @@
 				}
 			}
 		}
+
 		li.getting-started-item {
-			display: flex;
-			align-items: center;
-			margin-top: 0.25rem;
-			padding: 1rem 0;
+			padding: 0;
+			$sulo-color: darken(map-get($foundation-palette, sulo), 10%);
+			&:hover {
+				background: rgba($light-gray, 0.2);
+			}
 			p {
-				margin: 0;
+				margin-bottom: 0;
+				font-weight: $global-weight-bold;
 			}
 			i {
-				color: $light-gray;
-				margin-right: 0.5rem;
-			}
-			border-top: $global-border;
-			&:first-child {
-				border: none;
+				opacity: 0;
 			}
 			a {
-				border: none;
+				color: $sulo-color;
 			}
 			&.done {
-				a {
-					$color: map-get($foundation-palette, action);
-					color: rgba($color, 0.3);
-					cursor: default;
-					text-decoration: none;
-				}
-				span {
-					text-decoration: line-through;
+				pointer-events: none;
+				p {
+					font-weight: $global-weight-normal;
 				}
 				i {
-					color: $success-color;
+					opacity: 1;
+					color: $medium-gray;
+				}
+				span {
+					color: $medium-gray;
+					text-decoration: line-through;
 				}
 			}
+		}
+
+		.callout.getting-started {
+			// background: map-get($foundation-palette, sulo);
 		}
 	}
 }

@@ -8,7 +8,7 @@
 		margin-bottom: 0.5rem;
 	}
 	label[for] {
-		color: $body-font-color;
+		// color: $body-font-color;
 	}
 	.reveal {
 		.column {
@@ -115,7 +115,7 @@
 		font-size: 90%; 
 		color: $dark-gray;
 		&[for] {
-			color: $body-font-color;
+			// color: $body-font-color;
 		}
 		@include breakpoint(large) {
 			text-align: right;
@@ -165,8 +165,9 @@
 		}
 	}
 	.document-upload-container {
-		label {
+		label:not([for]) {
 			text-align: left;
+			color: $body-font-color;
 		}
 	}
 		.document-uploader {

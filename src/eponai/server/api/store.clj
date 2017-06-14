@@ -231,6 +231,7 @@
                              :order.status/fulfilled #{:order.status/returned}}
         old-status (:order/status old-order)
         is-status-transition-allowed? (contains? (get allowed-transitions old-status) status)]
+    (debug "Update order: " status)
     (if is-status-transition-allowed?
       (let [should-refund? (contains? #{:order.status/canceled :order.status/returned} status)]
         (when should-refund?

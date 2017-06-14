@@ -53,25 +53,25 @@
                   (some? due-by)
                   (dom/p nil
                          (dom/span nil "More information needs to be collected to keep this account enabled. Please ")
-                         (dom/a {:href (routes/url :store-dashboard/settings#activate {:store-id store-id})} "provide the required information")
+                         (dom/a {:href (routes/url :store-dashboard/business#verify {:store-id store-id})} "provide the required information")
                          (dom/span nil " to prevent disruption in service to this account."))
                   (some? fields-needed)
                   (dom/p nil
                          (dom/span nil "If this account continues to process more volume, more information may need to be collected. To prevent disruption in service to this account you can choose to ")
-                         (dom/a {:href (routes/url :store-dashboard/settings#activate {:store-id store-id})} "provide the information")
+                         (dom/a {:href (routes/url :store-dashboard/business#verify {:store-id store-id})} "provide the information")
                          (dom/span nil " proactively.")))
-            ))))))
+            ))))
+    nil))
 
 (defn check-list-item [done? href & [content]]
   (menu/item
     (cond->> (css/add-class :getting-started-item)
              done?
              (css/add-class :done))
-
-    (dom/p nil
-           (dom/i {:classes ["fa fa-check fa-fw"]})
-           (dom/a
-             {:href (when-not done? href)}
+    (dom/a
+      {:href (when-not done? href)}
+      (dom/p nil
+             (dom/i {:classes ["fa fa-check fa-fw"]})
              content))))
 
 (defui StoreHome
@@ -83,6 +83,7 @@
                                      {:store.profile/photo [:photo/path :photo/id]}]}
                     {:store/owners [{:store.owner/user [:user/email]}]}
                     :store/stripe
+                    {:store/shipping [{:shippping/rules [:db/id]}]}
                     {:order/_store [:order/items]}
                     {:stream/_store [:stream/state]}]}
      :query/store-item-count
@@ -160,57 +161,74 @@
               (dom/h3 nil "Payments")
               (dom/p (css/add-class :stat) 0))))
 
-        (dom/div
-          (css/add-class :section-title)
-          (dom/h2 nil "Getting started"))
-
-        (callout/callout
-          nil
-          (menu/vertical
+        (grid/row
+          (css/add-class :collapse)
+          (grid/column
             nil
 
-            (check-list-item
-              (some? (:store.profile/description (:store/profile store)))
-              (routes/url :store-dashboard/settings {:store-id store-id})
-              (dom/span nil "Describe your store. People love to hear your story."))
+            (dom/div
+              (css/add-class :section-title)
+              (dom/h2 nil "Getting started"))
 
-            (check-list-item
-              (boolean (pos? store-item-count))
-              (routes/url :store-dashboard/create-product {:store-id store-id})
-              (dom/span nil "Show off your amazing goods, add your first product."))
-
-            (check-list-item
-              false
-              (routes/url :store-dashboard/stream {:store-id store-id})
-              (dom/span nil "Setup your first stream and hangout with your customers when you feel like it."))
-
-            (check-list-item
-              (:stripe/details-submitted? stripe-account)
-              (routes/url :store-dashboard/settings#business {:store-id store-id})
-              (dom/span nil "Verify your account. You know, so we know you're real."))))
-
-        (dom/div
-          (css/add-class :section-title)
-          (dom/h2 nil "Notifications"))
-        (if (:stripe/details-submitted? stripe-account)
-          (verification-status-element this)
-          (callout/callout
-            (->> (css/add-class :notification)
-                 (css/add-class :action))
-            (grid/row
+            (callout/callout
               nil
-              (grid/column
-                (css/add-class :shrink)
-                (dom/i {:classes ["fa fa-info fa-fw"]}))
+              (menu/vertical
+                (css/add-class :section-list)
+
+                (check-list-item
+                  (some? (:store.profile/description (:store/profile store)))
+                  (routes/url :store-dashboard/profile {:store-id store-id})
+                  (dom/span nil "Describe your store."))
+
+                (check-list-item
+                  (not-empty (get-in store [:store/shipping :shipping/rules]))
+                  (routes/url :store-dashboard/shipping {:store-id store-id})
+                  (dom/span nil "Specify shipping options."))
+
+                (check-list-item
+                  (boolean (pos? store-item-count))
+                  (routes/url :store-dashboard/create-product {:store-id store-id})
+                  (dom/span nil "Add your first product."))
+
+                (check-list-item
+                  false
+                  (routes/url :store-dashboard/stream {:store-id store-id})
+                  (dom/span nil "Setup your first stream"))
+
+                (check-list-item
+                  (:stripe/details-submitted? stripe-account)
+                  (routes/url :store-dashboard/settings#business {:store-id store-id})
+                  (dom/span nil "Verify your account, so we know you're real.")))))
+          (if (:stripe/details-submitted? stripe-account)
+            (when-let [verification-el (verification-status-element this)]
               (grid/column
                 nil
-                (callout/header nil "Verify your account")))
-            (dom/p nil
-                   (dom/span nil "Before ")
-                   (dom/a {:href (routes/url :store-dashboard/settings#business {:store-id store-id})} (dom/span nil "verifying your account"))
-                   (dom/span nil ", you can only use SULO Live in test mode. You can manage your store, but it'll not be visible to the public."))
-            (dom/p nil
-                   "Once you've verified your account you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our terms of service. If there is a problem, we'll get in touch right away to resolve it as quickly as possible.")))
+                (dom/div
+                  (css/add-class :section-title)
+                  (dom/h2 nil "Notifications"))
+                verification-el))
+            (grid/column
+              nil
+              (dom/div
+                (css/add-class :section-title)
+                (dom/h2 nil "Notifications"))
+              (callout/callout
+                (->> (css/add-class :notification)
+                     (css/add-class :action))
+                (grid/row
+                  nil
+                  (grid/column
+                    (css/add-class :shrink)
+                    (dom/i {:classes ["fa fa-info fa-fw"]}))
+                  (grid/column
+                    nil
+                    (callout/header nil "Verify your account")))
+                (dom/p nil
+                       (dom/span nil "Before ")
+                       (dom/a {:href (routes/url :store-dashboard/settings#business {:store-id store-id})} (dom/span nil "verifying your account"))
+                       (dom/span nil ", you can only use SULO Live in test mode. You can manage your store, but it'll not be visible to the public."))
+                (dom/p nil
+                       "Once you've verified your account you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our terms of service. If there is a problem, we'll get in touch right away to resolve it as quickly as possible.")))))
 
         (dom/div
           (css/add-class :section-title)

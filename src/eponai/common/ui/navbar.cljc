@@ -597,7 +597,8 @@
                            (dom/div {:classes ["icon icon-truck"]})
                            (dom/span nil "Shipping")))
                   (menu/item
-                    (when (#{:store-dashboard/business} (:route current-route))
+                    (when (#{:store-dashboard/business
+                             :store-dashboard/business#verify} (:route current-route))
                       (css/add-class :is-active))
                     (dom/a {:href    (routes/url :store-dashboard/business {:store-id (:db/id owned-store)})
                             :onClick #(track-event ::mixpanel/go-to-business)}
