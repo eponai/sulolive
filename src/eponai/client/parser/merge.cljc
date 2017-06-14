@@ -166,9 +166,10 @@
   {:pre  [(or (nil? merge-fn) (methods merge-fn)) (datascript.db/db? db)]
    :post [(:keys %) (datascript.db/db? (:next %))]}
   ;; Merge :datascript/schema first if it exists
-  (let [keys-to-merge-first (select-keys novelty [:datascript/schema])
+  (let [keys-to-merge-first [:datascript/schema]
+        prio-novelty (select-keys novelty keys-to-merge-first)
         other-novelty (apply dissoc novelty keys-to-merge-first)
-        ordered-novelty (concat keys-to-merge-first other-novelty)]
+        ordered-novelty (concat prio-novelty other-novelty)]
     (reduce
       (fn [{:keys [next] :as m} [key value]]
         #?(:cljs (debug "Merging response for key:" key "value:" value))

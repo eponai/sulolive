@@ -44,7 +44,7 @@
                                       ;; Refs are the only valueTypes we care about
                                       ;; so we dissoc the rest.
                                       (dissoc datomic-s :db/valueType))
-                                    (select-keys (disj (set (keys datomic-s))
+                                    (select-keys (disj (set (cons :db/index (keys datomic-s)))
                                                        :db/doc
                                                        :db/id
                                                        :db.install/_attribute

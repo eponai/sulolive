@@ -148,7 +148,7 @@
           (css/add-class :chat-content {:id "sl-chat-content"})
           (elements/message-list messages))
         (->ChatInput (om/computed {}
-                                  {:on-enter (fn [chat-input] 
+                                  {:on-enter (fn [chat-input]
                                                (send-message this chat-input))}))))))
 
 (def ->StreamChat (om/factory StreamChat))
