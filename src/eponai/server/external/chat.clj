@@ -13,7 +13,7 @@
   (write-message [this store user message] "write a message from a user to a store's chat."))
 
 (defprotocol IReadStoreChatRef
-  (store-chat-reader [this] "Returns an IReadStoreChat 'value'. One with db values and not connections.")
+  (store-chat-reader [this sulo-db-filter] "Returns an IReadStoreChat 'value'. One with db values and not connections.")
   (sync-up-to! [this t])
   (chat-update-stream [this] "Stream of store-id's which have new messages"))
 
@@ -101,8 +101,11 @@
       (db/transact (:conn chat-datomic) tx)))
 
   IReadStoreChatRef
-  (store-chat-reader [this]
-    (->StoreChatReader (chat-db this) (db/db (:conn sulo-datomic))))
+  (store-chat-reader [this sulo-db-filter]
+    (->StoreChatReader (chat-db this)
+                       (cond-> (db/db (:conn sulo-datomic))
+                               (some? sulo-db-filter)
+                               (d/filter sulo-db-filter))))
   (sync-up-to! [this basis-t]
     (when basis-t
       (debug "Syncing chat up to basis-t: " basis-t)

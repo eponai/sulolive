@@ -19,7 +19,8 @@
     [clojure.data.json :as json]
     [clojure.java.io :as io]
     [eponai.common.format.date :as date]
-    [eponai.common.search :as common.search]))
+    [eponai.common.search :as common.search])
+  (:import (datomic.db Db)))
 
 (defmacro defread
   ""
@@ -326,7 +327,8 @@
     (let [chat (:system/chat system)
           _ (when chat-update-basis-t
               (chat/sync-up-to! chat chat-update-basis-t))
-          chat-reader (chat/store-chat-reader chat)]
+          chat-reader (chat/store-chat-reader chat (when (datomic/is-filtered db)
+                                                     (.getFilter ^Db db)))]
       {:value (-> (if (nil? read-basis-t-for-this-key)
                     (chat/initial-read chat-reader store query)
                     (chat/read-messages chat-reader store query read-basis-t-for-this-key))
