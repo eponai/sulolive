@@ -27,20 +27,48 @@
   (:db/id (get-store component-or-props)))
 
 ;; TODO: This ISendChatMessage stuff should probably be done without a protocol.
-(defprotocol ISendChatMessage
+(defprotocol IHasChatMessage
   (get-chat-message [this])
   (reset-chat-message! [this]))
 
-(defn send-message [component]
-  (let [chat-message (get-chat-message component)]
+(defn send-message [component has-message]
+  (let [chat-message (get-chat-message has-message)]
     (when-not (str/blank? chat-message)
-      (mixpanel/track "Send chat message" {:message chat-message
+      (mixpanel/track "Send chat message" {:message  chat-message
                                            :store-id (get-store-id component)})
       (om/transact! component `[(chat/send-message
                                   ~{:store (select-keys (get-store component) [:db/id])
                                     :text  chat-message})
                                 :query/chat])))
-  (reset-chat-message! component))
+  (reset-chat-message! has-message))
+
+(defui ChatInput
+  IHasChatMessage
+  (get-chat-message [this]
+    (:chat-message (om/get-state this)))
+  (reset-chat-message! [this]
+    (om/update-state! this assoc :chat-message ""))
+  Object
+  (render [this]
+    (let [{:keys [chat-message]} (om/get-state this)
+          {:keys [on-enter]} (om/get-computed this)]
+      (my-dom/div
+        (css/add-class :message-input-container)
+        (my-dom/input {:className   ""
+                       :type        "text"
+                       :placeholder "Say something..."
+                       :value       (or chat-message "")
+                       :onKeyDown   #?(:cljs #(when (utils/enter-pressed? %)
+                                                (on-enter this))
+                                       :clj  identity)
+                       :maxLength   150
+                       :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))})
+        (my-dom/a
+          (->> (css/button-hollow {:onClick #(on-enter this)})
+               (css/add-class :secondary))
+          (my-dom/i {:classes ["fa fa-send-o fa-fw"]}))))))
+
+(def ->ChatInput (om/factory ChatInput))
 
 (defui StreamChat
   static om/IQuery
@@ -61,11 +89,6 @@
     (client.chat/start-listening! (shared/by-key this :shared/store-chat-listener) store-id))
   (stop-listening! [this store-id]
     (client.chat/stop-listening! (shared/by-key this :shared/store-chat-listener) store-id))
-  ISendChatMessage
-  (get-chat-message [this]
-    (:chat-message (om/get-state this)))
-  (reset-chat-message! [this]
-    (om/update-state! this assoc :chat-message ""))
   Object
   (componentWillUnmount [this]
     (client.chat/stop-listening! this (get-store-id this)))
@@ -96,7 +119,7 @@
     (let [{:keys [show?]} (om/get-computed this)]
       {:show-chat? show?}))
   (render [this]
-    (let [{:keys [show-chat? chat-message]} (om/get-state this)
+    (let [{:keys [show-chat?]} (om/get-state this)
           messages (get-messages this)
           {:keys [stream-overlay?]} (om/get-computed this)]
       (my-dom/div
@@ -124,21 +147,8 @@
         (my-dom/div
           (css/add-class :chat-content {:id "sl-chat-content"})
           (elements/message-list messages))
-        (my-dom/div
-          (css/add-class :message-input-container)
-          (my-dom/input {:className   ""
-                         :type        "text"
-                         :placeholder "Say something..."
-                         :value       (or chat-message "")
-                         :onKeyDown   #?(:cljs #(when (utils/enter-pressed? %)
-                                                 (send-message this))
-                                         :clj  identity)
-                         :maxLength   150
-                         :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))})
-          (my-dom/a
-            (->> (css/button-hollow {:onClick #(send-message this)})
-                 (css/add-class :secondary))
-            (my-dom/i {:classes ["fa fa-send-o fa-fw"]})))
-        ))))
+        (->ChatInput (om/computed {}
+                                  {:on-enter (fn [chat-input] 
+                                               (send-message this chat-input))}))))))
 
 (def ->StreamChat (om/factory StreamChat))
