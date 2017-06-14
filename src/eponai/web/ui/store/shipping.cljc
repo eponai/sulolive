@@ -104,7 +104,7 @@
         address (:shipping/address shipping)
         {:keys [input-validation]} (om/get-state component)
         on-close #(do (mixpanel/track "Store: Close shipping info")
-                      (om/update-state! component dissoc :modal))]
+                      (om/update-state! component dissoc :modal :input-validation))]
     (common/modal
       (css/add-class :shipping-address-modal {:on-close       on-close
                                               :require-close? true})
@@ -192,7 +192,7 @@
 (defn add-shipping-rule-modal [component]
   (let [on-close #(om/update-state! component (fn [st]
                                                 (-> st
-                                                    (dissoc :modal :shipping-rule/edit-rule)
+                                                    (dissoc :modal :shipping-rule/edit-rule :input-validation)
                                                     (assoc :selected-countries []
                                                            :shipping-rule/section :shipping-rule.section/destinations))))
         {:query/keys [countries store]} (om/props component)
@@ -380,8 +380,7 @@
   Object
   (initLocalState [_]
     {:selected-countries    []
-     :shipping-rule/section :shipping-rule.section/destinations
-     :modal                 :modal/add-shipping-address})
+     :shipping-rule/section :shipping-rule.section/destinations})
   (save-shipping-rule [this]
     #?(:cljs
        (let [rate-first (utils/input-value-by-id (:shipping.rate/first form-inputs))
@@ -496,40 +495,40 @@
         (dom/div
           (css/show-for-sr)
           (dom/h1 nil "Shipping"))
-        (dom/div
-          (css/add-class :section-title)
-          (dom/h2 nil "Shipping settings"))
-        (callout/callout
-          (css/add-classes [:section-container :section-container--shipping-address])
-          (menu/vertical
-            (css/add-class :section-list)
-
-            (let [{:shipping/keys [address]
-                   shipping-name  :shipping/name} shipping
-                  {:shipping.address/keys [street street2 locality postal region country]} address]
-              (menu/item
-                nil
-                (grid/row
-                  (->> (css/add-class :collapse)
-                       (css/align :middle))
-                  (grid/column
-                    (grid/column-size {:small 12 :medium 6})
-                    (dom/label nil "Shipping address")
-                    (dom/p nil (dom/small nil "This is the address from which your products will ship.")))
-                  (grid/column
-                    (css/text-align :right)
-
-                    (if (some? address)
-                      (dom/p nil
-                             (dom/span nil shipping-name)
-                             (dom/br nil)
-                             (dom/small nil street)
-                             (dom/br nil)
-                             (dom/small nil (string/join ", " [locality postal region country])))
-                      (dom/p nil (dom/small nil (dom/i nil "No saved address"))))
-                    (button/user-setting-default
-                      {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-address)}
-                      (dom/span nil "Add shipping address"))))))))
+        ;(dom/div
+        ;  (css/add-class :section-title)
+        ;  (dom/h2 nil "Shipping settings"))
+        ;(callout/callout
+        ;  (css/add-classes [:section-container :section-container--shipping-address])
+        ;  (menu/vertical
+        ;    (css/add-class :section-list)
+        ;
+        ;    (let [{:shipping/keys [address]
+        ;           shipping-name  :shipping/name} shipping
+        ;          {:shipping.address/keys [street street2 locality postal region country]} address]
+        ;      (menu/item
+        ;        nil
+        ;        (grid/row
+        ;          (->> (css/add-class :collapse)
+        ;               (css/align :middle))
+        ;          (grid/column
+        ;            (grid/column-size {:small 12 :medium 6})
+        ;            (dom/label nil "Shipping address")
+        ;            (dom/p nil (dom/small nil "This is the address from which your products will ship.")))
+        ;          (grid/column
+        ;            (css/text-align :right)
+        ;
+        ;            (if (some? address)
+        ;              (dom/p nil
+        ;                     (dom/span nil shipping-name)
+        ;                     (dom/br nil)
+        ;                     (dom/small nil street)
+        ;                     (dom/br nil)
+        ;                     (dom/small nil (string/join ", " [locality postal region country])))
+        ;              (dom/p nil (dom/small nil (dom/i nil "No saved address"))))
+        ;            (button/user-setting-default
+        ;              {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-address)}
+        ;              (dom/span nil "Add shipping address"))))))))
         (dom/div
           (css/add-class :content-section)
           (dom/div
@@ -539,7 +538,8 @@
               (css/add-class :subtitle)
               (dom/p nil
                      (dom/small nil "Create shipping rules to define where you will ship your products and shipping rates for these orders. ")
-                     (dom/a nil (dom/small nil "Learn more")))
+                     ;(dom/a nil (dom/small nil "Learn more"))
+                     )
               (button/button
                 (button/small {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-rule)})
                 (dom/span nil "Add shipping rule"))))
@@ -604,7 +604,9 @@
                                    (table/td nil (dom/span nil (:shipping.rate/title r)))
                                    (table/td
                                      nil
-                                     (dom/span nil (ui-utils/two-decimal-price (:shipping.rate/first r))))
+                                     (dom/span nil (ui-utils/two-decimal-price (:shipping.rate/first r)))
+                                     (when (< 0 (:shipping.rate/additional r))
+                                       (dom/small nil (str " (" (ui-utils/two-decimal-price (:shipping.rate/additional r)) ")"))))
                                    (table/td
                                      nil
                                      (let [{:shipping.rate/keys [free-above additional]

@@ -97,7 +97,7 @@
         {:id "sulo-main-dashboard"}
 
         (dom/div
-          (css/add-class :section-title)
+          (css/show-for-sr)
           (dom/h1 nil "Home"))
 
         (dom/div

@@ -38,12 +38,16 @@
 	}
 
 	.sl-order-card {
-		border-top: $global-border-secondary;
+		// border-top: $global-border-secondary;
 		// border-bottom: $global-border;
-		// border: $global-border;
-		box-shadow: 0 1px 3px 0 rgba($black, 0.1);
+		// border-top: $global-border;
+		border: $global-border;
+		// box-shadow: 0 1px 3px 0 rgba($black, 0.1);
 		// padding: 0.5rem;
 		margin-bottom: 4rem;
+		&:last-child {
+			margin-bottom: 10rem;
+		}
 		.sl-order-card-subtitle {
 			// display: flex;
 			// justify-content: space-between;
@@ -108,8 +112,8 @@
 			}
 			.menu {
 				// margin-bottom: 1rem;
-				padding: 1rem;
-				padding-top: 0;
+				padding: 0 1rem;
+				// padding-top: 0;
 				li {
 					display: flex;
 					border-bottom: $global-border-secondary;

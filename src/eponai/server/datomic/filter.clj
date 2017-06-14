@@ -147,6 +147,7 @@
      :store.profile/name             public-attr
      :store.profile/description      public-attr
      :store.profile/return-policy    public-attr
+     :store.profile/shipping-policy  public-attr
      :store.profile/tagline          public-attr
      :store.profile/photo            public-attr
      :store.profile/cover            public-attr
@@ -205,7 +206,7 @@
      :shipping.rate/free-above       public-attr
      :order/created-at               public-attr
      ;; TODO End of Implement real filter-fn
-     :shipping/name                  public-attr                 ;shipping-owner
+     :shipping/name                  public-attr            ;shipping-owner
      :shipping/address               public-attr            ;shipping-owner
      :shipping.address/street        public-attr            ;shipping-address-owner
      :shipping.address/street2       public-attr            ;shipping-address-owner

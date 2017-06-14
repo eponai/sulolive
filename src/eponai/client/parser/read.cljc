@@ -37,7 +37,7 @@
   (when-let [store-id (c/parse-long-safe (:store-id route-params))]
     (if target
       {:remote (assoc-in ast [:params :store-id] store-id)}
-      {:value (common.read/multiply-store-items (db/pull db query store-id))})))
+      {:value (db/pull db query store-id)})))
 
 (defmethod client-read :query/stores
   [{:keys [db query target]} _ _]

@@ -345,21 +345,22 @@
                     (button/user-setting-default
                       {:onClick #(om/update-state! this assoc :modal :payout-schedule)}
                       (dom/span nil "Change schedule"))))))
-            (menu/item
-              nil
-              (grid/row
-                (->> (css/add-class :collapse)
-                     (css/align :middle))
-                (grid/column
-                  (grid/column-size {:small 12 :medium 6})
-                  (dom/label nil "Default currency")
-                  (dom/p nil (dom/small nil "Charges for a currency without a bank account will be converted to your default currency, ")))
-                (grid/column
-                  (css/text-align :right)
-                  (dom/p nil (dom/strong nil (string/upper-case (or default-currency ""))))
-                  (button/user-setting-default
-                    {:onClick #(om/update-state! this assoc :modal :default-currency)}
-                    (dom/span nil "Change currency")))))))
+            ;(menu/item
+            ;  nil
+            ;  (grid/row
+            ;    (->> (css/add-class :collapse)
+            ;         (css/align :middle))
+            ;    (grid/column
+            ;      (grid/column-size {:small 12 :medium 6})
+            ;      (dom/label nil "Default currency")
+            ;      (dom/p nil (dom/small nil "Charges for a currency without a bank account will be converted to your default currency, ")))
+            ;    (grid/column
+            ;      (css/text-align :right)
+            ;      (dom/p nil (dom/strong nil (string/upper-case (or default-currency ""))))
+            ;      (button/user-setting-default
+            ;        {:onClick #(om/update-state! this assoc :modal :default-currency)}
+            ;        (dom/span nil "Change currency")))))
+            ))
         ;(callout/callout
         ;  nil
         ;  (default-currency-section this))
@@ -451,9 +452,9 @@
             nil
             (grid/column
               nil
-              (button/user-setting-default
+              (button/button-small
                 {:onClick #(om/update-state! this assoc :modal :modal/bank-account :modal-object nil)}
-                (dom/span nil "Add bank account...")))))
+                (dom/span nil "Add bank account")))))
         ;(payout-schedule this)
 
         ;(when (< 1 (count external-accounts)))

@@ -274,10 +274,11 @@
 
             (dom/div
               (css/add-class :contact)
-              (dom/p nil
-                     (dom/span nil "Still have questions? Contact the shop at ")
-                     (dom/a nil (dom/span nil (get-in store [:store/profile :store.profile/email])))
-                     (dom/span nil ".")))))
+              (let [store-email (get-in store [:store/profile :store.profile/email])]
+                (dom/p nil
+                       (dom/span nil "Still have questions? Contact the shop at ")
+                       (dom/a {:href (when store-email (str "mailto:" store-email "?subject=SULO Live order #" (:db/id order)))} (dom/span nil store-email))
+                       (dom/span nil "."))))))
         (grid/row-column
           (css/add-class :go-back)
           (dom/a

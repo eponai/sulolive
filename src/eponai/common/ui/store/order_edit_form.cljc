@@ -371,13 +371,13 @@
                     {:order/store [{:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}]}]}
      :query/current-route])
 
-  static store-common/IDashboardNavbarContent
-  (render-subnav [_ current-route]
-    (menu/breadcrumbs
-      nil
-      (menu/item nil (dom/a {:href (routes/url :store-dashboard/order-list (:route-params current-route))}
-                            "Orders"))
-      (menu/item nil (dom/span nil "Order details"))))
+  ;static store-common/IDashboardNavbarContent
+  ;(render-subnav [_ current-route]
+  ;  (menu/breadcrumbs
+  ;    nil
+  ;    (menu/item nil (dom/a {:href (routes/url :store-dashboard/order-list (:route-params current-route))}
+  ;                          "Orders"))
+  ;    (menu/item nil (dom/span nil "Order details"))))
 
   Object
   #?(:cljs

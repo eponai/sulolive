@@ -61,10 +61,10 @@
   [{:keys [db db-history query]} _ {:keys [store-id]}]
   {:auth    ::auth/public
    :uniq-by [[:store-id store-id]]}
-  {:value (let [store (db/pull-one-with db query {:where   '[[?e :store/profile]]
+  {:value (let [store (query/one db db-history query {:where   '[[?e :store/profile]]
                                                   :symbols {'?e store-id}})]
-            (debug "Query: " query)
-            (debug "Got store shipping: " (:store/shipping store))
+            ;(debug "Query: " query)
+            ;(debug "Got store shipping: " (:store/shipping store))
 
             store)})
 

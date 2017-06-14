@@ -10,7 +10,8 @@
     [taoensso.timbre :refer [debug error info]]
     [eponai.server.external.stripe.webhooks :as webhooks]
     [clojure.data.json :as json]
-    [clojure.string :as string])
+    [clojure.string :as string]
+    [eponai.common.format.date :as date])
   (:import (clojure.lang ExceptionInfo)))
 
 (defn pull-stripe [db store-id]
@@ -321,8 +322,11 @@
            :charge/paid?  (:paid charge)}))
 
       (-get-charge [_ charge-id]
-        )
+        {:charge/amount  100
+         :charge/created (date/current-secs)})
 
+      (-create-card [_ customer-id card]
+        )
       (-create-refund [this params]))))
 
 (defn webhook [{:keys [type] :as env} event]
