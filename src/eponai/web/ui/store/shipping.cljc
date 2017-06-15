@@ -215,14 +215,14 @@
 (defn add-shipping-rule-modal [component]
   (let [on-close #(om/update-state! component (fn [st]
                                                 (-> st
-                                                    (dissoc :modal :shipping-rule/edit-rule :input-validation)
+                                                    (dissoc :modal :shipping-rule/edit-rule :input-validation :shipping-rule/edit-rate)
                                                     (assoc :selected-countries []
                                                            :shipping-rule/section :shipping-rule.section/destinations))))
         {:query/keys [countries store]} (om/props component)
         countries-by-continent (group-by :country/continent countries)
         used-countries (reduce #(into %1 (:shipping.rule/destinations %2)) [] (get-in store [:store/shipping :shipping/rules]))
         {:keys               [input-validation selected-countries modal]
-         :shipping-rule/keys [section offer-free? edit-rule]} (om/get-state component)
+         :shipping-rule/keys [section offer-free? edit-rule edit-rate]} (om/get-state component)
         used-country-codes (set (map :country/code used-countries))]
     (common/modal
       (css/add-class :shipping-rules-modal {:on-close       on-close
@@ -245,21 +245,21 @@
                         (not= modal :modal/add-shipping-rate))
                    (css/add-class :is-active))
           (dom/small nil "Select which countries you want to ship to. You'll add rates in the next step.")
-          (select/->SelectOne (om/computed {:options (reduce (fn [l [con cs]]
-                                                               (into l (into [{:value     (:continent/code con)
-                                                                               :label     (:continent/name con)
-                                                                               :className "continent"}]
-                                                                             (map (fn [c]
-                                                                                    {:value     (:country/code c)
-                                                                                     :label     (:country/name c)
-                                                                                     :className "country"
-                                                                                     :disabled  (or (some #(= (:country/code %)
-                                                                                                              (:country/code c))
-                                                                                                          selected-countries)
-                                                                                                    (contains? used-country-codes (:country/code c)))})
-                                                                                  (sort-by :country/name cs)))))
-                                                             []
-                                                             countries-by-continent)
+          (select/->SelectOne (om/computed {:options     (reduce (fn [l [con cs]]
+                                                                   (into l (into [{:value     (:continent/code con)
+                                                                                   :label     (:continent/name con)
+                                                                                   :className "continent"}]
+                                                                                 (map (fn [c]
+                                                                                        {:value     (:country/code c)
+                                                                                         :label     (:country/name c)
+                                                                                         :className "country"
+                                                                                         :disabled  (or (some #(= (:country/code %)
+                                                                                                                  (:country/code c))
+                                                                                                              selected-countries)
+                                                                                                        (contains? used-country-codes (:country/code c)))})
+                                                                                      (sort-by :country/name cs)))))
+                                                                 []
+                                                                 countries-by-continent)
                                             :placeholder "Select destinations..."}
                                            {:on-change #(add-shipping-destination component % used-country-codes)}))
           (when (not-empty selected-countries)
@@ -297,7 +297,8 @@
               (dom/label nil "Title")
               (v/input {:type        "text"
                         :id          (:shipping.rate/title form-inputs)
-                        :placeholder "e.g USPS Priority, FedEx 3-day"}
+                        :placeholder "e.g USPS Priority, FedEx 3-day"
+                        :defaultValue (:shipping.rate/title edit-rate)}
                        input-validation)
               (dom/small nil "This will be visible to your customers at checkout.")))
 
@@ -307,7 +308,8 @@
               nil
               (dom/label nil "Additional information")
               (v/input {:type "text"
-                        :id   (:shipping.rate/info form-inputs)}
+                        :id   (:shipping.rate/info form-inputs)
+                        :defaultValue (:shipping.rate/info edit-rate)}
                        input-validation)
               (dom/small nil "What should shoppers know about this shipping option?")))
 
@@ -319,7 +321,7 @@
               (dom/label nil "Rate first item")
               (v/input {:type         "number"
                         :id           (:shipping.rate/first form-inputs)
-                        :defaultValue 0
+                        :defaultValue (:shipping.rate/first edit-rate 0)
                         :min          0}
                        input-validation))
             (grid/column
@@ -327,7 +329,7 @@
               (dom/label nil "Rate additional item")
               (v/input {:type         "number"
                         :id           (:shipping.rate/additional form-inputs)
-                        :defaultValue 0
+                        :defaultValue (:shipping.rate/additional edit-rate 0)
                         :min          0}
                        input-validation)))
 
@@ -388,8 +390,10 @@
                         :country/name
                         {:country/continent [:continent/code
                                              :continent/name]}]}
-     {:query/store [{:store/shipping [{:shipping/rules [:shipping.rule/title
-                                                        {:shipping.rule/rates [:shipping.rate/title
+     {:query/store [{:store/shipping [{:shipping/rules [:db/id
+                                                        :shipping.rule/title
+                                                        {:shipping.rule/rates [:db/id
+                                                                               :shipping.rate/title
                                                                                :shipping.rate/info
                                                                                :shipping.rate/first
                                                                                :shipping.rate/additional
@@ -415,7 +419,8 @@
              rate-title (utils/input-value-by-id (:shipping.rate/title form-inputs))
              rate-info (utils/input-value-or-nil-by-id (:shipping.rate/info form-inputs))
              {:query/keys [current-route store]} (om/props this)
-             {:keys [selected-countries]} (om/get-state this)
+             {:keys [selected-countries]
+              :shipping-rule/keys [edit-rate]} (om/get-state this)
 
              input-map {:shipping.rule/destinations selected-countries
                         :shipping.rule/rates        [{:shipping.rate/first      rate-first
@@ -491,6 +496,17 @@
     (let [{:query/keys [store]} (om/props this)]
       (msg/om-transact! this [(list 'store/delete-shipping-rule {:rule     rule
                                                                  :store-id (:db/id store)})
+                              :query/store])))
+
+  (delete-rate [this rule rate]
+    (let [{:query/keys [store current-route]} (om/props this)
+          ;{:shipping-rule/keys [edit-rule]} (om/get-state this)
+          remove-rate-fn (fn [rates]
+                           (remove #(= (:db/id %) (:db/id rate)) rates))]
+      (debug "Edit rule: " rule)
+      (debug "Delete rate: " rate)
+      (msg/om-transact! this [(list 'store/update-shipping-rule {:shipping-rule (update rule :shipping.rule/rates remove-rate-fn)
+                                                                 :store-id      (:store-id (:route-params current-route))})
                               :query/store])))
 
   (componentDidUpdate [this _ _]
@@ -633,7 +649,8 @@
                             nil
                             (table/th nil "Name")
                             (table/th nil "Rate")
-                            (table/th nil "Free shipping")))
+                            (table/th nil "Free shipping")
+                            (table/th nil "")))
                         (table/tbody
                           nil
                           (map (fn [r]
@@ -657,13 +674,17 @@
 
                                              :else
                                              (dom/span nil "No")
-                                             ))))) rates)))
+                                             )))
+                                   (table/td
+                                     (css/text-align :right)
+                                     (button/user-setting-default
+                                       {:onClick #(.delete-rate this sr r)}
+                                       (dom/span nil "Delete"))))) rates)))
                       (dom/div
                         (css/add-classes [:action-buttons :shipping-rule-card-footer])
 
                         (button/default-hollow
-                          (button/small {:onClick #(om/update-state! this assoc :modal :modal/delete-rule :modal-object sr)
-                                         :classes [:alert]})
+                          (button/small {:onClick #(om/update-state! this assoc :modal :modal/delete-rule :modal-object sr)})
                           (dom/span nil "Delete rule"))
                         (button/default-hollow
                           (button/small {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-rate :shipping-rule/edit-rule sr)})
