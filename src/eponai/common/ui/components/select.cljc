@@ -11,19 +11,18 @@
     [eponai.common.ui.elements.css :as css]))
 
 (defn on-select-fn [component]
-  (fn [sel]
-    (let [selected (-> sel
-                       #?(:cljs (js->clj :keywordize-keys true)))
-          {:keys [on-change]} (om/get-computed component)]
-      ;(om/update-state! component assoc :selected selected)
-      (when on-change
-        (on-change selected)))))
+  (let [{:keys [on-change]} (om/get-computed component)]
+    (fn [sel]
+      (let [selected (-> sel
+                         #?(:cljs (js->clj :keywordize-keys true)))]
+        ;(om/update-state! component assoc :selected selected)
+        (when on-change
+          (on-change selected))))))
 
 (defui SelectOne
   Object
   (render [this]
-    (let [{:keys [selected]} (om/get-state this)
-          {:keys [addLabelText classes value clearable tab-index creatable?] :as props} (om/props this)
+    (let [{:keys [addLabelText classes value clearable tab-index creatable?] :as props} (om/props this)
           handled-props (cond-> {:value        (:value value)
                                  :addLabelText (or addLabelText "New section")
                                  :clearable    (boolean clearable)

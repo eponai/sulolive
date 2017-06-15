@@ -195,14 +195,16 @@
           (search-bar/->SearchBar {:ref             (str ::search-bar-ref)
                                    :placeholder     "What are you looking for?"
                                    :mixpanel-source "index"
-                                   :classes         [:drop-shadow]})
+                                   :classes         [:drop-shadow]
+                                   :default-value   (get-in (om/props component)
+                                                            [:query/current-route :query-params :search] "")})
           (button/button
             (->> (button/expanded {:onClick (fn []
                                               (let [search-bar (om/react-ref component (str ::search-bar-ref))]
                                                 (when (nil? search-bar)
                                                   (error "NO SEARCH BAR :( " component))
                                                 (search-bar/trigger-search! search-bar)))})
-                 (css/add-classes [:drop-shadow]))
+                 (css/add-classes [:drop-shadow :small]))
             (dom/span nil "Search")))))))
 
 (defn page-container [{:keys [navbar id class-name no-footer? footer]} & content]
