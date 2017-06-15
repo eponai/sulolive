@@ -18,6 +18,9 @@
 			margin-top: 0;
 		}
 	}
+	.is-invalid-input {
+		background: #FFFBFB;
+	}
 	.powr-instagram-feed {
 		// margin-bottom: 1%;
 	}
@@ -74,6 +77,8 @@
 				font-size: 130%;
 			}
 			max-width: 30rem;
+
+			
 		}
 	}
 
@@ -230,8 +235,14 @@
 			// padding-top: 100%
 			.photo {
 				@include breakpoint(small only) {
-					padding-top: 90%;
+					padding-top: 120%;
 				}	
+			}
+			.content {
+				padding: $global-padding;
+			}
+			p.user-message {
+				line-height: 1;
 			}
 			.overlay {
 				$background: map-get($foundation-palette, sulo);

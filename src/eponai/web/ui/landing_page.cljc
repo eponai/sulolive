@@ -1,5 +1,6 @@
 (ns eponai.web.ui.landing-page
   (:require
+    [clojure.spec :as s]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
     [om.next :as om :refer [defui]]
@@ -15,7 +16,18 @@
     [eponai.common.shared :as shared]
     [eponai.client.routes :as routes]
     [eponai.common.ui.icons :as icons]
-    [eponai.web.social :as social]))
+    [eponai.common.ui.elements.input-validate :as v]
+    [eponai.web.social :as social]
+    [eponai.client.utils :as client-utils]
+    [eponai.client.parser.message :as msg]))
+
+(def form-inputs
+  {:field/email    "field.email"
+   :field/location "field.location"})
+
+(s/def :field/email #(client-utils/valid-email? %))
+(s/def :field/location (s/and string? #(not-empty %)))
+(s/def ::location (s/keys :req [:field/email :field/location]))
 
 (defn top-feature [opts icon title text]
   (grid/column
@@ -42,15 +54,40 @@
   (select-locality [_ locality]
     #?(:cljs
        (web-utils/set-locality locality)))
+  (submit-new-location [this]
+    #?(:cljs
+       (let [email (web-utils/input-value-by-id (:field/email form-inputs))
+             location (web-utils/input-value-by-id (:field/location form-inputs))
+             input-map {:field/email email :field/location location}
+
+             validation (v/validate ::location input-map form-inputs)]
+         (debug "Input validation: " validation)
+         (when (nil? validation)
+           (msg/om-transact! this [(list 'location/suggest {:location location :email email})]))
+         (om/update-state! this assoc :input-validation validation))))
+
   (componentDidMount [this]
     (let [{:query/keys [current-route]} (om/props this)]
       #?(:cljs
          (when (= (:route current-route) :landing-page/locality)
            (when-let [locs (web-utils/element-by-id "sulo-locations")]
              (web-utils/scroll-to locs 250))))))
+
+  (componentDidUpdate [this _ _]
+    (let [last-message (msg/last-message this 'location/suggest)]
+      (when (msg/final? last-message)
+        (when (msg/success? last-message)
+          #?(:cljs
+             (do
+               (set! (.-value (web-utils/element-by-id (:field/email form-inputs))) nil)
+               (set! (.-value (web-utils/element-by-id (:field/location form-inputs))) nil))))
+        (msg/clear-messages! this 'location/suggest)
+        (om/update-state! this assoc :user-message (msg/message last-message)))))
   (render [this]
     (let [{:proxy/keys [navbar]
-           :query/keys [auth]} (om/props this)]
+           :query/keys [auth]} (om/props this)
+          {:keys [input-validation user-message]} (om/get-state this)
+          last-message (msg/last-message this 'location/suggest)]
       (common/page-container
         {:navbar navbar :id "sulo-landing"}
         (photo/cover
@@ -125,14 +162,29 @@
                 (css/add-classes [:suggest-location])
                 (photo/cover
                   nil
-                  (dom/h3 nil "Local somewhere else? Let us know where we should go next!")
-                  (dom/div
+                  (dom/h3 nil "Local somewhere else? Subscribe to our newsletter and let us know where we should go next!")
+                  (dom/form
                     (css/add-class :input-container)
-                    (dom/input {:type        "text"
-                                :placeholder "Your location"})
-                    (dom/input {:type        "text"
-                                :placeholder "Your email"})
-                    (button/button nil "Submit")))))
+                    (v/input {:type        "text"
+                              :placeholder "Your location"
+                              :id          (:field/location form-inputs)}
+                             input-validation)
+                    (v/input {:type        "email"
+                              :placeholder "Your email"
+                              :id          (:field/email form-inputs)}
+                             input-validation)
+                    (dom/button
+                      (css/add-class :button {:onClick #(do
+                                                         (.preventDefault %)
+                                                         (.submit-new-location this))})
+                      (dom/span nil "Submit")))
+                  (dom/p (css/add-class :user-message)
+
+                         (if (msg/pending? last-message)
+                           (dom/small nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))
+                           (dom/small nil (str user-message)))
+                         )
+                  )))
             "")
           )
 

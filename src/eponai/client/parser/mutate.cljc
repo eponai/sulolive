@@ -98,6 +98,12 @@
   (if target
     {:remote true}))
 
+(defmethod client-mutate 'location/suggest
+  [{:keys [target]} _ p]
+  (debug "location/suggest with params: " p)
+  (if target
+    {:remote true}))
+
 (defmethod client-mutate 'photo/upload
   [{:keys [target]} _ p]
   (debug "photo/upload with params: " p)
