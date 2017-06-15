@@ -7,6 +7,7 @@
     [eponai.web.ui.store.business.specs :as specs]
     #?(:cljs
        [eponai.web.utils :as utils])
+    #?(:cljs [eponai.web.ui.stripe :as stripe])
     [eponai.common.ui.elements.input-validate :as v]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
@@ -20,8 +21,6 @@
     [eponai.common.ui.elements.menu :as menu]
     #?(:cljs
        [cljs-http.client :as http])))
-
-(def stripe-key "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")
 
 (def stripe-fields
   {:field.legal-entity.address/line1      "legal_entity.address.line1"
@@ -460,25 +459,38 @@
 
          (when (nil? validation)
            (if (some? (:field/external-account input-map))
-             (do
-               (.setPublishableKey js/Stripe stripe-key)
-               (.createToken js/Stripe.bankAccount
-                             #js {:country        (:stripe/country stripe-account)
-                                  :currency       currency
-                                  :routing_number (str transit institution)
-                                  :account_number account}
-                             (fn [status ^js/Stripe.bankAccountResponse response]
-                               (when (= status 200)
-                                 (let [token (.-id response)
-                                       ip (.-client_ip response)
-                                       tos-acceptance {:field.tos-acceptance/ip   ip
-                                                       :field.tos-acceptance/date (date/current-secs)}]
-                                   (msg/om-transact! this `[(stripe/update-account
-                                                              ~{:account-params (-> input-map
-                                                                                    (assoc :field/external-account token)
-                                                                                    (assoc :field/tos-acceptance tos-acceptance))
-                                                                :store-id       (:db/id store)})
-                                                            :query/stripe-account]))))))
+             (stripe/bank-account {:country        (:stripe/country stripe-account)
+                                   :currency       currency
+                                   :routing_number (str transit institution)
+                                   :account_number account}
+                                  {:on-success (fn [token ip]
+                                                 (let [tos-acceptance {:field.tos-acceptance/ip   ip
+                                                                       :field.tos-acceptance/date (date/current-secs)}]
+                                                   (msg/om-transact! this `[(stripe/update-account
+                                                                              ~{:account-params (-> input-map
+                                                                                                    (assoc :field/external-account token)
+                                                                                                    (assoc :field/tos-acceptance tos-acceptance))
+                                                                                :store-id       (:db/id store)})
+                                                                            :query/stripe-account])))})
+             ;(do
+             ;  (.setPublishableKey js/Stripe stripe-key)
+             ;  (.createToken js/Stripe.bankAccount
+             ;                #js {:country        (:stripe/country stripe-account)
+             ;                     :currency       currency
+             ;                     :routing_number (str transit institution)
+             ;                     :account_number account}
+             ;                (fn [status ^js/Stripe.bankAccountResponse response]
+             ;                  (when (= status 200)
+             ;                    (let [token (.-id response)
+             ;                          ip (.-client_ip response)
+             ;                          tos-acceptance {:field.tos-acceptance/ip   ip
+             ;                                          :field.tos-acceptance/date (date/current-secs)}]
+             ;                      (msg/om-transact! this `[(stripe/update-account
+             ;                                                 ~{:account-params (-> input-map
+             ;                                                                       (assoc :field/external-account token)
+             ;                                                                       (assoc :field/tos-acceptance tos-acceptance))
+             ;                                                   :store-id       (:db/id store)})
+             ;                                               :query/stripe-account]))))))
              (msg/om-transact! this `[(stripe/update-account
                                         ~{:account-params input-map
                                           :store-id       (:db/id store)})

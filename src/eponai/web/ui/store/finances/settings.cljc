@@ -3,10 +3,13 @@
     [clojure.string :as string]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.dom :as dom]
-    [eponai.common.ui.store.account.validate :as v]
-    [eponai.common.ui.elements.input-validate :as validate]
+    ;[eponai.common.ui.store.account.validate :as v]
+    [eponai.web.ui.store.business.verify :as verify]
+    [eponai.common.ui.elements.input-validate :as v]
     #?(:cljs
        [eponai.web.utils :as utils])
+    #?(:cljs
+       [eponai.web.ui.stripe :as stripe])
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.grid :as grid]
     [om.next :as om :refer [defui]]
@@ -20,10 +23,10 @@
     [eponai.common :as c]))
 (def prefix-key "payouts-details-")
 
-(def stripe-key "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")
+(def form-inputs verify/form-inputs)
 
 (defn prefixed-id [k]
-  (str prefix-key (get v/form-inputs k)))
+  (str prefix-key (get form-inputs k)))
 
 (defn label-column [& content]
   (grid/column
@@ -49,7 +52,7 @@
         currency (or currency "CAD")]
     (common/modal
       {:on-close on-close
-       :size "tiny"}
+       :size     "tiny"}
       (dom/div
         nil
         (dom/h4 (css/add-class :header) "Your bank account")
@@ -70,21 +73,21 @@
                     (dom/option {:value country} country))
 
         (dom/label nil "Transit number")
-        (validate/input
+        (v/input
           {:placeholder "12345"
            :type        "text"
            :id          (prefixed-id :field.external-account/transit-number)}
           input-validation)
 
         (dom/label nil "Institution number")
-        (validate/input
+        (v/input
           {:placeholder "000"
            :type        "text"
            :id          (prefixed-id :field.external-account/institution-number)}
           input-validation)
 
         (dom/label nil "Account number")
-        (validate/input
+        (v/input
           {:type "text"
            :id   (prefixed-id :field.external-account/account-number)}
           input-validation)
@@ -112,11 +115,6 @@
         week-anchor (or week-anchor (:stripe.payout-schedule/week-anchor payout-schedule) "monday")
         month-anchor (or month-anchor (:stripe.payout-schedule/month-anchor payout-schedule) "1")]
 
-    (debug "Stripe account: " stripe-account)
-    (debug "State: " (om/get-state component))
-    (debug "Anchors:  " {:interval interval
-                         :weekly week-anchor
-                         :monthly month-anchor})
     (common/modal
       {:on-close #(om/update-state! component dissoc :modal)
        :size     "tiny"}
@@ -126,24 +124,24 @@
         (dom/p nil (dom/small nil (payout-schedule-info interval week-anchor month-anchor delay-days)))
 
         (dom/label nil "Deposit interval")
-        (dom/select {:value interval
-                     :onChange     #(om/update-state! component (fn [s]
-                                                                  (let [{:payout-schedule/keys [month-anchor week-anchor]} s
-                                                                        interval (.. % -target -value)]
-                                                                    (cond-> (assoc s :payout-schedule/interval interval)
-                                                                            (and (= interval "weekly")
-                                                                                 (nil? week-anchor))
-                                                                            (assoc :payout-schedule/week-anchor "monday")
-                                                                            (and (= interval "monthly")
-                                                                                 (nil? month-anchor))
-                                                                            (assoc :payout-schedule/month-anchor "1")))))}
+        (dom/select {:value    interval
+                     :onChange #(om/update-state! component (fn [s]
+                                                              (let [{:payout-schedule/keys [month-anchor week-anchor]} s
+                                                                    interval (.. % -target -value)]
+                                                                (cond-> (assoc s :payout-schedule/interval interval)
+                                                                        (and (= interval "weekly")
+                                                                             (nil? week-anchor))
+                                                                        (assoc :payout-schedule/week-anchor "monday")
+                                                                        (and (= interval "monthly")
+                                                                             (nil? month-anchor))
+                                                                        (assoc :payout-schedule/month-anchor "1")))))}
                     (dom/option {:value "daily"} "Daily")
                     (dom/option {:value "weekly"} "Weekly")
                     (dom/option {:value "monthly"} "Monthly"))
         (cond (= interval "weekly")
               [(dom/label nil "Deposit day")
-               (dom/select {:value week-anchor
-                            :onChange     #(om/update-state! component assoc :payout-schedule/week-anchor (.. % -target -value))}
+               (dom/select {:value    week-anchor
+                            :onChange #(om/update-state! component assoc :payout-schedule/week-anchor (.. % -target -value))}
                            (dom/option {:value "monday"} "Monday")
                            (dom/option {:value "tuesday"} "Tuesday")
                            (dom/option {:value "wednesday"} "Wednesday")
@@ -153,8 +151,8 @@
                            (dom/option {:value "sunday"} "Sunday"))]
               (= interval "monthly")
               [(dom/label nil "Deposit day")
-               (dom/select {:value month-anchor
-                            :onChange     #(om/update-state! component assoc :payout-schedule/month-anchor (.. % -target -value))}
+               (dom/select {:value    month-anchor
+                            :onChange #(om/update-state! component assoc :payout-schedule/month-anchor (.. % -target -value))}
                            (map (fn [i]
                                   (let [day (inc i)]
                                     (dom/option {:value (str day)} (c/ordinal-number day))))
@@ -180,7 +178,7 @@
     (debug "Currencies with accounts: " currencies-with-account)
     (common/modal
       {:on-close #(om/update-state! component dissoc :modal)
-       :size "tiny"}
+       :size     "tiny"}
       (dom/div
         nil
         (dom/h4 (css/add-class :header) "Change default currency")
@@ -194,7 +192,7 @@
                  (let [code (key c)
                        is-disabled? (not (contains? (set currencies-with-account) (name code)))]
                    (dom/option
-                     (cond-> {:value    code}
+                     (cond-> {:value code}
                              is-disabled?
                              (assoc :disabled true))
                      (if is-disabled?
@@ -228,9 +226,10 @@
     #?(:cljs
        (let [{:query/keys [store]} (om/props this)]
          (let [currency (utils/selected-value-by-id "sulo-default-currency-select")]
-           (msg/om-transact! this `[(stripe/update-account ~{:account-params {:field/default-currency currency}
-                                                             :store-id       (:db/id store)})
-                                    :query/stripe-account])))))
+           (msg/om-transact! this [(list 'stripe/update-account
+                                         {:account-params {:field/default-currency currency}
+                                          :store-id       (:db/id store)})
+                                   :query/stripe-account])))))
 
   (update-bank-account [this on-close]
     #?(:cljs
@@ -246,24 +245,19 @@
                                                  :field.external-account/country            country
                                                  :field.external-account/institution-number institution
                                                  :field.external-account/transit-number     transit}}
-             validation (v/validate :account/activate input-map prefix-key)]
+             validation (v/validate :account/activate input-map form-inputs prefix-key)]
 
          (when (nil? validation)
-           (.setPublishableKey js/Stripe stripe-key)
-           (.createToken js/Stripe.bankAccount
-                         #js {:country        country
-                              :currency       currency
-                              :routing_number (str transit institution)
-                              :account_number account}
-                         (fn [status ^js/Stripe.createToken.Response response]
-                           (when (= status 200)
-                             (let [token (.-id response)]
-                               (msg/om-transact! this `[(stripe/update-account
-                                                          ~{:account-params {:field/external-account token}
-                                                            :store-id       (:db/id store)})
-                                                        :query/stripe-account])
-                               (on-close)))
-                           (om/update-state! this assoc :stripe-validation (.-error response)))))
+           (stripe/bank-account {:country        country
+                                 :currency       currency
+                                 :routing_number (str transit institution)
+                                 :account_number account}
+                                {:on-success (fn [{:keys [token]}]
+                                               (msg/om-transact! this [(list 'stripe/update-account
+                                                                             {:account-params {:field/external-account token}
+                                                                              :store-id       (:db/id store)})
+                                                                       :query/stripe-account])
+                                               (on-close))}))
          (om/update-state! this assoc :input-validation validation))))
 
   (update-payout-schedule [this interval week-anchor month-anchor]
@@ -274,12 +268,12 @@
                               (assoc :field.payout-schedule/week-anchor week-anchor)
                               (= interval "monthly")
                               (assoc :field.payout-schedule/month-anchor month-anchor))]
-         (msg/om-transact! this `[(stripe/update-account
-                                    ~{:account-params {:field/payout-schedule schedule}
-                                      :store-id       (:db/id store)})
-                                  :query/stripe-account]))))
+         (msg/om-transact! this [(list 'stripe/update-account
+                                       {:account-params {:field/payout-schedule schedule}
+                                        :store-id       (:db/id store)})
+                                 :query/stripe-account]))))
   (render [this]
-    (let [{:keys [modal modal-object input-validation stripe-validation]
+    (let [{:keys                 [modal modal-object input-validation stripe-validation]
            :payout-schedule/keys [interval month-anchor week-anchor]} (om/get-state this)
           {:query/keys [stripe-account]} (om/props this)
           {:stripe/keys [external-accounts default-currency payout-schedule]} stripe-account

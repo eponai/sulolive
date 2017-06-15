@@ -6,7 +6,6 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.navbar :as nav]
-    [eponai.common.ui.store.account :as as]
     [eponai.common.ui.store.order-edit-form :as oef]
     [eponai.common.ui.store.order-list :as ol]
     [eponai.common.ui.store.product-edit-form :as pef]
