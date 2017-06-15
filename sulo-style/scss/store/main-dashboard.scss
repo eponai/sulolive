@@ -51,7 +51,7 @@
 
 		li.getting-started-item {
 			padding: 0;
-			$sulo-color: darken(map-get($foundation-palette, sulo), 10%);
+			// $sulo-color: darken(map-get($foundation-palette, sulo), 10%);
 			&:hover {
 				background: rgba($light-gray, 0.2);
 			}
@@ -63,7 +63,7 @@
 				opacity: 0;
 			}
 			a {
-				color: $sulo-color;
+				color: $body-font-color;//$sulo-color;
 			}
 			&.done {
 				// pointer-events: none;

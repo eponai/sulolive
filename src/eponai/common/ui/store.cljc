@@ -34,7 +34,8 @@
 
 (defn policies-section [component]
   (let [{:query/keys [store]} (om/props component)
-        {:store.profile/keys [return-policy shipping-policy]} (:store/profile store)]
+        {:store.profile/keys [return-policy]} (:store/profile store)
+        {shipping-policy :shipping/policy} (:store/shipping store)]
     (grid/row-column
       nil
       (dom/div
@@ -63,9 +64,9 @@
                                      :store.profile/description
                                      :store.profile/tagline
                                      :store.profile/return-policy
-                                     :store.profile/shipping-policy
                                      {:store.profile/photo [:photo/path :photo/id]}
-                                     {:store.profile/cover [:photo/path :photo/id]}]}]}
+                                     {:store.profile/cover [:photo/path :photo/id]}]}
+                    {:store/shipping [:shipping/policy]}]}
      {:query/store-items (om/get-query item/Product)}
      :query/current-route])
   Object

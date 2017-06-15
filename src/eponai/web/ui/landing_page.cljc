@@ -184,7 +184,8 @@
                            (dom/small nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))
                            (dom/small nil (str user-message)))
                          )
-                  )))
+                  ))
+              )
             "")
           )
 

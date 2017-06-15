@@ -5,7 +5,8 @@
             [eponai.common.format :as cf]
             [eponai.common.format.date :as date]
             [eponai.common.format :as common.format]
-            [eponai.common.database :as db]))
+            [eponai.common.database :as db]
+            [eponai.common.ui.om-quill :as quill]))
 
 
 ;; ------------------------ Create new entities -----------------
@@ -133,9 +134,11 @@
                                       :shipping.address/region
                                       :shipping.address/country])
                       cf/remove-nil-keys)]
-    (-> (select-keys s [:shipping/address :shipping/name])
+    (-> (select-keys s [:shipping/address :shipping/name :shipping/policy])
         (update :shipping/address address*)
-        cf/add-tempid)))
+        (update :shipping/policy #(cf/str->bytes (quill/sanitize-html %)))
+        cf/add-tempid
+        cf/remove-nil-keys)))
 
 (defn shipping-rate [r]
   (-> r

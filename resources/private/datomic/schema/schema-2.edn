@@ -1,24 +1,25 @@
 [
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store.profile/shipping-policy
-  :db/valueType          :db.type/bytes
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Store's custom shipping policy"
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
   :db/ident              :store/shipping
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
   :db/doc                "Store's shipping settings"
   :db.install/_attribute :db.part/db}
 
+ ;;Shipping
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :shipping/rules
   :db/valueType          :db.type/ref
   :db/isComponent        true
   :db/cardinality        :db.cardinality/many
   :db/doc                "Shipping rules."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping/policy
+  :db/valueType          :db.type/bytes
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Custom shipping policy"
   :db.install/_attribute :db.part/db}
 
  ;; Shipping Rules
@@ -78,7 +79,6 @@
   :db/ident              :shipping.rate/info
   :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one
-  :db/fulltext           true
   :db/doc                "Information about this shipping for customers."
   :db.install/_attribute :db.part/db}
 
