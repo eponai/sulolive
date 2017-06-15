@@ -139,22 +139,22 @@
 	}
 	#store-navbar {
 		$background: map-get($foundation-palette, secondary);
-		background: $white;
-		border-bottom: $global-border-secondary;
+		background: transparent;
+		border-bottom: none;//$global-border-secondary;
 		a {
 			transition: color .25s ease-in-out;
 			color: $dark-gray;
 			font-size: 0.9rem;
 		}
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
+		// position: absolute;
+		// top: 0;
+		// left: 0;
+		// width: 100%;
 		height: $subnav-height;
 		@include breakpoint(large) {
-			position: fixed;
-			top: $navbar-height;
-			z-index: $subnav-zindex;
+			// position: fixed;
+			// top: $navbar-height;
+			// z-index: $subnav-zindex;
 		}
 		.navbar {
 			max-width: $dashboard-max-width;
@@ -175,12 +175,13 @@
 			li:not(.menu-text) {
 				&:hover, &.is-active {
 					$border-color: map-get($foundation-palette, primary);
-					border-bottom: 3px solid $border-color;
+					// border-bottom: 3px solid $border-color;
 					a {
 						color: $black;
 					}
 				}
 				&.is-active {
+					background: rgba($light-gray, 0.8);
 					a {
 						font-weight: $global-weight-bold;
 					}

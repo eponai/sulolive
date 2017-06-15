@@ -1,12 +1,9 @@
 #sulo-store-finances {
 	max-width: $dashboard-content-width;
 	margin: 0 auto;
-	padding-top: $subnav-height;
+	// padding-top: $subnav-height;
 
 
-	[type="radio"]+label[for] {
-		color: $body-font-color;
-	}
 	.payout-schedule {
 		p {
 			margin-bottom: 0.5rem;

@@ -24,8 +24,8 @@
      ;{:proxy/navbar (om/get-query nav/Navbar)}
      ;{:query/store [:store/profile]}
      :query/current-route])
-  static store-common/IDashboardNavbarContent
-  (has-subnav? [_ _] true)
+  ;static store-common/IDashboardNavbarContent
+  ;(has-subnav? [_ _] true)
 
   Object
   (render [this]
@@ -41,13 +41,16 @@
         {:id "sulo-store-finances"}
 
         (dom/div
+          (css/add-class :section-title)
+          (dom/h1 nil "Finances"))
+        (dom/div
           (->> {:id "store-navbar"}
                (css/add-class :navbar-container))
           (dom/nav
             (->> (css/add-class :navbar)
                  (css/add-class :top-bar))
             (menu/horizontal
-              (css/align :center)
+              nil
               (menu/item
                 (when (= route :store-dashboard/finances)
                   (css/add-class :is-active))

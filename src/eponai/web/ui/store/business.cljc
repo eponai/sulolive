@@ -206,10 +206,10 @@
      :query/current-route
      :query/messages])
 
-  static store-common/IDashboardNavbarContent
-  (has-subnav? [this current-route]
-    (debug "Has subnav...")
-    true)
+  ;static store-common/IDashboardNavbarContent
+  ;(has-subnav? [this current-route]
+  ;  (debug "Has subnav...")
+  ;  true)
 
   Object
 
@@ -296,13 +296,16 @@
       (dom/div
         {:id "sulo-account-settings"}
         (dom/div
+          (css/add-class :section-title)
+          (dom/h1 nil "Business"))
+        (dom/div
           (->> {:id "store-navbar"}
                (css/add-class :navbar-container))
           (dom/nav
             (->> (css/add-class :navbar)
                  (css/add-class :top-bar))
             (menu/horizontal
-              (css/align :center)
+              nil
               (menu/item
                 (when (= route :store-dashboard/business#verify)
                   (css/add-class :is-active))
@@ -323,7 +326,7 @@
               (= modal :modal/edit-personal)
               (edit-personal-modal this))
 
-        (dom/h1 (css/show-for-sr) "Business")
+
         (cond
           (= route :store-dashboard/business)
           (dom/div
