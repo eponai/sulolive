@@ -14,7 +14,6 @@
     [eponai.common.format.date :as date]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.utils :as ui-utils]
-    [eponai.web.ui.store.common :as store-common]
     [eponai.common.ui.elements.table :as table]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.web.ui.button :as button]

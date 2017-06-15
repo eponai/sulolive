@@ -193,11 +193,11 @@
                 (check-list-item
                   false
                   (routes/url :store-dashboard/stream {:store-id store-id})
-                  (dom/span nil "Setup your first stream"))
+                  (dom/span nil "Setup your first stream."))
 
                 (check-list-item
                   (:stripe/details-submitted? stripe-account)
-                  (routes/url :store-dashboard/settings#business {:store-id store-id})
+                  (routes/url :store-dashboard/business#verify {:store-id store-id})
                   (dom/span nil "Verify your account, so we know you're real.")))))
           (if (:stripe/details-submitted? stripe-account)
             (when-let [verification-el (verification-status-element this)]

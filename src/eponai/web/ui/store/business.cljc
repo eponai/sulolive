@@ -6,7 +6,6 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.web.ui.store.common :as store-common]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
     [eponai.web.ui.store.business.verify :as verify]

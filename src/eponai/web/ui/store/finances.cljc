@@ -9,7 +9,6 @@
     ;[eponai.common.ui.store.account.payouts :as payouts]
     [eponai.web.ui.store.finances.settings :as settings]
     [eponai.common.ui.common :as common]
-    [eponai.web.ui.store.common :as store-common]
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.client.routes :as routes]
@@ -21,11 +20,7 @@
   (query [_]
     [{:proxy/settings (om/get-query settings/FinancesSettings)}
      {:query/stripe-balance [:stripe/balance]}
-     ;{:proxy/navbar (om/get-query nav/Navbar)}
-     ;{:query/store [:store/profile]}
      :query/current-route])
-  ;static store-common/IDashboardNavbarContent
-  ;(has-subnav? [_ _] true)
 
   Object
   (render [this]
@@ -33,10 +28,7 @@
            :query/keys [current-route stripe-balance]} (om/props this)
           {:keys [route route-params]} current-route
           {:keys [stripe-account]} (om/get-computed this)]
-      ;(common/page-container
-      ;  {:navbar navbar :id "sulo-store-finances"})
-      (debug "Current route: " route)
-      (debug "BalanceL " stripe-balance)
+
       (dom/div
         {:id "sulo-store-finances"}
 

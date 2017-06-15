@@ -18,9 +18,9 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.web.ui.photo :as photo]
-    [eponai.web.ui.store.common :as store-common]
     [eponai.common.ui.components.select :as sel]
-    [eponai.common.mixpanel :as mixpanel]))
+    [eponai.common.mixpanel :as mixpanel]
+    [eponai.web.ui.button :as button]))
 
 (def form-elements
   {:input-price          "input-price"
@@ -254,8 +254,8 @@
                       (when (some? photo-key)
                         (dom/div
                           nil
-                          (photo/square {:photo-id   photo-key
-                                     :transformation :transformation/thumbnail})
+                          (photo/square {:photo-id       photo-key
+                                         :transformation :transformation/thumbnail})
                           (dom/a
                             (->>
                               {:onClick #(.remove-uploaded-photo this i)}
@@ -266,7 +266,7 @@
               (when (some? queue-photo)
                 (grid/column
                   nil
-                  (photo/square {:src (:src queue-photo)
+                  (photo/square {:src    (:src queue-photo)
                                  :status :loading})))
               (when (and (nil? queue-photo) (> 5 (count (conj uploaded-photos))))
                 (grid/column
@@ -427,10 +427,9 @@
                                           (dom/option {:value "limited"} "Limited")))
                             (grid/column
                               (css/add-class :shrink)
-                              (dom/a (->> {:onClick #(om/update-state! this update :sku-count dec)}
-                                          (css/button-hollow)
-                                          (css/add-class ::css/color-secondary))
-                                     (dom/i {:classes ["fa fa-trash-o fa-fw"]}))))))))
+                              (button/user-setting-default
+                                {:onClick #(om/update-state! this update :sku-count dec)}
+                                (dom/i {:classes ["fa fa-trash-o fa-fw"]}))))))))
                   (range sku-count)))
               (dom/div
                 nil
@@ -452,11 +451,11 @@
               (label-column nil)
               (grid/column
                 nil
-                (dom/a
-                  (->> {:onClick #(do
-                                   (mixpanel/track "Store: Add product variation")
-                                   (om/update-state! this update :sku-count inc))}
-                       (css/button-hollow)) (dom/span nil "Add variation..."))))))
+                (button/user-setting-default
+                  {:onClick #(do
+                              (mixpanel/track "Store: Add product variation")
+                              (om/update-state! this update :sku-count inc))}
+                  (dom/span nil "Add variation..."))))))
 
         (grid/row
           (css/add-classes [:expanded :collapse])
@@ -467,18 +466,17 @@
                       :onClick #(.delete-product this)}
                      (dom/span nil "Delete product"))))
           (grid/column
-            (css/text-align :right)
-            (dom/a
-              (css/button-hollow {:href (routes/url :store-dashboard/product-list {:store-id store-id})
-                                  :onClick #(mixpanel/track "Store: Cancel edit product")})
+            (css/add-class :action-buttons)
+            (button/button
+              (button/hollow {:href    (routes/url :store-dashboard/product-list {:store-id store-id})
+                              :onClick #(mixpanel/track "Store: Cancel edit product")})
               (dom/span nil "Cancel"))
-            (dom/a
-              (->> {
-                    :onClick #(when-not is-loading?
-                               (if (is-new-product? this)
-                                 (.create-product this)
-                                 (.update-product this)))}
-                   (css/button))
+            (button/button
+              {
+               :onClick #(when-not is-loading?
+                          (if (is-new-product? this)
+                            (.create-product this)
+                            (.update-product this)))}
               (if is-loading?
                 (dom/i {:classes ["fa fa-spinner fa-spin"]})
                 (dom/span nil "Save product")))))

@@ -494,7 +494,7 @@
               (= modal :modal/add-shipping-address)
               (shipping-address-modal this))
         (dom/div
-          (css/show-for-sr)
+          (css/add-class :section-title)
           (dom/h1 nil "Shipping"))
         ;(dom/div
         ;  (css/add-class :section-title)
@@ -544,7 +544,7 @@
                              :onClick #(mixpanel/track "Store: See help for shipping rules")} (dom/small nil "Learn more"))
                      )
               (button/button
-                (button/small {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-rule)})
+                {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-rule)}
                 (dom/span nil "Add shipping rule"))))
           ;(grid/row
           ;  nil

@@ -66,7 +66,7 @@
 				color: $sulo-color;
 			}
 			&.done {
-				pointer-events: none;
+				// pointer-events: none;
 				p {
 					font-weight: $global-weight-normal;
 				}
