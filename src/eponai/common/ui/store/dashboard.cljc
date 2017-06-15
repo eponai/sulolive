@@ -91,7 +91,6 @@
                                      :store.profile/name
                                      :store.profile/tagline
                                      :store.profile/return-policy
-                                     :store.profile/shipping-policy
                                      ;:store.profile/shipping-fee
                                      {:store.profile/cover [:photo/id]}
                                      {:store.profile/photo [:photo/path :photo/id]}]}
@@ -109,7 +108,8 @@
                                    {:store.item/skus [:db/id
                                                       :store.item.sku/inventory
                                                       :store.item.sku/variation]}]}
-                    {:stream/_store [:stream/state]}]}
+                    {:stream/_store [:stream/state]}
+                    {:store/shipping [:shipping/policy]}]}
      :query/current-route
      :query/messages
      {:routing/store-dashboard (medley/map-vals (comp om/get-query :component) route-map)}

@@ -155,7 +155,7 @@
                ;:system/stripe
                ;:system/auth0
                ;:system/email
-               ;; :system/mailchimp
+               ; :system/mailchimp
                ))
 
 (defn test-system [config]

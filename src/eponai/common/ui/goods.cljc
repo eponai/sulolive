@@ -111,10 +111,13 @@
           (grid/column
             nil
             (nav-breadcrumbs (category-seq this))
-            (dom/h1 nil (str/upper-case
-                          (if (some? top-category)
-                            (products/category-display-name top-category)
-                            "All")))
+            (dom/div
+              (css/add-class :section-title)
+              (dom/h2 nil (str/upper-case
+                            (if (some? top-category)
+                              (products/category-display-name top-category)
+                              "All"))))
+
             ))
         (grid/row
           (css/hide-for :large)

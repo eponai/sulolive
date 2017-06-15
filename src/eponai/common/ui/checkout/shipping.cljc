@@ -26,13 +26,14 @@
    :shipping.address/region   "sulo-shipping-region"
    :shipping.address/country  "sulo-shipping-country"})
 
+(s/def :country/code (s/and string? #(re-matches #"\w{2}" %)))
 (s/def :shipping/name (s/and string? #(not-empty %)))
 (s/def :shipping.address/street (s/and string? #(not-empty %)))
 (s/def :shipping.address/street2 (s/or :value string? :empty nil?))
 (s/def :shipping.address/postal (s/and string? #(not-empty %)))
 (s/def :shipping.address/locality (s/and string? #(not-empty %)))
 (s/def :shipping.address/region (s/or :value #(string? (not-empty %)) :empty nil?))
-(s/def :shipping.address/country (s/and string? #(re-matches #"\w{2}" %)))
+(s/def :shipping.address/country (s/keys :req [:country/code]))
 
 (s/def :shipping/address (s/keys :req [:shipping.address/street
                                        :shipping.address/postal
@@ -105,7 +106,7 @@
                                  " "
                                  (:shipping.address/region address)
                                  )))
-            (dom/div nil (dom/span nil (:shipping.address/country address)))))
+            (dom/div nil (dom/span nil (:country/code (:shipping.address/country address))))))
         (button/user-setting-default
           {:onClick #(when on-open (on-open))}
           (dom/span nil "Edit address")))
@@ -233,7 +234,7 @@
                        :shipping/address {:shipping.address/street   (web-utils/input-value-or-nil-by-id street)
                                           :shipping.address/street2  (web-utils/input-value-or-nil-by-id street2)
                                           :shipping.address/locality (web-utils/input-value-or-nil-by-id locality)
-                                          :shipping.address/country  (web-utils/input-value-or-nil-by-id country)
+                                          :shipping.address/country  {:country/code (web-utils/input-value-or-nil-by-id country)}
                                           :shipping.address/region   (web-utils/input-value-or-nil-by-id region)
                                           :shipping.address/postal   (web-utils/input-value-or-nil-by-id postal)}}
              validation (validate ::shipping shipping)]
@@ -260,7 +261,7 @@
                (set! (.-value (web-utils/element-by-id street2)) (:shipping.address/street2 address))
                (set! (.-value (web-utils/element-by-id postal)) (:shipping.address/postal address))
                (set! (.-value (web-utils/element-by-id locality)) (:shipping.address/locality address))
-               (set! (.-value (web-utils/element-by-id country)) (:shipping.address/country address))
+               (set! (.-value (web-utils/element-by-id country)) (:country/code (:shipping.address/country address)))
                (set! (.-value (web-utils/element-by-id region)) (:shipping.address/region address)))
              (set! (.-value (web-utils/element-by-id country)) "CA"))
            )
@@ -278,7 +279,7 @@
              (set! (.-value (web-utils/element-by-id street2)) (:shipping.address/street2 address))
              (set! (.-value (web-utils/element-by-id postal)) (:shipping.address/postal address))
              (set! (.-value (web-utils/element-by-id locality)) (:shipping.address/locality address))
-             (set! (.-value (web-utils/element-by-id country)) (:shipping.address/country address))
+             (set! (.-value (web-utils/element-by-id country)) (:country/code (:shipping.address/country address)))
              (set! (.-value (web-utils/element-by-id region)) (:shipping.address/region address)))
            (set! (.-value (web-utils/element-by-id country)) "CA"))
          )))

@@ -39,7 +39,9 @@
           nil
           (grid/column
             nil
-            (my-dom/h1 nil "LIVE")))
+            (my-dom/div
+              (css/add-class :section-title)
+              (my-dom/h2 nil "LIVE"))))
         (grid/row
           nil
           (grid/column

@@ -5,10 +5,9 @@
     [eponai.common.ui.search-bar :as search-bar]
     [eponai.web.ui.photo :as photo]
     [eponai.common.ui.product-item :as pi]
-    [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug error]]
-    [eponai.common.ui.dom :as my-dom :refer [div a]]
+    [eponai.common.ui.dom :as dom :refer [div a]]
     [eponai.common.ui.elements.css :as css]
     [eponai.client.routes :as routes]
     [eponai.common.ui.icons :as icons]
@@ -17,30 +16,30 @@
     [eponai.web.ui.button :as button]
     [eponai.common.mixpanel :as mixpanel]))
 
-(defn banner [{:keys [color align] :as opts} primary secondary]
-  (let [align (or align :left)
-        color (or color :default)]
-    (dom/div #js {:className (str "banner " (name color))}
-      (grid/row
-        nil
-        (grid/column
-          (cond->> (->> (grid/column-size {:small 9 :medium 8})
-                        (css/text-align align))
-                   (= align :right)
-                   (grid/column-offset {:small 3 :medium 4}))
-          primary)
-        (grid/column
-          (css/align :right)
-          secondary)))))
+;(defn banner [{:keys [color align] :as opts} primary secondary]
+;  (let [align (or align :left)
+;        color (or color :default)]
+;    (dom/div #js {:className (str "banner " (name color))}
+;      (grid/row
+;        nil
+;        (grid/column
+;          (cond->> (->> (grid/column-size {:small 9 :medium 8})
+;                        (css/text-align align))
+;                   (= align :right)
+;                   (grid/column-offset {:small 3 :medium 4}))
+;          primary)
+;        (grid/column
+;          (css/align :right)
+;          secondary)))))
 
 (defn collection-element [{:keys [href url title full? url-small photo-id]}]
   ;; Use the whole thing as hover elem
-  (my-dom/a
+  (dom/a
     {:href    href
      :classes [:full :category-photo]}
     (photo/photo {:photo-id photo-id}
                  (photo/overlay
-                   nil (my-dom/div
+                   nil (dom/div
                          (->> (css/text-align :center))
                          (dom/span nil title))))))
 
@@ -77,39 +76,41 @@
       (debug "Items: " featured-items)
       (debug "Items: " featured-stores)
 
-      (dom/div #js {:id "sulo-index" :className "sulo-page"}
-        (common/page-container
-          {:navbar navbar}
-          (dom/div #js {:id "sulo-index-container" :onScroll #(debug "Did scroll page: " %)}
+      (common/page-container
+        {:navbar navbar
+         :id     "sulo-index"}
+        (dom/div {:id "sulo-index-container"}
 
-            (common/city-banner this locations)
-            ;(my-dom/div
-            ;  (css/add-class :intro-header)
-            ;  (grid/row
-            ;    (css/align :middle)
-            ;    (grid/column
-            ;      (grid/column-size {:small 12 :medium 6})
-            ;      (my-dom/h1
-            ;        (css/add-class :header)
-            ;        (dom/i #js {:className "fa fa-map-marker"})
-            ;        (dom/span nil locations)))
-            ;    (grid/column
-            ;      nil
-            ;      (my-dom/div
-            ;        (css/add-class :input-container)
-            ;        (search-bar/->SearchBar {:ref             (str ::search-bar-ref)
-            ;                                 :placeholder     "What are you looking for?"
-            ;                                 :mixpanel-source "index"
-            ;                                 :classes         [:drop-shadow]})
-            ;        (button/button
-            ;          (->> (button/expanded {:onClick (fn []
-            ;                                            (let [search-bar (om/react-ref this (str ::search-bar-ref))]
-            ;                                              (when (nil? search-bar)
-            ;                                                (error "NO SEARCH BAR :( " this))
-            ;                                              (search-bar/trigger-search! search-bar)))})
-            ;               (css/add-classes [:drop-shadow]))
-            ;          (dom/span nil "Search"))))))
+                 (common/city-banner this locations)
+                 ;(my-dom/div
+                 ;  (css/add-class :intro-header)
+                 ;  (grid/row
+                 ;    (css/align :middle)
+                 ;    (grid/column
+                 ;      (grid/column-size {:small 12 :medium 6})
+                 ;      (my-dom/h1
+                 ;        (css/add-class :header)
+                 ;        (dom/i #js {:className "fa fa-map-marker"})
+                 ;        (dom/span nil locations)))
+                 ;    (grid/column
+                 ;      nil
+                 ;      (my-dom/div
+                 ;        (css/add-class :input-container)
+                 ;        (search-bar/->SearchBar {:ref             (str ::search-bar-ref)
+                 ;                                 :placeholder     "What are you looking for?"
+                 ;                                 :mixpanel-source "index"
+                 ;                                 :classes         [:drop-shadow]})
+                 ;        (button/button
+                 ;          (->> (button/expanded {:onClick (fn []
+                 ;                                            (let [search-bar (om/react-ref this (str ::search-bar-ref))]
+                 ;                                              (when (nil? search-bar)
+                 ;                                                (error "NO SEARCH BAR :( " this))
+                 ;                                              (search-bar/trigger-search! search-bar)))})
+                 ;               (css/add-classes [:drop-shadow]))
+                 ;          (dom/span nil "Search"))))))
 
+                 (dom/div
+            (css/add-class :sections)
 
             (common/content-section {:href  (routes/url :live)
                                      :class "online-channels"}
@@ -174,7 +175,7 @@
               ;(dom/div
               ;  (css/add-class :section-title)
               ;  (dom/h2 nil "New brands"))
-              (my-dom/div
+              (dom/div
                 {:classes ["sulo-items-container"]}
                 (grid/row
                   (grid/columns-in-row {:small 2 :medium 4})
@@ -182,17 +183,17 @@
                          (let [store-name (get-in store [:store/profile :store.profile/name])]
                            (grid/column
                              nil
-                             (my-dom/div
+                             (dom/div
                                (->> (css/add-class :content-item)
                                     (css/add-class :stream-item))
-                               (my-dom/a
+                               (dom/a
                                  {:href (routes/url :store {:store-id (:db/id store)})}
                                  (photo/store-photo store {:transformation :transformation/thumbnail-large}))
-                               (my-dom/div
+                               (dom/div
                                  (->> (css/add-class :text)
                                       (css/add-class :header))
-                                 (my-dom/a {:href (routes/url :store {:store-id (:db/id store)})}
-                                           (my-dom/strong nil store-name)))))))
+                                 (dom/a {:href (routes/url :store {:store-id (:db/id store)})}
+                                        (dom/strong nil store-name)))))))
                        featured-stores)))
               "See more stores")
 

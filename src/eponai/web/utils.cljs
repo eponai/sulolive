@@ -50,8 +50,9 @@
     (set-locality "Vancouver, BC"))
   ([locality]
     (set! (.-cookie js/document) (str "sulo.locality=" locality))
-    (let [cookie-string (js/decodeURIComponent (.-cookie js/document))]
-      (debug "Got cookie: " cookie-string))))
+    ;(let [cookie-string (js/decodeURIComponent (.-cookie js/document))]
+    ;  (debug "Got cookie: " cookie-string))
+    ))
 
 (defn elements-by-class
   ([classname]

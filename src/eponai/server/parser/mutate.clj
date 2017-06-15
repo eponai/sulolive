@@ -102,6 +102,18 @@
                                              :list-id (env/env :mailchimp-customer-beta-id)})]
                ret))})
 
+(defmutation location/suggest
+  [{:keys [state auth system] ::parser/keys [return exception]} _ {:keys [name site email]}]
+  {:auth ::auth/public
+   :resp {:success "Thank you for your tip! Check your inbox for a confirmation email."
+          :error   (if exception (:detail (json/read-str (:body (ex-data exception)) :key-fn keyword) "") "")}}
+  {:action (fn []
+             (debug "location/suggest with email " email)
+             (let [ret (mailchimp/subscribe (:system/mailchimp system)
+                                            {:email   email
+                                             :list-id (env/env :mailchimp-newsletter-id)})]
+               ret))})
+
 (defmutation photo/upload
   [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ params]
   {:auth ::auth/any-user
@@ -267,7 +279,6 @@
                                                :store.profile/description
                                                :store.profile/tagline
                                                :store.profile/return-policy
-                                               :store.profile/shipping-policy
                                                :store.profile/email])
                          (update :store.profile/description #(f/str->bytes (quill/sanitize-html %)))
                          (update :store.profile/return-policy #(f/str->bytes (quill/sanitize-html %)))
@@ -275,7 +286,7 @@
                          ;                                      (when-let [fee (c/parse-long-safe %)]
                          ;                                        (bigdec fee))
                          ;                                      (bigdec 0)))
-                         (update :store.profile/shipping-policy #(f/str->bytes (quill/sanitize-html %)))
+
                          f/remove-nil-keys
                          (assoc :db/id (:db/id (:store/profile db-store))))]
                (debug "store/update-info with params: " s)
@@ -317,6 +328,15 @@
   {:action (fn []
              (debug "store/update-sections with params: " p)
              (store/create-shipping-rule env (c/parse-long store-id) p))})
+
+(defmutation store/delete-shipping-rule
+  [env _ {:keys [store-id rule] :as p}]
+  {:auth {::auth/store-owner store-id}
+   :resp {:success "Your shipping rule was successfully created."
+          :error   "Sorry, failed to create shipping rule. Try again later."}}
+  {:action (fn []
+             (debug "store/update-sections with params: " p)
+             (store/delete-shipping-rule env (c/parse-long store-id) rule))})
 
 (defmutation store/update-shipping-rule
   [env _ {:keys [store-id shipping-rule] :as p}]

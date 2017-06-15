@@ -149,7 +149,6 @@
      :store.profile/name             public-attr
      :store.profile/description      public-attr
      :store.profile/return-policy    public-attr
-     :store.profile/shipping-policy  public-attr
      :store.profile/tagline          public-attr
      :store.profile/photo            public-attr
      :store.profile/cover            public-attr
@@ -198,6 +197,7 @@
      :order.item/photo               order-item-owner
      :charge/id                      order-charge-owner
      ;; TODO Implement real filter-fn
+     :shipping/policy                public-attr
      :shipping/rules                 public-attr
      :shipping.rule/destinations     public-attr
      :shipping.rule/rates            public-attr

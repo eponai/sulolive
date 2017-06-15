@@ -121,6 +121,10 @@
         (db/transact state [new-shipping
                             [:db/add store-id :store/shipping (:db/id new-shipping)]])))))
 
+(defn delete-shipping-rule [{:keys [state]} store-id shipping-rule]
+  (when-let [eid (:db/id shipping-rule)]
+    (db/transact state [[:db.fn/retractEntity eid]])))
+
 (defn update-shipping-rule [{:keys [state]} rule-id {:shipping.rule/keys [rates] :as params}]
   (let [old-rule (db/pull (db/db state) [:db/id :shipping.rule/rates] rule-id)
         old-rates (:shipping.rule/rates old-rule)
@@ -193,7 +197,7 @@
                                                                                           :postal_code (:shipping.address/postal address)
                                                                                           :city        (:shipping.address/locality address)
                                                                                           :state       (:shipping.address/region address)
-                                                                                          :country     (:shipping.address/country address)}}
+                                                                                          :country     (:country/code (:shipping.address/country address))}}
                                                                   :destination {:account id
                                                                                 :amount  (int (* 100 destination-amount))}}) ;Convert to cents for Stripe
 

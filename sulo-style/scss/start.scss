@@ -17,11 +17,11 @@ $section-footer-color: $primary-color;
 	}
 	h2 {
 		@include breakpoint(large) {
-			font-size: rem-calc(28);
+			// font-size: rem-calc(28);
 		} 
 	}
 	.page-content {
-		padding-bottom: 0;
+		padding-bottom: 6rem;
 	}
 	.photo.cover {
 		@include breakpoint(large) {
@@ -69,13 +69,6 @@ $section-footer-color: $primary-color;
 	}
 
 	.section {
-		margin-top: 3%;
-		margin-bottom: 3rem;
-		padding: 2% 0;
-		.section-footer {
-			margin-top: $global-margin;
-		}
-
 		&.online-channels {
 			.online-stream {
 				@include breakpoint(small only) {
@@ -94,7 +87,7 @@ $section-footer-color: $primary-color;
 		}
 
 		&.collections {
-			font-size: 1.7rem;
+			// font-size: 1.7rem;
 			.section-footer {
 				visibility: hidden;
 			}
@@ -122,6 +115,9 @@ $section-footer-color: $primary-color;
 					padding: 0.5rem;
 				}
 			}
+		}
+		.sell-on-sulo {
+			padding-top: $global-padding;
 		}
 	}
 }

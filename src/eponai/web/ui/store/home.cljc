@@ -225,7 +225,7 @@
                     (callout/header nil "Verify your account")))
                 (dom/p nil
                        (dom/span nil "Before ")
-                       (dom/a {:href (routes/url :store-dashboard/settings#business {:store-id store-id})} (dom/span nil "verifying your account"))
+                       (dom/a {:href (routes/url :store-dashboard/business#verify {:store-id store-id})} (dom/span nil "verifying your account"))
                        (dom/span nil ", you can only use SULO Live in test mode. You can manage your store, but it'll not be visible to the public."))
                 (dom/p nil
                        "Once you've verified your account you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our terms of service. If there is a problem, we'll get in touch right away to resolve it as quickly as possible.")))))

@@ -17,7 +17,8 @@
     #?(:cljs [eponai.web.utils :as utils])
     [eponai.common.ui.common :as common]
     [eponai.common.format.date :as date]
-    [eponai.common.format :as f]))
+    [eponai.common.format :as f]
+    [eponai.common.mixpanel :as mixpanel]))
 
 (def form-inputs verify/form-inputs)
 
@@ -239,6 +240,7 @@
                                                              :field.legal-entity.address/state  state}
                           :field.legal-entity/business-name business-name
                           :field.legal-entity/type          entity-type})]
+         (mixpanel/track "Store: Save business information")
          (.save-legal-entity this input-map))))
 
   (save-personal-info [this]
@@ -254,6 +256,7 @@
                         :field.legal-entity/dob        {:field.legal-entity.dob/year  year
                                                         :field.legal-entity.dob/month month
                                                         :field.legal-entity.dob/day   day}}]
+         (mixpanel/track "Store: Save personal information")
          (.save-legal-entity this input-map))))
 
   (save-email [this]
@@ -264,6 +267,7 @@
          (debug "Validation: " validation)
          (if (nil? validation)
            (do
+             (mixpanel/track "Store: Update contact email")
              (msg/om-transact! this [(list 'store/update-info {:db/id         (:db/id store)
                                                                :store/profile {:store.profile/email email}})
                                      :query/store])

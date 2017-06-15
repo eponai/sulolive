@@ -20,7 +20,8 @@
     [eponai.web.ui.button :as button]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.table :as table]
-    [eponai.common :as c]))
+    [eponai.common :as c]
+    [eponai.common.mixpanel :as mixpanel]))
 (def prefix-key "payouts-details-")
 
 (def form-inputs verify/form-inputs)
@@ -253,6 +254,7 @@
                                  :routing_number (str transit institution)
                                  :account_number account}
                                 {:on-success (fn [{:keys [token]}]
+                                               (mixpanel/track "Store: Update bank account")
                                                (msg/om-transact! this [(list 'stripe/update-account
                                                                              {:account-params {:field/external-account token}
                                                                               :store-id       (:db/id store)})
@@ -268,6 +270,7 @@
                               (assoc :field.payout-schedule/week-anchor week-anchor)
                               (= interval "monthly")
                               (assoc :field.payout-schedule/month-anchor month-anchor))]
+         (mixpanel/track "Store: Update deposit schedule")
          (msg/om-transact! this [(list 'stripe/update-account
                                        {:account-params {:field/payout-schedule schedule}
                                         :store-id       (:db/id store)})

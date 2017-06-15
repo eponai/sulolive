@@ -2,6 +2,8 @@
 #sulo-store-dashboard {
 	#sulo-navbar, .sl-global-spinner  {
 		position: fixed;
+		background: map-get($foundation-palette, sulo);
+
 	}
 	.sl-global-spinner {
 		  top: $navbar-height;

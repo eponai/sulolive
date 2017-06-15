@@ -1,161 +1,161 @@
-#sulo-sell-coming-soon {
-	.content .callout {
-		background: rgba($white, 0.9);
-	}
-	.photo.header {
-		position: relative;
-		&:before {
-			content: '';
-			position: absolute;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: 100%;
-			background: rgba($white, 0.1);
-		}
-	}
-
-}
-// #sulo-index, #sulo-coming-soon, #sulo-sell-coming-soon {
-// 	h1, h2, h3, h4, h5, h6 {
-// 		font-family: $header-font-family-sans-serif;
+// #sulo-sell-coming-soon {
+// 	.content .callout {
+// 		background: rgba($white, 0.9);
 // 	}
-// 	h1 {
-// 		font-size: rem-calc(48px);
+// 	.photo.header {
+// 		position: relative;
+// 		&:before {
+// 			content: '';
+// 			position: absolute;
+// 			top: 0;
+// 			left: 0;
+// 			width: 100%;
+// 			height: 100%;
+// 			background: rgba($white, 0.1);
+// 		}
+// 	}
+
+// }
+// // #sulo-index, #sulo-coming-soon, #sulo-sell-coming-soon {
+// // 	h1, h2, h3, h4, h5, h6 {
+// // 		font-family: $header-font-family-sans-serif;
+// // 	}
+// // 	h1 {
+// // 		font-size: rem-calc(48px);
+// // 	}
+// // }
+// #sulo-coming-soon, #sulo-sell-coming-soon {
+// 	p {
+// 		&.success {
+// 			text-transform: none;
+// 			color: green;
+// 		}
+// 		&.alert {
+// 			text-transform: none;
+// 			color: red;
+// 		}
+// 	}
+// 	#sulo-sidebar {
+// 		a:not(.button) {
+// 			// pointer-events: none;
+// 		}
+// 		a:not(.button):not(.highlight) {
+// 			pointer-events: none;
+// 			text-decoration: line-through;
+// 			color: $dark-gray;
+// 		}
+// 	}
+// 	.info-banner {
+// 		$bg: lighten(map-get($foundation-palette, warning), 35%);
+// 		background: rgba($bg, 0.85);
+// 		font-weight: $global-weight-bold;
+// 		border: none;
+// 		box-shadow: 0px 1px 2px 0 rgba($black, 0.1);
+// 		transition: visibility 0s linear 0.25s, opacity 0.25s linear;
+// 		padding: 1rem !important;
+// 		// text-transform: none;
+// 		&.invisible {
+// 			opacity: 0;
+// 		}
+// 		// position: absolute;
+// 		// top: 0;
+// 		// left: 0;
+// 		// right: 0;
+// 		// transition: visibility .25s ease-in-out;
+// 	}
+// 	.page-content-container {
+// 		min-height: 100vh;
+// 		display: flex;
+// 	}
+// 	.page-content {
+// 		flex: 1;
+// 		padding-bottom: 0;
+// 		display: flex;
+// 		> .photo.header {
+// 			flex: 1;
+// 			padding-bottom: 3rem;
+// 			// padding-top: 0;
+// 			position: relative;
+// 			.button {
+// 				font-weight: bold;
+// 				text-transform: none;
+// 			}
+// 		}
+// 	}
+// 	.footer {
+// 		display: none;
+// 	}
+
+// 	.content .callout {
+// 		small {
+// 			text-transform: none;
+// 			a {
+// 				text-decoration: underline;
+// 			}
+// 		}
+// 		hr {
+// 			margin: 2rem 0;
+// 		}
+// 		padding: 2rem 1rem 2rem 1rem;
+// 		@include breakpoint(medium) {
+// 			padding: 2rem 3.6rem 2rem 3.6rem;
+// 		}
+// 		// margin-top: 3%;
+// 		border: none;
+// 		background: rgba($white, 0.85);
+// 		&.transparent {
+// 			background: transparent;
+// 		}
+// 		form {
+// 			margin: 2rem auto 0 auto;
+// 		}
+// 		.coming-soon {
+// 			// text-transform: none;
+// 			font-size: 1.2rem;
+// 			@include breakpoint(medium) {
+// 				font-size: 2rem;
+// 			}
+// 			@include breakpoint(large) {
+// 				font-size: 1.8rem;
+// 			}
+// 		}
+// 		p {
+// 			text-transform: none;
+// 		}
+// 		h1 {
+// 			line-height: 1.2;
+// 			font-weight: normal;
+// 			margin-bottom: 0;
+// 		}
+// 		h2 {
+// 			font-weight: bold;
+
+// 		}
+
+// 		&.secondary {
+// 			margin-top: 3%;
+// 			// padding: 0.5%;
+// 			background: rgba($black, 0.85);
+// 			color: $white;
+// 			font-size: 2rem;
+// 			@include breakpoint(medium) {
+// 				font-size: 2.5rem; 
+// 			}
+// 		}
+// 	}
+
+// 	.enter strong {
+// 		font-size: 80%;
+// 		text-transform: none;
+// 	}
+
+// 	#sulo-navbar {
+// 		.dropdown-pane {
+// 			display: none;
+// 		}
+// 		.category, .category a {
+// 			color: $medium-gray;
+// 			text-decoration: line-through;
+// 		}
 // 	}
 // }
-#sulo-coming-soon, #sulo-sell-coming-soon {
-	p {
-		&.success {
-			text-transform: none;
-			color: green;
-		}
-		&.alert {
-			text-transform: none;
-			color: red;
-		}
-	}
-	#sulo-sidebar {
-		a:not(.button) {
-			// pointer-events: none;
-		}
-		a:not(.button):not(.highlight) {
-			pointer-events: none;
-			text-decoration: line-through;
-			color: $dark-gray;
-		}
-	}
-	.info-banner {
-		$bg: lighten(map-get($foundation-palette, warning), 35%);
-		background: rgba($bg, 0.85);
-		font-weight: $global-weight-bold;
-		border: none;
-		box-shadow: 0px 1px 2px 0 rgba($black, 0.1);
-		transition: visibility 0s linear 0.25s, opacity 0.25s linear;
-		padding: 1rem !important;
-		// text-transform: none;
-		&.invisible {
-			opacity: 0;
-		}
-		// position: absolute;
-		// top: 0;
-		// left: 0;
-		// right: 0;
-		// transition: visibility .25s ease-in-out;
-	}
-	.page-content-container {
-		min-height: 100vh;
-		display: flex;
-	}
-	.page-content {
-		flex: 1;
-		padding-bottom: 0;
-		display: flex;
-		> .photo.header {
-			flex: 1;
-			padding-bottom: 3rem;
-			// padding-top: 0;
-			position: relative;
-			.button {
-				font-weight: bold;
-				text-transform: none;
-			}
-		}
-	}
-	.footer {
-		display: none;
-	}
-
-	.content .callout {
-		small {
-			text-transform: none;
-			a {
-				text-decoration: underline;
-			}
-		}
-		hr {
-			margin: 2rem 0;
-		}
-		padding: 2rem 1rem 2rem 1rem;
-		@include breakpoint(medium) {
-			padding: 2rem 3.6rem 2rem 3.6rem;
-		}
-		// margin-top: 3%;
-		border: none;
-		background: rgba($white, 0.85);
-		&.transparent {
-			background: transparent;
-		}
-		form {
-			margin: 2rem auto 0 auto;
-		}
-		.coming-soon {
-			// text-transform: none;
-			font-size: 1.2rem;
-			@include breakpoint(medium) {
-				font-size: 2rem;
-			}
-			@include breakpoint(large) {
-				font-size: 1.8rem;
-			}
-		}
-		p {
-			text-transform: none;
-		}
-		h1 {
-			line-height: 1.2;
-			font-weight: normal;
-			margin-bottom: 0;
-		}
-		h2 {
-			font-weight: bold;
-
-		}
-
-		&.secondary {
-			margin-top: 3%;
-			// padding: 0.5%;
-			background: rgba($black, 0.85);
-			color: $white;
-			font-size: 2rem;
-			@include breakpoint(medium) {
-				font-size: 2.5rem; 
-			}
-		}
-	}
-
-	.enter strong {
-		font-size: 80%;
-		text-transform: none;
-	}
-
-	#sulo-navbar {
-		.dropdown-pane {
-			display: none;
-		}
-		.category, .category a {
-			color: $medium-gray;
-			text-decoration: line-through;
-		}
-	}
-}

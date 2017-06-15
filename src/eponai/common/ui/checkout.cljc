@@ -105,7 +105,7 @@
     (om/update-state! this merge (.state-from-shipping this (om/props this) shipping)))
 
   (state-from-shipping [_ props shipping]
-    (let [country-code (get-in shipping [:shipping/address :shipping.address/country])
+    (let [{country-code :country/code} (get-in shipping [:shipping/address :shipping.address/country])
           {:query/keys [checkout]} props
           store (:store/_items (:store.item/_skus (first checkout)))
           shipping-rules (get-in store [:store/shipping :shipping/rules])
@@ -126,7 +126,7 @@
                          :shipping/address {:shipping.address/street   (:stripe.shipping.address/street address)
                                             :shipping.address/street2  (:stripe.shipping.address/street2 address)
                                             :shipping.address/locality (:stripe.shipping.address/city address)
-                                            :shipping.address/country  (:stripe.shipping.address/country address)
+                                            :shipping.address/country  {:country/code (:stripe.shipping.address/country address)}
                                             :shipping.address/region   (:stripe.shipping.address/state address)
                                             :shipping.address/postal   (:stripe.shipping.address/postal address)}}]
           (.state-from-shipping this props formatted))

@@ -71,7 +71,10 @@
                               (dom/small nil "Purchases"))
               (menu/item-link {:href    (routes/url :user-settings {:user-id (:db/id user)})
                                :onClick #(track-event ::mixpanel/go-to-settings)}
-                              (dom/small nil "Settings")))))
+                              (dom/small nil "Settings"))
+              (menu/item-link {:href    (routes/url :landing-page)
+                               :onClick #(track-event ::mixpanel/change-location)}
+                              (dom/small nil "Change location")))))
         (menu/item nil
                    (menu/vertical
                      (css/add-class :nested)
@@ -92,24 +95,24 @@
         (routes/url :landing-page/locality)
         href))))
 
-(defn collection-links [component]
-  (let [{:query/keys [auth locations]} (om/props component)]
+(defn collection-links [component source]
+  (let [{:query/keys [auth locations navigation]} (om/props component)]
     (map
       (fn [{:category/keys [href name path] :as a}]
         (let [opts {:href    (navbar-route component href)
                     :classes (when (nil? auth) [:unauthed])
-                    :onClick #(do (mixpanel/track-key ::mixpanel/shop-by-category {:source   "navbar"
+                    :onClick #(do (mixpanel/track-key ::mixpanel/shop-by-category {:source   source
                                                                                    :category path})
                                   (when (empty? locations)
                                     #?(:cljs
                                        (when-let [locs (utils/element-by-id "sulo-locations")]
                                          (utils/scroll-to locs 250)))))}]
           (menu/item-link
-            (->> opts
-                 (css/add-class :category)
-                 (css/show-for :large))
+            (cond->> (css/add-class :category opts)
+                     (= source "navbar")
+                     (css/show-for :large))
             (dom/span nil (s/capitalize name)))))
-      (:query/navigation (om/props component)))))
+      navigation)))
 
 (defn live-link [component]
   (let [{:query/keys [auth locations]} (om/props component)]
@@ -150,7 +153,7 @@
               (css/show-for :large))
          (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
        (menu/item
-         (css/show-for :large)
+         nil
          (dom/a
            {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
            (dom/strong nil (dom/small nil "Sign in")))))
@@ -267,18 +270,19 @@
         {:classes ["top-bar-left"]}
         (menu/horizontal
           nil
-          (menu/item
-            nil
-            (dom/a
-              (css/hide-for :large {:onClick #(.open-sidebar component)})
-              (dom/i {:classes ["fa fa-bars fa-fw"]})))
+          (when (some? auth)
+            (menu/item
+              nil
+              (dom/a
+                (css/hide-for :large {:onClick #(.open-sidebar component)})
+                (dom/i {:classes ["fa fa-bars fa-fw"]}))))
           (navbar-brand (if (and (not-empty locations)
                                  (some? auth))
                           (routes/url :index)
                           (routes/url :landing-page)))
           (live-link component)
 
-          (collection-links component)
+          (collection-links component "navbar")
           (when (:ui.singleton.loading-bar/show? loading-bar)
             ;; TODO: Do a pretty loading bar somwhere in this navbar.
             ;; (menu/item nil "Loading...")
@@ -642,17 +646,19 @@
                  (menu/vertical
                    nil
                    (sidebar-highlight this :live nil "LIVE")
-                   (map
-                     (fn [{:category/keys [name path href]}]
-                       (menu/item
-                         (css/add-class :category)
-                         (dom/a {:href    href
-                                 :onClick #(mixpanel/track-key ::mixpanel/shop-by-category {:source   "sidebar"
-                                                                                            :category path})}
-                                (dom/span nil (s/capitalize name))))
-                       ;(sidebar-category this href (s/capitalize name))
-                       )
-                     navigation)))
+                   (collection-links this "sidebar")
+                   ;(map
+                   ;  (fn [{:category/keys [name path href]}]
+                   ;    (menu/item
+                   ;      (css/add-class :category)
+                   ;      (dom/a {:href    href
+                   ;              :onClick #(mixpanel/track-key ::mixpanel/shop-by-category {:source   "sidebar"
+                   ;                                                                         :category path})}
+                   ;             (dom/span nil (s/capitalize name))))
+                   ;    ;(sidebar-category this href (s/capitalize name))
+                   ;    )
+                   ;  navigation)
+                   ))
                ;(menu/item
                ;  nil (dom/label nil "Shop by category")
                ;  (menu/vertical

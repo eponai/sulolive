@@ -1,24 +1,48 @@
 #sulo-city-banner {
-	$primary-color: map-get($foundation-palette, sulo);
-	padding: 1rem 0;
-	background: $primary-color;
+	.photo-container.cover {
+		.photo {
+			padding-top: 60%;
+			@include breakpoint(medium) {
+				padding-top: 20%;
+			}
+			@include breakpoint(large) {
+				padding-top: 15%;
+			}
+			@include breakpoint(xlarge) {
+				padding-top: 10%;
+			}
+		}
+		.overlay {
+			.content {
+				flex: 1;
+			}
+			background: rgba($primary-color, 0.5) !important;
+		}
+	}
 	input {
 		margin: 0;
+		// max-width: 20rem;
+		flex: 0;
 	}
-	// min-height: 30rem;
-	// height: 75vh;
+
 	color: $white;
 	h1 {
 		margin: 0;
 		display: flex;
 		align-items: center;
+		// text-transform: uppercase;
+		// font-weight: bold;
+		letter-spacing: 1px;
+		// font-size: 70%;
 		i {
-			font-size: 80%;
+			display: none !important;
+			font-size: 100%;
 			margin-right: 0.5rem;
+			margin-bottom: 0.25rem;
 		}
 	// font-size: 2rem;
 		@include breakpoint(large) {
-			font-size: rem-calc(32);
+			font-size: rem-calc(36);
 		}
 	}
 	.icon {

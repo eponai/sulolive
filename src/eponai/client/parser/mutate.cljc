@@ -98,6 +98,12 @@
   (if target
     {:remote true}))
 
+(defmethod client-mutate 'location/suggest
+  [{:keys [target]} _ p]
+  (debug "location/suggest with params: " p)
+  (if target
+    {:remote true}))
+
 (defmethod client-mutate 'photo/upload
   [{:keys [target]} _ p]
   (debug "photo/upload with params: " p)
@@ -200,6 +206,12 @@
 (defmethod client-mutate 'store/save-shipping-rule
   [{:keys [target]} _ p]
   (debug "store/save-shipping-rule with params: " p)
+  (if target
+    {:remote true}))
+
+(defmethod client-mutate 'store/delete-shipping-rule
+  [{:keys [target]} _ p]
+  (debug "store/delete-shipping-rule with params: " p)
   (if target
     {:remote true}))
 

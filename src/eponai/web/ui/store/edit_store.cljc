@@ -242,8 +242,8 @@
          (if (< text-lentgh (:text-max/shipping-policy state))
            (do
              (mixpanel/track "Store: Save shipping policy" {:length text-lentgh})
-             (msg/om-transact! this [(list 'store/update-info {:db/id         (:db/id store)
-                                                               :store/profile {:store.profile/shipping-policy store-shipping-policy}})
+             (msg/om-transact! this [(list 'store/update-shipping {:store-id (:db/id store)
+                                                                   :shipping {:shipping/policy store-shipping-policy}})
                                      :query/store])
              (om/update-state! this assoc :edit/shipping-policy false))
            (om/update-state! this assoc :error/shipping-policy "Sorry, your return policy is too long.")))))
@@ -282,7 +282,8 @@
      :products/selected-section                :all})
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
-          {{:store.profile/keys [return-policy shipping-policy]} :store/profile} store
+          {{:store.profile/keys [return-policy]} :store/profile
+           {shipping-policy :shipping/policy}    :store/shipping} store
           {:query/keys [current-route countries]} (om/props this)
           {:keys [store-id]} (:route-params current-route)
           {:return-policy/keys [on-editor-create on-editor-change] :as state} (om/get-state this)]
