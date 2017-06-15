@@ -76,9 +76,7 @@
     (map #(or (get all %) (when (some? %) (name %))) style-set)))
 
 (defn keys->class-str
-  "Convert keywords to string of classnames to use for :className in element options.
-
-  Valid keywords are found in eponai.common.ui.elements.photo/all-styles"
+  "Convert keywords to string of classnames to use for :className in element options."
   [styles]
   (s/join " " (keys->classes styles)))
 

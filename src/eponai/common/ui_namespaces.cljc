@@ -10,7 +10,6 @@
     [eponai.common.ui.product-page]
     [eponai.common.ui.streams]
     [eponai.common.ui.user]
-    [eponai.web.ui.coming-soon]
     [eponai.web.ui.start-store]
     [eponai.web.ui.login]
     [eponai.web.ui.unauthorized]

@@ -38,7 +38,7 @@
 
 (def routes [:index :store :browse :checkout :store-dashboard
              :shopping-bag :login :sell :product :live :help
-             :user :coming-soon :unauthorized :user-settings
+             :user :unauthorized :user-settings
              :landing-page])
 
 #?(:cljs

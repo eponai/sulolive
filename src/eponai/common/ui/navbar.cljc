@@ -249,19 +249,6 @@
             (dom/span nil (get-in owned-store [:store/profile :store.profile/name])))
           (user-menu-item component))))))
 
-(defn sidebar-highlight [component route route-params title]
-  (let [{:query/keys [current-route]} (om/props component)
-        {:keys [on-live-click]} (om/get-computed component)]
-    (menu/item
-      (css/add-class :category)
-      (dom/a
-        (->> {:onClick #(if (or (= (:route current-route route) :coming-soon)
-                                (= (:route current-route route) :coming-soon/sell))
-                         (when on-live-click
-                           (on-live-click))
-                         (routes/set-url! component route route-params))})
-        (dom/span nil title)))))
-
 (defn standard-navbar [component]
   (let [{:query/keys [cart loading-bar current-route locations auth]} (om/props component)]
     (navbar-content
@@ -645,7 +632,15 @@
                  (dom/label nil "Explore")
                  (menu/vertical
                    nil
-                   (sidebar-highlight this :live nil "LIVE")
+                   (menu/item
+                     (css/add-class :category)
+                     (dom/a
+                       (->> {:href    (when (not-empty locations) (routes/url :live))
+                             :onClick #(when (empty? locations)
+                                        #?(:cljs
+                                           (when-let [locs (utils/element-by-id "sulo-locations")]
+                                             (utils/scroll-to locs 250))))})
+                       (dom/span nil "LIVE")))
                    (collection-links this "sidebar")
                    ;(map
                    ;  (fn [{:category/keys [name path href]}]

@@ -64,10 +64,10 @@
                               content)]
                     [(when url-small
                        (dom/img
-                         {:src     url-small
+                         {:data-src     url-small
                           :classes ["small"]}))
                      (dom/img
-                       (cond->> {:src     (when loaded-main? url)
+                       (cond->> {:data-src     (when loaded-main? url)
                                  :classes ["main"]
                                  :onLoad  #(om/update-state! this assoc :loaded-main? true)}
                                 loaded-main?
@@ -76,9 +76,10 @@
             (some? src)
             (dom/div
               {:classes (conj classes ::css/photo)
-               :style   {:backgroundImage (str "url(" src ")")}}
+               ;:style   {:backgroundImage (str "url(" src ")")}
+               }
               (dom/img
-                {:src     src
+                {:data-src     src
                  :classes ["main loaded"]})
 
               (when (some? content)

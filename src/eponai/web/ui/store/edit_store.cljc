@@ -17,7 +17,6 @@
     [eponai.client.routes :as routes]
     [eponai.common.ui.om-quill :as quill]
     [eponai.common.format :as f]
-    ;[eponai.common.ui.elements.photo :as old-photo]
     [eponai.common.ui.elements.callout :as callout]
     ;[eponai.web.ui.store.common :as store-common :refer [edit-button save-button cancel-button]]
     [eponai.client.parser.message :as msg]

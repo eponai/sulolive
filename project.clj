@@ -33,7 +33,6 @@
         :unauthorized    {:entries [eponai.web.ui.unauthorized]}
         :login           {:entries    [eponai.web.ui.login]
                           :depends-on [:index]}
-        :coming-soon     {:entries [eponai.web.ui.coming-soon]}
         :landing-page    {:entries [eponai.web.ui.landing-page]}
         :sell            {:entries [eponai.web.ui.start-store]}
         :store           {:entries    [eponai.common.ui.store]
