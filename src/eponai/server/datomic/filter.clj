@@ -80,13 +80,13 @@
 
 (defn user-path
   "Takes a user-id and a path to walk from the datom to reach the user-id."
-  [user-id path]
+  [path user-id]
   (let [attrs (attr-path path)]
     (require-user user-id
                   (fn [db [e]]
                     (some? (seq (walk-entity-path (desince db) e attrs user-id)))))))
 
-(defn store-path [store-ids path]
+(defn store-path [path store-ids]
   "Takes a store-ids and a path to walk from the datom to reach any of the stores."
   (let [attrs (attr-path path)
         ids (cond-> store-ids (= 1 (count store-ids)) (first))]
@@ -101,29 +101,29 @@
             (require-stores store-ids (fn [_ [e]] (contains? store-ids e))))
 
           (stream-owner [_ store-ids]
-            (store-path store-ids [:stream/store]))
+            (store-path [:stream/store] store-ids))
           (cart-owner [user-id _]
-            (user-path user-id [:user/_cart]))
+            (user-path [:user/_cart] user-id))
           (stripe-owner [user-id store-ids]
-            (filter-or (user-path user-id [:user/_stripe])
-                       (store-path store-ids [:store/_stripe])))
+            (filter-or (user-path [:user/_stripe] user-id)
+                       (store-path [:store/_stripe] store-ids)))
           (order-owner [user-id store-ids]
-            (filter-or (user-path user-id [:order/user])
-                       (store-path store-ids [:order/store])))
+            (filter-or (user-path [:order/user] user-id)
+                       (store-path [:order/store] store-ids)))
           (order-item-owner [user-id store-ids]
-            (filter-or (user-path user-id [:order/_items :order/user])
-                       (store-path store-ids [:order/_items :order/store])))
+            (filter-or (user-path [:order/_items :order/user] user-id)
+                       (store-path [:order/_items :order/store] store-ids)))
           (shipping-owner [user-id store-ids]
-            (filter-or (store-path store-ids [:store/_shipping])
-                       (user-path user-id [:order/_shipping :order/user])
-                       (store-path store-ids [:order/_shipping :order/store])))
+            (filter-or (store-path [:store/_shipping] store-ids)
+                       (user-path [:order/_shipping :order/user] user-id)
+                       (store-path [:order/_shipping :order/store] store-ids)))
           (shipping-address-owner [user-id store-ids]
-            (filter-or (store-path store-ids [:shipping/_address :store/_shipping])
-                       (user-path user-id [:shipping/_address :order/_shipping :order/user])
-                       (store-path store-ids [:shipping/_address :order/_shipping :order/store])))
+            (filter-or (store-path [:shipping/_address :store/_shipping] store-ids)
+                       (user-path [:shipping/_address :order/_shipping :order/user] user-id)
+                       (store-path [:shipping/_address :order/_shipping :order/store] store-ids)))
           (order-charge-owner [user-id store-ids]
-            (filter-or (user-path user-id [:order/_charge :order/user])
-                       (store-path store-ids [:order/_charge :order/store])))]
+            (filter-or (user-path [:order/_charge :order/user] user-id)
+                       (store-path [:order/_charge :order/store] store-ids)))]
     {
      ;; TODO getting exception if :db/ident is not specified here, bug?
      :db/ident                       public-attr
@@ -132,6 +132,7 @@
      :user/verified                  user-attribute
      :user/stripe                    user-attribute
      :user/cart                      user-attribute
+     :user/created-at                public-attr
      :user/profile                   public-attr
      :user.profile/name              public-attr
      :user.profile/photo             public-attr
@@ -139,9 +140,9 @@
      :stripe/publ                    private-attr
      :stripe/secret                  private-attr
      :store/uuid                     public-attr
+     :store/created-at               public-attr
      :store/owners                   public-attr
      :store/stripe                   store-attribute
-     ;;TODO should :store/shipping be public?
      :store/shipping                 public-attr
      :store/items                    public-attr
      :store/profile                  public-attr
@@ -161,6 +162,8 @@
      :store.item/name                public-attr
      :store.item/description         public-attr
      :store.item/price               public-attr
+     :store.item/created-at          public-attr
+     :store.item/index               public-attr
      :store.item/category            public-attr
      :store.item/section             public-attr
      :store.item/photos              public-attr
@@ -181,6 +184,7 @@
      :chat/messages                  public-attr
      :chat.message/text              public-attr
      :chat.message/user              public-attr
+     :chat.message/created-at        public-attr
      :order/charge                   order-owner
      :order/amount                   order-owner
      :order/status                   order-owner
@@ -188,6 +192,7 @@
      :order/user                     order-owner
      :order/uuid                     order-owner
      :order/shipping                 order-owner
+     :order/created-at               order-owner
      :order/items                    order-owner
      :order.item/parent              order-item-owner
      :order.item/type                order-item-owner
@@ -196,36 +201,29 @@
      :order.item/title               order-item-owner
      :order.item/photo               order-item-owner
      :charge/id                      order-charge-owner
-     ;; TODO Implement real filter-fn
-     :shipping/policy                public-attr
      :shipping/rules                 public-attr
      :shipping.rule/destinations     public-attr
+     :shipping.rule/title            public-attr
      :shipping.rule/rates            public-attr
      :shipping.rate/title            public-attr
      :shipping.rate/info             public-attr
      :shipping.rate/first            public-attr
      :shipping.rate/additional       public-attr
      :shipping.rate/free-above       public-attr
-     :order/created-at               public-attr
-     ;; TODO End of Implement real filter-fn
-     :shipping/name                  public-attr            ;shipping-owner
-     :shipping/address               public-attr            ;shipping-owner
-     :shipping.address/street        public-attr            ;shipping-address-owner
-     :shipping.address/street2       public-attr            ;shipping-address-owner
-     :shipping.address/postal        public-attr            ;shipping-address-owner
-     :shipping.address/locality      public-attr            ;shipping-address-owner
-     :shipping.address/region        public-attr            ;shipping-address-owner
-     :shipping.address/country       public-attr            ;shipping-address-owner
+     :shipping/policy                public-attr
+     :shipping/name                  shipping-owner
+     :shipping/address               shipping-owner
+     :shipping.address/street        shipping-address-owner
+     :shipping.address/street2       shipping-address-owner
+     :shipping.address/postal        shipping-address-owner
+     :shipping.address/locality      shipping-address-owner
+     :shipping.address/region        shipping-address-owner
+     :shipping.address/country       shipping-address-owner
      :category/path                  public-attr
      :category/name                  public-attr
      :category/label                 public-attr
      :category/children              public-attr
-     :user/created-at                public-attr
-     :store/created-at               public-attr
-     :store.item/created-at          public-attr
-     :store.item/index               public-attr
      :photo/id                       public-attr
-
      :country/code                   public-attr
      :country/name                   public-attr
      :country/continent              public-attr
