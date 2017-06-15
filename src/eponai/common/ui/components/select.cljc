@@ -4,41 +4,45 @@
        [cljsjs.react-select])
     #?(:cljs
        [eponai.web.modules :as modules])
-    [om.dom :as dom]
-    [om.next :as om :refer [defui]]))
+    [eponai.common.ui.dom :as dom]
+    [om.dom]
+    [om.next :as om :refer [defui]]
+    [taoensso.timbre :refer [debug]]
+    [eponai.common.ui.elements.css :as css]))
 
-#?(:cljs
-   (defn on-select-fn [component]
-     (fn [sel]
-       (let [selected (js->clj sel :keywordize-keys true)
-             {:keys [on-change]} (om/get-computed component)]
-         ;(om/update-state! component assoc :selected selected)
-         (when on-change
-           (on-change selected))))))
+(defn on-select-fn [component]
+  (fn [sel]
+    (let [selected (-> sel
+                       #?(:cljs (js->clj :keywordize-keys true)))
+          {:keys [on-change]} (om/get-computed component)]
+      ;(om/update-state! component assoc :selected selected)
+      (when on-change
+        (on-change selected)))))
 
 (defui SelectOne
   Object
   (render [this]
     (let [{:keys [selected]} (om/get-state this)
-          {:keys [options value disabled clearable placeholder tab-index id creatable?]} (om/props this)]
-      #?(:cljs
-         (dom/create-element
-           (if creatable?
-             js/Select.Creatable
-             js/Select)
-           (clj->js
-             (cond->
-               {:value     (:value value)
-                :options   (clj->js options)
-                :addLabelText "New section"
-                :clearable (boolean clearable)
-                :onChange  (on-select-fn this)
-                :disabled  disabled}
-               (some? placeholder)
-               (assoc :placeholder placeholder)
-               (some? tab-index)
-               (assoc :tabIndex (str tab-index))
-               (some? id)
-               (assoc :id id))))))))
+          {:keys [addLabelText classes value clearable tab-index creatable?] :as props} (om/props this)
+          handled-props (cond-> {:value        (:value value)
+                                 :addLabelText (or addLabelText "New section")
+                                 :clearable    (boolean clearable)
+                                 :onChange     (on-select-fn this)}
+                                (some? tab-index)
+                                (assoc :tabIndex (str tab-index))
+                                (some? classes)
+                                (assoc :className (css/keys->class-str classes)))
+          component-props (merge
+                            (apply dissoc props (conj (keys handled-props) :classes :tab-index))
+                            handled-props)]
+      (debug ":className: " (css/keys->class-str classes))
+      (assert (nil? (:onChange props))
+              (str ":onChange was passed in props. Pass it in computed instead."))
+      #?(:clj (dom/input (assoc component-props :type "text"))
+         :cljs (om.dom/create-element
+                 (if creatable?
+                   js/Select.Creatable
+                   js/Select)
+                 (clj->js component-props))))))
 
 (def ->SelectOne (om/factory SelectOne))
