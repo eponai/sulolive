@@ -43,7 +43,7 @@
              (set! (.-src image-large) url))))))
 
   (render [this]
-    (let [{:keys [content src photo-id classes ext background?]} (om/props this)]
+    (let [{:keys [content src photo-id classes ext]} (om/props this)]
       (cond (some? photo-id)
             (let [{:keys [loaded-main?]} (om/get-state this)
                   url-small (photos/transform photo-id :transformation/micro ext)
@@ -51,27 +51,30 @@
               (if-not (string? photo-id)
                 (warn "Ignoring invalid photo src type, expecting a URL string. Got src: " photo-id)
                 (dom/div
-                  {:classes (conj classes ::css/photo)
-                   :style   (when background? {:backgroundImage (str "url(" url-small ")")})}
-                  (if background?
-                    [(dom/div
-                       (cond-> (css/add-class :background {:style {:backgroundImage (str "url(" url ")")}})
-                               ;loaded-main?
-                               ;(assoc :style {:backgroundImage (str "url(" url ")")})
-                               loaded-main?
-                               (update :classes conj :loaded)))
-                     (dom/div (css/add-class :content)
-                              content)]
-                    [(when url-small
-                       (dom/img
-                         {:data-src     url-small
-                          :classes ["small"]}))
-                     (dom/img
-                       (cond->> {:data-src     (when loaded-main? url)
-                                 :classes ["main"]
-                                 :onLoad  #(om/update-state! this assoc :loaded-main? true)}
-                                loaded-main?
-                                (css/add-class :loaded)))]))))
+                  {:classes (conj classes ::css/photo)}
+                  ;(if background?)
+                  ;[(dom/div
+                  ;   (cond-> (css/add-class :background {:style {:backgroundImage (str "url(" url ")")}})
+                  ;           ;loaded-main?
+                  ;           ;(assoc :style {:backgroundImage (str "url(" url ")")})
+                  ;           loaded-main?
+                  ;           (update :classes conj :loaded)))
+                  ; (dom/div (css/add-class :content)
+                  ;          content)]
+                  (when url-small
+                    (dom/img
+                      {
+                       ;:data-src url-small
+                       :src      url-small
+                       :classes  ["small"]}))
+                  (dom/img
+                    (cond->> {
+                              ;:data-src (when loaded-main? url)
+                              :src      (when loaded-main? url)
+                              :classes  ["main"]
+                              :onLoad   #(om/update-state! this assoc :loaded-main? true)}
+                             loaded-main?
+                             (css/add-class :loaded))))))
 
             (some? src)
             (dom/div
@@ -79,8 +82,10 @@
                ;:style   {:backgroundImage (str "url(" src ")")}
                }
               (dom/img
-                {:data-src     src
-                 :classes ["main loaded"]})
+                {
+                 ;:data-src src
+                 :src      src
+                 :classes  ["main loaded"]})
 
               (when (some? content)
                 (dom/div (css/add-class :content)
@@ -130,16 +135,9 @@
   (let [photo-key (when-not src (or photo-id "static/storefront"))]
     (photo (-> (css/add-class :cover props)
                (assoc :style :style/cover)
-               ;(assoc :background? true)
                (assoc :photo-id photo-key)
                (assoc :transformation :transformation/cover))
            (overlay nil content))))
-
-(defn header [props & content]
-  (->Photo
-    (-> (css/add-class ::css/photo-header props)
-        (assoc :content content)
-        (assoc :background? true))))
 
 ;(defn edit-cover [{:keys [photo-id] :as props} & content]
 ;  (cover (merge props {:placeholder? true
