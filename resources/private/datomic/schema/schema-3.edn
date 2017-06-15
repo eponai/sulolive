@@ -1,0 +1,6 @@
+[{:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping.address/country
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Shipping address country ref."
+  :db.install/_attribute :db.part/db}]

@@ -29,13 +29,13 @@
 (defn read-schema-files
   ([] (read-schema-files (list-schema-files)))
   ([schema-files]
-   (let [schema (into [] (mapcat parse-resource) schema-files)]
+   (let [schema (into [] (map parse-resource) schema-files)]
      schema)))
 
 (defn add-data-to-connection
-  ([conn add-data? & [schema]]
-   (let [schema (or schema (read-schema-files))]
-     (db/transact conn schema)
+  ([conn add-data?]
+   (let [schemas (read-schema-files)]
+     (run! #(db/transact conn %) schemas)
      (debug "Schema added.")
      (when add-data?
        (mocked/add-data conn)

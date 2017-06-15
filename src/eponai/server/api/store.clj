@@ -197,7 +197,7 @@
                                                                                           :postal_code (:shipping.address/postal address)
                                                                                           :city        (:shipping.address/locality address)
                                                                                           :state       (:shipping.address/region address)
-                                                                                          :country     (:shipping.address/country address)}}
+                                                                                          :country     (:country/code (:shipping.address/country address))}}
                                                                   :destination {:account id
                                                                                 :amount  (int (* 100 destination-amount))}}) ;Convert to cents for Stripe
 

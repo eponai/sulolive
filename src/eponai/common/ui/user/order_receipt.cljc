@@ -103,7 +103,7 @@
                                                           :shipping.address/postal
                                                           :shipping.address/locality
                                                           :shipping.address/region
-                                                          :shipping.address/country]}]}
+                                                          {:shipping.address/country [:country/name :country/code]}]}]}
                     :order/created-at
                     :order/user
                     {:order/charge [:db/id :charge/id]}
@@ -112,13 +112,14 @@
                                                     :store.profile/email
                                                     :store.profile/tagline
                                                     :store.profile/name]}]}]}
+     {:query/auth [:user/email]}
      {:query/order-payment [:charge/id
                             :charge/source
                             :charge/created
                             :charge/amount]}])
   Object
   (render [this]
-    (let [{:query/keys [current-route order order-payment]} (om/props this)
+    (let [{:query/keys [current-route order order-payment auth]} (om/props this)
           {:keys [route route-params]} current-route
           {:order/keys [store created-at]} order
           {:store.profile/keys [tagline]
@@ -191,7 +192,7 @@
                                                                        (:shipping.address/postal address)
                                                                        (:shipping.address/region address)])))
                          (dom/br nil)
-                         (dom/span nil (:shipping.address/country address)))))
+                         (dom/span nil (:country/name (:shipping.address/country address))))))
               (grid/column
                 nil
                 (dom/label nil "Delivery")
@@ -274,7 +275,7 @@
 
             (dom/div
               (css/add-class :contact)
-              (let [store-email (get-in store [:store/profile :store.profile/email])]
+              (let [store-email (get-in store [:store/profile :store.profile/email] (:user/email auth))]
                 (dom/p nil
                        (dom/span nil "Still have questions? Contact the shop at ")
                        (dom/a {:href (when store-email (str "mailto:" store-email "?subject=SULO Live order #" (:db/id order)))} (dom/span nil store-email))

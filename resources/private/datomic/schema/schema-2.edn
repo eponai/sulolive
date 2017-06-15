@@ -167,4 +167,7 @@
   :db/cardinality        :db.cardinality/one
   :db/doc                "Store contact email"
   :db.install/_attribute :db.part/db}
+
+ {:db/id    :shipping.address/country
+  :db/ident :shipping.address/country-code}
  ]
