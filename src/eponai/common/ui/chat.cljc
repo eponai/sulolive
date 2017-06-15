@@ -13,12 +13,20 @@
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.mixpanel :as mixpanel]))
+    [eponai.common.mixpanel :as mixpanel]
+    [eponai.common.format.date :as date]))
+
+(def hour-in-millis (* 3600 1000))
 
 (defn get-messages [component]
   (let [messages (get-in (om/props component) [:query/chat :chat/messages])
         {client-side true server-side false} (group-by (comp true? :chat.message/client-side-message?) messages)
-        msgs (into [] (concat (sort-by :chat.message/created-at server-side) client-side))]
+        now (date/current-millis)
+        msgs (into []
+                   (filter (fn [msg]
+                             (let [millis-since-message (- now (:chat.message/created-at msg))]
+                               (> hour-in-millis millis-since-message))))
+                   (concat (sort-by :chat.message/created-at server-side) client-side))]
     msgs))
 
 (defn- get-store [component-or-props]
