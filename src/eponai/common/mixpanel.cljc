@@ -52,13 +52,14 @@
    ::go-to-manage-store    "Go to manage store"
    ::go-to-purchases       "Go to user purchases"
    ::go-to-settings        "Go to user settings"
+   ::change-location       "Change locality"
 
    ::signout               "Sign out user"
    ::open-signin           "Open sign in user"
    ::go-to-start-store     "Go to start store"
 
-   ::shop-by-category "Shop by category"
-   ::shop-live "Browse live"
+   ::shop-by-category      "Shop by category"
+   ::shop-live             "Browse live"
    ::upload-photo          "Upload photo"})
 
 (defn track-key [k & [properties]]

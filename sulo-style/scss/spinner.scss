@@ -68,7 +68,7 @@
   }
 }
 .sl-global-spinner {
-  position: fixed;
+  position: absolute;
   z-index: $navbar-zindex;
   top: $navbar-height;
   transform: translateY(-2px);
