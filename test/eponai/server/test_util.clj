@@ -9,7 +9,7 @@
     [clj-http.client :as http]
     [taoensso.timbre :refer [debug]]))
 
-(def schema (dev/read-schema-files))
+(def schemas (dev/read-schema-files))
 
 (s/check-asserts true)
 
@@ -22,7 +22,7 @@
      (d/delete-database uri)
      (d/create-database uri)
      (let [conn (d/connect uri)]
-       (db/transact conn schema)
+       (run! #(db/transact conn %) schemas)
        (when txs
          (db/transact conn txs))
        conn))))

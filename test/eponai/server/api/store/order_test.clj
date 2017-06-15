@@ -25,10 +25,10 @@
 
           ;; Prepare parameters for order creation
           stripe-chan (async/chan 1)
-          order-params {:items        [db-sku]
-                        :shipping     {:shipping/address {:shipping.address/country "se"}}
-                        :source       "payment-source"
-                        :subtotal     0
+          order-params {:items         [db-sku]
+                        :shipping      {:shipping/address {:shipping.address/country {:country/code "se"}}}
+                        :source        "payment-source"
+                        :subtotal      0
                         :shipping-rate {:amount 0 :title "title" :description "desc"}}
           ;; Create new order
           new-order (api/create-order {:state  conn
@@ -64,9 +64,9 @@
           ;; Prepare parameters for order creation
           stripe-chan (async/chan 1)
           order-params {:items    [db-sku]
-                        :shipping {:shipping/address {:shipping.address/country "se"}}
+                        :shipping {:shipping/address {:shipping.address/country {:country/code "se"}}}
                         :source   "payment-source"
-                        :subtotal 0 :shipping-rate {:amount 0 :title "title" :description "desc"}}
+                        :subtotal 0}
           ;; Create new order
           new-order (api/create-order {:state  conn
                                        :system {:system/stripe (stripe-test-payment-failed stripe-chan)}
