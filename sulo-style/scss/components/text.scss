@@ -8,21 +8,21 @@ p > a {
 	font-weight: $global-weight-bold;
 }
 
-#sulo-index, #sulo-landing {
+#sulo-landing {
 	h1 {
 		@include breakpoint(large) {
 			font-size: rem-calc(48);
 		}
 	}
-	h3 {
-		text-transform: none;
-		@include breakpoint(large) {
-			font-size: rem-calc(22);
-		}
-	}
-	h2 {
-		@include breakpoint(large) {
-			font-size: rem-calc(32);
-		}
-	}
+	// h3 {
+	// 	text-transform: none;
+	// 	@include breakpoint(large) {
+	// 		font-size: rem-calc(22);
+	// 	}
+	// }
+	// h2 {
+	// 	@include breakpoint(large) {
+	// 		font-size: rem-calc(32);
+	// 	}
+	// }
 }

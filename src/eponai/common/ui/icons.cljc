@@ -14,7 +14,7 @@
 (defn icon* [viewbox])
 (defn video-camera []
   (dom/div
-    (css/add-class ::css/icon)
+    (css/add-classes [::css/icon :video-camera])
     (inline-html
       ["<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n<svg width=\"56px\" height=\"56px\" viewBox=\"0 0 56 56\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">"
 

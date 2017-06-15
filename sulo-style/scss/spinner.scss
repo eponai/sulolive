@@ -70,11 +70,12 @@
 .sl-global-spinner {
   position: fixed;
   z-index: $navbar-zindex;
-  top: 0;//$navbar-height;
+  top: $navbar-height;
+  transform: translateY(-2px);
   @include breakpoint(large) {
-    // position: fixed;
+    position: fixed;
   }
-  height: 1px;
+  height: 2px;
   background: map-get($foundation-palette, primary);
   // opacity: 0;
   transition: all .25s linear;

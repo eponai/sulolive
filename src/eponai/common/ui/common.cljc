@@ -103,7 +103,7 @@
         (->> (css/add-class :section-footer)
              (css/text-align :center))
         (button/button
-          (css/add-classes [:hollow :sulo] (cond-> {:href href}
+          (css/add-classes [:hollow :sulo-dark] (cond-> {:href href}
                                                    (some? target)
                                                    (assoc :target target))) footer)))))
 
@@ -179,31 +179,33 @@
 (defn city-banner [component locations]
   (debug "City locations: " locations)
   (dom/div
-    (css/add-class :intro-header {:id "sulo-city-banner"})
-    (grid/row
-      (css/align :middle)
-      (grid/column
-        (grid/column-size {:small 12 :medium 6})
-        (dom/h1
-          (css/add-class :header)
-          (dom/i {:className "fa fa-map-marker"})
-          (dom/span nil locations)))
-      (grid/column
-        nil
-        (dom/div
-          (css/add-class :input-container)
-          (search-bar/->SearchBar {:ref             (str ::search-bar-ref)
-                                   :placeholder     "What are you looking for?"
-                                   :mixpanel-source "index"
-                                   :classes         [:drop-shadow]})
-          (button/button
-            (->> (button/expanded {:onClick (fn []
-                                              (let [search-bar (om/react-ref component (str ::search-bar-ref))]
-                                                (when (nil? search-bar)
-                                                  (error "NO SEARCH BAR :( " component))
-                                                (search-bar/trigger-search! search-bar)))})
-                 (css/add-classes [:drop-shadow]))
-            (dom/span nil "Search")))))))
+    (css/add-class :intro-header {:id       "sulo-city-banner"})
+    (photo/cover
+      {:photo-id "static/landing-vancouver"}
+      (grid/row
+        (css/align :middle)
+        (grid/column
+          (grid/column-size {:small 12 :medium 6})
+          (dom/h1
+            (css/add-class :header)
+            (dom/i {:className "fa fa-map-marker"})
+            (dom/span nil locations)))
+        (grid/column
+          nil
+          (dom/div
+            (css/add-class :input-container)
+            (search-bar/->SearchBar {:ref             (str ::search-bar-ref)
+                                     :placeholder     "What are you looking for?"
+                                     :mixpanel-source "index"
+                                     :classes         [:drop-shadow]})
+            (button/button
+              (->> (button/expanded {:onClick (fn []
+                                                (let [search-bar (om/react-ref component (str ::search-bar-ref))]
+                                                  (when (nil? search-bar)
+                                                    (error "NO SEARCH BAR :( " component))
+                                                  (search-bar/trigger-search! search-bar)))})
+                   (css/add-classes [:drop-shadow]))
+              (dom/span nil "Search"))))))))
 
 (defn page-container [{:keys [navbar id class-name no-footer? footer]} & content]
   (dom/div
