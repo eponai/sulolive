@@ -37,8 +37,7 @@
                        :async true
                        :defer true
                        :type common/text-javascript})
-          (dom/script {:src "//www.powr.io/powr.js"
-                       :external-type "html"})
+
           ;<script src="//www.powr.io/powr.js" external-type="html"></script>
 
           (dom/script {:src  (common/budget-js-path)
@@ -47,6 +46,10 @@
           (when (some? (:user-id auth))
             (common/inline-javascript [(str "mixpanel.identify(\"" (:user-id auth) "\");")
                                        (str "mixpanel.people.set_once(" (json/write-str {:$email (:email auth) :$last_name (:email auth)}) ");")]))
+
+          ;; Powr can be loaded last, because it just hooks in to a div that we've specified.
+          (dom/script {:src "//www.powr.io/powr.js"
+                       :external-type "html"})
 
           (when-not (= cljs-build-id "devcards")
             (common/inline-javascript ["env.web.main.runsulo()"])))))))
