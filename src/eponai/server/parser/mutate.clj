@@ -330,6 +330,15 @@
              (debug "store/update-sections with params: " p)
              (store/create-shipping-rule env (c/parse-long store-id) p))})
 
+(defmutation store/delete-shipping-rule
+  [env _ {:keys [store-id rule] :as p}]
+  {:auth {::auth/store-owner store-id}
+   :resp {:success "Your shipping rule was successfully created."
+          :error   "Sorry, failed to create shipping rule. Try again later."}}
+  {:action (fn []
+             (debug "store/update-sections with params: " p)
+             (store/delete-shipping-rule env (c/parse-long store-id) rule))})
+
 (defmutation store/update-shipping-rule
   [env _ {:keys [store-id shipping-rule] :as p}]
   {:auth {::auth/store-owner store-id}

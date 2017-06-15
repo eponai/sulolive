@@ -71,6 +71,12 @@
 				 .shipping-rule-card-footer {
 				 	padding-top: 1rem;
 				 	text-align: right;
+				 	// display: flex;
+				 	// justify-content: space-between;
+				 	.button.alert {
+				 		border: none;
+				 	}
+				 	
 				 	.button {
 						margin: 0;
 					}	

@@ -99,6 +99,28 @@
                                                                                 (:country/code country))
                                                                             cs)))))
 
+(defn delete-rule-modal [component]
+  (let [{:keys [modal-object]} (om/get-state component)
+        on-close #(om/update-state! component dissoc :modal :modal-object)]
+    (common/modal
+      {:on-close on-close
+       :size     "tiny"}
+      (dom/h4 (css/add-class :header) "Delete rule")
+      (dom/p nil
+             ;(dom/span nil (get modal-message modal))
+             ;(dom/br nil)
+             (dom/small nil "Do you want to delete this shipping rule?"))
+      (dom/div
+        (css/add-class :action-buttons)
+        (button/user-setting-default
+          (css/button-hollow {:onClick on-close})
+          (dom/span nil "No thanks"))
+        (button/user-setting-cta
+          (css/button {:onClick #(do
+                                  (on-close)
+                                  (.delete-rule component modal-object))})
+          (dom/span nil "Yes, delete rule"))))))
+
 (defn shipping-address-modal [component]
   (let [{:query/keys [store countries]} (om/props component)
         shipping (:store/shipping store)                    ;[{:brand "American Express" :last4 1234 :exp-year 2018 :exp-month 4}]
@@ -237,7 +259,8 @@
                                                                                                     (contains? used-country-codes (:country/code c)))})
                                                                                   (sort-by :country/name cs)))))
                                                              []
-                                                             countries-by-continent)}
+                                                             countries-by-continent)
+                                            :placeholder "Select destinations..."}
                                            {:on-change #(add-shipping-destination component % used-country-codes)}))
           (when (not-empty selected-countries)
             (menu/vertical
@@ -402,6 +425,7 @@
                                                       :shipping.rate/free-above free-above}]}
              input-validation (validate :shipping/rule input-map)]
          (when (nil? input-validation)
+           (mixpanel/track "Store: Save shipping rule")
            (msg/om-transact! this [(list 'store/save-shipping-rule {:shipping-rule input-map
                                                                     :store-id      (:store-id (:route-params current-route))})
                                    :query/store]))
@@ -433,6 +457,7 @@
          (debug "Validation map: " input-map)
          (debug "validation: " input-validation)
          (when (nil? input-validation)
+           (mixpanel/track "Store: Save shipping from address")
            (msg/om-transact! this [(list 'store/update-shipping {:shipping input-map
                                                                  :store-id (:store-id (:route-params current-route))})
                                    :query/store]))
@@ -456,10 +481,17 @@
 
              input-validation (validate :shipping.rule/rate input-map)]
          (when (nil? input-validation)
+           (mixpanel/track "Store: Save shipping rate")
            (msg/om-transact! this [(list 'store/update-shipping-rule {:shipping-rule (update edit-rule :shipping.rule/rates conj input-map)
                                                                       :store-id      (:store-id (:route-params current-route))})
                                    :query/store]))
          (om/update-state! this assoc :input-validation input-validation))))
+
+  (delete-rule [this rule]
+    (let [{:query/keys [store]} (om/props this)]
+      (msg/om-transact! this [(list 'store/delete-shipping-rule {:rule     rule
+                                                                 :store-id (:db/id store)})
+                              :query/store])))
 
   (componentDidUpdate [this _ _]
     (let [rule-message (msg/last-message this 'store/save-shipping-rule)
@@ -492,7 +524,9 @@
               (= modal :modal/add-shipping-rate)
               (add-shipping-rule-modal this)
               (= modal :modal/add-shipping-address)
-              (shipping-address-modal this))
+              (shipping-address-modal this)
+              (= modal :modal/delete-rule)
+              (delete-rule-modal this))
         (dom/div
           (css/add-class :section-title)
           (dom/h1 nil "Shipping"))
@@ -577,6 +611,7 @@
                   show-locations 5]
               (callout/callout
                 (css/add-classes [:section-container :section-container--shipping-rules])
+
                 (menu/vertical
                   (css/add-class :section-list)
                   (menu/item
@@ -624,7 +659,12 @@
                                              (dom/span nil "No")
                                              ))))) rates)))
                       (dom/div
-                        (css/add-class :shipping-rule-card-footer)
+                        (css/add-classes [:action-buttons :shipping-rule-card-footer])
+
+                        (button/default-hollow
+                          (button/small {:onClick #(om/update-state! this assoc :modal :modal/delete-rule :modal-object sr)
+                                         :classes [:alert]})
+                          (dom/span nil "Delete rule"))
                         (button/default-hollow
                           (button/small {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-rate :shipping-rule/edit-rule sr)})
                           (dom/span nil "Add shipping rate")))))))))

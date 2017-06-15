@@ -209,6 +209,12 @@
   (if target
     {:remote true}))
 
+(defmethod client-mutate 'store/delete-shipping-rule
+  [{:keys [target]} _ p]
+  (debug "store/delete-shipping-rule with params: " p)
+  (if target
+    {:remote true}))
+
 (defmethod client-mutate 'store/update-shipping-rule
   [{:keys [target]} _ p]
   (debug "store/update-shipping-rule with params: " p)

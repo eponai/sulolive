@@ -48,7 +48,7 @@
 
         (dom/li
           nil
-          (dom/p nil (dom/span nil "Enter a name for the rate. This will be shown to customers on the cart and order pages so it should be descriptive, but not too long. For example, if you're creating a rate for standard shipping via the Canada Post, you might name it USPS First Class")))
+          (dom/p nil (dom/span nil "Enter a name for the rate. This will be shown to customers on the cart and order pages so it should be descriptive, but not too long. For example, if you're creating a rate for priority shipping via the Canada Post, you might name it Canada Post Priority.")))
 
         (dom/li
           nil
