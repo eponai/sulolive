@@ -6,7 +6,6 @@
     [eponai.common.ui.elements.table :as table]
     [eponai.common.ui.utils :as ui-utils]
     [eponai.common.ui.common :as common]
-    ;[eponai.web.ui.store.common :as store-common]
     [om.next :as om :refer [defui]]
     [eponai.common.format.date :as date]
     [taoensso.timbre :refer [debug]]
@@ -14,6 +13,8 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.grid :as grid]))
 
+(defn filter-new-orders [orders]
+  (filter #(#{:order.status/created :order.status/paid} (:order/status %)) orders))
 
 (defui OrderList
   static om/IQuery
@@ -30,19 +31,26 @@
   Object
   (initLocalState [_]
     {:selected-tab :inbox})
+  (componentDidMount [this]
+    (let [{:keys [query/orders query/current-route]} (om/props this)
+          new-orders (filter-new-orders orders)]
+      (when (empty? new-orders)
+        (om/update-state! this assoc :selected-tab :all))))
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
           {:keys [query/orders query/current-route]} (om/props this)
           {:keys [search-input selected-tab]} (om/get-state this)
-          new-orders (filter #(#{:order.status/created :order.status/paid} (:order/status %)) orders)
+          new-orders (filter-new-orders orders)
 
-          filtered-orders (cond (not-empty search-input)
-                       (filter #(clojure.string/starts-with? (str (:db/id %))
-                                                         search-input) orders)
-                       (= selected-tab :inbox)
-                       new-orders
-                       :else
-                       orders)]
+          filtered-orders (->> (cond (not-empty search-input)
+                                    (filter #(clojure.string/starts-with? (str (:db/id %))
+                                                                          search-input) orders)
+                                    (= selected-tab :inbox)
+                                    new-orders
+                                    :else
+                                    orders)
+                              (sort-by :order/created-at >))]
+      (debug "Got orders: " orders)
       (dom/div
         {:id "sl-order-list"}
 

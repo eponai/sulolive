@@ -41,11 +41,12 @@
    ["/" [#"\d+" :product-id]] :product})
 
 (def help-routes
-  {""               :help
-   "/first-stream"  :help/first-stream
-   "/mobile-stream" :help/mobile-stream
-   "/quality"       :help/quality
-   "/faq"           :help/faq})
+  {""                :help
+   "/first-stream"   :help/first-stream
+   "/mobile-stream"  :help/mobile-stream
+   "/shipping-rules" :help/shipping-rules
+   "/quality"        :help/quality
+   "/faq"            :help/faq})
 
 (def checkout-routes
   {""          :checkout

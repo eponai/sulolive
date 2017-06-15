@@ -55,29 +55,18 @@
                                     eponai.common.ui.help.quality]}
         :user            {:entries    [eponai.common.ui.user
                                        eponai.common.ui.user.order-list
-                                       eponai.common.ui.user.order-receipt
-                                       eponai.common.ui.user.profile
-                                       eponai.common.ui.user.profile-edit]
+                                       eponai.common.ui.user.order-receipt]
                           :depends-on [:photo-uploader]}
         :user-settings   {:entries    [eponai.web.ui.user.settings]
                           :depends-on [:photo-uploader]}
         :store-dashboard {:depends-on [:stream+chat
                                        :photo-uploader]
                           :entries    [eponai.common.ui.store.dashboard
-                                       eponai.common.ui.store.account
                                        eponai.common.ui.store.order-edit-form
                                        eponai.common.ui.store.order-list
                                        eponai.common.ui.store.product-edit-form
                                        eponai.common.ui.store.product-list
                                        eponai.common.ui.store.stream-settings
-                                       ;eponai.common.ui.store.account.activate
-                                       eponai.common.ui.store.account.business
-                                       eponai.common.ui.store.account.general
-                                       eponai.common.ui.store.account.payments
-                                       eponai.common.ui.store.account.payouts
-                                       eponai.common.ui.store.account.shipping
-                                       eponai.common.ui.store.account.validate
-                                       eponai.web.ui.store.common
                                        eponai.web.ui.store.edit-store
                                        eponai.web.ui.store.business.verify
                                        cljsjs.react-grid-layout]}})))

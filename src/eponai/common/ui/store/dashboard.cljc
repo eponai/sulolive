@@ -3,29 +3,18 @@
     [eponai.client.routes :as routes]
     [eponai.common :as c]
     [eponai.common.ui.common :as common]
-    [eponai.common.ui.elements.css :as css]
-    [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.navbar :as nav]
-    [eponai.common.ui.store.account :as as]
     [eponai.common.ui.store.order-edit-form :as oef]
     [eponai.common.ui.store.order-list :as ol]
     [eponai.common.ui.store.product-edit-form :as pef]
     [eponai.common.ui.store.product-list :as pl]
     [eponai.common.ui.store.stream-settings :as ss]
     [eponai.common.ui.router :as router]
-    [eponai.web.ui.store.common :as store-common]
-    [eponai.common.ui.utils :refer [two-decimal-price]]
     [eponai.common.ui.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
     [eponai.web.ui.store.edit-store :as es]
     [medley.core :as medley]
-    [eponai.common.ui.elements.callout :as callout]
-    [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.format.date :as date]
-    [eponai.web.ui.photo :as photo]
-    [eponai.web.ui.button :as button]
-    [eponai.common.mixpanel :as mixpanel]
     [eponai.web.ui.store.shipping :as shipping]
     [eponai.web.ui.store.home :as home]
     [eponai.web.ui.store.finances :as finances]
@@ -92,30 +81,6 @@
         path (clojure.string/split subroute #"#")]
     (keyword ns (first path))))
 
-;(defn sub-navbar [component]
-;  (let [{:query/keys [current-route]} (om/props component)
-;        {:keys [route route-params]} current-route
-;        {:keys [component computed-fn factory]} (get route-map (parse-route route))
-;        store-id (:store-id route-params)
-;        nav-breakpoint :medium]
-;    (dom/div
-;      (->> {:id "store-navbar"}
-;           (css/add-class :navbar-container))
-;      (dom/nav
-;        (->> (css/add-class :navbar)
-;             (css/add-class :top-bar))
-;        (when (satisfies? store-common/IDashboardNavbarContent component)
-;          (store-common/render-subnav component current-route))
-;        ))))
-
-(defn has-subnav? [component]
-  (let [{:query/keys [current-route]} (om/props component)
-        {:keys [route route-params]} current-route
-        {:keys [component computed-fn factory]} (get route-map (parse-route route))]
-    (if (satisfies? store-common/IDashboardNavbarContent component)
-      (store-common/has-subnav? component current-route)
-      false)))
-
 (defui Dashboard
   static om/IQuery
   (query [_]
@@ -172,9 +137,7 @@
 
       (common/page-container
         {:navbar     navbar
-         :id         "sulo-store-dashboard"
-         :class-name (when (has-subnav? this) "has-subnav")}
-        ;(sub-navbar this)
+         :id         "sulo-store-dashboard"}
 
         (let [{:keys [component computed-fn factory]} (get route-map (parse-route route))
               factory (or factory (om/factory component))

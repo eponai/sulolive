@@ -41,12 +41,19 @@
             modules (shared/by-key reconciler :shared/modules)
             loaded-route? (modules/loaded-route? modules handler)
             allow-remotes? parser/*parser-allow-remote*
-            query-params (->> (shared/by-key reconciler :shared/browser-history)
-                              (pushy/get-token)
+            path (->> (shared/by-key reconciler :shared/browser-history)
+                      (pushy/get-token))
+            query-params (->> path
                               (url/url)
                               :query
                               (medley/map-keys keyword))]
         (debug "updating route: " handler " query: " query-params)
+        (try
+          (when (exists? js/ga)
+            (js/ga "set" "page" path)
+            (js/ga "send" "pageview"))
+          (catch :default e
+            (error "Google analytics error: " e)))                        ;('set', 'page', '/new-page.html')
         (routes/transact-route! reconciler handler
                                 {:route-params  route-params
                                  :query-params  query-params

@@ -3,7 +3,6 @@
     [eponai.client.routes :as routes]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
-    [eponai.web.ui.store.common :as store-common]
     #?(:cljs
        [cljsjs.react-grid-layout])
     #?(:cljs
@@ -301,7 +300,7 @@
                 (css/add-class :button-item)
                 (dom/div
                   (css/text-align :right)
-                  (button/button-small
+                  (button/button
                     {:href    (routes/url :store-dashboard/create-product
                                           {:store-id (:store-id route-params)
                                            :action   "create"})
@@ -334,7 +333,7 @@
                           :type        "text"}))
             (menu/item
               nil
-              (button/button-small
+              (button/button
                 {:href    (routes/url :store-dashboard/create-product
                                       {:store-id (:store-id route-params)
                                        :action   "create"})

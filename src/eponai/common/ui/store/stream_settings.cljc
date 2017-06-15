@@ -11,7 +11,6 @@
        [eponai.web.utils :as utils])
     [eponai.common.parser :as parser]
     [eponai.common.ui.elements.callout :as callout]
-    [eponai.web.ui.store.common :as store-common]
     [eponai.client.routes :as routes]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.web.ui.button :as button]

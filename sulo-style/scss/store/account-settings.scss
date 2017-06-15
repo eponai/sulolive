@@ -1,15 +1,20 @@
 
-
+.callout.warning {
+	p {
+		margin-bottom:  0 !important;
+	}
+}
 #sulo-account-settings {
 	max-width: $dashboard-content-width;
 	margin: 0 auto;
-	padding-top: $navbar-height;
+	// padding-top: $navbar-height;
 	p {
 		margin-bottom: 0.5rem;
 	}
-	label[for] {
+	[type="radio"]+label[for] {
 		color: $body-font-color;
 	}
+
 	.reveal {
 		.column {
 			padding-right: 1rem;
@@ -115,7 +120,7 @@
 		font-size: 90%; 
 		color: $dark-gray;
 		&[for] {
-			color: $body-font-color;
+			// color: $body-font-color;
 		}
 		@include breakpoint(large) {
 			text-align: right;
@@ -165,8 +170,9 @@
 		}
 	}
 	.document-upload-container {
-		label {
+		label:not([for]) {
 			text-align: left;
+			color: $body-font-color;
 		}
 	}
 		.document-uploader {

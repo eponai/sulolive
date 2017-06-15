@@ -63,9 +63,9 @@
       (debug "Got orders: " orders)
       (dom/div
         {:id "sulo-user-order-list"}
+
         (grid/row-column
           nil
-
           (dom/h1 nil "Purchases")
           (if (not-empty orders)
             (map (fn [[timestamp os]]
@@ -142,21 +142,23 @@
               (dom/p (css/add-class :shoutout) "You haven't made any purchases yet")
               ;(dom/br nil)
               (button/button
-                (button/secondary (button/hollow {:href (routes/url :browse/all-items)})) (dom/span nil "Browse products"))))
+                (button/secondary (button/hollow {:href (routes/url :browse/all-items)})) (dom/span nil "Browse products")))))
 
+        (grid/row-column
+          nil
           (dom/hr nil)
           (dom/div
             (css/add-class :section-title)
-            (dom/h3 nil "New arrivals"))
-          (grid/row
-            (->>
-                 (grid/columns-in-row {:small 2 :medium 4 }))
-            (map
-              (fn [p]
-                (grid/column
-                  (css/add-class :new-arrival-item)
-                  (pi/product-element {:open-url? true} p)))
-              (take 4 featured-items)))
-          )))))
+            (dom/h3 nil "New arrivals")))
+        (grid/row
+          (->>
+            (grid/columns-in-row {:small 2 :large 6}))
+          (map
+            (fn [p]
+              (grid/column
+                (css/add-class :new-arrival-item)
+                (pi/product-element {:open-url? true} p)))
+            (take 6 featured-items)))
+        ))))
 
 (def ->OrderList (om/factory OrderList))

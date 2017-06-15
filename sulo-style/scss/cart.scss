@@ -72,5 +72,15 @@
 			font-weight: $global-weight-normal;
 		}
 	}
+
+	.total-price {
+		font-size: 110%;
+		margin-top: 0.5rem; 
+	}
+	.callout.warning {
+		flex: 0 0 auto;
+		text-align: center;
+		margin-top: 0.5rem;
+	}
 }
 

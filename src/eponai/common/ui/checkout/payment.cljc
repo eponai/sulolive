@@ -5,6 +5,7 @@
     [om.next :as om :refer [defui]]
     #?(:cljs
        [eponai.web.utils :as utils])
+    #?(:cljs [eponai.web.ui.stripe :as stripe])
     [eponai.common.ui.utils :refer [two-decimal-price]]
     [eponai.common.ui.script-loader :as script-loader]
     [taoensso.timbre :refer [debug]]
@@ -14,30 +15,7 @@
     [eponai.common.ui.common :as common]
     [eponai.web.ui.button :as button]))
 
-(def stripe-key "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")
 (def stripe-card-element "sulo-card-element")
-
-(defn create-token [card on-success on-error]
-  #?(:cljs
-     (let [stripe (js/Stripe "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")]
-       (.. stripe
-           (createToken card)
-           (then (fn [^js/Stripe.card.createToken.Response res]
-                   (if (.-error res)
-                     (on-error (.-error res))
-                     (on-success (.-token res)))))))))
-
-(defn token->payment [token]
-  #?(:cljs
-     (when token
-       (let [^js/Stripe.card.Token token token
-             card (js->clj (.-card token) :keywordize-keys true)
-             source (.-id token)
-             ret {:source         source
-                  :card           card
-                  :is-new-source? true}]
-         (debug "Payment Ret : " ret)
-         ret))))
 
 (defn render-payment [this props state]
   (let [{:keys [payment-error card add-new-card? selected-source]} state
@@ -96,7 +74,7 @@
                             (not add-new-card?))
                        (css/add-class :hide))))
           (if (and (not-empty sources)
-                     (not add-new-card?))
+                   (not add-new-card?))
             (button/user-setting-default
               {:onClick #(om/update-state! this assoc :add-new-card? true :selected-source :new-card)}
               (dom/span nil "Add new card...")))))
@@ -135,19 +113,15 @@
              {:keys [on-change on-error]} (om/get-computed this)
              on-success (fn [token]
                           (when on-change
-                            (on-change (token->payment token))))
-             on-error (fn [^js/Stripe.card.createToken.Reponse.Error error]
-                        (om/update-state! this assoc :payment-error (.-message error))
+                            (on-change (stripe/token->card token))))
+             on-error (fn [error-message]
+                        (om/update-state! this assoc :payment-error error-message)
                         (when on-error
-                          (on-error (.-message error))))
-             ^js/Stripe stripe stripe]
+                          (on-error error-message)))]
          (if (= selected-source :new-card)
-           (.. stripe
-               (createToken card)
-               (then (fn [^js/Stripe.card.createToken.Response res]
-                       (if (.-error res)
-                         (on-error (.-error res))
-                         (on-success (.-token res))))))
+           (stripe/source-card stripe card {:on-success on-success
+                                            :on-error   on-error})
+
            (when on-change
              (on-change {:source selected-source}))))))
 
@@ -155,15 +129,8 @@
     (debug "Stripe component did mount")
     #?(:cljs
        (when (utils/element-by-id stripe-card-element)
-         (let [stripe (js/Stripe stripe-key)
-               elements (.elements stripe)
-               card (.create ^js/Stripe.elements elements "card"
-                             (clj->js {:style {:base {:color          "#32325d"
-                                                      :fontSmoothing  "antialiased"
-                                                      :lineHeight     "24px"
-                                                      :fontSize       "16px"
-                                                      "::placeholder" {:color "#aab7c4"}}}}))]
-           (.mount ^js/Stripe.card card (str "#" stripe-card-element))
+         (let [stripe (stripe/instance)
+               card (stripe/card-element stripe (str "#" stripe-card-element))]
            (om/update-state! this assoc :card card :stripe stripe)))))
   (initLocalState [this]
     (let [{:keys [default-source]} (om/props this)]

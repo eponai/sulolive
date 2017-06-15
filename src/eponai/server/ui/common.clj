@@ -25,14 +25,20 @@
 
 (defn anti-forgery-field []
   (dom/input
-    {:id "__anti-forgery-token"
-     :name "__anti-forgery-token"
-     :type "hidden"
+    {:id    "__anti-forgery-token"
+     :name  "__anti-forgery-token"
+     :type  "hidden"
      :value *anti-forgery-token*}))
 
 
 (defn iubenda-code []
   (inline-javascript ["(function (w,d) {var loader = function () {var s = d.createElement(\"script\"), tag = d.getElementsByTagName(\"script\")[0]; s.src = \"//cdn.iubenda.com/iubenda.js\"; tag.parentNode.insertBefore(s,tag);}; if(w.addEventListener){w.addEventListener(\"load\", loader, false);}else if(w.attachEvent){w.attachEvent(\"onload\", loader);}else{w.onload = loader;}})(window, document);"]))
+
+(defn google-analytics []
+  (inline-javascript ["(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o), m=s.getElementsByTagName(o)[0];
+  a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');"
+                      "ga('create', 'UA-90954507-1', 'auto');"
+                      "ga('send', 'pageview');"]))
 
 ;; Facebook login init code
 
@@ -82,7 +88,7 @@
 (defn sharing-tags [{:keys [facebook twitter]}]
   (let [tag-fn (fn [[k v]]
                  (dom/meta {:property (name k)
-                            :content v}))
+                            :content  v}))
         facebook-tags (mapv tag-fn facebook)
         twitter-tags (mapv tag-fn twitter)]
     (into facebook-tags twitter-tags)))
@@ -91,7 +97,7 @@
   (dom/head
     {:prefix "og: http://ogp.me/ns# fb: http://ogp.me/ns/fb#"}
     (dom/meta {:name    "google-site-verification"
-                  :content "eWC2ZsxC6JcZzOWYczeVin6E0cvP4u6PE3insn9p76U"})
+               :content "eWC2ZsxC6JcZzOWYczeVin6E0cvP4u6PE3insn9p76U"})
 
     (dom/meta {:charset "utf-8"})
     (dom/meta {:http-equiv "X-UA-Compatible"
@@ -134,7 +140,9 @@
     (dom/meta {:name    "msapplication-TileImage"
                :content (versionize "/assets/img/favicon/ms-icon-144x144.png")})
     (dom/meta {:name "theme-color" :content "#ffffff"})
-    ))
+
+    (when release?
+      (google-analytics))))
 
 (defn budget-js-path []
   (versionize "/js/out/budget.js"))
