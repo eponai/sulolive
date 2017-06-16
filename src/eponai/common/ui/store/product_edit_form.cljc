@@ -458,7 +458,7 @@
                   (dom/span nil "Add variation..."))))))
 
         (grid/row
-          (css/add-classes [:expanded :collapse])
+          (css/add-classes [:expanded :collapse :buttons])
           (grid/column
             nil
             (when-not (is-new-product? this)

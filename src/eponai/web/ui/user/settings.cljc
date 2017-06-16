@@ -229,7 +229,7 @@
                          input-validation)))))
         ;(callout/callout-small
         ;  (css/add-class :warning))
-        (dom/p nil (dom/small nil "Shipping address cannot be saved yet. We're working on this."))
+        ;(dom/p nil (dom/small nil "Shipping address cannot be saved yet. We're working on this."))
         (dom/div
           (css/add-class :action-buttons)
           (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))

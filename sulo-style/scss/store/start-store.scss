@@ -1,5 +1,5 @@
 #sulo-start-store {
-	$color: map-get($foundation-palette, sulo);
+	$color: map-get($foundation-palette, primary);
 	h1 {
 		font-family: $header-font-family-sans-serif;
 		font-weight: $global-weight-bold;
@@ -27,7 +27,7 @@
 	.photo-container.cover {
 		flex: 0;
 		.overlay {
-			background: rgba($color, 0.9);
+			background: rgba($color, 0.5);
 		}
 		.photo {
 			padding-top: 50%;
@@ -41,6 +41,10 @@
 	}
 	.callout {
 		border: none;
+		// background: rgba(map-get($foundation-palette, sulo), 0.9);
+		label {
+			// color: $white;
+		}
 	}
 	.success-message {
 		color: darken(map-get($foundation-palette, success), 10%);

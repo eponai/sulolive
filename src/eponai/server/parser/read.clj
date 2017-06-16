@@ -291,12 +291,12 @@
   {:auth ::auth/public}
   ;; TODO: Come up with a way to feature stores.
   {:value (when-not db-history
-            (letfn [(add-time-to-all [time items]
+            (letfn [(add-time-to-all [time stores]
                       (map #(if (nil? (:store/created-at %))
                               (assoc % :store/created-at time)
                               %)
-                           items))]
-              (->> (query/all db db-history query {:where '[[?e :store/profile]]})
+                           stores))]
+              (->> (query/all db db-history query {:where '[[?e :store/uuid]]})
                    (add-time-to-all 0)
                    (sort-by :store/created-at >)
                    (take 4)

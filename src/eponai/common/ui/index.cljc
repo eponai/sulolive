@@ -111,23 +111,23 @@
 
                  (dom/div
             (css/add-class :sections)
-
-            (common/content-section {:href  (routes/url :live)
-                                     :class "online-channels"}
-                                    "Stores streaming right now"
-                                    (grid/row
-                                      (->>
-                                        (grid/columns-in-row {:small 2 :medium 4}))
-                                      ;(grid/column
-                                      ;  (css/add-class :online-streams))
-                                      (map (fn [c]
-                                             (grid/column
-                                               (css/add-class :online-stream)
-                                               (common/online-channel-element c)))
-                                           (if (<= 8 (count featured-streams))
-                                             (take 8 featured-streams)
-                                             (take 4 featured-streams))))
-                                    "More streams")
+            (when (pos? (count featured-streams))
+              (common/content-section {:href  (routes/url :live)
+                                       :class "online-channels"}
+                                      "Stores streaming right now"
+                                      (grid/row
+                                        (->>
+                                          (grid/columns-in-row {:small 2 :medium 4}))
+                                        ;(grid/column
+                                        ;  (css/add-class :online-streams))
+                                        (map (fn [c]
+                                               (grid/column
+                                                 (css/add-class :online-stream)
+                                                 (common/online-channel-element c)))
+                                             (if (<= 8 (count featured-streams))
+                                               (take 8 featured-streams)
+                                               (take 4 featured-streams))))
+                                      "More streams"))
 
             (common/content-section {:class "collections"}
                                     "Shop by collection"
