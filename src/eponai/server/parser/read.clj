@@ -259,17 +259,19 @@
 
 ; #### FEATURED ### ;
 
-(defn feature-all [db-history namespace coll]
-  (cond->> coll
-           (nil? db-history)
-           (into [] (map #(assoc % (keyword (name namespace) "featured") true)))))
+(defn feature-all [namespace coll]
+  (into []
+        (map #(assoc % (keyword (name namespace) "featured") true))
+        coll))
 
 (defread query/featured-streams
   [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
   {:value (when-not db-history
-            (->> (query/all db db-history query {:where '[[?e :stream/store]]})
-                 (feature-all db-history :stream)))})
+            (->> (query/all db db-history query {:where '[[?e :stream/store ?s]
+                                                          [?s :store/profile ?p]
+                                                          [?p :store.profile/photo _]]})
+                 (feature-all :stream)))})
 
 (defread query/featured-items
   [{:keys [db db-history query]} _ _]
@@ -279,11 +281,12 @@
                             (assoc % :store.item/created-at time)
                             %)
                          items))]
-            (->> (db/pull-all-with db query {:where '[[?e :store.item/name]]})
+            (->> (db/pull-all-with db query {:where '[[?e :store.item/photos ?p]
+                                                      [?p :store.item.photo/photo _]]})
                  (add-time-to-all 0)
-                 (sort-by :store.item/created-at >)
+                 (sort-by :store.item/created-at #(compare %2 %1) )
                  (take 10)
-                 (feature-all nil :store.item)))})
+                 (feature-all :store.item)))})
 
 (defread query/featured-stores
   [{:keys [db db-history query]} _ _]
@@ -294,11 +297,12 @@
                             (assoc % :store/created-at time)
                             %)
                          items))]
-            (->> (db/pull-all-with db query {:where '[[?e :store/profile]]})
+            (->> (db/pull-all-with db query {:where '[[?e :store/profile ?p]
+                                                      [?p :store.profile/photo _]]})
                  (add-time-to-all 0)
-                 (sort-by :store/created-at >)
+                 (sort-by :store/created-at #(compare %2 %1))
                  (take 4)
-                 (feature-all nil :store)))})
+                 (feature-all :store)))})
 
 (defread query/locations
   [{:keys [db db-history query locations]} _ _]

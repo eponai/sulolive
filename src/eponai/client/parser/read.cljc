@@ -394,8 +394,11 @@
 (defmethod client-read :query/featured-items
   [{:keys [db query]} _ _]
   {:remote true
-   :value  (let [items (db/all-with db {:where '[[?e :store.item/featured]]})]
-             (sort-by :store.item/created-at > (db/pull-many db query items)))})
+   :value  (let [items (db/all-with db {:where '[[?e :store.item/featured]]})
+                 pulled (db/pull-many db query items)]
+             (sort-by :store.item/created-at
+                      #(compare %2 %1)
+                      pulled))})
 
 (defmethod client-read :query/featured-stores
   [{:keys [db query]} _ _]
@@ -411,7 +414,7 @@
                        {:db/id                  store
                         :store/featured-img-src [img-1 (:store.profile/photo (:store/profile s)) img-2]}))]
              (sort-by :store/created-at
-                      >
+                      #(compare %2 %1)
                       (into [] (comp (map photos-fn)
                                      (map #(merge % (db/pull db query (:db/id %)))))
                             (db/all-with db {:where '[[?e :store/featured]]}))))})
