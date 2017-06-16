@@ -2,7 +2,7 @@
 
 HOST=$1
 PORT=$2
-ENDPOINT=/coming-soon
+ENDPOINT=/enter
 
 echo "Test with forwarding (which in production is done by load balancer)"
 wget -O- --header "x-forwarded-proto: https" --max-redirect 0 --retry-connrefused -t 30 http://$HOST:$PORT$ENDPOINT
