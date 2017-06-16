@@ -2,15 +2,18 @@
 
 (def stripe-key "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")
 
-(defn bank-account [params {:keys [on-success]}]
+(defn bank-account [params {:keys [on-success on-error]}]
   (.setPublishableKey js/Stripe stripe-key)
   (.createToken js/Stripe.bankAccount
                 (clj->js params)
                 (fn [status ^js/Stripe.createToken.Response response]
-                  (when (= status 200)
-                    (when on-success
-                      (on-success {:token (.-id response)
-                                   :ip    (.-client_ip response)}))))))
+                  (cond (= status 200)
+                        (when on-success
+                          (on-success {:token (.-id response)
+                                       :ip    (.-client_ip response)}))
+                        (some? (.-error response))
+                        (when on-error
+                          (on-error (.-message (.-error response))))))))
 
 (defn instance []
   (js/Stripe stripe-key))

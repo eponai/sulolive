@@ -95,7 +95,7 @@
 
         (dom/div
           (css/add-class :error-message)
-          (dom/p nil (dom/small nil (when stripe-validation (.-message stripe-validation)))))
+          (dom/p nil (dom/small nil (str stripe-validation))))
         (dom/div
           (css/add-class :action-buttons)
           (button/user-setting-default
@@ -259,7 +259,9 @@
                                                                              {:account-params {:field/external-account token}
                                                                               :store-id       (:db/id store)})
                                                                        :query/stripe-account])
-                                               (on-close))}))
+                                               (on-close))
+                                 :on-error (fn [error-message]
+                                             (om/update-state! this assoc :stripe-validation error-message))}))
          (om/update-state! this assoc :input-validation validation))))
 
   (update-payout-schedule [this interval week-anchor month-anchor]
