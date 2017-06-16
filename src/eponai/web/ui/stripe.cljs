@@ -1,6 +1,6 @@
 (ns eponai.web.ui.stripe)
 
-(def stripe-key "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")
+(def stripe-key "pk_live_qu5NUdQtDePkNiaeH5EjhEGH")
 
 (defn bank-account [params {:keys [on-success on-error]}]
   (.setPublishableKey js/Stripe stripe-key)
