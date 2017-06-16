@@ -106,6 +106,8 @@
         "login"                       :login
         "unauthorized"                :unauthorized}])
 
+(def location-independent-routes #{:landing-page :user-settings :sell})
+
 (defn auth-roles [handler]
   (cond
     (#{:landing-page :sell} handler)

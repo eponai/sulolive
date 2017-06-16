@@ -132,18 +132,16 @@
 (defn bidi-route-handler [route]
   ;; Currently all routes render the same way.
   ;; Enter route specific stuff here.
-  (auth/restrict
-    (fn [request]
-      (server.ui/render-site (request->props (assoc request :handler route))))
-    (auth/bidi-route-restrictions route)))
+  (-> (fn [request]
+        (server.ui/render-site (request->props (assoc request :handler route))))
+      (auth/restrict (auth/bidi-route-restrictions route))
+      (auth/restrict (auth/bidi-location-restrictions route))))
 
 (defroutes
   member-routes
   ;; Hooks in bidi routes with compojure.
   ;; TODO: Cache the handlers for each route.
-  (GET "*" request (if (nil? (get-in request [:cookies "sulo.locality" :value]))
-                     (r/redirect (routes/path :landing-page))
-                     (bidi.ring/make-handler common.routes/routes bidi-route-handler))))
+  (GET "*" request (bidi.ring/make-handler common.routes/routes bidi-route-handler)))
 
 (defroutes
   site-routes
@@ -164,8 +162,6 @@
       (server.ui/render-to-str root/Root {:route         :devcards
                                           :cljs-build-id "devcards"
                                           :release?      false})))
-
-  (GET "/enter" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
 
   ;; Websockets
   (GET "/ws/chat" {::m/keys [system] :as request}

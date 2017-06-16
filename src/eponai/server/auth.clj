@@ -14,6 +14,7 @@
     [eponai.common.database :as db]
     [eponai.common.routes :as routes]
     [eponai.common.auth :as auth]
+    [eponai.common.location :as location]
     [eponai.common :as c]
     [clojure.spec :as s]
     [medley.core :as medley]
@@ -38,6 +39,9 @@
 (defn remove-auth-cookie [response]
   (assoc-in response [:cookies auth-token-cookie-name] {:value {:token auth-token-remove-value} :max-age 1}))
 
+(defn prompt-location-picker [request]
+  (location/-prompt-location-picker (::location-responder request)))
+
 (defrecord HttpAuthResponder []
   auth/IAuthResponder
   (-redirect [this path]
@@ -46,6 +50,11 @@
     (auth/-redirect this (routes/path :login)))
   (-unauthorize [this]
     (auth/-redirect this (routes/path :unauthorized))))
+
+(defrecord HttpLocationResponder []
+  location/ILocationResponder
+  (-prompt-location-picker [this]
+    (r/redirect (routes/path :landing-page))))
 
 (defn authenticate-auth0-user [conn auth0-user]
   (when auth0-user
@@ -104,9 +113,10 @@
       (-handle-unauthorized [_ request metadata]
         (auth.protocols/-handle-unauthorized jws-backend request metadata)))))
 
-(defn- wrap-http-auth-responder [handler]
+(defn- wrap-http-responders [handler]
   (fn [request]
-    (handler (assoc request ::auth-responder (->HttpAuthResponder)))))
+    (handler (assoc request ::auth-responder (->HttpAuthResponder)
+                            ::location-responder (->HttpLocationResponder)))))
 
 (defn- wrap-expired-token [handler]
   (let [token-failure #{::token-manipulated ::token-expired}]
@@ -154,7 +164,7 @@
         (wrap-on-auth wrap-refresh-token)
         (wrap-authentication auth-backend)
         (wrap-authorization auth-backend)
-        (wrap-http-auth-responder))))
+        (wrap-http-responders))))
 
 (defn authenticate [{:keys [params] :as request} conn]
   (let [auth0 (get-in request [:eponai.server.middleware/system :system/auth0])
@@ -214,3 +224,21 @@
                    (redirect request (routes/path :landing-page))
                    :else
                    (unauthorize request)))}))
+
+;; Move this to location.clj?
+
+(defn requested-location [request]
+  (get-in request [:cookies "sulo.locality" :value]))
+
+(defn bidi-location-restrictions
+  [route]
+  (let [nomad? (contains? routes/location-independent-routes route)]
+    {:handler  (fn [request]
+                 (let [loc (requested-location request)]
+                   (if (and (not nomad?)
+                            (nil? loc))
+                     (buddy/error nil)
+                     (buddy/success loc))))
+     :on-error (fn [request _]
+                 (debug "Unable to show route: " route " because it requires location and there was none.")
+                 (prompt-location-picker request))}))
