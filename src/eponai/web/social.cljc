@@ -88,7 +88,7 @@
 (defn sulo-icon-attribution []
   (dom/a {:href   "https://icons8.com"
           :target "_blank"}
-         (dom/small {:classes ["copyright"]} "Icons by Icons8")))
+         (dom/span {:classes ["copyright"]} "Icons by Icons8")))
 
 (defn sulo-copyright []
-  (dom/small {:classes ["copyright"]} "© eponai hb 2017"))
+  (dom/span {:classes ["copyright"]} "© eponai hb 2017"))

@@ -620,8 +620,9 @@
                    {:key "social"}
                    (menu/item nil (social/sulo-social-link :social/facebook))
                    (menu/item nil (social/sulo-social-link :social/instagram))))
-               (menu/item-text nil (social/sulo-icon-attribution))
-               (menu/item-text nil (social/sulo-copyright)))]
+               (menu/item-text nil (social/sulo-icon-attribution)(social/sulo-copyright))
+               ;(menu/item-text nil (social/sulo-copyright))
+               )]
 
 
             ;; Consumer side menu.

@@ -76,7 +76,7 @@
     position: fixed;
   }
   height: 2px;
-  background: map-get($foundation-palette, primary);
+  background:rgba(map-get($foundation-palette, sulo), 0.9);
   // opacity: 0;
   transition: all .25s linear;
   animation: loading-slider 1s 0.5s 1 forwards;

@@ -223,7 +223,7 @@
                     (css/add-class :text-center)
                     (dom/p nil
                            (dom/small nil
-                                      (dom/span nil "By submitting up you accept our ")
+                                      (dom/span nil "By submitting you accept our ")
                                       (dom/a {:href    "//www.iubenda.com/privacy-policy/8010910"
                                               :classes ["iubenda-nostyle no-brand iubenda-embed"]
                                               :title   "Privacy Policy"}

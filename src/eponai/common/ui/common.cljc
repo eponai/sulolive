@@ -173,8 +173,8 @@
              (css/align :right))
         ;(menu/item-link nil (dom/small nil "Privacy Policy"))
         ;(menu/item-link nil (dom/small nil "Terms & Conditions"))
-        (menu/item nil (social/sulo-icon-attribution))
-        (menu/item-text nil (social/sulo-copyright))))))
+        (menu/item (css/add-class :sub-item) (social/sulo-icon-attribution))
+        (menu/item-text (css/add-class :sub-item) (social/sulo-copyright))))))
 
 (defn city-banner [component locations]
   (debug "City locations: " locations)
@@ -235,8 +235,12 @@
   (content-section
     {:href (routes/url :sell)}
     "Sell on SULO"
-    (dom/p (css/add-class :sell-on-sulo)
-           (dom/span nil "Are you selling products locally? Start a SULO store to tell your story and interact LIVE with your customers. "))
+    (grid/row
+      (css/align :center)
+      (grid/column
+        (grid/column-size {:small 12 :medium 8 :largr 8})
+        (dom/p (css/add-class :sell-on-sulo)
+               (dom/span nil "Are you a local business in Vancouver? Contact us to request your own SULO store and explore new ways of connecting LIVE with your customers online."))))
     "Contact us"))
 
 

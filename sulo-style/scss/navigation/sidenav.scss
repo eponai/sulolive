@@ -39,10 +39,10 @@ $sidenav-width: 75%;
 		font-weight: $global-weight-bold;
 	}
 	
-	> ul {
+	> ul:not(.footer-menu) {
 		flex: 0 0 auto;
 		> li {
-			padding: 0.1rem;
+			padding: 0.25rem;
 			label {
 				margin-left: 0.5rem;
 			}
@@ -80,10 +80,19 @@ $sidenav-width: 75%;
 		}
 	}
 	.footer-menu {
-		li.menu-text a {
-			padding: 0;
-			color: $dark-gray;
-			font-weight: $global-weight-normal;
+		li.menu-text {
+			display: flex;
+			justify-content: space-between;
+			flex-direction: row-reverse;
+			// padding: 0.5rem 0.5rem;
+			span {
+				color: $dark-gray;
+			}
+			a {
+				padding: 0;
+				font-weight: $global-weight-normal;
+			}
+			// color: $dark-gray;
 		}
 		li {
 			border: none;
