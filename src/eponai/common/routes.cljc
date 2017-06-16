@@ -88,8 +88,6 @@
   ["/" {""                            :index
         "enter"                       :landing-page
         "enter/l"                     :landing-page/locality
-        "coming-soon"                 :coming-soon
-        "sell/coming-soon"            :coming-soon/sell
         "sell"                        :sell
         "live"                        :live
         "store"                       :index/store
@@ -110,7 +108,7 @@
 
 (defn auth-roles [handler]
   (cond
-    (#{:coming-soon :coming-soon/sell :landing-page} handler)
+    (#{:landing-page} handler)
     ::auth/public
     (= handler :store-dashboard)
     ::auth/store-owner

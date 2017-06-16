@@ -165,8 +165,6 @@
                                           :cljs-build-id "devcards"
                                           :release?      false})))
 
-  (GET "/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
-  (GET "/sell/coming-soon" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
   (GET "/enter" _ (bidi.ring/make-handler common.routes/routes bidi-route-handler))
 
   ;; Websockets
