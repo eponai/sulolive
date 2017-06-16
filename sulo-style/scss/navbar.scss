@@ -150,6 +150,11 @@
 	border-right: $global-border;
 	border-left: $global-border;
 	text-transform: uppercase;
+	font-weight: $global-weight-bold;
+	color: map-get($foundation-palette, sulo-dark);
+	&:hover {
+		color: map-get($foundation-palette, sulo);
+	}
 	// letter-spacing: 1px;
 	// font-weight: $global-weight-bold;
 	// font-size: 80%;

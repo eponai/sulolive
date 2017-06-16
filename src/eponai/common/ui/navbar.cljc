@@ -126,7 +126,7 @@
                                                           (utils/scroll-to locs 250)))))
                                         :classes (when (nil? auth) [:unauthed])})
            (css/show-for :large))
-      (dom/strong
+      (dom/span
         nil
         ;; Wrap in span for server and client to render the same html
         (dom/span nil "Live")))))
