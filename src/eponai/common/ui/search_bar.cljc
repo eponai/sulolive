@@ -50,7 +50,7 @@
                                                (trigger-search! this))))})
                (dom/div
                  (cond->> (css/add-class :dropdown-pane)
-                          (seq search-matches)
+                          false ;; (seq search-matches)
                           (css/add-class :is-open))
                  (menu/vertical
                    nil
