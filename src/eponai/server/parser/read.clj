@@ -274,33 +274,31 @@
 (defread query/featured-items
   [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
-  {:value (when-not db-history
-            (letfn [(add-time-to-all [time items]
-                     (map #(if (nil? (:store.item/created-at %))
-                             (assoc % :store.item/created-at time)
-                             %)
-                          items))]
-             (->> (query/all db db-history query {:where '[[?e :store.item/name]]})
-                  (add-time-to-all 0)
-                  (sort-by :store.item/created-at >)
-                  (take 10)
-                  (feature-all db-history :store.item))))})
+  {:value (letfn [(add-time-to-all [time items]
+                    (map #(if (nil? (:store.item/created-at %))
+                            (assoc % :store.item/created-at time)
+                            %)
+                         items))]
+            (->> (db/pull-all-with db query {:where '[[?e :store.item/name]]})
+                 (add-time-to-all 0)
+                 (sort-by :store.item/created-at >)
+                 (take 10)
+                 (feature-all nil :store.item)))})
 
 (defread query/featured-stores
   [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
   ;; TODO: Come up with a way to feature stores.
-  {:value (when-not db-history
-            (letfn [(add-time-to-all [time stores]
-                      (map #(if (nil? (:store/created-at %))
-                              (assoc % :store/created-at time)
-                              %)
-                           stores))]
-              (->> (query/all db db-history query {:where '[[?e :store/uuid]]})
-                   (add-time-to-all 0)
-                   (sort-by :store/created-at >)
-                   (take 4)
-                   (feature-all db-history :store))))})
+  {:value (letfn [(add-time-to-all [time items]
+                    (map #(if (nil? (:store/created-at %))
+                            (assoc % :store/created-at time)
+                            %)
+                         items))]
+            (->> (db/pull-all-with db query {:where '[[?e :store/profile]]})
+                 (add-time-to-all 0)
+                 (sort-by :store/created-at >)
+                 (take 4)
+                 (feature-all nil :store)))})
 
 (defread query/locations
   [{:keys [db db-history query locations]} _ _]
