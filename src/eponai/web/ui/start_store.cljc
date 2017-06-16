@@ -37,6 +37,7 @@
 
 (s/def :field.store/name (s/and string? #(not-empty %)))
 (s/def :field.store/country (s/and #(re-matches #"\w{2}" %)))
+(s/def :field/website (s/and string? #(not-empty %)))
 
 (s/def :field/store (s/keys :req [:field.store/name
                                   :field.store/country]))
@@ -46,17 +47,18 @@
 (s/def :field/email #(client-utils/valid-email? %))
 (s/def :field/request (s/keys :req [:field/brand
                                     :field/email
-                                    :field/locality]))
+                                    :field/locality
+                                    :field/website]))
 
-(defn validate
-  [spec m & [prefix]]
-  (when-let [err (s/explain-data spec m)]
-    (let [problems (::s/problems err)
-          invalid-paths (map (fn [p]
-                               (str prefix (some #(get form-inputs %) p)))
-                             (map :path problems))]
-      {:explain-data  err
-       :invalid-paths invalid-paths})))
+;(defn validate
+;  [spec m & [prefix]]
+;  (when-let [err (s/explain-data spec m)]
+;    (let [problems (::s/problems err)
+;          invalid-paths (map (fn [p]
+;                               (str prefix (some #(get form-inputs %) p)))
+;                             (map :path problems))]
+;      {:explain-data  err
+;       :invalid-paths invalid-paths})))
 
 (defui StartStore
   static om/IQuery
@@ -75,7 +77,7 @@
 
              input-map {:field.store/name    store-name
                         :field.store/country "CA"}
-             validation (validate :field/store input-map)]
+             validation (validate/validate :field/store input-map form-inputs)]
          (when (nil? validation)
            (mixpanel/track "Start store")
            (msg/om-transact! this [(list 'store/create {:name store-name :country store-country})]))
@@ -94,7 +96,7 @@
                         :field/website  website
                         :field/locality locality
                         :field/message  message}
-             validation (validate :field/request input-map)]
+             validation (validate/validate :field/request input-map form-inputs)]
          (when (nil? validation)
            (mixpanel/track "Request access to store")
            (msg/om-transact! this [(list 'user/request-store-access input-map)]))
@@ -173,7 +175,7 @@
                     (dom/label nil "Local in")
                     (dom/select {:id           (:field.store/country form-inputs)
                                  :defaultValue "vancouver"}
-                                (dom/option {:value "vancouver"} "Vancouver, BC"))
+                                (dom/option {:value "vancouver"} "Vancouver/BC"))
                     (when (some? (:user/email auth))
                       (dom/p (css/text-align :center)
                              (dom/small nil (str "Logged in as " (:user/email auth)))))
@@ -190,7 +192,7 @@
               (dom/div
                 (css/add-class :section-title)
                 (dom/h2 nil "Request access to start your store"))
-              (dom/p nil "Want to join this ride with us? Access from us is needed to start a SULO store for now. Please provide us with information about your brand and we'll get in touch. We're currently rolling out invites and would love to have you in the SULO family!"))
+              (dom/p nil "Want to join this ride with us? Access from us is needed to start a SULO store for now. Please provide us with information about your business and we'll be in touch with you shortly!"))
 
             (grid/row
               (css/align :center)
@@ -212,8 +214,9 @@
                     {:type "text" :placeholder "e.g. Vancouver" :id (:field/locality form-inputs)}
                     input-validation)
 
-                  (dom/label nil "Website")
-                  (dom/input {:type "text" :placeholder "yourwebsite.com (optional)" :id (:field/website form-inputs)})
+                  (dom/label nil "Website/Social media")
+                  (validate/input {:type "text" :placeholder "yourwebsite.com, Facebook page, Instagram" :id (:field/website form-inputs)}
+                                  input-validation)
 
                   (dom/label nil "Message")
                   (dom/textarea {:placeholder "Anything else you'd like us to know? (optional)"

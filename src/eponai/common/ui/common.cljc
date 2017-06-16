@@ -233,13 +233,14 @@
   ;
   ;  "Contact us")
   (content-section
-    {:href (routes/url :sell)}
+    {:href  (routes/url :sell)
+     :class "sell-on-sulo"}
     "Sell on SULO"
     (grid/row
       (css/align :center)
       (grid/column
         (grid/column-size {:small 12 :medium 8 :largr 8})
-        (dom/p (css/add-class :sell-on-sulo)
+        (dom/p nil
                (dom/span nil "Are you a local business in Vancouver? Contact us to request your own SULO store and explore new ways of connecting LIVE with your customers online."))))
     "Contact us"))
 

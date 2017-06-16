@@ -15,6 +15,9 @@ $section-footer-color: $primary-color;
 			}
 		}
 	}
+	.section-footer {
+		// margin-top: 2rem;
+	}
 	h2 {
 		@include breakpoint(large) {
 			// font-size: rem-calc(28);

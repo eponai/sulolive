@@ -108,7 +108,7 @@
 
 (defn auth-roles [handler]
   (cond
-    (#{:landing-page} handler)
+    (#{:landing-page :sell} handler)
     ::auth/public
     (= handler :store-dashboard)
     ::auth/store-owner

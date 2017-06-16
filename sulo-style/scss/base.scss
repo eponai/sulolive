@@ -48,7 +48,7 @@ html, body {
 		// margin-bottom: 3rem;
 		padding: 1% 0;
 		&:first-child {
-			margin-top: 0;
+			// margin-top: 0.5%;
 		}
 		.section-footer {
 			margin-top: $global-margin;
@@ -83,6 +83,16 @@ html, body {
 		  	left: 0;
 		  	z-index: 0;
 	   }
+	}
+}
+#sulo-index {
+	.section .section-footer {
+		margin-top: 2rem;
+	}
+	.sell-on-sulo {
+		.section-footer {
+			margin-top: $global-margin;
+		}
 	}
 }
 

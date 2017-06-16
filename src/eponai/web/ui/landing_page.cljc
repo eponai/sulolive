@@ -124,8 +124,13 @@
                    (css/add-classes [:locations]))
               (grid/column
                 nil
-                (dom/div
-                  (css/add-class :city-anchor)
+                (dom/a
+                  (css/add-class :city-anchor {:href    (if (some? auth) (routes/url :index) "")
+                                               :onClick #(do
+                                                          (.select-locality this "Vancouver/BC")
+                                                          (when (nil? auth)
+                                                            (auth/show-lock (shared/by-key this :shared/auth-lock))))
+                                               })
                   (photo/photo
                     {:photo-id       "static/landing-vancouver"
                      :transformation :transformation/preview}
@@ -133,15 +138,10 @@
                       nil
                       (dom/div
                         (css/text-align :center)
-                        (dom/strong nil "Vancouver, BC")
-                        (button/button
-                          {:href    (if (some? auth) (routes/url :index) "")
-                           :onClick #(do
-                                      (.select-locality this "Vancouver, BC")
-                                      (when (nil? auth)
-                                        (auth/show-lock (shared/by-key this :shared/auth-lock))))
-                           :classes [:hollow :sulo]}
-                          (dom/span nil "Shop")))
+                        (dom/strong nil "Vancouver / BC")
+                        (dom/div
+                          {:classes [:button :hollow]}
+                          (dom/span nil "Enter")))
                       (when (nil? auth)
                         (dom/p (css/add-class :coming-soon) (dom/small nil "Coming soon - Summer 2017")))))))
               ;(grid/column
