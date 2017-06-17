@@ -181,9 +181,9 @@
   (dom/div
     (css/add-class :intro-header {:id       "sulo-city-banner"})
     (photo/cover
-      {:photo-id "static/landing-vancouver"}
+      {:photo-id "static/landing-vancouver-2"}
       (grid/row
-        (css/align :middle)
+        (css/align :bottom)
         (grid/column
           (grid/column-size {:small 12 :medium 6})
           (dom/h1

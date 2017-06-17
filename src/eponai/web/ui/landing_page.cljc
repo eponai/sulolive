@@ -92,7 +92,7 @@
       (common/page-container
         {:navbar navbar :id "sulo-landing"}
         (photo/cover
-          {:photo-id "static/landing-cover"}
+          {:photo-id "static/shop"}
           (dom/h1 nil (dom/span nil "Your local marketplace online"))
           (dom/p nil (dom/span nil "Shop and hang out LIVE with your favorite local brands")))
         (dom/div
@@ -133,7 +133,7 @@
                                                             (auth/show-lock (shared/by-key this :shared/auth-lock))))
                                                })
                   (photo/photo
-                    {:photo-id       "static/landing-vancouver"
+                    {:photo-id       "static/landing-vancouver-2"
                      :transformation :transformation/preview}
                     (photo/overlay
                       nil

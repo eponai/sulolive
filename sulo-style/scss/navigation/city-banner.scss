@@ -9,7 +9,7 @@
 				padding-top: 15%;
 			}
 			@include breakpoint(xlarge) {
-				padding-top: 10%;
+				padding-top: 9%;
 			}
 		}
 		.overlay {
@@ -35,16 +35,19 @@
 		font-weight: bold;
 		letter-spacing: 1px;
 		font-size: 70%;
-		text-shadow: 1px 1px 1px rgba($white, 0.5);
+		// text-shadow: 1px 1px 0 rgba($white, 0.5);
 		i {
 			display: none !important;
 			font-size: 100%;
 			margin-right: 0.5rem;
 			margin-bottom: 0.25rem;
 		}
-	// font-size: 2rem;
+	font-size: rem-calc(20);
+	@include breakpoint(medium) {
+		font-size: rem-calc(24);
+	}
 		@include breakpoint(large) {
-			font-size: rem-calc(28);
+			font-size: rem-calc(24);
 		}
 	}
 	.icon {

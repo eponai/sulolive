@@ -9,6 +9,7 @@
 // 	}
 // }
 #sulo-landing {
+	$sulo-color: rgba(map-get($foundation-palette, sulo), 0.8);
 	.section {
 		margin-top: 1%;
 		.section-title {
@@ -74,10 +75,16 @@
 				padding-top: 30%;
 			}
 		}
+		h1 {
+			// font-weight: bold;
+			text-shadow: 1px 1px 1px rgba($black, 0.5);
+		}
 		p {
+			text-shadow: 1px 1px 1px rgba($black, 0.5);
 			font-family: $header-font-family-sans-serif;
 			font-size: 110%;
-			// font-weight: bold;
+			font-weight: bold;
+			// color: map-get($foundation-palette, sulo-dark);
 			@include breakpoint(medium) {
 				font-size: 130%;
 			}
@@ -89,7 +96,10 @@
 
 	.top-features {
 		padding: 0.5rem;
+		margin-top: 2rem;
+		// background: $sulo-color;
 		// margin-top: 5%;
+		// color: $white;
 		strong {
 			// color: map-get($foundation-palette, sulo-dark);
 		}
@@ -120,7 +130,7 @@
 	}
 
 	.column {
-		margin-top: $global-margin;
+		// margin-top: $global-margin;
 		.photo-container {
 			.photo {
 				padding-top: 55%;
@@ -131,7 +141,7 @@
 		}
 		a.city-anchor {
 			display: block;
-			// color: $primary-color;
+			color: $white;
 			img {
 				// background-size: 100%;
 				transition: transform .25s ease-in-out;
@@ -143,7 +153,7 @@
 					transition: filter .25s ease-in-out;
 				}
 				.overlay {
-					background: rgba($white, 0.5);
+					background: rgba($black, 0.5);
 					transition: background .25s ease-in-out;
 					.content {
 						flex: 1;
@@ -161,6 +171,9 @@
 								flex: 0 0 auto;
 								font-weight: bold;
 								border-width: 2px;
+								color: $white;
+								border-color: $white;
+								transition: all .25s ease-in-out;
 								// padding: 0.5rem 1.5rem;
 							}
 						}
@@ -184,7 +197,7 @@
 					}
 					strong {
 						text-transform: uppercase;
-						text-shadow: 1px 1px 1px rgba($white, 0.5);
+						// text-shadow: 1px 1px 1px rgba($white, 0.5);
 						font-weight: bold;
 						letter-spacing: 1px;
 					}
@@ -203,6 +216,10 @@
 						background: rgba($white, 0.75);
 						.content {
 							background: transparent;
+							.button {
+								color: $black;
+								border-color: $black;
+							}
 						}
 					}
 				}				
@@ -253,7 +270,7 @@
 			}
 			.overlay {
 				$background: map-get($foundation-palette, sulo);
-				background: rgba($background, 0.9);
+				background: $sulo-color;//rgba($background, 0.9);
 			}
 		}
 		.input-container {
