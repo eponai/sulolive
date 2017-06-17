@@ -156,7 +156,11 @@
                     ;       (dom/em nil (get-in store [:store/profile :store.profile/name]))
                     ;       (dom/span nil " updated via your store dashboard"))
 
-                    (dom/a (->> (css/button {:href (routes/url :store-dashboard {:store-id (:db/id store)})})
+                    (dom/a (->> (css/button {:onClick #(do
+                                                         #?(:cljs
+                                                            (when (nil? (utils/get-locality))
+                                                              (utils/set-locality)))
+                                                         (routes/set-url! this :store-dashboard {:store-id (:db/id store)}))})
                                 ;(css/add-class :green)
                                 (css/add-class :expanded))
                            (dom/span nil (str "Continue to " (get-in store [:store/profile :store.profile/name]))))
