@@ -54,6 +54,9 @@
 (defrecord HttpLocationResponder []
   location/ILocationResponder
   (-prompt-location-picker [this]
+    ;; Routing to :landing-page instead of :landing-page/location
+    ;; because this will be an entire page reload, so it'll take
+    ;; a while before the screen scrolls down to "Vancouver / BC, Enter".
     (r/redirect (routes/path :landing-page))))
 
 (defn authenticate-auth0-user [conn auth0-user]
@@ -232,10 +235,10 @@
 
 (defn bidi-location-restrictions
   [route]
-  (let [nomad? (contains? routes/location-independent-routes route)]
+  (let [location-free? (routes/location-independent-route? route)]
     {:handler  (fn [request]
                  (let [loc (requested-location request)]
-                   (if (and (not nomad?)
+                   (if (and (not location-free?)
                             (nil? loc))
                      (buddy/error nil)
                      (buddy/success loc))))

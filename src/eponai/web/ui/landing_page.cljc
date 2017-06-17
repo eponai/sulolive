@@ -125,11 +125,12 @@
               (grid/column
                 nil
                 (dom/a
-                  (css/add-class :city-anchor {:href    (if (some? auth) (routes/url :index) "")
-                                               :onClick #(do
-                                                          (.select-locality this "Vancouver / BC")
-                                                          (when (nil? auth)
-                                                            (auth/show-lock (shared/by-key this :shared/auth-lock))))
+                  (css/add-class :city-anchor {:onClick #(do
+                                                           (debug "Setting locality!")
+                                                           (.select-locality this "Vancouver / BC")
+                                                           (if (nil? auth)
+                                                             (auth/show-lock (shared/by-key this :shared/auth-lock))
+                                                             (routes/set-url! this :index nil)))
                                                })
                   (photo/photo
                     {:photo-id       "static/landing-vancouver-2"

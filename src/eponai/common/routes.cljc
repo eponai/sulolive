@@ -106,7 +106,19 @@
         "login"                       :login
         "unauthorized"                :unauthorized}])
 
-(def location-independent-routes #{:landing-page :user-settings :sell})
+
+(defn location-independent-route? [route]
+  (when (some? route)
+    (or (contains? #{:user-settings
+                     :sell
+                     :landing-page
+                     :landing-page/locality
+                     :user/order-list
+                     :user/order
+                     :shopping-bag}
+                   route)
+        (= :store-dashboard route)
+        (= (name :store-dashboard) (namespace route)))))
 
 (defn auth-roles [handler]
   (cond

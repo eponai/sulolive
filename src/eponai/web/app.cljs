@@ -28,15 +28,28 @@
     [medley.core :as medley]
     [eponai.client.auth :as client.auth]
     [eponai.common.database :as db]
-    [eponai.client.cart :as client.cart]))
+    [eponai.client.cart :as client.cart]
+    [eponai.web.utils :as web.utils]))
 
 (defn add-root! [reconciler]
   (binding [parser/*parser-allow-remote* false]
     (om/add-root! reconciler router/Router (gdom/getElement router/dom-app-id))))
 
+(defn validate-location [{:keys [handler route-params]}]
+  (when (and (some? handler)
+             (not (common.routes/location-independent-route? handler))
+             (nil? (web.utils/get-locality)))
+    (throw (ex-info (str "Unable to set route: " handler
+                         " route-params: " route-params
+                         " because we didn't have location set.")
+                    {:route handler
+                     :route-params route-params
+                     :type ::location-not-set}))))
+
 (defn update-route-fn [reconciler-atom]
   (fn [{:keys [handler route-params] :as match}]
     (try
+      (validate-location match)
       (let [reconciler @reconciler-atom
             modules (shared/by-key reconciler :shared/modules)
             loaded-route? (modules/loaded-route? modules handler)
@@ -75,7 +88,13 @@
                                                                 (queue-cb))
                                                             (debug "No root query, nothing to queue..")))))))}))
       (catch :default e
-        (error "Error when transacting route: " e)))))
+        (let [data (ex-data e)]
+          (if (= ::location-not-set (:type data))
+            (do
+              (debug "Location was not set, setting new url with pushy.")
+              (-> (shared/by-key @reconciler-atom :shared/browser-history)
+                  (pushy/set-token! (routes/url :landing-page/locality))))
+            (error "Error when transacting route: " e)))))))
 
 (def skus-pattern [{:store.item/_skus
                     [:store.item/price

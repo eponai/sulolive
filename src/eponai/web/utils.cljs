@@ -1,5 +1,6 @@
 (ns eponai.web.utils
   (:require
+    [clojure.string :as string]
     [taoensso.timbre :refer [debug]]
     [cemerick.url :as url]))
 
@@ -28,13 +29,13 @@
   (when (some? el)
     (let [old-classname (.-className el)]
       (debug "oldclass: " old-classname)
-      (set! (.-className el) (clojure.string/join " " [old-classname class])))))
+      (set! (.-className el) (string/join " " [old-classname class])))))
 
 (defn remove-class-to-element [el class]
   (when (some? el)
     (let [old-classname (str " " (.-className el) " ")
-          new-classname (clojure.string/replace old-classname (str " " class) " ")]
-      (set! (.-className el) (clojure.string/trim new-classname)))))
+          new-classname (string/replace old-classname (str " " class) " ")]
+      (set! (.-className el) (string/trim new-classname)))))
 
 (defn scroll-to [el d]
   (when (< 0 d)
@@ -45,6 +46,21 @@
       (js/setTimeout (fn []
                        (set! (.-scrollTop body) (+ (.-scrollTop body) per-tick))
                        (scroll-to el (- d 10)))))))
+
+(defn get-cookie-val [cookie-key]
+  {:pre [(string? cookie-key)]}
+  (let [cookie-string (js/decodeURIComponent (.-cookie js/document))
+        key-vals (string/split cookie-string #";")]
+    (first (sequence
+             (comp (map string/trim)
+                   (filter #(string/starts-with? % (str cookie-key "=")))
+                   (take 1)
+                   (map #(string/split % #"="))
+                   (map second))
+             key-vals))))
+
+(defn get-locality []
+  (url/url-decode (get-cookie-val "sulo.locality")))
 
 (defn set-locality
   ([]
