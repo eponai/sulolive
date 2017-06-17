@@ -74,7 +74,7 @@
                (:status (http/get (util/endpoint-url *system* route route-params)
                                   {:follow-redirects false}))))
         200 :landing-page nil
+        200 :user-settings nil
         red :index nil
-        red :user-settings nil
         red :store-dashboard {:store-id store-id}
         red :store-dashboard {:store-id (dec store-id)}))))
