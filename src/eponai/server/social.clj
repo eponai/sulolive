@@ -40,10 +40,10 @@
                                                       (:store.profile/name profile))
                              :twitter:image       image}}
 
-                (some? stream-url)
-                (merge-with merge {:facebook {:og:video            stream-url
-                                              :og:video:secure_url stream-url}
-                                   :twitter {:twitter:player:stream stream-url}}))))))
+                 (some? stream-url)
+                 (merge-with merge {:facebook {:og:video            stream-url
+                                               :og:video:secure_url stream-url}
+                                    :twitter  {:twitter:player:stream stream-url}}))))))
 
 (defn- product [{:keys [state system]} product-id]
   (when-let [product-id (c/parse-long-safe product-id)]
@@ -59,23 +59,42 @@
             server-host (host/webserver-url (:system/server-address system))
             description-html (f/bytes->str (:store.item/description product))
             description-text (if description-html
-                                   (or (not-empty (string/replace description-html #"<(?:.|\n)*?>" ""))
-                                       (:store.item/name product))
-                                   (:store.item/name product))]
-        {:facebook {:fb:app_id              "936364773079066"
-                    :og:title               (:store.item/name product)
-                    :og:type                "product"
-                    :og:description         description-text
-                    :og:image               image
-                    :og:url                 (str server-host (routes/path :product {:product-id product-id}))}
-         :twitter {:twitter:card           "summary_large_image"
-                   :twitter:site           "@sulolive"
-                   :twitter:title          (:store.item/name product)
-                   :twitter:description    description-text
-                   :twitter:image          image}}))))
+                               (or (not-empty (string/replace description-html #"<(?:.|\n)*?>" ""))
+                                   (:store.item/name product))
+                               (:store.item/name product))]
+        {:facebook {:fb:app_id      "936364773079066"
+                    :og:title       (:store.item/name product)
+                    :og:type        "product"
+                    :og:description description-text
+                    :og:image       image
+                    :og:url         (str server-host (routes/path :product {:product-id product-id}))}
+         :twitter  {:twitter:card        "summary_large_image"
+                    :twitter:site        "@sulolive"
+                    :twitter:title       (:store.item/name product)
+                    :twitter:description description-text
+                    :twitter:image       image}}))))
+
+(defn- default [{:keys [state system]}]
+  (let [title "Your local marketplace online, shop and hangout LIVE with your local vendors - SULO Live"
+        description "Shop local goods and hangout LIVE with the community and your local brands."
+        image (photos/transform "static/shop" :transformation/preview)
+        server-host (host/webserver-url (:system/server-address system))]
+    {:facebook {:fb:app_id      "936364773079066"
+                :og:title       title
+                ;:og:type                "product"
+                :og:description description
+                :og:image       image
+                :og:url         (str server-host)}
+     :twitter  {:twitter:card        "summary_large_image"
+                :twitter:site        "@sulolive"
+                :twitter:title       title
+                :twitter:description description
+                :twitter:image       image}}))
 
 (defn share-objects [{:keys [route state route-params system] :as env}]
   (cond (= route :store)
         (store env (:store-id route-params))
         (= route :product)
-        (product env (:product-id route-params))))
+        (product env (:product-id route-params))
+        :else
+        (default env)))
