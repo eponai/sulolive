@@ -93,7 +93,7 @@
         (photo/cover
           {:photo-id "static/shop"}
           (dom/h1 nil (dom/span nil "Your local marketplace online"))
-          (dom/p nil (dom/span nil "Shop and hang out LIVE with your favorite local brands")))
+          (dom/p nil (dom/span nil "Global change starts local. Shop and hang out with your favorite local brands and each other. It's all LIVE.")))
         (dom/div
           {:classes ["top-features"]}
           (grid/row
@@ -102,17 +102,17 @@
               nil
               (icons/shopping-bag)
               "Shop and discover"
-              "Get lost in a marketplace filled with your local gems.")
+              "Explore and shop from a marketplace filled with your local gems.")
             (top-feature
               nil
               (icons/video-camera)
               "Watch and chat"
-              "Watch live streams from your favorite local brands.")
+              "Watch live streams while you chat with brands and other users on SULO.")
             (top-feature
               nil
               (icons/heart)
-              "Follow and share"
-              "Sign up to follow and share your faves.")))
+              "Join the community"
+              "Sign in to follow stores and be the first to know when they are live.")))
 
         (dom/div
           (css/text-align :center {:id "sulo-locations"})

@@ -72,6 +72,9 @@
 			padding-top: 70%;
 			// filter: blur(3px);
 			@include breakpoint(medium) {
+				padding-top: 50%;
+			}
+			@include breakpoint(large) {
 				padding-top: 30%;
 			}
 		}
@@ -260,7 +263,7 @@
 			// padding-top: 100%
 			.photo {
 				@include breakpoint(small only) {
-					padding-top: 120%;
+					padding-top: 100%;
 				}	
 			}
 			.content {

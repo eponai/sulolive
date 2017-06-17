@@ -60,11 +60,19 @@ $sidenav-width: 75%;
 						border: none;
 					}
 				}
+
+				&.your-account {
+					li a, li span {
+						font-size: 90%;
+						letter-spacing: 1px;
+					}
+				}
 			}
 		}
 		&:last-child {
 			color: $dark-gray;
 		}
+
 	}
 	.icon {
 		padding: 0 !important;
@@ -79,6 +87,7 @@ $sidenav-width: 75%;
 			color: $dark-gray;
 		}
 	}
+	
 	.footer-menu {
 		li.menu-text {
 			display: flex;

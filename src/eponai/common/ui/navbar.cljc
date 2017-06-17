@@ -690,7 +690,7 @@
                  (menu/item nil
                             (dom/label nil "Your account")
                             (menu/vertical
-                              nil
+                              (css/add-class :your-account)
                               ;(sidebar-link this :user {:user-id (:db/id auth)}
                               ;              (dom/div {:classes ["icon icon-profile"]})
                               ;              (dom/span nil "Profile"))
@@ -707,7 +707,12 @@
                                 (dom/a {:href    (routes/url :user-settings {:user-id (:db/id auth)})
                                         :onClick #(track-event ::mixpanel/go-to-settings)}
                                        ;(dom/div {:classes ["icon icon-settings"]})
-                                       (dom/span nil "Settings"))))))
+                                       (dom/span nil "Settings")))
+                              (menu/item
+                                nil
+                                (dom/a {:href    (routes/url :landing-page)
+                                        :onClick #(track-event ::mixpanel/change-location)}
+                                       (dom/span nil "Change location"))))))
                ;(when (and (some? auth)
                ;           (nil? owned-store))
                ;  (menu/item nil (dom/a
