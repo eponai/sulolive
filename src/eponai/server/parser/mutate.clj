@@ -105,7 +105,7 @@
 (defmutation location/suggest
   [{:keys [state auth system] ::parser/keys [return exception]} _ {:keys [name site email]}]
   {:auth ::auth/public
-   :resp {:success "Thank you for your tip! Check your inbox for a confirmation email."
+   :resp {:success "Thank you! Check your inbox for a confirmation email."
           :error   (if exception (:detail (json/read-str (:body (ex-data exception)) :key-fn keyword) "") "")}}
   {:action (fn []
              (debug "location/suggest with email " email)

@@ -41,7 +41,7 @@
                  (photo/overlay
                    nil (dom/div
                          (->> (css/text-align :center))
-                         (dom/span nil title))))))
+                         (dom/h3 nil title))))))
 
 (defui Index
   static om/IQuery

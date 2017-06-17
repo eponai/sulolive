@@ -15,9 +15,7 @@ $section-footer-color: $primary-color;
 			}
 		}
 	}
-	.section-footer {
-		// margin-top: 2rem;
-	}
+	
 	h2 {
 		@include breakpoint(large) {
 			// font-size: rem-calc(28);
@@ -95,6 +93,14 @@ $section-footer-color: $primary-color;
 				visibility: hidden;
 			}
 			.collection-item {
+				h3 {
+					// font-size: 95%
+					margin-bottom: 0;
+					text-transform: uppercase;
+					font-weight: bold;
+					margin-top: 0.25rem;
+					letter-spacing: 1px;
+				}
 				@include breakpoint(small only) {
 					padding: 0.5rem 0;
 					.photo {

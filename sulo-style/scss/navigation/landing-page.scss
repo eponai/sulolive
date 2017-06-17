@@ -249,8 +249,9 @@
 			font-weight: $global-weight-bold;
 			margin-bottom: 0.5rem;
 		}
-		a {
+		a, p {
 			text-shadow: none;
+			font-weight: $global-weight-normal;
 		}
 		img {
 			display: none;

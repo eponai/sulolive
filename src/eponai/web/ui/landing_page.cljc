@@ -77,12 +77,11 @@
   (componentDidUpdate [this _ _]
     (let [last-message (msg/last-message this 'location/suggest)]
       (when (msg/final? last-message)
-        (when (msg/success? last-message)
-          #?(:cljs
-             (do
-               (set! (.-value (web-utils/element-by-id (:field/email form-inputs))) nil)
-               (set! (.-value (web-utils/element-by-id (:field/location form-inputs))) nil))))
-        (msg/clear-messages! this 'location/suggest)
+        ;(when (msg/success? last-message)
+        ;  #?(:cljs
+        ;     (do
+        ;       (set! (.-value (web-utils/element-by-id (:field/email form-inputs))) "")
+        ;       (set! (.-value (web-utils/element-by-id (:field/location form-inputs))) ""))))
         (om/update-state! this assoc :user-message (msg/message last-message)))))
   (render [this]
     (let [{:proxy/keys [navbar]
@@ -163,28 +162,28 @@
                 (css/add-classes [:suggest-location])
                 (photo/cover
                   nil
-                  (dom/h3 nil "Local somewhere else? Subscribe to our newsletter and let us know where we should go next!")
-                  (dom/form
-                    (css/add-class :input-container)
-                    (v/input {:type        "text"
-                              :placeholder "Your location"
-                              :id          (:field/location form-inputs)}
-                             input-validation)
-                    (v/input {:type        "email"
-                              :placeholder "Your email"
-                              :id          (:field/email form-inputs)}
-                             input-validation)
-                    (dom/button
-                      (css/add-class :button {:onClick #(do
-                                                         (.preventDefault %)
-                                                         (.submit-new-location this))})
-                      (dom/span nil "Submit")))
-                  (dom/p (css/add-class :user-message)
-
-                         (if (msg/pending? last-message)
-                           (dom/small nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))
-                           (dom/small nil (str user-message)))
-                         )
+                  (if (msg/final? last-message)
+                    (dom/h3 nil (str user-message))
+                    [(dom/h3 nil "Local somewhere else? Subscribe to our newsletter and let us know where we should go next!")
+                     (dom/form
+                       (css/add-class :input-container)
+                       (v/input {:type        "text"
+                                 :placeholder "Your location"
+                                 :id          (:field/location form-inputs)}
+                                input-validation)
+                       (v/input {:type        "email"
+                                 :placeholder "Your email"
+                                 :id          (:field/email form-inputs)}
+                                input-validation)
+                       (dom/button
+                         (css/add-class :button {:onClick #(do
+                                                            (.preventDefault %)
+                                                            (.submit-new-location this))})
+                         (dom/span nil "Submit")))
+                     (when (msg/pending? last-message)
+                       (dom/p (css/add-class :user-message)
+                              (dom/small nil (dom/i {:classes ["fa fa-spinner fa-spin"]}))
+                              ))])
                   ))
               )
             "")

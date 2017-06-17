@@ -131,9 +131,7 @@
             (if (and (:user/can-open-store? auth)
                      (nil? store))
               (dom/h1 nil "You are invited to open a SULO store!")
-              (dom/h1 nil
-                      (dom/span nil "Connect with your community on ")
-                      (dom/strong nil "SULO Live")))))
+              (dom/h1 nil "Connect with your community on SULO Live"))))
 
         (if (or (:user/can-open-store? auth)
                 (some? store))

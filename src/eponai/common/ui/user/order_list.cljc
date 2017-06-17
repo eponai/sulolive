@@ -152,7 +152,7 @@
             (dom/h3 nil "New arrivals")))
         (grid/row
           (->>
-            (grid/columns-in-row {:small 2 :large 6}))
+            (grid/columns-in-row {:small 2 :medium 3 :large 6}))
           (map
             (fn [p]
               (grid/column
