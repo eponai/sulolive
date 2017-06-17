@@ -77,7 +77,7 @@
 (defn- default [{:keys [state system]}]
   (let [title "Your local marketplace online, shop and hangout LIVE with your local vendors - SULO Live"
         description "Shop local goods and hangout LIVE with the community and your local brands."
-        image (photos/transform "static/shop" :transformation/preview)
+        image (photos/transform "static/landing-social" :transformation/preview)
         server-host (host/webserver-url (:system/server-address system))]
     {:facebook {:fb:app_id      "936364773079066"
                 :og:title       title
