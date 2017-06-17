@@ -1,6 +1,7 @@
 (ns eponai.web.utils
   (:require
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [cemerick.url :as url]))
 
 (defn enter-pressed? [^js/Event e]
   (= 13 (.-keyCode e)))
@@ -49,7 +50,7 @@
   ([]
     (set-locality "Vancouver / BC"))
   ([locality]
-    (set! (.-cookie js/document) (str "sulo.locality=" locality))
+    (set! (.-cookie js/document) (str "sulo.locality=" (url/url-encode locality)))
     ;(let [cookie-string (js/decodeURIComponent (.-cookie js/document))]
     ;  (debug "Got cookie: " cookie-string))
     ))

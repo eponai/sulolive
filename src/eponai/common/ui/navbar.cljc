@@ -636,7 +636,7 @@
                    (menu/item
                      (css/add-class :category)
                      (dom/a
-                       (->> {:href    (when (not-empty locations) (routes/url :live))
+                       (->> {:href    (navbar-route this (routes/url :live)) ;(when (not-empty locations) (routes/url :live))
                              :onClick #(when (empty? locations)
                                         #?(:cljs
                                            (when-let [locs (utils/element-by-id "sulo-locations")]

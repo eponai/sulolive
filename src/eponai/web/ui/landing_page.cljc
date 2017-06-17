@@ -54,7 +54,7 @@
   Object
   (select-locality [_ locality]
     #?(:cljs
-       (web-utils/set-locality (url/url-encode locality))))
+       (web-utils/set-locality locality)))
   (submit-new-location [this]
     #?(:cljs
        (let [email (web-utils/input-value-by-id (:field/email form-inputs))
