@@ -15,7 +15,8 @@
     [eponai.common.ui.elements.menu :as menu]
     [clojure.string :as string]
     [eponai.web.ui.button :as button]
-    [eponai.common.ui.product-item :as pi]))
+    [eponai.common.ui.product-item :as pi]
+    #?(:cljs [eponai.web.utils :as web.utils])))
 
 (defui OrderList
 
@@ -144,21 +145,23 @@
               (button/button
                 (button/secondary (button/hollow {:href (routes/url :browse/all-items)})) (dom/span nil "Browse products")))))
 
-        (grid/row-column
-          nil
-          (dom/hr nil)
-          (dom/div
-            (css/add-class :section-title)
-            (dom/h3 nil "New arrivals")))
-        (grid/row
-          (->>
-            (grid/columns-in-row {:small 2 :medium 3 :large 6}))
-          (map
-            (fn [p]
-              (grid/column
-                (css/add-class :new-arrival-item)
-                (pi/product-element {:open-url? true} p)))
-            (take 6 featured-items)))
+        (when #?(:clj  false
+                 :cljs (some? (web.utils/get-locality)))
+          [(grid/row-column
+             nil
+             (dom/hr nil)
+             (dom/div
+               (css/add-class :section-title)
+               (dom/h3 nil "New arrivals")))
+           (grid/row
+             (->>
+               (grid/columns-in-row {:small 2 :medium 3 :large 6}))
+             (map
+               (fn [p]
+                 (grid/column
+                   (css/add-class :new-arrival-item)
+                   (pi/product-element {:open-url? true} p)))
+               (take 6 featured-items)))])
         ))))
 
 (def ->OrderList (om/factory OrderList))
