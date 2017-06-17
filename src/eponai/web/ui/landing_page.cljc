@@ -1,5 +1,6 @@
 (ns eponai.web.ui.landing-page
   (:require
+    [cemerick.url :as url]
     [clojure.spec :as s]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
@@ -53,7 +54,7 @@
   Object
   (select-locality [_ locality]
     #?(:cljs
-       (web-utils/set-locality locality)))
+       (web-utils/set-locality (url/url-encode locality))))
   (submit-new-location [this]
     #?(:cljs
        (let [email (web-utils/input-value-by-id (:field/email form-inputs))
@@ -127,7 +128,7 @@
                 (dom/a
                   (css/add-class :city-anchor {:href    (if (some? auth) (routes/url :index) "")
                                                :onClick #(do
-                                                          (.select-locality this "Vancouver/BC")
+                                                          (.select-locality this "Vancouver / BC")
                                                           (when (nil? auth)
                                                             (auth/show-lock (shared/by-key this :shared/auth-lock))))
                                                })

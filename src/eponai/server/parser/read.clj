@@ -19,7 +19,8 @@
     [clojure.data.json :as json]
     [clojure.java.io :as io]
     [eponai.common.format.date :as date]
-    [eponai.common.search :as common.search])
+    [eponai.common.search :as common.search]
+    [cemerick.url :as url])
   (:import (datomic.db Db)))
 
 (defmacro defread
@@ -307,7 +308,7 @@
 (defread query/locations
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
-  {:value locations})
+  {:value (url/url-decode locations)})
 
 
 (defread query/stream-config

@@ -175,7 +175,7 @@
                     (dom/label nil "Local in")
                     (dom/select {:id           (:field.store/country form-inputs)
                                  :defaultValue "vancouver"}
-                                (dom/option {:value "vancouver"} "Vancouver/BC"))
+                                (dom/option {:value "vancouver"} "Vancouver / BC"))
                     (when (some? (:user/email auth))
                       (dom/p (css/text-align :center)
                              (dom/small nil (str "Logged in as " (:user/email auth)))))

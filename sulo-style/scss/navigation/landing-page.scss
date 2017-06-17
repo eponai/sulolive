@@ -60,7 +60,7 @@
 		color: $white;
 		.overlay {
 			$background: map-get($foundation-palette, primary);
-			background: rgba($background, 0.5);
+			background: rgba($black, 0.5);
 			.content {
 				display: flex;
 				flex-direction: column;
@@ -69,6 +69,7 @@
 		}
 		.photo {
 			padding-top: 70%;
+			// filter: blur(3px);
 			@include breakpoint(medium) {
 				padding-top: 30%;
 			}
@@ -76,6 +77,7 @@
 		p {
 			font-family: $header-font-family-sans-serif;
 			font-size: 110%;
+			// font-weight: bold;
 			@include breakpoint(medium) {
 				font-size: 130%;
 			}

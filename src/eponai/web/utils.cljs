@@ -47,7 +47,7 @@
 
 (defn set-locality
   ([]
-    (set-locality "Vancouver/BC"))
+    (set-locality "Vancouver / BC"))
   ([locality]
     (set! (.-cookie js/document) (str "sulo.locality=" locality))
     ;(let [cookie-string (js/decodeURIComponent (.-cookie js/document))]
