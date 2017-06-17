@@ -103,8 +103,14 @@
 		// background: $sulo-color;
 		// margin-top: 5%;
 		// color: $white;
-		strong {
-			// color: map-get($foundation-palette, sulo-dark);
+		// strong {
+		// 	// color: map-get($foundation-palette, sulo-dark);
+		// }
+		h4 {
+			text-transform: uppercase;
+			font-weight: bold;
+			font-size: 90%;
+			margin-bottom: 0;
 		}
 		.feature-item {
 			.column {

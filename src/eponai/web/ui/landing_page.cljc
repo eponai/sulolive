@@ -41,7 +41,7 @@
         icon)
       (grid/column
         nil
-        (dom/strong (css/add-class :feature-title) title)
+        (dom/h4 (css/add-class :feature-title) title)
         (dom/p nil text)))))
 
 (defui LandingPage
@@ -92,7 +92,9 @@
         {:navbar navbar :id "sulo-landing"}
         (photo/cover
           {:photo-id "static/shop"}
-          (dom/h1 nil (dom/span nil "Your local marketplace online"))
+          (dom/div
+            (css/add-class :section-title)
+            (dom/h1 nil (dom/span nil "Your local marketplace online")))
           (dom/p nil (dom/span nil "Global change starts local. Shop and hang out with your favorite local brands and with each other. It's all LIVE.")))
         (dom/div
           {:classes ["top-features"]}

@@ -95,6 +95,7 @@
         "products"                    product-routes
         "browse"                      browse-categories
         "help"                        help-routes
+        "about"                       :about
         ["checkout/" :store-id]       checkout-routes
         "shopping-bag"                :shopping-bag
         "business"                    :business
@@ -122,7 +123,7 @@
 
 (defn auth-roles [handler]
   (cond
-    (#{:landing-page :sell} handler)
+    (#{:landing-page :sell :about} handler)
     ::auth/public
     (= handler :store-dashboard)
     ::auth/store-owner

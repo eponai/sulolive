@@ -150,8 +150,8 @@
                          ;(menu/item-link {:href (routes/url :sell)} (dom/span nil "Start a store"))
                          ;(menu/item-link nil (dom/span nil "Sign up/Sign in"))
                          ;(menu/item-link nil (dom/span nil "Press"))
-                         (menu/item-link {:href "https://blog.sulo.live/introducing-sulo-live-b3de8206a419"
-                                          :target "_blank"} (dom/span nil "About us"))
+                         (menu/item-link {:href (routes/url :about) ;"https://blog.sulo.live/introducing-sulo-live-b3de8206a419"
+                                          } (dom/span nil "About us"))
                          (menu/item-link {:href "https://blog.sulo.live"
                                           :target "_blank"} (dom/span nil "Blog"))
                          ;(menu/item-link nil (dom/span nil "FAQ"))

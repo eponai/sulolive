@@ -75,8 +75,8 @@
                     :twitter:image       image}}))))
 
 (defn- default [{:keys [state system]}]
-  (let [title "Your local marketplace online, shop and hangout LIVE with your local vendors - SULO Live"
-        description "Shop local goods and hangout LIVE with the community and your local brands."
+  (let [title "Your local marketplace online - SULO Live"
+        description "Global change starts local. Shop and hang out with your favorite local brands and each other. It's all LIVE."
         image (photos/transform "static/landing-social" :transformation/preview)
         server-host (host/webserver-url (:system/server-address system))]
     {:facebook {:fb:app_id      "936364773079066"

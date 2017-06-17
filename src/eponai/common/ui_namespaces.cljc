@@ -10,11 +10,12 @@
     [eponai.common.ui.product-page]
     [eponai.common.ui.streams]
     [eponai.common.ui.user]
-    [eponai.web.ui.start-store]
+    [eponai.web.ui.about-sulo]
+    [eponai.web.ui.landing-page]
     [eponai.web.ui.login]
+    [eponai.web.ui.start-store]
     [eponai.web.ui.unauthorized]
     [eponai.web.ui.user.settings]
-    [eponai.web.ui.landing-page]
     #?(:cljs [eponai.web.chat])))
 
 ;; WARNING
