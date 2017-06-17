@@ -76,5 +76,6 @@
         200 :landing-page nil
         200 :user-settings nil
         red :index nil
-        red :store-dashboard {:store-id store-id}
+        red :browse/all-items nil
+        200 :store-dashboard {:store-id store-id}
         red :store-dashboard {:store-id (dec store-id)}))))
