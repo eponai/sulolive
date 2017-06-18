@@ -16,6 +16,7 @@
     [eponai.server.external.product-search :as product-search]
     [eponai.server.external.mailchimp :as mailchimp]
     [eponai.server.external.stripe :as stripe]
+    [eponai.server.external.taxjar :as taxjar]
     [eponai.server.external.aws-s3 :as s3]
     [eponai.server.external.email :as email]
     [eponai.server.external.client-env :as client-env]
@@ -36,6 +37,7 @@
                    :system/mailchimp
                    :system/server-address
                    :system/stripe
+                   :system/taxjar
                    :system/product-search
                    :system/wowza
                    :system/email})
@@ -91,6 +93,7 @@
                                    :pass (:smtp-password env)})
    :system/mailchimp (mailchimp/mail-chimp (:mailchimp-api-key env))
    :system/stripe    (stripe/stripe (:stripe-secret-key env))
+   :system/taxjar    (taxjar/taxjar (:taxjar-api-key env))
    :system/wowza     (wowza/wowza {:secret         (:wowza-jwt-secret env)
                                    :subscriber-url (:wowza-subscriber-url env)
                                    :publisher-url  (:wowza-publisher-url env)})})
@@ -101,10 +104,11 @@
    :system/aws-ec2   (ec2/aws-ec2-stub)
    :system/aws-elb   (elb/aws-elastic-beanstalk-stub)
    :system/aws-s3    (s3/aws-s3-stub)
+   :system/email     (email/email-stub)
    :system/mailchimp (mailchimp/mail-chimp-stub)
    :system/stripe    (stripe/stripe-stub (:stripe-secret-key env))
-   :system/wowza     (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})
-   :system/email     (email/email-stub)})
+   :system/taxjar    (taxjar/taxjar-stub)
+   :system/wowza     (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})})
 
 (defn with-request-handler [system {:keys [in-prod? env] :as config}]
   (assoc system
@@ -171,10 +175,11 @@
   {:post [(= (set (keys %)) system-keys)]}
   (fake-system (dev-config config)
                ;; Put keys under here to use the real implementation
-               ;:system/stripe
+               :system/stripe
                ;:system/auth0
                ;:system/email
                ;:system/mailchimp
+               ;:system/taxjar
                ))
 
 (defn test-system [config]

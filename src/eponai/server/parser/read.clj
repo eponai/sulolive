@@ -21,7 +21,8 @@
     [clojure.java.io :as io]
     [eponai.common.format.date :as date]
     [eponai.common.search :as common.search]
-    [cemerick.url :as url])
+    [cemerick.url :as url]
+    [eponai.server.external.taxjar :as taxjar])
   (:import (datomic.db Db)))
 
 (defmacro defread
@@ -60,12 +61,25 @@
                                       :symbols {'?s store-id
                                                 '?u (:user-id auth)}})})
 
+(defread query/taxes
+  [{:keys [db db-history query auth system]} _ {:keys [store-id]}]
+  {:auth ::auth/any-user}
+  {:value (do
+            (debug "Query/taxes")
+            (taxjar/calculate (:system/taxjar system) {:store-id     store-id
+                                                       :to_country   "CA"
+                                                       :to_state     "BC"
+                                                       :from_country "CA"
+                                                       :from_state   "BC"
+                                                       :amount       300
+                                                       :shipping     5}))})
+
 (defread query/store
   [{:keys [db db-history query]} _ {:keys [store-id]}]
   {:auth    ::auth/public
    :uniq-by [[:store-id store-id]]}
   {:value (let [store (query/one db db-history query {:where   '[[?e :store/profile]]
-                                                  :symbols {'?e store-id}})]
+                                                      :symbols {'?e store-id}})]
             ;(debug "Query: " query)
             ;(debug "Got store shipping: " (:store/shipping store))
 
@@ -280,13 +294,13 @@
   {:auth ::auth/public}
   {:value (letfn [(add-time-to-all [time items]
                     (map #(if (nil? (:store.item/created-at %))
-                            (assoc % :store.item/created-at time)
-                            %)
+                           (assoc % :store.item/created-at time)
+                           %)
                          items))]
             (->> (db/pull-all-with db query {:where '[[?e :store.item/photos ?p]
                                                       [?p :store.item.photo/photo _]]})
                  (add-time-to-all 0)
-                 (sort-by :store.item/created-at #(compare %2 %1) )
+                 (sort-by :store.item/created-at #(compare %2 %1))
                  (take 10)
                  (feature-all :store.item)))})
 
@@ -296,8 +310,8 @@
   ;; TODO: Come up with a way to feature stores.
   {:value (letfn [(add-time-to-all [time items]
                     (map #(if (nil? (:store/created-at %))
-                            (assoc % :store/created-at time)
-                            %)
+                           (assoc % :store/created-at time)
+                           %)
                          items))]
             (->> (db/pull-all-with db query {:where '[[?e :store/profile ?p]
                                                       [?p :store.profile/photo _]]})

@@ -57,6 +57,7 @@
                                                                             ;:store.profile/shipping-fee
                                                                             {:store.profile/photo [:photo/id]}]}]}]}
                        ]}
+     :query/taxes
      {:query/countries [:country/code :country/name]}
      {:query/stripe-customer [:stripe/id
                               :stripe/sources
@@ -215,10 +216,11 @@
               nil
               (dom/div
                 (css/add-class :section-title)
-                (dom/p nil "1. Ship to"))
+                (dom/h2 nil "1. Ship to"))
               (ship/->CheckoutShipping (om/computed {:collapse? (not= open-section :shipping)
                                                      :shipping  shipping
-                                                     :countries countries}
+                                                     :countries countries
+                                                     :store (:store/_items (:store.item/_skus (first checkout)))}
                                                     {:on-change         #(.save-shipping this %)
                                                      ;:on-country-change #(.save-shipping this {:shipping/address {:shipping.address/country %}})
                                                      :on-open           #(om/update-state! this assoc :open-section :shipping)}))
@@ -229,16 +231,22 @@
                          (css/text-align :center))
                     (dom/small nil (str "Sorry, " (get-in store [:store/profile :store.profile/name]) " does not ship to this country."))))))
 
+            ;(callout/callout
+            ;  nil
+            ;  (dom/div
+            ;    (css/add-class :section-title)
+            ;    (dom/p nil "2. Delivery"))
+            ;  )
             (callout/callout
               nil
               (dom/div
                 (css/add-class :section-title)
-                (dom/p nil "2. Delivery & Payment"))
+                (dom/h2 nil "3. Payment"))
+
               (dom/div
                 (when (or (not= open-section :payment)
                           (empty? available-rates))
                   (css/add-class :hide))
-
                 (dom/div
                   (css/add-class :subsection)
                   (dom/p (css/add-class :subsection-title) "Delivery options")

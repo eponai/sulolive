@@ -68,16 +68,30 @@
       {:explain-data  err
        :invalid-paths invalid-paths})))
 
-#?(:cljs
-   (defn prefill-address-form [place]
-     (let [long-val (fn [k & [d]] (get-in place [k :long] d))
-           short-val (fn [k & [d]] (get-in place [k :short] d))
-           {:shipping.address/keys [street postal locality region country]} form-inputs]
-       (set! (.-value (web-utils/element-by-id street)) (long-val :address))
-       (set! (.-value (web-utils/element-by-id postal)) (long-val :postal_code))
-       (set! (.-value (web-utils/element-by-id locality)) (long-val :locality))
-       (set! (.-value (web-utils/element-by-id country)) (short-val :country))
-       (set! (.-value (web-utils/element-by-id region)) (short-val :administrative_area_level_1)))))
+(defn google-place->shipping [place]
+  (let [long-val (fn [k & [d]] (get-in place [k :long] d))
+        short-val (fn [k & [d]] (get-in place [k :short] d))
+        {:shipping.address/keys [street postal locality region country]} form-inputs]
+    {:shipping.address/street   (long-val :address)
+     :shipping.address/postal   (long-val :postal_code)
+     :shipping.address/locality (long-val :locality)
+     :shipping.address/region   (short-val :administrative_area_level_1)
+     :shipping.address/country  (short-val :country)}))
+
+(defn prefill-address-form [shipping]
+  #?(:cljs
+     (let [address (:shipping/address shipping)
+           {:shipping.address/keys [street street2 postal locality region country]} form-inputs]
+       (set! (.-value (web-utils/element-by-id street)) (:shipping.address/street address ""))
+       (set! (.-value (web-utils/element-by-id street2)) (:shipping.address/street2 address ""))
+       (set! (.-value (web-utils/element-by-id postal)) (:shipping.address/postal address ""))
+       (set! (.-value (web-utils/element-by-id locality)) (:shipping.address/locality address ""))
+       (set! (.-value (web-utils/element-by-id region)) (:shipping.address/region address ""))
+       (set! (.-value (web-utils/element-by-id country)) (:country/code (:shipping.address/country address) "CA")))))
+
+(defn prefill-shipping-name [shipping]
+  #?(:cljs
+     (set! (.-value (web-utils/element-by-id (:shipping/name form-inputs))) (:shipping/name shipping ""))))
 
 (defn render-checkout-shipping [this props computed state]
   (let [{:keys [input-validation]} state
@@ -144,7 +158,7 @@
               {:id           (:shipping.address/country form-inputs)
                :name         "ship-country"
                :autoComplete "shipping country"
-               ;:defaultValue (or (:shipping.address/country address) "CA")
+               :defaultValue (or (:shipping.address/country address) "CA")
                ;:onChange     #(on-country-change (.-value (.-target %)))
                }
               (map (fn [c]
@@ -163,7 +177,7 @@
               (validate/input
                 {:id           (:shipping.address/street form-inputs)
                  :type         "text"
-                 ;:defaultValue (:shipping.address/street address)
+                 :defaultValue (:shipping.address/street address)
                  :name         "ship-address"
                  :autoComplete "shipping address-line1"}
                 input-validation))
@@ -173,7 +187,7 @@
               (validate/input
                 {:type         "text"
                  :id           (:shipping.address/street2 form-inputs)
-                 ;:defaultValue (:shipping.address/street2 address)
+                 :defaultValue (:shipping.address/street2 address)
                  }
                 input-validation)))
           (grid/row
@@ -186,7 +200,7 @@
                  :type         "text"
                  :name         "ship-zip"
                  :autoComplete "shipping postal-code"
-                 ;:defaultValue (:shipping.address/postal address)
+                 :defaultValue (:shipping.address/postal address)
                  }
                 input-validation))
             (grid/column
@@ -195,7 +209,7 @@
               (validate/input
                 {:type         "text"
                  :id           (:shipping.address/locality form-inputs)
-                 ;:defaultValue (:shipping.address/locality address)
+                 :defaultValue (:shipping.address/locality address)
                  :name         "ship-city"
                  :autoComplete "shipping locality"}
                 input-validation))
@@ -204,7 +218,7 @@
               (dom/label nil "State/Province (optional)")
               (validate/input
                 {:id           (:shipping.address/region form-inputs)
-                 ;:defaultValue (:shipping.address/region address)
+                 :defaultValue (:shipping.address/region address)
                  :name         "ship-state"
                  :type         "text"
                  :autoComplete "shipping region"}
@@ -248,41 +262,16 @@
     #?(:cljs
        (let [autocomplete (places/mount-places-address-autocomplete {:element-id "auto-complete"
                                                                      :on-change  (fn [place]
-                                                                                   (prefill-address-form place))})]
+                                                                                   (prefill-address-form (google-place->shipping place)))})]
          (om/update-state! this assoc :autocomplete autocomplete)
-         (let [{:keys [shipping]} (om/props this)
-               {:shipping.address/keys [street street2 postal locality region country]
-                :shipping/keys         [name]} form-inputs]
-           (if (some? shipping)
-             (let [address (:shipping/address shipping)]
-               (debug "Setting mount country: " (:shipping.address/country address "CA"))
-               (set! (.-value (web-utils/element-by-id name)) (:shipping/name shipping))
-               (set! (.-value (web-utils/element-by-id street)) (:shipping.address/street address))
-               (set! (.-value (web-utils/element-by-id street2)) (:shipping.address/street2 address))
-               (set! (.-value (web-utils/element-by-id postal)) (:shipping.address/postal address))
-               (set! (.-value (web-utils/element-by-id locality)) (:shipping.address/locality address))
-               (set! (.-value (web-utils/element-by-id country)) (:country/code (:shipping.address/country address)))
-               (set! (.-value (web-utils/element-by-id region)) (:shipping.address/region address)))
-             (set! (.-value (web-utils/element-by-id country)) "CA"))
-           )
-         )))
+         (let [{:keys [shipping]} (om/props this)]
+           (prefill-shipping-name shipping)
+           (prefill-address-form shipping)))))
   (componentDidUpdate [this prev-props _]
     #?(:cljs
-       (let [{:keys [shipping]} (om/props this)
-             {:shipping.address/keys [street street2 postal locality region country]
-              :shipping/keys         [name]} form-inputs]
-         (if-not (= shipping (:shipping prev-props))
-           (let [address (:shipping/address shipping)]
-             (debug "Setting update country: " (:shipping.address/country address "CA"))
-             (set! (.-value (web-utils/element-by-id name)) (:shipping/name shipping))
-             (set! (.-value (web-utils/element-by-id street)) (:shipping.address/street address))
-             (set! (.-value (web-utils/element-by-id street2)) (:shipping.address/street2 address))
-             (set! (.-value (web-utils/element-by-id postal)) (:shipping.address/postal address))
-             (set! (.-value (web-utils/element-by-id locality)) (:shipping.address/locality address))
-             (set! (.-value (web-utils/element-by-id country)) (:country/code (:shipping.address/country address)))
-             (set! (.-value (web-utils/element-by-id region)) (:shipping.address/region address)))
-           (set! (.-value (web-utils/element-by-id country)) "CA"))
-         )))
+       (let [{:keys [shipping]} (om/props this)]
+         (prefill-shipping-name shipping)
+         (prefill-address-form shipping))))
 
   (render [this]
     (debug "Shipping props " (om/props this))

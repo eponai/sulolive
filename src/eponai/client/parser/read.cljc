@@ -206,6 +206,14 @@
                                                      [?s :store/items ?i]]
                                           :symbols {'?s store-id}})})))
 
+(defmethod client-read :query/taxes
+  [{:keys [db query route-params target ast]} _ _]
+  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
+    (if target
+      {:remote (assoc-in ast [:params :store-id] store-id)}
+      {:value (db/pull-one-with db query {:where   '[[?e :taxes/store ?s]]
+                                          :symbols {'?s store-id}})})))
+
 (defmethod client-read :query/browse-items
   [{:keys [db target query route-params ast query-params]} _ _]
   (let [{:keys [top-category sub-category]} route-params]
