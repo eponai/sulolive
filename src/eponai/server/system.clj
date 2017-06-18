@@ -62,9 +62,7 @@
    :system/chat-websocket (c/using (websocket/map->StoreChatWebsocket {})
                                    {:chat :system/chat})
    :system/client-env     (client-env/map->ClientEnvironment
-                            {:client-env {:stripe-publishable-key (if in-aws?
-                                                                    "pk_live_qu5NUdQtDePkNiaeH5EjhEGH"
-                                                                    "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")}})
+                            {:client-env (select-keys env [:stripe-publishable-key])})
    :system/datomic        (datomic/map->Datomic
                             {:db-url           (:db-url env)
                              :provided-conn    (::provided-conn config)
@@ -141,16 +139,31 @@
                                  (select-keys reals real-component-keys))
                           (with-request-handler config)))))
 
+(defn aws-env? [env]
+  (some? (:aws-elb env)))
+
+(defn- with-stripe-publishable-key [env]
+  ;; We should make sure we've set a "real" stripe-publishable key
+  ;; when in production (in aws).
+  ;; Otherwise, just use the test key if we haven't set it already.
+  (if (aws-env? env)
+    (do (assert (contains? env :stripe-publishable-key)
+                (str "Env did not contain :stripe-publishable-key"))
+        env)
+    (update env :stripe-publishable-key
+            (fnil identity "pk_test_VhkTdX6J9LXMyp5nqIqUTemM"))))
+
 (defn prod-system [config]
   {:post [(= (set (keys %)) system-keys)]}
-  (let [config (assoc config :env environ/env
+  (let [config (assoc config :env (-> environ/env (with-stripe-publishable-key))
                              :in-prod? true
-                             :in-aws? (some? (get-in config [:env :aws-elb])))]
+                             :in-aws? (aws-env? environ/env))]
     (real-system config)))
 
 (defn- dev-config [config]
-  (assoc config :env environ/env
+  (assoc config :env (-> environ/env (with-stripe-publishable-key))
                 :in-prod? false
+                :in-aws? false
                 ::disable-ssl true
                 ::disable-anti-forgery true))
 
