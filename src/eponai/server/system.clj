@@ -18,6 +18,7 @@
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.aws-s3 :as s3]
     [eponai.server.external.email :as email]
+    [eponai.server.external.client-env :as client-env]
     [eponai.server.external.request-handler :as request-handler]))
 
 (def system-keys #{:system/aleph
@@ -44,7 +45,7 @@
   (when-let [request-handler (:system/handler system)]
     (request-handler/resume-requests request-handler)))
 
-(defn components-without-fakes [{:keys [env] :as config}]
+(defn components-without-fakes [{:keys [env in-aws?] :as config}]
   {:system/aleph          (c/using (aleph/map->Aleph (select-keys config [:handler :port :netty-options]))
                                    {:handler :system/handler})
    :system/cloudinary     (cloudinary/cloudinary
@@ -59,6 +60,10 @@
                              :add-mocked-data? false})
    :system/chat-websocket (c/using (websocket/map->StoreChatWebsocket {})
                                    {:chat :system/chat})
+   :system/client-env     (client-env/map->ClientEnvironment
+                            {:client-env {:stripe-publishable-key (if in-aws?
+                                                                    "pk_live_qu5NUdQtDePkNiaeH5EjhEGH"
+                                                                    "pk_test_VhkTdX6J9LXMyp5nqIqUTemM")}})
    :system/datomic        (datomic/map->Datomic
                             {:db-url           (:db-url env)
                              :provided-conn    (::provided-conn config)
@@ -155,7 +160,7 @@
                ;:system/stripe
                ;:system/auth0
                ;:system/email
-                :system/mailchimp
+               ;:system/mailchimp
                ))
 
 (defn test-system [config]

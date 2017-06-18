@@ -501,3 +501,8 @@
   [{:keys [target]} _ _]
   (when target
     {:remote true}))
+
+(defmethod client-read :query/client-env
+  [{:keys [target]} _ _]
+  (when target
+    {:remote true}))

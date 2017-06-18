@@ -149,10 +149,9 @@
 (defonce history-atom (atom nil))
 (defonce reconciler-atom (atom nil))
 
-(defn- run [{:keys [auth-lock modules loading-bar stripe]
+(defn- run [{:keys [auth-lock modules loading-bar]
              :or   {auth-lock   (auth/auth0-lock)
-                    loading-bar (loading-bar/loading-bar)
-                    stripe      ::shared/prod}
+                    loading-bar (loading-bar/loading-bar)}
              :as   run-options}]
   (let [modules (or modules (modules/advanced-compilation-modules router/routes))
         init? (atom false)
@@ -171,7 +170,7 @@
                           (update :remote/chat #(remotes/send-with-chat-update-basis-t % reconciler-atom)))
         add-schema-to-query-once (apply-once (fn [q]
                                                {:pre [(sequential? q)]}
-                                               (into [:datascript/schema] q)))
+                                               (into [:datascript/schema :query/client-env] q)))
         initial-module-loaded-chan (async/chan)
         initial-merge-chan (async/chan)
         send-fn (backend/send! reconciler-atom
@@ -191,12 +190,12 @@
                                        :ui->props                  (client.utils/cached-ui->props-fn parser)
                                        :send-fn                    send-fn
                                        :remotes                    (:order remote-config)
-                                       :shared/stripe              stripe
                                        :shared/scroll-helper       scroll-helper
                                        :shared/loading-bar         loading-bar
                                        :shared/modules             modules
                                        :shared/browser-history     history
                                        :shared/store-chat-listener ::shared/prod
+                                       :shared/stripe              ::shared/client-env
                                        :shared/auth-lock           auth-lock
                                        :instrument                 (::plomber run-options)})]
     (reset! reconciler-atom reconciler)
@@ -228,7 +227,6 @@
   (run (merge {
                :auth-lock (auth/fake-lock)
                :modules   (modules/dev-modules router/routes)
-               :stripe    ::shared/dev
                }
               deps)))
 

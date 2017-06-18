@@ -84,6 +84,12 @@
           (debug "No new search db with merge value: " val)
           db)))))
 
+(defmethod client-merge :query/client-env
+  [db k val]
+  (cond-> db
+          (not-empty val)
+          (db-with [[:db/add [:ui/singleton :ui.singleton/client-env] :ui.singleton.client-env/env-map val]])))
+
 (defn- placeholder-refs
   "Returns transactions that adds {:placeholder :workaround} for every entity that has attr."
   [db attr]

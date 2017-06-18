@@ -1,7 +1,8 @@
 (ns eponai.web.ui.stripe
-  (:require [eponai.common.shared :as shared]))
-
-(def stripe-key "pk_live_qu5NUdQtDePkNiaeH5EjhEGH")
+  (:require
+    [eponai.common.shared :as shared]
+    [eponai.common.database :as db]
+    [taoensso.timbre :refer [debug]]))
 
 (defprotocol IStripeClient
   (bank-account [this params callbacks])
@@ -58,10 +59,9 @@
 ;(defn mount-card [card element-id]
 ;  (.mount ^js/Stripe.card card element-id))
 
-(defmethod shared/shared-component [:shared/stripe ::shared/prod]
-  [_ _ _]
-  (stripe-client "pk_live_qu5NUdQtDePkNiaeH5EjhEGH"))
-
-(defmethod shared/shared-component [:shared/stripe ::shared/dev]
-  [_ _ _]
-  (stripe-client "pk_test_VhkTdX6J9LXMyp5nqIqUTemM"))
+(defmethod shared/shared-component [:shared/stripe ::shared/client-env]
+  [reconciler _ _]
+  (let [{:keys [stripe-publishable-key]} (db/singleton-value (db/to-db reconciler)
+                                                             :ui.singleton.client-env/env-map)]
+    (debug "Using stripe-publishable-key: " stripe-publishable-key)
+    (stripe-client stripe-publishable-key)))
