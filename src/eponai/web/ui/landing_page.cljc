@@ -92,10 +92,12 @@
         {:navbar navbar :id "sulo-landing"}
         (photo/cover
           {:photo-id "static/shop"}
-          (dom/div
-            (css/add-class :section-title)
-            (dom/h1 nil (dom/span nil "Your local marketplace online")))
-          (dom/p nil (dom/span nil "Global change starts local. Shop and hang out with your favorite local brands and with each other. It's all LIVE.")))
+          (grid/row-column
+            (css/text-align :center)
+            (dom/div
+              (css/add-class :section-title)
+              (dom/h1 nil (dom/span nil "Your local marketplace online")))
+            (dom/p nil (dom/span nil "Global change starts local. Shop and hang out LIVE with your favourite local brands and people from your city."))))
         (dom/div
           {:classes ["top-features"]}
           (grid/row
