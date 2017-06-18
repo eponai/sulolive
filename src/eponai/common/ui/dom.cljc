@@ -130,6 +130,9 @@
 (defn img [opts & content]
   (element dom/img opts content))
 
+(defn picture [opts & content]
+  (element dom/picture opts content))
+
 (defn fieldset [opts & content]
   (element dom/fieldset opts content))
 

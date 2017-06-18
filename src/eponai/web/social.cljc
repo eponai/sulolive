@@ -10,13 +10,15 @@
   {:social/email     "/assets/img/icons/Email-96.png"
    :social/facebook  "/assets/img/icons/FB-f-Logo__blue_1024.png"
    :social/twitter   "/assets/img/icons/Twitter_Logo_White_On_Blue.png"
-   :social/pinterest "/assets/img/icons/Pinterest_badgeRGB.png"})
+   :social/pinterest "/assets/img/icons/Pinterest_badgeRGB.png"
+   :social/instagram "/assets/img/icons/IG_Glyph_fill.png"})
 
 (def socials
   {:social/email     "Email"
    :social/facebook  "Facebook"
    :social/twitter   "Twitter"
-   :social/pinterest "Pinterest"})
+   :social/pinterest "Pinterest"
+   :social/instagram "Instagram"})
 
 (defmulti share-stream (fn [{:keys [platform]}] platform))
 
@@ -56,6 +58,15 @@
 
 ;(defmethod share-stream :social/email
 ;  [_ stream])
+
+(defn follow-button [{:keys [platform on-click] :as opts}]
+  (dom/a
+    (->> (dissoc opts :platform)
+         (css/add-class :follow-button)
+         (css/add-class :sl-tooltip))
+    (dom/img {:src (get logos platform)})
+    (dom/span (css/add-class :sl-tooltip-text)
+              (get socials platform))))
 
 (defn share-button [{:keys [on-click platform] :as opts}]
   (dom/a

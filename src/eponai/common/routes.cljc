@@ -116,7 +116,8 @@
                      :landing-page/locality
                      :user/order-list
                      :user/order
-                     :shopping-bag}
+                     :shopping-bag
+                     :about}
                    route)
         (= :store-dashboard route)
         (= (name :store-dashboard) (namespace route)))))

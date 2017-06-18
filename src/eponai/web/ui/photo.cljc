@@ -64,13 +64,13 @@
                   (when url-small
                     (dom/img
                       {
-                       :data-src url-small
-                       ;:src      url-small
+                       ;:data-src url-small
+                       :src      url-small
                        :classes  ["small"]}))
                   (dom/img
                     (cond->> {
-                              :data-src (when loaded-main? url)
-                              ;:src      (when loaded-main? url)
+                              ;:data-src (when loaded-main? url)
+                              :src      url
                               :classes  ["main"]
                               :onLoad   #(om/update-state! this assoc :loaded-main? true)}
                              loaded-main?
@@ -83,8 +83,8 @@
                }
               (dom/img
                 {
-                 :data-src src
-                 ;:src      src
+                 ;:data-src src
+                 :src      src
                  :classes  ["main loaded"]})
 
               (when (some? content)

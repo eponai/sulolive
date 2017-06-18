@@ -52,10 +52,10 @@
 		}
 	}
 	
-	strong {
-		font-family: $header-font-family-sans-serif;
-		font-weight: bold;
-	}
+	// strong {
+		// font-family: $header-font-family-sans-serif;
+		// font-weight: bold;
+	// }
 	.cover {
 		text-align: center;
 		color: $white;
@@ -69,13 +69,16 @@
 			}
 		}
 		.photo {
-			padding-top: 70%;
+			padding-top: 100%;
 			// filter: blur(3px);
+			@include breakpoint(medium-small) {
+				padding-top: 80%;
+			}
 			@include breakpoint(medium) {
 				padding-top: 50%;
 			}
-			@include breakpoint(large) {
-				padding-top: 30%;
+			@include breakpoint(xlarge) {
+				padding-top: 35%;
 			}
 		}
 		h1 {
@@ -84,9 +87,9 @@
 		}
 		p {
 			text-shadow: 1px 1px 1px rgba($black, 0.5);
-			font-family: $header-font-family-sans-serif;
-			font-size: 110%;
-			font-weight: bold;
+			// font-family: $header-font-family-sans-serif;
+			// font-size: 110%;
+			font-weight: $global-weight-bold;
 			// color: map-get($foundation-palette, sulo-dark);
 			@include breakpoint(medium) {
 				font-size: 130%;
@@ -142,8 +145,14 @@
 		// margin-top: $global-margin;
 		.photo-container {
 			.photo {
-				padding-top: 55%;
+				padding-top: 75%;
+				// @include breakpoint(medium-small) {
+				// 	padding-top: 75%;
+				// }
 				@include breakpoint(medium) {
+					padding-top: 50%;
+				}
+				@include breakpoint(large) {
 					padding-top: 35%;
 				}
 			}
@@ -173,7 +182,9 @@
 							display: flex;
 							flex-direction: column;
 							align-items: center;
-							transform: translateY(25%); 
+							@include breakpoint(medium) {
+								transform: translateY(25%); 
+							}
 							.button {
 								margin-top: 0.5rem;
 								opacity: 0.9;
@@ -216,7 +227,7 @@
 				color: $black;
 				.photo-container {
 					.photo {
-						filter: blur(2px);
+						// filter: blur(2px);
 					}
 					img {
 						transform: scale(1.02);
@@ -269,8 +280,11 @@
 			// padding-top: 100%
 			.photo {
 				@include breakpoint(small only) {
-					padding-top: 100%;
+					padding-top: 110%;
 				}	
+				@include breakpoint(medium-small only) {
+					padding-top: 80%;
+				}
 			}
 			.content {
 				padding: $global-padding;

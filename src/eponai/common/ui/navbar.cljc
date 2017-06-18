@@ -270,6 +270,7 @@
           (live-link component)
 
           (collection-links component "navbar")
+
           (when (:ui.singleton.loading-bar/show? loading-bar)
             ;; TODO: Do a pretty loading bar somwhere in this navbar.
             ;; (menu/item nil "Loading...")
@@ -290,15 +291,21 @@
           ;  nil
           ;  (dom/a nil
           ;         (dom/span (css/add-classes ["icon icon-heart"]))))
+          (when (nil? auth)
+            (menu/item
+              nil
+              (dom/a {:href (routes/url :about)}
+                     (dom/strong nil (dom/small nil "About us")))))
           (user-menu-item component)
-          (menu/item
-            (css/add-class :shopping-bag)
-            (dom/a {:classes ["shopping-bag-icon"]
-                    :href    (routes/url :shopping-bag)}
-                   ;(dom/span (css/add-class ["icon icon-shopping-bag"]))
-                   (icons/shopping-bag)
-                   (when (< 0 (count (:user.cart/items cart)))
-                     (dom/span (css/add-class :badge) (count (:user.cart/items cart)))))))))))
+          (when (some? auth)
+            (menu/item
+              (css/add-class :shopping-bag)
+              (dom/a {:classes ["shopping-bag-icon"]
+                      :href    (routes/url :shopping-bag)}
+                     ;(dom/span (css/add-class ["icon icon-shopping-bag"]))
+                     (icons/shopping-bag)
+                     (when (< 0 (count (:user.cart/items cart)))
+                       (dom/span (css/add-class :badge) (count (:user.cart/items cart))))))))))))
 
 (defui LoadingBar
   static om/IQuery

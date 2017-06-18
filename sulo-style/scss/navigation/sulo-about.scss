@@ -1,13 +1,33 @@
 #sulo-about {
+	p .follow-button {
+		// height: 100%;
+		// min-height: 1.5rem;
+		// min-width: 1.5rem;
+		img {
+			width: 1.5rem;
+			height: 1.5rem;
+		}
+		margin-right: 1rem;
+		&:last-child {
+			margin-right: 0;
+		}
+		// height: 1.2rem;
+	}
 	.page-content {
-		padding-top: 1rem;
+		padding: $global-padding 0;
 	}
 	.photo-container {
 		max-width: 15rem;
 		margin: $global-margin auto;
+		// .circle {
+			border: none;
+		// }
 	}
 	.section-title {
 		margin-bottom: $global-margin;
+		h2 {
+			margin-top: 2rem;
+		}
 	}
 
 	h3 {
@@ -15,5 +35,9 @@
 		font-weight: bold;
 		letter-spacing: 1px;
 		font-size: 90%;
+	}
+	.column {
+		padding: $global-padding;
+		margin-bottom: $global-margin;
 	}
 }

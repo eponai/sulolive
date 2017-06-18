@@ -69,7 +69,7 @@ $foundation-palette: (
   facebook: #3b5998,
   twitter: #1a8bf0,
   sulo: #8CC3C6,
-  sulo-dark: darken(#8CC3C6, 20%),
+  sulo-dark: #4e9a9e,//darken(#8CC3C6, 20%),
 );
 $body-background: $white;//#F0EDE3;
 $body-font-color: #2E2A31;
@@ -96,6 +96,7 @@ $global-border-secondary: 1px solid rgba($light-gray, 0.5);
 
 $breakpoints: (
   small: 0,
+  medium-small: 460,
   medium: 750px,//640px,
   large: 1024px,
   xlarge: 1200px,
@@ -126,7 +127,7 @@ $header-font-style: normal;
 $font-family-monospace: Consolas, 'Liberation Mono', Courier, monospace;
 $header-sizes: (
   small: (
-    'h1': 24,
+    'h1': 22,
     'h2': 20,
     'h3': 19,
     'h4': 18,
