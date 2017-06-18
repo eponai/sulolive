@@ -13,7 +13,8 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.common :as common]
-    [eponai.web.ui.button :as button]))
+    [eponai.web.ui.button :as button]
+    [eponai.common.shared :as shared]))
 
 (def stripe-card-element "sulo-card-element")
 
@@ -109,7 +110,7 @@
   #?(:cljs
      (save-payment
        [this]
-       (let [{:keys [card stripe selected-source]} (om/get-state this)
+       (let [{:keys [card selected-source]} (om/get-state this)
              {:keys [on-change on-error]} (om/get-computed this)
              on-success (fn [token]
                           (when on-change
@@ -119,8 +120,10 @@
                         (when on-error
                           (on-error error-message)))]
          (if (= selected-source :new-card)
-           (stripe/source-card stripe card {:on-success on-success
-                                            :on-error   on-error})
+           (stripe/source-card (shared/by-key this :shared/stripe)
+                               card
+                               {:on-success on-success
+                                :on-error   on-error})
 
            (when on-change
              (on-change {:source selected-source}))))))
@@ -129,9 +132,8 @@
     (debug "Stripe component did mount")
     #?(:cljs
        (when (utils/element-by-id stripe-card-element)
-         (let [stripe (stripe/instance)
-               card (stripe/card-element stripe (str "#" stripe-card-element))]
-           (om/update-state! this assoc :card card :stripe stripe)))))
+         (let [card (stripe/card-element (shared/by-key this :shared/stripe) (str "#" stripe-card-element))]
+           (om/update-state! this assoc :card card)))))
   (initLocalState [this]
     (let [{:keys [default-source]} (om/props this)]
       {:selected-source (or default-source :new-card)}))

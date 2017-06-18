@@ -149,9 +149,10 @@
 (defonce history-atom (atom nil))
 (defonce reconciler-atom (atom nil))
 
-(defn- run [{:keys [auth-lock modules loading-bar]
-             :or   {auth-lock    (auth/auth0-lock)
-                    loading-bar  (loading-bar/loading-bar)}
+(defn- run [{:keys [auth-lock modules loading-bar stripe]
+             :or   {auth-lock   (auth/auth0-lock)
+                    loading-bar (loading-bar/loading-bar)
+                    stripe      ::shared/prod}
              :as   run-options}]
   (let [modules (or modules (modules/advanced-compilation-modules router/routes))
         init? (atom false)
@@ -190,6 +191,7 @@
                                        :ui->props                  (client.utils/cached-ui->props-fn parser)
                                        :send-fn                    send-fn
                                        :remotes                    (:order remote-config)
+                                       :shared/stripe              stripe
                                        :shared/scroll-helper       scroll-helper
                                        :shared/loading-bar         loading-bar
                                        :shared/modules             modules
@@ -226,6 +228,7 @@
   (run (merge {
                :auth-lock (auth/fake-lock)
                :modules   (modules/dev-modules router/routes)
+               :stripe    ::shared/dev
                }
               deps)))
 
