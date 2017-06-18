@@ -11,7 +11,7 @@
    :social/facebook  "/assets/img/icons/FB-f-Logo__blue_1024.png"
    :social/twitter   "/assets/img/icons/Twitter_Logo_White_On_Blue.png"
    :social/pinterest "/assets/img/icons/Pinterest_badgeRGB.png"
-   :social/instagram "/assets/img/icons/IG_Glyph_fill.png"})
+   :social/instagram "/assets/img/icons/IG_Glyph_Fill.png"})
 
 (def socials
   {:social/email     "Email"
