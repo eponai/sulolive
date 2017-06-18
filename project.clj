@@ -51,11 +51,13 @@
                                     eponai.common.ui.help.faq
                                     eponai.common.ui.help.first-stream
                                     eponai.common.ui.help.mobile-stream
-                                    eponai.common.ui.help.quality]}
+                                    eponai.common.ui.help.quality
+                                    eponai.web.ui.help.shipping-rules]}
         :user            {:entries    [eponai.common.ui.user
                                        eponai.common.ui.user.order-list
                                        eponai.common.ui.user.order-receipt]
                           :depends-on [:photo-uploader]}
+        :about           {:entries [eponai.web.ui.about-sulo]}
         :user-settings   {:entries    [eponai.web.ui.user.settings]
                           :depends-on [:photo-uploader]}
         :store-dashboard {:depends-on [:stream+chat
@@ -68,6 +70,13 @@
                                        eponai.common.ui.store.stream-settings
                                        eponai.web.ui.store.edit-store
                                        eponai.web.ui.store.business.verify
+                                       eponai.web.ui.store.business.specs
+                                       eponai.web.ui.store.finances.settings
+                                       eponai.web.ui.store.business
+                                       eponai.web.ui.store.edit-store
+                                       eponai.web.ui.store.finances
+                                       eponai.web.ui.store.home
+                                       eponai.web.ui.store.shipping
                                        cljsjs.react-grid-layout]}})))
 
 (defproject budget "0.1.0-SNAPSHOT"
