@@ -29,6 +29,7 @@
                    :system/chat
                    :system/chat-datomic
                    :system/chat-websocket
+                   :system/client-env
                    :system/cloudinary
                    :system/datomic
                    :system/handler
