@@ -10,6 +10,7 @@
        [eponai.web.utils :as utils])
     #?(:cljs
        [eponai.web.ui.stripe :as stripe])
+    [eponai.common.shared :as shared]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.grid :as grid]
     [om.next :as om :refer [defui]]
@@ -249,7 +250,8 @@
              validation (v/validate :account/activate input-map form-inputs prefix-key)]
 
          (when (nil? validation)
-           (stripe/bank-account {:country        country
+           (stripe/bank-account (shared/by-key this :shared/stripe)
+                                {:country        country
                                  :currency       currency
                                  :routing_number (str transit institution)
                                  :account_number account}
@@ -260,8 +262,8 @@
                                                                               :store-id       (:db/id store)})
                                                                        :query/stripe-account])
                                                (on-close))
-                                 :on-error (fn [error-message]
-                                             (om/update-state! this assoc :stripe-validation error-message))}))
+                                 :on-error   (fn [error-message]
+                                               (om/update-state! this assoc :stripe-validation error-message))}))
          (om/update-state! this assoc :input-validation validation))))
 
   (update-payout-schedule [this interval week-anchor month-anchor]

@@ -20,7 +20,8 @@
     [clojure.string :as string]
     [eponai.common.ui.elements.menu :as menu]
     #?(:cljs
-       [cljs-http.client :as http])))
+       [cljs-http.client :as http])
+    [eponai.common.shared :as shared]))
 
 (def stripe-fields
   {:field.legal-entity.address/line1      "legal_entity.address.line1"
@@ -459,7 +460,8 @@
 
          (when (nil? validation)
            (if (some? (:field/external-account input-map))
-             (stripe/bank-account {:country        (:stripe/country stripe-account)
+             (stripe/bank-account (shared/by-key this :shared/stripe)
+                                  {:country        (:stripe/country stripe-account)
                                    :currency       currency
                                    :routing_number (str transit institution)
                                    :account_number account}

@@ -18,6 +18,7 @@
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.aws-s3 :as s3]
     [eponai.server.external.email :as email]
+    [eponai.server.external.client-env :as client-env]
     [eponai.server.external.request-handler :as request-handler]))
 
 (def system-keys #{:system/aleph
@@ -28,6 +29,7 @@
                    :system/chat
                    :system/chat-datomic
                    :system/chat-websocket
+                   :system/client-env
                    :system/cloudinary
                    :system/datomic
                    :system/handler
@@ -44,7 +46,7 @@
   (when-let [request-handler (:system/handler system)]
     (request-handler/resume-requests request-handler)))
 
-(defn components-without-fakes [{:keys [env] :as config}]
+(defn components-without-fakes [{:keys [env in-aws?] :as config}]
   {:system/aleph          (c/using (aleph/map->Aleph (select-keys config [:handler :port :netty-options]))
                                    {:handler :system/handler})
    :system/cloudinary     (cloudinary/cloudinary
@@ -59,6 +61,8 @@
                              :add-mocked-data? false})
    :system/chat-websocket (c/using (websocket/map->StoreChatWebsocket {})
                                    {:chat :system/chat})
+   :system/client-env     (client-env/map->ClientEnvironment
+                            {:client-env (select-keys env [:stripe-publishable-key])})
    :system/datomic        (datomic/map->Datomic
                             {:db-url           (:db-url env)
                              :provided-conn    (::provided-conn config)
@@ -135,16 +139,31 @@
                                  (select-keys reals real-component-keys))
                           (with-request-handler config)))))
 
+(defn aws-env? [env]
+  (some? (:aws-elb env)))
+
+(defn- with-stripe-publishable-key [env]
+  ;; We should make sure we've set a "real" stripe-publishable key
+  ;; when in production (in aws).
+  ;; Otherwise, just use the test key if we haven't set it already.
+  (if (aws-env? env)
+    (do (assert (contains? env :stripe-publishable-key)
+                (str "Env did not contain :stripe-publishable-key"))
+        env)
+    (update env :stripe-publishable-key
+            (fnil identity "pk_test_VhkTdX6J9LXMyp5nqIqUTemM"))))
+
 (defn prod-system [config]
   {:post [(= (set (keys %)) system-keys)]}
-  (let [config (assoc config :env environ/env
+  (let [config (assoc config :env (-> environ/env (with-stripe-publishable-key))
                              :in-prod? true
-                             :in-aws? (some? (get-in config [:env :aws-elb])))]
+                             :in-aws? (aws-env? environ/env))]
     (real-system config)))
 
 (defn- dev-config [config]
-  (assoc config :env environ/env
+  (assoc config :env (-> environ/env (with-stripe-publishable-key))
                 :in-prod? false
+                :in-aws? false
                 ::disable-ssl true
                 ::disable-anti-forgery true))
 
@@ -155,7 +174,7 @@
                ;:system/stripe
                ;:system/auth0
                ;:system/email
-                :system/mailchimp
+               ;:system/mailchimp
                ))
 
 (defn test-system [config]

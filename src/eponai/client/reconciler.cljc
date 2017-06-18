@@ -44,7 +44,8 @@
                              auth-lock
                              local-storage
                              store-chat-listener
-                             modules]
+                             modules
+                             stripe]
                :or   {conn          (utils/create-conn)
                       local-storage (local-storage/->local-storage)
                       remotes       (remote-order)
@@ -57,7 +58,8 @@
                                          :remotes    remotes
                                          :send       send-fn
                                          :merge      merge
-                                         :shared     {:shared/scroll-helper       scroll-helper
+                                         :shared     {:shared/stripe              stripe
+                                                      :shared/scroll-helper       scroll-helper
                                                       :shared/loading-bar         loading-bar
                                                       :shared/modules             modules
                                                       :shared/browser-history     browser-history

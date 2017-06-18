@@ -12,6 +12,7 @@
     [eponai.server.external.wowza :as wowza]
     [eponai.server.external.chat :as chat]
     [eponai.server.external.product-search :as product-search]
+    [eponai.server.external.client-env :as client-env]
     [eponai.server.api.store :as store]
     [eponai.common.api.products :as products]
     [eponai.server.api.user :as user]
@@ -393,3 +394,9 @@
   {:value (if-not db-history
             (db/db (:search-conn (:system/product-search system)))
             (product-search/changes-since db-history :store.item/name))})
+
+(defread query/client-env
+  [{:keys [db-history system]} _ _]
+  {:auth ::auth/public}
+  {:value (when-not db-history
+            (client-env/env-map (:system/client-env system)))})
