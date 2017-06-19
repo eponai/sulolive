@@ -172,8 +172,8 @@
                                            :order.item/amount      (bigdec shipping-fee)
                                            :order.item/title       (:title shipping-rate)
                                            :order.item/description (:description shipping-rate)})
-        tax-item (cf/remove-nil-keys {:order.item/type        :order.item.type/tax
-                                      :order.item/amount      (bigdec tax-amount)
+        tax-item (cf/remove-nil-keys {:order.item/type   :order.item.type/tax
+                                      :order.item/amount (bigdec tax-amount)
                                       ;:order.item/title       "Tax"
                                       ;:order.item/description (:description shipping-rate)
                                       })
@@ -260,3 +260,20 @@
   (let [{:keys [stripe/id stripe/secret] :as s} (stripe/pull-stripe (db/db state) store-id)]
     (when (some? id)
       (assoc (stripe/get-balance (:system/stripe system) id secret) :db/id (:db/id s)))))
+
+(defn address [{:keys [state system]} store-id]
+  (let [address-keys [:shipping.address/street
+                      :shipping.address/postal
+                      :shipping.address/locality
+                      :shipping.address/region
+                      :shipping.address/country]
+        store (db/pull (db/db state) [{:store/shipping [{:shipping/address address-keys}]}
+                                      {:store/stripe [:stripe/id]}] store-id)
+        store-address (get-in store [:store/shipping :shipping/address])]
+    (if (some? store-address)
+      store-address
+      (let [stripe-id (get-in store [:store/stripe :stripe/id])
+            stripe-account (stripe/get-account (:system/stripe system) stripe-id)
+            stripe-address (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/address])
+            {:stripe.legal-entity.address/keys [line1 city state postal country]} stripe-address]
+        (zipmap address-keys [line1 postal city state {:country/code country}])))))

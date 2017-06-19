@@ -108,13 +108,22 @@
            (.place-order this payment)))))
 
   (save-shipping [this shipping]
-    (om/update-state! this merge (.state-from-shipping this (om/props this) shipping)))
+    (let [new-state (.state-from-shipping this (om/props this) shipping)
+          {:keys [shipping-fee subtotal]} new-state]
+      (when-not (:shipping/unavailable? new-state)
+        (om/transact! (om/get-reconciler this) [(list {:query/taxes
+                                                       [:taxes/id :taxes/rate :taxes/freight-taxable?]}
+                                                      {:destination shipping
+                                                       :subtotal    subtotal
+                                                       :shipping    shipping-fee})]))
+      (om/update-state! this merge new-state)))
 
   (payment-amounts-from-shipping-rate [_ props rate]
     (let [{:query/keys [taxes checkout]} props
           {tax-rate    :taxes/rate
            :taxes/keys [freight-taxable?]} taxes
-          shipping-fee (compute-shipping-fee rate checkout)
+          tax-rate (or tax-rate 0)
+          shipping-fee (if rate (compute-shipping-fee rate checkout) 0)
           subtotal (review/compute-item-price checkout)
           tax-amount (if freight-taxable?
                        (* tax-rate (+ subtotal shipping-fee))
@@ -133,11 +142,13 @@
           available-rates (map #(assoc % :shipping.rate/total (compute-shipping-fee % checkout)) (:shipping.rule/rates rule-for-country))
           new-selected-rate (first (sort-by :shipping.rate/total available-rates))]
       (debug "State from shipping: " shipping)
+      (debug "State from props: " props)
       (merge
         {:checkout/shipping        shipping
          :open-section             (if (and (some? shipping) (not-empty available-rates)) :payment :shipping)
          :shipping/available-rates available-rates
-         :shipping/selected-rate   new-selected-rate}
+         :shipping/selected-rate   new-selected-rate
+         :shipping/unavailable?    (and (some? shipping) (empty? available-rates))}
         (.payment-amounts-from-shipping-rate this props new-selected-rate))))
 
   (select-shipping-rate [this rate]
@@ -146,29 +157,44 @@
                                  (merge (.payment-amounts-from-shipping-rate this (om/props this) rate))
                                  (assoc :shipping/selected-rate rate)))))
 
-  (local-state-from-props [this props]
-    (let [{:query/keys [stripe-customer]} props]
-      (if (some? (:stripe/shipping stripe-customer))
-        (let [address (:stripe.shipping/address (:stripe/shipping stripe-customer))
-              formatted {:shipping/name    (:stripe.shipping/name (:stripe/shipping stripe-customer))
-                         :shipping/address {:shipping.address/street   (:stripe.shipping.address/street address)
-                                            :shipping.address/street2  (:stripe.shipping.address/street2 address)
-                                            :shipping.address/locality (:stripe.shipping.address/city address)
-                                            :shipping.address/country  {:country/code (:stripe.shipping.address/country address)}
-                                            :shipping.address/region   (:stripe.shipping.address/state address)
-                                            :shipping.address/postal   (:stripe.shipping.address/postal address)}}]
-          (.state-from-shipping this props formatted))
-        (.state-from-shipping this props nil))))
+  ;(local-state-from-props [this props]
+  ;  (let [{:query/keys [stripe-customer]} props]
+  ;    (.state-from-shipping this props (:stripe/shipping stripe-customer))
+  ;    ;(if (some? (:stripe/shipping stripe-customer))
+  ;    ;  (let [address (:shipping/address (:stripe/shipping stripe-customer))
+  ;    ;        ;formatted {:shipping/name    (:stripe.shipping/name (:stripe/shipping stripe-customer))
+  ;    ;        ;           :shipping/address {:shipping.address/street   (:shipping.address/street address)
+  ;    ;        ;                              :shipping.address/street2  (:shipping.address/street2 address)
+  ;    ;        ;                              :shipping.address/locality (:shipping.address/locality address)
+  ;    ;        ;                              :shipping.address/country  {:country/code (:shipping.address/country address)}
+  ;    ;        ;                              :shipping.address/region   (:shipping.address/region address)
+  ;    ;        ;                              :shipping.address/postal   (:shipping.address/postal address)}}
+  ;    ;        ]
+  ;    ;    (.state-from-shipping this props formatted))
+  ;    ;  (.payment-amounts-from-shipping-rate this props nil))
+  ;    ))
 
   ;; React lifecycle
   (initLocalState [this]
-    (merge {:checkout/payment nil}
-           (.local-state-from-props this (om/props this))))
+    (let [{:query/keys [stripe-customer]} (om/props this)]
+      (merge {:checkout/payment nil}
+             (.state-from-shipping this (om/props this) (:stripe/shipping stripe-customer)))))
 
   (componentWillReceiveProps [this next-props]
-    (when-not (= (:query/stripe-customer next-props)
-                 (:query/stripe-customer (om/props this)))
-      (om/update-state! this merge (.local-state-from-props this next-props))))
+    (let [updated-shipping? (not= (:query/stripe-customer next-props)
+                                  (:query/stripe-customer (om/props this)))
+          updated-taxes? (not= (:query/taxes next-props)
+                               (:query/taxes (om/props this)))]
+      (when (or updated-taxes? updated-shipping?)
+        (let [shipping (if updated-shipping?
+                         (get-in next-props [:query/stripe-customer :stripe/shipping])
+                         (:checkout/shipping (om/get-state this)))]
+          (om/update-state! this merge (.state-from-shipping this next-props shipping)))))
+
+    ;(not= (:query/taxes next-props)
+    ;      (:query/taxes (om/props this)))
+    ;(om/update-state! this merge (.local-state-from-props this next-props))
+    )
 
   (componentDidUpdate [this _ _]
 
@@ -218,6 +244,7 @@
            :keys          [open-section error-message subtotal shipping-fee tax-amount grandtotal]
            :shipping/keys [available-rates selected-rate]} (om/get-state this)]
       (debug "Checkout props: " (om/props this))
+      (debug "Checout state" (om/get-state this))
 
       (common/page-container
         {:navbar navbar :id "sulo-checkout"}
@@ -253,7 +280,7 @@
                                                     {:on-change #(.save-shipping this %)
                                                      ;:on-country-change #(.save-shipping this {:shipping/address {:shipping.address/country %}})
                                                      :on-open   #(om/update-state! this assoc :open-section :shipping)}))
-              (when (and (some? shipping) (empty? available-rates))
+              (when (:shipping/unavailable? (om/get-state this)) ;(and (some? shipping) (empty? available-rates))
                 (let [store (:store/_items (:store.item/_skus (first checkout)))]
                   (callout/callout-small
                     (->> (css/add-class :warning)

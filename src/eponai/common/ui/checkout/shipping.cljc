@@ -38,6 +38,7 @@
 (s/def :shipping/address (s/keys :req [:shipping.address/street
                                        :shipping.address/postal
                                        :shipping.address/locality]
+
                                  :opt [:shipping.address/street2
                                        :shipping.address/region]))
 (s/def ::shipping (s/keys :req [:shipping/address
@@ -58,15 +59,15 @@
                                         ^js/google.maps.places.Autocomplete autocomplete autocomplete]
                                     (.setBounds autocomplete (.getBounds circle))))))))))
 
-(defn validate
-  [spec m & [prefix]]
-  (when-let [err (s/explain-data spec m)]
-    (let [problems (::s/problems err)
-          invalid-paths (map (fn [p]
-                               (str prefix (some #(get form-inputs %) p)))
-                             (map :path problems))]
-      {:explain-data  err
-       :invalid-paths invalid-paths})))
+;(defn validate
+;  [spec m & [prefix]]
+;  (when-let [err (s/explain-data spec m)]
+;    (let [problems (::s/problems err)
+;          invalid-paths (map (fn [p]
+;                               (str prefix (some #(get form-inputs %) p)))
+;                             (map :path problems))]
+;      {:explain-data  err
+;       :invalid-paths invalid-paths})))
 
 (defn google-place->shipping [place]
   (let [long-val (fn [k & [d]] (get-in place [k :long] d))
@@ -76,7 +77,7 @@
      :shipping.address/postal   (long-val :postal_code)
      :shipping.address/locality (long-val :locality)
      :shipping.address/region   (short-val :administrative_area_level_1)
-     :shipping.address/country  (short-val :country)}))
+     :shipping.address/country  {:country/code (short-val :country)}}))
 
 (defn prefill-address-form [shipping]
   #?(:cljs
@@ -251,8 +252,8 @@
                                           :shipping.address/country  {:country/code (web-utils/input-value-or-nil-by-id country)}
                                           :shipping.address/region   (web-utils/input-value-or-nil-by-id region)
                                           :shipping.address/postal   (web-utils/input-value-or-nil-by-id postal)}}
-             validation (validate ::shipping shipping)]
-         (debug "Validation: " validate)
+             validation (validate/validate ::shipping shipping form-inputs)]
+         (debug "Validation: " validation)
          (when (nil? validation)
            (when on-change
              (on-change shipping)))

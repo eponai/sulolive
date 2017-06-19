@@ -62,17 +62,19 @@
                                                 '?u (:user-id auth)}})})
 
 (defread query/taxes
-  [{:keys [db db-history query auth system]} _ {:keys [store-id]}]
+  [{:keys [db db-history query auth system state] :as env} _ {:keys [destination store-id subtotal shipping]}]
   {:auth ::auth/any-user}
   {:value (do
             (debug "Query/taxes")
-            (taxjar/calculate (:system/taxjar system) {:store-id     store-id
-                                                       :to_country   "CA"
-                                                       :to_state     "BC"
-                                                       :from_country "CA"
-                                                       :from_state   "BC"
-                                                       :amount       300
-                                                       :shipping     5}))})
+            (when-let [destination-address (:shipping/address destination)]
+              (let [taxes (taxjar/calculate (:system/taxjar system)
+                                            store-id
+                                            {:destination-address destination-address
+                                             :source-address      (store/address env store-id)
+                                             :amount              subtotal
+                                             :shipping            shipping})]
+                (debug "Got taxes: " taxes)
+                taxes)))})
 
 (defread query/store
   [{:keys [db db-history query]} _ {:keys [store-id]}]
