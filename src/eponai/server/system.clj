@@ -175,11 +175,11 @@
   {:post [(= (set (keys %)) system-keys)]}
   (fake-system (dev-config config)
                ;; Put keys under here to use the real implementation
-               :system/stripe
+               ;:system/stripe
                ;:system/auth0
                ;:system/email
                ;:system/mailchimp
-               :system/taxjar
+               ;:system/taxjar
                ))
 
 (defn test-system [config]

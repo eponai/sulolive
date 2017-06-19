@@ -175,7 +175,7 @@
                   {:id           (:shipping.address/country form-inputs)
                    :name         "ship-country"
                    :autoComplete "shipping country"
-                   :defaultValue (:shipping.address/country address)}
+                   :defaultValue (:country/code (:shipping.address/country address))}
                   ;input-validation
                   (map (fn [c]
                          (dom/option {:value (:country/code c)} (:country/name c)))
@@ -512,12 +512,13 @@
                       (dom/div
                         (css/add-classes [:shipping :default-shipping])
                         ;(dom/div {:classes ["icon" (get payment-logos brand "icon-cc-unknown")]})
-                        (dom/p nil
-                               (dom/span nil name)
-                               (dom/br nil)
-                               (dom/small nil (str street ", " locality " " postal))
-                               (dom/br nil)
-                               (dom/small nil (string/join ", " [region (:country/code country)])))
+                        (common/render-shipping shipping nil)
+                        ;(dom/p nil
+                        ;       (dom/span nil name)
+                        ;       (dom/br nil)
+                        ;       (dom/small nil (str street ", " locality " " postal))
+                        ;       (dom/br nil)
+                        ;       (dom/small nil (string/join ", " [region (:country/code country)])))
                         ))
                     (dom/p nil (dom/small nil (dom/i nil "No saved address")))
                     )
