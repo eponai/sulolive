@@ -1,4 +1,4 @@
-(ns eponai.server.logging
+(ns eponai.server.log
   (:require
     [taoensso.timbre :as timbre]
     [clojure.core.async :as async]
@@ -38,7 +38,7 @@
    (let [capacity 100
          buf (async/sliding-buffer capacity)
          msg-chan (async/chan buf)]
-     (take threads (repeatedly #(logging-thread logger msg-chan)))
+     (doall (take threads (repeatedly #(logging-thread logger msg-chan))))
      (reify
        ILogger
        (log [_ msg]
@@ -59,13 +59,13 @@
                :data data
                :millis (System/currentTimeMillis)}))
 
-(defn info [logger id data]
+(defn info! [logger id data]
   (log! :info logger id data))
 
-(defn warn [logger id data]
+(defn warn! [logger id data]
   (log! :warn logger id data))
 
-(defn error [logger id data]
+(defn error! [logger id data]
   (log! :error logger id data))
 
 ;; ------ Loggers
@@ -73,4 +73,4 @@
 (defrecord TimbreLogger []
   ILogger
   (log [this msg]
-    (timbre/log (:level msg) (:id msg) " " (dissoc msg :level :id :millis))))
+    (timbre/log (:level msg) (:id msg) " " (:data msg))))

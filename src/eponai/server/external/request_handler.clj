@@ -8,7 +8,7 @@
     [eponai.server.middleware :as m]
     [eponai.common.parser :as parser]
     [eponai.server.routes :as server-routes]
-    [eponai.server.logging :as logging]
+    [eponai.server.log :as log]
     [medley.core :as medley]))
 
 (defn to-queued-request
@@ -49,7 +49,7 @@
                                        (swap! suspended-state update :queued-requests conj queued-request))
                                      deferred-response)
                                    (handler request))))
-            logger (logging/async-logger (logging/->TimbreLogger))
+            logger (log/async-logger (log/->TimbreLogger))
             handler (-> (compojure/routes server-routes/site-routes)
                         (cond-> (not in-production?) (m/wrap-node-modules))
                         m/wrap-post-middlewares
