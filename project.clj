@@ -381,6 +381,7 @@
                                                                 ;; :parallel-build  true
                                                                 ;; :pseudo-names true
                                                                 ;; :pretty-print true
+                                                                :elide-asserts   true
                                                                 :verbose         true
                                                                 :compiler-stats  true
                                                                 :npm-deps        ~npm-deps
