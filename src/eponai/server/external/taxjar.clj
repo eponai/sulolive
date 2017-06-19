@@ -37,11 +37,12 @@
             response {:tax {:order_total_amount total-amount
                             :shipping           5.0
                             :taxable_amount     total-amount
-                            :amount_to_collect  36.6
+                            :amount_to_collect  (* 0.12 total-amount)
                             :rate               0.12
                             :has_nexus          true
                             :freight_taxable    true
                             :tax_source         "origin"}}]
-        {:taxes/id           store-id
-         :taxes/rate         (get-in response [:tax :rate])
-         :taxes/total-amount (get-in response [:tax :order_total_amount])}))))
+        {:taxes/id               store-id
+         :taxes/rate             (get-in response [:tax :rate])
+         :taxes/total-amount     (get-in response [:tax :order_total_amount])
+         :taxes/freight-taxable? (get-in response [:tax :freight_taxable])}))))

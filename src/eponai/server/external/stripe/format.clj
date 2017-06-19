@@ -129,10 +129,13 @@
        :stripe/default-source (:default_source customer)
        :stripe/shipping       (shipping* (:shipping customer))})))
 
+(defn stripe->price [p]
+  (bigdec (with-precision 10 (/ p 100))))
+
 (defn stripe->balance [b id]
   (letfn [(balance* [a]
             {:stripe.balance/currency (:currency a)
-             :stripe.balance/amount   (bigdec (with-precision 10 (/ (:amount a) 100)))})]
+             :stripe.balance/amount   (stripe->price (:amount a))})]
     (f/remove-nil-keys
       {:stripe/id      id
        :stripe/balance {:stripe.balance/available (map balance* (:available b))

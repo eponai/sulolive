@@ -57,7 +57,9 @@
                                                                             ;:store.profile/shipping-fee
                                                                             {:store.profile/photo [:photo/id]}]}]}]}
                        ]}
-     :query/taxes
+     {:query/taxes [:taxes/id
+                    :taxes/rate
+                    :taxes/freight-taxable?]}
      {:query/countries [:country/code :country/name]}
      {:query/stripe-customer [:stripe/id
                               :stripe/sources
@@ -74,8 +76,9 @@
     #?(:cljs
        (let [{:query/keys [current-route checkout]} (om/props this)
              {:checkout/keys [shipping]
-              :shipping/keys [selected-rate]} (om/get-state this)
-             shipping-fee (compute-shipping-fee selected-rate checkout)
+              :shipping/keys [selected-rate]
+              :keys          [shipping-fee grandtotal tax-amount subtotal]} (om/get-state this)
+             ;shipping-fee (compute-shipping-fee selected-rate checkout)
              ;shipping-fee (get-in (first checkout) [:store.item/_skus :store/_items :store/profile :store.profile/shipping-fee] 0)
              {:keys [source]} payment
              {:keys [route-params]} current-route
@@ -86,10 +89,12 @@
                                                                      :source        source
                                                                      :shipping      shipping
                                                                      :items         items
+                                                                     :tax-amount    tax-amount
+                                                                     :grandtotal    grandtotal
                                                                      :shipping-rate {:amount      shipping-fee
                                                                                      :title       (:shipping.rate/title selected-rate)
                                                                                      :description (:shipping.rate/info selected-rate)}
-                                                                     :subtotal      (review/compute-item-price items)}
+                                                                     :subtotal      subtotal}
                                                           :store-id (c/parse-long store-id)})]))
          (om/update-state! this assoc :loading/message "Placing your order..."))))
   (save-payment [this]
@@ -105,19 +110,41 @@
   (save-shipping [this shipping]
     (om/update-state! this merge (.state-from-shipping this (om/props this) shipping)))
 
-  (state-from-shipping [_ props shipping]
+  (payment-amounts-from-shipping-rate [_ props rate]
+    (let [{:query/keys [taxes checkout]} props
+          {tax-rate    :taxes/rate
+           :taxes/keys [freight-taxable?]} taxes
+          shipping-fee (compute-shipping-fee rate checkout)
+          subtotal (review/compute-item-price checkout)
+          tax-amount (if freight-taxable?
+                       (* tax-rate (+ subtotal shipping-fee))
+                       (* tax-rate subtotal))]
+      {:subtotal     subtotal
+       :shipping-fee shipping-fee
+       :tax-amount   tax-amount
+       :grandtotal   (+ subtotal shipping-fee tax-amount)}))
+
+  (state-from-shipping [this props shipping]
     (let [{country-code :country/code} (get-in shipping [:shipping/address :shipping.address/country])
-          {:query/keys [checkout]} props
+          {:query/keys [checkout taxes]} props
           store (:store/_items (:store.item/_skus (first checkout)))
           shipping-rules (get-in store [:store/shipping :shipping/rules])
           rule-for-country (some (fn [r] (some #(when (= (:country/code %) country-code) r) (:shipping.rule/destinations r))) shipping-rules)
           available-rates (map #(assoc % :shipping.rate/total (compute-shipping-fee % checkout)) (:shipping.rule/rates rule-for-country))
           new-selected-rate (first (sort-by :shipping.rate/total available-rates))]
       (debug "State from shipping: " shipping)
-      {:checkout/shipping        shipping
-       :open-section             (if (and (some? shipping) (not-empty available-rates)) :payment :shipping)
-       :shipping/available-rates available-rates
-       :shipping/selected-rate   new-selected-rate}))
+      (merge
+        {:checkout/shipping        shipping
+         :open-section             (if (and (some? shipping) (not-empty available-rates)) :payment :shipping)
+         :shipping/available-rates available-rates
+         :shipping/selected-rate   new-selected-rate}
+        (.payment-amounts-from-shipping-rate this props new-selected-rate))))
+
+  (select-shipping-rate [this rate]
+    (om/update-state! this (fn [s]
+                             (-> s
+                                 (merge (.payment-amounts-from-shipping-rate this (om/props this) rate))
+                                 (assoc :shipping/selected-rate rate)))))
 
   (local-state-from-props [this props]
     (let [{:query/keys [stripe-customer]} props]
@@ -187,43 +214,45 @@
   (render [this]
     (let [{:proxy/keys [navbar]
            :query/keys [checkout current-route stripe-customer countries]} (om/props this)
-          {:checkout/keys [shipping payment pending-payment]
-           :keys          [open-section error-message]
-           :shipping/keys [available-rates selected-rate]} (om/get-state this)
-          {:keys [route]} current-route
-          checkout-resp (msg/last-message this 'store/create-order)
-          customer-resp (msg/last-message this 'stripe/update-customer)
-          subtotal (review/compute-item-price checkout)
-          shipping-fee (compute-shipping-fee selected-rate checkout)
-          grandtotal (+ subtotal shipping-fee)]
+          {:checkout/keys [shipping]
+           :keys          [open-section error-message subtotal shipping-fee tax-amount grandtotal]
+           :shipping/keys [available-rates selected-rate]} (om/get-state this)]
+      (debug "Checkout props: " (om/props this))
 
       (common/page-container
         {:navbar navbar :id "sulo-checkout"}
         (when-let [loading-message (:loading/message (om/get-state this))]
           (common/loading-spinner nil (dom/span nil loading-message)))
 
+        (dom/h1 (css/show-for-sr) "Checkout")
+
         (grid/row
           (css/align :center)
+
           (grid/column
             (grid/column-size {:small 12 :medium 8 :large 8})
             (dom/div
               nil
-              (review/->CheckoutReview {:items    checkout
-                                        :subtotal subtotal
-                                        :shipping shipping-fee}))
+              (dom/h2 (css/show-for-sr) "Review order")
+              (review/->CheckoutReview {:items      checkout
+                                        :subtotal   subtotal
+                                        :shipping   shipping-fee
+                                        :tax-amount tax-amount
+                                        :grandtotal grandtotal}))
 
+            (dom/h2 (css/show-for-sr) "Order info")
             (callout/callout
               nil
               (dom/div
-                (css/add-class :section-title)
-                (dom/h2 nil "1. Ship to"))
+                (css/text-align :center)
+                (dom/h3 nil "1. Ship to"))
               (ship/->CheckoutShipping (om/computed {:collapse? (not= open-section :shipping)
                                                      :shipping  shipping
                                                      :countries countries
-                                                     :store (:store/_items (:store.item/_skus (first checkout)))}
-                                                    {:on-change         #(.save-shipping this %)
+                                                     :store     (:store/_items (:store.item/_skus (first checkout)))}
+                                                    {:on-change #(.save-shipping this %)
                                                      ;:on-country-change #(.save-shipping this {:shipping/address {:shipping.address/country %}})
-                                                     :on-open           #(om/update-state! this assoc :open-section :shipping)}))
+                                                     :on-open   #(om/update-state! this assoc :open-section :shipping)}))
               (when (and (some? shipping) (empty? available-rates))
                 (let [store (:store/_items (:store.item/_skus (first checkout)))]
                   (callout/callout-small
@@ -240,8 +269,8 @@
             (callout/callout
               nil
               (dom/div
-                (css/add-class :section-title)
-                (dom/h2 nil "3. Payment"))
+                (css/text-align :center)
+                (dom/h3 nil "2. Payment & Delivery"))
 
               (dom/div
                 (when (or (not= open-section :payment)
@@ -257,7 +286,7 @@
                              (menu/item
                                (css/add-class :section-list-item)
                                (dom/a
-                                 {:onClick #(om/update-state! this assoc :shipping/selected-rate r)}
+                                 {:onClick #(.select-shipping-rate this r)}
                                  (dom/div
                                    (css/add-class :shipping-info)
                                    (dom/input

@@ -93,9 +93,9 @@
         {:order/keys [id amount currency items store]} order
         {store-name :store.profile/name} (:store/profile store)
 
-        skus (filter #(= :order.item.type/sku (:order.item/type %)) items)
-        tax (some #(when (= :tax (:order.item/type %)) %) items)
-        shipping (some #(when (= :shipping (:order.item/type %)) %) items)
+        ;skus (filter #(= :order.item.type/sku (:order.item/type %)) items)
+        ;tax (some #(when (= :tax (:order.item/type %)) %) items)
+        ;shipping (some #(when (= :shipping (:order.item/type %)) %) items)
         order-created (when-some [created (:order/created-at order)]
                         (date/date->string created "MMMM dd YYYY"))
         grouped-orders (group-by :order.item/type items)
@@ -106,6 +106,7 @@
         total-amount (reduce + 0 (map :order.item/amount items))
         order-status (:order/status order)
         delivery (some #(when (= (:order.item/type %) :order.item.type/shipping) %) (:order/items order))
+        tax-item (some #(when (= (:order.item/type %) :order.item.type/tax) %) (:order/items order))
         sulo-fee (some #(when (= (:order.item/type %) :order.item.type/sulo-fee) %) (:order/items order))]
     (dom/div
       nil
@@ -164,7 +165,7 @@
                                    (:shipping.address/region address)
                                    ))
                        (dom/br nil)
-                       (dom/span nil (:shipping.address/country address))))
+                       (dom/span nil (:country/code (:shipping.address/country address)))))
               (dom/label nil "Shipping option")
               (dom/p nil (dom/span nil (:order.item/title delivery))
                      (dom/br nil)
@@ -264,7 +265,7 @@
                 (grid/column
                   (->> (grid/column-size {:small 4 :medium 3})
                        (css/text-align :right))
-                  (dom/p nil (ui-utils/two-decimal-price 0))))
+                  (dom/p nil (ui-utils/two-decimal-price (:order.item/amount tax-item)))))
               (grid/row
                 nil
                 (grid/column (grid/column-size {:small 4 :medium 6}))

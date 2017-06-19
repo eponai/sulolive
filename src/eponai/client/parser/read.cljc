@@ -211,7 +211,7 @@
   (when-let [store-id (c/parse-long-safe (:store-id route-params))]
     (if target
       {:remote (assoc-in ast [:params :store-id] store-id)}
-      {:value (db/pull-one-with db query {:where   '[[?e :taxes/store ?s]]
+      {:value (db/pull-one-with db query {:where   '[[?e :taxes/id ?s]]
                                           :symbols {'?s store-id}})})))
 
 (defmethod client-read :query/browse-items

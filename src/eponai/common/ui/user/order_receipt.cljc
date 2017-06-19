@@ -125,6 +125,7 @@
           {:store.profile/keys [tagline]
            store-name          :store.profile/name} (:store/profile store)
           delivery (some #(when (= (:order.item/type %) :order.item.type/shipping) %) (:order/items order))
+          tax-item (some #(when (= (:order.item/type %) :order.item.type/tax) %) (:order/items order))
           skus (filter #(= (:order.item/type %) :order.item.type/sku) (:order/items order))]
       (debug "Order receipt:  " order)
       (debug "Order charge:  " order-payment)
@@ -261,7 +262,7 @@
                            (grid/column
                              (->> (grid/column-size {:small 4 :medium 3})
                                   (css/text-align :right))
-                             (dom/p nil (ui-utils/two-decimal-price 0))))))
+                             (dom/p nil (ui-utils/two-decimal-price (:order.item/amount tax-item)))))))
             (grid/row
               (css/add-class :total-price)
               (grid/column (grid/column-size {:small 4 :medium 6}))
