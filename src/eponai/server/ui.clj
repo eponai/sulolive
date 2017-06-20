@@ -16,7 +16,8 @@
     [eponai.server.auth :as auth]
     [eponai.server.ui.root :as root]
     [taoensso.timbre :as timbre :refer [debug]]
-    [eponai.common.ui.router :as router]))
+    [eponai.common.ui.router :as router]
+    [eponai.server.log :as log]))
 
 (defn server-send [server-env reconciler-atom]
   (fn [queries cb]
@@ -73,10 +74,13 @@
 (defn makesite [component]
   (let [->component (om/factory component)]
     (fn [props]
-      (debug "COMPONENT: " (pr-str component))
-      (with-doctype
-        (html/render-html-without-reactid-tags
-          (->component (assoc props ::root/app-html (render-page props))))))))
+      (let [start (System/currentTimeMillis)
+            html (with-doctype
+                   (html/render-html-without-reactid-tags
+                     (->component (assoc props ::root/app-html (render-page props)))))
+            end (System/currentTimeMillis)]
+        (log/info! (:logger props) ::render-html {:event-start start :event-end end :event-millis (- end start)})
+        html))))
 
 (def render-site (makesite root/Root))
 
