@@ -54,7 +54,8 @@
 ;; ------ Logging functions
 
 (defn- log! [level logger id data]
-  {:pre [(and (keyword? id) (some? (namespace id)))
+  {:pre [(and (or (keyword? id) (symbol? id))
+              (some? (namespace id)))
          (map? data)]}
   (log logger {:id id
                :level level

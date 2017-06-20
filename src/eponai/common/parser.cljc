@@ -21,7 +21,8 @@
             [clojure.set :as set]
             [medley.core :as medley]
             [cemerick.url :as url]
-            [eponai.server.log :as log])
+            #?(:clj
+            [eponai.server.log :as log]))
   #?(:clj
      (:import (clojure.lang ExceptionInfo))))
 
@@ -585,7 +586,8 @@
            (update-action
              (read-or-mutate env k p)
              (fn [action]
-               (log-action action))))))))
+               (fn []
+                 (log-action action)))))))))
 
 #?(:clj
    (defn with-server-logger [read-or-mutate]
