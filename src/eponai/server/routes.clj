@@ -45,10 +45,20 @@
                     (db/lookup-entity (db/db conn) [:user/email user-email]))]
     (assoc auth :user-id (:db/id auth-user))))
 
-(defn- context-logger [{::m/keys [logger]} user-id route-map]
+;; Inspired by
+;; https://stackoverflow.com/a/30022208
+(defn- client-ip [request]
+  (if-let [ips (get-in request [:headers "x-forwarded-for"])]
+    (-> ips (clojure.string/split #",") first)
+    (:remote-addr request)))
+
+(defn- context-logger [{::m/keys [logger] :as request} user-id route-map]
   (let [start (System/currentTimeMillis)
-        route (select-keys route-map [:route :route-params :query-params])]
-    (cond-> (log/with logger #(assoc % :context-start start))
+        route (select-keys route-map [:route :route-params :query-params])
+        ip (client-ip request)]
+    (cond-> (log/with logger #(cond-> (assoc % :context-start start)
+                                      (some? ip)
+                                      (assoc :client-ip ip)))
             (some? user-id)
             (log/with #(assoc % :user-id user-id))
             (seq route-map)
