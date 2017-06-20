@@ -6,7 +6,8 @@
             [eponai.client.auth :as auth]
             [om.next :as om]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug]]
-            [eponai.client.chat :as chat]))
+            [eponai.client.chat :as chat]
+            [eponai.client.routes :as routes]))
 
 
 #?(:cljs
@@ -45,6 +46,12 @@
     (-> (remote-fn query)
         (assoc-in [:opts :transit-params :auth :email]
                   (auth/authed-email (db/db conn))))))
+
+(defn with-route [remote-fn conn]
+  (fn [query]
+    (-> (remote-fn query)
+        (assoc-in [:opts :transit-params :route-map]
+                  (routes/current-route (db/db conn))))))
 
 (defn read-basis-t-remote-middleware
   "Given a remote-fn (that describes what, where and how to send a request to a server),

@@ -45,6 +45,15 @@
                     (db/lookup-entity (db/db conn) [:user/email user-email]))]
     (assoc auth :user-id (:db/id auth-user))))
 
+(defn- context-logger [{::m/keys [logger]} user-id route-map]
+  (let [start (System/currentTimeMillis)
+        route (select-keys route-map [:route :route-params :query-params])]
+    (cond-> (log/with logger #(assoc % :context-start start))
+            (some? user-id)
+            (log/with #(assoc % :user-id user-id))
+            (seq route-map)
+            (log/with #(merge % route)))))
+
 (defn request->props [request]
   (let [state (::m/conn request)
         route (:handler request)
@@ -54,17 +63,22 @@
         sharing-objects (social/share-objects {:route-params route-params
                                                :state        state
                                                :route        route
-                                               :system       system})]
-    {:empty-datascript-db (::m/empty-datascript-db request)
-     :state               state
-     :system              system
-     :release?            (release? request)
-     :cljs-build-id       (::m/cljs-build-id request)
-     :route-params        route-params
-     :route               route
-     :query-params        (:params request)
-     :auth                (request->auth request)
-     :social-sharing      sharing-objects}))
+                                               :system       system})
+        props {:empty-datascript-db (::m/empty-datascript-db request)
+               :state               state
+               :system              system
+               :release?            (release? request)
+               :cljs-build-id       (::m/cljs-build-id request)
+               :route-params        route-params
+               :route               route
+               :query-params        (:params request)
+               :auth                (request->auth request)
+               :social-sharing      sharing-objects}
+        logger (context-logger request
+                               (:get-in props [:auth :user-id])
+                               (select-keys props [:route :route-params :query-params]))]
+    (assoc props :logger logger)))
+
 
 ;---------- Auth handlers
 
@@ -73,7 +87,7 @@
 ;----------API Routes
 
 (defn handle-parser-request
-  [{:keys [body cookies] ::m/keys [conn parser-fn system logger] :as request} read-basis-t-graph]
+  [{:keys [body cookies route-map] ::m/keys [conn parser-fn system logger] :as request} read-basis-t-graph]
   (debug "Handling parser request with query:" (:query body))
   (debug "Handling parser request with cookies:" cookies)
   (let [{:keys [user-id] :as auth} (request->auth request)]
@@ -86,10 +100,7 @@
        :params                      (:params request)
        :system                      system
        :locations                   (get-in cookies ["sulo.locality" :value])
-       :logger                      (cond-> logger
-                                            (some? user-id)
-                                            (log/with #(assoc % :user-id user-id
-                                                                :parse-started (System/currentTimeMillis))))}
+       :logger                      (context-logger request user-id route-map)}
       (:query body))))
 
 (defn trace-parser-response-handlers
