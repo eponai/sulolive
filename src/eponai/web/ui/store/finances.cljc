@@ -36,23 +36,19 @@
           (css/add-class :section-title)
           (dom/h1 nil "Finances"))
         (dom/div
-          (->> {:id "store-navbar"}
-               (css/add-class :navbar-container))
-          (dom/nav
-            (->> (css/add-class :navbar)
-                 (css/add-class :top-bar))
-            (menu/horizontal
-              nil
-              (menu/item
-                (when (= route :store-dashboard/finances)
-                  (css/add-class :is-active))
-                (dom/a {:href (routes/url :store-dashboard/finances route-params)}
-                       (dom/span nil "Overview")))
-              (menu/item
-                (when (= route :store-dashboard/finances#settings)
-                  (css/add-class :is-active))
-                (dom/a {:href (routes/url :store-dashboard/finances#settings route-params)}
-                       (dom/span nil "Settings"))))))
+          {:id "store-navbar"}
+          (menu/horizontal
+            nil
+            (menu/item
+              (when (= route :store-dashboard/finances)
+                (css/add-class :is-active))
+              (dom/a {:href (routes/url :store-dashboard/finances route-params)}
+                     (dom/span nil "Overview")))
+            (menu/item
+              (when (= route :store-dashboard/finances#settings)
+                (css/add-class :is-active))
+              (dom/a {:href (routes/url :store-dashboard/finances#settings route-params)}
+                     (dom/span nil "Settings")))))
 
         (cond (= route :store-dashboard/finances)
               [

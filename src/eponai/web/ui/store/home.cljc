@@ -24,6 +24,8 @@
 
         disabled-labels {:fields_needed (dom/p nil (dom/span nil "More information is needed to verify your account. Please ")
                                                (dom/a nil (dom/span nil "provide the required information")) (dom/span nil " to re-enable the account."))}]
+    (debug "Stripe account: " stripe-account)
+    (debug "Notification: " (or is-alert? is-warning? (not-empty fields-needed)))
     (when (or is-alert? is-warning? (not-empty fields-needed))
       (callout/callout
         (cond->> (css/add-class :account-status (css/add-class :notification))
@@ -62,8 +64,7 @@
                       (dom/span nil "If this account continues to process more volume, more information may need to be collected. To prevent disruption in service to this account you can choose to ")
                       (dom/a {:href (routes/url :store-dashboard/business#verify {:store-id store-id})} "provide the information")
                       (dom/span nil " proactively."))])
-            ))))
-    nil))
+            ))))))
 
 (defn check-list-item [done? href & [content]]
   (menu/item
@@ -95,6 +96,7 @@
   (render [this]
     (let [{:query/keys [store store-item-count current-route stripe-account]} (om/props this)
           {:keys [store-id]} (:route-params current-route)
+          {:keys [route route-params]} current-route
           store-item-count (or store-item-count 0)]
       (dom/div
         {:id "sulo-main-dashboard"}
@@ -102,6 +104,20 @@
         (dom/div
           (css/add-class :section-title)
           (dom/h1 nil "Home"))
+
+        ;(dom/div
+        ;  (->> {:id "store-navbar"}
+        ;       (css/add-class :navbar-container))
+        ;  (dom/nav
+        ;    (->> (css/add-class :navbar)
+        ;         (css/add-class :top-bar))
+        ;    (menu/horizontal
+        ;      nil
+        ;      (menu/item
+        ;        (when (= route :store-dashboard)
+        ;          (css/add-class :is-active))
+        ;        (dom/a {:href (routes/url :store-dashboard route-params)}
+        ;               (dom/span nil "Overview"))))))
         (callout/callout-small
           (css/add-class :section-info)
           (grid/row

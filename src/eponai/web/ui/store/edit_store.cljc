@@ -287,18 +287,16 @@
           {:return-policy/keys [on-editor-create on-editor-change] :as state} (om/get-state this)
           {:keys [route route-params]} current-route]
       (dom/div
-        {:id "sulo-store-edit"}
-        (grid/row-column
-          {:id "sulo-store" :classes ["edit-store"]}
-          (dom/div
-            (css/add-class :section-title)
-            (dom/h1 nil "Store info"))
-          (dom/div
-            (->> {:id "store-navbar"}
-                 (css/add-class :navbar-container))
-            (dom/nav
-              (->> (css/add-class :navbar)
-                   (css/add-class :top-bar))
+        {:id "sulo-store" :classes ["edit-store"]}
+        (dom/div
+          (css/add-class :section-title)
+          (dom/h1 nil "Store info"))
+        (grid/row
+          (css/add-class :collapse)
+          (grid/column
+            nil
+            (dom/div
+              {:id "store-navbar"}
               (menu/horizontal
                 nil
                 (menu/item
@@ -310,98 +308,99 @@
                   (when (= route :store-dashboard/profile#options)
                     (css/add-class :is-active))
                   (dom/a {:href (routes/url :store-dashboard/profile#options route-params)}
-                         (dom/span nil "Options"))))))
+                         (dom/span nil "Options")))))))
 
-          (cond (= route :store-dashboard/profile#options)
-                (status/->StoreStatus status)
-                :else
-                [(edit-about-section this)
 
+        (cond (= route :store-dashboard/profile#options)
+              (status/->StoreStatus status)
+              :else
+              [(edit-about-section this)
+
+               (dom/div
+                 (->> (css/add-class :expanded)
+                      (css/add-class :collapse)
+                      (css/add-classes [:store-info-section :store-info-section--policies]))
                  (dom/div
-                   (->> (css/add-class :expanded)
-                        (css/add-class :collapse)
-                        (css/add-classes [:store-info-section :store-info-section--policies]))
+                   nil
                    (dom/div
-                     nil
-                     (dom/div
-                       (css/add-class :section-title)
-                       (dom/h2 nil "Return policy")
-                       (if (:edit/return-policy state)
-                         (dom/div
-                           (css/add-class :action-buttons)
-                           (button/cancel {:onClick #(do
-                                                      (mixpanel/track "Store: Cancel edit return policy.")
-                                                      (om/update-state! this assoc :edit/return-policy false)
-                                                      (quill/set-content (:editor/return-policy state) (f/bytes->str return-policy)))})
-                           (button/save {:onClick #(.save-return-policy this)}))
-                         (button/edit {:onClick #(do
-                                                  (mixpanel/track "Store: Edit return policy.")
-                                                  (om/update-state! this assoc :edit/return-policy true))})))
-                     (when (and (:edit/return-policy state) (:error/return-policy state))
-                       (dom/p (css/add-class :section-error) (dom/small (css/add-class :text-alert) (:error/return-policy state))))
+                     (css/add-class :section-title)
+                     (dom/h2 nil "Return policy")
+                     (if (:edit/return-policy state)
+                       (dom/div
+                         (css/add-class :action-buttons)
+                         (button/cancel {:onClick #(do
+                                                    (mixpanel/track "Store: Cancel edit return policy.")
+                                                    (om/update-state! this assoc :edit/return-policy false)
+                                                    (quill/set-content (:editor/return-policy state) (f/bytes->str return-policy)))})
+                         (button/save {:onClick #(.save-return-policy this)}))
+                       (button/edit {:onClick #(do
+                                                (mixpanel/track "Store: Edit return policy.")
+                                                (om/update-state! this assoc :edit/return-policy true))})))
+                   (when (and (:edit/return-policy state) (:error/return-policy state))
+                     (dom/p (css/add-class :section-error) (dom/small (css/add-class :text-alert) (:error/return-policy state))))
 
-                     (callout/callout-small
-                       nil
-                       (when (:edit/return-policy state)
-                         (dom/div
-                           (css/text-align :right)
-                           (let [remaining (- (:text-max/return-policy state)
-                                              (:text-length/return-policy state))]
-                             (dom/small
-                               (when (neg? remaining)
-                                 (css/add-class :text-alert))
-                               remaining))))
-                       (quill/->QuillEditor (om/computed {:content     (f/bytes->str return-policy)
-                                                          :id          "return-policy"
-                                                          :enable?     (:edit/return-policy state)
-                                                          :placeholder "No return policy"}
-                                                         {:on-editor-created on-editor-create
-                                                          :on-text-change    on-editor-change}))))
+                   (callout/callout-small
+                     nil
+                     (when (:edit/return-policy state)
+                       (dom/div
+                         (css/text-align :right)
+                         (let [remaining (- (:text-max/return-policy state)
+                                            (:text-length/return-policy state))]
+                           (dom/small
+                             (when (neg? remaining)
+                               (css/add-class :text-alert))
+                             remaining))))
+                     (quill/->QuillEditor (om/computed {:content     (f/bytes->str return-policy)
+                                                        :id          "return-policy"
+                                                        :enable?     (:edit/return-policy state)
+                                                        :placeholder "No return policy"}
+                                                       {:on-editor-created on-editor-create
+                                                        :on-text-change    on-editor-change}))))
+                 (dom/div
+                   (when (:edit/shipping-policy state)
+                     (css/add-class :editable))
                    (dom/div
-                     (when (:edit/shipping-policy state)
-                       (css/add-class :editable))
-                     (dom/div
-                       (css/add-class :section-title)
-                       (dom/h2 nil "Shipping policy")
-                       (if (:edit/shipping-policy state)
-                         (dom/div
-                           (css/add-class :action-buttons)
-                           (button/cancel {:onClick #(do
-                                                      (mixpanel/track "Store: Cancel edit shipping policy")
-                                                      (om/update-state! this assoc :edit/shipping-policy false)
-                                                      (quill/set-content (:editor/shipping-policy state) (f/bytes->str shipping-policy)))})
-                           (button/save {:onClick #(do
-                                                    (mixpanel/track "Store: Save shipping policy")
-                                                    (.save-shipping-policy this)
-                                                    )}))
-                         (button/edit {:onClick #(do
-                                                  (mixpanel/track "Store: Edit shipping policy")
-                                                  (om/update-state! this assoc :edit/shipping-policy true))})))
-                     (callout/callout-small
-                       (css/add-classes [:store-info-policy :store-info-policy--shipping])
-                       ;(when (:edit/shipping-policy state)
-                       ;  (dom/p nil
-                       ;         (dom/small nil "Bas"))
-                       ;  (callout/callout-small
-                       ;    (css/add-class :warning)
-                       ;    (dom/small nil
-                       ;               "We're not quite ready with the work on shipping settings, so this section cannot be saved yet. We're working on it, hang in there!"))
-                       ;  )
-                       (if (:edit/shipping-policy state)
-                         (dom/div
-                           (css/text-align :right)
-                           (let [remaining (- (:text-max/shipping-policy state)
-                                              (:text-length/shipping-policy state))]
-                             (dom/small
-                               (when (neg? remaining)
-                                 (css/add-class :text-alert))
-                               remaining))))
-                       (quill/->QuillEditor (om/computed {:content     (f/bytes->str shipping-policy)
-                                                          :id          "shipping-policy"
-                                                          :enable?     (:edit/shipping-policy state)
-                                                          :placeholder "No shipping policy"}
-                                                         {:on-editor-created (:shipping-policy/on-editor-create state)
-                                                          :on-text-change    (:shipping-policy/on-editor-change state)}))
-                       )))]))))))
+                     (css/add-class :section-title)
+                     (dom/h2 nil "Shipping policy")
+                     (if (:edit/shipping-policy state)
+                       (dom/div
+                         (css/add-class :action-buttons)
+                         (button/cancel {:onClick #(do
+                                                    (mixpanel/track "Store: Cancel edit shipping policy")
+                                                    (om/update-state! this assoc :edit/shipping-policy false)
+                                                    (quill/set-content (:editor/shipping-policy state) (f/bytes->str shipping-policy)))})
+                         (button/save {:onClick #(do
+                                                  (mixpanel/track "Store: Save shipping policy")
+                                                  (.save-shipping-policy this)
+                                                  )}))
+                       (button/edit {:onClick #(do
+                                                (mixpanel/track "Store: Edit shipping policy")
+                                                (om/update-state! this assoc :edit/shipping-policy true))})))
+                   (callout/callout-small
+                     (css/add-classes [:store-info-policy :store-info-policy--shipping])
+                     ;(when (:edit/shipping-policy state)
+                     ;  (dom/p nil
+                     ;         (dom/small nil "Bas"))
+                     ;  (callout/callout-small
+                     ;    (css/add-class :warning)
+                     ;    (dom/small nil
+                     ;               "We're not quite ready with the work on shipping settings, so this section cannot be saved yet. We're working on it, hang in there!"))
+                     ;  )
+                     (if (:edit/shipping-policy state)
+                       (dom/div
+                         (css/text-align :right)
+                         (let [remaining (- (:text-max/shipping-policy state)
+                                            (:text-length/shipping-policy state))]
+                           (dom/small
+                             (when (neg? remaining)
+                               (css/add-class :text-alert))
+                             remaining))))
+                     (quill/->QuillEditor (om/computed {:content     (f/bytes->str shipping-policy)
+                                                        :id          "shipping-policy"
+                                                        :enable?     (:edit/shipping-policy state)
+                                                        :placeholder "No shipping policy"}
+                                                       {:on-editor-created (:shipping-policy/on-editor-create state)
+                                                        :on-text-change    (:shipping-policy/on-editor-change state)}))
+                     )))])))))
 
 (def ->EditStore (om/factory EditStore))

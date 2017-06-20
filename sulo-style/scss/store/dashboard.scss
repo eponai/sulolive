@@ -109,37 +109,15 @@
 		}
 	}
 	#store-navbar {
-		$background: map-get($foundation-palette, secondary);
-		background: transparent;
-		border-bottom: none;//$global-border-secondary;
-		a {
-			transition: color .25s ease-in-out;
-			color: $dark-gray;
-			font-size: 0.9rem;
-		}
+		margin-bottom: $global-margin;
+		ul {
+			> li {
+				> a {
+					transition: color .25s ease-in-out;
+					color: $dark-gray;
+				}
 
-		height: $subnav-height;
-
-		.navbar {
-			max-width: $dashboard-max-width;
-			margin: 0 auto;
-			height: 100%;
-		}
-		ul, li {
-			height: 100%;
-			display: flex;
-			align-items: center;
-		}
-		ul:not(.breadcrumbs) {
-			li {
-				border-bottom: 3px solid transparent;
-				margin-right: 1rem;
-				transition: border-color .25s ease-in-out;
-			}
-			li:not(.menu-text) {
 				&:hover, &.is-active {
-					$border-color: map-get($foundation-palette, primary);
-					// border-bottom: 3px solid $border-color;
 					a {
 						color: $black;
 					}
@@ -151,9 +129,6 @@
 					}
 				}
 			}
-		}
-		ul.breadcrumbs {
-			margin: 0 1rem;
 		}
 	}
 

@@ -190,30 +190,30 @@ $sidenav-width: 75%;
 				background: transparent;
 				box-shadow: none;
 				
-				li {
+				> ul > li {
+					padding: 0;
+					label {
+						margin-top: $global-margin;
+					}
+				}
+				ul ul li {
 					transition: background .25s linear;
 					a {
 						color: $body-font-color;
 						font-weight: $global-weight-normal;
 					}
 					&.is-active {
+						background: rgba($light-gray, 0.8);
 						a {
 							font-weight: $global-weight-bold;
 						}
 					}
-				}
-				li.is-active, li:hover {
-					background: rgba($light-gray, 0.8);
-				}
-				li:nth-child(1) {
 					&:hover {
-						background: transparent;
+						background: rgba($light-gray, 0.5);
+
 					}
 				}
-				// > ul > li:last-child {
-				// 	display: none;
-				// }
-				
+			
 				.signout-menu {
 					display: none;
 				}
