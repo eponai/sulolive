@@ -3,7 +3,9 @@
     [taoensso.timbre :as timbre :refer [debug]]
     [clojure.core.async :as async]
     [eponai.common.format.date :as date]
-    [com.stuartsierra.component :as component]))
+    [com.stuartsierra.component :as component]
+    [clojure.string :as string])
+  (:import (java.io StringWriter PrintWriter LineNumberReader StringReader)))
 
 (defprotocol ILogger
   (log [this msg]))
@@ -70,7 +72,52 @@
 
 ;; ------ Loggers
 
+(defrecord NoOpLogger []
+  ILogger
+  (log [_ _]))
+
+(def no-op-logger (delay (timbre/debug "Using NoOpLogger")
+                         (->NoOpLogger)))
+
 (defrecord TimbreLogger []
   ILogger
   (log [this msg]
     (timbre/log (:level msg) (:id msg) " " (:data msg))))
+
+;; ------ Helpers
+
+(defn- clean-ex-data
+  "Returns only first level atomic values from the ex-data map."
+  [data]
+  (when (map? data)
+    (into {}
+          (filter (fn [kv]
+                    (let [v (val kv)]
+                      (or (string? v)
+                          (number? v)
+                          (keyword? v)
+                          (boolean? v)
+                          (symbol? v)
+                          (nil? v)))))
+          data)))
+
+;; Inspired by:
+;; https://github.com/kikonen/log4j-share/blob/master/src/main/java/org/apache/log4j/DefaultThrowableRenderer.java#L56
+(defn- stacktrace-seq [^Throwable x]
+  (let [sw (StringWriter.)
+        pw (PrintWriter. sw)]
+    (try
+      (.printStackTrace x pw)
+      (catch Exception _))
+    (.flush pw)
+
+    (let [reader (LineNumberReader. (StringReader. (.toString sw)))]
+      (->> (repeatedly #(.readLine reader))
+           (take-while some?)))))
+
+(defn render-exception [^Throwable x]
+  (cond-> {:exception-message (.getMessage x)
+           :exception-class   (.getCanonicalName (.getClass x))
+           :stacktrace        (string/join "\newline" (stacktrace-seq x))}
+          (some? (ex-data x))
+          (assoc :exception-data (clean-ex-data (ex-data x)))))

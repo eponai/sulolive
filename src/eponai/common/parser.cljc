@@ -461,10 +461,14 @@
             (on-not-authed (assoc env :auth-roles roles) k p)))))))
 
 (defn wrap-server-read-auth [read]
-  (let [read-authed (wrap-auth server-auth-role read (fn [env k p]
-                                                       (debug "Not authed enough for read: " k
-                                                              " params: " p
-                                                              " auth-roles: " (:auth-roles env))))]
+  (let [read-authed (wrap-auth server-auth-role read
+                               (fn [{:keys [auth logger] :as env} k p]
+                                 #?(:clj
+                                    (when (not-empty auth)
+                                      (log/info! logger k {:response-type :unauthorized})))
+                                 (debug "Not authed enough for read: " k
+                                        " params: " p
+                                        " auth-roles: " (:auth-roles env))))]
     (fn [env k p]
       (if (is-special-key? k)
         (read env k p)
@@ -545,36 +549,32 @@
      "Returns a function that takes a thunk (0-arity function) and logs it"
      [env k p]
      (fn [thunk]
-       ;; When testing, we can decide to not pass a logger.
-       (if (nil? (:logger env))
-         (thunk)
-         (let [start (System/currentTimeMillis)
-               log-then-return
-               (fn [x]
-                 (let [success? (not (instance? Throwable x))
-                       log-fn (if success? log/info! log/error!)
-                       end (System/currentTimeMillis)
-                       read? (keyword? k)]
-                   (log-fn (:logger env)
-                           k
-                           (merge {:success?     success?
-                                   :parse-key    k
-                                   :parse-type   (if read? :read :mutation)
-                                   :params       (select-keys p (log-param-keys env k p))
-                                   :event-millis (- end start)
-                                   :event-start  start
-                                   :event-end    end}
-                                  (when read?
-                                    (cond-> nil
-                                            (coll? x)
-                                            (assoc :return-empty? (empty? x))
-                                            (counted? x)
-                                            (assoc :return-count (count x))))))
-                   x))]
-           (try
-             (log-then-return (thunk))
-             (catch Throwable e
-               (throw (log-then-return e)))))))))
+       (let [start (System/currentTimeMillis)
+             log-then-return
+             (fn [x]
+               (let [error? (instance? Throwable x)
+                     log-fn (if error? log/error! log/info!)
+                     end (System/currentTimeMillis)]
+                 (log-fn (:logger env)
+                         k
+                         (merge {:response-type (if error? :error :success)
+                                 :event-millis  (- end start)
+                                 :event-start   start
+                                 :event-end     end}
+                                (cond
+                                  error?
+                                  {:exception (log/render-exception x)}
+                                  (keyword? k)
+                                  (cond-> nil
+                                          (coll? x)
+                                          (assoc :return-empty? (empty? x))
+                                          (counted? x)
+                                          (assoc :return-count (count x))))))
+                 x))]
+         (try
+           (log-then-return (thunk))
+           (catch Throwable e
+             (throw (log-then-return e))))))))
 
 #?(:clj
    (defn with-server-logging [read-or-mutate]
@@ -586,6 +586,16 @@
              (read-or-mutate env k p)
              (fn [action]
                (log-action action))))))))
+
+#?(:clj
+   (defn with-server-logger [read-or-mutate]
+     (fn [{:keys [logger] :as env} k p]
+       (read-or-mutate
+         (assoc env :logger (log/with (or logger (force log/no-op-logger))
+                                      #(assoc % :parse-key k
+                                                :parse-type (if (keyword? k) :read :mutation)
+                                                :parse-params (select-keys p (log-param-keys env k p)))))
+         k p))))
 
 (defn client-mutate-creation-time [mutate]
   (fn [env k p]
@@ -749,6 +759,7 @@
                          read-returning-basis-t
                          with-server-logging
                          wrap-server-read-auth
+                         with-server-logger
                          (wrap-datomic-db (atom nil))))
 
                    (fn [mutate state]
@@ -759,6 +770,7 @@
                          mutate-without-history-id-param
                          with-server-logging
                          wrap-server-mutate-auth
+                         with-server-logger
                          wrap-datomic-db))))))
 
 (defn test-client-parser
