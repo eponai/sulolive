@@ -109,24 +109,50 @@
 
 ;; ############## Stripe record #################
 
-(defn stripe-endpoint [& path]
-  (string/join "/" (into ["https://api.stripe.com/v1"] (remove nil? path))))
+(def stripe-api-version "2017-06-05")
+(def stripe-api-host "https://api.stripe.com/v1")
+
+(defn- get [api-key & path]
+  (let [url (string/join "/" (into [stripe-api-host] (remove nil? path)))]
+    (json/read-str (:body (client/get url {:basic-auth api-key
+                                           :headers    {"Stripe-Version" stripe-api-version}})) :key-fn keyword)))
+
+(defn- post [api-key params & path]
+  {:pre [(map? params)]}
+  (let [url (string/join "/" (into [stripe-api-host] (remove nil? path)))]
+    (json/read-str (:body (client/post url {:form-params params
+                                           :basic-auth  api-key
+                                           :headers     {"Stripe-Version" stripe-api-version}})) :key-fn keyword)))
+
+(defn- delete [api-key params & path]
+  (let [url (string/join "/" (into [stripe-api-host] (remove nil? path)))]
+    (json/read-str (:body (client/delete url {:basic-auth api-key
+                                              :headers    {"Stripe-Version" stripe-api-version}})) :key-fn keyword)))
 
 (defrecord StripeRecord [api-key]
   IStripeConnect
   (-get-country-spec [_ code]
-    (let [country-spec (json/read-str (:body (client/get (stripe-endpoint "country_specs" code) {:basic-auth api-key})) :key-fn keyword)]
+    (let [country-spec (get api-key "country_specs" code)]
       (debug "STRIPE - fetched country spec: " country-spec)
       (f/stripe->country-spec country-spec)))
 
+  (-create-account [_ {:keys [country]}]
+    (let [params {:country country :type "custom"}
+          account (post api-key params "accounts")
+          keys (:keys account)]
+      (debug "STRIPE - created account: " account)
+      {:id     (:id account)
+       :secret (:secret keys)
+       :publ   (:publishable keys)}))
+
   (-get-account [_ account-id]
-    (let [account (json/read-str (:body (client/get (stripe-endpoint "accounts" account-id) {:basic-auth api-key})) :key-fn keyword)]
+    (let [account (get api-key "accounts" account-id)]
       (debug "STRIPE - fetched account: " account)
       (f/stripe->account account)))
 
   (-update-account [_ account-id params]
     (try+
-      (let [updated (json/read-str (:body (client/post (stripe-endpoint "accounts" account-id) {:basic-auth api-key :form-params params})) :key-fn keyword)]
+      (let [updated (post api-key params "accounts" account-id)]
         (debug "STRIPE - updated account: " updated)
         (f/stripe->account updated))
       (catch [:status 400] r
@@ -136,31 +162,29 @@
           (throw (ex-info (:message error) error))))))
 
   (-get-balance [_ account-id secret]
-    (let [balance (json/read-str (:body (client/get (stripe-endpoint "balance") {:basic-auth secret})) :key-fn keyword)]
+    (let [balance (get api-key "balance")]
       (debug "STRIPE - fetch balance: " balance)
       (f/stripe->balance balance account-id)))
 
   (-create-customer [_ params]
-    (let [customer (json/read-str (:body (client/post (stripe-endpoint "customers") {:basic-auth api-key :form-params params})) :key-fn keyword)]
+    (let [customer (post api-key params "customers")]
       (debug "STRIPE - created new customer: " customer)
       (f/stripe->customer customer)))
 
   (-update-customer [_ customer-id params]
-    (let [customer (json/read-str (:body (client/post (stripe-endpoint "customers" customer-id)
-                                                      {:basic-auth api-key :form-params params :throw-exceptions false})) :key-fn keyword)]
+    (let [customer (post api-key params "customers" customer-id)]
       (debug "STRIPE - updated customer: " customer)
       (f/stripe->customer customer)))
 
   (-get-customer [_ customer-id]
-    (let [customer (json/read-str (:body (client/get (stripe-endpoint "customers" customer-id) {:basic-auth api-key})) :key-fn keyword)]
+    (let [customer (get api-key "customers" customer-id)]
       (debug "STRIPE - fetched customer: " customer)
       (f/stripe->customer customer)))
 
   (-create-card [_ customer-id source]
     (try+
       (let [params {:source source}
-            card (json/read-str (:body (client/post (stripe-endpoint "customers" customer-id "sources")
-                                                    {:basic-auth api-key :form-params params})) :key-fn keyword)]
+            card (post api-key params "customers" customer-id "sources")]
         (debug "STRIPE - created card: " card)
         card)
       (catch [:status 402] r
@@ -171,24 +195,13 @@
 
   (-delete-card [_ customer-id card-id]
     ;https://api.stripe.com/v1/customers/{CUSTOMER_ID}/sources/{CARD_ID}
-    (let [deleted (json/read-str (:body (client/delete (stripe-endpoint "customers" customer-id "sources" card-id)
-                                                       {:basic-auth api-key})) :key-fn keyword)]
+    (let [deleted (delete api-key "customers" customer-id "sources" card-id)]
       (debug "STRIPE - deleted card: " deleted)
       deleted))
 
-  (-create-account [_ {:keys [country]}]
-    (let [params {:country country :managed true}
-          account (json/read-str (:body (client/post (stripe-endpoint "accounts") {:basic-auth api-key :form-params params})) :key-fn keyword)
-          keys (:keys account)]
-      (debug "STRIPE - created account: " account)
-      {:id     (:id account)
-       :secret (:secret keys)
-       :publ   (:publishable keys)}))
-
   (-create-charge [_ params]
     (try+
-      (let [charge (json/read-str (:body (client/post (stripe-endpoint "charges") {:basic-auth  api-key
-                                                                                   :form-params params})) :key-fn keyword)]
+      (let [charge (post api-key params "charges")]
         (debug "STRIPE - created charge: " charge)
         {:charge/status (:status charge)
          :charge/id     (:id charge)
@@ -199,7 +212,7 @@
           (throw (ex-info (:message error) error))))))
 
   (-get-charge [_ charge-id]
-    (let [charge (json/read-str (:body (client/get (stripe-endpoint "charges" charge-id) {:basic-auth api-key})) :key-fn keyword)]
+    (let [charge (get api-key "charges" charge-id)]
       (debug "STRIPE - fetched charge: " charge)
       {:charge/status  (:status charge)
        :charge/id      (:id charge)
@@ -211,7 +224,7 @@
   (-create-refund [_ {:keys [charge]}]
     (let [params {:charge           charge
                   :reverse_transfer true}
-          refund (json/read-str (:body (client/post (stripe-endpoint "refunds") {:basic-auth api-key :form-params params})) :key-fn keyword)]
+          refund (post api-key params "refunds")]
       (debug "STRIPE - created refund: " refund)
       {:refund/status (:status refund)
        :refund/id     (:id refund)})))
@@ -256,9 +269,9 @@
           (f/stripe->account account)))
       (-get-balance [_ account-id secret]
         (f/stripe->balance {:available [{:currency "cad"
-                                         :amount 123434}]
-                            :pending [{:currency "cad"
-                                       :amount 1234}]}
+                                         :amount   123434}]
+                            :pending   [{:currency "cad"
+                                         :amount   1234}]}
                            account-id))
 
       (-update-account [_ account-id params]

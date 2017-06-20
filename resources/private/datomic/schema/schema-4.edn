@@ -34,20 +34,35 @@
   :db/valueType          :db.type/ref
   :db/cardinality        :db.cardinality/one
   :db/isComponent        true
-  :db/doc                "Status of this store (e.g. if disabled or not open)"
+  :db/doc                "Status of this store (e.g. if inactive, closed or open)"
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store.status/type
+  :db/ident              :status/type
   :db/valueType          :db.type/keyword
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Status keyword of the store, (e.g. :store.status.type/inactive."
+  :db/doc                "Status keyword, inactive, active, verified."
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :store.status/reason
+  :db/ident              :status/reason
   :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one
   :db/doc                "Reason for this status, (e.g. if Stripe disabled this etc)."
   :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :stripe/status
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/isComponent        true
+  :db/doc                "Status of this Stripe account (e.g. if disabled, unverified, etc)"
+  :db.install/_attribute :db.part/db}
+
+ ;{:db/id                 #db/id[:db.part/db]
+ ; :db/ident              :stripe/verification
+ ; :db/valueType          :db.type/keyword
+ ; :db/cardinality        :db.cardinality/one
+ ; :db/doc                "Verification of this Stripe account (e.g. if pending, verified, unverified, etc)"
+ ; :db.install/_attribute :db.part/db}
  ]

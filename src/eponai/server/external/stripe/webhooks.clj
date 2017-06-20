@@ -6,12 +6,9 @@
     [eponai.common.database :as db]
     [eponai.common.format :as f]))
 
-(defmulti handle-account-webhook (fn [_ event] (debug "Webhook event: " (:type event)) (:type event)))
-(defmulti handle-connected-webhook (fn [_ event] (:type event)))
+;; ############### SULO ACCOUNT ####################
 
-(defmethod handle-connected-webhook :default
-  [_ event]
-  (debug "No handler implemented for connected webhook event " (:type event) ", doing nothing."))
+(defmulti handle-account-webhook (fn [_ event] (debug "Webhook event: " (:type event)) (:type event)))
 
 (defmethod handle-account-webhook :default
   [_ event]
@@ -51,3 +48,34 @@
   [{:keys [state system] :as env} event]
   ;(debug "Will handle captured succeeded:  " event)
   (send-order-receipt env event))
+
+;; ############## CONNECTED ACCOUNT ################
+
+(defmulti handle-connected-webhook (fn [_ event] (debug "Webhook event: " (:type event)) (:type event)))
+
+(defmethod handle-connected-webhook :default
+  [_ event]
+  (debug "No handler implemented for connected webhook event " (:type event) ", doing nothing."))
+
+(defmethod handle-connected-webhook "account.updated"
+  [{:keys [state system] :as env} event]
+  (let [account (get-in event [:data :object])
+        {:keys [id verification details_submitted tos_acceptance payouts_enabled charges_enabled]} account
+        {:keys [disabled_reason]} verification
+        stripe (db/pull (db/db state) [{:store/_stripe [:store/status {:store/items [:db/id]}
+                                                        {:store/profile [:store.profile/photo]}]}
+                                       :stripe/status] [:stripe/id id])
+        new-status (if (or (some? disabled_reason)
+                           (some false? [details_submitted tos_acceptance payouts_enabled charges_enabled]))
+                     :status.type/inactive
+                     :status.type/active)]
+    (if-let [old-status (:stripe/status stripe)]
+      (when-not (= (:status/type old-status) new-status)
+        (debug (db/transact-one state [:db/add (:db/id old-status) :status/type new-status])))
+
+      (debug (db/transact-one state {:db/id        (:db/id stripe)
+                                     :store/status {:status/type new-status}})))
+
+    (debug "Verification: " verification)
+    ;(debug "Got account: " account)
+    ))
