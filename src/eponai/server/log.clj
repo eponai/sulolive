@@ -1,6 +1,6 @@
 (ns eponai.server.log
   (:require
-    [taoensso.timbre :as timbre]
+    [taoensso.timbre :as timbre :refer [debug]]
     [clojure.core.async :as async]
     [eponai.common.format.date :as date]
     [com.stuartsierra.component :as component]))

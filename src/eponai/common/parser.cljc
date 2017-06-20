@@ -20,7 +20,8 @@
             [eponai.server.datomic.filter :as filter])
             [clojure.set :as set]
             [medley.core :as medley]
-            [cemerick.url :as url])
+            [cemerick.url :as url]
+            [eponai.server.log :as log])
   #?(:clj
      (:import (clojure.lang ExceptionInfo))))
 
@@ -30,6 +31,11 @@
 (defmulti server-read om/dispatch)
 (defmulti server-mutate om/dispatch)
 (defmulti server-message om/dispatch)
+
+(defmulti log-param-keys om/dispatch)
+(defmethod log-param-keys :default
+  [_ _ _]
+  nil)
 
 (defmulti server-auth-role om/dispatch)
 (defmulti client-auth-role om/dispatch)
@@ -466,7 +472,7 @@
 
 (defn wrap-server-mutate-auth [mutate]
   (wrap-auth server-auth-role mutate
-             (fn [{::keys [auth-responder] :keys [auth]} _ _]
+             (fn [{::keys [auth-responder] :keys [auth logger]} _ _]
                (let [message (if (empty? auth)
                                (do (auth/-prompt-login auth-responder nil)
                                    "You need to log in to perform this action")
@@ -533,6 +539,53 @@
                    (throw (ex-info (.getMessage e)
                                    {:cause             e
                                     ::mutation-message (x->message e)})))))))))))
+
+#?(:clj
+   (defn- thunk-logger
+     "Returns a function that takes a thunk (0-arity function) and logs it"
+     [env k p]
+     (fn [thunk]
+       ;; When testing, we can decide to not pass a logger.
+       (if (nil? (:logger env))
+         (thunk)
+         (let [start (System/currentTimeMillis)
+               log-then-return
+               (fn [x]
+                 (let [success? (not (instance? Throwable x))
+                       log-fn (if success? log/info! log/error!)
+                       end (System/currentTimeMillis)
+                       read? (keyword? k)]
+                   (log-fn (:logger env)
+                           k
+                           (merge {:success?     success?
+                                   :parse-key    k
+                                   :parse-type   (if read? :read :mutation)
+                                   :params       (select-keys p (log-param-keys env k p))
+                                   :event-millis (- end start)
+                                   :event-start  start
+                                   :event-end    end}
+                                  (when read?
+                                    (cond-> nil
+                                            (coll? x)
+                                            (assoc :return-empty? (empty? x))
+                                            (counted? x)
+                                            (assoc :return-count (count x))))))
+                   x))]
+           (try
+             (log-then-return (thunk))
+             (catch Throwable e
+               (throw (log-then-return e)))))))))
+
+#?(:clj
+   (defn with-server-logging [read-or-mutate]
+     (fn [env k p]
+       (let [log-action (thunk-logger env k p)]
+         (if (keyword? k)
+           (log-action #(read-or-mutate env k p))
+           (update-action
+             (read-or-mutate env k p)
+             (fn [action]
+               (log-action action))))))))
 
 (defn client-mutate-creation-time [mutate]
   (fn [env k p]
@@ -692,9 +745,9 @@
                          wrap-server-parser-state
                          wrap-om-next-error-handler))
                    (fn [read state]
-
                      (-> read
                          read-returning-basis-t
+                         with-server-logging
                          wrap-server-read-auth
                          (wrap-datomic-db (atom nil))))
 
@@ -704,6 +757,7 @@
                          server-mutate-creation-time-env
                          with-mutation-message
                          mutate-without-history-id-param
+                         with-server-logging
                          wrap-server-mutate-auth
                          wrap-datomic-db))))))
 

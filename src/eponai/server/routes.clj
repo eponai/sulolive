@@ -24,6 +24,7 @@
     [eponai.server.social :as social]
     [eponai.common.routes :as routes]
     [eponai.common.database :as db]
+    [eponai.server.log :as log]
     [eponai.common :as c]
     [eponai.common.photos :as photos]
     [eponai.server.external.email.templates :as templates]
@@ -39,6 +40,11 @@
 
 (declare handle-parser-request)
 
+(defn request->auth [{conn ::m/conn auth :identity}]
+  (let [auth-user (when-some [user-email (:email auth)]
+                    (db/lookup-entity (db/db conn) [:user/email user-email]))]
+    (assoc auth :user-id (:db/id auth-user))))
+
 (defn request->props [request]
   (let [state (::m/conn request)
         route (:handler request)
@@ -48,9 +54,7 @@
         sharing-objects (social/share-objects {:route-params route-params
                                                :state        state
                                                :route        route
-                                               :system       system})
-        user-email (:email (:identity request))
-        auth-user (when user-email (db/lookup-entity (db/db state) [:user/email user-email]))]
+                                               :system       system})]
     {:empty-datascript-db (::m/empty-datascript-db request)
      :state               state
      :system              system
@@ -59,7 +63,7 @@
      :route-params        route-params
      :route               route
      :query-params        (:params request)
-     :auth                (assoc (:identity request) :user-id (:db/id auth-user))
+     :auth                (request->auth request)
      :social-sharing      sharing-objects}))
 
 ;---------- Auth handlers
@@ -69,19 +73,24 @@
 ;----------API Routes
 
 (defn handle-parser-request
-  [{:keys [body cookies] ::m/keys [conn parser-fn system] :as request} read-basis-t-graph]
+  [{:keys [body cookies] ::m/keys [conn parser-fn system logger] :as request} read-basis-t-graph]
   (debug "Handling parser request with query:" (:query body))
   (debug "Handling parser request with cookies:" cookies)
-  ((parser-fn)
-    {::parser/read-basis-t-graph  (some-> read-basis-t-graph (atom))
-     ::parser/chat-update-basis-t (::parser/chat-update-basis-t body)
-     ::parser/auth-responder      (::parser/auth-responder request)
-     :state                       conn
-     :auth                        (:identity request)
-     :params                      (:params request)
-     :system                      system
-     :locations                   (get-in cookies ["sulo.locality" :value])}
-    (:query body)))
+  (let [{:keys [user-id] :as auth} (request->auth request)]
+    ((parser-fn)
+      {::parser/read-basis-t-graph  (some-> read-basis-t-graph (atom))
+       ::parser/chat-update-basis-t (::parser/chat-update-basis-t body)
+       ::parser/auth-responder      (::parser/auth-responder request)
+       :state                       conn
+       :auth                        auth
+       :params                      (:params request)
+       :system                      system
+       :locations                   (get-in cookies ["sulo.locality" :value])
+       :logger                      (cond-> logger
+                                            (some? user-id)
+                                            (log/with #(assoc % :user-id user-id
+                                                                :parse-started (System/currentTimeMillis))))}
+      (:query body))))
 
 (defn trace-parser-response-handlers
   "Wrapper with logging for parser.response/response-handler."

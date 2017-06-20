@@ -43,10 +43,6 @@
   (apply swap! force-read-without-history conj k ks)
   nil)
 
-(defn- query-user-id [{:keys [state auth]}]
-  (db/one-with (db/db state) {:where   '[[?e :user/email ?email]]
-                              :symbols {'?email (:email auth)}}))
-
 (defmutation shopping-bag/add-items
   [{:keys [state auth] :as env} _ {:keys [skus]}]
   {:auth ::auth/any-user
