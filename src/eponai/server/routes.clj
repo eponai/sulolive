@@ -52,17 +52,22 @@
     (-> ips (clojure.string/split #",") first)
     (:remote-addr request)))
 
-(defn- context-logger [{::m/keys [logger] :as request} user-id route-map]
-  (let [start (System/currentTimeMillis)
-        route (select-keys route-map [:route :route-params :query-params])
-        ip (client-ip request)]
-    (cond-> (log/with logger #(cond-> (assoc % :context-start start)
-                                      (some? ip)
-                                      (assoc :client-ip ip)))
-            (some? user-id)
-            (log/with #(assoc % :user-id user-id))
-            (seq route-map)
-            (log/with #(merge % route)))))
+(defn- context-logger
+  ([request route-map]
+   (context-logger request
+                   route-map
+                   (get-in (request->auth request) [:user-id])))
+  ([{::m/keys [logger] :as request} route-map user-id]
+   (let [start (System/currentTimeMillis)
+         route (select-keys route-map [:route :route-params :query-params])
+         ip (client-ip request)]
+     (cond-> (log/with logger #(cond-> (assoc % :context-start start)
+                                       (some? ip)
+                                       (assoc :client-ip ip)))
+             (some? user-id)
+             (log/with #(assoc % :user-id user-id))
+             (seq route-map)
+             (log/with #(merge % route))))))
 
 (defn request->props [request]
   (let [state (::m/conn request)
@@ -85,8 +90,8 @@
                :auth                (request->auth request)
                :social-sharing      sharing-objects}
         logger (context-logger request
-                               (:get-in props [:auth :user-id])
-                               (select-keys props [:route :route-params :query-params]))]
+                               (select-keys props [:route :route-params :query-params])
+                               (:get-in props [:auth :user-id]))]
     (assoc props :logger logger)))
 
 
@@ -110,7 +115,7 @@
        :params                      (:params request)
        :system                      system
        :locations                   (get-in cookies ["sulo.locality" :value])
-       :logger                      (context-logger request user-id route-map)}
+       :logger                      (context-logger request route-map user-id)}
       (:query body))))
 
 (defn trace-parser-response-handlers
@@ -181,11 +186,16 @@
   (POST "/api/chat" request
     (r/response (call-parser request)))
 
-  (GET "/auth" request (auth/authenticate request (::m/conn request)))
+  (GET "/auth" request (auth/authenticate
+                         (assoc request ::m/logger (context-logger request {:route :auth}))))
 
-  (GET "/logout" request (-> (auth/redirect request (or (get-in request [:params :redirect])
-                                                        (routes/path :landing-page)))
-                             (auth/remove-auth-cookie)))
+  (GET "/logout" request
+    (let [logger (context-logger request {:route :logout})
+          redirect (or (get-in request [:params :redirect])
+                       (routes/path :landing-page))]
+      (log/info! logger ::user-logout {:redirect redirect})
+      (-> (auth/redirect (assoc request ::m/logger logger) redirect)
+          (auth/remove-auth-cookie))))
 
   (GET "/devcards" request
     (when-not (::m/in-production? request)
