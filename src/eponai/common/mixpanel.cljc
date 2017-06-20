@@ -57,6 +57,7 @@
    ::signout               "Sign out user"
    ::open-signin           "Open sign in user"
    ::go-to-start-store     "Go to start store"
+   ::update-status "Go to update store status"
 
    ::shop-by-category      "Shop by category"
    ::shop-live             "Browse live"

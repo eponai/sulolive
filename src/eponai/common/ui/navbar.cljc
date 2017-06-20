@@ -569,7 +569,8 @@
                            (dom/div {:classes ["icon icon-stream"]})
                            (dom/span nil "Live stream")))
                   (menu/item
-                    (when (= :store-dashboard/profile (:route current-route))
+                    (when (#{:store-dashboard/profile
+                             :store-dashboard/profile#options} (:route current-route))
                       (css/add-class :is-active))
                     (dom/a {:href    (routes/url :store-dashboard/profile {:store-id (:db/id owned-store)})
                             :onClick #(track-event ::mixpanel/go-to-store-info)}

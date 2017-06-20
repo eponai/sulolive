@@ -8,6 +8,7 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.components.select :as select]
     [eponai.web.ui.button :as button]
+    [eponai.web.ui.switch-input :as switch]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.utils :as ui-utils]
     [taoensso.timbre :refer [debug]]
@@ -295,9 +296,9 @@
             (grid/column
               nil
               (dom/label nil "Title")
-              (v/input {:type        "text"
-                        :id          (:shipping.rate/title form-inputs)
-                        :placeholder "e.g USPS Priority, FedEx 3-day"
+              (v/input {:type         "text"
+                        :id           (:shipping.rate/title form-inputs)
+                        :placeholder  "e.g USPS Priority, FedEx 3-day"
                         :defaultValue (:shipping.rate/title edit-rate)}
                        input-validation)
               (dom/small nil "This will be visible to your customers at checkout.")))
@@ -307,8 +308,8 @@
             (grid/column
               nil
               (dom/label nil "Additional information")
-              (v/input {:type "text"
-                        :id   (:shipping.rate/info form-inputs)
+              (v/input {:type         "text"
+                        :id           (:shipping.rate/info form-inputs)
                         :defaultValue (:shipping.rate/info edit-rate)}
                        input-validation)
               (dom/small nil "What should shoppers know about this shipping option?")))
@@ -335,19 +336,24 @@
 
           ;(dom/p (css/add-class :header) (dom/span nil "Offers"))
 
-          (dom/div
-            (css/add-class :switch-container)
-            (dom/div
-              (css/add-classes [:switch :tiny])
-              (dom/input {:classes ["switch-input"]
-                          :id      (:shipping.rate/offer-free? form-inputs)
-                          :type    "checkbox"
-                          :name    "free-shipping-switch"
-                          :onClick #(om/update-state! component assoc :shipping-rule/offer-free? (.-checked (.-target %)))})
-              (dom/label
-                (css/add-class :switch-paddle {:htmlFor (:shipping.rate/offer-free? form-inputs)})
-                (dom/span (css/show-for-sr) "Offer free shipping")))
-            (dom/label nil "Offer free shipping"))
+          (dom/label nil "Offer free shipping")
+          (switch/switch
+            (css/add-class :tiny {:onClick #(om/update-state! component assoc :shipping-rule/offer-free? (.-checked (.-target %)))
+                                  :id      (:shipping.rate/offer-free? form-inputs)
+                                  :title   "Offer free shipping"}))
+          ;(dom/div
+          ;  (css/add-class :switch-container)
+          ;  (dom/div
+          ;    (css/add-classes [:switch :tiny])
+          ;    (dom/input {:classes ["switch-input"]
+          ;                :id      (:shipping.rate/offer-free? form-inputs)
+          ;                :type    "checkbox"
+          ;                :name    "free-shipping-switch"
+          ;                :onClick #(om/update-state! component assoc :shipping-rule/offer-free? (.-checked (.-target %)))})
+          ;    (dom/label
+          ;      (css/add-class :switch-paddle {:htmlFor (:shipping.rate/offer-free? form-inputs)})
+          ;      (dom/span (css/show-for-sr) "Offer free shipping")))
+          ;  (dom/label nil "Offer free shipping"))
           (when offer-free?
             (grid/row
               nil
@@ -419,7 +425,7 @@
              rate-title (utils/input-value-by-id (:shipping.rate/title form-inputs))
              rate-info (utils/input-value-or-nil-by-id (:shipping.rate/info form-inputs))
              {:query/keys [current-route store]} (om/props this)
-             {:keys [selected-countries]
+             {:keys               [selected-countries]
               :shipping-rule/keys [edit-rate]} (om/get-state this)
 
              input-map {:shipping.rule/destinations selected-countries

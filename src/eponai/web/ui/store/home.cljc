@@ -36,30 +36,32 @@
             (dom/i {:classes ["fa fa-warning fa-fw"]}))
           (grid/column
             nil
-            (dom/p
-              nil
-              (cond (false? charges-enabled?)
-                    (dom/strong nil "Charges from this account are disabled")
-                    (false? payouts-enabled?)
-                    (dom/strong nil "Payouts to this account are disabled")
-                    (some? due-by)
-                    (dom/strong nil "More information is needed to verify your account")
-                    (not-empty fields-needed)
-                    (dom/strong nil "More information may be needed to verify your account")))
-            (cond (false? charges-enabled?)
-                  (get disabled-labels (keyword disabled-reason))
-                  (false? payouts-enabled?)
-                  (get disabled-labels (keyword disabled-reason))
-                  (some? due-by)
-                  (dom/p nil
-                         (dom/span nil "More information needs to be collected to keep this account enabled. Please ")
-                         (dom/a {:href (routes/url :store-dashboard/business#verify {:store-id store-id})} "provide the required information")
-                         (dom/span nil " to prevent disruption in service to this account."))
-                  (some? fields-needed)
-                  (dom/p nil
-                         (dom/span nil "If this account continues to process more volume, more information may need to be collected. To prevent disruption in service to this account you can choose to ")
-                         (dom/a {:href (routes/url :store-dashboard/business#verify {:store-id store-id})} "provide the information")
-                         (dom/span nil " proactively.")))
+            (cond
+              ;; Stripe has disabled charges because required information is overdue
+              (false? charges-enabled?)
+              [(dom/p nil (dom/strong nil "Charges from this account are disabled"))
+               (get disabled-labels (keyword disabled-reason))]
+
+              ;; Stripe has disabled payouts because required information is overdue
+              (false? payouts-enabled?)
+              [(dom/p nil (dom/strong nil "Payouts to this account are disabled"))
+               (get disabled-labels (keyword disabled-reason))]
+
+              ;; Stripe has set a deadline to provide the information
+              (some? due-by)
+              [(dom/p nil (dom/strong nil "More information is needed to verify your account"))
+               (dom/p nil
+                      (dom/span nil "More information needs to be collected to keep this account enabled. Please ")
+                      (dom/a {:href (routes/url :store-dashboard/business#verify {:store-id store-id})} "provide the required information")
+                      (dom/span nil " to prevent disruption in service to this account."))]
+
+              ;; Stripe might need more information, and added some fields for verification. This might never be required.
+              (not-empty fields-needed)
+              [(dom/p nil (dom/strong nil "More information may be needed to verify your account"))
+               (dom/p nil
+                      (dom/span nil "If this account continues to process more volume, more information may need to be collected. To prevent disruption in service to this account you can choose to ")
+                      (dom/a {:href (routes/url :store-dashboard/business#verify {:store-id store-id})} "provide the information")
+                      (dom/span nil " proactively."))])
             ))))
     nil))
 
@@ -98,12 +100,8 @@
         {:id "sulo-main-dashboard"}
 
         (dom/div
-          (css/show-for-sr)
-          (dom/h1 nil "Home"))
-
-        (dom/div
           (css/add-class :section-title)
-          (dom/h2 nil "Your store"))
+          (dom/h1 nil "Home"))
         (callout/callout-small
           (css/add-class :section-info)
           (grid/row
@@ -111,7 +109,17 @@
                  (css/align :middle))
 
             (grid/column
-              (->> (grid/column-size {:small 12 :medium 4})
+              (->> (grid/column-size {:small 6 :medium 3})
+                   (css/text-align :center))
+              (dom/h3 nil "Status")
+              (dom/p nil (dom/span (css/add-classes [:stat]) "Inactive"))
+              (button/default-hollow
+                {:href    (routes/url :store-dashboard/profile#options {:store-id store-id})
+                 :onClick #(mixpanel/track-key ::mixpanel/update-status {:source "store-dashboard"})}
+                (dom/span nil "Options")
+                (dom/i {:classes ["fa fa-chevron-right"]})))
+            (grid/column
+              (->> (grid/column-size {:small 6 :medium 3})
                    (css/text-align :center))
               (dom/h3 nil (get-in store [:store/profile :store.profile/name]))
               (photo/store-photo store {:transformation :transformation/thumbnail})
@@ -125,6 +133,7 @@
               nil
               (grid/row
                 (grid/columns-in-row {:small 2})
+
                 (grid/column
                   (css/text-align :center)
                   (dom/h3 nil "Products")
@@ -143,62 +152,72 @@
                      :onClick #(mixpanel/track-key ::mixpanel/go-to-orders {:source "store-dashboard"})}
                     (dom/span nil "Orders")
                     (dom/i {:classes ["fa fa-chevron-right"]})))))))
+        ;(callout/callout
+        ;  nil
+        ;  (grid/row
+        ;    (grid/columns-in-row {:small 3})
+        ;    (grid/column
+        ;      (css/text-align :center)
+        ;      (dom/h3 nil "Balance")
+        ;      (dom/p (css/add-class :stat) (two-decimal-price 0)))
+        ;    (grid/column
+        ;      (css/text-align :center)
+        ;      (dom/h3 nil "Customers")
+        ;      (dom/p (css/add-class :stat) 0))
+        ;    (grid/column
+        ;      (css/text-align :center)
+        ;      (dom/h3 nil "Payments")
+        ;      (dom/p (css/add-class :stat) 0))))
 
+        (dom/div
+          (css/add-class :section-title)
+          (dom/h2 nil "Getting started"))
         (callout/callout
           nil
-          (grid/row
-            (grid/columns-in-row {:small 3})
-            (grid/column
-              (css/text-align :center)
-              (dom/h3 nil "Balance")
-              (dom/p (css/add-class :stat) (two-decimal-price 0)))
-            (grid/column
-              (css/text-align :center)
-              (dom/h3 nil "Customers")
-              (dom/p (css/add-class :stat) 0))
-            (grid/column
-              (css/text-align :center)
-              (dom/h3 nil "Payments")
-              (dom/p (css/add-class :stat) 0))))
+          (menu/vertical
+            (css/add-class :section-list)
+
+            (check-list-item
+              (some? (:store.profile/description (:store/profile store)))
+              (routes/url :store-dashboard/profile {:store-id store-id})
+              (dom/span nil "Describe your store."))
+
+            (check-list-item
+              (not-empty (get-in store [:store/shipping :shipping/rules]))
+              (routes/url :store-dashboard/shipping {:store-id store-id})
+              (dom/span nil "Specify shipping options."))
+
+            (check-list-item
+              (boolean (pos? store-item-count))
+              (routes/url :store-dashboard/create-product {:store-id store-id})
+              (dom/span nil "Add your first product."))
+
+            (check-list-item
+              false
+              (routes/url :store-dashboard/stream {:store-id store-id})
+              (dom/span nil "Setup your first stream."))
+
+            (check-list-item
+              (:stripe/details-submitted? stripe-account)
+              (routes/url :store-dashboard/business#verify {:store-id store-id})
+              (dom/span nil "Verify your account, so we know you're real."))))
+
+
+
+
 
         (grid/row
           (css/add-class :collapse)
-          (grid/column
-            nil
-
-            (dom/div
-              (css/add-class :section-title)
-              (dom/h2 nil "Getting started"))
-
-            (callout/callout
-              nil
-              (menu/vertical
-                (css/add-class :section-list)
-
-                (check-list-item
-                  (some? (:store.profile/description (:store/profile store)))
-                  (routes/url :store-dashboard/profile {:store-id store-id})
-                  (dom/span nil "Describe your store."))
-
-                (check-list-item
-                  (not-empty (get-in store [:store/shipping :shipping/rules]))
-                  (routes/url :store-dashboard/shipping {:store-id store-id})
-                  (dom/span nil "Specify shipping options."))
-
-                (check-list-item
-                  (boolean (pos? store-item-count))
-                  (routes/url :store-dashboard/create-product {:store-id store-id})
-                  (dom/span nil "Add your first product."))
-
-                (check-list-item
-                  false
-                  (routes/url :store-dashboard/stream {:store-id store-id})
-                  (dom/span nil "Setup your first stream."))
-
-                (check-list-item
-                  (:stripe/details-submitted? stripe-account)
-                  (routes/url :store-dashboard/business#verify {:store-id store-id})
-                  (dom/span nil "Verify your account, so we know you're real.")))))
+          ;(grid/column
+          ;  nil
+          ;
+          ;  (dom/div
+          ;    (css/add-class :section-title)
+          ;    (dom/h2 nil "Getting started"))
+          ;
+          ;  (callout/callout
+          ;    nil
+          ;    ))
           (if (:stripe/details-submitted? stripe-account)
             (when-let [verification-el (verification-status-element this)]
               (grid/column
