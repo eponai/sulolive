@@ -555,7 +555,8 @@
              (fn [x]
                (let [error? (instance? Throwable x)
                      log-fn (if error? log/error! log/info!)
-                     end (System/currentTimeMillis)]
+                     end (System/currentTimeMillis)
+                     read-basis-t (::read-basis-t-for-this-key env)]
                  (log-fn (:logger env)
                          k
                          (merge {:response-type (if error? :error :success)
@@ -570,7 +571,9 @@
                                           (coll? x)
                                           (assoc :return-empty? (empty? x))
                                           (counted? x)
-                                          (assoc :return-count (count x))))))
+                                          (assoc :return-count (count x))
+                                          (some? read-basis-t)
+                                          (assoc ::read-basis-t read-basis-t)))))
                  x))]
          (try
            (log-then-return (thunk))
@@ -593,10 +596,22 @@
    (defn with-server-logger [read-or-mutate]
      (fn [{:keys [logger] :as env} k p]
        (read-or-mutate
-         (assoc env :logger (log/with (or logger (force log/no-op-logger))
-                                      #(assoc % :parse-key k
-                                                :parse-type (if (keyword? k) :read :mutation)
-                                                :parse-params (select-keys p (log-param-keys env k p)))))
+         (assoc env :logger
+                    (log/with (or logger (force log/no-op-logger))
+                              #(let [param-keys (log-param-keys env k p)]
+                                 ;; Returning ::no-logging from log-param-keys will
+                                 ;; not log this mutation or read.
+                                 (if (= ::no-logging param-keys)
+                                   log/skip-message
+                                   (assoc % :parse-key k
+                                            :parse-type (if (keyword? k) :read :mutation)
+                                            :parse-params (if (map? param-keys)
+                                                            ;; If implementation of log-params-keys returns a map
+                                                            ;; we just return it. It enables us to return the params
+                                                            ;; in whatever form we want. For example:
+                                                            ;; Flattened keys, anonymous email, changed values.
+                                                            param-keys
+                                                            (select-keys p param-keys)))))))
          k p))))
 
 (defn client-mutate-creation-time [mutate]
@@ -758,8 +773,8 @@
                          wrap-om-next-error-handler))
                    (fn [read state]
                      (-> read
-                         read-returning-basis-t
                          with-server-logging
+                         read-returning-basis-t
                          wrap-server-read-auth
                          with-server-logger
                          (wrap-datomic-db (atom nil))))

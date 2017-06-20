@@ -22,6 +22,7 @@
     [eponai.common.format.date :as date]
     [eponai.common.search :as common.search]
     [cemerick.url :as url]
+    [eponai.common.format :as f]
     [eponai.server.external.taxjar :as taxjar])
   (:import (datomic.db Db)))
 
@@ -33,9 +34,12 @@
                " was: " auth-and-basis-params))
   (let [read-key# (keyword (namespace read-sym) (name read-sym))
         basis-params-body# (when-let [bp# (:uniq-by auth-and-basis-params)]
-                             `(defmethod parser/read-basis-params ~read-key# ~args ~bp#))]
+                             `(defmethod parser/read-basis-params ~read-key# ~args ~bp#))
+        log-param-key# (when-let [pk# (:log auth-and-basis-params)]
+                         `(defmethod parser/log-param-keys ~read-key# ~args ~pk#))]
     `(do
        ~basis-params-body#
+       ~log-param-key#
        (defmethod parser/server-auth-role ~read-key# ~args ~(:auth auth-and-basis-params))
        (defmethod parser/server-read ~read-key# ~args ~mutate-body))))
 
@@ -53,7 +57,8 @@
 
 (defread query/checkout
   [{:keys [db db-history query auth]} _ {:keys [store-id]}]
-  {:auth ::auth/any-user}
+  {:auth ::auth/any-user
+   :log  [:store-id]}
   {:value (db/pull-all-with db query {:where   '[[?u :user/cart ?c]
                                                  [?c :user.cart/items ?e]
                                                  [?i :store.item/skus ?e]
@@ -79,6 +84,7 @@
 (defread query/store
   [{:keys [db db-history query]} _ {:keys [store-id]}]
   {:auth    ::auth/public
+   :log     [:store-id]
    :uniq-by [[:store-id store-id]]}
   {:value (let [store (query/one db db-history query {:where   '[[?e :store/profile]]
                                                       :symbols {'?e store-id}})]
@@ -98,6 +104,7 @@
 (defread query/store-items
   [{:keys [db db-history query]} _ {:keys [store-id navigation]}]
   {:auth    ::auth/public
+   :log     [:store-id :navigation]
    :uniq-by [[:store-id store-id] [:nav-path (hash navigation)]]}
   {:value (let [params (if (not-empty navigation)
                          {:where   '[[?s :store/items ?e]
@@ -117,6 +124,7 @@
   {:auth    (if (some? store-id)
               {::auth/store-owner store-id}
               ::auth/any-user)
+   :log     [:store-id]
    :uniq-by [[:val (if (some? store-id)
                      [:store-id store-id]
                      [:user-id (hash (:email auth))])]]}
@@ -129,6 +137,7 @@
 (defread query/inventory
   [{:keys [query db]} _ {:keys [store-id]}]
   {:auth    {::auth/store-owner store-id}
+   :log     [:store-id]
    :uniq-by [[:store-id store-id]]}
   {:value (let [items (db/pull-all-with db query {:where   '[[?s :store/items ?e]]
                                                   :symbols {'?s store-id}})]
@@ -138,6 +147,7 @@
 (defread query/order
   [{:keys [state query db auth] :as env} _ {:keys [order-id store-id]}]
   {:auth    ::auth/any-user
+   :log     [:store-id :order-id]
    :uniq-by [[:val (if (some? store-id)
                      [:store-id store-id]
                      [:user-id (hash (:email auth))])] [:order-id order-id]]}
@@ -152,6 +162,7 @@
 (defread query/order-payment
   [{:keys [state query db auth system] :as env} _ {:keys [order-id store-id]}]
   {:auth    ::auth/any-user
+   :log     [:store-id :order-id]
    :uniq-by [[:val (if (some? store-id)
                      [:store-id store-id]
                      [:user-id (hash (:email auth))])] [:order-id order-id]]}
@@ -169,12 +180,14 @@
 (defread query/stripe-account
   [env _ {:keys [store-id]}]
   {:auth    {::auth/store-owner store-id}
+   :log     [:store-id]
    :uniq-by [[:store-id store-id]]}
   {:value (store/account env store-id)})
 
 (defread query/stripe-balance
   [env _ {:keys [store-id]}]
   {:auth    {::auth/store-owner store-id}
+   :log     [:store-id]
    :uniq-by [[:store-id store-id]]}
   {:value (store/balance env store-id)})
 
@@ -210,13 +223,15 @@
 
 (defread query/user
   [{:keys [db db-history query]} _ {:keys [user-id]}]
-  {:auth ::auth/any-user}
+  {:auth ::auth/any-user
+   :log  [:user-id]}
   {:value (query/one db db-history query {:where   '[[?e]]
                                           :symbols {'?e user-id}})})
 
 (defread query/items
   [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
   {:auth    ::auth/public
+   :log     [:search :category]
    :uniq-by [[:category (or category (:category route-params))]]}
   {:value (let [c (or category (:category route-params))]
             (cond (some? category)
@@ -228,6 +243,7 @@
 (defread query/top-categories
   [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
   {:auth    ::auth/public
+   :log     [:category]
    :uniq-by [[:category (or category (:category route-params))]]}
   {:value (db/pull-all-with db query {:where '[[?e :category/path]
                                                (not [_ :category/children ?e])]})})
@@ -235,6 +251,7 @@
 (defread query/category
   [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
   {:auth    ::auth/public
+   :log     [:category]
    :uniq-by [[:category (or category (:category route-params))]]}
   {:value (db/pull-one-with db query {:where   '[[?e :category/path ?p]]
                                       :symbols {'?p (or category (:category route-params))}})})
@@ -242,6 +259,7 @@
 (defread query/skus
   [{:keys [db db-history query]} _ {:keys [sku-ids]}]
   {:auth    ::auth/public
+   :log     [:sku-ids]
    :uniq-by [[:sku-id sku-ids]]}
   {:value (query/all db db-history query
                      {:where   '[[_ :store.item/skus ?e]]
@@ -250,6 +268,7 @@
 (defread query/item
   [{:keys [db db-history query]} _ {:keys [product-id]}]
   {:auth    ::auth/public
+   :log     [:product-id]
    :uniq-by [[:product-id product-id]]}
   {:value (query/one db db-history query
                      {:where   '[[?e :store.item/name]]
@@ -266,6 +285,7 @@
 (defread query/stream
   [{:keys [db db-history query]} _ {:keys [store-id]}]
   {:auth    ::auth/public
+   :log     [:store-id]
    :uniq-by [[:store-id store-id]]}
   {:value (query/one db db-history query {:where   '[[?e :stream/store ?store-id]]
                                           :symbols {'?store-id store-id}})})
@@ -343,6 +363,7 @@
   [{:keys         [db query system]
     ::parser/keys [read-basis-t-for-this-key chat-update-basis-t]} k {:keys [store] :as params}]
   {:auth    ::auth/public
+   :log     ::parser/no-logging
    :uniq-by [[:store-id (:db/id store)]]}
   (if (nil? (:db/id store))
     (do (warn "No store :db/id passed in params for read: " k " with params: " params)
@@ -362,6 +383,7 @@
   [{:keys [db db-history query]} _ {{:keys [top-category sub-category] :as categories} :route-params
                                     {:keys [search]}                                   :query-params}]
   {:auth    ::auth/public
+   :log     (f/remove-nil-keys {:search search :top-category top-category :sub-category sub-category})
    :uniq-by [[:filter (cond
                         (seq search)
                         [:search search]

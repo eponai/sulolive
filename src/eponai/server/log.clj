@@ -12,11 +12,17 @@
 
 ;; ------- Log manipulation functions
 
+(deftype SkipMessage [])
+
+(def skip-message (SkipMessage.))
+
 (defn with [logger f]
   (reify
     ILogger
     (log [_ msg]
-      (log logger (f msg)))))
+      (let [m (f msg)]
+        (when-not (identical? skip-message m)
+          (log logger m))))))
 
 (defn- logging-thread [logger in]
   (async/thread
