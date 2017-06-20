@@ -584,7 +584,8 @@
    (defn with-server-logging [read-or-mutate]
      (fn [env k p]
        (let [log-action (thunk-logger env k p)]
-         (if (keyword? k)
+         (if (and (keyword? k)
+                  (not (is-special-key? k)))
            (log-action #(read-or-mutate env k p))
            (update-action
              (read-or-mutate env k p)
@@ -596,22 +597,26 @@
    (defn with-server-logger [read-or-mutate]
      (fn [{:keys [logger] :as env} k p]
        (read-or-mutate
-         (assoc env :logger
-                    (log/with (or logger (force log/no-op-logger))
-                              #(let [param-keys (log-param-keys env k p)]
-                                 ;; Returning ::no-logging from log-param-keys will
-                                 ;; not log this mutation or read.
-                                 (if (= ::no-logging param-keys)
-                                   log/skip-message
-                                   (assoc % :parse-key k
-                                            :parse-type (if (keyword? k) :read :mutation)
-                                            :parse-params (if (map? param-keys)
-                                                            ;; If implementation of log-params-keys returns a map
-                                                            ;; we just return it. It enables us to return the params
-                                                            ;; in whatever form we want. For example:
-                                                            ;; Flattened keys, anonymous email, changed values.
-                                                            param-keys
-                                                            (select-keys p param-keys)))))))
+         (cond-> env
+                 (not (is-special-key? k))
+                 (assoc :logger
+                        (log/with (or logger
+                                      ;; Using a no-op-logger for testing environments that don't care.
+                                      (force log/no-op-logger))
+                                  #(let [param-keys (log-param-keys env k p)]
+                                     ;; Returning ::no-logging from log-param-keys will
+                                     ;; not log this mutation or read.
+                                     (if (= ::no-logging param-keys)
+                                       log/skip-message
+                                       (assoc % :parse-key k
+                                                :parse-type (if (keyword? k) :read :mutation)
+                                                :parse-params (if (map? param-keys)
+                                                                ;; If implementation of log-params-keys returns a map
+                                                                ;; we just return it. It enables us to return the params
+                                                                ;; in whatever form we want. For example:
+                                                                ;; Flattened keys, anonymous email, changed values.
+                                                                param-keys
+                                                                (select-keys p param-keys))))))))
          k p))))
 
 (defn client-mutate-creation-time [mutate]

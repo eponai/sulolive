@@ -66,7 +66,7 @@
                                        (assoc :client-ip ip)))
              (some? user-id)
              (log/with #(assoc % :user-id user-id))
-             (seq route-map)
+             (seq route)
              (log/with #(merge % route))))))
 
 (defn request->props [request]
@@ -102,10 +102,11 @@
 ;----------API Routes
 
 (defn handle-parser-request
-  [{:keys [body cookies route-map] ::m/keys [conn parser-fn system logger] :as request} read-basis-t-graph]
+  [{:keys [body cookies] ::m/keys [conn parser-fn system] :as request} read-basis-t-graph]
   (debug "Handling parser request with query:" (:query body))
   (debug "Handling parser request with cookies:" cookies)
-  (let [{:keys [user-id] :as auth} (request->auth request)]
+  (let [{:keys [user-id] :as auth} (request->auth request)
+        route-map (:route-map body)]
     ((parser-fn)
       {::parser/read-basis-t-graph  (some-> read-basis-t-graph (atom))
        ::parser/chat-update-basis-t (::parser/chat-update-basis-t body)

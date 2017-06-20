@@ -100,12 +100,10 @@
             old-atom (::handler-atom old-this)]
         (if (and old-handler old-atom)
           (do
-            (c/stop (:logger this))
             (swap! (::suspended-state this) assoc :queued-requests (-> old-this ::suspended-state deref :queued-requests))
             (reset! old-atom @(::handler-atom this))
             (assoc this :handler old-handler
-                        ::handler-atom old-atom
-                        :logger (:logger old-this)))
+                        ::handler-atom old-atom))
           (do
             (c/stop old-this)
             this))))))

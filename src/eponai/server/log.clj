@@ -20,9 +20,9 @@
   (reify
     ILogger
     (log [_ msg]
-      (let [m (f msg)]
+      (let [m (f (:data msg))]
         (when-not (identical? skip-message m)
-          (log logger m))))))
+          (log logger (assoc msg :data m)))))))
 
 (defn- logging-thread [logger in]
   (async/thread
@@ -79,12 +79,10 @@
 
 ;; ------ Loggers
 
-(defrecord NoOpLogger []
-  ILogger
-  (log [_ _]))
-
 (def no-op-logger (delay (timbre/debug "Using NoOpLogger")
-                         (->NoOpLogger)))
+                         (reify
+                           ILogger
+                           (log [_ _]))))
 
 (defrecord TimbreLogger []
   ILogger
