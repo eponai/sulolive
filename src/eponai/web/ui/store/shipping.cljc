@@ -106,7 +106,7 @@
     (common/modal
       {:on-close on-close
        :size     "tiny"}
-      (dom/h4 (css/add-class :header) "Delete rule")
+      (dom/p (css/add-class :header) "Delete rule")
       (dom/p nil
              ;(dom/span nil (get modal-message modal))
              ;(dom/br nil)

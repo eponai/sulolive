@@ -15,11 +15,16 @@
 	.action-buttons {
 		display: flex;
 		justify-content: flex-end;
+		align-items: center;
 		.button {
+			// flex: 0;
 			&:nth-child(2) {
 				margin-left: 0.5rem;
 			}
 			margin-bottom: 0;
+		}
+		&.text-left {
+			justify-content: flex-start;
 		}
 	}
 

@@ -2,17 +2,13 @@
   (:require
     [clj-http.client :as client]
     [slingshot.slingshot :refer [try+]]
-    [clojure.spec :as s]
     [eponai.common.database :as db]
     [eponai.server.external.stripe.format :as f]
-    [eponai.server.http :as h]
     [eponai.server.external.stripe.stub :as stub]
     [taoensso.timbre :refer [debug error info]]
-    [eponai.server.external.stripe.webhooks :as webhooks]
     [clojure.data.json :as json]
     [clojure.string :as string]
-    [eponai.common.format.date :as date])
-  (:import (clojure.lang ExceptionInfo)))
+    [eponai.common.format.date :as date]))
 
 (defn pull-stripe [db store-id]
   (when store-id
@@ -25,7 +21,13 @@
                                :symbols {'?u user-id}})))
 ;; ########## Stripe protocol ################
 
+(defprotocol IStripeEndpoint
+  (-post [this params path])
+  (-get [this path])
+  (-delete [this path]))
+
 (defprotocol IStripeConnect
+
   (-get-country-spec [this code])
 
   (-create-account [this opts]
@@ -112,79 +114,76 @@
 (def stripe-api-version "2017-06-05")
 (def stripe-api-host "https://api.stripe.com/v1")
 
-(defn- get [api-key & path]
-  (let [url (string/join "/" (into [stripe-api-host] (remove nil? path)))]
-    (json/read-str (:body (client/get url {:basic-auth api-key
-                                           :headers    {"Stripe-Version" stripe-api-version}})) :key-fn keyword)))
-
-(defn- post [api-key params & path]
-  {:pre [(map? params)]}
-  (let [url (string/join "/" (into [stripe-api-host] (remove nil? path)))]
-    (json/read-str (:body (client/post url {:form-params params
-                                           :basic-auth  api-key
-                                           :headers     {"Stripe-Version" stripe-api-version}})) :key-fn keyword)))
-
-(defn- delete [api-key params & path]
-  (let [url (string/join "/" (into [stripe-api-host] (remove nil? path)))]
-    (json/read-str (:body (client/delete url {:basic-auth api-key
-                                              :headers    {"Stripe-Version" stripe-api-version}})) :key-fn keyword)))
-
 (defrecord StripeRecord [api-key]
+  IStripeEndpoint
+  (-post [_ params path]
+    (let [url (string/join "/" (into [stripe-api-host] (remove nil? path)))]
+      (json/read-str (:body (client/post url {:form-params params
+                                              :basic-auth  api-key
+                                              :headers     {"Stripe-Version" stripe-api-version}})) :key-fn keyword)))
+  (-get [_ path]
+    (let [url (string/join "/" (into [stripe-api-host] (remove nil? path)))]
+      (json/read-str (:body (client/get url {:basic-auth api-key
+                                             :headers    {"Stripe-Version" stripe-api-version}})) :key-fn keyword)))
+
+  (-delete [_ path]
+    (let [url (string/join "/" (into [stripe-api-host] (remove nil? path)))]
+      (json/read-str (:body (client/delete url {:basic-auth api-key
+                                                :headers    {"Stripe-Version" stripe-api-version}})) :key-fn keyword)))
   IStripeConnect
-  (-get-country-spec [_ code]
-    (let [country-spec (get api-key "country_specs" code)]
+  (-get-country-spec [this code]
+    (let [country-spec (get api-key ["country_specs" code])]
       (debug "STRIPE - fetched country spec: " country-spec)
       (f/stripe->country-spec country-spec)))
 
-  (-create-account [_ {:keys [country]}]
+  (-create-account [this {:keys [country]}]
     (let [params {:country country :type "custom"}
-          account (post api-key params "accounts")
+          account (-post this params ["accounts"])
           keys (:keys account)]
       (debug "STRIPE - created account: " account)
       {:id     (:id account)
        :secret (:secret keys)
        :publ   (:publishable keys)}))
 
-  (-get-account [_ account-id]
-    (let [account (get api-key "accounts" account-id)]
+  (-get-account [this account-id]
+    (let [account (-get this ["accounts" account-id])]
       (debug "STRIPE - fetched account: " account)
       (f/stripe->account account)))
 
-  (-update-account [_ account-id params]
+  (-update-account [this account-id params]
     (try+
-      (let [updated (post api-key params "accounts" account-id)]
+      (let [updated (-post this params ["accounts" account-id])]
         (debug "STRIPE - updated account: " updated)
         (f/stripe->account updated))
       (catch [:status 400] r
         (let [{:keys [body]} r
               {:keys [error]} (json/read-str body :key-fn keyword)]
-          ;(debug "Error response: " (clojure.walk/keywordize-keys body))
           (throw (ex-info (:message error) error))))))
 
-  (-get-balance [_ account-id secret]
-    (let [balance (get api-key "balance")]
+  (-get-balance [this account-id secret]
+    (let [balance (-get this ["balance"])]
       (debug "STRIPE - fetch balance: " balance)
       (f/stripe->balance balance account-id)))
 
-  (-create-customer [_ params]
-    (let [customer (post api-key params "customers")]
+  (-create-customer [this params]
+    (let [customer (-post this params ["customers"])]
       (debug "STRIPE - created new customer: " customer)
       (f/stripe->customer customer)))
 
-  (-update-customer [_ customer-id params]
-    (let [customer (post api-key params "customers" customer-id)]
+  (-update-customer [this customer-id params]
+    (let [customer (-post this params ["customers" customer-id])]
       (debug "STRIPE - updated customer: " customer)
       (f/stripe->customer customer)))
 
-  (-get-customer [_ customer-id]
-    (let [customer (get api-key "customers" customer-id)]
+  (-get-customer [this customer-id]
+    (let [customer (-get this ["customers" customer-id])]
       (debug "STRIPE - fetched customer: " customer)
       (f/stripe->customer customer)))
 
-  (-create-card [_ customer-id source]
+  (-create-card [this customer-id source]
     (try+
       (let [params {:source source}
-            card (post api-key params "customers" customer-id "sources")]
+            card (-post this params ["customers" customer-id "sources"])]
         (debug "STRIPE - created card: " card)
         card)
       (catch [:status 402] r
@@ -193,15 +192,15 @@
           ;(debug "Error response: " (clojure.walk/keywordize-keys body))
           (throw (ex-info (:message error) error))))))
 
-  (-delete-card [_ customer-id card-id]
+  (-delete-card [this customer-id card-id]
     ;https://api.stripe.com/v1/customers/{CUSTOMER_ID}/sources/{CARD_ID}
-    (let [deleted (delete api-key "customers" customer-id "sources" card-id)]
+    (let [deleted (-delete this ["customers" customer-id "sources" card-id])]
       (debug "STRIPE - deleted card: " deleted)
       deleted))
 
-  (-create-charge [_ params]
+  (-create-charge [this params]
     (try+
-      (let [charge (post api-key params "charges")]
+      (let [charge (-post this params ["charges"])]
         (debug "STRIPE - created charge: " charge)
         {:charge/status (:status charge)
          :charge/id     (:id charge)
@@ -211,8 +210,8 @@
               {:keys [error]} (json/read-str body :key-fn keyword)]
           (throw (ex-info (:message error) error))))))
 
-  (-get-charge [_ charge-id]
-    (let [charge (get api-key "charges" charge-id)]
+  (-get-charge [this charge-id]
+    (let [charge (-get this ["charges" charge-id])]
       (debug "STRIPE - fetched charge: " charge)
       {:charge/status  (:status charge)
        :charge/id      (:id charge)
@@ -221,10 +220,10 @@
        :charge/amount  (f/stripe->price (:amount charge))
        :charge/paid?   (:paid charge)}))
 
-  (-create-refund [_ {:keys [charge]}]
+  (-create-refund [this {:keys [charge]}]
     (let [params {:charge           charge
                   :reverse_transfer true}
-          refund (post api-key params "refunds")]
+          refund (-post this params ["refunds"])]
       (debug "STRIPE - created refund: " refund)
       {:refund/status (:status refund)
        :refund/id     (:id refund)})))
@@ -341,10 +340,3 @@
       (-create-card [_ customer-id card]
         )
       (-create-refund [this params]))))
-
-(defn webhook [{:keys [type] :as env} event]
-  (cond (= type :account)
-        (or (webhooks/handle-account-webhook env event) {})
-
-        (= type :connected)
-        (or (webhooks/handle-connected-webhook env event) {})))

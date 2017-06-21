@@ -600,9 +600,10 @@
                   (dom/span nil "Add variation..."))))))
 
         (grid/row
-          (css/add-classes [:expanded :collapse :buttons])
+          (css/add-classes [:expanded :collapse])
           (grid/column
-            nil
+            (->> (css/add-class :action-buttons)
+                 (css/text-align :left))
             (when-not (is-new-product? this)
               (dom/a {:classes ["button hollow alert"]
                       :onClick #(.delete-product this)}

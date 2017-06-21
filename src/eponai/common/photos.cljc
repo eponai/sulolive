@@ -11,7 +11,8 @@
    :transformation/thumbnail       "thumbnail"
    :transformation/thumbnail-large "thumbnail-large"
    :transformation/preview         "preview"
-   :transformation/cover           "cover"})
+   :transformation/cover           "cover"
+   :transformation/banner          "city-banner"})
 
 (def presets
   {:preset/product-photo "product-photo"

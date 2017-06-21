@@ -18,7 +18,7 @@
     [taoensso.timbre :refer [debug error trace warn]]
     [eponai.server.ui :as server.ui]
     [om.next :as om]
-    [eponai.server.external.stripe :as stripe]
+    [eponai.server.external.stripe.webhooks :as stripe-webhooks]
     [eponai.server.websocket :as websocket]
     [eponai.server.ui.root :as root]
     [eponai.server.social :as social]
@@ -228,12 +228,14 @@
     (websocket/handler-post-request (:system/chat-websocket system) request))
 
   ;; Webhooks
-  (POST "/stripe/connected" request (r/response (stripe/webhook {:state  (::m/conn request)
-                                                                 :type   :connected
-                                                                 :system (::m/system request)} (:body request))))
-  (POST "/stripe" request (r/response (stripe/webhook {:state  (::m/conn request)
-                                                       :type   :account
-                                                       :system (::m/system request)} (:body request))))
+  (POST "/stripe/connected" request (r/response (stripe-webhooks/handle-connected-webhook
+                                                  {:state  (::m/conn request)
+                                                   :system (::m/system request)}
+                                                  (:body request))))
+  (POST "/stripe" request (r/response (stripe-webhooks/handle-account-webhook
+                                        {:state  (::m/conn request)
+                                         :system (::m/system request)}
+                                        (:body request))))
 
   (context "/" [:as request]
     member-routes

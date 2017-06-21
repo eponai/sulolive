@@ -156,6 +156,11 @@
                                          [:db/add (:db/id p) :store.item/index (:store.item/index p)])
                                        items)))}))
 
+(defmethod client-mutate 'store/update-status
+  [{:keys [state target]} _ {:keys [items] :as p}]
+  (if target
+    {:remote true}))
+
 ;; ########### STRIPE ###############
 
 (defmethod client-mutate 'stripe/create-account

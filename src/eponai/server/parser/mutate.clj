@@ -314,6 +314,14 @@
                (debug "store/update-info with params: " s)
                (db/transact-one state s)))})
 
+(defmutation store/update-status
+  [{:keys [state ::parser/return ::parser/exception auth system] :as env} _ {:keys [store-id status]}]
+  {:auth {::auth/store-owner store-id}
+   :resp {:success "Your store info was successfully updated."
+          :error   "Sorry, your info could not be updated. Try again later."}}
+  {:action (fn []
+             (store/update-status env store-id status))})
+
 (defmutation store/update-shipping
   [{:keys [state ::parser/return ::parser/exception auth system] :as env} _ {:keys [shipping store-id]}]
   {:auth {::auth/store-owner store-id}
@@ -401,7 +409,7 @@
                                      [:db/add store :store/stripe (:db/id stripe-info)]])))}))
 
 (defmutation stripe/update-account
-  [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [store-id account-params]}]
+  [{:keys [state ::parser/return ::parser/exception system] :as env} _ {:keys [store-id account-params]}]
   {:auth {::auth/store-owner store-id}
    :log  [:store-id]
    :resp {:success "Your account was updated"
@@ -409,8 +417,10 @@
                      (or (.getMessage exception) "Something went wrong")
                      "Something went wrong!")}}
   {:action (fn []
-             (let [{:stripe/keys [id]} (stripe/pull-stripe (db/db state) store-id)]
-               (stripe/update-account (:system/stripe system) id account-params)))})
+             (let [{:stripe/keys [id]} (stripe/pull-stripe (db/db state) store-id)
+                   new-account (stripe/update-account (:system/stripe system) id account-params)]
+               (store/stripe-account-updated env new-account)
+               new-account))})
 
 (defmutation stripe/update-customer
   [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [shipping default-source source remove-source] :as params}]

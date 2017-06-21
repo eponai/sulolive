@@ -131,12 +131,12 @@
           :else
           content)))
 
-(defn cover [{:keys [photo-id src] :as props} & content]
+(defn cover [{:keys [photo-id src transformation] :as props} & content]
   (let [photo-key (when-not src (or photo-id "static/storefront"))]
     (photo (-> (css/add-class :cover props)
                (assoc :style :style/cover)
                (assoc :photo-id photo-key)
-               (assoc :transformation :transformation/cover))
+               (assoc :transformation (or transformation :transformation/cover)))
            (overlay nil content))))
 
 ;(defn edit-cover [{:keys [photo-id] :as props} & content]

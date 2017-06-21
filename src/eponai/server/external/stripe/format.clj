@@ -88,7 +88,10 @@
                              {:stripe.payout-schedule/interval     (:interval payout-shedule)
                               :stripe.payout-schedule/month-anchor (:monthly_anchor payout-shedule)
                               :stripe.payout-schedule/week-anchor  (:weekly_anchor payout-shedule)
-                              :stripe.payout-schedule/delay-days   (:delay_days payout-shedule)}))]
+                              :stripe.payout-schedule/delay-days   (:delay_days payout-shedule)}))
+        tos-acceptance* (fn [tos]
+                          (f/remove-nil-keys
+                            {:stripe.tos/date (:date tos)}))]
     (f/remove-nil-keys
       {:stripe/id                 (:id account)
        :stripe/business-name      (:business_name account)
@@ -101,7 +104,8 @@
        :stripe/legal-entity       (stripe->legal-entity (:legal_entity account))
        :stripe/payouts-enabled?   (:transfers_enabled account)
        :stripe/payout-schedule    (payout-schedule* (:payout_schedule account))
-       :stripe/verification       (stripe->verification (:verification account))})))
+       :stripe/verification       (stripe->verification (:verification account))
+       :stripe/tos-acceptance     (tos-acceptance* (:tos_acceptance account))})))
 
 (defn stripe->customer [customer]
   (let [source* (fn [s]
