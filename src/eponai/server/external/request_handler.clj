@@ -49,7 +49,9 @@
                                        (swap! suspended-state update :queued-requests conj queued-request))
                                      deferred-response)
                                    (handler request))))
-            logger (log/async-logger (log/->TimbreLogger))
+            logger (log/async-logger (or
+                                       (:system/elastic-cloud system)
+                                       (log/->TimbreLogger)))
             handler (-> (compojure/routes server-routes/site-routes)
                         (cond-> (not in-production?) (m/wrap-node-modules))
                         m/wrap-post-middlewares

@@ -88,7 +88,8 @@
                  [org.clojure/clojure "1.9.0-alpha14"]
                  [org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"]
                  ;;[org.omcljs/om "1.0.0-alpha46"]
-                 [aleph "0.4.3"]
+                 [io.netty/netty-all "4.1.11.Final"]
+                 [aleph "0.4.3" :exclusions [io.netty/netty-all]]
                  [aleph-middleware "0.1.2" :exclusions [aleph]]
                  [clj-http "3.3.0" :exclusions [riddley]]
                  [clj-time "0.13.0"]
@@ -97,6 +98,8 @@
                   :exclusions [com.google.guava/guava]]
                  [buddy/buddy-auth "1.3.0"]
                  [com.cemerick/url "0.1.1"]
+                 [org.apache.logging.log4j/log4j-api "2.6.2"]
+                 [org.apache.logging.log4j/log4j-to-slf4j "2.6.2"]
                  [com.datomic/datomic-pro "0.9.5544"
                   :exclusions [joda-time]]
                  [com.amazonaws/aws-java-sdk-dynamodb "1.11.77"
@@ -120,6 +123,7 @@
                  ;; Depending on transit-clj for faster cljs builds
                  [com.cognitect/transit-clj "0.8.300"]
                  ; ring helpers
+                 [org.elasticsearch.client/x-pack-transport "5.4.2"]
                  [ring/ring-core "1.5.0"]
                  [ring/ring-devel "1.5.0"]
                  [ring/ring-defaults "0.2.1"]
@@ -302,7 +306,8 @@
                                        [figwheel-sidecar "0.5.10"]
                                        [com.cemerick/piggieback "0.2.1"]
                                        ]
-                        :repl-options {:init-ns eponai.repl
+                        :repl-options {:timeout 60000
+                                       :init-ns eponai.repl
                                        :init    (eponai.repl/init)}
                         :test-paths   ["test" "env/server/dev"]}
              :tester   {:dependencies [[lein-cljsbuild "1.1.5"]
@@ -469,7 +474,10 @@
   :ring {:handler eponai.server.core/app
          :init    eponai.server.core/init}
   :main eponai.server.core
-  :repositories {"my.datomic.com" {:url      "https://my.datomic.com/repo"
+  :repositories {"elasticsearch"  {:url      "https://artifacts.elastic.co/maven"
+                                   :releases true
+                                   :snapshots false}
+                 "my.datomic.com" {:url      "https://my.datomic.com/repo"
                                    :username ~(System/getenv "DATOMIC_EMAIL")
                                    :password ~(System/getenv "DATOMIC_KEY")}}
 

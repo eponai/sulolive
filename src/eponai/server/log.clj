@@ -10,6 +10,10 @@
 (defprotocol ILogger
   (log [this msg]))
 
+(defprotocol IBulkLogger
+  (log-bulk [this messages])
+  (bulk-size [this]))
+
 ;; ------- Log manipulation functions
 
 (deftype SkipMessage [])
@@ -25,19 +29,28 @@
           (log logger (assoc msg :data m)))))))
 
 (defn- logging-thread [logger in]
-  (async/thread
-    (loop []
-      (when-some [v (async/<!! in)]
-        (try
-          (log logger v)
-          (catch Throwable e
-            (try
-              (timbre/error ::async-error
-                            e
-                            {:exception-class   (.getClass e)
-                             :exception-message (.getMessage e)})
-              (catch Throwable _))))
-        (recur)))))
+  (let [bulk? (satisfies? IBulkLogger logger)]
+    (async/thread
+      (loop []
+        (when-some [v (if bulk?
+                        (into []
+                              (comp (take-while some?)
+                                    (take (bulk-size logger)))
+                              (cons (async/<!! in)
+                                    (repeatedly #(async/poll! in))))
+                        (async/<!! in))]
+          (try
+            (if bulk?
+              (log-bulk logger v)
+              (log logger v))
+            (catch Throwable e
+              (try
+                (timbre/error ::async-error
+                              e
+                              {:exception-class   (.getClass e)
+                               :exception-message (.getMessage e)})
+                (catch Throwable _))))
+          (recur))))))
 
 (defn async-logger
   ([logger]
@@ -63,9 +76,9 @@
   {:pre [(and (or (keyword? id) (symbol? id))
               (some? (namespace id)))
          (map? data)]}
-  (log logger {:id id
-               :level level
-               :data data
+  (log logger {:id          id
+               :level       level
+               :data        data
                :millis (System/currentTimeMillis)}))
 
 (defn info! [logger id data]

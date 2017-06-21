@@ -15,6 +15,7 @@
     [eponai.server.external.wowza :as wowza]
     [eponai.server.external.product-search :as product-search]
     [eponai.server.external.mailchimp :as mailchimp]
+    [eponai.server.external.elastic-cloud :as elastic-cloud]
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.taxjar :as taxjar]
     [eponai.server.external.aws-s3 :as s3]
@@ -33,6 +34,7 @@
                    :system/client-env
                    :system/cloudinary
                    :system/datomic
+                   :system/elastic-cloud
                    :system/handler
                    :system/mailchimp
                    :system/server-address
@@ -91,6 +93,9 @@
                                    :ssl  true
                                    :user (:smtp-user env)
                                    :pass (:smtp-password env)})
+   :system/elastic-cloud (elastic-cloud/map->ElasticCloud {:cluster-hostname (:elastic-cloud-host env)
+                                                           ;; shield-user being "username:password"
+                                                           :xpack-user (:elastic-cloud-xpack-user env)})
    :system/mailchimp (mailchimp/mail-chimp (:mailchimp-api-key env))
    :system/stripe    (stripe/stripe (:stripe-secret-key env))
    :system/taxjar    (taxjar/taxjar (:taxjar-api-key env))
@@ -104,6 +109,7 @@
    :system/aws-ec2   (ec2/aws-ec2-stub)
    :system/aws-elb   (elb/aws-elastic-beanstalk-stub)
    :system/aws-s3    (s3/aws-s3-stub)
+   :system/elastic-cloud nil
    :system/email     (email/email-stub)
    :system/mailchimp (mailchimp/mail-chimp-stub)
    :system/stripe    (stripe/stripe-stub (:stripe-secret-key env))
@@ -180,6 +186,8 @@
                ;:system/email
                ;:system/mailchimp
                ;:system/taxjar
+
+               ;:system/elastic-cloud
                ))
 
 (defn test-system [config]

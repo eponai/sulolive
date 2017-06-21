@@ -556,17 +556,20 @@
                (let [error? (instance? Throwable x)
                      log-fn (if error? log/error! log/info!)
                      end (System/currentTimeMillis)
-                     read-basis-t (::read-basis-t-for-this-key env)]
+                     read-basis-t (::read-basis-t-for-this-key env)
+                     read? (keyword? k)]
                  (log-fn (:logger env)
-                         k
-                         (merge {:response-type (if error? :error :success)
+                         (keyword (str "eponai.server.parser")
+                                  (if read? "read" "mutate"))
+                         (merge {:parser-key    k
+                                 :response-type (if error? :error :success)
                                  :event-millis  (- end start)
                                  :event-start   start
                                  :event-end     end}
                                 (cond
                                   error?
                                   {:exception (log/render-exception x)}
-                                  (keyword? k)
+                                  read?
                                   (cond-> nil
                                           (coll? x)
                                           (assoc :return-empty? (empty? x))
