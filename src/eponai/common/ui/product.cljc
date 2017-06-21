@@ -54,7 +54,9 @@
      {:store/_items [{:store/profile [{:store.profile/photo [:photo/path :photo/id]}
                                       :store.profile/name]}
                      {:store/locality [:sulo-locality/path]}
-                     {:store/shipping [{:shipping/rules [{:shipping.rule/destinations [:country/code]}]}]}]}])
+                     {:store/shipping [{:shipping/rules [{:shipping.rule/destinations [:country/code]}]}]}
+                     {:store/status [:status/type]}]}])
+
   Object
   (initLocalState [_]
     {:selected-tab       :rating

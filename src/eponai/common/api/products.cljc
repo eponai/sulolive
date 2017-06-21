@@ -27,20 +27,34 @@
 (defn find-by-category [category-path]
   {:where   '[[?category :category/path ?path]
               (eq-or-child-category? ?category ?c)
+              [?status :status/type :status.type/open]
+              [?s :store/status ?status]
+              [?s :store/profile ?p]
+              [?p :store.profile/photo _]
+              [?s :store/items ?e]
               [?e :store.item/category ?c]]
    :symbols {'?path category-path}
    :rules   eq-or-child-category-rule})
 
 (defn find-all [locality]
-  {:where   '[[?s :store/locality ?l]
-              [?s :store/items ?e]
-              [?e :store.item/name]]
+  {:where '[[?s :store/locality ?l]
+            [?status :status/type :status.type/open]
+            [?s :store/status ?status]
+            [?s :store/profile ?p]
+            [?p :store.profile/photo _]
+            [?s :store/items ?e]
+            ;[?e :store.item/uuid _]
+            ]
    :symbols {'?l (:db/id locality)}})
 
 (defn find-with-search [locality search]
-  {:where    '[[?s :store/locality ?l]
-               [?s :store/items ?e]
-               {:fulltext-id 1}]
+  {:where    ['[?s :store/locality ?l]
+              '[?status :status/type :status.type/open]
+              '[?s :store/status ?status]
+              '[?s :store/profile ?p]
+              '[?p :store.profile/photo _]
+              '[?s :store/items ?e]
+              {:fulltext-id 1}]
    :symbols  {'?search search
               '?l      (:db/id locality)}
    :fulltext [{:id     1
@@ -79,14 +93,18 @@
 
 (defn find-with-category-names [locality category-names]
   (db/merge-query (category-names-query category-names)
-                  {:where   [(list 'eq-or-child-category?
-                                   (smallest-category category-names)
-                                   '?item-category)
-                             '[?s :store/locality ?l]
-                             '[?s :store/items ?e]
-                             '[?e :store.item/category ?item-category]]
+                  {:where [(list 'eq-or-child-category?
+                                 (smallest-category category-names)
+                                 '?item-category)
+                           '[?s :store/locality ?l]
+                           '[?status :status/type :status.type/open]
+                           '[?s :store/status ?status]
+                           '[?s :store/profile ?p]
+                           '[?p :store.profile/photo _]
+                           '[?s :store/items ?e]
+                           '[?e :store.item/category ?item-category]]
                    :symbols {'?l (:db/id locality)}
-                   :rules   eq-or-child-category-rule}))
+                   :rules eq-or-child-category-rule}))
 
 ;; Navigation bs
 

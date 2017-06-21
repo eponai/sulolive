@@ -91,12 +91,14 @@
   {:value (do
             (debug "Read stores: " locations)
             (when (some? (:db/id locations))
-              (query/all db db-history query {:where   '[[?e :store/locality ?l]
-                                                         [?s :stream/state ?states]
-                                                         [?s :stream/store ?e]]
-                                              :symbols {'[?states ...] [:stream.state/online
-                                                                        :stream.state/offline]
-                                                        '?l            (:db/id locations)}})))})
+                (query/all db db-history query {:where   '[[?e :store/locality ?l]
+                                                           [?s :stream/state ?states]
+                                                           [?e :store/profile ?p]
+                                                           [?p :store.profile/photo _]
+                                                           [?s :stream/store ?e]]
+                                                :symbols {'[?states ...] [:stream.state/online
+                                                                          :stream.state/offline]
+                                                          '?l            (:db/id locations)}})))})
 
 (defread query/streams
   [{:keys [db db-history query locations]} _ _]

@@ -142,7 +142,8 @@
                              :stripe/charges-enabled?
                              :stripe/payouts-enabled?
                              :stripe/verification]}
-     :query/current-route])
+     :query/current-route
+     :query/messages])
   Object
   (open-store [this]
     (let [{:query/keys [store stripe-account current-route]} (om/props this)]

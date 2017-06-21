@@ -185,6 +185,7 @@
     :store/profile    {:store.profile/name  "thislovesthat"
                        :store.profile/cover (photo "mocked/175704-27dcee8b2fd94212b2cc7dcbe43bb80c")
                        :store.profile/photo (photo "mocked/175704-27dcee8b2fd94212b2cc7dcbe43bb80c")}
+    :store/status     {:status/type :status.type/open}
     :store/created-at 3
     ;:store/locality   [:sulo-locality/path "yvr"]
 
@@ -213,8 +214,9 @@
    {:db/id            (db/tempid :db.part/user)
     :store/created-at 4
     :store/profile    {:store.profile/name  "Nafsika"
-
-                       :store.profile/photo (photo "mocked/isla_500x500.22177516_ath1ugrh")}
+                       ;:store.profile/photo (photo "mocked/isla_500x500.22177516_ath1ugrh")
+                       }
+    :store/status     {:status/type :status.type/open}
     :store/locality   [:sulo-locality/path "yul"]
     :store/items      [{:store.item/name     "Silver Twig Ring Milky"
                         :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1094898766_ewls"
@@ -266,12 +268,14 @@
                      :store.item/skus     [(sku)]}]}
 
    ;; BangiShop
-   {:db/id          (db/tempid :db.part/user)
-    :store/profile  {:store.profile/name  "BangiShop"
-                     :store.profile/cover (photo "mocked/isbl_3360x840.24031443_roffucs6")
-                     :store.profile/photo (photo "mocked/isla_500x500.18128391_dro0qzqd")}
+
+   {:db/id         (db/tempid :db.part/user)
+    :store/profile {:store.profile/name  "BangiShop"
+                    :store.profile/cover (photo "mocked/isbl_3360x840.24031443_roffucs6")
+                    :store.profile/photo (photo "mocked/isla_500x500.18128391_dro0qzqd")}
     :store/locality [:sulo-locality/path "yul"]
     :store/stripe   {:stripe/id "acct_19jze1BbOp8CGZPS"}
+    :store/status     {:status/type :status.type/open}
     :store/items    [{:store.item/name     "Leather Shoes (silver)"
                       :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1040522475_mbon"
                                                                              "mocked/il_570xN.993989824_3pdl"])
