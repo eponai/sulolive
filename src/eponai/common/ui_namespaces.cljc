@@ -13,6 +13,7 @@
     [eponai.web.ui.about-sulo]
     [eponai.web.ui.landing-page]
     [eponai.web.ui.login]
+    [eponai.web.ui.not-found]
     [eponai.web.ui.start-store]
     [eponai.web.ui.unauthorized]
     [eponai.web.ui.user.settings]

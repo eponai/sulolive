@@ -39,7 +39,7 @@
 (def routes [:index :store :browse :checkout :store-dashboard
              :shopping-bag :login :sell :product :live :help
              :user :unauthorized :user-settings
-             :landing-page :about])
+             :landing-page :about :not-found])
 
 #?(:cljs
    (defn should-update-when-route-is-loaded
