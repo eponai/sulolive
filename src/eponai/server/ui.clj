@@ -79,7 +79,7 @@
                    (html/render-html-without-reactid-tags
                      (->component (assoc props ::root/app-html (render-page props)))))
             end (System/currentTimeMillis)]
-        (log/info! (:logger props) ::render-html {:event-start start :event-end end :event-millis (- end start)})
+        (log/info! (:logger props) ::render-html {:event-time-ms (- end start)})
         html))))
 
 (def render-site (makesite root/Root))

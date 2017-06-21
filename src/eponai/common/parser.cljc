@@ -563,9 +563,7 @@
                                   (if read? "read" "mutate"))
                          (merge {:parser-key    k
                                  :response-type (if error? :error :success)
-                                 :event-millis  (- end start)
-                                 :event-start   start
-                                 :event-end     end}
+                                 :event-time-ms  (- end start)}
                                 (cond
                                   error?
                                   {:exception (log/render-exception x)}

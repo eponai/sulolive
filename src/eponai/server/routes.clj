@@ -58,6 +58,7 @@
                    route-map
                    (get-in (request->auth request) [:user-id])))
   ([{::m/keys [logger] :as request} route-map user-id]
+   {:pre [(or (nil? user-id) (number? user-id))]}
    (let [start (System/currentTimeMillis)
          route (select-keys route-map [:route :route-params :query-params])
          ip (client-ip request)]
@@ -91,7 +92,7 @@
                :social-sharing      sharing-objects}
         logger (context-logger request
                                (select-keys props [:route :route-params :query-params])
-                               (:get-in props [:auth :user-id]))]
+                               (get-in props [:auth :user-id]))]
     (assoc props :logger logger)))
 
 
