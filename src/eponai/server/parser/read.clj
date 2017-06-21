@@ -92,6 +92,8 @@
             (debug "Read stores: " locations)
             (when (some? (:db/id locations))
                 (query/all db db-history query {:where   '[[?e :store/locality ?l]
+                                                           [?status :status/type :status.type/open]
+                                                           [?e :store/status ?status]
                                                            [?s :stream/state ?states]
                                                            [?e :store/profile ?p]
                                                            [?p :store.profile/photo _]
@@ -105,6 +107,8 @@
   {:auth ::auth/public}
   {:value (when (some? (:db/id locations))
             (query/all db db-history query {:where   '[[?s :store/locality ?l]
+                                                       [?st :status/type :status.type/open]
+                                                       [?s :store/status ?st]
                                                        [?e :stream/store ?s]
                                                        [?e :stream/state :stream.state/live]]
                                             :symbols {'?l (:db/id locations)}}))})
@@ -144,6 +148,8 @@
   {:value (when (some? (:db/id locations))
             (when-not db-history
               (->> (query/all db db-history query {:where   '[[?s :store/locality ?l]
+                                                              [?st :status/type :status.type/open]
+                                                              [?s :store/status ?st]
                                                               [?e :stream/store ?s]
                                                               [?s :store/profile ?p]
                                                               [?p :store.profile/photo _]]
@@ -160,6 +166,8 @@
                              %)
                            items))]
               (->> (db/pull-all-with db query {:where   '[[?s :store/locality ?l]
+                                                          [?st :status/type :status.type/open]
+                                                          [?s :store/status ?st]
                                                           [?s :store/items ?e]
                                                           [?e :store.item/photos ?p]
                                                           [?p :store.item.photo/photo _]]
@@ -180,6 +188,8 @@
                              %)
                            items))]
               (->> (db/pull-all-with db query {:where   '[[?e :store/locality ?l]
+                                                          [?st :status/type :status.type/open]
+                                                          [?e :store/status ?st]
                                                           [?e :store/profile ?p]
                                                           [?p :store.profile/photo _]]
                                                :symbols {'?l (:db/id locations)}})
@@ -191,16 +201,22 @@
 ;; ##############
 
 (defread query/store
-  [{:keys [db db-history query]} _ {:keys [store-id]}]
+  [{:keys [db db-history query auth]} _ {:keys [store-id]}]
   {:auth    ::auth/public
    :log     [:store-id]
    :uniq-by [[:store-id store-id]]}
-  {:value (let [store (query/one db db-history query {:where   '[[?e :store/profile]]
-                                                      :symbols {'?e store-id}})]
-            ;(debug "Query: " query)
-            ;(debug "Got store shipping: " (:store/shipping store))
-
-            store)})
+  {:value (let [{:store/keys [status owners]} (db/pull db
+                                                       [{:store/status [:status/type]}
+                                                        {:store/owners [{:store.owner/user [:user/email]}]}]
+                                                       store-id)]
+            (debug "AUTH: " auth)
+            (if (or (= (:status/type status)
+                       :status.type/open)
+                    (= (:email auth) (get-in owners [:store.owner/user :user/email])))
+              (query/one db db-history query {:where   '[[?e :store/profile]]
+                                              :symbols {'?e store-id}})
+              {:db/id            store-id
+               :store/not-found? true}))})
 
 (defread query/store-items
   [{:keys [db db-history query]} _ {:keys [store-id navigation]}]
