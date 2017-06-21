@@ -133,7 +133,9 @@
   (c/map->SystemMap (-> (merge (components-without-fakes config)
                                (real-components config)
                                (when (not in-aws?)
-                                 (select-keys (fake-components config) [:system/aws-elb :system/aws-ec2])))
+                                 (select-keys (fake-components config) [:system/aws-elb
+                                                                        :system/aws-ec2
+                                                                        :system/elastic-cloud])))
                         (with-request-handler config))))
 
 (defn fake-system [config & real-component-keys]
