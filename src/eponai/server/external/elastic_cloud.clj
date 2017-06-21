@@ -82,33 +82,43 @@
       (do (component/stop old-this)
           (component/start this))))
 
-  log/IBulkLogger
-  (bulk-size [this]
-    ;; What's a good bulk-size?
-    ;; Docs says to start with around ~1000-5000 "documents" (json objects),
-    ;; or 5-15MB. I measured a server.parser/read json object, and it was 435B.
-    ;; So we can do more than 1000.
-    ;; https://www.elastic.co/guide/en/elasticsearch/guide/current/bulk.html
-    2000)
-  (log-bulk [this messages]
-    (debug "Sending messages to elastic: " messages)
-    (let [^TransportClient client (:client this)
-          bulk-builder (.prepareBulk client)
-          json-opts {:date-format logstash-iso-format}
-          _ (doseq [msg messages]
-              (let [date (clj-time.coerce/from-long (:millis msg))
-                    ymd (clj-time.format/unparse yyyy-MM-dd-formatter date)
-                    timestamp (clj-time.format/unparse iso-format-formatter date)]
-                (.add bulk-builder
-                      (-> (.prepareIndex client
-                                         (str index-name "-" ymd)
-                                         (str (:id msg)))
-                          (.setSource (cheshire/generate-string
-                                        (assoc (:data msg)
-                                          "@timestamp" timestamp
-                                          :level (:level msg)
-                                          :host (:host this))
-                                        json-opts))))))
-          bulk-response ^BulkResponse (.get bulk-builder)]
-      (when (.hasFailures bulk-response)
-        (error "elastic cloud bulk request failure: " (.buildFailureMessage bulk-response))))))
+
+  log/ILoggerFactory
+  (make-logger [this]
+    (reify
+      log/IBulkLogger
+      (bulk-size [_]
+        ;; What's a good bulk-size?
+        ;; Docs says to start with around ~1000-5000 "documents" (json objects),
+        ;; or 5-15MB. I measured a server.parser/read json object, and it was 435B.
+        ;; So we can do more than 1000.
+        ;; https://www.elastic.co/guide/en/elasticsearch/guide/current/bulk.html
+        2000)
+      (log-bulk [_ messages]
+        (debug "Sending messages to elastic: " messages)
+        (let [^TransportClient client (:client this)
+              bulk-builder (.prepareBulk client)
+              json-opts {:date-format logstash-iso-format}
+              _ (doseq [msg messages]
+                  (let [date (clj-time.coerce/from-long (:millis msg))
+                        ymd (clj-time.format/unparse yyyy-MM-dd-formatter date)
+                        timestamp (clj-time.format/unparse iso-format-formatter date)]
+                    (.add bulk-builder
+                          (-> (.prepareIndex client
+                                             (str index-name "-" ymd)
+                                             (str (:id msg)))
+                              (.setSource (cheshire/generate-string
+                                            (assoc (:data msg)
+                                              "@timestamp" timestamp
+                                              :level (:level msg)
+                                              :host (:host this))
+                                            json-opts))))))
+              bulk-response ^BulkResponse (.get bulk-builder)]
+          (when (.hasFailures bulk-response)
+            (error "elastic cloud bulk request failure: " (.buildFailureMessage bulk-response))))))))
+
+(defn elastic-cloud-stub []
+  (reify
+    log/ILoggerFactory
+    (make-logger [this]
+      nil)))

@@ -7,6 +7,9 @@
     [clojure.string :as string])
   (:import (java.io StringWriter PrintWriter LineNumberReader StringReader)))
 
+(defprotocol ILoggerFactory
+  (make-logger [this] "Returns a new logger"))
+
 (defprotocol ILogger
   (log [this msg]))
 

@@ -50,7 +50,7 @@
                                      deferred-response)
                                    (handler request))))
             logger (log/async-logger (or
-                                       (:system/elastic-cloud system)
+                                       (log/make-logger (:system/elastic-cloud system))
                                        (log/->TimbreLogger)))
             handler (-> (compojure/routes server-routes/site-routes)
                         (cond-> (not in-production?) (m/wrap-node-modules))

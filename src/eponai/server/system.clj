@@ -107,17 +107,17 @@
                                        :publisher-url  (:wowza-publisher-url env)})})
 
 (defn fake-components [{:keys [env] :as config}]
-  {:system/auth0     (c/using (auth0/map->FakeAuth0 {})
-                              {:datomic :system/datomic})
-   :system/aws-ec2   (ec2/aws-ec2-stub)
-   :system/aws-elb   (elb/aws-elastic-beanstalk-stub)
-   :system/aws-s3    (s3/aws-s3-stub)
-   :system/elastic-cloud nil
-   :system/email     (email/email-stub)
-   :system/mailchimp (mailchimp/mail-chimp-stub)
-   :system/stripe    (stripe/stripe-stub (:stripe-secret-key env))
-   :system/taxjar    (taxjar/taxjar-stub)
-   :system/wowza     (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})})
+  {:system/auth0         (c/using (auth0/map->FakeAuth0 {})
+                                  {:datomic :system/datomic})
+   :system/aws-ec2       (ec2/aws-ec2-stub)
+   :system/aws-elb       (elb/aws-elastic-beanstalk-stub)
+   :system/aws-s3        (s3/aws-s3-stub)
+   :system/elastic-cloud (elastic-cloud/elastic-cloud-stub)
+   :system/email         (email/email-stub)
+   :system/mailchimp     (mailchimp/mail-chimp-stub)
+   :system/stripe        (stripe/stripe-stub (:stripe-secret-key env))
+   :system/taxjar        (taxjar/taxjar-stub)
+   :system/wowza         (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})})
 
 (defn with-request-handler [system {:keys [in-prod? env] :as config}]
   (assoc system
