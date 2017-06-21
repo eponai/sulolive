@@ -41,6 +41,8 @@
     {:remote true}
     {:value (when-let [loc (client.auth/current-locality db)]
               (db/pull-all-with db query {:where   '[[?e :store/locality ?l]
+                                                     [?st :status/type :status.type/open]
+                                                     [?e :store/status ?st]
                                                      [?s :stream/state ?states]
                                                      [?s :stream/store ?e]]
                                           :symbols {'[?states ...] [:stream.state/online
@@ -462,6 +464,56 @@
       {:value (db/pull-one-with db query {:where   '[[?e :stream/store ?store-id]]
                                           :symbols {'?store-id store-id}})})))
 
+<<<<<<< HEAD
+=======
+(defmethod client-read :query/streams
+  [{:keys [db query target]} _ _]
+  ;(debug "Read query/auth: ")
+  (if target
+    {:remote true}
+    {:value (db/pull-all-with db query {:where '[[?e :stream/state :stream.state/live]
+                                                 [?e :stream/store ?s]
+                                                 [?s :store/status ?st]
+                                                 [?st :status/type :status.type/open]]})}))
+
+; ### FEATURED ###  ;
+
+(defmethod client-read :query/featured-streams
+  [{:keys [db query]} _ _]
+  {:remote true
+   :value  (->> (db/all-with db {:where '[[?e :stream/featured]]})
+                (db/pull-many db query)
+                (sort-by :db/id))})
+
+(defmethod client-read :query/featured-items
+  [{:keys [db query]} _ _]
+  {:remote true
+   :value  (let [items (db/all-with db {:where '[[?e :store.item/featured]]})
+                 pulled (db/pull-many db query items)]
+             (sort-by :store.item/created-at
+                      #(compare %2 %1)
+                      pulled))})
+
+(defmethod client-read :query/featured-stores
+  [{:keys [db query]} _ _]
+  ;; Only fetch featured-stores initially? i.e. (when (nil? db-history) ...)
+  ;; TODO: Come up with a way to feature stores. DB SHUFFLE
+  {:remote true
+   :value  (letfn [(photos-fn [store]
+                     (let [s (db/entity db store)
+                           [img-1 img-2] (->> (:store.item/_store s)
+                                              (sort-by :db/id)
+                                              (map :store.item/img-src)
+                                              (take 2))]
+                       {:db/id                  store
+                        :store/featured-img-src [img-1 (:store.profile/photo (:store/profile s)) img-2]}))]
+             (sort-by :store/created-at
+                      #(compare %2 %1)
+                      (into [] (comp (map photos-fn)
+                                     (map #(merge % (db/pull db query (:db/id %)))))
+                            (db/all-with db {:where '[[?e :store/featured]]}))))})
+
+>>>>>>> Update home dashboard to show store status.
 (defmethod client-read :query/stream-config
   [{:keys [db query]} k _]
   {:remote true

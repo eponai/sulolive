@@ -12,7 +12,8 @@
     [eponai.common.mixpanel :as mixpanel]
     [eponai.common.ui.utils :refer [two-decimal-price]]
     [eponai.web.ui.photo :as photo]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [clojure.string :as string]))
 
 (defn verification-status-element [component]
   (let [{:query/keys [stripe-account current-route]} (om/props component)
@@ -77,6 +78,12 @@
              (dom/i {:classes ["fa fa-check fa-fw"]})
              content))))
 
+(defn store-status [store]
+  (let [{:store/keys [status]} store]
+    (if status
+      (string/upper-case (name (:status/type status)))
+      "CLOSED")))
+
 (defui StoreHome
   static om/IQuery
   (query [_]
@@ -86,6 +93,7 @@
                                      {:store.profile/photo [:photo/path :photo/id]}]}
                     {:store/owners [{:store.owner/user [:user/email]}]}
                     :store/stripe
+                    {:store/status [:status/type]}
                     {:store/shipping [{:shippping/rules [:db/id]}]}
                     {:order/_store [:order/items]}
                     {:stream/_store [:stream/state]}]}
@@ -125,18 +133,7 @@
                  (css/align :middle))
 
             (grid/column
-              (->> (grid/column-size {:small 6 :medium 3})
-                   (css/text-align :center))
-              (dom/h3 nil "Status")
-              (dom/p nil (dom/span (css/add-classes [:stat]) "Inactive"))
-              (button/default-hollow
-                {:href    (routes/url :store-dashboard/profile#options {:store-id store-id})
-                 :onClick #(mixpanel/track-key ::mixpanel/update-status {:source "store-dashboard"})}
-                (dom/span nil "Options")
-                (dom/i {:classes ["fa fa-chevron-right"]})))
-            (grid/column
-              (->> (grid/column-size {:small 6 :medium 3})
-                   (css/text-align :center))
+              (css/text-align :center)
               (dom/h3 nil (get-in store [:store/profile :store.profile/name]))
               (photo/store-photo store {:transformation :transformation/thumbnail})
               (button/default-hollow
@@ -146,28 +143,51 @@
                 (dom/i {:classes ["fa fa-chevron-right"]})))
 
             (grid/column
-              nil
-              (grid/row
-                (grid/columns-in-row {:small 2})
+              (css/text-align :center)
+              (dom/h3 nil "Status")
+              (dom/p nil (dom/span (css/add-classes [:stat])
+                                   (store-status store)))
+              ;(dom/p nil (dom/span (css/add-class "icon icon-opened")))
+              (when-not (= :status.type/open
+                           (get-in store [:store/status :status/type]))
+                (button/default-hollow
+                  {:href    (routes/url :store-dashboard/profile#options {:store-id store-id})
+                   :onClick #(mixpanel/track-key ::mixpanel/update-status {:source "store-dashboard"})}
+                  (dom/span nil "Options")
+                  (dom/i {:classes ["fa fa-chevron-right"]}))))))
 
-                (grid/column
-                  (css/text-align :center)
-                  (dom/h3 nil "Products")
-                  (dom/p (css/add-class :stat) store-item-count)
-                  (button/default-hollow
-                    {:href    (routes/url :store-dashboard/product-list {:store-id store-id})
-                     :onClick #(mixpanel/track-key ::mixpanel/go-to-products {:source "store-dashboard"})}
-                    (dom/span nil "Products")
-                    (dom/i {:classes ["fa fa-chevron-right"]})))
-                (grid/column
-                  (css/text-align :center)
-                  (dom/h3 nil "Orders")
-                  (dom/p (css/add-class :stat) (count (:order/_store store)))
-                  (button/default-hollow
-                    {:href    (routes/url :store-dashboard/order-list {:store-id store-id})
-                     :onClick #(mixpanel/track-key ::mixpanel/go-to-orders {:source "store-dashboard"})}
-                    (dom/span nil "Orders")
-                    (dom/i {:classes ["fa fa-chevron-right"]})))))))
+        (callout/callout
+          nil
+          (grid/row
+            nil
+
+            (grid/column
+              (css/text-align :center)
+              (dom/h3 nil "Balance")
+              (dom/p (css/add-class :stat) "$0.00")
+              (button/default-hollow
+                {:href    (routes/url :store-dashboard/finances {:store-id store-id})
+                 :onClick #(mixpanel/track-key ::mixpanel/go-to-finances {:source "store-dashboard"})}
+                (dom/span nil "Finances")
+                (dom/i {:classes ["fa fa-chevron-right"]})))
+            (grid/column
+              (css/text-align :center)
+              (dom/h3 nil "Products")
+              (dom/p (css/add-class :stat) store-item-count)
+              (button/default-hollow
+                {:href    (routes/url :store-dashboard/product-list {:store-id store-id})
+                 :onClick #(mixpanel/track-key ::mixpanel/go-to-products {:source "store-dashboard"})}
+                (dom/span nil "Products")
+                (dom/i {:classes ["fa fa-chevron-right"]})))
+            (grid/column
+              (css/text-align :center)
+              (dom/h3 nil "Orders")
+              (dom/p (css/add-class :stat) (count (:order/_store store)))
+              (button/default-hollow
+                {:href    (routes/url :store-dashboard/order-list {:store-id store-id})
+                 :onClick #(mixpanel/track-key ::mixpanel/go-to-orders {:source "store-dashboard"})}
+                (dom/span nil "Orders")
+                (dom/i {:classes ["fa fa-chevron-right"]})))))
         ;(callout/callout
         ;  nil
         ;  (grid/row

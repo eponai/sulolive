@@ -47,6 +47,8 @@
    ::go-to-products        "Store: Go to products"
    ::go-to-orders          "Store: Go to orders"
    ::go-to-business        "Store: Go to business settings"
+   ::go-to-finances        "Store: Go to finances"
+   ::go-to-shipping        "Store: Go to shipping"
 
    ;; User menu
    ::go-to-manage-store    "Go to manage store"
@@ -57,7 +59,7 @@
    ::signout               "Sign out user"
    ::open-signin           "Open sign in user"
    ::go-to-start-store     "Go to start store"
-   ::update-status "Go to update store status"
+   ::update-status         "Go to update store status"
 
    ::shop-by-category      "Shop by category"
    ::shop-live             "Browse live"

@@ -610,7 +610,7 @@
                         (when (contains? #{:store-dashboard/shipping} (:route current-route))
                           (css/add-class :is-active))
                         (dom/a {:href (routes/url :store-dashboard/shipping {:store-id (:db/id owned-store)})
-                                ;:onClick #(track-event ::mixpanel/go-to-orders)
+                                :onClick #(track-event ::mixpanel/go-to-shipping)
                                 }
                                (dom/div {:classes ["icon icon-truck"]})
                                (dom/span nil "Shipping")))
@@ -627,7 +627,7 @@
                                  :store-dashboard/finances#settings} (:route current-route))
                           (css/add-class :is-active))
                         (dom/a {:href    (routes/url :store-dashboard/finances {:store-id (:db/id owned-store)})
-                                :onClick #(track-event ::mixpanel/go-to-business)}
+                                :onClick #(track-event ::mixpanel/go-to-finances)}
                                (dom/div {:classes ["icon icon-finances"]})
                                (dom/span nil "Finances")))))]))
              (menu/vertical
