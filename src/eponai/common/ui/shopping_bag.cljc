@@ -168,15 +168,17 @@
           (if (not-empty items)
             (dom/div nil
                      (store-items-element this skus-by-store))
+
             (dom/div
-              (->> (css/callout)
-                   (css/text-align :center)
+              (->> (css/text-align :center)
                    (css/add-class :cart-empty))
-              (dom/p nil (dom/strong nil "Your shopping bag is empty"))
+              (dom/div
+                (css/add-class :empty-container)
+                (dom/p (css/add-class :shoutout) "Your shopping bag is empty"))
               (icons/empty-shopping-bag)
               ;(dom/p (css/add-class :header))
               (button/button
-                (button/hollow {:href (routes/url :browse/all-items)})
+                (button/sulo-dark (button/hollow {:href (routes/url :browse/all-items)}))
                 (dom/span nil "Go to the market - start shopping")))))))))
 
 (def ->ShoppingBag (om/factory ShoppingBag))

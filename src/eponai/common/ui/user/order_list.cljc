@@ -143,7 +143,7 @@
               (dom/p (css/add-class :shoutout) "You haven't made any purchases yet")
               ;(dom/br nil)
               (button/button
-                (button/secondary (button/hollow {:href (routes/url :browse/all-items)})) (dom/span nil "Browse products")))))
+                (button/sulo-dark (button/hollow {:href (routes/url :browse/all-items)})) (dom/span nil "Browse products")))))
 
         (when #?(:clj  false
                  :cljs (some? (web.utils/get-locality)))

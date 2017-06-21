@@ -15,6 +15,9 @@
 (defn hollow [& [opts]]
   (css/add-class :hollow opts))
 
+(defn sulo-dark [& [opts]]
+  (css/add-class :sulo-dark opts))
+
 (defn expanded [& [opts]]
   (css/add-class :expanded opts))
 

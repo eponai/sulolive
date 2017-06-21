@@ -41,6 +41,34 @@ html, body {
 		font-size: $global-font-size;
 	}
 }
+#sulo-not-found {
+	$sulo-color: map-get($foundation-palette, sulo-dark);
+	.page-content {
+		padding: 4rem 0;
+		.empty-container {
+			padding: $global-padding;
+		}
+		.not-found-code {
+			// flex: 0 0 auto;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			p {
+				flex: 0;
+				border: $global-border;
+				padding: $global-padding;
+				border-radius: 100px;
+				margin-bottom: 0;
+				color: $dark-gray;
+				border-color: $sulo-color;
+			}
+			// font-size: rem-calc(24);
+		}
+	}
+	hr {
+		margin-top: 6rem;
+	}
+}
 
 #sulo-landing, #sulo-index, #sulo-about {
 	.section {

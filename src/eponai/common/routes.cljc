@@ -85,27 +85,28 @@
              (remove-from-char (name route) "+"))))
 
 (def routes
-  ["/" {""                            :index
-        "enter"                       :landing-page
-        "enter/l"                     :landing-page/locality
-        "sell"                        :sell
-        "live"                        :live
-        "store"                       :index/store
-        ["store/" [#"\d+" :store-id]] store-routes
-        "products"                    product-routes
-        "browse"                      browse-categories
-        "help"                        help-routes
-        "about"                       :about
-        ["checkout/" :store-id]       checkout-routes
-        "shopping-bag"                :shopping-bag
-        "business"                    :business
-        "settings"                    :user-settings
-        "orders"                      {""                       :user/order-list
-                                       ["/" [#"\w+" :order-id]] :user/order}
-        ;["user/" [#"\d+" :user-id]]   user-routes
-        "auth"                        :auth
-        "login"                       :login
-        "unauthorized"                :unauthorized}])
+  ["" [["/" {""                            :index
+             "enter"                       :landing-page
+             "enter/l"                     :landing-page/locality
+             "sell"                        :sell
+             "live"                        :live
+             "store"                       :index/store
+             ["store/" [#"\d+" :store-id]] store-routes
+             "products"                    product-routes
+             "browse"                      browse-categories
+             "help"                        help-routes
+             "about"                       :about
+             ["checkout/" :store-id]       checkout-routes
+             "shopping-bag"                :shopping-bag
+             "business"                    :business
+             "settings"                    :user-settings
+             "orders"                      {""                       :user/order-list
+                                            ["/" [#"\w+" :order-id]] :user/order}
+             ;["user/" [#"\d+" :user-id]]   user-routes
+             "auth"                        :auth
+             "login"                       :login
+             "unauthorized"                :unauthorized}]
+       [true :not-found]]])
 
 
 (defn location-independent-route? [route]
@@ -117,14 +118,15 @@
                      :user/order-list
                      :user/order
                      :shopping-bag
-                     :about}
+                     :about
+                     :not-found}
                    route)
         (= :store-dashboard route)
         (= (name :store-dashboard) (namespace route)))))
 
 (defn auth-roles [handler]
   (cond
-    (#{:landing-page :sell :about} handler)
+    (#{:landing-page :sell :about :not-found} handler)
     ::auth/public
     (= handler :store-dashboard)
     ::auth/store-owner
