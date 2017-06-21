@@ -57,35 +57,6 @@ html, body {
 			margin-bottom: $global-margin;
 		}
 	}
-	.section-title {
-		position: relative;
-		display: flex;
-		justify-content: center;
-		h2, h1 {
-			position: relative;
-			// background: $white;
-			// flex: 0 0 auto;
-			z-index: 1;
-			padding: 0 1rem;
-			margin-bottom: 0;
-			text-transform: uppercase;
-			font-weight: bold;
-			letter-spacing: 1px;
-		}
-		h2 {
-			font-size: 120% !important;
-		}
-		&:before { 
-			// content: '';
-		  	position: absolute;
-		  	border-bottom: 1px $light-gray solid;
-		  	height: 100%;
-		  	width: 100%;
-		  	transform: translateY(-50%);
-		  	left: 0;
-		  	z-index: 0;
-	   }
-	}
 }
 #sulo-index {
 	.section .section-footer {

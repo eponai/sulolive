@@ -26,3 +26,31 @@ p > a {
 	// 	}
 	// }
 }
+
+h1, h2, h3, h4, h5, h6 {
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	font-weight: bold;
+	margin-top: $global-margin;
+	// font-size: 100%;
+}
+#sulo-store-dashboard {
+	// @include foundation-typography-base;
+		h1, h2, h3, h4, h5, h6 {
+		text-transform: none;
+		letter-spacing: 0;
+		font-weight: $global-weight-normal;
+	// font-size: 100%;
+	}
+	// $header-sizes:
+	@each $size, $headers in $dashboard-header-sizes {
+    	@include breakpoint($size) {
+      		@each $header, $font-size in $headers {
+        		#{$header} {
+          			font-size: rem-calc($font-size);
+        		}
+    	  	}
+    	}
+  	}
+
+}

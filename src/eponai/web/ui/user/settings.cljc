@@ -138,7 +138,7 @@
 (defn shipping-info-modal [component]
   (let [{:query/keys [stripe-customer countries]} (om/props component)
         shipping (:stripe/shipping stripe-customer)         ;[{:brand "American Express" :last4 1234 :exp-year 2018 :exp-month 4}]
-        address (:stripe.shipping/address shipping)
+        address (:shipping/address shipping)
         {:shipping/keys [input-validation]} (om/get-state component)
         on-close #(do (mixpanel/track "Close shipping info")
                       (om/update-state! component dissoc :modal))]
@@ -159,7 +159,7 @@
                 nil
                 (v/input {:id           (:shipping/name form-inputs)
                           :type         "text"
-                          :defaultValue (:stripe.shipping/name shipping)
+                          :defaultValue (:shipping/name shipping)
                           :name         "name"
                           :autoComplete "name"
                           :placeholder  "Full name"}
@@ -175,7 +175,7 @@
                   {:id           (:shipping.address/country form-inputs)
                    :name         "ship-country"
                    :autoComplete "shipping country"
-                   :defaultValue (:stripe.shipping.address/country address)}
+                   :defaultValue (:country/code (:shipping.address/country address))}
                   ;input-validation
                   (map (fn [c]
                          (dom/option {:value (:country/code c)} (:country/name c)))
@@ -186,7 +186,7 @@
                 (grid/column-size {:small 12 :medium 8})
                 (v/input {:id           (:shipping.address/street form-inputs)
                           :type         "text"
-                          :defaultValue (:stripe.shipping.address/street address)
+                          :defaultValue (:shipping.address/street address)
                           :name         "ship-address"
                           :autoComplete "shipping address-line1"
                           :placeholder  "Street"}
@@ -195,7 +195,7 @@
                 nil
                 (v/input {:id           (:shipping.address/street2 form-inputs)
                           :type         "text"
-                          :defaultValue (:stripe.shipping.address/street2 address)
+                          :defaultValue (:shipping.address/street2 address)
                           :placeholder  "Apt/Suite/Other"}
                          input-validation)))
             (grid/row
@@ -204,7 +204,7 @@
                 (grid/column-size {:small 12 :medium 4})
                 (v/input {:id           (:shipping.address/postal form-inputs)
                           :type         "text"
-                          :defaultValue (:stripe.shipping.address/postal address)
+                          :defaultValue (:shipping.address/postal address)
                           :name         "ship-zip"
                           :autoComplete "shipping postal-code"
                           :placeholder  "Postal code"}
@@ -213,7 +213,7 @@
                 (grid/column-size {:small 12 :medium 4})
                 (v/input {:id           (:shipping.address/locality form-inputs)
                           :type         "text"
-                          :defaultValue (:stripe.shipping.address/city address)
+                          :defaultValue (:shipping.address/locality address)
                           :name         "ship-city"
                           :autoComplete "shipping locality"
                           :placeholder  "City"}
@@ -222,7 +222,7 @@
                 (grid/column-size {:small 12 :medium 4})
                 (v/input {:id           (:shipping.address/region form-inputs)
                           :type         "text"
-                          :defaultValue (:stripe.shipping.address/state address)
+                          :defaultValue (:shipping.address/region address)
                           :name         "ship-state"
                           :autoComplete "shipping region"
                           :placeholder  "Province/State"}
@@ -507,17 +507,18 @@
                   (->> (grid/column-size {:small 12 :medium 6})
                        (css/text-align :right))
                   (if-let [shipping (:stripe/shipping stripe-customer)]
-                    (let [{:stripe.shipping/keys [address name]} shipping
-                          {:stripe.shipping.address/keys [street street2 city postal state country]} address]
+                    (let [{:shipping/keys [address name]} shipping
+                          {:shipping.address/keys [street street2 locality postal region country]} address]
                       (dom/div
                         (css/add-classes [:shipping :default-shipping])
                         ;(dom/div {:classes ["icon" (get payment-logos brand "icon-cc-unknown")]})
-                        (dom/p nil
-                               (dom/span nil name)
-                               (dom/br nil)
-                               (dom/small nil (str street ", " city " " postal))
-                               (dom/br nil)
-                               (dom/small nil (string/join ", " [state country])))
+                        (common/render-shipping shipping nil)
+                        ;(dom/p nil
+                        ;       (dom/span nil name)
+                        ;       (dom/br nil)
+                        ;       (dom/small nil (str street ", " locality " " postal))
+                        ;       (dom/br nil)
+                        ;       (dom/small nil (string/join ", " [region (:country/code country)])))
                         ))
                     (dom/p nil (dom/small nil (dom/i nil "No saved address")))
                     )

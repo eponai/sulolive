@@ -135,20 +135,20 @@ $header-sizes: (
     'h6': 16,
   ),
   medium: (
-    'h1': 32,
-    'h2': 24,//40,
+    'h1': 28,
+    'h2': 22,//40,
     'h3': 20,
     'h4': 18,
-    'h5': 20,
+    'h5': 17,
     'h6': 16,
   ),
 
   xlarge: (
-    'h1': 32,
-    'h2': 24,//40,
+    'h1': 28,
+    'h2': 22,//40,
     'h3': 20,
     'h4': 18,
-    'h5': 20,
+    'h5': 17,
     'h6': 16,
     ),
 );
@@ -601,6 +601,33 @@ $topbar-unstack-breakpoint: small;
 $dashboard-background: rgba($light-gray, 0.35);
 $dashboard-max-width: 100%;
 $dashboard-content-width: 54rem;
+$dashboard-header-sizes: (
+  small: (
+    'h1': 22,
+    'h2': 20,
+    'h3': 19,
+    'h4': 18,
+    'h5': 17,
+    'h6': 16,
+  ),
+  medium: (
+    'h1': 32,
+    'h2': 24,//40,
+    'h3': 22,
+    'h4': 20,
+    'h5': 18,
+    'h6': 16,
+  ),
+
+  xlarge: (
+    'h1': 32,
+    'h2': 24,//40,
+    'h3': 22,
+    'h4': 20,
+    'h5': 18,
+    'h6': 16,
+    ),
+);
 
 // 38. Z-index 
 // --------------

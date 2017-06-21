@@ -8,3 +8,10 @@
 @import "quill-snow";
 @import "quill";
 @import "search-bar";
+
+.sl-shipping {
+	.sl-shipping--address {
+		font-size: 80%;
+		color: $dark-gray;
+	}
+}

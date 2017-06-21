@@ -362,14 +362,21 @@
                       (grid/column
                         (css/text-align :right)
                         (if (some some? [business-name line1 city postal state])
-                          (dom/p nil
-
-                                 (when (= type :company)
-                                   [(dom/span nil (str business-name))
-                                    (dom/br nil)])
-                                 (dom/small nil line1)
-                                 (dom/br nil)
-                                 (dom/small nil (str city ", " postal ", " state)))
+                          (common/render-shipping {:shipping/name    (when (= type :company) business-name)
+                                                   :shipping/address {:shipping.address/street   line1
+                                                                      :shipping.address/postal   postal
+                                                                      :shipping.address/locality city
+                                                                      :shipping.address/region   state}}
+                                                  nil)
+                          ;(dom/p nil
+                          ;
+                          ;
+                          ;       (when (= type :company)
+                          ;         [(dom/span nil (str business-name))
+                          ;          (dom/br nil)])
+                          ;       (dom/small nil line1)
+                          ;       (dom/br nil)
+                          ;       (dom/small nil (str city ", " postal ", " state)))
                           (dom/p nil (dom/small nil (dom/i nil "No saved info"))))
                         (button/user-setting-default
                           {:onClick #(om/update-state! this assoc :modal :modal/edit-info)}

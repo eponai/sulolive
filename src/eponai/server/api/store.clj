@@ -154,7 +154,7 @@
   (let [store (db/lookup-entity (db/db state) store-id)]
     (assoc o :order/store store :order/user user-id)))
 
-(defn create-order [{:keys [state system auth]} store-id {:keys [items shipping source subtotal shipping-rate]}]
+(defn create-order [{:keys [state system auth]} store-id {:keys [items shipping source subtotal grandtotal tax-amount shipping-rate]}]
   (let [
         {:keys [stripe/id]} (stripe/pull-stripe (db/db state) store-id)
         user-stripe (stripe/pull-user-stripe (db/db state) (:user-id auth))
@@ -162,16 +162,21 @@
         {:keys [shipping/address]} shipping
         shipping-fee (:amount shipping-rate 0)
 
-        total-amount (+ subtotal shipping-fee)
+        total-amount (+ subtotal shipping-fee tax-amount)
         application-fee (* 0.2 subtotal)                    ;Convert to cents for Stripe
         transaction-fee (* 0.029 total-amount)
         sulo-fee (+ application-fee transaction-fee)
-        destination-amount (- total-amount sulo-fee)
+        destination-amount (- grandtotal sulo-fee)
 
         shipping-item (cf/remove-nil-keys {:order.item/type        :order.item.type/shipping
                                            :order.item/amount      (bigdec shipping-fee)
                                            :order.item/title       (:title shipping-rate)
                                            :order.item/description (:description shipping-rate)})
+        tax-item (cf/remove-nil-keys {:order.item/type   :order.item.type/tax
+                                      :order.item/amount (bigdec tax-amount)
+                                      ;:order.item/title       "Tax"
+                                      ;:order.item/description (:description shipping-rate)
+                                      })
         sulo-fee-item (cf/remove-nil-keys {:order.item/type        :order.item.type/sulo-fee
                                            :order.item/amount      (bigdec sulo-fee)
                                            ;:order.item/title       "SULO Live fee"
@@ -183,7 +188,7 @@
                             :order/store      store-id
                             :order/amount     (bigdec total-amount)
                             :order/created-at (date/current-millis)})
-                  (update :order/items conj shipping-item sulo-fee-item))]
+                  (update :order/items conj shipping-item sulo-fee-item tax-item))]
     (when (some? user-stripe)
       (let [charge (stripe/create-charge (:system/stripe system) {:amount      (int (* 100 total-amount)) ;Convert to cents for Stripe
                                                                   ;:application_fee (int (+ application-fee transaction-fee))
@@ -255,3 +260,20 @@
   (let [{:keys [stripe/id stripe/secret] :as s} (stripe/pull-stripe (db/db state) store-id)]
     (when (some? id)
       (assoc (stripe/get-balance (:system/stripe system) id secret) :db/id (:db/id s)))))
+
+(defn address [{:keys [state system]} store-id]
+  (let [address-keys [:shipping.address/street
+                      :shipping.address/postal
+                      :shipping.address/locality
+                      :shipping.address/region
+                      :shipping.address/country]
+        store (db/pull (db/db state) [{:store/shipping [{:shipping/address address-keys}]}
+                                      {:store/stripe [:stripe/id]}] store-id)
+        store-address (get-in store [:store/shipping :shipping/address])]
+    (if (some? store-address)
+      store-address
+      (let [stripe-id (get-in store [:store/stripe :stripe/id])
+            stripe-account (stripe/get-account (:system/stripe system) stripe-id)
+            stripe-address (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/address])
+            {:stripe.legal-entity.address/keys [line1 city state postal country]} stripe-address]
+        (zipmap address-keys [line1 postal city state {:country/code country}])))))

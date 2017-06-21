@@ -22,7 +22,8 @@
         (grid/row-column
           nil
           (dom/div
-            (css/add-class :section-title)
+            (->> (css/add-class :section-title)
+                 (css/text-align :center))
             (dom/h1 nil "About us"))
           (dom/p
             nil
@@ -47,8 +48,10 @@
             (dom/strong nil "We belive that global change starts local")
             (dom/span nil ". Where are you local?"))
           (dom/p nil "SULO Love")
-          (dom/div (css/add-class :section-title)
-                   (dom/h2 nil "Our team"))
+          (dom/div
+            (->> (css/add-class :section-title)
+                 (css/text-align :center))
+            (dom/h2 nil "Our team"))
           (grid/row
             (grid/columns-in-row {:small 1 :medium 3})
             (grid/column

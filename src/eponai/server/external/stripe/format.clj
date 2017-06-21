@@ -43,10 +43,11 @@
                   :stripe.legal-entity.dob/month (:month dob)
                   :stripe.legal-entity.dob/day   (:day dob)}))
         address* (fn [address]
-                   {:stripe.legal-entity.address/city   (:city address)
-                    :stripe.legal-entity.address/postal (:postal_code address)
-                    :stripe.legal-entity.address/line1  (:line1 address)
-                    :stripe.legal-entity.address/state  (:state address)})
+                   {:stripe.legal-entity.address/city    (:city address)
+                    :stripe.legal-entity.address/postal  (:postal_code address)
+                    :stripe.legal-entity.address/line1   (:line1 address)
+                    :stripe.legal-entity.address/state   (:state address)
+                    :stripe.legal-entity.address/country (:country address)})
         verification* (fn [v]
                         {:stripe.legal-entity.verification/status  (:status v)
                          :stripe.legal-entity.verification/details (:details v)})]
@@ -114,25 +115,28 @@
         shipping* (fn [s]
                     (let [address* (fn [a]
                                      (f/remove-nil-keys
-                                       {:stripe.shipping.address/street  (:line1 a)
-                                        :stripe.shipping.address/street2 (:line2 a)
-                                        :stripe.shipping.address/city    (:city a)
-                                        :stripe.shipping.address/postal  (:postal_code a)
-                                        :stripe.shipping.address/state   (:state a)
-                                        :stripe.shipping.address/country (:country a)}))]
+                                       {:shipping.address/street   (:line1 a)
+                                        :shipping.address/street2  (:line2 a)
+                                        :shipping.address/locality (:city a)
+                                        :shipping.address/postal   (:postal_code a)
+                                        :shipping.address/region   (:state a)
+                                        :shipping.address/country  {:country/code (:country a)}}))]
                       (f/remove-nil-keys
-                        {:stripe.shipping/name    (:name s)
-                         :stripe.shipping/address (address* (:address s))})))]
+                        {:shipping/name    (:name s)
+                         :shipping/address (address* (:address s))})))]
     (f/remove-nil-keys
       {:stripe/id             (:id customer)
        :stripe/sources        (map source* (:data (:sources customer)))
        :stripe/default-source (:default_source customer)
        :stripe/shipping       (shipping* (:shipping customer))})))
 
+(defn stripe->price [p]
+  (bigdec (with-precision 10 (/ p 100))))
+
 (defn stripe->balance [b id]
   (letfn [(balance* [a]
             {:stripe.balance/currency (:currency a)
-             :stripe.balance/amount   (bigdec (with-precision 10 (/ (:amount a) 100)))})]
+             :stripe.balance/amount   (stripe->price (:amount a))})]
     (f/remove-nil-keys
       {:stripe/id      id
        :stripe/balance {:stripe.balance/available (map balance* (:available b))

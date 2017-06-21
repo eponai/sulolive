@@ -205,7 +205,7 @@
        :charge/id      (:id charge)
        :charge/source  (:source charge)
        :charge/created (:created charge)
-       :charge/amount  (/ (:amount charge) 100)
+       :charge/amount  (f/stripe->price (:amount charge))
        :charge/paid?   (:paid charge)}))
 
   (-create-refund [_ {:keys [charge]}]

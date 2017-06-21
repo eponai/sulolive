@@ -33,9 +33,9 @@
 (defui CheckoutReview
   Object
   (render [this]
-    (let [{:keys [items subtotal shipping]} (om/props this)
+    (let [{:keys [items subtotal shipping tax-amount grandtotal]} (om/props this)
           item-count (count items)]
-      ;(debug "CheckoutReview " (om/props this))
+      (debug "CheckoutReview " (om/props this))
       (callout/callout
         nil
         (let [store (:store/_items (:store.item/_skus (first items)))]
@@ -98,6 +98,15 @@
               (css/text-align :right)
               (dom/span nil (utils/two-decimal-price shipping))))
 
+          (grid/row
+            nil
+            (grid/column
+              nil
+              (dom/span nil "Tax"))
+            (grid/column
+              (css/text-align :right)
+              (dom/span nil (utils/two-decimal-price tax-amount))))
+
           (dom/div
             (css/add-class :total)
             (grid/row
@@ -107,6 +116,6 @@
                 (dom/strong nil "Total"))
               (grid/column
                 (css/text-align :right)
-                (dom/strong nil (utils/two-decimal-price (+ shipping subtotal)))))))))))
+                (dom/strong nil (utils/two-decimal-price grandtotal))))))))))
 
 (def ->CheckoutReview (om/factory CheckoutReview))

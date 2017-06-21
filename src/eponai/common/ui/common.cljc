@@ -12,7 +12,24 @@
     [eponai.web.ui.photo :as photo]
     [eponai.web.social :as social]
     [eponai.web.ui.button :as button]
-    [eponai.common.ui.search-bar :as search-bar]))
+    [eponai.common.ui.search-bar :as search-bar]
+    [clojure.string :as string]))
+
+(defn render-shipping [shipping opts]
+  (let [{:shipping/keys [address]
+         full-name      :shipping/name} shipping
+        {:shipping.address/keys [street locality postal region country]} address]
+    (dom/p (css/add-class :sl-shipping)
+           (when (not-empty full-name)
+             [
+              (dom/span (css/add-class :sl-shipping--name) full-name)
+              (dom/br nil)])
+           (when (some? street)
+             [
+              (dom/span (css/add-class :sl-shipping--address) (str street))
+              (dom/br nil)])
+           (dom/span (css/add-class :sl-shipping--address) (string/join ", " (filter not-empty [(str locality " " postal) region (or (:country/name country)
+                                                                     (:country/code country))]))))))
 
 (defn order-status-element [order]
   (let [status (:order/status order)]

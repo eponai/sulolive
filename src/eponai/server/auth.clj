@@ -238,10 +238,11 @@
   (let [location-free? (routes/location-independent-route? route)]
     {:handler  (fn [request]
                  (let [loc (requested-location request)]
-                   (if (and (not location-free?)
-                            (nil? loc))
-                     (buddy/error nil)
-                     (buddy/success loc))))
+                   (if (or (agent-whitelisted? request)
+                           location-free?
+                           (some? loc))
+                     (buddy/success loc)
+                     (buddy/error nil))))
      :on-error (fn [request _]
                  (debug "Unable to show route: " route " because it requires location and there was none.")
                  (prompt-location-picker request))}))
