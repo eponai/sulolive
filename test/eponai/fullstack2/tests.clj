@@ -101,7 +101,7 @@
                                                                         {:did-merge-fn (fn [reconciler]
                                                                                          (go (>! merge-chan reconciler)))})
                                        :history          1000
-                                       :route            :index
+                                       :route            :landing-page
                                        :shared/auth-lock (clj-auth-lock system cookie-store)})]
     (reset! reconciler-atom reconciler)
     reconciler))

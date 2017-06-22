@@ -48,8 +48,9 @@
                   {:href    (routes/url :store-dashboard {:store-id (:db/id owned-store)})
                    :onClick #(do (track-event ::mixpanel/go-to-manage-store {:store-id   (:db/id owned-store)
                                                                              :store-name store-name})
-                                 #?(:cljs (when (empty? locations)
-                                            (utils/set-locality (:sulo-locality/path (:store/locality owned-store))))))}
+                                 ;#?(:cljs (when (empty? locations)
+                                 ;           (utils/set-locality (:db/id (:store/locality owned-store)))))
+                                 )}
                   (dom/span nil store-name)))))
           (menu/item
             (css/add-class :my-stores)
@@ -209,7 +210,7 @@
                                      ;(.addEventListener js/document "touchstart" on-close-sidebar-fn)
                                      (om/update-state! component assoc :inline-sidebar-hidden? (not inline-sidebar-hidden?))
                                      )))]
-
+    (debug "Locations: " locations)
     (navbar-content
       {:classes ["store-dashboard"]}
       (dom/div
@@ -234,7 +235,9 @@
 
           (menu/item
             nil
-            (dom/a {:href    (routes/url :index {:locality (:sulo-locality/path locations)})
+            (dom/a {:href    (if locations
+                               (routes/url :index {:locality (:sulo-locality/path locations)})
+                               (routes/url :landing-page))
                     :onClick #(mixpanel/track "Store: Go back to marketplace" {:source "navbar"})}
                    (dom/strong nil (dom/small nil "Back to marketplace"))))
           ;(menu/item-text nil (dom/span nil (get routes->titles (:route current-route))))
@@ -252,6 +255,7 @@
 
 (defn standard-navbar [component]
   (let [{:query/keys [cart loading-bar current-route locations auth]} (om/props component)]
+
     (navbar-content
       nil
       (dom/div
@@ -542,7 +546,9 @@
                    nil
                    (menu/item
                      (css/add-class :back)
-                     (dom/a {:href    (routes/url :index {:locality (:sulo-locality/path locations)})
+                     (dom/a {:href    (if locations
+                                        (routes/url :index {:locality (:sulo-locality/path locations)})
+                                        (routes/url :landing-page))
                              :onClick #(mixpanel/track "Store: Go back to marketplace" {:source "sidebar"})}
                             ;(dom/i {:classes ["fa fa-chevron-left fa-fw"]})
                             (dom/strong nil (dom/small nil "Back to marketplace")))
@@ -646,7 +652,7 @@
                    (menu/item
                      (css/add-class :category)
                      (dom/a
-                       (->> {:href    (navbar-route this (routes/url :live {:locality (:sulo-locality/path locations)})) ;(when (not-empty locations) (routes/url :live))
+                       (->> {:href    (navbar-route this (when locations (routes/url :live {:locality (:sulo-locality/path locations)})))
                              :onClick #(when (empty? locations)
                                         #?(:cljs
                                            (when-let [locs (utils/element-by-id "sulo-locations")]
@@ -692,8 +698,9 @@
                          (dom/a {:href    (routes/url :store-dashboard {:store-id (:db/id owned-store)})
                                  :onClick #(do (track-event ::mixpanel/go-to-manage-store {:store-id   (:db/id owned-store)
                                                                                            :store-name store-name})
-                                               #?(:cljs (when (empty? locations)
-                                                          (utils/set-locality (:sulo-locality/path (:store/locality owned-store))))))}
+                                               ;#?(:cljs (when (empty? locations)
+                                               ;           (utils/set-locality (:db/id (:store/locality owned-store)))))
+                                               )}
                                 (dom/div {:classes ["icon icon-shop"]})
                                 (dom/span nil store-name)))))))
                (when (some? auth)

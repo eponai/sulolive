@@ -179,7 +179,7 @@
                                     )
 
             (common/content-section
-              {:href  (routes/url :live {:locality (:sulo-locality/path locations)})
+              {:href  (routes/url :live route-params)
                :class "new-brands"}
               "New stores"
               ;(grid/row-column

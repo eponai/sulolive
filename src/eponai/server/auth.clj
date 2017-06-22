@@ -266,7 +266,7 @@
                    (let [loc (c/parse-long-safe (requested-location request))]
                      (if (nil? loc)
                        (buddy/success {})
-                       (buddy/error nil)))
+                       (buddy/error loc)))
                    (buddy/success {})))
      ;(fn [request]
      ;               (let [loc (c/parse-long-safe (requested-location request))]

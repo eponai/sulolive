@@ -58,24 +58,24 @@
         200 :store-dashboard {:store-id store-id}
         red :store-dashboard {:store-id (dec store-id)}))))
 
-(deftest test-authed-no-locality-http
-  (let [red (:found response/redirect-status-codes)
-        db (util/system-db *system*)
-        user-id (db/one-with db {:where   '[[?e :user/email ?email]]
-                                 :symbols {'?email user-email}})
-        store-id (db/one-with db {:where   '[[?e :store/owners ?owners]
-                                             [?owners :store.owner/user ?user]]
-                                  :symbols {'?user user-id}})]
-    (util/with-auth
-      *system* user-email
-      (test/are [status route route-params]
-        (do (debug "endpoint: " (util/endpoint-url *system* route route-params))
-            (= status
-               (:status (http/get (util/endpoint-url *system* route route-params)
-                                  {:follow-redirects false}))))
-        200 :landing-page nil
-        200 :user-settings nil
-        red :index nil
-        red :browse/all-items nil
-        200 :store-dashboard {:store-id store-id}
-        red :store-dashboard {:store-id (dec store-id)}))))
+;(deftest test-authed-no-locality-http
+;  (let [red (:found response/redirect-status-codes)
+;        db (util/system-db *system*)
+;        user-id (db/one-with db {:where   '[[?e :user/email ?email]]
+;                                 :symbols {'?email user-email}})
+;        store-id (db/one-with db {:where   '[[?e :store/owners ?owners]
+;                                             [?owners :store.owner/user ?user]]
+;                                  :symbols {'?user user-id}})]
+;    (util/with-auth
+;      *system* user-email
+;      (test/are [status route route-params]
+;        (do (debug "endpoint: " (util/endpoint-url *system* route route-params))
+;            (= status
+;               (:status (http/get (util/endpoint-url *system* route route-params)
+;                                  {:follow-redirects false}))))
+;        200 :landing-page nil
+;        200 :user-settings nil
+;        red :index nil
+;        red :browse/all-items nil
+;        200 :store-dashboard {:store-id store-id}
+;        red :store-dashboard {:store-id (dec store-id)}))))
