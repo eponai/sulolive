@@ -5,7 +5,6 @@
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.router :as router]
-    [om.dom :as dom]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug warn]]
     [eponai.web.ui.footer :as foot]))
@@ -27,14 +26,15 @@
     (let [{:proxy/keys [order navbar footer order-list profile-edit]
            :query/keys [auth current-route]} (om/props this)
           {:keys [route]} current-route]
-      (dom/div
-        #js {:id "sulo-user" :className "sulo-page"}
-        (common/page-container
-          {:navbar navbar :footer footer}
-          (condp = route
-            :user/order-list (uo/->OrderList order-list)
-            :user/order (o/->Order order)
-            (warn "Unknown route: " route)))))))
+      (common/page-container
+        {:navbar navbar
+         :footer (om/computed footer
+                              {:on-change-location #(om/transact! this [:query/featured-items])})
+         :id     "sulo-user"}
+        (condp = route
+          :user/order-list (uo/->OrderList order-list)
+          :user/order (o/->Order order)
+          (warn "Unknown route: " route))))))
 
 (def ->User (om/factory User))
 

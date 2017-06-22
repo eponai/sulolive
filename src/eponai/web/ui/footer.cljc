@@ -20,48 +20,53 @@
                               :sulo-locality/path
                               :sulo-locality/title
                               {:sulo-locality/photo [:photo/id]}]}
+     {:query/auth [:db/id]}
      :query/current-route])
   Object
   (change-location [this location-id]
     (debug "Change location: " location-id)
     (let [{:query/keys [current-route sulo-localities]} (om/props this)
+          {:keys [on-change-location]} (om/get-computed this)
           {:keys [route route-params]} current-route
           location (some #(when (= (:db/id %) (c/parse-long location-id)) %) sulo-localities)]
       (debug "Select location: " location)
       #?(:cljs
          (do
            (web-utils/set-locality location)
-           (om/transact! this [(list 'client/set-locality {:locality (:sulo-locality/path location)})
+           (om/transact! this [(list 'client/set-locality {:locality location})
                                :query/locations])))
+      (when (some? on-change-location)
+        (on-change-location location))
       (when (some? (:locality route-params))
         (routes/set-url! this route (assoc route-params :locality (:sulo-locality/path location))))))
 
   (render [this]
-    (let [{:query/keys [sulo-localities locations]} (om/props this)]
+    (let [{:query/keys [sulo-localities locations auth]} (om/props this)]
       (dom/div
         (css/add-class :footer {:key "footer"})
         (dom/footer
           nil
           (grid/row
-            (grid/columns-in-row {:small 2 :medium 4})
-            (grid/column
-              nil
-              (menu/vertical (css/add-class :location-menu)
-                             (menu/item-text nil (dom/span nil "Change location"))
-                             (menu/item
-                               nil
-                               (dom/select
-                                 {:defaultValue (:db/id locations)
-                                  :onChange #(.change-location this (.-value (.-target %)))}
-                                 (map (fn [l]
-                                        (dom/option {:value (:db/id l)} (:sulo-locality/title l)))
-                                      sulo-localities)))
-                             ;(menu/item-link nil (dom/span nil "Vancouver"))
-                             ;(menu/item-link {:href (routes/url :browse/category {:top-category "home"})} (dom/span nil "HOME"))
-                             ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "women"})} (dom/span nil "WOMEN"))
-                             ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "men"})} (dom/span nil "MEN"))
-                             ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "unisex-kids"})} (dom/span nil "KIDS"))
-                             ))
+            (grid/columns-in-row {:small 2 :medium (if (some? auth) 4 3)})
+            (when (some? auth)
+              (grid/column
+                nil
+                (menu/vertical (css/add-class :location-menu)
+                               (menu/item-text nil (dom/span nil "Change location"))
+                               (menu/item
+                                 nil
+                                 (dom/select
+                                   {:defaultValue (:db/id locations)
+                                    :onChange     #(.change-location this (.-value (.-target %)))}
+                                   (map (fn [l]
+                                          (dom/option {:value (:db/id l)} (:sulo-locality/title l)))
+                                        sulo-localities)))
+                               ;(menu/item-link nil (dom/span nil "Vancouver"))
+                               ;(menu/item-link {:href (routes/url :browse/category {:top-category "home"})} (dom/span nil "HOME"))
+                               ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "women"})} (dom/span nil "WOMEN"))
+                               ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "men"})} (dom/span nil "MEN"))
+                               ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "unisex-kids"})} (dom/span nil "KIDS"))
+                               )))
 
             (grid/column
               nil

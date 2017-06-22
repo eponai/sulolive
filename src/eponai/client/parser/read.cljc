@@ -91,6 +91,7 @@
   [{:keys [db query]} _ _]
   {:remote true
    :value  (when-let [loc (client.auth/current-locality db)]
+             (debug "Featured items: " loc)
              (let [items (db/all-with db {:where   '[[?s :store/locality ?l]
                                                      [?s :store/items ?e]
                                                      [?e :store.item/featured]]
@@ -313,10 +314,12 @@
   (letfn [(with-hrefs [category parent-names]
             (let [names (conj parent-names (:category/name category))
                   params (zipmap param-order names)]
-              (-> category
-                  (assoc :category/href (client.routes/url (params->route-handler params) (assoc params :locality (:sulo-locality/path loc))))
-                  (update :category/children (fn [children]
-                                               (into (empty children) (map #(with-hrefs % names)) children))))))]
+              (cond-> category
+                      (some? (:sulo-locality/path loc))
+                      (assoc :category/href (client.routes/url (params->route-handler params) (assoc params :locality (:sulo-locality/path loc))))
+                      :always
+                      (update :category/children (fn [children]
+                                                   (into (empty children) (map #(with-hrefs % names)) children))))))]
     (with-hrefs category [])))
 
 (defn assoc-gender-hrefs [loc category]

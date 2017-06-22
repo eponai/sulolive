@@ -32,7 +32,8 @@
     (let [{:proxy/keys [navbar footer]
            :query/keys [featured-items locations]} (om/props this)]
       (common/page-container
-        {:navbar navbar :footer footer :id "sulo-not-found"}
+        {:navbar navbar :footer (om/computed footer
+                                             {:on-change-location #(om/transact! this [:query/featured-items])}) :id "sulo-not-found"}
         (grid/row-column
           (css/text-align :center)
           (dom/div (css/add-classes [:not-found-code])

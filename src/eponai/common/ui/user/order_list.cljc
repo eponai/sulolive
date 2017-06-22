@@ -55,7 +55,8 @@
                              :store.item/created-at
                              {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                   :store.item.photo/index]}
-                             {:store/_items [{:store/profile [:store.profile/name]}]}]}
+                             {:store/_items [{:store/profile [:store.profile/name]}
+                                             :store/locality]}]}
      :query/locations])
 
   Object
