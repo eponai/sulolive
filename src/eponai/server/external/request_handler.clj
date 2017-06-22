@@ -51,7 +51,7 @@
                                    (handler request))))
             logger (log/async-logger (or
                                        (log/make-logger (:system/elastic-cloud system))
-                                       (log/->TimbreLogger)))
+                                       (force log/no-op-logger)))
             handler (-> (compojure/routes server-routes/site-routes)
                         (cond-> (not in-production?) (m/wrap-node-modules))
                         m/wrap-post-middlewares
