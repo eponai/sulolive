@@ -138,8 +138,7 @@
                        (grid/column
                          nil
                          (dom/a
-                           (css/add-class :city-anchor {:href    "#"
-                                                        :onClick #(do
+                           (css/add-class :city-anchor {:onClick #(do
                                                                    (debug "Setting locality! " loc)
                                                                    (.select-locality this (:db/id loc))
                                                                    (if (nil? auth)

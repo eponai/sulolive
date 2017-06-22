@@ -242,49 +242,23 @@
 ;; Move this to location.clj?
 
 (defn requested-location [request]
-  (get-in request [:cookies "sulo.locality" :value]))
-
-(defn bidi-location-restrictions
-  [route]
-  (let [location-free? (routes/location-independent-route? route)]
-    {:handler  (fn [request]
-                 (let [loc (c/parse-long-safe (requested-location request))]
-                   (if (or (agent-whitelisted? request)
-                           location-free?
-                           (some? loc))
-                     (buddy/success loc)
-                     (buddy/error nil))))
-     :on-error (fn [request _]
-                 (debug "Unable to show route: " route " because it requires location and there was none.")
-                 (prompt-location-picker request))}))
+  (c/parse-long-safe (get-in request [:cookies "sulo.locality" :value])))
 
 (defn bidi-location-redirect
   [route]
-  (let [location-free? (routes/location-independent-route? route)]
-    {:handler  (fn [{:keys [route-params] :as request}]
-                 (if (= route :landing-page)
-                   (let [loc (c/parse-long-safe (requested-location request))
-                         auth-roles (routes/auth-roles route)]
-                     (if (or
-                           (not (auth/authed-for-roles?
-                                  (db/db (:eponai.server.middleware/conn request))
-                                  auth-roles
-                                  identity
-                                  route-params))
-                           (nil? loc))
-                       (buddy/success {})
-                       (buddy/error loc)))
-                   (buddy/success {})))
-     ;(fn [request]
-     ;               (let [loc (c/parse-long-safe (requested-location request))]
-     ;                 (if (or (agent-whitelisted? request)
-     ;                         location-free?
-     ;                         (some? loc))
-     ;                   (buddy/success loc)
-     ;                   (buddy/error nil))))
-     :on-error (fn [{:keys [:eponai.server.middleware/conn]} loc]
-                 (let [locality (db/pull (db/db conn) [:sulo-locality/path] loc)]
-                   (r/redirect (routes/path :index {:locality (:sulo-locality/path locality)})))
-                 ;(debug "Unable to show route: " route " because it requires location and there was none.")
-                 ;(prompt-location-picker request)
-                 )}))
+  {:handler  (fn [{:keys [identity route-params headers] :as request}]
+               (if (= route :landing-page)
+                 (if-let [loc (requested-location request)]
+                   (if (auth/authed-for-roles?
+                         (db/db (:eponai.server.middleware/conn request))
+                         ::auth/any-user
+                         identity
+                         nil)
+                     (buddy/error loc)
+                     (buddy/success))
+                   (buddy/success))
+                 (buddy/success)))
+   :on-error (fn [{:keys [eponai.server.middleware/conn]} loc]
+               (let [{loc-path :sulo-locality/path} (db/pull (db/db conn) [:sulo-locality/path] loc)]
+                 (debug "Redirect: " loc-path)
+                 (r/redirect (routes/path :index {:locality loc-path}))))})
