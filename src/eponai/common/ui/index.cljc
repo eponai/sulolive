@@ -150,28 +150,28 @@
                                                   (css/add-class :collection-item))
                                              (collection-element {:href     (routes/url :browse/category (merge route-params
                                                                                                                 {:top-category "home"}))
-                                                                  :photo-id "static/home"
+                                                                  :photo-id "static/home-4"
                                                                   :title    "Home"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
                                              (collection-element {:href     (routes/url :browse/gender (merge route-params
                                                                                                               {:sub-category "women"}))
-                                                                  :photo-id "static/women"
+                                                                  :photo-id "static/women-3"
                                                                   :title    "Women"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
                                              (collection-element {:href     (routes/url :browse/gender (merge route-params
                                                                                                               {:sub-category "men"}))
-                                                                  :photo-id "static/men"
+                                                                  :photo-id "static/men-3"
                                                                   :title    "Men"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
                                              (collection-element {:href     (routes/url :browse/gender (merge route-params
                                                                                                               {:sub-category "unisex-kids"}))
-                                                                  :photo-id "static/kids"
+                                                                  :photo-id "static/kids-3"
                                                                   :title    "Kids"}))))
                                     ;(map (fn [s t]
                                     ;       (collection-element {:url (first (:store/featured-img-src s))

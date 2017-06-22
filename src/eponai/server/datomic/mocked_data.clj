@@ -391,11 +391,11 @@
 (defn sulo-localities []
   [{:sulo-locality/title "Vancouver, BC"
     :sulo-locality/path  "yvr"
-    :sulo-locality/photo (photo "static/landing-vancouver-2")}
+    :sulo-locality/photo (photo "static/landing-vancouver-3")}
 
    {:sulo-locality/title "Montréal, QC"
     :sulo-locality/path  "yul"
-    :sulo-locality/photo (photo "static/alex-jodoin-140651")}])
+    :sulo-locality/photo (photo "static/landing-montreal")}])
 
 (defn mock-chats [stores]
   (vec (map (fn [s]
