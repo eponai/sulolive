@@ -52,7 +52,8 @@
                             :category/path
                             :category/name]}
      {:store/_items [{:store/profile [{:store.profile/photo [:photo/path :photo/id]}
-                                      :store.profile/name]}]}])
+                                      :store.profile/name]}
+                     :store/locality]}])
   Object
   (initLocalState [_]
     {:selected-tab       :rating

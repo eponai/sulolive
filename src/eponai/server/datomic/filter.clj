@@ -143,6 +143,7 @@
      :stripe/publ                    private-attr
      :stripe/secret                  private-attr
      :store/uuid                     public-attr
+     :store/locality                 public-attr
      :store/created-at               public-attr
      :store/owners                   public-attr
      :store/stripe                   store-attribute

@@ -32,22 +32,102 @@
 
 ;; ----------
 
-(defmethod client-read :query/store
-  [{:keys [db query target ast route-params] :as env} _ _]
-  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
-    (if target
-      {:remote (assoc-in ast [:params :store-id] store-id)}
-      {:value (db/pull db query store-id)})))
+;; ################# Browsing reads
 
 (defmethod client-read :query/stores
   [{:keys [db query target]} _ _]
   ;(debug "Read query/auth: ")
   (if target
     {:remote true}
-    {:value (db/pull-all-with db query {:where '[[?s :stream/state ?states]
-                                                 [?s :stream/store ?e]]
-                                        :symbols {'[?states ...] [:stream.state/online
-                                                                 :stream.state/offline]}})}))
+    {:value (when-let [loc (client.auth/current-locality db)]
+              (db/pull-all-with db query {:where   '[[?s :stream/state ?states]
+                                                     [?s :stream/store ?e]]
+                                          :symbols {'[?states ...] [:stream.state/online
+                                                                    :stream.state/offline]
+                                                    '?l            (:db/id loc)}}))}))
+
+(defmethod client-read :query/streams
+  [{:keys [db query target]} _ _]
+  ;(debug "Read query/auth: ")
+  (if target
+    {:remote true}
+    {:value (when-let [loc (client.auth/current-locality db)]
+              (db/pull-all-with db query {:where   '[[?s :store/locality ?l]
+                                                     [?e :stream/store ?s]
+                                                     [?e :stream/state :stream.state/live]]
+                                          :symbols {'?l (:db/id loc)}}))}))
+
+(defmethod client-read :query/browse-items
+  [{:keys [db target query route-params ast query-params]} _ _]
+  (let [{:keys [top-category sub-category]} route-params]
+    (if target
+      {:remote (-> ast
+                   (assoc-in [:params :route-params] route-params)
+                   (assoc-in [:params :query-params] query-params))}
+      {:value (when-let [loc (client.auth/current-locality db)]
+                (db/pull-all-with db query (cond
+                                             (seq (:search query-params))
+                                             (products/find-with-search (:db/id loc) (:search query-params))
+                                             (or (some? sub-category) (some? top-category))
+                                             (products/find-with-category-names (:db/id loc) route-params)
+                                             :else
+                                             (products/find-all (:db/id loc)))))})))
+
+;; ----- Featured
+
+(defmethod client-read :query/featured-streams
+  [{:keys [db query]} _ _]
+  {:remote true
+   :value  (when-let [loc (client.auth/current-locality db)]
+             (->> (db/all-with db {:where   '[[?e :stream/featured]
+                                              [?e :stream/store ?s]
+                                              [?s :store/locality ?l]]
+                                   :symbols {'?l (:db/id loc)}})
+                  (db/pull-many db query)
+                  (sort-by :db/id)))})
+
+(defmethod client-read :query/featured-items
+  [{:keys [db query]} _ _]
+  {:remote true
+   :value  (when-let [loc (client.auth/current-locality db)]
+             (let [items (db/all-with db {:where   '[[?s :store/locality ?l]
+                                                     [?e :store.item/featured]]
+                                          :symbols {'?l (:db/id loc)}})
+                   pulled (db/pull-many db query items)]
+               (sort-by :store.item/created-at
+                        #(compare %2 %1)
+                        pulled)))})
+
+(defmethod client-read :query/featured-stores
+  [{:keys [db query]} _ _]
+  ;; Only fetch featured-stores initially? i.e. (when (nil? db-history) ...)
+  ;; TODO: Come up with a way to feature stores. DB SHUFFLE
+  {:remote true
+   :value  (when-let [loc (client.auth/current-locality db)]
+             (letfn [(photos-fn [store]
+                       (let [s (db/entity db store)
+                             [img-1 img-2] (->> (:store.item/_store s)
+                                                (sort-by :db/id)
+                                                (map :store.item/img-src)
+                                                (take 2))]
+                         {:db/id                  store
+                          :store/featured-img-src [img-1 (:store.profile/photo (:store/profile s)) img-2]}))]
+               (sort-by :store/created-at
+                        #(compare %2 %1)
+                        (into [] (comp (map photos-fn)
+                                       (map #(merge % (db/pull db query (:db/id %)))))
+                              (db/all-with db {:where   '[[?e :store/featured]
+                                                          [?e :store/locality ?l]]
+                                               :symbols {'?l (:db/id loc)}})))))})
+
+;################
+
+(defmethod client-read :query/store
+  [{:keys [db query target ast route-params] :as env} _ _]
+  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
+    (if target
+      {:remote (assoc-in ast [:params :store-id] store-id)}
+      {:value (db/pull db query store-id)})))
 
 (defmethod client-read :query/store-items
   [{:keys [db query target ast route-params]} _ _]
@@ -215,21 +295,6 @@
       {:value (db/pull-one-with db query {:where   '[[?e :taxes/id ?s]]
                                           :symbols {'?s store-id}})})))
 
-(defmethod client-read :query/browse-items
-  [{:keys [db target query route-params ast query-params]} _ _]
-  (let [{:keys [top-category sub-category]} route-params]
-    (if target
-      {:remote (-> ast
-                   (assoc-in [:params :route-params] route-params)
-                   (assoc-in [:params :query-params] query-params))}
-      {:value (db/pull-all-with db query (cond
-                                           (seq (:search query-params))
-                                           (products/find-with-search (:search query-params))
-                                           (or (some? sub-category) (some? top-category))
-                                           (products/find-with-category-names route-params)
-                                           :else
-                                           (products/find-all)))})))
-
 (defmethod client-read :query/owned-store
   [{:keys [db target query]} _ _]
   (if target
@@ -270,26 +335,26 @@
 (defn navigate-gender [db query gender]
   (let [gender-query (products/category-names-query {:sub-category gender})]
     (when (db/one-with db (db/merge-query gender-query {:where '[[(identity ?sub) ?e]]}))
-     (let [query-without-children (into [:db/id] (parser.util/remove-query-key :category/children) query)
-           ;; Since our query is flat, it's faster to just select keys from the entity.
-           entity-pull (comp (map #(db/entity db %))
-                             (map #(select-keys % query-without-children)))]
-       #_(assert (every? keyword? query-without-children))
-       (-> {:category/name     gender
-            :category/label    (str/capitalize gender)
-            :category/children (->> (db/all-with db (db/merge-query gender-query {:where '[[?e :category/children ?sub]]}))
-                                    (into []
-                                          (comp
-                                            entity-pull
-                                            (map (fn [category]
-                                                   (->> (db/merge-query (products/category-names-query
-                                                                          {:top-category (:category/name category)
-                                                                           :sub-category gender})
-                                                                        {:where '[[?sub :category/children ?e]]})
-                                                        (db/all-with db)
-                                                        (into [] entity-pull)
-                                                        (assoc category :category/children)))))))}
-           (assoc-gender-hrefs))))))
+      (let [query-without-children (into [:db/id] (parser.util/remove-query-key :category/children) query)
+            ;; Since our query is flat, it's faster to just select keys from the entity.
+            entity-pull (comp (map #(db/entity db %))
+                              (map #(select-keys % query-without-children)))]
+        #_(assert (every? keyword? query-without-children))
+        (-> {:category/name     gender
+             :category/label    (str/capitalize gender)
+             :category/children (->> (db/all-with db (db/merge-query gender-query {:where '[[?e :category/children ?sub]]}))
+                                     (into []
+                                           (comp
+                                             entity-pull
+                                             (map (fn [category]
+                                                    (->> (db/merge-query (products/category-names-query
+                                                                           {:top-category (:category/name category)
+                                                                            :sub-category gender})
+                                                                         {:where '[[?sub :category/children ?e]]})
+                                                         (db/all-with db)
+                                                         (into [] entity-pull)
+                                                         (assoc category :category/children)))))))}
+            (assoc-gender-hrefs))))))
 
 (defn navigate-category [db query category-name]
   (some-> (db/pull-one-with db (into [{:category/children '...}]
@@ -363,18 +428,7 @@
   [{:keys [target db query]} _ _]
   (if target
     {:remote true}
-    {:value (-> (db/lookup-entity  db [:ui/singleton :ui.singleton/auth])
-                :ui.singleton.auth/locations)})
-  ;(debug "Read query/auth: ")
-
-  ;#?(:cljs
-  ;   {:value (let [cookie-string (js/decodeURIComponent (.-cookie js/document))
-  ;                 key-vals (string/split cookie-string #";")
-  ;                 locality-str (some #(when (string/starts-with? (string/trim %) "locality=") %) key-vals)
-  ;                 locality (when locality-str
-  ;                            (second (string/split locality-str #"=")))]
-  ;             locality)})
-  )
+    {:value (client.auth/current-locality db)}))
 
 (defmethod client-read :query/stream
   [{:keys [db query target ast route-params] :as env} _ _]
@@ -383,50 +437,6 @@
       {:remote (assoc-in ast [:params :store-id] store-id)}
       {:value (db/pull-one-with db query {:where   '[[?e :stream/store ?store-id]]
                                           :symbols {'?store-id store-id}})})))
-
-(defmethod client-read :query/streams
-  [{:keys [db query target]} _ _]
-  ;(debug "Read query/auth: ")
-  (if target
-    {:remote true}
-    {:value (db/pull-all-with db query {:where '[[?e :stream/state :stream.state/live]]})}))
-
-; ### FEATURED ###  ;
-
-(defmethod client-read :query/featured-streams
-  [{:keys [db query]} _ _]
-  {:remote true
-   :value  (->> (db/all-with db {:where '[[?e :stream/featured]]})
-                (db/pull-many db query)
-                (sort-by :db/id))})
-
-(defmethod client-read :query/featured-items
-  [{:keys [db query]} _ _]
-  {:remote true
-   :value  (let [items (db/all-with db {:where '[[?e :store.item/featured]]})
-                 pulled (db/pull-many db query items)]
-             (sort-by :store.item/created-at
-                      #(compare %2 %1)
-                      pulled))})
-
-(defmethod client-read :query/featured-stores
-  [{:keys [db query]} _ _]
-  ;; Only fetch featured-stores initially? i.e. (when (nil? db-history) ...)
-  ;; TODO: Come up with a way to feature stores. DB SHUFFLE
-  {:remote true
-   :value  (letfn [(photos-fn [store]
-                     (let [s (db/entity db store)
-                           [img-1 img-2] (->> (:store.item/_store s)
-                                              (sort-by :db/id)
-                                              (map :store.item/img-src)
-                                              (take 2))]
-                       {:db/id                  store
-                        :store/featured-img-src [img-1 (:store.profile/photo (:store/profile s)) img-2]}))]
-             (sort-by :store/created-at
-                      #(compare %2 %1)
-                      (into [] (comp (map photos-fn)
-                                     (map #(merge % (db/pull db query (:db/id %)))))
-                            (db/all-with db {:where '[[?e :store/featured]]}))))})
 
 (defmethod client-read :query/stream-config
   [{:keys [db query]} k _]

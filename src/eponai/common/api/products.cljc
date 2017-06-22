@@ -31,16 +31,22 @@
    :symbols {'?path category-path}
    :rules   eq-or-child-category-rule})
 
-(defn find-all []
-  {:where '[[?e :store.item/name]]})
+(defn find-all [locality]
+  {:where   '[[?s :store/locality ?l]
+              [?s :store/items ?e]
+              [?e :store.item/name]]
+   :symbols {'?l locality}})
 
-(defn find-with-search [search]
+(defn find-with-search [locality search]
   {:where    [{:fulltext-id 1}]
-   :symbols  {'?search search}
+   :symbols  {'?search search
+              '?l      locality}
    :fulltext [{:id     1
                :attr   :store.item/name
                :arg    '?search
-               :return '[[?e ?item-name _ ?score]]}]})
+               :return '[[?e ?item-name _ ?score]
+                         [?s :store/items ?e]
+                         [?s :store/locality ?l]]}]})
 
 (defn- normalize-gender [category-name]
   (let [unisex-categories {"women"        ["unisex-adult"]
@@ -71,13 +77,15 @@
       (when sub-category '?sub)
       (when top-category '?top)))
 
-(defn find-with-category-names [category-names]
+(defn find-with-category-names [locality category-names]
   (db/merge-query (category-names-query category-names)
-                  {:where [(list 'eq-or-child-category?
-                                 (smallest-category category-names)
-                                 '?item-category)
-                           '[?e :store.item/category ?item-category]]
-                   :rules eq-or-child-category-rule}))
+                  {:where   [(list 'eq-or-child-category?
+                                   (smallest-category category-names)
+                                   '?item-category)
+                             '[?s :store/locality ?l]
+                             '[?e :store.item/category ?item-category]]
+                   :symbols {'?l locality}
+                   :rules   eq-or-child-category-rule}))
 
 ;; Navigation bs
 
@@ -97,7 +105,7 @@
                      (into [] (map #(assoc % :category/href (routes/path route (assoc params category-level (:category/name %)))))
                            children))]
     (if gender-route?
-      {:category/href    (routes/path :browse/gender {:sub-category sub-category})
+      {:category/href     (routes/path :browse/gender {:sub-category sub-category})
        :category/name     sub-category
        :category/label    (str/capitalize sub-category)
        :category/children (->> (if (nil? top-category)

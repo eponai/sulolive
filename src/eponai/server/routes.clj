@@ -116,7 +116,7 @@
        :auth                        auth
        :params                      (:params request)
        :system                      system
-       :locations                   (get-in cookies ["sulo.locality" :value])
+       :locations                   (c/parse-long-safe (get-in cookies ["sulo.locality" :value]))
        :logger                      (context-logger request route-map user-id)}
       (:query body))))
 

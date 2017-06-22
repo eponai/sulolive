@@ -83,6 +83,109 @@
                 (debug "Got taxes: " taxes)
                 taxes)))})
 
+;; ############ Browsing reads
+
+(defread query/stores
+  [{:keys [db db-history query locations]} _ _]
+  {:auth ::auth/public}
+  {:value (when (some? locations)
+            (query/all db db-history query {:where   '[[?e :store/locality ?l]
+                                                       [?s :stream/state ?states]
+                                                       [?s :stream/store ?e]]
+                                            :symbols {'[?states ...] [:stream.state/online
+                                                                      :stream.state/offline]
+                                                      '?l            locations}}))})
+
+(defread query/streams
+  [{:keys [db db-history query locations]} _ _]
+  {:auth ::auth/public}
+  {:value (when (some? locations)
+            (query/all db db-history query {:where   '[[?s :store/locality ?l]
+                                                       [?e :stream/store ?s]
+                                                       [?e :stream/state :stream.state/live]]
+                                            :symbols {'?l locations}}))})
+
+(defread query/browse-items
+  [{:keys [db db-history query locations]} _ {{:keys [top-category sub-category] :as categories} :route-params
+                                              {:keys [search]}                                   :query-params}]
+  {:auth    ::auth/public
+   :log     (f/remove-nil-keys {:search search :top-category top-category :sub-category sub-category})
+   :uniq-by [[:filter (cond
+                        (seq search)
+                        [:search search]
+                        (some? top-category)
+                        [:tc top-category]
+                        (some? sub-category)
+                        [:sc sub-category])]]}
+  {:value (when (some? locations)
+            (query/all db db-history query (cond
+                                             (seq search)
+                                             (products/find-with-search locations search)
+                                             (some? top-category)
+                                             (products/find-with-category-names locations (select-keys categories [:top-category]))
+                                             (some? sub-category)
+                                             (products/find-with-category-names locations (select-keys categories [:sub-category]))
+                                             :else
+                                             (products/find-all locations))))})
+
+;; ------ Featured
+(defn feature-all [namespace coll]
+  (into []
+        (map #(assoc % (keyword (name namespace) "featured") true))
+        coll))
+
+(defread query/featured-streams
+  [{:keys [db db-history query locations]} _ _]
+  {:auth ::auth/public}
+  {:value (when (some? locations)
+            (when-not db-history
+              (->> (query/all db db-history query {:where   '[[?s :store/locality ?l]
+                                                              [?e :stream/store ?s]
+                                                              [?s :store/profile ?p]
+                                                              [?p :store.profile/photo _]]
+                                                   :symbols {'?l locations}})
+                   (feature-all :stream))))})
+
+(defread query/featured-items
+  [{:keys [db db-history query locations]} _ _]
+  {:auth ::auth/public}
+  {:value (when (some? locations)
+            (letfn [(add-time-to-all [time items]
+                      (map #(if (nil? (:store.item/created-at %))
+                             (assoc % :store.item/created-at time)
+                             %)
+                           items))]
+              (->> (db/pull-all-with db query {:where   '[[?s :store/locality ?l]
+                                                          [?s :store/items ?e]
+                                                          [?e :store.item/photos ?p]
+                                                          [?p :store.item.photo/photo _]]
+                                               :symbols {'?l locations}})
+                   (add-time-to-all 0)
+                   (sort-by :store.item/created-at #(compare %2 %1))
+                   (take 10)
+                   (feature-all :store.item))))})
+
+(defread query/featured-stores
+  [{:keys [db db-history query locations]} _ _]
+  {:auth ::auth/public}
+  ;; TODO: Come up with a way to feature stores.
+  {:value (when (some? locations)
+            (letfn [(add-time-to-all [time items]
+                      (map #(if (nil? (:store/created-at %))
+                             (assoc % :store/created-at time)
+                             %)
+                           items))]
+              (->> (db/pull-all-with db query {:where   '[[?e :store/locality ?l]
+                                                          [?e :store/profile ?p]
+                                                          [?p :store.profile/photo _]]
+                                               :symbols {'?l locations}})
+                   (add-time-to-all 0)
+                   (sort-by :store/created-at #(compare %2 %1))
+                   (take 4)
+                   (feature-all :store))))})
+
+;; ##############
+
 (defread query/store
   [{:keys [db db-history query]} _ {:keys [store-id]}]
   {:auth    ::auth/public
@@ -94,14 +197,6 @@
             ;(debug "Got store shipping: " (:store/shipping store))
 
             store)})
-
-(defread query/stores
-  [{:keys [db db-history query]} _ _]
-  {:auth ::auth/public}
-  {:value (query/all db db-history query {:where   '[[?s :stream/state ?states]
-                                                     [?s :stream/store ?e]]
-                                          :symbols {'[?states ...] [:stream.state/online
-                                                                    :stream.state/offline]}})})
 
 (defread query/store-items
   [{:keys [db db-history query]} _ {:keys [store-id navigation]}]
@@ -206,41 +301,12 @@
   {:auth ::auth/any-store-owner}
   {:value (stripe/get-country-spec (:system/stripe system) "CA")})
 
-;(defmethod server-read :query/stripe
-;  [{:keys [db db-history query system auth]} _ _]
-;  (debug "SYSTEM: " system)
-;  {:value (let [{:stripe/keys [id secret]}
-;                (db/pull-one-with db [:stripe/id :stripe/secret] {:where   '[[?u :user/email ?email]
-;                                                                             [?owner :store.owner/user ?u]
-;                                                                             [?s :store/owners ?owner]
-;                                                                             [?s :store/stripe ?e]]
-;                                                                  :symbols {'?email (:email auth)}})
-;                products (stripe/get-products (:system/stripe system) secret)
-;                stripe-account (stripe/get-account (:system/stripe system) id)]
-;            (debug "Got stripe account: " {:account  stripe-account
-;                                           :products products})
-;            {:stripe/id       id
-;             :stripe/account  stripe-account
-;             :stripe/products products})})
-
 (defread query/user
   [{:keys [db db-history query]} _ {:keys [user-id]}]
   {:auth ::auth/any-user
    :log  [:user-id]}
   {:value (query/one db db-history query {:where   '[[?e]]
                                           :symbols {'?e user-id}})})
-
-(defread query/items
-  [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
-  {:auth    ::auth/public
-   :log     [:search :category]
-   :uniq-by [[:category (or category (:category route-params))]]}
-  {:value (let [c (or category (:category route-params))]
-            (cond (some? category)
-                  (db/pull-all-with db query (products/find-by-category c))
-                  ;(query/all db db-history query (products/find-by-category c))
-                  :else
-                  (query/all db db-history query (products/find-all))))})
 
 (defread query/top-categories
   [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
@@ -292,58 +358,6 @@
   {:value (query/one db db-history query {:where   '[[?e :stream/store ?store-id]]
                                           :symbols {'?store-id store-id}})})
 
-(defread query/streams
-  [{:keys [db db-history query]} _ _]
-  {:auth ::auth/public}
-  {:value (query/all db db-history query {:where '[[?e :stream/state :stream.state/live]]})})
-
-; #### FEATURED ### ;
-
-(defn feature-all [namespace coll]
-  (into []
-        (map #(assoc % (keyword (name namespace) "featured") true))
-        coll))
-
-(defread query/featured-streams
-  [{:keys [db db-history query]} _ _]
-  {:auth ::auth/public}
-  {:value (when-not db-history
-            (->> (query/all db db-history query {:where '[[?e :stream/store ?s]
-                                                          [?s :store/profile ?p]
-                                                          [?p :store.profile/photo _]]})
-                 (feature-all :stream)))})
-
-(defread query/featured-items
-  [{:keys [db db-history query]} _ _]
-  {:auth ::auth/public}
-  {:value (letfn [(add-time-to-all [time items]
-                    (map #(if (nil? (:store.item/created-at %))
-                           (assoc % :store.item/created-at time)
-                           %)
-                         items))]
-            (->> (db/pull-all-with db query {:where '[[?e :store.item/photos ?p]
-                                                      [?p :store.item.photo/photo _]]})
-                 (add-time-to-all 0)
-                 (sort-by :store.item/created-at #(compare %2 %1))
-                 (take 10)
-                 (feature-all :store.item)))})
-
-(defread query/featured-stores
-  [{:keys [db db-history query]} _ _]
-  {:auth ::auth/public}
-  ;; TODO: Come up with a way to feature stores.
-  {:value (letfn [(add-time-to-all [time items]
-                    (map #(if (nil? (:store/created-at %))
-                           (assoc % :store/created-at time)
-                           %)
-                         items))]
-            (->> (db/pull-all-with db query {:where '[[?e :store/profile ?p]
-                                                      [?p :store.profile/photo _]]})
-                 (add-time-to-all 0)
-                 (sort-by :store/created-at #(compare %2 %1))
-                 (take 4)
-                 (feature-all :store)))})
-
 (defread query/locations
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
@@ -381,28 +395,6 @@
                     (chat/initial-read chat-reader store query)
                     (chat/read-messages chat-reader store query read-basis-t-for-this-key))
                   (parser/value-with-basis-t (chat/last-read chat-reader)))})))
-
-(defread query/browse-items
-  [{:keys [db db-history query]} _ {{:keys [top-category sub-category] :as categories} :route-params
-                                    {:keys [search]}                                   :query-params}]
-  {:auth    ::auth/public
-   :log     (f/remove-nil-keys {:search search :top-category top-category :sub-category sub-category})
-   :uniq-by [[:filter (cond
-                        (seq search)
-                        [:search search]
-                        (some? top-category)
-                        [:tc top-category]
-                        (some? sub-category)
-                        [:sc sub-category])]]}
-  {:value (query/all db db-history query (cond
-                                           (seq search)
-                                           (products/find-with-search search)
-                                           (some? top-category)
-                                           (products/find-with-category-names (select-keys categories [:top-category]))
-                                           (some? sub-category)
-                                           (products/find-with-category-names (select-keys categories [:sub-category]))
-                                           :else
-                                           (products/find-all)))})
 
 ;; Get all categories.
 (defread query/navigation

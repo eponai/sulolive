@@ -54,18 +54,23 @@
                              :store.item/created-at
                              {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                   :store.item.photo/index]}
-                             {:store/_items [{:store/profile [:store.profile/name]}]}]}
+                             {:store/_items [{:store/profile [:store.profile/name]}
+                                             :store/locality]}]}
      {:query/featured-stores [:db/id
                               {:store/profile [:store.profile/name
                                                {:store.profile/photo [:photo/path :photo/id]}]}
+                              :store/locality
                               :store/created-at
                               :store/featured
                               :store/featured-img-src
                               {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                                          :store.item.photo/index]}]}]}
-     {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id {:store/profile [:store.profile/name {:store.profile/photo [:photo/path :photo/id]}]}]}]}
+     {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id
+                                                                    :store/locality
+                                                                    {:store/profile [:store.profile/name {:store.profile/photo [:photo/path :photo/id]}]}]}]}
      {:query/auth [:db/id :user/email]}
      {:query/owned-store [:db/id
+                          :store/locality
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.
                           {:store/owners [{:store.owner/user [:db/id]}]}]}])
@@ -129,6 +134,37 @@
                                                (take 4 featured-streams))))
                                       "More streams"))
 
+            (common/content-section
+              {:href  (routes/url :live)
+               :class "new-brands"}
+              "New stores"
+              ;(grid/row-column
+              ;  (css/text-align :center))
+              ;(dom/div
+              ;  (css/add-class :section-title)
+              ;  (dom/h2 nil "New brands"))
+              (dom/div
+                {:classes ["sulo-items-container"]}
+                (grid/row
+                  (grid/columns-in-row {:small 2 :medium 4})
+                  (map (fn [store]
+                         (let [store-name (get-in store [:store/profile :store.profile/name])]
+                           (grid/column
+                             nil
+                             (dom/div
+                               (->> (css/add-class :content-item)
+                                    (css/add-class :stream-item))
+                               (dom/a
+                                 {:href (routes/url :store {:store-id (:db/id store)})}
+                                 (photo/store-photo store {:transformation :transformation/thumbnail-large}))
+                               (dom/div
+                                 (->> (css/add-class :text)
+                                      (css/add-class :header))
+                                 (dom/a {:href (routes/url :store {:store-id (:db/id store)})}
+                                        (dom/strong nil store-name)))))))
+                       (take 4 featured-stores))))
+              "See more stores")
+
             (common/content-section {:class "collections"}
                                     "Shop by collection"
                                     (div nil
@@ -165,37 +201,6 @@
                                     ;     ["Home" "Kids" "Women" "Men"])
                                     ""
                                     )
-
-            (common/content-section
-              {:href  (routes/url :live)
-               :class "new-brands"}
-              "New stores"
-              ;(grid/row-column
-              ;  (css/text-align :center))
-              ;(dom/div
-              ;  (css/add-class :section-title)
-              ;  (dom/h2 nil "New brands"))
-              (dom/div
-                {:classes ["sulo-items-container"]}
-                (grid/row
-                  (grid/columns-in-row {:small 2 :medium 4})
-                  (map (fn [store]
-                         (let [store-name (get-in store [:store/profile :store.profile/name])]
-                           (grid/column
-                             nil
-                             (dom/div
-                               (->> (css/add-class :content-item)
-                                    (css/add-class :stream-item))
-                               (dom/a
-                                 {:href (routes/url :store {:store-id (:db/id store)})}
-                                 (photo/store-photo store {:transformation :transformation/thumbnail-large}))
-                               (dom/div
-                                 (->> (css/add-class :text)
-                                      (css/add-class :header))
-                                 (dom/a {:href (routes/url :store {:store-id (:db/id store)})}
-                                        (dom/strong nil store-name)))))))
-                       featured-stores)))
-              "See more stores")
 
             (common/content-section {:href  (routes/url :browse/all-items)
                                      :class "new-arrivals"}
