@@ -59,7 +59,8 @@
                                    {:defaultValue (:db/id locations)
                                     :onChange     #(.change-location this (.-value (.-target %)))}
                                    (map (fn [l]
-                                          (dom/option {:value (:db/id l)} (:sulo-locality/title l)))
+                                          (dom/option
+                                            {:value (:db/id l)} (:sulo-locality/title l)))
                                         sulo-localities)))
                                ;(menu/item-link nil (dom/span nil "Vancouver"))
                                ;(menu/item-link {:href (routes/url :browse/category {:top-category "home"})} (dom/span nil "HOME"))

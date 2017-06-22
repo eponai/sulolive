@@ -184,7 +184,7 @@
                     (:sulo-locality/path old-local))
             (r/set-cookie resp
                           location/locality-cookie-name
-                          (url/url-encode (c/write-transit new-local))
+                          (c/write-transit new-local)
                           {:path "/"})
             resp)))
       (auth/restrict (auth/bidi-location-redirect route))

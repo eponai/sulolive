@@ -10,7 +10,10 @@
             [eponai.server.datomic.mocked-data :as mocked-data]
             [taoensso.timbre :as timbre :refer [debug]]
             [eponai.common.database :as db]
-            [eponai.common.location :as location]))
+            [eponai.common.location :as location]
+            [eponai.common :as c]
+            [cemerick.url :as url]
+            [eponai.server.auth :as auth]))
 
 (def ^:dynamic *system* nil)
 (def user-email mocked-data/test-user-email)
@@ -26,16 +29,23 @@
 
 (test/use-fixtures :each with-system)
 
+(defn location-cookie []
+  (let [value {:value (url/url-encode (c/write-transit {:sulo-locality/path "yvr"}))}]
+    {location/locality-cookie-name value}))
+
 (deftest test-not-authed-http
   (let [red (:found response/redirect-status-codes)]
-    (test/are [status route route-params]
-      (= (:status (http/get (str (util/server-url *system*)
-                                 (routes/path route route-params))
-                            {:follow-redirects false}))
-         status)
-      200 :landing-page nil
-      red :user-settings nil
-      red :store-dashboard {:store-id 123})))
+    (test/are [status route route-params cookies]
+      (let [endpoint (util/endpoint-url *system* route route-params)
+            response (http/get endpoint
+                               {:follow-redirects false
+                                :cookies          cookies})]
+        (= (:status response)
+           status))
+      200 :landing-page nil (location-cookie)
+      red :index {:locality "yvr"} (location-cookie)
+      red :user-settings nil (location-cookie)
+      red :store-dashboard {:store-id 123} (location-cookie))))
 
 (deftest test-authed-http
   (let [red (:found response/redirect-status-codes)
@@ -47,36 +57,32 @@
                                   :symbols {'?user user-id}})]
     (util/with-auth
       *system* user-email
-      (test/are [status route route-params]
-        (do (debug "endpoint: " (util/endpoint-url *system* route route-params))
-          (= status
-             (:status (http/get (util/endpoint-url *system* route route-params)
-                                {:follow-redirects false
-                                 :cookies          {location/locality-cookie-name {:value "some-location"}}}))))
-        200 :landing-page nil
-        200 :user-settings nil
-        ;red :user-settings {:user-id (dec user-id)}
-        200 :store-dashboard {:store-id store-id}
-        red :store-dashboard {:store-id (dec store-id)}))))
+      (test/are [status route route-params cookies]
+        (let [endpoint (util/endpoint-url *system* route route-params)
+              response (http/get endpoint
+                                 {:follow-redirects false
+                                  :cookies          cookies})]
 
-;(deftest test-authed-no-locality-http
-;  (let [red (:found response/redirect-status-codes)
-;        db (util/system-db *system*)
-;        user-id (db/one-with db {:where   '[[?e :user/email ?email]]
-;                                 :symbols {'?email user-email}})
-;        store-id (db/one-with db {:where   '[[?e :store/owners ?owners]
-;                                             [?owners :store.owner/user ?user]]
-;                                  :symbols {'?user user-id}})]
-;    (util/with-auth
-;      *system* user-email
-;      (test/are [status route route-params]
-;        (do (debug "endpoint: " (util/endpoint-url *system* route route-params))
-;            (= status
-;               (:status (http/get (util/endpoint-url *system* route route-params)
-;                                  {:follow-redirects false}))))
-;        200 :landing-page nil
-;        200 :user-settings nil
-;        red :index nil
-;        red :browse/all-items nil
-;        200 :store-dashboard {:store-id store-id}
-;        red :store-dashboard {:store-id (dec store-id)}))))
+          (= status (:status response)))
+
+        ;; Redirect into location if one is selected
+        red :landing-page nil (location-cookie)
+        200 :landing-page nil nil
+        200 :index {:locality "yvr"} nil
+        200 :user-settings nil nil
+        200 :store-dashboard {:store-id store-id} nil
+        red :store-dashboard {:store-id (dec store-id)} nil))))
+
+(deftest test-authed-no-locality-should-set-cookie-http
+  (let [red (:found response/redirect-status-codes)
+        db (util/system-db *system*)]
+    (util/with-auth
+      *system* user-email
+      (test/are [_ route route-params]
+        (let [endpoint (util/endpoint-url *system* route route-params)
+              response (http/get endpoint {:follow-redirects false})
+              cookie-locality (auth/cookie-locality response)]
+          (= (:sulo-locality/path cookie-locality) (:locality route-params)))
+        200 :index {:locality "yvr"}
+        200 :index {:locality "yul"}
+        200 :user-settings nil))))
