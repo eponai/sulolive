@@ -2,7 +2,8 @@
   (:require
     [clojure.string :as string]
     [taoensso.timbre :refer [debug]]
-    [cemerick.url :as url]))
+    [cemerick.url :as url]
+    [eponai.common.location :as location]))
 
 (defn enter-pressed? [^js/Event e]
   (= 13 (.-keyCode e)))
@@ -60,7 +61,7 @@
              key-vals))))
 
 (defn get-locality []
-  (url/url-decode (get-cookie-val "sulo.locality")))
+  (url/url-decode (get-cookie-val location/locality-cookie-name)))
 
 (defn set-locality
   [locality-id]

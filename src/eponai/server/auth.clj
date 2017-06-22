@@ -242,7 +242,7 @@
 ;; Move this to location.clj?
 
 (defn requested-location [request]
-  (c/parse-long-safe (get-in request [:cookies "sulo.locality" :value])))
+  (c/parse-long-safe (get-in request [:cookies location/locality-cookie-name :value])))
 
 (defn bidi-location-redirect
   [route]

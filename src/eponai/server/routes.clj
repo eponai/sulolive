@@ -28,7 +28,8 @@
     [eponai.common :as c]
     [eponai.common.photos :as photos]
     [eponai.server.external.email.templates :as templates]
-    [eponai.common.format.date :as date]))
+    [eponai.common.format.date :as date]
+    [eponai.common.location :as location]))
 
 (defn html [& path]
   (-> (clj.string/join "/" path)
@@ -89,6 +90,7 @@
                :route               route
                :query-params        (:params request)
                :auth                (request->auth request)
+               :locations           (auth/requested-location request)
                :social-sharing      sharing-objects}
         logger (context-logger request
                                (select-keys props [:route :route-params :query-params])
@@ -116,7 +118,7 @@
        :auth                        auth
        :params                      (:params request)
        :system                      system
-       :locations                   (c/parse-long-safe (get-in cookies ["sulo.locality" :value]))
+       :locations                   (auth/requested-location request)
        :logger                      (context-logger request route-map user-id)}
       (:query body))))
 
@@ -169,8 +171,12 @@
 (defn bidi-route-handler [route]
   ;; Currently all routes render the same way.
   ;; Enter route specific stuff here.
-  (-> (fn [request]
-        (server.ui/render-site (request->props (assoc request :handler route))))
+  (-> (fn [{:keys [route-params ::m/conn] :as request}]
+        (let [resp (server.ui/render-site (request->props (assoc request :handler route)))]
+          (if-let [loc-path (:locality route-params)]
+            (let [{loc-id :db/id} (db/pull (db/db conn) [:db/id] [:sulo-locality/path loc-path])]
+              (r/set-cookie (r/content-type (r/response resp) "text/html") location/locality-cookie-name loc-id {:path "/"}))
+            resp)))
       (auth/restrict (auth/bidi-location-redirect route))
       (auth/restrict (auth/bidi-route-restrictions route))))
 
@@ -213,10 +219,10 @@
 
   ;; Webhooks
   (POST "/stripe/connected" request (r/response (stripe/webhook {:state  (::m/conn request)
-                                                                 :type :connected
+                                                                 :type   :connected
                                                                  :system (::m/system request)} (:body request))))
   (POST "/stripe" request (r/response (stripe/webhook {:state  (::m/conn request)
-                                                       :type :account
+                                                       :type   :account
                                                        :system (::m/system request)} (:body request))))
 
   (context "/" [:as request]

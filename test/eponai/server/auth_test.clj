@@ -9,7 +9,8 @@
             [eponai.server.test-util :as util]
             [eponai.server.datomic.mocked-data :as mocked-data]
             [taoensso.timbre :as timbre :refer [debug]]
-            [eponai.common.database :as db]))
+            [eponai.common.database :as db]
+            [eponai.common.location :as location]))
 
 (def ^:dynamic *system* nil)
 (def user-email mocked-data/test-user-email)
@@ -51,7 +52,7 @@
           (= status
              (:status (http/get (util/endpoint-url *system* route route-params)
                                 {:follow-redirects false
-                                 :cookies          {"sulo.locality" {:value "some-location"}}}))))
+                                 :cookies          {location/locality-cookie-name {:value "some-location"}}}))))
         200 :landing-page nil
         200 :user-settings nil
         ;red :user-settings {:user-id (dec user-id)}
