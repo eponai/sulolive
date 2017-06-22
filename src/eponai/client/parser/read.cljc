@@ -363,7 +363,7 @@
   [{:keys [target db query]} _ _]
   (if target
     {:remote true}
-    {:value (-> (db/lookup-entity db [:ui/singleton :ui.singleton/auth])
+    {:value (-> (db/lookup-entity  db [:ui/singleton :ui.singleton/auth])
                 :ui.singleton.auth/locations)})
   ;(debug "Read query/auth: ")
 
@@ -515,3 +515,9 @@
   [{:keys [target]} _ _]
   (when target
     {:remote true}))
+
+(defmethod client-read :query/sulo-localities
+  [{:keys [target db query]} _ _]
+  (if target
+    {:remote true}
+    {:value (db/pull-all-with db query {:where '[[?e :sulo-locality/title _]]})}))

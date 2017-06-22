@@ -63,13 +63,11 @@
   (url/url-decode (get-cookie-val "sulo.locality")))
 
 (defn set-locality
-  ([]
-    (set-locality "Vancouver / BC"))
-  ([locality]
-    (set! (.-cookie js/document) (str "sulo.locality=" (url/url-encode locality)))
-    ;(let [cookie-string (js/decodeURIComponent (.-cookie js/document))]
-    ;  (debug "Got cookie: " cookie-string))
-    ))
+  [locality-id]
+  (set! (.-cookie js/document) (str "sulo.locality=" (url/url-encode locality-id)))
+  ;(let [cookie-string (js/decodeURIComponent (.-cookie js/document))]
+  ;  (debug "Got cookie: " cookie-string))
+  )
 
 (defn elements-by-class
   ([classname]

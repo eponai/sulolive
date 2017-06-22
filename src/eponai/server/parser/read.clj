@@ -23,7 +23,8 @@
     [eponai.common.search :as common.search]
     [cemerick.url :as url]
     [eponai.common.format :as f]
-    [eponai.server.external.taxjar :as taxjar])
+    [eponai.server.external.taxjar :as taxjar]
+    [eponai.common :as c])
   (:import (datomic.db Db)))
 
 (defmacro defread
@@ -346,7 +347,8 @@
 (defread query/locations
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
-  {:value (url/url-decode locations)})
+  {:value (when-let [dbid (c/parse-long-safe locations)]
+            (db/pull db [:db/id :sulo-locality/path :sulo-locality/title {:sulo-locality/photo [:photo/id]}] dbid))})
 
 
 (defread query/stream-config
@@ -439,3 +441,8 @@
   {:auth ::auth/public}
   {:value (when-not db-history
             (client-env/env-map (:system/client-env system)))})
+
+(defread query/sulo-localities
+  [{:keys [target db query]} _ _]
+  {:auth ::auth/public}
+  {:value (db/pull-all-with db query {:where '[[?e :sulo-locality/title _]]})})

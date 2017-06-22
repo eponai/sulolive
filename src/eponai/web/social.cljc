@@ -20,7 +20,7 @@
    :social/pinterest "Pinterest"
    :social/instagram "Instagram"})
 
-(defmulti share-stream (fn [{:keys [platform]}] platform))
+(defmulti share-social (fn [{:keys [platform]}] platform))
 
 (defn params->query-str [params]
   (string/join "&"
@@ -29,14 +29,14 @@
                        []
                        params)))
 
-(defmethod share-stream :social/facebook
+(defmethod share-social :social/facebook
   [{:keys [href]}]
   #?(:cljs
      (let [params {:app_id "145634995501895"
                    :href   href}
            query (url/map->query params)]
        (.open js/window (str "https://www.facebook.com/dialog/share?" query)))))
-(defmethod share-stream :social/twitter
+(defmethod share-social :social/twitter
   [{:keys [href description]}]
   #?(:cljs
      (let [params {:text     description
@@ -46,8 +46,7 @@
            query (url/map->query params)]
        (.open js/window (str "https://twitter.com/intent/tweet?" query)))))
 
-;<a data-pin-do="buttonPin" href="https://www.pinterest.com/pin/create/button/?url=http://www.foodiecrush.com/2014/03/filet-mignon-with-porcini-mushroom-compound-butter/&media=https://s-media-cache-ak0.pinimg.com/736x/17/34/8e/17348e163a3212c06e61c41c4b22b87a.jpg&description=So%20delicious!"></a>
-(defmethod share-stream :social/pinterest
+(defmethod share-social :social/pinterest
   [{:keys [href description media]}]
   #?(:cljs
      (let [params {:url         href
@@ -55,9 +54,6 @@
                    :description description}
            query (url/map->query params)]
        (.open js/window (str "https://www.pinterest.com/pin/create/button/?" query)))))
-
-;(defmethod share-stream :social/email
-;  [_ stream])
 
 (defn follow-button [{:keys [platform on-click] :as opts}]
   (dom/a
@@ -72,7 +68,7 @@
   (dom/a
     (->> {:onClick #(do
                      (debug "Share on platform: " platform)
-                     (share-stream opts)
+                     (share-social opts)
                      (when on-click
                        (on-click)))}
          (css/add-class :share-button)

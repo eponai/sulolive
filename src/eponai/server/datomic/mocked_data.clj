@@ -381,6 +381,15 @@
                                 :continent/name (get continents (keyword (:continent country)))}})
          (:countries country-data))))
 
+(defn sulo-localities []
+  [{:sulo-locality/title "Vancouver, BC"
+    :sulo-locality/path  "yvr"
+    :sulo-locality/photo (photo "static/landing-vancouver-2")}
+
+   {:sulo-locality/title "Montréal, QC"
+    :sulo-locality/path  "yul"
+    :sulo-locality/photo (photo "static/alex-jodoin-140651")}])
+
 (defn mock-chats [stores]
   (vec (map (fn [s]
               {:chat/store (:db/id s)})
@@ -413,5 +422,5 @@
     (db/transact conn categories)
     ;(db/transact-one conn storeless-user)
     (debug "Categories added")
-    (db/transact conn (concat stores live-streams streams chats countries))
+    (db/transact conn (concat stores live-streams streams chats countries (sulo-localities)))
     (debug "Stores with items, chats and streams added")))

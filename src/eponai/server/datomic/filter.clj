@@ -136,6 +136,9 @@
      :user/profile                   public-attr
      :user.profile/name              public-attr
      :user.profile/photo             public-attr
+     :sulo-locality/title            public-attr
+     :sulo-locality/path             public-attr
+     :sulo-locality/photo            public-attr
      :stripe/id                      stripe-owner
      :stripe/publ                    private-attr
      :stripe/secret                  private-attr
