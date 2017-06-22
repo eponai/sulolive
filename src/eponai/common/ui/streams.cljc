@@ -20,9 +20,11 @@
                       :stream/state
                       {:stream/store [{:store/profile [:store.profile/name
                                                        {:store.profile/photo [:photo/path
-                                                                              :photo/id]}]}]}]}
+                                                                              :photo/id]}]}
+                                      :store/locality]}]}
      {:query/stores [:db/id
                      {:stream/_store [:stream/state]}
+                     :store/locality
                      {:store/profile [:store.profile/name
                                       {:store.profile/photo [:photo/path
                                                              :photo/id]}]}]}

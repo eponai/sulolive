@@ -60,6 +60,9 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 			.overlay {
 				display: flex;
 				justify-content: center;
+				h3 {
+					transition: font-size .25s ease-in-out;
+				}
 				> div {
 					padding: 0.2rem 1rem;
 					transition: background .25s ease-in;
@@ -75,7 +78,9 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 				transition: all .2s ease-in;
 				&:hover {
 					background: rgba($white, 0.75);
-					font-size: 125%;
+					h3 {
+						font-size: 160%;
+					}
 					> div {
 						background: transparent;
 					}

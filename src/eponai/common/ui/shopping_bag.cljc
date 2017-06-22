@@ -143,6 +143,7 @@
                                                           {:store/_items [:db/id
                                                                           {:store/profile [:store.profile/name
                                                                                            {:store.profile/photo [:photo/id]}]}]}]}]}]}
+     :query/locations
      {:query/auth [:user/email]}])
   Object
   (remove-item [this sku]
@@ -155,7 +156,7 @@
       (if-not did-mount?
         (om/update-state! this assoc :did-mount? true))))
   (render [this]
-    (let [{:keys [query/cart proxy/navbar]} (om/props this)
+    (let [{:keys [query/cart proxy/navbar query/locations]} (om/props this)
           {:keys [user.cart/items]} cart
           skus-by-store (items-by-store items)]
       (debug "Shopping bag: " cart)
@@ -178,7 +179,7 @@
               (icons/empty-shopping-bag)
               ;(dom/p (css/add-class :header))
               (button/button
-                (button/sulo-dark (button/hollow {:href (routes/url :browse/all-items)}))
+                (button/sulo-dark (button/hollow {:href (routes/url :browse/all-items {:locality (:sulo-locality/path locations)})}))
                 (dom/span nil "Go to the market - start shopping")))))))))
 
 (def ->ShoppingBag (om/factory ShoppingBag))

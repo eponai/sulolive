@@ -64,7 +64,8 @@
 
 (defn set-locality
   [locality-id]
-  (set! (.-cookie js/document) (str "sulo.locality=" (url/url-encode locality-id)))
+  (debug "Setting locality id: " (url/url-encode locality-id))
+  (set! (.-cookie js/document) (str "sulo.locality=" (url/url-encode locality-id) ";path=/"))
   ;(let [cookie-string (js/decodeURIComponent (.-cookie js/document))]
   ;  (debug "Got cookie: " cookie-string))
   )

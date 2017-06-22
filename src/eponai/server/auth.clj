@@ -248,7 +248,7 @@
   [route]
   (let [location-free? (routes/location-independent-route? route)]
     {:handler  (fn [request]
-                 (let [loc (requested-location request)]
+                 (let [loc (c/parse-long-safe (requested-location request))]
                    (if (or (agent-whitelisted? request)
                            location-free?
                            (some? loc))
@@ -257,3 +257,27 @@
      :on-error (fn [request _]
                  (debug "Unable to show route: " route " because it requires location and there was none.")
                  (prompt-location-picker request))}))
+
+(defn bidi-location-redirect
+  [route]
+  (let [location-free? (routes/location-independent-route? route)]
+    {:handler  (fn [request]
+                 (if (= route :landing-page)
+                   (let [loc (c/parse-long-safe (requested-location request))]
+                     (if (nil? loc)
+                       (buddy/success {})
+                       (buddy/error nil)))
+                   (buddy/success {})))
+     ;(fn [request]
+     ;               (let [loc (c/parse-long-safe (requested-location request))]
+     ;                 (if (or (agent-whitelisted? request)
+     ;                         location-free?
+     ;                         (some? loc))
+     ;                   (buddy/success loc)
+     ;                   (buddy/error nil))))
+     :on-error (fn [{:keys [:eponai.server.middleware/conn]} loc]
+                 (let [locality (db/pull (db/db conn) [:sulo-locality/path] loc)]
+                   (r/redirect (routes/path :index {:locality (:sulo-locality/path locality)})))
+                 ;(debug "Unable to show route: " route " because it requires location and there was none.")
+                 ;(prompt-location-picker request)
+                 )}))

@@ -40,7 +40,8 @@
   (if target
     {:remote true}
     {:value (when-let [loc (client.auth/current-locality db)]
-              (db/pull-all-with db query {:where   '[[?s :stream/state ?states]
+              (db/pull-all-with db query {:where   '[[?e :store/locality ?l]
+                                                     [?s :stream/state ?states]
                                                      [?s :stream/store ?e]]
                                           :symbols {'[?states ...] [:stream.state/online
                                                                     :stream.state/offline]
@@ -91,6 +92,7 @@
   {:remote true
    :value  (when-let [loc (client.auth/current-locality db)]
              (let [items (db/all-with db {:where   '[[?s :store/locality ?l]
+                                                     [?s :store/items ?e]
                                                      [?e :store.item/featured]]
                                           :symbols {'?l (:db/id loc)}})
                    pulled (db/pull-many db query items)]
@@ -304,18 +306,18 @@
                                                      [?e :store/owners ?owners]]
                                           :symbols {'?user user-id}})})))
 
-(defn- add-all-hrefs [category params->route-handler param-order]
+(defn- add-all-hrefs [loc category params->route-handler param-order]
   (letfn [(with-hrefs [category parent-names]
             (let [names (conj parent-names (:category/name category))
                   params (zipmap param-order names)]
               (-> category
-                  (assoc :category/href (client.routes/url (params->route-handler params) params))
+                  (assoc :category/href (client.routes/url (params->route-handler params) (assoc params :locality (:sulo-locality/path loc))))
                   (update :category/children (fn [children]
                                                (into (empty children) (map #(with-hrefs % names)) children))))))]
     (with-hrefs category [])))
 
-(defn assoc-gender-hrefs [category]
-  (add-all-hrefs category
+(defn assoc-gender-hrefs [loc category]
+  (add-all-hrefs loc category
                  (fn [{:keys [top-category sub-category sub-sub-category]}]
                    (or (when sub-sub-category :browse/gender+top+sub-sub)
                        (when top-category :browse/gender+top)
@@ -323,8 +325,8 @@
                        :browse/all-items))
                  [:sub-category :top-category :sub-sub-category]))
 
-(defn assoc-category-hrefs [category]
-  (add-all-hrefs category
+(defn assoc-category-hrefs [loc category]
+  (add-all-hrefs loc category
                  (fn [{:keys [top-category sub-category sub-sub-category]}]
                    (or (when sub-sub-category :browse/category+sub+sub-sub)
                        (when sub-category :browse/category+sub)
@@ -338,31 +340,40 @@
       (let [query-without-children (into [:db/id] (parser.util/remove-query-key :category/children) query)
             ;; Since our query is flat, it's faster to just select keys from the entity.
             entity-pull (comp (map #(db/entity db %))
-                              (map #(select-keys % query-without-children)))]
+                              (map #(select-keys % query-without-children)))
+            loc (client.auth/current-locality db)
+
+            genders {:category/name     gender
+                     :category/label    (str/capitalize gender)
+                     :category/children (->> (db/all-with db (db/merge-query gender-query {:where '[[?e :category/children ?sub]]}))
+                                             (into []
+                                                   (comp
+                                                     entity-pull
+                                                     (map (fn [category]
+                                                            (->> (db/merge-query (products/category-names-query
+                                                                                   {:top-category (:category/name category)
+                                                                                    :sub-category gender})
+                                                                                 {:where '[[?sub :category/children ?e]]})
+                                                                 (db/all-with db)
+                                                                 (into [] entity-pull)
+                                                                 (assoc category :category/children)))))))}]
         #_(assert (every? keyword? query-without-children))
-        (-> {:category/name     gender
-             :category/label    (str/capitalize gender)
-             :category/children (->> (db/all-with db (db/merge-query gender-query {:where '[[?e :category/children ?sub]]}))
-                                     (into []
-                                           (comp
-                                             entity-pull
-                                             (map (fn [category]
-                                                    (->> (db/merge-query (products/category-names-query
-                                                                           {:top-category (:category/name category)
-                                                                            :sub-category gender})
-                                                                         {:where '[[?sub :category/children ?e]]})
-                                                         (db/all-with db)
-                                                         (into [] entity-pull)
-                                                         (assoc category :category/children)))))))}
-            (assoc-gender-hrefs))))))
+        (if (some? loc)
+          (assoc-gender-hrefs loc genders)
+          genders)))))
 
 (defn navigate-category [db query category-name]
-  (some-> (db/pull-one-with db (into [{:category/children '...}]
-                                     (parser.util/remove-query-key :category/children)
-                                     query)
-                            (db/merge-query (products/category-names-query {:top-category category-name})
-                                            {:where '[[(identity ?top) ?e]]}))
-          (assoc-category-hrefs)))
+  (let [categories (db/pull-one-with db (into [{:category/children '...}]
+                                              (parser.util/remove-query-key :category/children)
+                                              query)
+                                     (db/merge-query (products/category-names-query {:top-category category-name})
+                                                     {:where '[[(identity ?top) ?e]]}))
+        loc (client.auth/current-locality db)]
+
+    (when (some? categories)
+      (if (some? loc)
+        (assoc-category-hrefs loc categories)
+        categories))))
 
 (defn nav-categories [db query]
   (letfn [(distinct-by-name [category]

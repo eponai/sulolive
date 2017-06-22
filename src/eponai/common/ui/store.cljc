@@ -57,6 +57,7 @@
      {:proxy/stream (om/get-query stream/Stream)}
      {:proxy/chat (om/get-query chat/StreamChat)}
      {:query/store [:db/id
+                    :store/locality
                     {:store/sections [:store.section/label :store.section/path :db/id]}
                     ;{:store/items (om/get-query item/Product)}
                     {:stream/_store [:stream/state :stream/title]}

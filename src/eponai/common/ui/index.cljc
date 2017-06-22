@@ -48,6 +48,7 @@
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      :query/locations
+     :query/current-route
      {:query/featured-items [:db/id
                              :store.item/name
                              :store.item/price
@@ -55,31 +56,33 @@
                              {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                   :store.item.photo/index]}
                              {:store/_items [{:store/profile [:store.profile/name]}
-                                             :store/locality]}]}
+                                             {:store/locality [:sulo-locality/path]}]}]}
      {:query/featured-stores [:db/id
                               {:store/profile [:store.profile/name
                                                {:store.profile/photo [:photo/path :photo/id]}]}
-                              :store/locality
+                              {:store/locality [:sulo-locality/path]}
                               :store/created-at
                               :store/featured
                               :store/featured-img-src
                               {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                                          :store.item.photo/index]}]}]}
      {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id
-                                                                    :store/locality
+                                                                    {:store/locality [:sulo-locality/path]}
                                                                     {:store/profile [:store.profile/name {:store.profile/photo [:photo/path :photo/id]}]}]}]}
      {:query/auth [:db/id :user/email]}
      {:query/owned-store [:db/id
-                          :store/locality
+                          {:store/locality [:sulo-locality/path]}
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.
                           {:store/owners [{:store.owner/user [:db/id]}]}]}])
   Object
   (render [this]
     (let [{:keys       [proxy/navbar query/featured-items query/featured-streams]
-           :query/keys [owned-store locations featured-stores]} (om/props this)]
+           :query/keys [owned-store locations featured-stores current-route]} (om/props this)
+          {:keys [route-params]} current-route]
       (debug "Items: " featured-items)
       (debug "Items: " featured-stores)
+      (debug "Selected location: " locations)
 
       (common/page-container
         {:navbar navbar
@@ -117,7 +120,7 @@
                  (dom/div
             (css/add-class :sections)
             (when (pos? (count featured-streams))
-              (common/content-section {:href  (routes/url :live)
+              (common/content-section {:href  (routes/url :live route-params)
                                        :class "online-channels"}
                                       "Stores streaming right now"
                                       (grid/row
@@ -134,8 +137,49 @@
                                                (take 4 featured-streams))))
                                       "More streams"))
 
+            (common/content-section {:class "collections"}
+                                    "Shop by collection"
+                                    (div nil
+                                         (grid/row
+                                           (grid/columns-in-row {:small 1 :medium 2})
+                                           (grid/column
+                                             (->> (css/add-class :content-item)
+                                                  (css/add-class :collection-item))
+                                             (collection-element {:href     (routes/url :browse/category (merge route-params
+                                                                                                                {:top-category "home"}))
+                                                                  :photo-id "static/home"
+                                                                  :title    "Home"}))
+                                           (grid/column
+                                             (->> (css/add-class :content-item)
+                                                  (css/add-class :collection-item))
+                                             (collection-element {:href     (routes/url :browse/gender (merge route-params
+                                                                                                              {:sub-category "women"}))
+                                                                  :photo-id "static/women"
+                                                                  :title    "Women"}))
+                                           (grid/column
+                                             (->> (css/add-class :content-item)
+                                                  (css/add-class :collection-item))
+                                             (collection-element {:href     (routes/url :browse/gender (merge route-params
+                                                                                                              {:sub-category "men"}))
+                                                                  :photo-id "static/men"
+                                                                  :title    "Men"}))
+                                           (grid/column
+                                             (->> (css/add-class :content-item)
+                                                  (css/add-class :collection-item))
+                                             (collection-element {:href     (routes/url :browse/gender (merge route-params
+                                                                                                              {:sub-category "unisex-kids"}))
+                                                                  :photo-id "static/kids"
+                                                                  :title    "Kids"}))))
+                                    ;(map (fn [s t]
+                                    ;       (collection-element {:url (first (:store/featured-img-src s))
+                                    ;                            :title t}))
+                                    ;     featured-stores
+                                    ;     ["Home" "Kids" "Women" "Men"])
+                                    ""
+                                    )
+
             (common/content-section
-              {:href  (routes/url :live)
+              {:href  (routes/url :live {:locality (:sulo-locality/path locations)})
                :class "new-brands"}
               "New stores"
               ;(grid/row-column
@@ -165,44 +209,7 @@
                        (take 4 featured-stores))))
               "See more stores")
 
-            (common/content-section {:class "collections"}
-                                    "Shop by collection"
-                                    (div nil
-                                         (grid/row
-                                           (grid/columns-in-row {:small 1 :medium 2})
-                                           (grid/column
-                                             (->> (css/add-class :content-item)
-                                                  (css/add-class :collection-item))
-                                             (collection-element {:href     (routes/url :browse/category {:top-category "home"})
-                                                                  :photo-id "static/home"
-                                                                  :title    "Home"}))
-                                           (grid/column
-                                             (->> (css/add-class :content-item)
-                                                  (css/add-class :collection-item))
-                                             (collection-element {:href     (routes/url :browse/gender {:sub-category "women"})
-                                                                  :photo-id "static/women"
-                                                                  :title    "Women"}))
-                                           (grid/column
-                                             (->> (css/add-class :content-item)
-                                                  (css/add-class :collection-item))
-                                             (collection-element {:href     (routes/url :browse/gender {:sub-category "men"})
-                                                                  :photo-id "static/men"
-                                                                  :title    "Men"}))
-                                           (grid/column
-                                             (->> (css/add-class :content-item)
-                                                  (css/add-class :collection-item))
-                                             (collection-element {:href     (routes/url :browse/gender {:sub-category "unisex-kids"})
-                                                                  :photo-id "static/kids"
-                                                                  :title    "Kids"}))))
-                                    ;(map (fn [s t]
-                                    ;       (collection-element {:url (first (:store/featured-img-src s))
-                                    ;                            :title t}))
-                                    ;     featured-stores
-                                    ;     ["Home" "Kids" "Women" "Men"])
-                                    ""
-                                    )
-
-            (common/content-section {:href  (routes/url :browse/all-items)
+            (common/content-section {:href  (routes/url :browse/all-items route-params)
                                      :class "new-arrivals"}
                                     "New products"
                                     (grid/row

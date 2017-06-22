@@ -88,13 +88,15 @@
 (defread query/stores
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
-  {:value (when (some? locations)
-            (query/all db db-history query {:where   '[[?e :store/locality ?l]
-                                                       [?s :stream/state ?states]
-                                                       [?s :stream/store ?e]]
-                                            :symbols {'[?states ...] [:stream.state/online
-                                                                      :stream.state/offline]
-                                                      '?l            locations}}))})
+  {:value (do
+            (debug "Read stores: " locations)
+            (when (some? locations)
+                (query/all db db-history query {:where   '[[?e :store/locality ?l]
+                                                           [?s :stream/state ?states]
+                                                           [?s :stream/store ?e]]
+                                                :symbols {'[?states ...] [:stream.state/online
+                                                                          :stream.state/offline]
+                                                          '?l            locations}})))})
 
 (defread query/streams
   [{:keys [db db-history query locations]} _ _]

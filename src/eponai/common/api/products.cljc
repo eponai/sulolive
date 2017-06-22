@@ -83,6 +83,7 @@
                                    (smallest-category category-names)
                                    '?item-category)
                              '[?s :store/locality ?l]
+                             '[?s :store/items ?e]
                              '[?e :store.item/category ?item-category]]
                    :symbols {'?l locality}
                    :rules   eq-or-child-category-rule}))

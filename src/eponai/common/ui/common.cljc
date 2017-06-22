@@ -215,7 +215,8 @@
               (search-bar/->SearchBar {:ref             (str ::search-bar-ref)
                                        :placeholder     "What are you looking for?"
                                        :mixpanel-source "index"
-                                       :classes         [:drop-shadow]})
+                                       :classes         [:drop-shadow]
+                                       :locations locations})
               (button/button
                 (->> (button/expanded {:onClick (fn []
                                                   (let [search-bar (om/react-ref component (str ::search-bar-ref))]

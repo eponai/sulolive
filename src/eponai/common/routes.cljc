@@ -76,6 +76,12 @@
                                     :sub-sub-category
                                     :browse/gender+top+sub-sub))]])
 
+(def locality-routes
+  {"/"         :index
+   "/products" :browse/all-items
+   "/browse"   browse-categories
+   "/live"     :live})
+
 (defn normalize-browse-route [route]
   (letfn [(remove-from-char [s c]
             (if-let [idx (str/index-of s c)]
@@ -85,23 +91,24 @@
              (remove-from-char (name route) "+"))))
 
 (def routes
-  ["" [["/" {""                            :index
-             "enter"                       :landing-page
-             "enter/l"                     :landing-page/locality
-             "sell"                        :sell
-             "live"                        :live
-             "store"                       :index/store
-             ["store/" [#"\d+" :store-id]] store-routes
-             "products"                    product-routes
-             "browse"                      browse-categories
-             "help"                        help-routes
-             "about"                       :about
-             ["checkout/" :store-id]       checkout-routes
-             "shopping-bag"                :shopping-bag
-             "business"                    :business
-             "settings"                    :user-settings
-             "orders"                      {""                       :user/order-list
-                                            ["/" [#"\w+" :order-id]] :user/order}
+  ["" [["/" {
+             ""                                 :landing-page
+             "l"                                :landing-page/locality
+             ["" [#"(yvr|yul)" :locality]]    locality-routes
+             "sell"                             :sell
+             ["/products" [#"\d+" :product-id]] :product
+             ;"products"                    product-routes
+             ;"browse"                      browse-categories
+             "store"                            :index/store
+             ["store/" [#"\d+" :store-id]]      store-routes
+             "help"                             help-routes
+             "about"                            :about
+             ["checkout/" :store-id]            checkout-routes
+             "shopping-bag"                     :shopping-bag
+             "business"                         :business
+             "settings"                         :user-settings
+             "orders"                           {""                       :user/order-list
+                                                 ["/" [#"\w+" :order-id]] :user/order}
              ;["user/" [#"\d+" :user-id]]   user-routes
              "auth"                        :auth
              "login"                       :login

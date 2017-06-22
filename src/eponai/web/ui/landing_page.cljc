@@ -56,7 +56,7 @@
                               {:sulo-locality/photo [:photo/id]}]}
      :query/messages])
   Object
-  (select-locality [_ locality-id]
+  (select-locality [this locality-id]
     #?(:cljs
        (web-utils/set-locality locality-id)))
   (submit-new-location [this]
@@ -138,12 +138,13 @@
                        (grid/column
                          nil
                          (dom/a
-                           (css/add-class :city-anchor {:onClick #(do
-                                                                   (debug "Setting locality! " (:db/id loc))
+                           (css/add-class :city-anchor {:href    "#"
+                                                        :onClick #(do
+                                                                   (debug "Setting locality! " loc)
                                                                    (.select-locality this (:db/id loc))
                                                                    (if (nil? auth)
                                                                      (auth/show-lock (shared/by-key this :shared/auth-lock))
-                                                                     (routes/set-url! this :index nil)))})
+                                                                     (routes/set-url! this :index {:locality (:sulo-locality/path loc)})))})
                            (photo/photo
                              {:photo-id       (:photo/id photo)
                               :transformation :transformation/preview}

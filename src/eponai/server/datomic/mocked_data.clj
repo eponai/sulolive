@@ -140,7 +140,7 @@
     :store/profile    {:store.profile/name  "ikcha"
                        :store.profile/photo (photo "mocked/isla_500x500.24111301_nvjpi6zo")
                        :store.profile/cover (photo "mocked/isbl_3360x840.20468865_f7kumdbt")}
-    :store/locality   [:sulo-locality/path "yvr"]
+    ;:store/locality   [:sulo-locality/path "yvr"]
     :store/created-at 1
     :store/stripe     (stripe-account)
     :store/sections   [{:db/id               (db/tempid :db.part/user -1000)
@@ -192,7 +192,7 @@
                        :store.profile/cover (photo "mocked/isbl_3360x840.22956500_1bj341c6")
                        :store.profile/photo (photo "mocked/isla_500x500.17338368_6u0a6c4s")}
     :store/created-at 2
-    :store/locality   [:sulo-locality/path "yvr"]
+    ;:store/locality   [:sulo-locality/path "yvr"]
 
     :store/items      [{:store.item/name     "Linen duvet cover - Woodrose"
                         :store.item/price    34.00M
@@ -221,7 +221,7 @@
                        :store.profile/cover (photo "mocked/175704-27dcee8b2fd94212b2cc7dcbe43bb80c")
                        :store.profile/photo (photo "mocked/175704-27dcee8b2fd94212b2cc7dcbe43bb80c")}
     :store/created-at 3
-    :store/locality   [:sulo-locality/path "yvr"]
+    ;:store/locality   [:sulo-locality/path "yvr"]
 
     :store/items      [{:store.item/name     "Glitter & Navy Blue Envelope Clutch"
                         :store.item/photos   [(item-photo "mocked/175704-f4b3f5a3acdd4997a3a4ea18186cca19")]
@@ -425,9 +425,14 @@
         streams (mock-streams (drop 4 stores) :stream.state/offline)
         countries (countries)
         ;storeless-user (user-no-store)
+        stores-with-localities (map (fn [s]
+                                      (if (nil? (:store/locality s))
+                                        (assoc s :store/locality [:sulo-locality/path "yvr"])
+                                        s))
+                                    stores)
         ]
     (db/transact conn (concat categories (sulo-localities)))
     ;(db/transact-one conn storeless-user)
     (debug "Categories added")
-    (db/transact conn (concat stores live-streams streams chats countries))
+    (db/transact conn (concat stores-with-localities live-streams streams chats countries))
     (debug "Stores with items, chats and streams added")))
