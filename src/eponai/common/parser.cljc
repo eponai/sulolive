@@ -20,7 +20,9 @@
             [eponai.server.datomic.filter :as filter])
             [clojure.set :as set]
             [medley.core :as medley]
-            [cemerick.url :as url])
+            [cemerick.url :as url]
+            #?(:clj
+            [eponai.server.log :as log]))
   #?(:clj
      (:import (clojure.lang ExceptionInfo))))
 
@@ -30,6 +32,11 @@
 (defmulti server-read om/dispatch)
 (defmulti server-mutate om/dispatch)
 (defmulti server-message om/dispatch)
+
+(defmulti log-param-keys om/dispatch)
+(defmethod log-param-keys :default
+  [_ _ _]
+  nil)
 
 (defmulti server-auth-role om/dispatch)
 (defmulti client-auth-role om/dispatch)
@@ -455,10 +462,14 @@
             (on-not-authed (assoc env :auth-roles roles) k p)))))))
 
 (defn wrap-server-read-auth [read]
-  (let [read-authed (wrap-auth server-auth-role read (fn [env k p]
-                                                       (debug "Not authed enough for read: " k
-                                                              " params: " p
-                                                              " auth-roles: " (:auth-roles env))))]
+  (let [read-authed (wrap-auth server-auth-role read
+                               (fn [{:keys [auth logger] :as env} k p]
+                                 #?(:clj
+                                    (when (not-empty auth)
+                                      (log/info! logger k {:response-type :unauthorized})))
+                                 (debug "Not authed enough for read: " k
+                                        " params: " p
+                                        " auth-roles: " (:auth-roles env))))]
     (fn [env k p]
       (if (is-special-key? k)
         (read env k p)
@@ -466,7 +477,7 @@
 
 (defn wrap-server-mutate-auth [mutate]
   (wrap-auth server-auth-role mutate
-             (fn [{::keys [auth-responder] :keys [auth]} _ _]
+             (fn [{::keys [auth-responder] :keys [auth logger]} _ _]
                (let [message (if (empty? auth)
                                (do (auth/-prompt-login auth-responder nil)
                                    "You need to log in to perform this action")
@@ -533,6 +544,81 @@
                    (throw (ex-info (.getMessage e)
                                    {:cause             e
                                     ::mutation-message (x->message e)})))))))))))
+
+#?(:clj
+   (defn- thunk-logger
+     "Returns a function that takes a thunk (0-arity function) and logs it"
+     [env k p]
+     (fn [thunk]
+       (let [start (System/currentTimeMillis)
+             log-then-return
+             (fn [x]
+               (let [error? (instance? Throwable x)
+                     log-fn (if error? log/error! log/info!)
+                     end (System/currentTimeMillis)
+                     read-basis-t (::read-basis-t-for-this-key env)
+                     read? (keyword? k)]
+                 (log-fn (:logger env)
+                         (keyword (str "eponai.server.parser")
+                                  (if read? "read" "mutate"))
+                         (merge {:parser-key    k
+                                 :response-type (if error? :error :success)
+                                 :event-time-ms  (- end start)}
+                                (cond
+                                  error?
+                                  {:exception (log/render-exception x)}
+                                  read?
+                                  (cond-> nil
+                                          (coll? x)
+                                          (assoc :return-empty? (empty? x))
+                                          (counted? x)
+                                          (assoc :return-count (count x))
+                                          (some? read-basis-t)
+                                          (assoc ::read-basis-t read-basis-t)))))
+                 x))]
+         (try
+           (log-then-return (thunk))
+           (catch Throwable e
+             (throw (log-then-return e))))))))
+
+#?(:clj
+   (defn with-server-logging [read-or-mutate]
+     (fn [env k p]
+       (let [log-action (thunk-logger env k p)]
+         (if (and (keyword? k)
+                  (not (is-special-key? k)))
+           (log-action #(read-or-mutate env k p))
+           (update-action
+             (read-or-mutate env k p)
+             (fn [action]
+               (fn []
+                 (log-action action)))))))))
+
+#?(:clj
+   (defn with-server-logger [read-or-mutate]
+     (fn [{:keys [logger] :as env} k p]
+       (read-or-mutate
+         (cond-> env
+                 (not (is-special-key? k))
+                 (assoc :logger
+                        (log/with (or logger
+                                      ;; Using a no-op-logger for testing environments that don't care.
+                                      (force log/no-op-logger))
+                                  #(let [param-keys (log-param-keys env k p)]
+                                     ;; Returning ::no-logging from log-param-keys will
+                                     ;; not log this mutation or read.
+                                     (if (= ::no-logging param-keys)
+                                       log/skip-message
+                                       (assoc % :parse-key k
+                                                :parse-type (if (keyword? k) :read :mutation)
+                                                :parse-params (if (map? param-keys)
+                                                                ;; If implementation of log-params-keys returns a map
+                                                                ;; we just return it. It enables us to return the params
+                                                                ;; in whatever form we want. For example:
+                                                                ;; Flattened keys, anonymous email, changed values.
+                                                                param-keys
+                                                                (select-keys p param-keys))))))))
+         k p))))
 
 (defn client-mutate-creation-time [mutate]
   (fn [env k p]
@@ -692,10 +778,11 @@
                          wrap-server-parser-state
                          wrap-om-next-error-handler))
                    (fn [read state]
-
                      (-> read
+                         with-server-logging
                          read-returning-basis-t
                          wrap-server-read-auth
+                         with-server-logger
                          (wrap-datomic-db (atom nil))))
 
                    (fn [mutate state]
@@ -704,7 +791,9 @@
                          server-mutate-creation-time-env
                          with-mutation-message
                          mutate-without-history-id-param
+                         with-server-logging
                          wrap-server-mutate-auth
+                         with-server-logger
                          wrap-datomic-db))))))
 
 (defn test-client-parser

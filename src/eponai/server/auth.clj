@@ -20,7 +20,8 @@
     [medley.core :as medley]
     [clojure.string :as string]
     [eponai.common.mixpanel :as mixpanel]
-    [taoensso.timbre :as timbre]))
+    [taoensso.timbre :as timbre]
+    [eponai.server.log :as log]))
 
 (def auth-token-cookie-name "sulo-auth-token")
 (def auth-token-remove-value "kill")
@@ -169,24 +170,34 @@
         (wrap-authorization auth-backend)
         (wrap-http-responders))))
 
-(defn authenticate [{:keys [params] :as request} conn]
-  (let [auth0 (get-in request [:eponai.server.middleware/system :system/auth0])
+(defn- do-authenticate
+  "Returns a logged in response if authenticate went well."
+  [{:keys                          [params] :as request
+    :eponai.server.middleware/keys [system logger conn]}]
+  (let [auth0 (:system/auth0 system)
         {:keys [code state]} params
-        {:keys [redirect-url token profile]} (auth0/authenticate auth0 code state)
-        old-user (db/lookup-entity (db/db conn) [:user/email (:email profile)])
-        user (if-not (some? old-user)
-               (let [new-user (f/auth0->user profile)
-                     _ (info "Auth - authenticated user did not exist, creating new user: " new-user)
-                     result (db/transact-one conn new-user)]
-                 (debug "Auth - new user: " new-user)
-                 (db/lookup-entity (:db-after result) [:user/email (:email profile)]))
-               old-user)]
-    (if token
-      (do
-        (mixpanel/track "Sign in user" {:distinct_id (:db/id user)
-                                        :ip          (:remote-addr request)})
-        (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token}))
-      (prompt-login request))))
+        {:keys [redirect-url token profile]} (auth0/authenticate auth0 code state)]
+    (when-let [email (:email profile)]
+      (let [old-user (db/lookup-entity (db/db conn) [:user/email email])
+            user (if-not (some? old-user)
+                   (let [new-user (f/auth0->user profile)
+                         _ (info "Auth - authenticated user did not exist, creating new user: " new-user)
+                         result (db/transact-one conn new-user)]
+                     (debug "Auth - new user: " new-user)
+                     (db/lookup-entity (:db-after result) [:user/email email]))
+                   old-user)]
+        (when-not (some? old-user)
+          (log/info! logger ::user-created {:user-id (:db/id user)}))
+        (when token
+          (mixpanel/track "Sign in user" {:distinct_id (:db/id user)
+                                          :ip          (:remote-addr request)})
+          (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token}))))))
+
+(defn authenticate
+  [request]
+  (or
+    (do-authenticate request)
+    (prompt-login request)))
 
 (defn agent-whitelisted? [request]
   (let [whitelist #{"facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"

@@ -15,6 +15,7 @@
     [eponai.server.external.wowza :as wowza]
     [eponai.server.external.product-search :as product-search]
     [eponai.server.external.mailchimp :as mailchimp]
+    [eponai.server.external.elastic-cloud :as elastic-cloud]
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.taxjar :as taxjar]
     [eponai.server.external.aws-s3 :as s3]
@@ -33,6 +34,7 @@
                    :system/client-env
                    :system/cloudinary
                    :system/datomic
+                   :system/elastic-cloud
                    :system/handler
                    :system/mailchimp
                    :system/server-address
@@ -76,39 +78,46 @@
                                    {:aws-elb :system/aws-elb})})
 
 (defn real-components [{:keys [env] :as config}]
-  {:system/auth0     (c/using (auth0/map->Auth0 {:client-id     (:auth0-client-id env)
-                                                 :client-secret (:auth0-client-secret env)})
-                              {:server-address :system/server-address})
-   :system/aws-ec2   (ec2/aws-ec2)
-   :system/aws-elb   (c/using (elb/map->AwsElasticBeanstalk {})
-                              {:aws-ec2 :system/aws-ec2})
-   :system/aws-s3    (s3/map->AwsS3 {:bucket     (:aws-s3-bucket-photos env)
-                                     :zone       (:aws-s3-bucket-photos-zone env)
-                                     :access-key (:aws-access-key-id env)
-                                     :secret     (:aws-secret-access-key env)})
-   :system/email     (email/email {:host (:smtp-host env)
-                                   ;:port (Long/parseLong (:smtp-port env))
-                                   :ssl  true
-                                   :user (:smtp-user env)
-                                   :pass (:smtp-password env)})
-   :system/mailchimp (mailchimp/mail-chimp (:mailchimp-api-key env))
-   :system/stripe    (stripe/stripe (:stripe-secret-key env))
-   :system/taxjar    (taxjar/taxjar (:taxjar-api-key env))
-   :system/wowza     (wowza/wowza {:secret         (:wowza-jwt-secret env)
-                                   :subscriber-url (:wowza-subscriber-url env)
-                                   :publisher-url  (:wowza-publisher-url env)})})
+  {:system/auth0         (c/using (auth0/map->Auth0 {:client-id     (:auth0-client-id env)
+                                                     :client-secret (:auth0-client-secret env)})
+                                  {:server-address :system/server-address})
+   :system/aws-ec2       (ec2/aws-ec2)
+   :system/aws-elb       (c/using (elb/map->AwsElasticBeanstalk {})
+                                  {:aws-ec2 :system/aws-ec2})
+   :system/aws-s3        (s3/map->AwsS3 {:bucket     (:aws-s3-bucket-photos env)
+                                         :zone       (:aws-s3-bucket-photos-zone env)
+                                         :access-key (:aws-access-key-id env)
+                                         :secret     (:aws-secret-access-key env)})
+   :system/email         (email/email {:host (:smtp-host env)
+                                       ;:port (Long/parseLong (:smtp-port env))
+                                       :ssl  true
+                                       :user (:smtp-user env)
+                                       :pass (:smtp-password env)})
+   :system/elastic-cloud (c/using (elastic-cloud/map->ElasticCloud
+                                    {:cluster-hostname (:elastic-cloud-host env)
+                                     ;; xpack-user format: "username:password"
+                                     :xpack-user       (:elastic-cloud-xpack-user env)
+                                     :index-name       (:elastic-cloud-index-name env)})
+                                  {:server-address :system/server-address})
+   :system/mailchimp     (mailchimp/mail-chimp (:mailchimp-api-key env))
+   :system/stripe        (stripe/stripe (:stripe-secret-key env))
+   :system/taxjar        (taxjar/taxjar (:taxjar-api-key env))
+   :system/wowza         (wowza/wowza {:secret         (:wowza-jwt-secret env)
+                                       :subscriber-url (:wowza-subscriber-url env)
+                                       :publisher-url  (:wowza-publisher-url env)})})
 
 (defn fake-components [{:keys [env] :as config}]
-  {:system/auth0     (c/using (auth0/map->FakeAuth0 {})
-                              {:datomic :system/datomic})
-   :system/aws-ec2   (ec2/aws-ec2-stub)
-   :system/aws-elb   (elb/aws-elastic-beanstalk-stub)
-   :system/aws-s3    (s3/aws-s3-stub)
-   :system/email     (email/email-stub)
-   :system/mailchimp (mailchimp/mail-chimp-stub)
-   :system/stripe    (stripe/stripe-stub (:stripe-secret-key env))
-   :system/taxjar    (taxjar/taxjar-stub)
-   :system/wowza     (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})})
+  {:system/auth0         (c/using (auth0/map->FakeAuth0 {})
+                                  {:datomic :system/datomic})
+   :system/aws-ec2       (ec2/aws-ec2-stub)
+   :system/aws-elb       (elb/aws-elastic-beanstalk-stub)
+   :system/aws-s3        (s3/aws-s3-stub)
+   :system/elastic-cloud (elastic-cloud/elastic-cloud-stub)
+   :system/email         (email/email-stub)
+   :system/mailchimp     (mailchimp/mail-chimp-stub)
+   :system/stripe        (stripe/stripe-stub (:stripe-secret-key env))
+   :system/taxjar        (taxjar/taxjar-stub)
+   :system/wowza         (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})})
 
 (defn with-request-handler [system {:keys [in-prod? env] :as config}]
   (assoc system
@@ -124,7 +133,9 @@
   (c/map->SystemMap (-> (merge (components-without-fakes config)
                                (real-components config)
                                (when (not in-aws?)
-                                 (select-keys (fake-components config) [:system/aws-elb :system/aws-ec2])))
+                                 (select-keys (fake-components config) [:system/aws-elb
+                                                                        :system/aws-ec2
+                                                                        :system/elastic-cloud])))
                         (with-request-handler config))))
 
 (defn fake-system [config & real-component-keys]
@@ -180,6 +191,8 @@
                ;:system/email
                ;:system/mailchimp
                ;:system/taxjar
+
+               ;:system/elastic-cloud
                ))
 
 (defn test-system [config]

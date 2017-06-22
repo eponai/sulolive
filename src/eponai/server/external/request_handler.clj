@@ -8,6 +8,7 @@
     [eponai.server.middleware :as m]
     [eponai.common.parser :as parser]
     [eponai.server.routes :as server-routes]
+    [eponai.server.log :as log]
     [medley.core :as medley]))
 
 (defn to-queued-request
@@ -48,6 +49,9 @@
                                        (swap! suspended-state update :queued-requests conj queued-request))
                                      deferred-response)
                                    (handler request))))
+            logger (log/async-logger (or
+                                       (log/make-logger (:system/elastic-cloud system))
+                                       (log/->TimbreLogger)))
             handler (-> (compojure/routes server-routes/site-routes)
                         (cond-> (not in-production?) (m/wrap-node-modules))
                         m/wrap-post-middlewares
@@ -59,7 +63,8 @@
                                        ;; Construct a new parser each request.
                                        ::m/parser-fn           #(parser/server-parser)
                                        ::m/cljs-build-id       (or cljs-build-id "dev")
-                                       ::m/system              system})
+                                       ::m/system              system
+                                       ::m/logger              logger})
                         ;; Places wrap-suspendable under wrap-js-files, so figwheel can get the
                         ;; javascript files from our server, but ajax requests waits until the
                         ;; system is restarted.
@@ -80,9 +85,12 @@
         (assoc this ::started? true
                     ::handler-atom handler-atom
                     ::suspended-state suspended-state
-                    :handler handler))))
+                    :handler handler
+                    :logger logger))))
   (stop [this]
-    (dissoc this ::started? ::handler-atom :handler))
+    (when-some [l (:logger this)]
+      (c/stop l))
+    (dissoc this ::started? ::handler-atom :handler :logger))
   suspendable/Suspendable
   (suspend [this]
     (debug "Suspending request handler.")

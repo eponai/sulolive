@@ -24,6 +24,7 @@
     [eponai.server.social :as social]
     [eponai.common.routes :as routes]
     [eponai.common.database :as db]
+    [eponai.server.log :as log]
     [eponai.common :as c]
     [eponai.common.photos :as photos]
     [eponai.server.external.email.templates :as templates]
@@ -39,6 +40,36 @@
 
 (declare handle-parser-request)
 
+(defn request->auth [{conn ::m/conn auth :identity}]
+  (let [auth-user (when-some [user-email (:email auth)]
+                    (db/lookup-entity (db/db conn) [:user/email user-email]))]
+    (assoc auth :user-id (:db/id auth-user))))
+
+;; Inspired by
+;; https://stackoverflow.com/a/30022208
+(defn- client-ip [request]
+  (if-let [ips (get-in request [:headers "x-forwarded-for"])]
+    (-> ips (clojure.string/split #",") first)
+    (:remote-addr request)))
+
+(defn- context-logger
+  ([request route-map]
+   (context-logger request
+                   route-map
+                   (get-in (request->auth request) [:user-id])))
+  ([{::m/keys [logger] :as request} route-map user-id]
+   {:pre [(or (nil? user-id) (number? user-id))]}
+   (let [start (System/currentTimeMillis)
+         route (select-keys route-map [:route :route-params :query-params])
+         ip (client-ip request)]
+     (cond-> (log/with logger #(cond-> (assoc % :context-start start)
+                                       (some? ip)
+                                       (assoc :client-ip ip)))
+             (some? user-id)
+             (log/with #(assoc % :user-id user-id))
+             (seq route)
+             (log/with #(merge % route))))))
+
 (defn request->props [request]
   (let [state (::m/conn request)
         route (:handler request)
@@ -49,18 +80,21 @@
                                                :state        state
                                                :route        route
                                                :system       system})
-        user-email (:email (:identity request))
-        auth-user (when user-email (db/lookup-entity (db/db state) [:user/email user-email]))]
-    {:empty-datascript-db (::m/empty-datascript-db request)
-     :state               state
-     :system              system
-     :release?            (release? request)
-     :cljs-build-id       (::m/cljs-build-id request)
-     :route-params        route-params
-     :route               route
-     :query-params        (:params request)
-     :auth                (assoc (:identity request) :user-id (:db/id auth-user))
-     :social-sharing      sharing-objects}))
+        props {:empty-datascript-db (::m/empty-datascript-db request)
+               :state               state
+               :system              system
+               :release?            (release? request)
+               :cljs-build-id       (::m/cljs-build-id request)
+               :route-params        route-params
+               :route               route
+               :query-params        (:params request)
+               :auth                (request->auth request)
+               :social-sharing      sharing-objects}
+        logger (context-logger request
+                               (select-keys props [:route :route-params :query-params])
+                               (get-in props [:auth :user-id]))]
+    (assoc props :logger logger)))
+
 
 ;---------- Auth handlers
 
@@ -72,16 +106,19 @@
   [{:keys [body cookies] ::m/keys [conn parser-fn system] :as request} read-basis-t-graph]
   (debug "Handling parser request with query:" (:query body))
   (debug "Handling parser request with cookies:" cookies)
-  ((parser-fn)
-    {::parser/read-basis-t-graph  (some-> read-basis-t-graph (atom))
-     ::parser/chat-update-basis-t (::parser/chat-update-basis-t body)
-     ::parser/auth-responder      (::parser/auth-responder request)
-     :state                       conn
-     :auth                        (:identity request)
-     :params                      (:params request)
-     :system                      system
-     :locations                   (get-in cookies ["sulo.locality" :value])}
-    (:query body)))
+  (let [{:keys [user-id] :as auth} (request->auth request)
+        route-map (:route-map body)]
+    ((parser-fn)
+      {::parser/read-basis-t-graph  (some-> read-basis-t-graph (atom))
+       ::parser/chat-update-basis-t (::parser/chat-update-basis-t body)
+       ::parser/auth-responder      (::parser/auth-responder request)
+       :state                       conn
+       :auth                        auth
+       :params                      (:params request)
+       :system                      system
+       :locations                   (get-in cookies ["sulo.locality" :value])
+       :logger                      (context-logger request route-map user-id)}
+      (:query body))))
 
 (defn trace-parser-response-handlers
   "Wrapper with logging for parser.response/response-handler."
@@ -151,11 +188,16 @@
   (POST "/api/chat" request
     (r/response (call-parser request)))
 
-  (GET "/auth" request (auth/authenticate request (::m/conn request)))
+  (GET "/auth" request (auth/authenticate
+                         (assoc request ::m/logger (context-logger request {:route :auth}))))
 
-  (GET "/logout" request (-> (auth/redirect request (or (get-in request [:params :redirect])
-                                                        (routes/path :landing-page)))
-                             (auth/remove-auth-cookie)))
+  (GET "/logout" request
+    (let [logger (context-logger request {:route :logout})
+          redirect (or (get-in request [:params :redirect])
+                       (routes/path :landing-page))]
+      (log/info! logger ::user-logout {:redirect redirect})
+      (-> (auth/redirect (assoc request ::m/logger logger) redirect)
+          (auth/remove-auth-cookie))))
 
   (GET "/devcards" request
     (when-not (::m/in-production? request)
