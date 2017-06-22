@@ -139,7 +139,8 @@
       (if (some? (:handler match))
         (debug "Matched url: " url " to route handler: " (:handler match) " whole match:" match)
         (warn "Could not match url: " url " to any route."))
-      match)))
+      (when-not (= :logout (:handler match))
+        match))))
 
 (defn set-current-route! [history update-route-fn]
   (let [match-all-routes (partial bidi/match-route common.routes/routes)

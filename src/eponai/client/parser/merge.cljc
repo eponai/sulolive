@@ -10,7 +10,8 @@
             [eponai.client.auth :as auth]
             [cemerick.url :as url]
             [datascript.core :as datascript]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [eponai.client.routes :as routes]))
 
 (defn db-with [db tx]
   (if (empty? tx)
@@ -207,7 +208,7 @@
                        ::parser/read-basis-t-graph merged-graph}))))
 
 (defn- logout-with-redirect! [auth]
-  #?(:cljs (-> (url/url (str js/window.location.origin "/logout"))
+  #?(:cljs (-> (url/url (str js/window.location.origin (routes/url :logout)))
                (assoc :query {:redirect (str js/window.location.pathname)})
                (str)
                (js/window.location.replace))

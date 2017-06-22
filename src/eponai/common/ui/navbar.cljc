@@ -78,7 +78,7 @@
         (menu/item nil
                    (menu/vertical
                      (css/add-class :nested)
-                     (menu/item-link {:href    "/logout"
+                     (menu/item-link {:href    (routes/url :logout)
                                       :onClick #(track-event ::mixpanel/signout)}
                                      (dom/small nil "Sign out"))))))))
 
@@ -745,7 +745,7 @@
                                                          :onClick #(track-event ::mixpanel/go-to-start-store)}
                                                         (css/button)) (dom/span nil "Start a store"))))
                                 (if (some? auth)
-                                  (menu/item nil (dom/a {:href    "/logout"
+                                  (menu/item nil (dom/a {:href    (routes/url :logout)
                                                          :onClick #(track-event ::mixpanel/signout)}
                                                         (dom/small nil "Sign out")))
                                   (menu/item nil (dom/a

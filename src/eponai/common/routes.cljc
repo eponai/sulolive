@@ -105,6 +105,7 @@
              ;["user/" [#"\d+" :user-id]]   user-routes
              "auth"                        :auth
              "login"                       :login
+             "logout"                      :logout
              "unauthorized"                :unauthorized}]
        [true :not-found]]])
 
