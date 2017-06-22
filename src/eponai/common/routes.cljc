@@ -77,10 +77,12 @@
                                     :browse/gender+top+sub-sub))]])
 
 (def locality-routes
-  {"/"         :index
-   "/products" :browse/all-items
-   "/browse"   browse-categories
-   "/live"     :live})
+  [["" {
+        ;"/"         :index
+        "/products" :browse/all-items
+        "/browse"   browse-categories
+        "/live"     :live}]
+   [true :index]])
 
 (defn normalize-browse-route [route]
   (letfn [(remove-from-char [s c]

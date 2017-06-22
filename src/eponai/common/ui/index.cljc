@@ -80,8 +80,8 @@
     (let [{:keys       [proxy/navbar query/featured-items query/featured-streams]
            :query/keys [owned-store locations featured-stores current-route]} (om/props this)
           {:keys [route-params]} current-route]
-      (debug "Items: " featured-items)
-      (debug "Items: " featured-stores)
+      ;(debug "Items: " featured-items)
+      ;(debug "Items: " featured-stores)
       (debug "Selected location: " locations)
 
       (common/page-container

@@ -19,6 +19,11 @@
   {:action (db/transact-one state {:ui/singleton :ui.singleton/state
                                :ui.singleton.state/product-view product-view})})
 
+(defmethod client-mutate 'client/set-locality
+  [{:keys [target db state reconciler]} _ {:keys [locality]}]
+  {:action (db/transact-one state {:ui/singleton :ui.singleton/auth
+                                   :ui.singleton.auth/locations locality})})
+
 ;; ################ Remote mutations ####################
 ;; Remote mutations goes here. We share these mutations
 ;; with all client platforms (web, ios, android).

@@ -90,22 +90,22 @@
   {:auth ::auth/public}
   {:value (do
             (debug "Read stores: " locations)
-            (when (some? locations)
+            (when (some? (:db/id locations))
                 (query/all db db-history query {:where   '[[?e :store/locality ?l]
                                                            [?s :stream/state ?states]
                                                            [?s :stream/store ?e]]
                                                 :symbols {'[?states ...] [:stream.state/online
                                                                           :stream.state/offline]
-                                                          '?l            locations}})))})
+                                                          '?l            (:db/id locations)}})))})
 
 (defread query/streams
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
-  {:value (when (some? locations)
+  {:value (when (some? (:db/id locations))
             (query/all db db-history query {:where   '[[?s :store/locality ?l]
                                                        [?e :stream/store ?s]
                                                        [?e :stream/state :stream.state/live]]
-                                            :symbols {'?l locations}}))})
+                                            :symbols {'?l (:db/id locations)}}))})
 
 (defread query/browse-items
   [{:keys [db db-history query locations]} _ {{:keys [top-category sub-category] :as categories} :route-params
@@ -119,7 +119,7 @@
                         [:tc top-category]
                         (some? sub-category)
                         [:sc sub-category])]]}
-  {:value (when (some? locations)
+  {:value (when (some? (:db/id locations))
             (query/all db db-history query (cond
                                              (seq search)
                                              (products/find-with-search locations search)
@@ -139,19 +139,19 @@
 (defread query/featured-streams
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
-  {:value (when (some? locations)
+  {:value (when (some? (:db/id locations))
             (when-not db-history
               (->> (query/all db db-history query {:where   '[[?s :store/locality ?l]
                                                               [?e :stream/store ?s]
                                                               [?s :store/profile ?p]
                                                               [?p :store.profile/photo _]]
-                                                   :symbols {'?l locations}})
+                                                   :symbols {'?l (:db/id locations)}})
                    (feature-all :stream))))})
 
 (defread query/featured-items
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
-  {:value (when (some? locations)
+  {:value (when (some? (:db/id locations))
             (letfn [(add-time-to-all [time items]
                       (map #(if (nil? (:store.item/created-at %))
                              (assoc % :store.item/created-at time)
@@ -161,7 +161,7 @@
                                                           [?s :store/items ?e]
                                                           [?e :store.item/photos ?p]
                                                           [?p :store.item.photo/photo _]]
-                                               :symbols {'?l locations}})
+                                               :symbols {'?l (:db/id locations)}})
                    (add-time-to-all 0)
                    (sort-by :store.item/created-at #(compare %2 %1))
                    (take 10)
@@ -171,7 +171,7 @@
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
   ;; TODO: Come up with a way to feature stores.
-  {:value (when (some? locations)
+  {:value (when (some? (:db/id locations))
             (letfn [(add-time-to-all [time items]
                       (map #(if (nil? (:store/created-at %))
                              (assoc % :store/created-at time)
@@ -180,7 +180,7 @@
               (->> (db/pull-all-with db query {:where   '[[?e :store/locality ?l]
                                                           [?e :store/profile ?p]
                                                           [?p :store.profile/photo _]]
-                                               :symbols {'?l locations}})
+                                               :symbols {'?l (:db/id locations)}})
                    (add-time-to-all 0)
                    (sort-by :store/created-at #(compare %2 %1))
                    (take 4)
@@ -363,10 +363,10 @@
 (defread query/locations
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
-  {:value (when-let [dbid (c/parse-long-safe locations)]
+  {:value (when (:db/id locations)
             (db/pull db [:db/id
                          :sulo-locality/path
-                         :sulo-locality/title {:sulo-locality/photo [:photo/id]}] dbid))})
+                         :sulo-locality/title {:sulo-locality/photo [:photo/id]}] (:db/id locations)))})
 
 
 (defread query/stream-config

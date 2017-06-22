@@ -35,12 +35,12 @@
   {:where   '[[?s :store/locality ?l]
               [?s :store/items ?e]
               [?e :store.item/name]]
-   :symbols {'?l locality}})
+   :symbols {'?l (:db/id locality)}})
 
 (defn find-with-search [locality search]
   {:where    [{:fulltext-id 1}]
    :symbols  {'?search search
-              '?l      locality}
+              '?l      (:db/id locality)}
    :fulltext [{:id     1
                :attr   :store.item/name
                :arg    '?search
@@ -85,7 +85,7 @@
                              '[?s :store/locality ?l]
                              '[?s :store/items ?e]
                              '[?e :store.item/category ?item-category]]
-                   :symbols {'?l locality}
+                   :symbols {'?l (:db/id locality)}
                    :rules   eq-or-child-category-rule}))
 
 ;; Navigation bs

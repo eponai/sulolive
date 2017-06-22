@@ -6,9 +6,12 @@
     [clojure.string :as string]
     [clojure.pprint :refer [cl-format]]
     [taoensso.timbre :refer [debug]]
+    [cognitect.transit :as transit]
 
     #?(:cljs [cljs.reader])
-    #?(:cljs [goog.string :as gstring])))
+    #?(:cljs [goog.string :as gstring]))
+  #?(:clj
+     (:import (java.io ByteArrayInputStream ByteArrayOutputStream))))
 
 (defn parse-long [l]
   (if (and (number? l) (= l (long l)))
@@ -41,3 +44,22 @@
         length (count formatted-str)]
     (str n
          (subs formatted-str (- length 2) length))))
+
+
+;; ########## TRANSIT ##############
+(defn read-transit [input & [format]]
+  #?(:cljs
+          (let [reader (transit/reader (or format :json))]
+            (transit/read reader input))
+     :clj (let [in (ByteArrayInputStream. (.getBytes input))
+                reader (transit/reader in (or format :json))]
+            (transit/read reader))))
+
+(defn write-transit [input & [format size]]
+  #?(:cljs
+          (let [writer (transit/writer (or format :json))]
+            (transit/write writer input))
+     :clj (let [out (ByteArrayOutputStream. (or size 1024))
+                writer (transit/writer out (or format :json))]
+            (transit/write writer input)
+            (str out))))

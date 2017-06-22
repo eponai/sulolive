@@ -56,9 +56,12 @@
                               {:sulo-locality/photo [:photo/id]}]}
      :query/messages])
   Object
-  (select-locality [this locality-id]
+  (select-locality [this locality]
     #?(:cljs
-       (web-utils/set-locality locality-id)))
+       (do
+         (web-utils/set-locality locality)
+         (om/transact! this [(list 'client/set-locality {:locality locality})
+                             :query/locations]))))
   (submit-new-location [this]
     #?(:cljs
        (let [email (web-utils/input-value-by-id (:field/email form-inputs))
@@ -140,7 +143,7 @@
                          (dom/a
                            (css/add-class :city-anchor {:onClick #(do
                                                                    (debug "Setting locality! " loc)
-                                                                   (.select-locality this (:db/id loc))
+                                                                   (.select-locality this loc)
                                                                    (if (nil? auth)
                                                                      (auth/show-lock (shared/by-key this :shared/auth-lock))
                                                                      (routes/set-url! this :index {:locality (:sulo-locality/path loc)})))})

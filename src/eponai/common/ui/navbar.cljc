@@ -469,8 +469,6 @@
     (let [{:query/keys [current-route navigation]
            :proxy/keys [loading-bar]} (om/props this)
           {:keys [route]} current-route]
-
-      (debug "Navitagion: " navigation)
       (dom/div
         nil
         (dom/header

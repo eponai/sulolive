@@ -68,11 +68,11 @@
       {:value (when-let [loc (client.auth/current-locality db)]
                 (db/pull-all-with db query (cond
                                              (seq (:search query-params))
-                                             (products/find-with-search (:db/id loc) (:search query-params))
+                                             (products/find-with-search loc (:search query-params))
                                              (or (some? sub-category) (some? top-category))
-                                             (products/find-with-category-names (:db/id loc) route-params)
+                                             (products/find-with-category-names loc route-params)
                                              :else
-                                             (products/find-all (:db/id loc)))))})))
+                                             (products/find-all loc))))})))
 
 ;; ----- Featured
 

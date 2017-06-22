@@ -21,7 +21,8 @@
     [clojure.string :as string]
     [eponai.common.mixpanel :as mixpanel]
     [taoensso.timbre :as timbre]
-    [eponai.server.log :as log]))
+    [eponai.server.log :as log]
+    [cemerick.url :as url]))
 
 (def auth-token-cookie-name "sulo-auth-token")
 (def auth-token-remove-value "kill")
@@ -241,14 +242,25 @@
 
 ;; Move this to location.clj?
 
+(defn cookie-locality [request]
+  (let [json-str (url/url-decode (get-in request [:cookies location/locality-cookie-name :value]))]
+    (when (not-empty json-str)
+      (c/read-transit json-str ))))
+
 (defn requested-location [request]
-  (c/parse-long-safe (get-in request [:cookies location/locality-cookie-name :value])))
+  (let [conn (:eponai.server.middleware/conn request)
+        loc (cookie-locality request)
+        {:keys [locality]} (:route-params request)]
+    (if (and (some? locality)
+             (not= (:sulo-locality/path loc) locality))
+      (db/pull (db/db conn) [:db/id :sulo-locality/path] [:sulo-locality/path locality])
+      loc)))
 
 (defn bidi-location-redirect
   [route]
   {:handler  (fn [{:keys [identity route-params headers] :as request}]
                (if (= route :landing-page)
-                 (if-let [loc (requested-location request)]
+                 (if-let [loc (cookie-locality request)]
                    (if (auth/authed-for-roles?
                          (db/db (:eponai.server.middleware/conn request))
                          ::auth/any-user
@@ -259,6 +271,5 @@
                    (buddy/success))
                  (buddy/success)))
    :on-error (fn [{:keys [eponai.server.middleware/conn]} loc]
-               (let [{loc-path :sulo-locality/path} (db/pull (db/db conn) [:sulo-locality/path] loc)]
-                 (debug "Redirect: " loc-path)
-                 (r/redirect (routes/path :index {:locality loc-path}))))})
+               (debug "Redirect: " loc)
+               (r/redirect (routes/path :index {:locality (:sulo-locality/path loc)})))})

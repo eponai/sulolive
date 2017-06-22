@@ -29,7 +29,8 @@
     [eponai.common.photos :as photos]
     [eponai.server.external.email.templates :as templates]
     [eponai.common.format.date :as date]
-    [eponai.common.location :as location]))
+    [eponai.common.location :as location]
+    [cemerick.url :as url]))
 
 (defn html [& path]
   (-> (clj.string/join "/" path)
@@ -81,6 +82,7 @@
                                                :state        state
                                                :route        route
                                                :system       system})
+
         props {:empty-datascript-db (::m/empty-datascript-db request)
                :state               state
                :system              system
@@ -172,16 +174,19 @@
   ;; Currently all routes render the same way.
   ;; Enter route specific stuff here.
   (-> (fn [{:keys [route-params ::m/conn] :as request}]
-        (let [resp (server.ui/render-site (request->props (assoc request :handler route)))]
-          (if-let [loc-path (:locality route-params)]
-            (let [{loc-id :db/id} (db/pull (db/db conn) [:db/id] [:sulo-locality/path loc-path])]
-              (-> (r/response resp)
-                  (r/content-type  "text/html")
-                  (r/charset "UTF-8")
-                  (r/set-cookie  location/locality-cookie-name loc-id {:path "/"})))
-            (-> (r/response resp)
-                (r/content-type "text/html")
-                (r/charset "UTF-8")))))
+        (let [resp (-> (r/response (server.ui/render-site (request->props (assoc request :handler route))))
+                       (r/content-type "text/html")
+                       (r/charset "UTF-8"))
+              new-local (auth/requested-location request)
+              old-local (auth/cookie-locality request)]
+
+          (if (not= (:sulo-locality/path new-local)
+                    (:sulo-locality/path old-local))
+            (r/set-cookie resp
+                          location/locality-cookie-name
+                          (url/url-encode (c/write-transit new-local))
+                          {:path "/"})
+            resp)))
       (auth/restrict (auth/bidi-location-redirect route))
       (auth/restrict (auth/bidi-route-restrictions route))))
 
@@ -236,7 +241,4 @@
     ;(if (release? request)
     ;  (auth/restrict member-routes (auth/member-restrict-opts))
     ;  member-routes)
-    )
-
-
-  (route/not-found "Not found"))
+    ))
