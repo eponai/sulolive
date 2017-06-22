@@ -99,7 +99,7 @@
     (dom/meta {:name    "google-site-verification"
                :content "eWC2ZsxC6JcZzOWYczeVin6E0cvP4u6PE3insn9p76U"})
 
-    (dom/meta {:charset "utf-8"})
+    (dom/meta {:charset "UTF-8"})
     (dom/meta {:http-equiv "X-UA-Compatible"
                :content    "IE=edge"})
     (dom/meta {:name    "viewport"

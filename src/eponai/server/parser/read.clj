@@ -364,7 +364,9 @@
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
   {:value (when-let [dbid (c/parse-long-safe locations)]
-            (db/pull db [:db/id :sulo-locality/path :sulo-locality/title {:sulo-locality/photo [:photo/id]}] dbid))})
+            (db/pull db [:db/id
+                         :sulo-locality/path
+                         :sulo-locality/title {:sulo-locality/photo [:photo/id]}] dbid))})
 
 
 (defread query/stream-config

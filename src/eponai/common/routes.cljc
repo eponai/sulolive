@@ -94,9 +94,9 @@
   ["" [["/" {
              ""                                 :landing-page
              "l"                                :landing-page/locality
-             ["" [#"(yvr|yul)" :locality]]    locality-routes
+             ["" [#"(yvr|yul)" :locality]]      locality-routes
              "sell"                             :sell
-             ["/products" [#"\d+" :product-id]] :product
+             ["products/" [#"\d+" :product-id]] :product
              ;"products"                    product-routes
              ;"browse"                      browse-categories
              "store"                            :index/store
@@ -110,10 +110,10 @@
              "orders"                           {""                       :user/order-list
                                                  ["/" [#"\w+" :order-id]] :user/order}
              ;["user/" [#"\d+" :user-id]]   user-routes
-             "auth"                        :auth
-             "login"                       :login
-             "logout"                      :logout
-             "unauthorized"                :unauthorized}]
+             "auth"                             :auth
+             "login"                            :login
+             "logout"                           :logout
+             "unauthorized"                     :unauthorized}]
        [true :not-found]]])
 
 

@@ -175,8 +175,13 @@
         (let [resp (server.ui/render-site (request->props (assoc request :handler route)))]
           (if-let [loc-path (:locality route-params)]
             (let [{loc-id :db/id} (db/pull (db/db conn) [:db/id] [:sulo-locality/path loc-path])]
-              (r/set-cookie (r/content-type (r/response resp) "text/html") location/locality-cookie-name loc-id {:path "/"}))
-            resp)))
+              (-> (r/response resp)
+                  (r/content-type  "text/html")
+                  (r/charset "UTF-8")
+                  (r/set-cookie  location/locality-cookie-name loc-id {:path "/"})))
+            (-> (r/response resp)
+                (r/content-type "text/html")
+                (r/charset "UTF-8")))))
       (auth/restrict (auth/bidi-location-redirect route))
       (auth/restrict (auth/bidi-route-restrictions route))))
 

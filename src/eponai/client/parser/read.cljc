@@ -96,9 +96,12 @@
                                                      [?e :store.item/featured]]
                                           :symbols {'?l (:db/id loc)}})
                    pulled (db/pull-many db query items)]
-               (sort-by :store.item/created-at
-                        #(compare %2 %1)
-                        pulled)))})
+               (sort #(let [c (compare (:store.item/created-at %2)
+                                       (:store.item/created-at %1))]
+                       (if (zero? c)
+                         (compare (:store.item/name %1) (:store.item/name %2))
+                         c))
+                     pulled)))})
 
 (defmethod client-read :query/featured-stores
   [{:keys [db query]} _ _]

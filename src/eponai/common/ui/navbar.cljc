@@ -317,14 +317,15 @@
   (query [this] [{:query/loading-bar [:ui.singleton.loading-bar/show?]}])
   Object
   (initLocalState [this]
-    #?(:cljs
-       {:on-transition-iteration-fn (fn []
-                                      (let [{:query/keys [loading-bar]} (om/props this)
-                                            is-loading? (:ui.singleton.loading-bar/show? loading-bar)]
-                                        (when-let [spinner (utils/element-by-id "sl-global-spinner")]
-                                          (when-not is-loading?
-                                            (utils/remove-class-to-element spinner "is-active")))
-                                        ))}))
+    {:is-active? true
+     #?@(:cljs
+         [:on-transition-iteration-fn (fn []
+                                        (let [{:query/keys [loading-bar]} (om/props this)
+                                              is-loading? (:ui.singleton.loading-bar/show? loading-bar)]
+                                          (when-let [spinner (utils/element-by-id "sl-global-spinner")]
+                                            (when-not is-loading?
+                                              (utils/remove-class-to-element spinner "is-active")))
+                                          ))])})
   (componentWillUnmount [this]
     #?(:cljs
        (let [{:keys [on-transition-iteration-fn]} (om/get-state this)
@@ -338,7 +339,8 @@
              spinner (utils/element-by-id "sl-global-spinner")]
          (when spinner
            (.addEventListener spinner "webkitAnimationIteration" on-transition-iteration-fn)
-           (.addEventListener spinner "animationiteration" on-transition-iteration-fn)))))
+           (.addEventListener spinner "animationiteration" on-transition-iteration-fn))
+         (om/update-state! this assoc :is-active? false))))
   (componentWillReceiveProps [this next-props]
     (let [{:query/keys [loading-bar]} next-props]
       #?(:cljs
@@ -353,12 +355,11 @@
                  (debug "REMOVE LOADER ACTIVE")
                  (utils/remove-class-to-element spinner "is-active"))))))))
   (render [this]
-    #?(:cljs
-       (dom/div
-         (css/add-class :sl-global-spinner {:id "sl-global-spinner"}))
-       :clj
-        (dom/div
-          (css/add-classes [:sl-global-spinner :is-active] {:id "sl-global-spinner"})))))
+    (let [{:keys [is-active?]} (om/get-state this)]
+      (dom/div
+        (cond->> (css/add-classes [:sl-global-spinner] {:id "sl-global-spinner"})
+                 is-active?
+                 (css/add-class :is-active))))))
 
 (def ->LoadingBar (om/factory LoadingBar))
 
