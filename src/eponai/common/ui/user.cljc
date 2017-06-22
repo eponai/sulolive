@@ -7,12 +7,14 @@
     [eponai.common.ui.router :as router]
     [om.dom :as dom]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [debug warn]]))
+    [taoensso.timbre :refer [debug warn]]
+    [eponai.web.ui.footer :as foot]))
 
 (defui User
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}
      {:query/auth [:db/id :user/email
                    {:user/profile [{:user.profile/photo [:photo/path
                                                          :photo/id]}
@@ -22,13 +24,13 @@
      :query/current-route])
   Object
   (render [this]
-    (let [{:proxy/keys [order navbar order-list profile-edit]
+    (let [{:proxy/keys [order navbar footer order-list profile-edit]
            :query/keys [auth current-route]} (om/props this)
           {:keys [route]} current-route]
       (dom/div
         #js {:id "sulo-user" :className "sulo-page"}
         (common/page-container
-          {:navbar navbar}
+          {:navbar navbar :footer footer}
           (condp = route
             :user/order-list (uo/->OrderList order-list)
             :user/order (o/->Order order)

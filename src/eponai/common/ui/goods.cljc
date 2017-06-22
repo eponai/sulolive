@@ -17,7 +17,8 @@
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug error]]
     [eponai.web.ui.button :as button]
-    [eponai.common.ui.search-bar :as search-bar]))
+    [eponai.common.ui.search-bar :as search-bar]
+    [eponai.web.ui.footer :as foot]))
 
 (def sorting-vals
   {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
@@ -80,6 +81,7 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}
      {:query/browse-items (om/get-query product/Product)}
      {:query/navigation [:category/name :category/label :category/path :category/href]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
@@ -90,14 +92,14 @@
     {:sorting       (get sorting-vals :sort/price-inc)
      :filters-open? false})
   (render [this]
-    (let [{:proxy/keys [navbar product-filters]
+    (let [{:proxy/keys [navbar product-filters footer]
            :query/keys [browse-items navigation selected-navigation locations]} (om/props this)
           {:keys [sorting filters-open?]} (om/get-state this)
           [top-category sub-category :as categories] (category-seq this)
           items browse-items]
 
       (common/page-container
-        {:navbar navbar :id "sulo-items" :class-name "sulo-browse"}
+        {:navbar navbar :id "sulo-items" :class-name "sulo-browse" :footer footer}
         (common/city-banner this locations)
         (when filters-open?
           (dom/div

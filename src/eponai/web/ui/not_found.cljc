@@ -9,12 +9,14 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.web.ui.button :as button]
     [eponai.client.routes :as routes]
-    [eponai.common.ui.product-item :as pi]))
+    [eponai.common.ui.product-item :as pi]
+    [eponai.web.ui.footer :as foot]))
 
 (defui NotFound
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}
      {:query/featured-items [:db/id
                              :store.item/name
                              :store.item/price
@@ -27,10 +29,10 @@
      :query/current-route])
   Object
   (render [this]
-    (let [{:proxy/keys [navbar]
+    (let [{:proxy/keys [navbar footer]
            :query/keys [featured-items locations]} (om/props this)]
       (common/page-container
-        {:navbar navbar :id "sulo-not-found"}
+        {:navbar navbar :footer footer :id "sulo-not-found"}
         (grid/row-column
           (css/text-align :center)
           (dom/div (css/add-classes [:not-found-code])

@@ -14,7 +14,8 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.router :as router]
     [eponai.web.ui.button :as button]
-    [eponai.common.mixpanel :as mixpanel]))
+    [eponai.common.mixpanel :as mixpanel]
+    [eponai.web.ui.footer :as foot]))
 
 ;(defn banner [{:keys [color align] :as opts} primary secondary]
 ;  (let [align (or align :left)
@@ -47,6 +48,7 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}
      :query/locations
      :query/current-route
      {:query/featured-items [:db/id
@@ -77,8 +79,8 @@
                           {:store/owners [{:store.owner/user [:db/id]}]}]}])
   Object
   (render [this]
-    (let [{:keys       [proxy/navbar query/featured-items query/featured-streams]
-           :query/keys [owned-store locations featured-stores current-route]} (om/props this)
+    (let [{:proxy/keys [navbar footer]
+           :query/keys [locations featured-items featured-streams featured-stores current-route]} (om/props this)
           {:keys [route-params]} current-route]
       ;(debug "Items: " featured-items)
       ;(debug "Items: " featured-stores)
@@ -86,6 +88,7 @@
 
       (common/page-container
         {:navbar navbar
+         :footer footer
          :id     "sulo-index"}
         (dom/div {:id "sulo-index-container"}
 

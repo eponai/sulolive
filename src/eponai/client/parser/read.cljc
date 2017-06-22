@@ -418,7 +418,9 @@
   [{:keys [db target query route-params]} _ _]
   (if target
     {:remote true}
-    {:value (memoized-nav-categories db query)}))
+    {:value (nav-categories db query)
+     ;(memoized-nav-categories db query)
+     }))
 
 (defmethod client-read :query/item
   [{:keys [db query target route-params ast]} _ _]

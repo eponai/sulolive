@@ -21,7 +21,8 @@
     [eponai.web.social :as social]
     [eponai.client.utils :as client-utils]
     [eponai.client.parser.message :as msg]
-    [medley.core :as medley]))
+    [medley.core :as medley]
+    [eponai.web.ui.footer :as foot]))
 
 (def form-inputs
   {:field/email    "field.email"
@@ -49,6 +50,7 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}
      :query/current-route
      {:query/auth [:db/id]}
      {:query/sulo-localities [:sulo-locality/title
@@ -91,13 +93,13 @@
         ;       (set! (.-value (web-utils/element-by-id (:field/location form-inputs))) ""))))
         (om/update-state! this assoc :user-message (msg/message last-message)))))
   (render [this]
-    (let [{:proxy/keys [navbar]
+    (let [{:proxy/keys [navbar footer]
            :query/keys [auth sulo-localities]} (om/props this)
           {:keys [input-validation user-message]} (om/get-state this)
           last-message (msg/last-message this 'location/suggest)]
       (debug "Localitites: " sulo-localities)
       (common/page-container
-        {:navbar navbar :id "sulo-landing"}
+        {:navbar navbar :footer footer :id "sulo-landing"}
         (photo/cover
           {:photo-id "static/shop"}
           (grid/row-column

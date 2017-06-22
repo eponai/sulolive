@@ -8,17 +8,19 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.web.ui.photo :as photo]
-    [eponai.web.social :as social]))
+    [eponai.web.social :as social]
+    [eponai.web.ui.footer :as foot]))
 
 (defui AboutSulo
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}])
+    [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}])
   Object
   (render [this]
-    (let [{:proxy/keys [navbar]} (om/props this)]
+    (let [{:proxy/keys [navbar footer]} (om/props this)]
       (common/page-container
-        {:navbar navbar :id "sulo-about"}
+        {:navbar navbar :footer footer :id "sulo-about"}
         (grid/row-column
           nil
           (dom/div

@@ -6,25 +6,26 @@
         [clojure.spec :as s])
     #?(:cljs
        [eponai.web.utils :as utils])
-        [eponai.client.utils :as client-utils]
-        [eponai.common.ui.dom :as dom]
-        [om.next :as om :refer [defui]]
-        [eponai.common.ui.router :as router]
-        [eponai.common.ui.common :as common]
-        [eponai.common.ui.navbar :as nav]
+    [eponai.client.utils :as client-utils]
+    [eponai.common.ui.dom :as dom]
+    [om.next :as om :refer [defui]]
+    [eponai.common.ui.router :as router]
+    [eponai.common.ui.common :as common]
+    [eponai.common.ui.navbar :as nav]
 
-        [eponai.common.ui.elements.css :as css]
-        [eponai.common.ui.elements.grid :as grid]
-        [eponai.common.ui.elements.callout :as callout]
-        [clojure.spec :as s]
-        [eponai.common.ui.elements.input-validate :as v]
-        [eponai.client.parser.message :as msg]
-        [taoensso.timbre :refer [debug]]
-        [eponai.client.routes :as routes]
-        [eponai.web.ui.photo :as photo]
-        [eponai.common.mixpanel :as mixpanel]
-        [eponai.web.ui.button :as button]
-        [eponai.common :as c]))
+    [eponai.common.ui.elements.css :as css]
+    [eponai.common.ui.elements.grid :as grid]
+    [eponai.common.ui.elements.callout :as callout]
+    [clojure.spec :as s]
+    [eponai.common.ui.elements.input-validate :as v]
+    [eponai.client.parser.message :as msg]
+    [taoensso.timbre :refer [debug]]
+    [eponai.client.routes :as routes]
+    [eponai.web.ui.photo :as photo]
+    [eponai.common.mixpanel :as mixpanel]
+    [eponai.web.ui.button :as button]
+    [eponai.common :as c]
+    [eponai.web.ui.footer :as foot]))
 
 (def form-inputs
   {:field.store/name     "store.name"
@@ -57,6 +58,7 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}
      {:query/auth [:user/email
                    :user/can-open-store?
                    {:store.owner/_user [{:store/_owners [:db/id
@@ -108,7 +110,7 @@
             (routes/set-url! this :store-dashboard {:store-id (:db/id new-store)}))))))
 
   (render [this]
-    (let [{:proxy/keys [navbar]
+    (let [{:proxy/keys [navbar footer]
            :query/keys [auth sulo-localities]} (om/props this)
           {:keys [input-validation]} (om/get-state this)
           message (msg/last-message this 'store/create)
@@ -116,7 +118,7 @@
           store (-> auth :store.owner/_user first :store/_owners)]
       (debug "Current auth: " auth)
       (common/page-container
-        {:navbar navbar :id "sulo-start-store"}
+        {:navbar navbar :footer footer :id "sulo-start-store"}
         (cond (msg/pending? message)
               (common/loading-spinner nil (dom/span nil "Starting store...")))
         ;(common/city-banner this locations)

@@ -73,7 +73,7 @@
               (menu/item-link {:href    (routes/url :user-settings {:user-id (:db/id user)})
                                :onClick #(track-event ::mixpanel/go-to-settings)}
                               (dom/small nil "Settings"))
-              (menu/item-link {:href    (routes/url :landing-page/locality)
+              (menu/item-link {:href    (routes/url :landing-page)
                                :onClick #(track-event ::mixpanel/change-location)}
                               (dom/small nil "Change location")))))
         (menu/item nil
@@ -726,7 +726,7 @@
                                        (dom/span nil "Settings")))
                               (menu/item
                                 nil
-                                (dom/a {:href    (routes/url :landing-page/locality)
+                                (dom/a {:href    (routes/url :landing-page)
                                         :onClick #(track-event ::mixpanel/change-location)}
                                        (dom/span nil "Change location"))))))
                ;(when (and (some? auth)
