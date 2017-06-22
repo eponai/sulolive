@@ -36,6 +36,11 @@
 (defmulti log-param-keys om/dispatch)
 (defmethod log-param-keys :default
   [_ _ _]
+  ;; Return values:
+  ;; vector of keys -> selects the keys from params
+  ;; map -> returns (and logs) the map
+  ;; nil -> returns no params
+  ;; ::no-logging -> skips logging of this mutation/read
   nil)
 
 (defmulti server-auth-role om/dispatch)

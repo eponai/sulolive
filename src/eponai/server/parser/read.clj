@@ -35,6 +35,7 @@
   (let [read-key# (keyword (namespace read-sym) (name read-sym))
         basis-params-body# (when-let [bp# (:uniq-by auth-and-basis-params)]
                              `(defmethod parser/read-basis-params ~read-key# ~args ~bp#))
+        ;; For return values of :log, see comment in parser/log-param-keys
         log-param-key# (when-let [pk# (:log auth-and-basis-params)]
                          `(defmethod parser/log-param-keys ~read-key# ~args ~pk#))]
     `(do
