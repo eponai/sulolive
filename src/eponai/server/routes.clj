@@ -171,8 +171,8 @@
   ;; Enter route specific stuff here.
   (-> (fn [request]
         (server.ui/render-site (request->props (assoc request :handler route))))
+      ;(auth/restrict (auth/bidi-location-redirect route))
       (auth/restrict (auth/bidi-route-restrictions route))
-      (auth/restrict (auth/bidi-location-redirect route))
       (auth/restrict (auth/bidi-location-restrictions route))))
 
 (defroutes

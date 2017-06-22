@@ -261,10 +261,17 @@
 (defn bidi-location-redirect
   [route]
   (let [location-free? (routes/location-independent-route? route)]
-    {:handler  (fn [request]
+    {:handler  (fn [{:keys [route-params] :as request}]
                  (if (= route :landing-page)
-                   (let [loc (c/parse-long-safe (requested-location request))]
-                     (if (nil? loc)
+                   (let [loc (c/parse-long-safe (requested-location request))
+                         auth-roles (routes/auth-roles route)]
+                     (if (or
+                           (not (auth/authed-for-roles?
+                                  (db/db (:eponai.server.middleware/conn request))
+                                  auth-roles
+                                  identity
+                                  route-params))
+                           (nil? loc))
                        (buddy/success {})
                        (buddy/error loc)))
                    (buddy/success {})))

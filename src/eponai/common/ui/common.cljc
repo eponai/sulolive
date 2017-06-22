@@ -244,26 +244,29 @@
 
 
 (defn sell-on-sulo [component]
-  ;(content-section
-  ;  {:href    (routes/url :coming-soon/sell)}
-  ;  "Sell on SULO"
-  ;  (grid/row-column
-  ;    (css/text-align :center)
-  ;    (dom/p (css/add-class :sell-on-sulo)
-  ;           (dom/span nil "Are you selling products locally? Start a store to tell your story and interact LIVE with your customers. ")))
-  ;
-  ;  "Contact us")
-  (content-section
-    {:href  (routes/url :sell)
-     :class "sell-on-sulo"}
-    "Sell on SULO"
-    (grid/row
-      (css/align :center)
-      (grid/column
-        (grid/column-size {:small 12 :medium 8 :largr 8})
-        (dom/p nil
-               (dom/span nil "Are you a local business in Vancouver? Start your own SULO store and explore new ways of connecting LIVE with your customers."))))
-    "Contact us"))
+  (let [{:query/keys [locations]} (om/props component)]
+    ;(content-section
+    ;  {:href    (routes/url :coming-soon/sell)}
+    ;  "Sell on SULO"
+    ;  (grid/row-column
+    ;    (css/text-align :center)
+    ;    (dom/p (css/add-class :sell-on-sulo)
+    ;           (dom/span nil "Are you selling products locally? Start a store to tell your story and interact LIVE with your customers. ")))
+    ;
+    ;  "Contact us")
+    (content-section
+      {:href  (routes/url :sell)
+       :class "sell-on-sulo"}
+      "Sell on SULO"
+      (grid/row
+        (css/align :center)
+        (grid/column
+          (grid/column-size {:small 12 :medium 8 :largr 8})
+          (dom/p nil
+                 (if locations
+                   (dom/span nil (str "Are you a local business in " (:sulo-locality/title locations) "? Start your own SULO store and explore new ways of connecting LIVE with your customers."))
+                   (dom/span nil (str "Are you a local business? Start your own SULO store and explore new ways of connecting LIVE with your customers."))))))
+      "Contact us")))
 
 
 (defn is-new-order? [component]

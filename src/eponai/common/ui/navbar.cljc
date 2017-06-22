@@ -248,7 +248,7 @@
         (menu/horizontal
           nil
           (menu/item-link
-            (->> {:href    (routes/url :store {:store-id (:db/id owned-store)})
+            (->> {:href    (routes/url :store (:route-params current-route))
                   :classes ["store-name"]})
             (dom/span nil (get-in owned-store [:store/profile :store.profile/name])))
           (user-menu-item component))))))
