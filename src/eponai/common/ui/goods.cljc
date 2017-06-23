@@ -18,25 +18,14 @@
     [taoensso.timbre :refer [debug error]]
     [eponai.web.ui.button :as button]
     [eponai.common.ui.search-bar :as search-bar]
-    [eponai.web.ui.footer :as foot]))
+    [eponai.web.ui.footer :as foot]
+    [clojure.string :as string]))
 
 (def sorting-vals
   {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
    :sort/name-dec  {:key [:store.item/name :store.item/price] :reverse? true}
    :sort/price-inc {:key [:store.item/price :store.item/name] :reverse? false}
    :sort/price-dec {:key [:store.item/price :store.item/name] :reverse? true}})
-
-;(defn nav-breadcrumbs [categories]
-;  (let [items (into [(menu/item nil (dom/a {:href (routes/url :browse/all-items)}
-;                                           "All"))]
-;                    (map (fn [category]
-;                           (menu/item nil (dom/a {:href (:category/href category)}
-;                                                 (products/category-display-name category)))))
-;                    categories)]
-;    (menu/breadcrumbs
-;      (when-not (< 1 (count items))
-;        {:classes [:invisible]})
-;      items)))
 
 (defn- vertical-category-menu [children current-category]
   (menu/vertical
@@ -46,10 +35,9 @@
          (map-indexed
            (fn [i {:category/keys [path] :as category}]
              (menu/item
-               (cond->> {:key i}
-                        (and (some? current-category)
-                             (= path (:category/path current-category)))
-                        (css/add-class ::css/is-active))
+               (when (and (some? current-category)
+                          (= path (:category/path current-category)))
+                 (css/add-class ::css/is-active))
                (dom/a {:href (:category/href category)}
                       (dom/span nil (products/category-display-name category)))))))))
 
@@ -61,14 +49,14 @@
                          [sub-category top-category sub-sub-category]
                          [top-category sub-category sub-sub-category])
         selected-nav-path (fn self [categories [n & names]]
-                  (when n
-                    (some (fn [[i category]]
-                            (when (= n (:category/name category))
-                              (if-let [next-find (self (:category/children category)
-                                                       names)]
-                                (cons i (cons :category/children next-find))
-                                (cons i nil))))
-                          (map-indexed vector categories))))]
+                            (when n
+                              (some (fn [[i category]]
+                                      (when (= n (:category/name category))
+                                        (if-let [next-find (self (:category/children category)
+                                                                 names)]
+                                          (cons i (cons :category/children next-find))
+                                          (cons i nil))))
+                                    (map-indexed vector categories))))]
     (vec (selected-nav-path navigation selected-names))))
 
 (defn category-seq [component]
@@ -93,9 +81,10 @@
      :filters-open? false})
   (render [this]
     (let [{:proxy/keys [navbar product-filters footer]
-           :query/keys [browse-items navigation selected-navigation locations]} (om/props this)
+           :query/keys [browse-items navigation locations current-route]} (om/props this)
           {:keys [sorting filters-open?]} (om/get-state this)
           [top-category sub-category :as categories] (category-seq this)
+          {:keys [query-params]} current-route
           items browse-items]
 
       (common/page-container
@@ -112,13 +101,15 @@
           nil
           (grid/column
             nil
-            ;(nav-breadcrumbs (category-seq this))
             (dom/div
               (css/add-class :section-title)
               (dom/h2 nil (str/upper-case
-                            (if (some? top-category)
-                              (products/category-display-name top-category)
-                              "All"))))
+                            (cond (some? top-category)
+                                  (string/join " - " (remove nil? [(products/category-display-name top-category) (products/category-display-name sub-category)]))
+                                  (not-empty (:search query-params))
+                                  (str "Result for \"" (:search query-params) "\"")
+                                  :else
+                                  "All products"))))
 
             ))
         (grid/row
@@ -136,32 +127,46 @@
             (->> (grid/column-size {:large 3})
                  (css/add-class :navigation)
                  (css/show-for :large))
-            ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
-            (if (nil? top-category)
-              (menu/vertical
-                nil
-                (->> navigation
-                     (sort-by :category/name)
-                     (map (fn [category]
+
+            (menu/vertical
+              (css/add-class :sl-navigation-parent)
+              (->> navigation
+                   (sort-by :category/name)
+                   (map (fn [category]
+                          (let [is-active? (= (:category/name category) (:category/name (first categories)))]
                             (menu/item
-                              nil
+                              (when is-active? (css/add-class :is-active))
                               (dom/a {:href (:category/href category)}
-                                     (dom/span nil (products/category-display-name category))))))))
-              (menu/vertical
-                nil
-                (menu/item
-                  nil
-                  (dom/a {:href (:category/href top-category)}
-                         (dom/strong nil (products/category-display-name top-category)))
-                  (if (some? sub-category)
-                    (menu/vertical
-                      nil
-                      (menu/item
-                        nil
-                        (dom/a {:href (:category/href sub-category)}
-                               (dom/strong nil (products/category-display-name sub-category)))
-                        (vertical-category-menu (:category/children sub-category) (last categories))))
-                    (vertical-category-menu (:category/children top-category) (last categories)))))))
+                                     (dom/span nil (products/category-display-name category)))
+                              (vertical-category-menu (:category/children category) (last categories))))))))
+            ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
+
+            ;(if (nil? top-category)
+            ;(menu/vertical
+            ;  nil
+            ;  (->> navigation
+            ;       (sort-by :category/name)
+            ;       (map (fn [category]
+            ;              (menu/item
+            ;                nil
+            ;                (dom/a {:href (:category/href category)}
+            ;                       (dom/span nil (products/category-display-name category))))))))
+            ;  (menu/vertical
+            ;    nil
+            ;    (menu/item
+            ;      nil
+            ;      (dom/a {:href (:category/href top-category)}
+            ;             (dom/strong nil (products/category-display-name top-category)))
+            ;      (if (some? sub-category)
+            ;        (menu/vertical
+            ;          nil
+            ;          (menu/item
+            ;            nil
+            ;            (dom/a {:href (:category/href sub-category)}
+            ;                   (dom/strong nil (products/category-display-name sub-category)))
+            ;            (vertical-category-menu (:category/children sub-category) (last categories))))
+            ;        (vertical-category-menu (:category/children top-category) (last categories))))))
+            )
           (grid/column
             (grid/column-size {:small 12 :large 9})
 

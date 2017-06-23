@@ -179,13 +179,13 @@
 		}
 	}
 	.sulo-items-container {
-		padding: 4rem 0;
+		// padding: 4rem 0;
 		select {
 			font-size: 90%;
 			font-weight: $global-weight-bold;
 		}
 		.column {
-			margin-bottom: 1.5rem;
+			// margin-bottom: 1.5rem;
 			padding-bottom: 0;
 		}
 		// border-bottom: $global-border;
@@ -203,24 +203,78 @@
 		}
 	}
 	.navigation {
-		// display: none;
-		@include breakpoint(large) {
-			// display: block;
+		span {
+			font-family: $header-font-family-sans-serif;
+			// letter-spacing: 0.5px;
 		}
 		ul {
-			border-top: 1px solid $medium-gray;
-			&.nested, ul {
+			border-top: $global-border;
+			// margin-right: $global-margin;
+			.nested {
 				border: none;
+				display: none;
+				margin: 0;
+				padding-left: $global-padding;
 			}
-			li.is-active {
-				font-weight: $global-weight-bold;
-				background: rgba($black, 0.05); 
-				a {
-					color: $black;
+
+			> li {
+				transition: background .25s ease-in-out;
+				> a {
+					transition: color .25s ease-in-out;
+					color: $dark-gray;
+				}
+				&:hover {
+					a {
+						color: $body-font-color;
+					}
+				}
+				&.is-active {
+					> a {
+						color: $body-font-color;
+						font-weight: bold;
+					}
+					// span {
+					// 	color: $body-font-color;
+					// 	font-weight: bold;
+					// }
+					> ul.nested {
+						display: block;
+						a {
+							color: $body-font-color;
+						}
+						li.is-active, li:hover {
+							a {
+								font-weight: $global-weight-normal;
+							}
+							// span {
+							// 	font-weight: bold;
+							// }
+							background: rgba($light-gray, 0.5);
+						}
+					}
 				}
 			}
 		}
 	}
+	// .navigation {
+	// 	// display: none;
+	// 	@include breakpoint(large) {
+	// 		// display: block;
+	// 	}
+	// 	ul {
+	// 		border-top: 1px solid $medium-gray;
+	// 		&.nested, ul {
+	// 			border: none;
+	// 		}
+	// 		li.is-active {
+	// 			font-weight: $global-weight-bold;
+	// 			background: rgba($black, 0.05); 
+	// 			a {
+	// 				color: $black;
+	// 			}
+	// 		}
+	// 	}
+	// }
 	input, select {
 		margin: 0;
 	}
