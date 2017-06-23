@@ -15,7 +15,8 @@
     [eponai.web.ui.photo :as photo]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.web.ui.button :as button]
-    [eponai.common.mixpanel :as mixpanel]))
+    [eponai.common.mixpanel :as mixpanel]
+    [eponai.web.ui.footer :as foot]))
 
 (defn items-by-store [items]
   (group-by #(get-in % [:store.item/_skus :store/_items]) items))
@@ -133,6 +134,7 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}
      {:query/cart [{:user.cart/items [:store.item.sku/variation
                                       :db/id
                                       :store.item.sku/inventory
@@ -143,6 +145,7 @@
                                                           {:store/_items [:db/id
                                                                           {:store/profile [:store.profile/name
                                                                                            {:store.profile/photo [:photo/id]}]}]}]}]}]}
+     :query/locations
      {:query/auth [:user/email]}])
   Object
   (remove-item [this sku]
@@ -155,12 +158,13 @@
       (if-not did-mount?
         (om/update-state! this assoc :did-mount? true))))
   (render [this]
-    (let [{:keys [query/cart proxy/navbar]} (om/props this)
+    (let [{:proxy/keys [navbar footer]
+           :query/keys [cart locations]} (om/props this)
           {:keys [user.cart/items]} cart
           skus-by-store (items-by-store items)]
       (debug "Shopping bag: " cart)
       (common/page-container
-        {:navbar navbar :id "sulo-shopping-bag"}
+        {:navbar navbar :footer footer :id "sulo-shopping-bag"}
 
         (grid/row-column
           nil
@@ -178,7 +182,7 @@
               (icons/empty-shopping-bag)
               ;(dom/p (css/add-class :header))
               (button/button
-                (button/sulo-dark (button/hollow {:href (routes/url :browse/all-items)}))
+                (button/sulo-dark (button/hollow {:href (routes/url :browse/all-items {:locality (:sulo-locality/path locations)})}))
                 (dom/span nil "Go to the market - start shopping")))))))))
 
 (def ->ShoppingBag (om/factory ShoppingBag))

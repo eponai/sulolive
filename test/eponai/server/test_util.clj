@@ -41,7 +41,7 @@
   (http/get (endpoint-url system :auth)
             {:follow-redirects false
              :query-params     {:code  email
-                                :state (routes/path :index)}}))
+                                :state (routes/path :landing-page)}}))
 
 (defmacro with-auth [system email & body]
   `(binding [clj-http.core/*cookie-store* (clj-http.cookies/cookie-store)]

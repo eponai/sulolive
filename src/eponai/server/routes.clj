@@ -28,7 +28,9 @@
     [eponai.common :as c]
     [eponai.common.photos :as photos]
     [eponai.server.external.email.templates :as templates]
-    [eponai.common.format.date :as date]))
+    [eponai.common.format.date :as date]
+    [eponai.common.location :as location]
+    [cemerick.url :as url]))
 
 (defn html [& path]
   (-> (clj.string/join "/" path)
@@ -80,6 +82,7 @@
                                                :state        state
                                                :route        route
                                                :system       system})
+
         props {:empty-datascript-db (::m/empty-datascript-db request)
                :state               state
                :system              system
@@ -89,6 +92,7 @@
                :route               route
                :query-params        (:params request)
                :auth                (request->auth request)
+               :locations           (auth/requested-location request)
                :social-sharing      sharing-objects}
         logger (context-logger request
                                (select-keys props [:route :route-params :query-params])
@@ -116,7 +120,7 @@
        :auth                        auth
        :params                      (:params request)
        :system                      system
-       :locations                   (get-in cookies ["sulo.locality" :value])
+       :locations                   (auth/requested-location request)
        :logger                      (context-logger request route-map user-id)}
       (:query body))))
 
@@ -169,10 +173,22 @@
 (defn bidi-route-handler [route]
   ;; Currently all routes render the same way.
   ;; Enter route specific stuff here.
-  (-> (fn [request]
-        (server.ui/render-site (request->props (assoc request :handler route))))
-      (auth/restrict (auth/bidi-route-restrictions route))
-      (auth/restrict (auth/bidi-location-restrictions route))))
+  (-> (fn [{:keys [route-params ::m/conn] :as request}]
+        (let [resp (-> (r/response (server.ui/render-site (request->props (assoc request :handler route))))
+                       (r/content-type "text/html")
+                       (r/charset "UTF-8"))
+              new-local (auth/requested-location request)
+              old-local (auth/cookie-locality request)]
+
+          (if (not= (:sulo-locality/path new-local)
+                    (:sulo-locality/path old-local))
+            (r/set-cookie resp
+                          location/locality-cookie-name
+                          (c/write-transit new-local)
+                          {:path "/"})
+            resp)))
+      (auth/restrict (auth/bidi-location-redirect route))
+      (auth/restrict (auth/bidi-route-restrictions route))))
 
 (defroutes
   member-routes
@@ -213,10 +229,10 @@
 
   ;; Webhooks
   (POST "/stripe/connected" request (r/response (stripe/webhook {:state  (::m/conn request)
-                                                                 :type :connected
+                                                                 :type   :connected
                                                                  :system (::m/system request)} (:body request))))
   (POST "/stripe" request (r/response (stripe/webhook {:state  (::m/conn request)
-                                                       :type :account
+                                                       :type   :account
                                                        :system (::m/system request)} (:body request))))
 
   (context "/" [:as request]
@@ -225,7 +241,4 @@
     ;(if (release? request)
     ;  (auth/restrict member-routes (auth/member-restrict-opts))
     ;  member-routes)
-    )
-
-
-  (route/not-found "Not found"))
+    ))

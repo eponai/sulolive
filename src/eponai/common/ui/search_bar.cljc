@@ -25,7 +25,7 @@
                        {:search input-search})))
   Object
   (render [this]
-    (let [{:keys [mixpanel-source placeholder default-value classes]} (om/props this)
+    (let [{:keys [mixpanel-source placeholder default-value classes locations]} (om/props this)
           {:keys [input-search]} (om/get-state this)
           search-db (some-> (db/to-db this)
                             (db/entity [:ui/singleton :ui.singleton/product-search])
@@ -69,7 +69,7 @@
                                (take 4)
                                (map (fn [[word refs]]
                                       (menu/item-link
-                                        {:href    (routes/url :browse/all-items nil {:search word})
+                                        {:href    (routes/url :browse/all-items {:locality (:sulo-locality/path locations)} {:search word})
                                          :onClick #(mixpanel/track "Search products"
                                                                    {:source        mixpanel-source
                                                                     :search-string word})}

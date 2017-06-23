@@ -6,37 +6,42 @@
         [clojure.spec :as s])
     #?(:cljs
        [eponai.web.utils :as utils])
-        [eponai.client.utils :as client-utils]
-        [eponai.common.ui.dom :as dom]
-        [om.next :as om :refer [defui]]
-        [eponai.common.ui.router :as router]
-        [eponai.common.ui.common :as common]
-        [eponai.common.ui.navbar :as nav]
+    [eponai.client.utils :as client-utils]
+    [eponai.common.ui.dom :as dom]
+    [om.next :as om :refer [defui]]
+    [eponai.common.ui.router :as router]
+    [eponai.common.ui.common :as common]
+    [eponai.common.ui.navbar :as nav]
 
-        [eponai.common.ui.elements.css :as css]
-        [eponai.common.ui.elements.grid :as grid]
-        [eponai.common.ui.elements.callout :as callout]
-        [clojure.spec :as s]
-        [eponai.common.ui.elements.input-validate :as validate]
-        [eponai.client.parser.message :as msg]
-        [taoensso.timbre :refer [debug]]
-        [eponai.client.routes :as routes]
-        [eponai.web.ui.photo :as photo]
-        [eponai.common.mixpanel :as mixpanel]
-        [eponai.web.ui.button :as button]))
+    [eponai.common.ui.elements.css :as css]
+    [eponai.common.ui.elements.grid :as grid]
+    [eponai.common.ui.elements.callout :as callout]
+    [clojure.spec :as s]
+    [eponai.common.ui.elements.input-validate :as v]
+    [eponai.client.parser.message :as msg]
+    [taoensso.timbre :refer [debug]]
+    [eponai.client.routes :as routes]
+    [eponai.web.ui.photo :as photo]
+    [eponai.common.mixpanel :as mixpanel]
+    [eponai.web.ui.button :as button]
+    [eponai.common :as c]
+    [eponai.web.ui.footer :as foot]))
 
 (def form-inputs
-  {:field.store/name    "store.name"
-   :field.store/country "store.country"
+  {:field.store/name     "store.name"
+   :field.store/country  "store.country"
+   :field.store/locality "store.locality"
 
-   :field/brand         "request.brand"
-   :field/email         "request.email"
-   :field/website       "request.website"
-   :field/locality      "request.locality"
-   :field/message       "request.message"})
+   :field/brand          "request.brand"
+   :field/email          "request.email"
+   :field/website        "request.website"
+   :field/locality       "request.locality"
+   :field/message        "request.message"})
 
 (s/def :field.store/name (s/and string? #(not-empty %)))
 (s/def :field.store/country (s/and #(re-matches #"\w{2}" %)))
+(s/def :field.store/locality number?)
+
 (s/def :field/website (s/and string? #(not-empty %)))
 
 (s/def :field/store (s/keys :req [:field.store/name
@@ -49,25 +54,17 @@
                                     :field/email
                                     :field/locality
                                     :field/website]))
-
-;(defn validate
-;  [spec m & [prefix]]
-;  (when-let [err (s/explain-data spec m)]
-;    (let [problems (::s/problems err)
-;          invalid-paths (map (fn [p]
-;                               (str prefix (some #(get form-inputs %) p)))
-;                             (map :path problems))]
-;      {:explain-data  err
-;       :invalid-paths invalid-paths})))
-
 (defui StartStore
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}
      {:query/auth [:user/email
                    :user/can-open-store?
                    {:store.owner/_user [{:store/_owners [:db/id
                                                          {:store/profile [:store.profile/name]}]}]}]}
+     {:query/sulo-localities [:sulo-locality/title
+                              :db/id]}
      :query/messages])
   Object
   (start-store [this]
@@ -75,12 +72,14 @@
        (let [store-name (utils/input-value-by-id (:field.store/name form-inputs))
              store-country "ca"                             ;(utils/input-value-by-id (:field.store/country form-inputs))
 
-             input-map {:field.store/name    store-name
-                        :field.store/country "CA"}
-             validation (validate/validate :field/store input-map form-inputs)]
+             locality (c/parse-long-safe (utils/input-value-by-id (:field.store/locality form-inputs)))
+             input-map {:field.store/name     store-name
+                        :field.store/country  "CA"
+                        :field.store/locality locality}
+             validation (v/validate :field/store input-map form-inputs)]
          (when (nil? validation)
            (mixpanel/track "Start store")
-           (msg/om-transact! this [(list 'store/create {:name store-name :country store-country})]))
+           (msg/om-transact! this [(list 'store/create {:name store-name :country store-country :locality locality})]))
 
          (om/update-state! this assoc :input-validation validation))))
   (request-access [this]
@@ -96,7 +95,7 @@
                         :field/website  website
                         :field/locality locality
                         :field/message  message}
-             validation (validate/validate :field/request input-map form-inputs)]
+             validation (v/validate :field/request input-map form-inputs)]
          (when (nil? validation)
            (mixpanel/track "Request access to store")
            (msg/om-transact! this [(list 'user/request-store-access input-map)]))
@@ -111,15 +110,15 @@
             (routes/set-url! this :store-dashboard {:store-id (:db/id new-store)}))))))
 
   (render [this]
-    (let [{:proxy/keys [navbar]
-           :query/keys [auth]} (om/props this)
+    (let [{:proxy/keys [navbar footer]
+           :query/keys [auth sulo-localities]} (om/props this)
           {:keys [input-validation]} (om/get-state this)
           message (msg/last-message this 'store/create)
           request-message (msg/last-message this 'user/request-store-access)
           store (-> auth :store.owner/_user first :store/_owners)]
       (debug "Current auth: " auth)
       (common/page-container
-        {:navbar navbar :id "sulo-start-store"}
+        {:navbar navbar :footer footer :id "sulo-start-store"}
         (cond (msg/pending? message)
               (common/loading-spinner nil (dom/span nil "Starting store...")))
         ;(common/city-banner this locations)
@@ -133,7 +132,7 @@
               (dom/h1 nil "You are invited to open a SULO store!")
               (dom/h1 nil "Connect with your community on SULO Live"))))
 
-        (if (or (:user/can-open-store? auth)
+        (if (or true                                        ;(:user/can-open-store? auth)
                 (some? store))
           (dom/div
             nil
@@ -157,10 +156,10 @@
                     ;       (dom/span nil " updated via your store dashboard"))
 
                     (dom/a (->> (css/button {:onClick #(do
-                                                         #?(:cljs
-                                                            (when (nil? (utils/get-locality))
-                                                              (utils/set-locality)))
-                                                         (routes/set-url! this :store-dashboard {:store-id (:db/id store)}))})
+                                                        ;#?(:cljs
+                                                        ;   (when (nil? (utils/get-locality))
+                                                        ;     (utils/set-locality)))
+                                                        (routes/set-url! this :store-dashboard {:store-id (:db/id store)}))})
                                 ;(css/add-class :green)
                                 (css/add-class :expanded))
                            (dom/span nil (str "Continue to " (get-in store [:store/profile :store.profile/name]))))
@@ -169,20 +168,25 @@
                   (callout/callout
                     (css/add-class :start-store-form)
                     (dom/label nil "Store name")
-                    (validate/input {:id          (:field.store/name form-inputs)
-                                     :type        "text"
-                                     :placeholder "My store"}
-                                    input-validation)
+                    (v/input {:id          (:field.store/name form-inputs)
+                              :type        "text"
+                              :placeholder "My store"}
+                             input-validation)
 
                     (dom/label nil "Local in")
-                    (dom/select {:id           (:field.store/country form-inputs)
-                                 :defaultValue "vancouver"}
-                                (dom/option {:value "vancouver"} "Vancouver / BC"))
+                    (v/select {:id           (:field.store/locality form-inputs)
+                               :defaultValue ""}
+                              input-validation
+                              (dom/option {:value    ""
+                                           :disabled true} "Select locality")
+                              (map (fn [l]
+                                     (dom/option {:value (:db/id l)} (:sulo-locality/title l)))
+                                   sulo-localities))
                     (when (some? (:user/email auth))
                       (dom/p (css/text-align :center)
                              (dom/small nil (str "Logged in as " (:user/email auth)))))
                     (dom/div
-                      (css/text-align :center )
+                      (css/text-align :center)
                       (button/button
                         {:onClick #(.start-store this)}
                         (dom/span nil "Start store"))))))))
@@ -203,22 +207,22 @@
                 (callout/callout
                   (css/add-class :request-access-form)
                   (dom/label nil "Name")
-                  (validate/input
+                  (v/input
                     {:type "email" :placeholder "Your brand" :id (:field/brand form-inputs)}
                     input-validation)
                   (dom/label nil "Email")
-                  (validate/input
+                  (v/input
                     {:type "email" :placeholder "youremail@example.com" :id (:field/email form-inputs) :defaultValue (:user/email auth)}
                     input-validation)
 
                   (dom/label nil "Where are you local?")
-                  (validate/input
+                  (v/input
                     {:type "text" :placeholder "e.g. Vancouver" :id (:field/locality form-inputs)}
                     input-validation)
 
                   (dom/label nil "Website/Social media")
-                  (validate/input {:type "text" :placeholder "yourwebsite.com, Facebook page, Instagram" :id (:field/website form-inputs)}
-                                  input-validation)
+                  (v/input {:type "text" :placeholder "yourwebsite.com, Facebook page, Instagram" :id (:field/website form-inputs)}
+                           input-validation)
 
                   (dom/label nil "Message")
                   (dom/textarea {:placeholder "Anything else you'd like us to know? (optional)"

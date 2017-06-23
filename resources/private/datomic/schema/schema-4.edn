@@ -1,0 +1,32 @@
+[
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store/locality
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "SULO locality that this store belongs to."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :sulo-locality/title
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/value
+  :db/doc                "Title of this SULO locality."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :sulo-locality/path
+  :db/valueType          :db.type/string
+  :db/unique             :db.unique/value
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Path for this SULO locality (to use as root in URLs)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :sulo-locality/photo
+  :db/valueType          :db.type/ref
+  :db/unique             :db.unique/value
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Photo for this SULO locality (shown on landing-page etc)."
+  :db.install/_attribute :db.part/db}
+ ]

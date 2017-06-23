@@ -48,8 +48,9 @@
                   {:href    (routes/url :store-dashboard {:store-id (:db/id owned-store)})
                    :onClick #(do (track-event ::mixpanel/go-to-manage-store {:store-id   (:db/id owned-store)
                                                                              :store-name store-name})
-                                 #?(:cljs (when (empty? locations)
-                                            (utils/set-locality))))}
+                                 ;#?(:cljs (when (empty? locations)
+                                 ;           (utils/set-locality (:db/id (:store/locality owned-store)))))
+                                 )}
                   (dom/span nil store-name)))))
           (menu/item
             (css/add-class :my-stores)
@@ -91,7 +92,7 @@
 (defn navbar-route [component href]
   (let [{:query/keys [auth locations]} (om/props component)]
     (when (some? auth)
-      (if (empty? locations)
+      (if (nil? href)
         (routes/url :landing-page/locality)
         href))))
 
@@ -111,13 +112,14 @@
             (cond->> (css/add-class :category opts)
                      (= source "navbar")
                      (css/show-for :large))
-            (dom/span nil (s/capitalize name)))))
+            (dom/span nil (str name)))))
       navigation)))
 
 (defn live-link [component]
   (let [{:query/keys [auth locations]} (om/props component)]
     (menu/item-link
-      (->> (css/add-class :navbar-live {:href    (navbar-route component (routes/url :live))
+      (->> (css/add-class :navbar-live {:href    (navbar-route component (when locations
+                                                                           (routes/url :live {:locality (:sulo-locality/path locations)})))
                                         :onClick #(do
                                                    (mixpanel/track-key ::mixpanel/shop-live {:source "navbar"})
                                                    (when (empty? locations)
@@ -197,7 +199,7 @@
 
 
 (defn manage-store-navbar [component]
-  (let [{:query/keys [auth owned-store current-route]} (om/props component)
+  (let [{:query/keys [auth owned-store current-route locations]} (om/props component)
         {:keys [inline-sidebar-hidden?]} (om/get-state component)
         toggle-inline-sidebar (fn []
                                 #?(:cljs
@@ -208,7 +210,7 @@
                                      ;(.addEventListener js/document "touchstart" on-close-sidebar-fn)
                                      (om/update-state! component assoc :inline-sidebar-hidden? (not inline-sidebar-hidden?))
                                      )))]
-
+    (debug "Locations: " locations)
     (navbar-content
       {:classes ["store-dashboard"]}
       (dom/div
@@ -233,7 +235,9 @@
 
           (menu/item
             nil
-            (dom/a {:href    (routes/url :index)
+            (dom/a {:href    (if locations
+                               (routes/url :index {:locality (:sulo-locality/path locations)})
+                               (routes/url :landing-page))
                     :onClick #(mixpanel/track "Store: Go back to marketplace" {:source "navbar"})}
                    (dom/strong nil (dom/small nil "Back to marketplace"))))
           ;(menu/item-text nil (dom/span nil (get routes->titles (:route current-route))))
@@ -244,13 +248,14 @@
         (menu/horizontal
           nil
           (menu/item-link
-            (->> {:href    (routes/url :store {:store-id (:db/id owned-store)})
+            (->> {:href    (routes/url :store (:route-params current-route))
                   :classes ["store-name"]})
             (dom/span nil (get-in owned-store [:store/profile :store.profile/name])))
           (user-menu-item component))))))
 
 (defn standard-navbar [component]
   (let [{:query/keys [cart loading-bar current-route locations auth]} (om/props component)]
+
     (navbar-content
       nil
       (dom/div
@@ -265,7 +270,7 @@
                 (dom/i {:classes ["fa fa-bars fa-fw"]}))))
           (navbar-brand (if (and (not-empty locations)
                                  (some? auth))
-                          (routes/url :index)
+                          (routes/url :index {:locality (:sulo-locality/path locations)})
                           (routes/url :landing-page)))
           (live-link component)
 
@@ -312,14 +317,15 @@
   (query [this] [{:query/loading-bar [:ui.singleton.loading-bar/show?]}])
   Object
   (initLocalState [this]
-    #?(:cljs
-       {:on-transition-iteration-fn (fn []
-                                      (let [{:query/keys [loading-bar]} (om/props this)
-                                            is-loading? (:ui.singleton.loading-bar/show? loading-bar)]
-                                        (when-let [spinner (utils/element-by-id "sl-global-spinner")]
-                                          (when-not is-loading?
-                                            (utils/remove-class-to-element spinner "is-active")))
-                                        ))}))
+    {:is-active? true
+     #?@(:cljs
+         [:on-transition-iteration-fn (fn []
+                                        (let [{:query/keys [loading-bar]} (om/props this)
+                                              is-loading? (:ui.singleton.loading-bar/show? loading-bar)]
+                                          (when-let [spinner (utils/element-by-id "sl-global-spinner")]
+                                            (when-not is-loading?
+                                              (utils/remove-class-to-element spinner "is-active")))
+                                          ))])})
   (componentWillUnmount [this]
     #?(:cljs
        (let [{:keys [on-transition-iteration-fn]} (om/get-state this)
@@ -333,7 +339,8 @@
              spinner (utils/element-by-id "sl-global-spinner")]
          (when spinner
            (.addEventListener spinner "webkitAnimationIteration" on-transition-iteration-fn)
-           (.addEventListener spinner "animationiteration" on-transition-iteration-fn)))))
+           (.addEventListener spinner "animationiteration" on-transition-iteration-fn))
+         (om/update-state! this assoc :is-active? false))))
   (componentWillReceiveProps [this next-props]
     (let [{:query/keys [loading-bar]} next-props]
       #?(:cljs
@@ -348,12 +355,11 @@
                  (debug "REMOVE LOADER ACTIVE")
                  (utils/remove-class-to-element spinner "is-active"))))))))
   (render [this]
-    #?(:cljs
-       (dom/div
-         (css/add-class :sl-global-spinner {:id "sl-global-spinner"}))
-       :clj
-        (dom/div
-          (css/add-classes [:sl-global-spinner :is-active] {:id "sl-global-spinner"})))))
+    (let [{:keys [is-active?]} (om/get-state this)]
+      (dom/div
+        (cond->> (css/add-classes [:sl-global-spinner] {:id "sl-global-spinner"})
+                 is-active?
+                 (css/add-class :is-active))))))
 
 (def ->LoadingBar (om/factory LoadingBar))
 
@@ -374,6 +380,7 @@
                    {:user/profile [{:user.profile/photo [:photo/path :photo/id]}]}]}
      :query/locations
      {:query/owned-store [:db/id
+                          {:store/locality [:sulo-locality/path]}
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.
                           {:store/owners [{:store.owner/user [:db/id]}]}]}
@@ -459,10 +466,9 @@
     )
 
   (render [this]
-    (let [{:query/keys [current-route]
+    (let [{:query/keys [current-route navigation]
            :proxy/keys [loading-bar]} (om/props this)
           {:keys [route]} current-route]
-
       (dom/div
         nil
         (dom/header
@@ -539,7 +545,9 @@
                    nil
                    (menu/item
                      (css/add-class :back)
-                     (dom/a {:href    (routes/url :index nil)
+                     (dom/a {:href    (if locations
+                                        (routes/url :index {:locality (:sulo-locality/path locations)})
+                                        (routes/url :landing-page))
                              :onClick #(mixpanel/track "Store: Go back to marketplace" {:source "sidebar"})}
                             ;(dom/i {:classes ["fa fa-chevron-left fa-fw"]})
                             (dom/strong nil (dom/small nil "Back to marketplace")))
@@ -643,7 +651,7 @@
                    (menu/item
                      (css/add-class :category)
                      (dom/a
-                       (->> {:href    (navbar-route this (routes/url :live)) ;(when (not-empty locations) (routes/url :live))
+                       (->> {:href    (navbar-route this (when locations (routes/url :live {:locality (:sulo-locality/path locations)})))
                              :onClick #(when (empty? locations)
                                         #?(:cljs
                                            (when-let [locs (utils/element-by-id "sulo-locations")]
@@ -689,8 +697,9 @@
                          (dom/a {:href    (routes/url :store-dashboard {:store-id (:db/id owned-store)})
                                  :onClick #(do (track-event ::mixpanel/go-to-manage-store {:store-id   (:db/id owned-store)
                                                                                            :store-name store-name})
-                                               #?(:cljs (when (empty? locations)
-                                                          (utils/set-locality))))}
+                                               ;#?(:cljs (when (empty? locations)
+                                               ;           (utils/set-locality (:db/id (:store/locality owned-store)))))
+                                               )}
                                 (dom/div {:classes ["icon icon-shop"]})
                                 (dom/span nil store-name)))))))
                (when (some? auth)

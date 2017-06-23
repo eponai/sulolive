@@ -22,7 +22,8 @@
     [eponai.client.parser.message :as msg]
     [clojure.string :as string]
     [eponai.common.ui.elements.callout :as callout]
-    [eponai.web.ui.button :as button]))
+    [eponai.web.ui.button :as button]
+    [eponai.web.ui.footer :as foot]))
 
 (def form-inputs
   {:user.info/name            "user.info.name"
@@ -306,6 +307,7 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}
      {:query/auth [:user/email
                    {:user/profile [:user.profile/name
                                    {:user.profile/photo [:photo/id]}]}
@@ -393,14 +395,14 @@
           (msg/pending? photo-msg)
           (msg/pending? stripe-msg))))
   (render [this]
-    (let [{:proxy/keys [navbar]
+    (let [{:proxy/keys [navbar footer]
            :query/keys [auth current-route stripe-customer]} (om/props this)
           {:keys [modal photo-upload queue-photo]} (om/get-state this)
           {user-profile :user/profile} auth
           {:keys [route-params]} current-route
           is-loading? (.is-loading? this)]
       (common/page-container
-        {:navbar navbar :id "sulo-user-settings"}
+        {:navbar navbar :footer footer :id "sulo-user-settings"}
         (when is-loading?
           (common/loading-spinner nil))
         (grid/row-column

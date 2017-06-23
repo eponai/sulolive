@@ -18,7 +18,8 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.elements.menu :as menu]
-    [clojure.string :as string]))
+    [clojure.string :as string]
+    [eponai.web.ui.footer :as foot]))
 
 (defn get-route-params [component]
   (get-in (om/props component) [:query/current-route :route-params]))
@@ -42,6 +43,7 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}
      {:query/checkout [:db/id
                        {:user.cart/_items [:user/_cart]}
                        :store.item.sku/variation
@@ -238,7 +240,7 @@
               (om/update-state! this assoc :error-message message :loading/message nil)))))))
 
   (render [this]
-    (let [{:proxy/keys [navbar]
+    (let [{:proxy/keys [navbar footer]
            :query/keys [checkout current-route stripe-customer countries]} (om/props this)
           {:checkout/keys [shipping]
            :keys          [open-section error-message subtotal shipping-fee tax-amount grandtotal]
@@ -247,7 +249,7 @@
       (debug "Checout state" (om/get-state this))
 
       (common/page-container
-        {:navbar navbar :id "sulo-checkout"}
+        {:navbar navbar :footer footer :id "sulo-checkout"}
         (when-let [loading-message (:loading/message (om/get-state this))]
           (common/loading-spinner nil (dom/span nil loading-message)))
 

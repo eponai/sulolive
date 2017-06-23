@@ -18,7 +18,8 @@
     [eponai.web.ui.store.shipping :as shipping]
     [eponai.web.ui.store.home :as home]
     [eponai.web.ui.store.finances :as finances]
-    [eponai.web.ui.store.business :as business]))
+    [eponai.web.ui.store.business :as business]
+    [eponai.web.ui.footer :as foot]))
 
 (defn find-product [store product-id]
   (let [product-id (c/parse-long product-id)]
@@ -85,6 +86,7 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}
      {:query/store [:db/id
                     :store/uuid
                     {:store/profile [:store.profile/description
@@ -128,7 +130,7 @@
       (when-not did-mount?
         (om/update-state! this assoc :did-mount? true))))
   (render [this]
-    (let [{:proxy/keys [navbar]
+    (let [{:proxy/keys [navbar footer]
            :query/keys [store current-route stripe-account]
            :as         props} (om/props this)
           {:keys [route route-params]} current-route
@@ -137,6 +139,7 @@
 
       (common/page-container
         {:navbar     navbar
+         :footer footer
          :id         "sulo-store-dashboard"}
 
         (let [{:keys [component computed-fn factory]} (get route-map (parse-route route))

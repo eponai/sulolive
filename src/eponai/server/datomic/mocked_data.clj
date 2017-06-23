@@ -140,6 +140,7 @@
     :store/profile    {:store.profile/name  "ikcha"
                        :store.profile/photo (photo "mocked/isla_500x500.24111301_nvjpi6zo")
                        :store.profile/cover (photo "mocked/isbl_3360x840.20468865_f7kumdbt")}
+    ;:store/locality   [:sulo-locality/path "yvr"]
     :store/created-at 1
     :store/stripe     (stripe-account)
     :store/sections   [{:db/id               (db/tempid :db.part/user -1000)
@@ -191,6 +192,7 @@
                        :store.profile/cover (photo "mocked/isbl_3360x840.22956500_1bj341c6")
                        :store.profile/photo (photo "mocked/isla_500x500.17338368_6u0a6c4s")}
     :store/created-at 2
+    ;:store/locality   [:sulo-locality/path "yvr"]
 
     :store/items      [{:store.item/name     "Linen duvet cover - Woodrose"
                         :store.item/price    34.00M
@@ -219,6 +221,7 @@
                        :store.profile/cover (photo "mocked/175704-27dcee8b2fd94212b2cc7dcbe43bb80c")
                        :store.profile/photo (photo "mocked/175704-27dcee8b2fd94212b2cc7dcbe43bb80c")}
     :store/created-at 3
+    ;:store/locality   [:sulo-locality/path "yvr"]
 
     :store/items      [{:store.item/name     "Glitter & Navy Blue Envelope Clutch"
                         :store.item/photos   [(item-photo "mocked/175704-f4b3f5a3acdd4997a3a4ea18186cca19")]
@@ -247,6 +250,7 @@
     :store/profile    {:store.profile/name  "Nafsika"
 
                        :store.profile/photo (photo "mocked/isla_500x500.22177516_ath1ugrh")}
+    :store/locality   [:sulo-locality/path "yul"]
     :store/items      [{:store.item/name     "Silver Twig Ring Milky"
                         :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1094898766_ewls"
                                                                                "mocked/il_570xN.1094898750_jnvm"])
@@ -297,75 +301,78 @@
                      :store.item/skus     [(sku)]}]}
 
    ;; BangiShop
-   {:db/id         (db/tempid :db.part/user)
-    :store/profile {:store.profile/name  "BangiShop"
-                    :store.profile/cover (photo "mocked/isbl_3360x840.24031443_roffucs6")
-                    :store.profile/photo (photo "mocked/isla_500x500.18128391_dro0qzqd")}
-    :store/stripe  {:stripe/id "acct_19jze1BbOp8CGZPS"}
-    :store/items   [{:store.item/name     "Leather Shoes (silver)"
-                     :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1040522475_mbon"
-                                                                            "mocked/il_570xN.993989824_3pdl"])
-                     :store.item/price    24.74M
-                     :store.item/category [:category/path (category-path "shoes" "women")]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Leather Shoes (yellow)"
-                     :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.988317879_5pik"
-                                                                            "mocked/il_570xN.988317889_kzc9"])
-                     :store.item/price    4.49M
-                     :store.item/category [:category/path (category-path "shoes" "women")]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Leather Boots"
-                     :store.item/photos   [(item-photo "mocked/il_570xN.1104988862_cb12")]
-                     :store.item/price    6.37M
-                     :store.item/category [:category/path (category-path "shoes" "women" "boots")]
-                     :store.item/skus     [(sku)]}]}
+   {:db/id          (db/tempid :db.part/user)
+    :store/profile  {:store.profile/name  "BangiShop"
+                     :store.profile/cover (photo "mocked/isbl_3360x840.24031443_roffucs6")
+                     :store.profile/photo (photo "mocked/isla_500x500.18128391_dro0qzqd")}
+    :store/locality [:sulo-locality/path "yul"]
+    :store/stripe   {:stripe/id "acct_19jze1BbOp8CGZPS"}
+    :store/items    [{:store.item/name     "Leather Shoes (silver)"
+                      :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1040522475_mbon"
+                                                                             "mocked/il_570xN.993989824_3pdl"])
+                      :store.item/price    24.74M
+                      :store.item/category [:category/path (category-path "shoes" "women")]
+                      :store.item/skus     [(sku)]}
+                     {:store.item/name     "Leather Shoes (yellow)"
+                      :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.988317879_5pik"
+                                                                             "mocked/il_570xN.988317889_kzc9"])
+                      :store.item/price    4.49M
+                      :store.item/category [:category/path (category-path "shoes" "women")]
+                      :store.item/skus     [(sku)]}
+                     {:store.item/name     "Leather Boots"
+                      :store.item/photos   [(item-photo "mocked/il_570xN.1104988862_cb12")]
+                      :store.item/price    6.37M
+                      :store.item/category [:category/path (category-path "shoes" "women" "boots")]
+                      :store.item/skus     [(sku)]}]}
 
    ;; MIRIMIRIFASHION
-   {:db/id         (db/tempid :db.part/user)
-    :store/profile {:store.profile/name    "MIRIMIRIFASHION"
-                    :store.profile/tagline "Handmade exclusive fashion designer shop."
-                    ;:store/cover #db/id[:db.part/user -51]
-                    :store.profile/photo   (photo "mocked/isla_500x500.17344782_h4dngp5g")}
-    :store/items   [{:store.item/name     "Hoodie Dress"
-                     :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1088263217_thkk"
-                                                                            "mocked/il_570xN.1041709156_noxy"
-                                                                            "mocked/il_570xN.1041709214_ae4i"])
-                     :store.item/price    24.74M
-                     :store.item/category [:category/path (category-path "clothing" "women" "dresses")]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Maxi skirt"
-                     :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.272372530"
-                                                                            "mocked/il_570xN.272372548"])
-                     :store.item/price    4.49M
-                     :store.item/category [:category/path (category-path "clothing" "women" "skirts")]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Leather Boots"
-                     :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1087733031_du1y"
-                                                                            "mocked/il_570xN.1087733249_hz9c"])
-                     :store.item/price    6.37M
-                     :store.item/category [:category/path (category-path "shoes" "women" "boots")]
-                     :store.item/skus     [(sku)]}]}
+   {:db/id          (db/tempid :db.part/user)
+    :store/profile  {:store.profile/name    "MIRIMIRIFASHION"
+                     :store.profile/tagline "Handmade exclusive fashion designer shop."
+                     ;:store/cover #db/id[:db.part/user -51]
+                     :store.profile/photo   (photo "mocked/isla_500x500.17344782_h4dngp5g")}
+    :store/locality [:sulo-locality/path "yul"]
+    :store/items    [{:store.item/name     "Hoodie Dress"
+                      :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1088263217_thkk"
+                                                                             "mocked/il_570xN.1041709156_noxy"
+                                                                             "mocked/il_570xN.1041709214_ae4i"])
+                      :store.item/price    24.74M
+                      :store.item/category [:category/path (category-path "clothing" "women" "dresses")]
+                      :store.item/skus     [(sku)]}
+                     {:store.item/name     "Maxi skirt"
+                      :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.272372530"
+                                                                             "mocked/il_570xN.272372548"])
+                      :store.item/price    4.49M
+                      :store.item/category [:category/path (category-path "clothing" "women" "skirts")]
+                      :store.item/skus     [(sku)]}
+                     {:store.item/name     "Leather Boots"
+                      :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1087733031_du1y"
+                                                                             "mocked/il_570xN.1087733249_hz9c"])
+                      :store.item/price    6.37M
+                      :store.item/category [:category/path (category-path "shoes" "women" "boots")]
+                      :store.item/skus     [(sku)]}]}
 
    ;; RecycledBeautifully
-   {:db/id         (db/tempid :db.part/user)
-    :store/profile {:store.profile/name  "RecycledBeautifully"
-                    :store.profile/cover (photo "mocked/isbl_3360x840.18460378_4d4b1gyn")
-                    :store.profile/photo (photo "mocked/isla_500x500.23870003_5l3vsjlx")}
-    :store/items   [{:store.item/name     "Tree of Life wire"
-                     :store.item/photos   [(item-photo "mocked/il_570xN.728670429_e1dd")]
-                     :store.item/price    24.74M
-                     :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Tree of Life copper"
-                     :store.item/photos   [(item-photo "mocked/il_570xN.1094904882_t58t")]
-                     :store.item/price    42.49M
-                     :store.item/category [:category/path (category-path "jewelry" "women")]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Tree of Life wire"
-                     :store.item/photos   [(item-photo "mocked/il_570xN.1074937810_dh62")]
-                     :store.item/price    64.37M
-                     :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
-                     :store.item/skus     [(sku)]}]}
+   {:db/id          (db/tempid :db.part/user)
+    :store/profile  {:store.profile/name  "RecycledBeautifully"
+                     :store.profile/cover (photo "mocked/isbl_3360x840.18460378_4d4b1gyn")
+                     :store.profile/photo (photo "mocked/isla_500x500.23870003_5l3vsjlx")}
+    :store/locality [:sulo-locality/path "yul"]
+    :store/items    [{:store.item/name     "Tree of Life wire"
+                      :store.item/photos   [(item-photo "mocked/il_570xN.728670429_e1dd")]
+                      :store.item/price    24.74M
+                      :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
+                      :store.item/skus     [(sku)]}
+                     {:store.item/name     "Tree of Life copper"
+                      :store.item/photos   [(item-photo "mocked/il_570xN.1094904882_t58t")]
+                      :store.item/price    42.49M
+                      :store.item/category [:category/path (category-path "jewelry" "women")]
+                      :store.item/skus     [(sku)]}
+                     {:store.item/name     "Tree of Life wire"
+                      :store.item/photos   [(item-photo "mocked/il_570xN.1074937810_dh62")]
+                      :store.item/price    64.37M
+                      :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
+                      :store.item/skus     [(sku)]}]}
    ])
 
 (defn countries []
@@ -380,6 +387,15 @@
                                 :continent/code (:continent country)
                                 :continent/name (get continents (keyword (:continent country)))}})
          (:countries country-data))))
+
+(defn sulo-localities []
+  [{:sulo-locality/title "Vancouver, BC"
+    :sulo-locality/path  "yvr"
+    :sulo-locality/photo (photo "static/landing-vancouver-3")}
+
+   {:sulo-locality/title "Montréal, QC"
+    :sulo-locality/path  "yul"
+    :sulo-locality/photo (photo "static/landing-montreal")}])
 
 (defn mock-chats [stores]
   (vec (map (fn [s]
@@ -405,13 +421,18 @@
   (let [categories (mock-categories3)
         stores (mock-stores)
         chats (mock-chats stores)
-        live-streams (mock-streams (take 4 stores) :stream.state/offline)
+        live-streams (mock-streams (take 4 stores) :stream.state/live)
         streams (mock-streams (drop 4 stores) :stream.state/offline)
         countries (countries)
         ;storeless-user (user-no-store)
+        stores-with-localities (map (fn [s]
+                                      (if (nil? (:store/locality s))
+                                        (assoc s :store/locality [:sulo-locality/path "yvr"])
+                                        s))
+                                    stores)
         ]
-    (db/transact conn categories)
+    (db/transact conn (concat categories (sulo-localities)))
     ;(db/transact-one conn storeless-user)
     (debug "Categories added")
-    (db/transact conn (concat stores live-streams streams chats countries))
+    (db/transact conn (concat stores-with-localities live-streams streams chats countries))
     (debug "Stores with items, chats and streams added")))

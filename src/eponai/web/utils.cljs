@@ -2,7 +2,9 @@
   (:require
     [clojure.string :as string]
     [taoensso.timbre :refer [debug]]
-    [cemerick.url :as url]))
+    [cemerick.url :as url]
+    [eponai.common.location :as location]
+    [eponai.common :as c]))
 
 (defn enter-pressed? [^js/Event e]
   (= 13 (.-keyCode e)))
@@ -60,16 +62,14 @@
              key-vals))))
 
 (defn get-locality []
-  (url/url-decode (get-cookie-val "sulo.locality")))
+  (let [json-str (url/url-decode (get-cookie-val location/locality-cookie-name))]
+    (js->clj (c/read-transit json-str))))
 
 (defn set-locality
-  ([]
-    (set-locality "Vancouver / BC"))
-  ([locality]
-    (set! (.-cookie js/document) (str "sulo.locality=" (url/url-encode locality)))
-    ;(let [cookie-string (js/decodeURIComponent (.-cookie js/document))]
-    ;  (debug "Got cookie: " cookie-string))
-    ))
+  [loc]
+  (debug "Setting locality: " (select-keys loc [:db/id :sulo-locality/path]))
+  (let [json-loc (c/write-transit (select-keys loc [:db/id :sulo-locality/path]))]
+    (set! (.-cookie js/document) (str "sulo.locality=" (url/url-encode json-loc) ";path=/"))))
 
 (defn elements-by-class
   ([classname]

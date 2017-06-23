@@ -20,7 +20,9 @@
     [eponai.common.ui.elements.input-validate :as v]
     [eponai.web.social :as social]
     [eponai.client.utils :as client-utils]
-    [eponai.client.parser.message :as msg]))
+    [eponai.client.parser.message :as msg]
+    [medley.core :as medley]
+    [eponai.web.ui.footer :as foot]))
 
 (def form-inputs
   {:field/email    "field.email"
@@ -48,13 +50,20 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}
      :query/current-route
      {:query/auth [:db/id]}
+     {:query/sulo-localities [:sulo-locality/title
+                              :sulo-locality/path
+                              {:sulo-locality/photo [:photo/id]}]}
      :query/messages])
   Object
-  (select-locality [_ locality]
+  (select-locality [this locality]
     #?(:cljs
-       (web-utils/set-locality locality)))
+       (do
+         (web-utils/set-locality locality)
+         (om/transact! this [(list 'client/set-locality {:locality locality})
+                             :query/locations]))))
   (submit-new-location [this]
     #?(:cljs
        (let [email (web-utils/input-value-by-id (:field/email form-inputs))
@@ -84,12 +93,13 @@
         ;       (set! (.-value (web-utils/element-by-id (:field/location form-inputs))) ""))))
         (om/update-state! this assoc :user-message (msg/message last-message)))))
   (render [this]
-    (let [{:proxy/keys [navbar]
-           :query/keys [auth]} (om/props this)
+    (let [{:proxy/keys [navbar footer]
+           :query/keys [auth sulo-localities]} (om/props this)
           {:keys [input-validation user-message]} (om/get-state this)
           last-message (msg/last-message this 'location/suggest)]
+      (debug "Localitites: " sulo-localities)
       (common/page-container
-        {:navbar navbar :id "sulo-landing"}
+        {:navbar navbar :footer footer :id "sulo-landing"}
         (photo/cover
           {:photo-id "static/shop"}
           (grid/row-column
@@ -122,47 +132,42 @@
           (css/text-align :center {:id "sulo-locations"})
           (common/content-section
             nil
-            "Where are you local?"
+            "Where do you shop local?"
             (grid/row
               (->> (grid/columns-in-row {:small 1})
                    (css/add-classes [:locations]))
-              (grid/column
-                nil
-                (dom/a
-                  (css/add-class :city-anchor {:onClick #(do
-                                                           (debug "Setting locality!")
-                                                           (.select-locality this "Vancouver / BC")
-                                                           (if (nil? auth)
-                                                             (auth/show-lock (shared/by-key this :shared/auth-lock))
-                                                             (routes/set-url! this :index nil)))
-                                               })
-                  (photo/photo
-                    {:photo-id       "static/landing-vancouver-2"
-                     :transformation :transformation/preview}
-                    (photo/overlay
-                      nil
-                      (dom/div
-                        (css/text-align :center)
-                        (dom/strong nil "Vancouver / BC")
-                        (dom/div
-                          {:classes [:button :hollow]}
-                          (dom/span nil "Enter")))
-                      (when (nil? auth)
-                        (dom/p (css/add-class :coming-soon) (dom/small nil "Coming soon - Summer 2017")))))))
-              ;(grid/column
-              ;  nil
-              ;  (dom/a
-              ;    (css/add-classes [:city-anchor :inactive] nil)
-              ;
-              ;    (photo/photo
-              ;      {:photo-id       "s--1wUD_bGi--/v1496873909/static/alex-shutin-228917"
-              ;       :transformation :transformation/preview}
-              ;      (photo/overlay
-              ;        nil
-              ;        (dom/div
-              ;          (css/text-align :center)
-              ;          (dom/strong nil "Toronto, ON"))
-              ;        (dom/p (css/add-class :coming-soon) (dom/small nil "Coming soon - Fall 2017"))))))
+
+              (let [loc-vancouver (medley/find-first #(= "yvr" (:sulo-locality/path %)) sulo-localities)
+                    loc-montreal (medley/find-first #(= "yul" (:sulo-locality/path %)) sulo-localities)]
+                (map (fn [{:sulo-locality/keys [title photo coming-soon] :as loc}]
+                       (grid/column
+                         nil
+                         (dom/a
+                           (css/add-class :city-anchor {:onClick #(do
+                                                                   (debug "Setting locality! " loc)
+                                                                   (.select-locality this loc)
+                                                                   (if (nil? auth)
+                                                                     (auth/show-lock (shared/by-key this :shared/auth-lock))
+                                                                     (routes/set-url! this :index {:locality (:sulo-locality/path loc)})))})
+                           (photo/photo
+                             {:photo-id       (:photo/id photo)
+                              :transformation :transformation/preview}
+                             (photo/overlay
+                               nil
+                               (dom/div
+                                 (css/text-align :center)
+                                 (dom/strong nil title)
+                                 (dom/div
+                                   {:classes [:button :hollow]}
+                                   (dom/span nil "Enter")))
+                               (when (and (not-empty coming-soon) (nil? auth))
+                                 (dom/p (css/add-class :coming-soon) (dom/small nil coming-soon))))))))
+
+                     ;; Assoc comming soon mesage for each city, position them in this array to keep order.
+                     [(assoc loc-vancouver :sulo-locality/coming-soon "Coming soon - Summer 2017")
+                      (assoc loc-montreal :sulo-locality/coming-soon "Coming soon - Fall 2017")]))
+
+
               (grid/column
                 (css/add-classes [:suggest-location])
                 (photo/cover

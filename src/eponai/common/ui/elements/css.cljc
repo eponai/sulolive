@@ -73,7 +73,7 @@
         ;(warn "Unexpected CSS class keys " unexpected ", using values " (map #(when (some? %) (name %)) unexpected) ".")
         ))
 
-    (map #(or (get all %) (when (some? %) (name %))) style-set)))
+    (map #(or (get all %) (when (some? %) (name %))) (sort-by str style-set))))
 
 (defn keys->class-str
   "Convert keywords to string of classnames to use for :className in element options."

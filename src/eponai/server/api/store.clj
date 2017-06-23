@@ -10,7 +10,7 @@
     [eponai.common.format.date :as date]))
 
 
-(defn create [{:keys [state auth system]} {:keys [country name]}]
+(defn create [{:keys [state auth system]} {:keys [country name locality]}]
   (let [stripe-account (stripe/create-account (:system/stripe system) {:country country})
         new-store {:db/id            (db/tempid :db.part/user)
                    :store/uuid       (db/squuid)
@@ -21,6 +21,7 @@
                                       :stripe/publ   (:publ stripe-account)}
                    :store/owners     {:store.owner/role :store.owner.role/admin
                                       :store.owner/user (:user-id auth)}
+                   :store/locality   locality
                    :store/created-at (date/current-millis)}
         stream {:db/id        (db/tempid :db.part/user)
                 :stream/store (:db/id new-store)

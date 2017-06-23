@@ -14,7 +14,8 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.client.routes :as routes]))
+    [eponai.client.routes :as routes]
+    [eponai.web.ui.footer :as foot]))
 
 (def guides
   {:help/first-stream   {:guide       ::live-stream
@@ -55,14 +56,15 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}
      :query/current-route])
   Object
   (render [this]
-    (let [{:proxy/keys [navbar]
+    (let [{:proxy/keys [navbar footer]
            :query/keys [current-route]} (om/props this)
           {:keys [route]} current-route]
       (common/page-container
-        {:navbar navbar :id "sulo-help"}
+        {:navbar navbar :footer footer :id "sulo-help"}
         (grid/row-column
           nil
           (dom/div

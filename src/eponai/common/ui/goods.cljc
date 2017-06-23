@@ -17,7 +17,8 @@
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug error]]
     [eponai.web.ui.button :as button]
-    [eponai.common.ui.search-bar :as search-bar]))
+    [eponai.common.ui.search-bar :as search-bar]
+    [eponai.web.ui.footer :as foot]))
 
 (def sorting-vals
   {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
@@ -25,17 +26,17 @@
    :sort/price-inc {:key [:store.item/price :store.item/name] :reverse? false}
    :sort/price-dec {:key [:store.item/price :store.item/name] :reverse? true}})
 
-(defn nav-breadcrumbs [categories]
-  (let [items (into [(menu/item nil (dom/a {:href (routes/url :browse/all-items)}
-                                           "All"))]
-                    (map (fn [category]
-                           (menu/item nil (dom/a {:href (:category/href category)}
-                                                 (products/category-display-name category)))))
-                    categories)]
-    (menu/breadcrumbs
-      (when-not (< 1 (count items))
-        {:classes [:invisible]})
-      items)))
+;(defn nav-breadcrumbs [categories]
+;  (let [items (into [(menu/item nil (dom/a {:href (routes/url :browse/all-items)}
+;                                           "All"))]
+;                    (map (fn [category]
+;                           (menu/item nil (dom/a {:href (:category/href category)}
+;                                                 (products/category-display-name category)))))
+;                    categories)]
+;    (menu/breadcrumbs
+;      (when-not (< 1 (count items))
+;        {:classes [:invisible]})
+;      items)))
 
 (defn- vertical-category-menu [children current-category]
   (menu/vertical
@@ -80,6 +81,7 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}
      {:query/browse-items (om/get-query product/Product)}
      {:query/navigation [:category/name :category/label :category/path :category/href]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
@@ -90,14 +92,14 @@
     {:sorting       (get sorting-vals :sort/price-inc)
      :filters-open? false})
   (render [this]
-    (let [{:proxy/keys [navbar product-filters]
+    (let [{:proxy/keys [navbar product-filters footer]
            :query/keys [browse-items navigation selected-navigation locations]} (om/props this)
           {:keys [sorting filters-open?]} (om/get-state this)
           [top-category sub-category :as categories] (category-seq this)
           items browse-items]
 
       (common/page-container
-        {:navbar navbar :id "sulo-items" :class-name "sulo-browse"}
+        {:navbar navbar :id "sulo-items" :class-name "sulo-browse" :footer footer}
         (common/city-banner this locations)
         (when filters-open?
           (dom/div
@@ -110,7 +112,7 @@
           nil
           (grid/column
             nil
-            (nav-breadcrumbs (category-seq this))
+            ;(nav-breadcrumbs (category-seq this))
             (dom/div
               (css/add-class :section-title)
               (dom/h2 nil (str/upper-case

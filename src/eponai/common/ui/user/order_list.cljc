@@ -55,11 +55,13 @@
                              :store.item/created-at
                              {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                   :store.item.photo/index]}
-                             {:store/_items [{:store/profile [:store.profile/name]}]}]}])
+                             {:store/_items [{:store/profile [:store.profile/name]}
+                                             :store/locality]}]}
+     :query/locations])
 
   Object
   (render [this]
-    (let [{:query/keys [orders current-route featured-items]} (om/props this)
+    (let [{:query/keys [orders current-route featured-items locations]} (om/props this)
           orders-by-month (group-by #(date/month->long (:order/created-at % 0)) orders)]
       (debug "Got orders: " orders)
       (dom/div
@@ -143,7 +145,7 @@
               (dom/p (css/add-class :shoutout) "You haven't made any purchases yet")
               ;(dom/br nil)
               (button/button
-                (button/sulo-dark (button/hollow {:href (routes/url :browse/all-items)})) (dom/span nil "Browse products")))))
+                (button/sulo-dark (button/hollow {:href (routes/url :browse/all-items {:locality (:sulo-locality/path locations)})})) (dom/span nil "Browse products")))))
 
         (when #?(:clj  false
                  :cljs (some? (web.utils/get-locality)))
@@ -152,7 +154,7 @@
              (dom/hr nil)
              (dom/div
                (css/add-class :section-title)
-               (dom/h3 nil "New arrivals")))
+               (dom/h3 nil (str "New arrivals in " (:sulo-locality/title locations)))))
            (grid/row
              (->>
                (grid/columns-in-row {:small 2 :medium 3 :large 6}))

@@ -409,7 +409,7 @@
 
 #?(:clj
    (defn read-returning-basis-t [read]
-     (fn [{:keys [db query]
+     (fn [{:keys [db query locations]
            ::keys [force-read-without-history read-basis-t-graph] :as env} k p]
        {:pre [(some? db)]}
        (if (or (is-proxy? k) (is-routing? k))
@@ -423,7 +423,7 @@
                          (str "Path returned from read-basis-param-path for key: " k
                               " params: " p
                               " was not nil or sequential with [k v] pairs. Was: " read-basis-params))
-               read-basis-params (into [[:query-hash (hash query)]] read-basis-params)
+               read-basis-params (into [[:locations locations] [:query-hash (hash query)]] read-basis-params)
                basis-t-for-this-key (util/get-basis-t @read-basis-t-graph k read-basis-params)
                env (if (contains? @force-read-without-history k)
                      (do

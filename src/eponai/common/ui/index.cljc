@@ -14,7 +14,8 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.router :as router]
     [eponai.web.ui.button :as button]
-    [eponai.common.mixpanel :as mixpanel]))
+    [eponai.common.mixpanel :as mixpanel]
+    [eponai.web.ui.footer :as foot]))
 
 ;(defn banner [{:keys [color align] :as opts} primary secondary]
 ;  (let [align (or align :left)
@@ -47,37 +48,47 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}
      :query/locations
+     :query/current-route
      {:query/featured-items [:db/id
                              :store.item/name
                              :store.item/price
                              :store.item/created-at
                              {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                   :store.item.photo/index]}
-                             {:store/_items [{:store/profile [:store.profile/name]}]}]}
+                             {:store/_items [{:store/profile [:store.profile/name]}
+                                             {:store/locality [:sulo-locality/path]}]}]}
      {:query/featured-stores [:db/id
                               {:store/profile [:store.profile/name
                                                {:store.profile/photo [:photo/path :photo/id]}]}
+                              {:store/locality [:sulo-locality/path]}
                               :store/created-at
                               :store/featured
                               :store/featured-img-src
                               {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                                          :store.item.photo/index]}]}]}
-     {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id {:store/profile [:store.profile/name {:store.profile/photo [:photo/path :photo/id]}]}]}]}
+     {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id
+                                                                    {:store/locality [:sulo-locality/path]}
+                                                                    {:store/profile [:store.profile/name {:store.profile/photo [:photo/path :photo/id]}]}]}]}
      {:query/auth [:db/id :user/email]}
      {:query/owned-store [:db/id
+                          {:store/locality [:sulo-locality/path]}
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.
                           {:store/owners [{:store.owner/user [:db/id]}]}]}])
   Object
   (render [this]
-    (let [{:keys       [proxy/navbar query/featured-items query/featured-streams]
-           :query/keys [owned-store locations featured-stores]} (om/props this)]
-      (debug "Items: " featured-items)
-      (debug "Items: " featured-stores)
+    (let [{:proxy/keys [navbar footer]
+           :query/keys [locations featured-items featured-streams featured-stores current-route]} (om/props this)
+          {:keys [route-params]} current-route]
+      ;(debug "Items: " featured-items)
+      ;(debug "Items: " featured-stores)
+      (debug "Selected location: " locations)
 
       (common/page-container
         {:navbar navbar
+         :footer footer
          :id     "sulo-index"}
         (dom/div {:id "sulo-index-container"}
 
@@ -112,7 +123,7 @@
                  (dom/div
             (css/add-class :sections)
             (when (pos? (count featured-streams))
-              (common/content-section {:href  (routes/url :live)
+              (common/content-section {:href  (routes/url :live route-params)
                                        :class "online-channels"}
                                       "Stores streaming right now"
                                       (grid/row
@@ -137,26 +148,30 @@
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
-                                             (collection-element {:href     (routes/url :browse/category {:top-category "home"})
-                                                                  :photo-id "static/home"
+                                             (collection-element {:href     (routes/url :browse/category (merge route-params
+                                                                                                                {:top-category "home"}))
+                                                                  :photo-id "static/home-4"
                                                                   :title    "Home"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
-                                             (collection-element {:href     (routes/url :browse/gender {:sub-category "women"})
-                                                                  :photo-id "static/women"
+                                             (collection-element {:href     (routes/url :browse/gender (merge route-params
+                                                                                                              {:sub-category "women"}))
+                                                                  :photo-id "static/women-3"
                                                                   :title    "Women"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
-                                             (collection-element {:href     (routes/url :browse/gender {:sub-category "men"})
-                                                                  :photo-id "static/men"
+                                             (collection-element {:href     (routes/url :browse/gender (merge route-params
+                                                                                                              {:sub-category "men"}))
+                                                                  :photo-id "static/men-3"
                                                                   :title    "Men"}))
                                            (grid/column
                                              (->> (css/add-class :content-item)
                                                   (css/add-class :collection-item))
-                                             (collection-element {:href     (routes/url :browse/gender {:sub-category "unisex-kids"})
-                                                                  :photo-id "static/kids"
+                                             (collection-element {:href     (routes/url :browse/gender (merge route-params
+                                                                                                              {:sub-category "unisex-kids"}))
+                                                                  :photo-id "static/kids-3"
                                                                   :title    "Kids"}))))
                                     ;(map (fn [s t]
                                     ;       (collection-element {:url (first (:store/featured-img-src s))
@@ -167,7 +182,7 @@
                                     )
 
             (common/content-section
-              {:href  (routes/url :live)
+              {:href  (routes/url :live route-params)
                :class "new-brands"}
               "New stores"
               ;(grid/row-column
@@ -194,10 +209,10 @@
                                       (css/add-class :header))
                                  (dom/a {:href (routes/url :store {:store-id (:db/id store)})}
                                         (dom/strong nil store-name)))))))
-                       featured-stores)))
+                       (take 4 featured-stores))))
               "See more stores")
 
-            (common/content-section {:href  (routes/url :browse/all-items)
+            (common/content-section {:href  (routes/url :browse/all-items route-params)
                                      :class "new-arrivals"}
                                     "New products"
                                     (grid/row

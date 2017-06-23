@@ -19,7 +19,8 @@
     [eponai.web.ui.photo :as photo]
     [eponai.web.social :as social]
     [eponai.common.photos :as photos]
-    [eponai.common.mixpanel :as mixpanel]))
+    [eponai.common.mixpanel :as mixpanel]
+    [eponai.web.ui.footer :as foot]))
 
 
 (defn about-section [component]
@@ -54,9 +55,11 @@
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}
      {:proxy/stream (om/get-query stream/Stream)}
      {:proxy/chat (om/get-query chat/StreamChat)}
      {:query/store [:db/id
+                    :store/locality
                     {:store/sections [:store.section/label :store.section/path :db/id]}
                     ;{:store/items (om/get-query item/Product)}
                     {:stream/_store [:stream/state :stream/title]}
@@ -75,7 +78,7 @@
   (render [this]
     (let [{:keys [fullscreen? selected-navigation] :as st} (om/get-state this)
           {:query/keys [store store-items current-route]
-           :proxy/keys [navbar] :as props} (om/props this)
+           :proxy/keys [navbar footer] :as props} (om/props this)
           {:store/keys [profile]
            stream      :stream/_store} store
           {:store.profile/keys [photo cover tagline description]
@@ -86,6 +89,7 @@
           {:keys [route route-params]} current-route]
       (common/page-container
         {:navbar navbar
+         :footer footer
          :id     "sulo-store"}
 
         (grid/row

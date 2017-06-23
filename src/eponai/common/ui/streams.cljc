@@ -10,30 +10,34 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.router :as router]
     [eponai.client.routes :as routes]
-    [eponai.web.ui.photo :as photo]))
+    [eponai.web.ui.photo :as photo]
+    [eponai.web.ui.footer :as foot]))
 
 (defui Streams
   static om/IQuery
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
+     {:proxy/footer (om/get-query foot/Footer)}
      {:query/streams [:stream/title
                       :stream/state
                       {:stream/store [{:store/profile [:store.profile/name
                                                        {:store.profile/photo [:photo/path
-                                                                              :photo/id]}]}]}]}
+                                                                              :photo/id]}]}
+                                      :store/locality]}]}
      {:query/stores [:db/id
                      {:stream/_store [:stream/state]}
+                     :store/locality
                      {:store/profile [:store.profile/name
                                       {:store.profile/photo [:photo/path
                                                              :photo/id]}]}]}
      :query/locations])
   Object
   (render [this]
-    (let [{:keys [query/streams query/stores proxy/navbar]
-           :query/keys [locations]} (om/props this)]
+    (let [{:proxy/keys [navbar footer]
+           :query/keys [locations streams stores]} (om/props this)]
       (debug "Live props: " (om/props this))
       (common/page-container
-        {:navbar navbar :id "sulo-live" :class-name "sulo-browse"}
+        {:navbar navbar :footer footer :id "sulo-live" :class-name "sulo-browse"}
         (common/city-banner this locations)
         (grid/row
           nil

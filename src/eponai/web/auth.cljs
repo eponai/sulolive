@@ -11,7 +11,7 @@
 (defn- redirect-to-after-login []
   (let [current-url (str js/window.location.pathname)]
     (if (contains? urls-redirecting-to-index current-url)
-      (routes/url :index)
+      (routes/url :landing-page)
       current-url)))
 
 (extend-type js/Auth0Lock
