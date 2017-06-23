@@ -73,18 +73,26 @@
      {:query/browse-items (om/get-query product/Product)}
      {:query/navigation [:category/name :category/label :category/path :category/href]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
+     {:query/countries [:country/code :country/name]}
      :query/locations
      :query/current-route])
   Object
+  (select-shipping-destination [this country-code]
+    (let [{:query/keys [current-route]} (om/props this)
+          {:keys [route route-params query-params]} current-route
+          new-query (if (= "anywhere" country-code)
+                      (dissoc query-params :ship_to)
+                      (assoc query-params :ship_to country-code))]
+      (routes/set-url! this route route-params new-query)))
   (initLocalState [_]
     {:sorting       (get sorting-vals :sort/price-inc)
      :filters-open? false})
   (render [this]
     (let [{:proxy/keys [navbar product-filters footer]
-           :query/keys [browse-items navigation locations current-route]} (om/props this)
+           :query/keys [browse-items navigation locations current-route countries]} (om/props this)
           {:keys [sorting filters-open?]} (om/get-state this)
           [top-category sub-category :as categories] (category-seq this)
-          {:keys [query-params]} current-route
+          {:keys [route route-params query-params]} current-route
           items browse-items]
 
       (common/page-container
@@ -109,9 +117,7 @@
                                   (not-empty (:search query-params))
                                   (str "Result for \"" (:search query-params) "\"")
                                   :else
-                                  "All products"))))
-
-            ))
+                                  "All products"))))))
         (grid/row
           (css/hide-for :large)
           (grid/column
@@ -139,6 +145,17 @@
                               (dom/a {:href (:category/href category)}
                                      (dom/span nil (products/category-display-name category)))
                               (vertical-category-menu (:category/children category) (last categories))))))))
+            (dom/div
+              nil
+              (dom/label nil "Ship to")
+              (dom/select {:defaultValue "anywhere"
+                           :onChange  #(.select-shipping-destination this (.-value (.-target %)))}
+                          (dom/option {:value "anywhere"} "Anywhere")
+                          (dom/optgroup
+                            {:label "---"}
+                            (map (fn [c]
+                                   (dom/option {:value (:country/code c)} (:country/name c)))
+                                 (sort-by :country/name countries)))))
             ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
 
             ;(if (nil? top-category)

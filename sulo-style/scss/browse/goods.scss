@@ -209,11 +209,14 @@
 		}
 		ul {
 			border-top: $global-border;
-			// margin-right: $global-margin;
+			border-bottom: $global-border;
+			margin-bottom: $global-margin;
+			padding: $global-padding 0;
 			.nested {
 				border: none;
 				display: none;
 				margin: 0;
+				padding: 0;
 				padding-left: $global-padding;
 			}
 

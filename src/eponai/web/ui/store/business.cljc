@@ -219,10 +219,36 @@
           {:query/keys [store]} (om/props this)]
       (debug "Validation: " validation)
       (when (nil? validation)
-        (msg/om-transact! this [(list 'stripe/update-account {:account-params {:field/legal-entity le}
-                                                              :store-id       (:db/id store)})
-                                :query/stripe-account]))
+        (let [{:field.legal-entity.address/keys [line1 postal city state] :as address} (:field.legal-entity/address le)]
+          (msg/om-transact! this (cond-> [(list 'stripe/update-account {:account-params {:field/legal-entity le}
+                                                                        :store-id       (:db/id store)})]
+                                         ;(some? address)
+                                         ;(conj (list 'store/update-shipping {:shipping {:shipping/address {:shipping.address/street   line1
+                                         ;                                                                  :shipping.address/postal   postal
+                                         ;                                                                  :shipping.address/locality city
+                                         ;                                                                  :shipping.address/region   state}}
+                                         ;                                    :store-id (:db/id store)}))
+                                         :always
+                                         (conj :query/stripe-account)))))
       (om/update-state! this assoc :input-validation validation)))
+  (get-legal-entity [this]
+    #?(:cljs
+       (let [{:keys [entity-type]} (om/get-state this)
+             street (utils/input-value-or-nil-by-id (prefixed-id :field.legal-entity.address/line1))
+             postal (utils/input-value-or-nil-by-id (prefixed-id :field.legal-entity.address/postal))
+             city (utils/input-value-or-nil-by-id (prefixed-id :field.legal-entity.address/city))
+             state (utils/input-value-or-nil-by-id (prefixed-id :field.legal-entity.address/state))
+             business-name (utils/input-value-or-nil-by-id (prefixed-id :field.legal-entity/business-name))
+             ;entity-type (when (keyword? entity-type) (name entity-type))
+             ]
+         (f/remove-nil-keys
+           {:field.legal-entity/address       {:field.legal-entity.address/line1  street
+                                               :field.legal-entity.address/postal postal
+                                               :field.legal-entity.address/city   city
+                                               :field.legal-entity.address/state  state}
+            :field.legal-entity/business-name business-name
+            :field.legal-entity/type          entity-type})
+         )))
   (save-business-info [this]
     #?(:cljs
        (let [{:keys [entity-type]} (om/get-state this)
@@ -233,13 +259,7 @@
              business-name (utils/input-value-or-nil-by-id (prefixed-id :field.legal-entity/business-name))
              ;entity-type (when (keyword? entity-type) (name entity-type))
 
-             input-map (f/remove-nil-keys
-                         {:field.legal-entity/address       {:field.legal-entity.address/line1  street
-                                                             :field.legal-entity.address/postal postal
-                                                             :field.legal-entity.address/city   city
-                                                             :field.legal-entity.address/state  state}
-                          :field.legal-entity/business-name business-name
-                          :field.legal-entity/type          entity-type})]
+             input-map (.get-legal-entity this)]
          (mixpanel/track "Store: Save business information")
          (.save-legal-entity this input-map))))
 
@@ -250,7 +270,6 @@
              year (utils/input-value-or-nil-by-id (prefixed-id :field.legal-entity.dob/year))
              month (utils/input-value-or-nil-by-id (prefixed-id :field.legal-entity.dob/month))
              day (utils/input-value-or-nil-by-id (prefixed-id :field.legal-entity.dob/day))
-
              input-map {:field.legal-entity/first-name first-name
                         :field.legal-entity/last-name  last-name
                         :field.legal-entity/dob        {:field.legal-entity.dob/year  year
@@ -275,12 +294,25 @@
            (om/update-state! this assoc :input-validation validation)))))
 
   (componentDidUpdate [this _ _]
-    (let [last-message (msg/last-message this 'stripe/update-account)]
+    (let [last-message (msg/last-message this 'stripe/update-account)
+          shipping-msg (msg/last-message this 'store/update-shipping)]
       (when (msg/final? last-message)
         (msg/clear-messages! this 'stripe/update-account)
         (if (msg/success? last-message)
-          (om/update-state! this dissoc :modal)
-          (om/update-state! this assoc :error-message (msg/message last-message))))))
+          (let [address (:field.legal-entity/address (.get-legal-entity this))
+                {:query/keys [store]} (om/props this)]
+            (if (some? address)
+              (let [{:field.legal-entity.address/keys [line1 postal city state]} address]
+                (msg/om-transact! this [(list 'store/update-shipping {:shipping {:shipping/address {:shipping.address/street   line1
+                                                                                                    :shipping.address/postal   postal
+                                                                                                    :shipping.address/locality city
+                                                                                                    :shipping.address/region   state}}
+                                                                      :store-id (:db/id store)})]))
+              (om/update-state! this dissoc :modal)))
+          (om/update-state! this assoc :error-message (msg/message last-message))))
+      (when (msg/final? shipping-msg)
+        (msg/clear-messages! this 'store/update-shipping)
+        (om/update-state! this dissoc :modal))))
 
   (initLocalState [_]
     {:active-tab :payouts})
@@ -293,6 +325,7 @@
           accepted-tos? (not (some #(clojure.string/starts-with? % "tos_acceptance") (:stripe.verification/fields-needed verification)))
           {:keys [route route-params]} current-route
           last-message (msg/last-message this 'stripe/update-account)
+          shipping-msg (msg/last-message this 'store/update-shipping)
           ]
 
       (debug "Finances: " finances)
@@ -321,8 +354,9 @@
                        (dom/span nil "Business info")))
               )
             ))
-        (when (msg/pending? last-message)
-          (common/loading-spinner nil (dom/span nil "Saving info...")))
+        (when (or (msg/pending? last-message)
+                  (msg/pending? shipping-msg))
+              (common/loading-spinner nil (dom/span nil "Saving info...")))
 
         (cond (= modal :modal/edit-info)
               (edit-business-modal this)

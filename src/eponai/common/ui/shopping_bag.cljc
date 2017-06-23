@@ -16,7 +16,8 @@
     [eponai.common.ui.elements.callout :as callout]
     [eponai.web.ui.button :as button]
     [eponai.common.mixpanel :as mixpanel]
-    [eponai.web.ui.footer :as foot]))
+    [eponai.web.ui.footer :as foot]
+    [eponai.common.ui.product-item :as pi]))
 
 (defn items-by-store [items]
   (group-by #(get-in % [:store.item/_skus :store/_items]) items))
@@ -145,6 +146,14 @@
                                                           {:store/_items [:db/id
                                                                           {:store/profile [:store.profile/name
                                                                                            {:store.profile/photo [:photo/id]}]}]}]}]}]}
+     {:query/featured-items [:db/id
+                             :store.item/name
+                             :store.item/price
+                             :store.item/created-at
+                             {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
+                                                  :store.item.photo/index]}
+                             {:store/_items [{:store/profile [:store.profile/name]}
+                                             :store/locality]}]}
      :query/locations
      {:query/auth [:user/email]}])
   Object
@@ -159,12 +168,13 @@
         (om/update-state! this assoc :did-mount? true))))
   (render [this]
     (let [{:proxy/keys [navbar footer]
-           :query/keys [cart locations]} (om/props this)
+           :query/keys [cart locations featured-items]} (om/props this)
           {:keys [user.cart/items]} cart
           skus-by-store (items-by-store items)]
       (debug "Shopping bag: " cart)
       (common/page-container
-        {:navbar navbar :footer footer :id "sulo-shopping-bag"}
+        {:navbar navbar :footer (om/computed footer
+                                             {:on-change-location #(om/transact! this [:query/featured-items])}) :id "sulo-shopping-bag"}
 
         (grid/row-column
           nil
@@ -173,17 +183,32 @@
             (dom/div nil
                      (store-items-element this skus-by-store))
 
-            (dom/div
-              (->> (css/text-align :center)
-                   (css/add-class :cart-empty))
-              (dom/div
-                (css/add-class :empty-container)
-                (dom/p (css/add-class :shoutout) "Your shopping bag is empty"))
-              (icons/empty-shopping-bag)
-              ;(dom/p (css/add-class :header))
-              (button/button
-                (button/sulo-dark (button/hollow {:href (routes/url :browse/all-items {:locality (:sulo-locality/path locations)})}))
-                (dom/span nil "Go to the market - start shopping")))))))))
+            [(dom/div
+               (->> (css/text-align :center)
+                    (css/add-class :cart-empty))
+               (dom/div
+                 (css/add-class :empty-container)
+                 (dom/p (css/add-class :shoutout) "Your shopping bag is empty"))
+               (icons/empty-shopping-bag)
+               ;(dom/p (css/add-class :header))
+               (button/button
+                 (button/sulo-dark (button/hollow {:href (routes/url :browse/all-items {:locality (:sulo-locality/path locations)})}))
+                 (dom/span nil "Go to the market - start shopping")))
+             (grid/row-column
+                  nil
+                  (dom/hr nil)
+                  (dom/div
+                    (css/add-class :section-title)
+                    (dom/h3 nil (str "New arrivals in " (:sulo-locality/title locations)))))
+             (grid/row
+               (->>
+                 (grid/columns-in-row {:small 2 :medium 3 :large 6}))
+               (map
+                 (fn [p]
+                   (grid/column
+                     (css/add-class :new-arrival-item)
+                     (pi/product-element {:open-url? true} p)))
+                 (take 6 featured-items)))]))))))
 
 (def ->ShoppingBag (om/factory ShoppingBag))
 
