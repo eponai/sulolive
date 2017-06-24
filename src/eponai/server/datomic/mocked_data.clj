@@ -39,40 +39,13 @@
    :store.item.photo/photo (photo id)
    :store.item.photo/index (or i 0)})
 
-(defn kids-category [label {:keys [unisex-kids unisex-fn boys-fn girls-fn]
-                            :or   {unisex-fn vals
-                                   boys-fn   vals
-                                   girls-fn  vals}}]
-  [#:category {:name     "unisex-kids"
-               :label    (str "Unisex Kids' " label)
-               :children (unisex-fn unisex-kids)}
-   #:category {:name     "boys"
-               :label    (str "Boy's " label)
-               :children (boys-fn unisex-kids)}
-   #:category {:name     "girls"
-               :label    (str "Girl's " label)
-               :children (girls-fn unisex-kids)}])
-
-(defn adult-category [label {:keys [unisex-adult unisex-fn men-fn women-fn]
-                             :or   {unisex-fn identity
-                                    men-fn    identity
-                                    women-fn  identity}}]
+(defn adult-category [label]
   [#:category {:name  "unisex-adult"
-               :label (str "Unisex Adult " label)
-               ;:children (vals (unisex-fn unisex-adult))
-               }
+               :label (str "Unisex " label)}
    #:category {:name  "men"
-               :label (str "Men's " label)
-               ;:children (vals (men-fn unisex-adult))
-               }
+               :label (str "Men's " label)}
    #:category {:name  "women"
-               :label (str "Women's " label)
-               ;:children (vals (women-fn unisex-adult))
-               }])
-
-(defn leaf [& name-parts]
-  #:category {:name  (str/join products/category-name-separator name-parts)
-              :label (str/capitalize (str/join " " name-parts))})
+               :label (str "Women's " label)}])
 
 (defn hash-map-by [f coll]
   (into {} (map (juxt f identity)) coll))
@@ -80,22 +53,13 @@
 (def cats
   [#:category {:name     "clothing"
                :label    "Clothing"
-               :children (fn []
-                           (adult-category "Clothing" {:unisex-adult {"pants" (leaf "pants")}
-                                                       :women-fn     #(-> %
-                                                                          (assoc "skirts" (leaf "skirts"))
-                                                                          (assoc "dresses" (leaf "dresses")))}))}
-   #:category {:name     "shoes"
-               :label    "Shoes"
-               :children (fn []
-                           (adult-category "Shoes" {:unisex-adult {"boots" (leaf "boots")}}))}
+               :children (into [
+                                ;; #:category {:name  "unisex-kids" :label "Kids Clothing"}
+                                ]
+                               (adult-category "Clothing"))}
    #:category {:name     "jewelry"
                :label    "Jewelry"
-               :children (fn []
-                           (adult-category "Jewelry" {:unisex-adult (hash-map-by :category/name
-                                                                                 [(leaf "earrings")
-                                                                                  (leaf "rings")
-                                                                                  (leaf "necklaces")])}))}
+               :children (adult-category "Jewelry")}
    #:category {:name     "home"
                :label    "Home"
                :children [#:category {:name  "bath-and-body"
@@ -106,31 +70,18 @@
                                       :label "Furniture"}
                           #:category {:name  "accessories"
                                       :label "Accessories"}]}
-   #:category {:name "art"
+   #:category {:name  "art"
                :label "Art"}
    #:category {:name     "accessories"
                :label    "Accessories"
-               :children (fn []
-                           (let [unisex-cats (hash-map-by :category/name
-                                                          [(leaf "hats")
-                                                           (leaf "keychains")
-                                                           (leaf "watches")])]
-                             (into
-                               ;[#:category {:name     "childrens"
-                               ;             :label    "Children's Accessories"
-                               ;             :children (-> unisex-cats
-                               ;                           (assoc "socks" (leaf "socks"))
-                               ;                           (vals))}]
-                               (adult-category "Accessories" {:unisex-adult unisex-cats
-                                                              :men-fn       #(assoc % "socks" (leaf "socks"))
-                                                              :women-fn     #(-> %
-                                                                                 (assoc "handbag" (leaf "handbag" "accessories"))
-                                                                                 (assoc "socks" (leaf "socks"))
-                                                                                 (assoc "wallets" (leaf "wallets")))})
-                               )))}])
+               :children (into
+                           [
+                            ;;#:category {:name  "unisex-kids" :label "Kids Accessories"}
+                            ]
+                           (adult-category "Accessories"))}])
 
 (defn category-path [& path-parts]
-  (str/join products/category-path-separator (take 2 path-parts)))
+  (str/join products/category-path-separator path-parts))
 
 (defn mock-categories3 []
   (letfn [(category-path-from-names [category path]
@@ -169,7 +120,7 @@
     :store/items      [{:store.item/name     "Rutilated Quartz & Yellow Citrine Sterling Silver Cocktail Ring - Bohemian"
                         :store.item/price    318.00M
                         :store.item/photos   [(item-photo "mocked/il_570xN.883668651_pp7m")]
-                        :store.item/category [:category/path (category-path "jewelry" "women" "rings")]
+                        :store.item/category [:category/path (category-path "jewelry" "women")]
                         :store.item/section  (db/tempid :db.part/user -1002)
                         :store.item/uuid     #uuid "58a4b30e-3c8b-49c4-ab08-796c05b4275b"
                         :store.item/skus     [(sku "S")
@@ -178,7 +129,7 @@
                        {:store.item/name     "Emerald silver choker"
                         :store.item/price    219.00M
                         :store.item/photos   [(item-photo "mocked/il_570xN.1122315115_m1kt")]
-                        :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
+                        :store.item/category [:category/path (category-path "jewelry" "women")]
                         :store.item/uuid     #uuid "58a4b2b8-4489-4661-9580-c0fe2d132966"
                         :store.item/skus     [(sku)]
                         :store.item/section  (db/tempid :db.part/user -1001)}
@@ -193,7 +144,7 @@
                         :store.item/section  (db/tempid :db.part/user -1002)
                         :store.item/price    211.00M
                         :store.item/photos   [(item-photo "mocked/il_570xN.883902058_swjc")]
-                        :store.item/category [:category/path (category-path "jewelry" "women" "rings")]}]
+                        :store.item/category [:category/path (category-path "jewelry" "women")]}]
     :store/owners     {:store.owner/user {:db/id        (db/tempid :db.part/user)
                                           :user/email   test-user-email
                                           :user/profile {:user.profile/photo (photo "static/men")
@@ -250,12 +201,12 @@
                        {:store.item/name     "Modern Geometric Wood Bead Necklace"
                         :store.item/price    134.00M
                         :store.item/photos   [(item-photo "mocked/175704-bae48bd385d64dc0bb6ebad3190cc317")]
-                        :store.item/category [:category/path (category-path "jewelry" "men" "necklaces")]
+                        :store.item/category [:category/path (category-path "jewelry" "men")]
                         :store.item/skus     [(sku)]}
                        {:store.item/name     "Modern Wood Teardrop Stud Earrings"
                         :store.item/price    34.00M
                         :store.item/photos   [(item-photo "mocked/175704-ba70e3b49b0f4a9084ce14f569d1cf60")]
-                        :store.item/category [:category/path (category-path "jewelry" "men" "earrings")]
+                        :store.item/category [:category/path (category-path "jewelry" "men")]
                         :store.item/skus     [(sku)]}]}
 
    ;; Nafsika
@@ -269,22 +220,22 @@
                         :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1094898766_ewls"
                                                                                "mocked/il_570xN.1094898750_jnvm"])
                         :store.item/price    34.00M
-                        :store.item/category [:category/path (category-path "jewelry" "women" "rings")]
+                        :store.item/category [:category/path (category-path "jewelry" "women")]
                         :store.item/skus     [(sku)]}
                        {:store.item/name     "Bunny Charm Necklace"
                         :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1116392641_6zg2"])
                         :store.item/price    52.00M
-                        :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
+                        :store.item/category [:category/path (category-path "jewelry" "women")]
                         :store.item/skus     [(sku)]}
                        {:store.item/name     "Red Moss Planter Fall Cube Necklace"
                         :store.item/photos   [(item-photo "mocked/il_570xN.988546292_nvbz")]
                         :store.item/price    134.00M
-                        :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
+                        :store.item/category [:category/path (category-path "jewelry" "women")]
                         :store.item/skus     [(sku)]}
                        {:store.item/name     "Elvish Twig Ring"
                         :store.item/photos   [(item-photo "mocked/il_570xN.987968604_8ix5")]
                         :store.item/price    34.00M
-                        :store.item/category [:category/path (category-path "jewelry" "women" "rings")]
+                        :store.item/category [:category/path (category-path "jewelry" "women")]
                         :store.item/skus     [(sku)]}]}
 
    ;; FlowerRainbowNJ
@@ -301,17 +252,17 @@
                     {:store.item/name     "Tragus Earring"
                      :store.item/photos   [(item-photo "mocked/449892-7340ea71653e4b53a9057de4f64c1018")]
                      :store.item/price    4.49M
-                     :store.item/category [:category/path (category-path "jewelry" "women" "earrings")]
+                     :store.item/category [:category/path (category-path "jewelry" "women")]
                      :store.item/skus     [(sku)]}
                     {:store.item/name     "Nose Ring"
                      :store.item/photos   [(item-photo "mocked/449892-4603b04cdd4e4a41b281a4aff4a39fe0")]
                      :store.item/price    6.37M
-                     :store.item/category [:category/path (category-path "jewelry" "women" "rings")]
+                     :store.item/category [:category/path (category-path "jewelry" "women")]
                      :store.item/skus     [(sku)]}
                     {:store.item/name     "Nose Ring"
                      :store.item/photos   [(item-photo "mocked/449892-18406d9dfa7e449e8d36627c088c92c1")]
                      :store.item/price    6.74M
-                     :store.item/category [:category/path (category-path "jewelry" "women" "rings")]
+                     :store.item/category [:category/path (category-path "jewelry" "women")]
                      :store.item/skus     [(sku)]}]}
 
    ;; BangiShop
@@ -325,18 +276,18 @@
                       :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1040522475_mbon"
                                                                              "mocked/il_570xN.993989824_3pdl"])
                       :store.item/price    24.74M
-                      :store.item/category [:category/path (category-path "shoes" "women")]
+                      :store.item/category [:category/path (category-path "clothing" "women")]
                       :store.item/skus     [(sku)]}
                      {:store.item/name     "Leather Shoes (yellow)"
                       :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.988317879_5pik"
                                                                              "mocked/il_570xN.988317889_kzc9"])
                       :store.item/price    4.49M
-                      :store.item/category [:category/path (category-path "shoes" "women")]
+                      :store.item/category [:category/path (category-path "clothing" "women")]
                       :store.item/skus     [(sku)]}
                      {:store.item/name     "Leather Boots"
                       :store.item/photos   [(item-photo "mocked/il_570xN.1104988862_cb12")]
                       :store.item/price    6.37M
-                      :store.item/category [:category/path (category-path "shoes" "women" "boots")]
+                      :store.item/category [:category/path (category-path "clothing" "women")]
                       :store.item/skus     [(sku)]}]}
 
    ;; MIRIMIRIFASHION
@@ -351,19 +302,19 @@
                                                                              "mocked/il_570xN.1041709156_noxy"
                                                                              "mocked/il_570xN.1041709214_ae4i"])
                       :store.item/price    24.74M
-                      :store.item/category [:category/path (category-path "clothing" "women" "dresses")]
+                      :store.item/category [:category/path (category-path "clothing" "women")]
                       :store.item/skus     [(sku)]}
                      {:store.item/name     "Maxi skirt"
                       :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.272372530"
                                                                              "mocked/il_570xN.272372548"])
                       :store.item/price    4.49M
-                      :store.item/category [:category/path (category-path "clothing" "women" "skirts")]
+                      :store.item/category [:category/path (category-path "clothing" "women")]
                       :store.item/skus     [(sku)]}
                      {:store.item/name     "Leather Boots"
                       :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1087733031_du1y"
                                                                              "mocked/il_570xN.1087733249_hz9c"])
                       :store.item/price    6.37M
-                      :store.item/category [:category/path (category-path "shoes" "women" "boots")]
+                      :store.item/category [:category/path (category-path "clothing" "women")]
                       :store.item/skus     [(sku)]}]}
 
    ;; RecycledBeautifully
@@ -375,7 +326,7 @@
     :store/items    [{:store.item/name     "Tree of Life wire"
                       :store.item/photos   [(item-photo "mocked/il_570xN.728670429_e1dd")]
                       :store.item/price    24.74M
-                      :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
+                      :store.item/category [:category/path (category-path "jewelry" "women")]
                       :store.item/skus     [(sku)]}
                      {:store.item/name     "Tree of Life copper"
                       :store.item/photos   [(item-photo "mocked/il_570xN.1094904882_t58t")]
@@ -385,7 +336,7 @@
                      {:store.item/name     "Tree of Life wire"
                       :store.item/photos   [(item-photo "mocked/il_570xN.1074937810_dh62")]
                       :store.item/price    64.37M
-                      :store.item/category [:category/path (category-path "jewelry" "women" "necklaces")]
+                      :store.item/category [:category/path (category-path "jewelry" "women")]
                       :store.item/skus     [(sku)]}]}
    ])
 
