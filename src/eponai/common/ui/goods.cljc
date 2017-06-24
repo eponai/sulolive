@@ -118,16 +118,7 @@
         ;  (grid/column
         ;    nil
         ;    ))
-        (grid/row
-          (css/hide-for :large)
-          (grid/column
-            nil
-            (button/button
-              (->> {:onClick #(om/update-state! this assoc :filters-open? true)
-                    :classes [:sulo-dark]}
-                   (button/hollow)
-                   (button/expanded))
-              (dom/span nil "Filter products"))))
+
         (grid/row
           nil
           (grid/column
@@ -196,6 +187,15 @@
                                   (str "Result for \"" (:search query-params) "\"")
                                   :else
                                   "All products"))))
+            
+            (dom/div
+              (css/hide-for :large)
+              (button/button
+                (->> {:onClick #(om/update-state! this assoc :filters-open? true)
+                      :classes [:sulo-dark]}
+                     (button/hollow)
+                     (button/expanded))
+                (dom/span nil "Filter products")))
             (dom/div
               (css/add-class :sulo-items-container)
               (grid/row
