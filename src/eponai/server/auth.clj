@@ -245,7 +245,11 @@
 (defn cookie-locality [request]
   (let [json-str (url/url-decode (get-in request [:cookies location/locality-cookie-name :value]))]
     (when (not-empty json-str)
-      (c/read-transit json-str ))))
+      (try
+        (c/read-transit json-str)
+        (catch Exception e
+          (debug "Exception when parsing cookie-locality: " e)
+          nil)))))
 
 (defn requested-location [request]
   (let [conn (:eponai.server.middleware/conn request)
