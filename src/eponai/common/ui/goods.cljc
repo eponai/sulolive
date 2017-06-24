@@ -113,19 +113,11 @@
                            :size     "full"}
                           (pf/->ProductFilters (om/computed product-filters
                                                             {:on-click #(om/update-state! this assoc :filters-open? false)})))))
-        (grid/row
-          nil
-          (grid/column
-            nil
-            (dom/div
-              (css/add-class :section-title)
-              (dom/h2 nil (str/upper-case
-                            (cond (some? top-category)
-                                  (string/join " - " (remove nil? [(products/category-display-name top-category) (products/category-display-name sub-category)]))
-                                  (not-empty (:search query-params))
-                                  (str "Result for \"" (:search query-params) "\"")
-                                  :else
-                                  "All products"))))))
+        ;(grid/row
+        ;  nil
+        ;  (grid/column
+        ;    nil
+        ;    ))
         (grid/row
           (css/hide-for :large)
           (grid/column
@@ -146,7 +138,6 @@
             (menu/vertical
               (css/add-class :sl-navigation-parent)
               (->> navigation
-                   (sort-by :category/name)
                    (map (fn [category]
                           (let [is-active? (= (:category/name category) (:category/name (first categories)))]
                             (menu/item
@@ -154,17 +145,17 @@
                               (dom/a {:href (:category/href category)}
                                      (dom/span nil (products/category-display-name category)))
                               (vertical-category-menu (:category/children category) (last categories))))))))
-            (dom/div
-              nil
-              (dom/label nil "Ship to")
-              (dom/select {:defaultValue "anywhere"
-                           :onChange     #(.select-shipping-destination this (.-value (.-target %)))}
-                          (dom/option {:value "anywhere"} "Anywhere")
-                          (dom/optgroup
-                            {:label "---"}
-                            (map (fn [c]
-                                   (dom/option {:value (:country/code c)} (:country/name c)))
-                                 (sort-by :country/name countries)))))
+            ;(dom/div
+            ;  nil
+            ;  (dom/label nil "Ship to")
+            ;  (dom/select {:defaultValue "anywhere"
+            ;               :onChange     #(.select-shipping-destination this (.-value (.-target %)))}
+            ;              (dom/option {:value "anywhere"} "Anywhere")
+            ;              (dom/optgroup
+            ;                {:label "---"}
+            ;                (map (fn [c]
+            ;                       (dom/option {:value (:country/code c)} (:country/name c)))
+            ;                     (sort-by :country/name countries)))))
             ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
 
             ;(if (nil? top-category)
@@ -196,6 +187,15 @@
           (grid/column
             (grid/column-size {:small 12 :large 9})
 
+            (dom/div
+              (css/add-class :section-title)
+              (dom/h2 nil (str/upper-case
+                            (cond (some? top-category)
+                                  (string/join " - " (remove nil? [(products/category-display-name top-category) (products/category-display-name sub-category)]))
+                                  (not-empty (:search query-params))
+                                  (str "Result for \"" (:search query-params) "\"")
+                                  :else
+                                  "All products"))))
             (dom/div
               (css/add-class :sulo-items-container)
               (grid/row

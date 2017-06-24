@@ -276,7 +276,7 @@
 
       ;(debug "Categories: " categories)
       ;(debug "Selected category: " category)
-      (debug "Selected category seq: " selected-category-seq)
+      ;(debug "Selected category seq: " selected-category-seq)
       (debug "Selected " {:top top-category :sub sub-category :subsub subsub-category})
       ;(debug "Messages: " {:update update-resp
       ;                     :create create-resp
@@ -423,7 +423,8 @@
                                       #?(:cljs
                                          (do
                                            (set! (.-value (utils/element-by-id (:select-sub-category form-elements))) "")
-                                           (set! (.-value (utils/element-by-id (:select-subsub-category form-elements))) ""))))}
+                                           ;(set! (.-value (utils/element-by-id (:select-subsub-category form-elements))) "")
+                                           )))}
                   (dom/option {:value "" :disabled true} "--- Select category ---")
                   (map (fn [c]
                          (dom/option {:value (:db/id c)} (:category/label c)))
@@ -450,19 +451,20 @@
                          (dom/option {:value (:db/id c)} (:category/label c)))
                        (:category/children top-category))))
 
-              (grid/column
-                (grid/column-size {:small 12 :medium 3})
-                (dom/select
-                  (cond->>
-                    {:defaultValue (:db/id subsub-category "")
-                     :id           (:select-subsub-category form-elements)
-                     :onChange     #(.select-category this (.-value (.-target %)) [top-category sub-category])}
-                    (or (nil? sub-category) (empty? (:category/children sub-category)))
-                    (css/add-class :hide))
-                  (dom/option {:value "" :disabled true} "--- Select category ---")
-                  (map (fn [c]
-                         (dom/option {:value (:db/id c)} (:category/label c)))
-                       (:category/children sub-category)))))
+              ;(grid/column
+              ;  (grid/column-size {:small 12 :medium 3})
+              ;  (dom/select
+              ;    (cond->>
+              ;      {:defaultValue (:db/id subsub-category "")
+              ;       :id           (:select-subsub-category form-elements)
+              ;       :onChange     #(.select-category this (.-value (.-target %)) [top-category sub-category])}
+              ;      (or (nil? sub-category) (empty? (:category/children sub-category)))
+              ;      (css/add-class :hide))
+              ;    (dom/option {:value "" :disabled true} "--- Select category ---")
+              ;    (map (fn [c]
+              ;           (dom/option {:value (:db/id c)} (:category/label c)))
+              ;         (:category/children sub-category))))
+              )
             (grid/row
               nil
               (grid/column

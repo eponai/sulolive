@@ -57,15 +57,18 @@
                              :or   {unisex-fn identity
                                     men-fn    identity
                                     women-fn  identity}}]
-  [#:category {:name     "unisex-adult"
-               :label    (str "Unisex Adult " label)
-               :children (vals (unisex-fn unisex-adult))}
-   #:category {:name     "men"
-               :label    (str "Men's " label)
-               :children (vals (men-fn unisex-adult))}
-   #:category {:name     "women"
-               :label    (str "Women's " label)
-               :children (vals (women-fn unisex-adult))}])
+  [#:category {:name  "unisex-adult"
+               :label (str "Unisex Adult " label)
+               ;:children (vals (unisex-fn unisex-adult))
+               }
+   #:category {:name  "men"
+               :label (str "Men's " label)
+               ;:children (vals (men-fn unisex-adult))
+               }
+   #:category {:name  "women"
+               :label (str "Women's " label)
+               ;:children (vals (women-fn unisex-adult))
+               }])
 
 (defn leaf [& name-parts]
   #:category {:name  (str/join products/category-name-separator name-parts)
@@ -93,8 +96,18 @@
                                                                                  [(leaf "earrings")
                                                                                   (leaf "rings")
                                                                                   (leaf "necklaces")])}))}
-   #:category {:name  "home"
-               :label "Home"}
+   #:category {:name     "home"
+               :label    "Home"
+               :children [#:category {:name  "bath-and-body"
+                                      :label "Bath & Body"}
+                          #:category {:name  "decor"
+                                      :label "Décor"}
+                          #:category {:name  "furniture"
+                                      :label "Furniture"}
+                          #:category {:name  "accessories"
+                                      :label "Accessories"}]}
+   #:category {:name "art"
+               :label "Art"}
    #:category {:name     "accessories"
                :label    "Accessories"
                :children (fn []
@@ -103,20 +116,21 @@
                                                            (leaf "keychains")
                                                            (leaf "watches")])]
                              (into
-                               [#:category {:name     "childrens"
-                                            :label    "Children's Accessories"
-                                            :children (-> unisex-cats
-                                                          (assoc "socks" (leaf "socks"))
-                                                          (vals))}]
+                               ;[#:category {:name     "childrens"
+                               ;             :label    "Children's Accessories"
+                               ;             :children (-> unisex-cats
+                               ;                           (assoc "socks" (leaf "socks"))
+                               ;                           (vals))}]
                                (adult-category "Accessories" {:unisex-adult unisex-cats
                                                               :men-fn       #(assoc % "socks" (leaf "socks"))
                                                               :women-fn     #(-> %
                                                                                  (assoc "handbag" (leaf "handbag" "accessories"))
                                                                                  (assoc "socks" (leaf "socks"))
-                                                                                 (assoc "wallets" (leaf "wallets")))}))))}])
+                                                                                 (assoc "wallets" (leaf "wallets")))})
+                               )))}])
 
 (defn category-path [& path-parts]
-  (str/join products/category-path-separator path-parts))
+  (str/join products/category-path-separator (take 2 path-parts)))
 
 (defn mock-categories3 []
   (letfn [(category-path-from-names [category path]

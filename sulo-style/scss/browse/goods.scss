@@ -207,13 +207,13 @@
 		}
 	}
 	.navigation {
-		margin-top: $global-margin;
+		// margin-top: 4rem;
 		span {
 			font-family: $header-font-family-sans-serif;
 			// letter-spacing: 0.5px;
 		}
 		ul {
-			border-top: $global-border;
+			// border-top: $global-border;
 			border-bottom: $global-border;
 			margin-bottom: $global-margin;
 			padding: $global-padding 0;
@@ -227,19 +227,23 @@
 
 			> li {
 				transition: background .25s ease-in-out;
+				padding: 0;
 				> a {
-					transition: color .25s ease-in-out;
-					color: $dark-gray;
+					padding: 0.75rem 0.5rem;
+					transition: background .25s ease-in-out;
+					// color: $medium-gray;
 				}
 				&:hover {
-					a {
+					> a {
 						color: $body-font-color;
+						background: rgba($light-gray, 0.5);
 					}
 				}
 				&.is-active {
 					> a {
 						color: $body-font-color;
 						font-weight: bold;
+						background: transparent;
 					}
 					// span {
 					// 	color: $body-font-color;
