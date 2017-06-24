@@ -41,7 +41,7 @@
           (dom/h1 nil "Page not found")
           (dom/div (css/add-class :empty-container)
                    (dom/p (css/add-class :shoutout) "Oops, seems we're a little lost. This page doesn't exist."))
-          (if (some? locations)
+          (if (some? (:sulo-locality/path locations))
             (button/button
               {:href    (routes/url :browse/all-items {:locality (:sulo-locality/path locations)})
                :classes [:hollow :sulo-dark]}

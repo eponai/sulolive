@@ -18,25 +18,18 @@
     [taoensso.timbre :refer [debug error]]
     [eponai.web.ui.button :as button]
     [eponai.common.ui.search-bar :as search-bar]
-    [eponai.web.ui.footer :as foot]))
+    [eponai.web.ui.footer :as foot]
+    [clojure.string :as string]))
+
+;(def sorting-vals
+;  {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
+;   :sort/name-dec  {:key [:store.item/name :store.item/price] :reverse? true}
+;   :sort/price-inc {:key [:store.item/price :store.item/name] :reverse? false}
+;   :sort/price-dec {:key [:store.item/price :store.item/name] :reverse? true}})
 
 (def sorting-vals
-  {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
-   :sort/name-dec  {:key [:store.item/name :store.item/price] :reverse? true}
-   :sort/price-inc {:key [:store.item/price :store.item/name] :reverse? false}
-   :sort/price-dec {:key [:store.item/price :store.item/name] :reverse? true}})
-
-;(defn nav-breadcrumbs [categories]
-;  (let [items (into [(menu/item nil (dom/a {:href (routes/url :browse/all-items)}
-;                                           "All"))]
-;                    (map (fn [category]
-;                           (menu/item nil (dom/a {:href (:category/href category)}
-;                                                 (products/category-display-name category)))))
-;                    categories)]
-;    (menu/breadcrumbs
-;      (when-not (< 1 (count items))
-;        {:classes [:invisible]})
-;      items)))
+  {"price_asc"  {:key [:store.item/price :store.item/name ] :comp #(compare %1 %2) :label "Price (low to high)"}
+   "price_desc" {:key [:store.item/price :store.item/name] :comp #(compare %2 %1) :label "Price (high to low)"}})
 
 (defn- vertical-category-menu [children current-category]
   (menu/vertical
@@ -46,10 +39,9 @@
          (map-indexed
            (fn [i {:category/keys [path] :as category}]
              (menu/item
-               (cond->> {:key i}
-                        (and (some? current-category)
-                             (= path (:category/path current-category)))
-                        (css/add-class ::css/is-active))
+               (when (and (some? current-category)
+                          (= path (:category/path current-category)))
+                 (css/add-class ::css/is-active))
                (dom/a {:href (:category/href category)}
                       (dom/span nil (products/category-display-name category)))))))))
 
@@ -61,14 +53,14 @@
                          [sub-category top-category sub-sub-category]
                          [top-category sub-category sub-sub-category])
         selected-nav-path (fn self [categories [n & names]]
-                  (when n
-                    (some (fn [[i category]]
-                            (when (= n (:category/name category))
-                              (if-let [next-find (self (:category/children category)
-                                                       names)]
-                                (cons i (cons :category/children next-find))
-                                (cons i nil))))
-                          (map-indexed vector categories))))]
+                            (when n
+                              (some (fn [[i category]]
+                                      (when (= n (:category/name category))
+                                        (if-let [next-find (self (:category/children category)
+                                                                 names)]
+                                          (cons i (cons :category/children next-find))
+                                          (cons i nil))))
+                                    (map-indexed vector categories))))]
     (vec (selected-nav-path navigation selected-names))))
 
 (defn category-seq [component]
@@ -85,18 +77,31 @@
      {:query/browse-items (om/get-query product/Product)}
      {:query/navigation [:category/name :category/label :category/path :category/href]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
+     {:query/countries [:country/code :country/name]}
      :query/locations
      :query/current-route])
   Object
+  (select-shipping-destination [this country-code]
+    (let [{:query/keys [current-route]} (om/props this)
+          {:keys [route route-params query-params]} current-route
+          new-query (if (= "anywhere" country-code)
+                      (dissoc query-params :ship_to)
+                      (assoc query-params :ship_to country-code))]
+      (routes/set-url! this route route-params new-query)))
   (initLocalState [_]
     {:sorting       (get sorting-vals :sort/price-inc)
      :filters-open? false})
   (render [this]
     (let [{:proxy/keys [navbar product-filters footer]
-           :query/keys [browse-items navigation selected-navigation locations]} (om/props this)
-          {:keys [sorting filters-open?]} (om/get-state this)
+           :query/keys [browse-items navigation locations current-route countries]} (om/props this)
+          {:keys [filters-open?]} (om/get-state this)
           [top-category sub-category :as categories] (category-seq this)
-          items browse-items]
+          {:keys [route route-params query-params]} current-route
+          items browse-items
+          default-sort-key (key (first sorting-vals))
+          sorting (get sorting-vals (:sort_by query-params default-sort-key) )]
+
+      (debug "Sorting: " sorting)
 
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse" :footer footer}
@@ -108,68 +113,95 @@
                            :size     "full"}
                           (pf/->ProductFilters (om/computed product-filters
                                                             {:on-click #(om/update-state! this assoc :filters-open? false)})))))
-        (grid/row
-          nil
-          (grid/column
-            nil
-            ;(nav-breadcrumbs (category-seq this))
-            (dom/div
-              (css/add-class :section-title)
-              (dom/h2 nil (str/upper-case
-                            (if (some? top-category)
-                              (products/category-display-name top-category)
-                              "All"))))
-
-            ))
+        ;(grid/row
+        ;  nil
+        ;  (grid/column
+        ;    nil
+        ;    ))
         (grid/row
           (css/hide-for :large)
           (grid/column
             nil
             (button/button
-              (->> {:onClick #(om/update-state! this assoc :filters-open? true)}
+              (->> {:onClick #(om/update-state! this assoc :filters-open? true)
+                    :classes [:sulo-dark]}
                    (button/hollow)
                    (button/expanded))
-              (dom/span nil "Filter Products"))))
+              (dom/span nil "Filter products"))))
         (grid/row
           nil
           (grid/column
             (->> (grid/column-size {:large 3})
                  (css/add-class :navigation)
                  (css/show-for :large))
-            ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
-            (if (nil? top-category)
-              (menu/vertical
-                nil
-                (->> navigation
-                     (sort-by :category/name)
-                     (map (fn [category]
+
+            (menu/vertical
+              (css/add-class :sl-navigation-parent)
+              (->> navigation
+                   (map (fn [category]
+                          (let [is-active? (= (:category/name category) (:category/name (first categories)))]
                             (menu/item
-                              nil
+                              (when is-active? (css/add-class :is-active))
                               (dom/a {:href (:category/href category)}
-                                     (dom/span nil (products/category-display-name category))))))))
-              (menu/vertical
-                nil
-                (menu/item
-                  nil
-                  (dom/a {:href (:category/href top-category)}
-                         (dom/strong nil (products/category-display-name top-category)))
-                  (if (some? sub-category)
-                    (menu/vertical
-                      nil
-                      (menu/item
-                        nil
-                        (dom/a {:href (:category/href sub-category)}
-                               (dom/strong nil (products/category-display-name sub-category)))
-                        (vertical-category-menu (:category/children sub-category) (last categories))))
-                    (vertical-category-menu (:category/children top-category) (last categories)))))))
+                                     (dom/span nil (products/category-display-name category)))
+                              (vertical-category-menu (:category/children category) (last categories))))))))
+            ;(dom/div
+            ;  nil
+            ;  (dom/label nil "Ship to")
+            ;  (dom/select {:defaultValue "anywhere"
+            ;               :onChange     #(.select-shipping-destination this (.-value (.-target %)))}
+            ;              (dom/option {:value "anywhere"} "Anywhere")
+            ;              (dom/optgroup
+            ;                {:label "---"}
+            ;                (map (fn [c]
+            ;                       (dom/option {:value (:country/code c)} (:country/name c)))
+            ;                     (sort-by :country/name countries)))))
+            ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
+
+            ;(if (nil? top-category)
+            ;(menu/vertical
+            ;  nil
+            ;  (->> navigation
+            ;       (sort-by :category/name)
+            ;       (map (fn [category]
+            ;              (menu/item
+            ;                nil
+            ;                (dom/a {:href (:category/href category)}
+            ;                       (dom/span nil (products/category-display-name category))))))))
+            ;  (menu/vertical
+            ;    nil
+            ;    (menu/item
+            ;      nil
+            ;      (dom/a {:href (:category/href top-category)}
+            ;             (dom/strong nil (products/category-display-name top-category)))
+            ;      (if (some? sub-category)
+            ;        (menu/vertical
+            ;          nil
+            ;          (menu/item
+            ;            nil
+            ;            (dom/a {:href (:category/href sub-category)}
+            ;                   (dom/strong nil (products/category-display-name sub-category)))
+            ;            (vertical-category-menu (:category/children sub-category) (last categories))))
+            ;        (vertical-category-menu (:category/children top-category) (last categories))))))
+            )
           (grid/column
             (grid/column-size {:small 12 :large 9})
 
             (dom/div
+              (css/add-class :section-title)
+              (dom/h2 nil (str/upper-case
+                            (cond (some? top-category)
+                                  (string/join " - " (remove nil? [(products/category-display-name top-category) (products/category-display-name sub-category)]))
+                                  (not-empty (:search query-params))
+                                  (str "Result for \"" (:search query-params) "\"")
+                                  :else
+                                  "All products"))))
+            (dom/div
               (css/add-class :sulo-items-container)
               (grid/row
                 (->> (css/align :bottom)
-                     (css/show-for :large))
+                     ;(css/show-for :large)
+                     )
                 (grid/column
                   nil
                   (dom/small nil
@@ -178,17 +210,18 @@
 
                 (grid/column
                   (->> (grid/column-size {:large 4})
-                       (css/add-class :sort))
+                       (css/add-class :sort)
+                       (css/show-for :large))
                   (dom/label nil (dom/small nil "Sort"))
                   (dom/select
-                    {:defaultValue (name :sort/name-inc)
-                     :onChange     #(om/update-state! this assoc :sorting (get sorting-vals (keyword "sort" (.. % -target -value))))}
-                    ;(dom/option #js {:value (name :sort/name-inc)} "Alphabetical (ascending)")
-                    ;(dom/option #js {:value (name :sort/name-dec)} "Alphabetical (descending)")
-                    (dom/option {:value (name :sort/price-inc)} "Price (low to high)")
-                    (dom/option {:value (name :sort/price-dec)} "Price (high to low)"))))
+                    {:defaultValue (:sort_by query-params default-sort-key)
+                     :onChange     #(routes/set-url! this route route-params (assoc query-params :sort_by (.-value (.-target %))))}
+                    (map (fn [[k v]]
+                           (let [{:keys [comp key label]} v]
+                             (dom/option {:value k} (str label))))
+                         sorting-vals))))
 
-              (let [sorted (sort-by (apply juxt (:key sorting)) items)
+              (let [sorted (sort-by (apply juxt (:key sorting)) (:comp sorting) items)
                     ordered-products (if (:reverse? sorting)
                                        (reverse sorted)
                                        sorted)]

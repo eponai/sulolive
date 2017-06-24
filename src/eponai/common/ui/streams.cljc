@@ -39,13 +39,11 @@
       (common/page-container
         {:navbar navbar :footer footer :id "sulo-live" :class-name "sulo-browse"}
         (common/city-banner this locations)
-        (grid/row
-          nil
-          (grid/column
-            nil
-            (my-dom/div
-              (css/add-class :section-title)
-              (my-dom/h2 nil "LIVE"))))
+        ;(grid/row
+        ;  nil
+        ;  (grid/column
+        ;    nil
+        ;    ))
         (grid/row
           nil
           (grid/column
@@ -54,15 +52,18 @@
                  (css/show-for :large))
             (menu/vertical
               nil
-              (menu/item-link nil "Live now")
+              (menu/item-link (css/add-class :is-active) "Live now")
               (menu/item-link nil "Scheduled streams")
               (menu/item-link nil "New arrivals")
               (menu/item-link nil "Popular")))
           (grid/column
             nil
+            (my-dom/div
+              (css/add-class :section-title)
+              (my-dom/h2 nil "LIVE now"))
             (if (not-empty streams)
               (my-dom/div {:classes ["sulo-items-container"]}
-                          (my-dom/p (css/add-class :header) "LIVE right now")
+                          ;(my-dom/h3 (css/add-class :header) "LIVE right now")
                           (grid/row
                             (grid/columns-in-row {:small 2 :medium 3})
                             (map (fn [s]
@@ -75,7 +76,7 @@
                 (my-dom/span (css/add-class :shoutout) "No stores are LIVE right now :'(")))
             (my-dom/div
               {:classes ["sulo-items-container"]}
-              (my-dom/p (css/add-class :header) "Other cool stores currently offline")
+              (my-dom/h3 (css/add-class :header) "Other cool stores currently offline")
               (grid/row
                 (grid/columns-in-row {:small 2 :medium 3})
                 (map (fn [store]

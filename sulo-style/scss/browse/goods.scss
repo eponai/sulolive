@@ -179,22 +179,26 @@
 		}
 	}
 	.sulo-items-container {
-		padding: 4rem 0;
+		padding-bottom: 4rem;
 		select {
 			font-size: 90%;
 			font-weight: $global-weight-bold;
 		}
 		.column {
-			margin-bottom: 1.5rem;
+			// margin-bottom: 1.5rem;
 			padding-bottom: 0;
 		}
 		// border-bottom: $global-border;
 
 		> .header {
+			text-align: center;
 			// text-transform: uppercase;
-			border-bottom: $global-border;
-			font-size: 100%;
-			font-weight: $global-weight-bold;
+			// border-bottom: $global-border;
+			// font-size: 100%;
+			// font-weight: $global-weight-bold;
+		}
+		&.empty-container {
+			padding: 4rem 0;
 		}
 	}
 	&#sulo-live {
@@ -203,24 +207,86 @@
 		}
 	}
 	.navigation {
-		// display: none;
-		@include breakpoint(large) {
-			// display: block;
+		// margin-top: 4rem;
+		span {
+			font-family: $header-font-family-sans-serif;
+			// letter-spacing: 0.5px;
 		}
 		ul {
-			border-top: 1px solid $medium-gray;
-			&.nested, ul {
+			// border-top: $global-border;
+			border-bottom: $global-border;
+			margin-bottom: $global-margin;
+			padding: $global-padding 0;
+			.nested {
 				border: none;
+				display: none;
+				margin: 0;
+				padding: 0;
+				padding-left: $global-padding;
 			}
-			li.is-active {
-				font-weight: $global-weight-bold;
-				background: rgba($black, 0.05); 
-				a {
-					color: $black;
+
+			> li {
+				transition: background .25s ease-in-out;
+				padding: 0;
+				> a {
+					padding: 0.75rem 0.5rem;
+					transition: background .25s ease-in-out;
+					// color: $medium-gray;
+				}
+				&:hover {
+					> a {
+						color: $body-font-color;
+						background: rgba($light-gray, 0.5);
+					}
+				}
+				&.is-active {
+					> a {
+						color: $body-font-color;
+						font-weight: bold;
+						background: transparent;
+					}
+					// span {
+					// 	color: $body-font-color;
+					// 	font-weight: bold;
+					// }
+					> ul.nested {
+						display: block;
+						a {
+							color: $body-font-color;
+						}
+						li.is-active, li:hover {
+							a {
+								font-weight: $global-weight-normal;
+							}
+							// span {
+							// 	font-weight: bold;
+							// }
+							background: rgba($light-gray, 0.5);
+						}
+					}
 				}
 			}
 		}
 	}
+	// .navigation {
+	// 	// display: none;
+	// 	@include breakpoint(large) {
+	// 		// display: block;
+	// 	}
+	// 	ul {
+	// 		border-top: 1px solid $medium-gray;
+	// 		&.nested, ul {
+	// 			border: none;
+	// 		}
+	// 		li.is-active {
+	// 			font-weight: $global-weight-bold;
+	// 			background: rgba($black, 0.05); 
+	// 			a {
+	// 				color: $black;
+	// 			}
+	// 		}
+	// 	}
+	// }
 	input, select {
 		margin: 0;
 	}

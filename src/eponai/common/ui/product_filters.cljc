@@ -10,9 +10,7 @@
   (let [{:keys [active]} (om/get-state component)]
     (when (seq children)
       (menu/vertical
-        (cond->> {:classes [:nested :submenu]}
-                 (= active name)
-                 (css/add-class ::css/is-active))
+        {:classes [:nested :submenu]}
         (map (fn [{:category/keys [href label]}]
                (menu/item {:classes [:is-submenu-item]}
                           (dom/a {:href    href
@@ -23,7 +21,8 @@
 (defui ProductFilters
   static om/IQuery
   (query [_]
-    [{:query/navigation [:category/name :category/label :category/path :category/href]}])
+    [{:query/navigation [:category/name :category/label :category/path :category/href]}
+     :query/current-route])
   Object
   (toggle-filter [this category]
     (let [{:keys [active]} (om/get-state this)]
@@ -37,22 +36,26 @@
 
   (render [this]
     (let [{:keys [active]} (om/get-state this)
-          {:query/keys [navigation]} (om/props this)]
+          {:query/keys [navigation current-route]} (om/props this)]
+      (debug "Current route: " current-route)
       (dom/div
         {:id "product-filters"}
         (dom/h3 (css/add-class :header) "Filter by Category")
         (dom/div
-          nil
+          (css/add-class :navigation)
           (menu/vertical
-            (->> {:data-accordion-menu true}
-                 (css/add-class :navigation))
+            (->> {:data-accordion-menu true})
             (map (fn [{:category/keys [name label href] :as top-nav-cat}]
-                   (let []
+                   (let [is-active? (= active name)]
                      (menu/item
-                       {:aria-expanded (some? active)}
+                       (cond->> {:aria-expanded (some? active)}
+                                is-active?
+                                (css/add-class ::css/is-active))
                        (dom/div nil
-                                (dom/a {:href href
-                                        :onClick #(.clicked-category this)}
+                                (dom/a {:href    (when is-active? href)
+                                        :onClick (if is-active?
+                                                   #(.clicked-category this)
+                                                   #(.toggle-filter this name))}
                                        (dom/strong nil label))
                                 (dom/a
                                   (->> {:href    "#"

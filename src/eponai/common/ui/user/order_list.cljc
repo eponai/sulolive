@@ -147,8 +147,7 @@
               (button/button
                 (button/sulo-dark (button/hollow {:href (routes/url :browse/all-items {:locality (:sulo-locality/path locations)})})) (dom/span nil "Browse products")))))
 
-        (when #?(:clj  false
-                 :cljs (some? (web.utils/get-locality)))
+        (when (some? locations)
           [(grid/row-column
              nil
              (dom/hr nil)
@@ -157,13 +156,13 @@
                (dom/h3 nil (str "New arrivals in " (:sulo-locality/title locations)))))
            (grid/row
              (->>
-               (grid/columns-in-row {:small 2 :medium 3 :large 6}))
+               (grid/columns-in-row {:small 2 :medium 3 :large 5}))
              (map
                (fn [p]
                  (grid/column
                    (css/add-class :new-arrival-item)
                    (pi/product-element {:open-url? true} p)))
-               (take 6 featured-items)))])
+               (take 5 featured-items)))])
         ))))
 
 (def ->OrderList (om/factory OrderList))

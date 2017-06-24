@@ -91,12 +91,12 @@
   {:value (do
             (debug "Read stores: " locations)
             (when (some? (:db/id locations))
-                (query/all db db-history query {:where   '[[?e :store/locality ?l]
-                                                           [?s :stream/state ?states]
-                                                           [?s :stream/store ?e]]
-                                                :symbols {'[?states ...] [:stream.state/online
-                                                                          :stream.state/offline]
-                                                          '?l            (:db/id locations)}})))})
+              (query/all db db-history query {:where   '[[?e :store/locality ?l]
+                                                         [?s :stream/state ?states]
+                                                         [?s :stream/store ?e]]
+                                              :symbols {'[?states ...] [:stream.state/online
+                                                                        :stream.state/offline]
+                                                        '?l            (:db/id locations)}})))})
 
 (defread query/streams
   [{:keys [db db-history query locations]} _ _]
@@ -363,10 +363,11 @@
 (defread query/locations
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
-  {:value (when (:db/id locations)
-            (db/pull db [:db/id
-                         :sulo-locality/path
-                         :sulo-locality/title {:sulo-locality/photo [:photo/id]}] (:db/id locations)))})
+  {:value (do (debug "Fetch locations: " locations)
+              (when (:sulo-locality/path locations)
+                (db/pull db [:db/id
+                             :sulo-locality/path
+                             :sulo-locality/title {:sulo-locality/photo [:photo/id]}] [:sulo-locality/path (:sulo-locality/path locations)])))})
 
 
 (defread query/stream-config
@@ -411,6 +412,12 @@
                                    (remove #(and (map? %) (some children-keys (keys %)))))
                              query)
                        {:where '[[?e :category/path]]}))})
+
+(defread query/categories
+  [{:keys [db db-history query]} _ _]
+  {:auth ::auth/public}
+  {:value (query/all db db-history query {:where '[[?e :category/path _]
+                                                   [(missing? $ ?e :category/_children)]]})})
 
 (defread query/owned-store
   [{:keys [db db-history auth query]} _ _]
