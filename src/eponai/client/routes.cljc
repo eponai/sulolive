@@ -60,19 +60,22 @@
            (not (empty? query-params))
            (str "?" (url/map->query query-params)))))
 
+(defn- do-set-url!
+  [component url]
+  {:pre [(or (nil? url) (string? url))]}
+  #?(;; There's no URL to set in clj land, so do nothing.
+     :clj  nil
+     :cljs (if-let [history (shared/by-key component :shared/browser-history)]
+             (pushy/set-token! history url)
+             (warn "No history found in shared for component: " component
+                   ". Make sure :history was passed to the reconciler."))))
+
 (defn set-url!
   "Sets the URL which will propagate the route changes, reads and everything else.
 
   Example:
   (set-url! this :store-dashboard/product {:store-id 1 :dashboard-option products :product-id 2})"
-  ([component url]
-   {:pre [(or (nil? url) (string? url))]}
-   #?(;; There's no URL to set in clj land, so do nothing.
-      :clj nil
-      :cljs (if-let [history (shared/by-key component :shared/browser-history)]
-              (pushy/set-token! history url)
-              (warn "No history found in shared for component: " component
-                    ". Make sure :history was passed to the reconciler."))))
+  ([component route] (set-url! component route nil))
   ([component route route-params] (set-url! component route route-params nil))
   ([component route route-params query-params]
    {:pre [(om/component? component)]}
@@ -81,7 +84,7 @@
        (debug "Will set url: " bidi-url " created with " {:route        route
                                                           :route-params route-params
                                                           :query-params query-params})
-       (set-url! component bidi-url))
+       (do-set-url! component bidi-url))
      (warn "Unable to create a url with route: " route " route-params: " route-params))))
 
 (defn current-route [x]

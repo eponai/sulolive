@@ -38,15 +38,15 @@
    :symbols {'?l (:db/id locality)}})
 
 (defn find-with-search [locality search]
-  {:where    [{:fulltext-id 1}]
+  {:where    '[[?s :store/locality ?l]
+               [?s :store/items ?e]
+               {:fulltext-id 1}]
    :symbols  {'?search search
               '?l      (:db/id locality)}
    :fulltext [{:id     1
                :attr   :store.item/name
                :arg    '?search
-               :return '[[?e ?item-name _ ?score]
-                         [?s :store/items ?e]
-                         [?s :store/locality ?l]]}]})
+               :return '[[?e ?item-name _ ?score]]}]})
 
 (defn- normalize-gender [category-name]
   (let [unisex-categories {"women"        ["unisex-adult"]

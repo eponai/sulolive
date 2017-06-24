@@ -16,6 +16,6 @@
            (:user/email)))
 
 
-(defn current-locality [db]
-  (-> (db/lookup-entity  db [:ui/singleton :ui.singleton/auth])
+(defn current-locality [x]
+  (-> (db/lookup-entity  (db/to-db x) [:ui/singleton :ui.singleton/auth])
       :ui.singleton.auth/locations))

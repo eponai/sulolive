@@ -10,7 +10,8 @@
             [eponai.common.mixpanel :as mixpanel]
             [eponai.client.routes :as routes]
             [clojure.string :as str]
-            [eponai.common.ui.elements.grid :as grid]))
+            [eponai.common.ui.elements.grid :as grid]
+            [eponai.client.auth :as client.auth]))
 
 (defprotocol ISearchBar
   (trigger-search! [this]))
@@ -21,7 +22,7 @@
     (let [{:keys [input-search]} (om/get-state this)]
       (routes/set-url! this
                        :browse/all-items
-                       nil
+                       {:locality (:sulo-locality/path (client.auth/current-locality this))}
                        {:search input-search})))
   Object
   (render [this]
