@@ -425,6 +425,13 @@
      ;(memoized-nav-categories db query)
      }))
 
+(defmethod client-read :query/categories
+  [{:keys [db target query route-params]} _ _]
+  (if target
+    {:remote true}
+    {:value (db/pull-all-with db query {:where '[[?e :category/path _]
+                                                 [(missing? $ ?e :category/_children)]]})}))
+
 (defmethod client-read :query/item
   [{:keys [db query target route-params ast]} _ _]
   (when-let [product-id (c/parse-long-safe (:product-id route-params))]

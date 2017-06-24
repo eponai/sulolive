@@ -179,7 +179,7 @@
 		}
 	}
 	.sulo-items-container {
-		// padding: 4rem 0;
+		padding-bottom: 4rem;
 		select {
 			font-size: 90%;
 			font-weight: $global-weight-bold;
@@ -191,10 +191,14 @@
 		// border-bottom: $global-border;
 
 		> .header {
+			text-align: center;
 			// text-transform: uppercase;
-			border-bottom: $global-border;
-			font-size: 100%;
-			font-weight: $global-weight-bold;
+			// border-bottom: $global-border;
+			// font-size: 100%;
+			// font-weight: $global-weight-bold;
+		}
+		&.empty-container {
+			padding: 4rem 0;
 		}
 	}
 	&#sulo-live {
@@ -203,6 +207,7 @@
 		}
 	}
 	.navigation {
+		margin-top: $global-margin;
 		span {
 			font-family: $header-font-family-sans-serif;
 			// letter-spacing: 0.5px;

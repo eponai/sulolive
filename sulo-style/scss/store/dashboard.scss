@@ -8,7 +8,12 @@
 	.sl-global-spinner {
 		  // top: $navbar-height;
 	}
+	.buttons {
+		.button { margin: 0;}
+		margin-bottom: $global-margin;
+	}
 	.action-buttons {
+		align-items: center;
 		.button {
 			&:nth-child(2) {
 				margin-left: 0.25rem;

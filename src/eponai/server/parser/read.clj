@@ -412,6 +412,12 @@
                              query)
                        {:where '[[?e :category/path]]}))})
 
+(defread query/categories
+  [{:keys [db db-history query]} _ _]
+  {:auth ::auth/public}
+  {:value (query/all db db-history query {:where '[[?e :category/path _]
+                                                   [(missing? $ ?e :category/_children)]]})})
+
 (defread query/owned-store
   [{:keys [db db-history auth query]} _ _]
   {:auth ::auth/any-user}

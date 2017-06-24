@@ -23,17 +23,21 @@
     [eponai.web.ui.button :as button]))
 
 (def form-elements
-  {:input-price          "input-price"
-   :input-on-sale?       "input-on-sale?"
-   :input-sale-price     "input-sale-price"
-   :input-name           "input-name"
-   :input-desc           "input-desc"
-   :input-main-inventory "input-main-inventory"
+  {:input-price            "input-price"
+   :input-on-sale?         "input-on-sale?"
+   :input-sale-price       "input-sale-price"
+   :input-name             "input-name"
+   :input-desc             "input-desc"
+   :input-main-inventory   "input-main-inventory"
 
-   :input-sku-value      "input-sku-value-"
-   :input-sku-inventory  "input-sku-inventory-"
+   :input-sku-value        "input-sku-value-"
+   :input-sku-inventory    "input-sku-inventory-"
 
-   :input-sku-group      "input-sku-group"})
+   :input-sku-group        "input-sku-group"
+
+   :select-top-category    "select.top-category"
+   :select-sub-category    "select.sub-category"
+   :select-subsub-category "select.subsub-category"})
 
 (defn get-route-params [component]
   (get-in (om/props component) [:query/current-route :route-params]))
@@ -52,13 +56,15 @@
 
 (defn input-product [component]
   #?(:cljs
-     (let [{:keys [uploaded-photos quill-editor]} (om/get-state component)
-           {:keys [input-price input-name input-sku-price input-sku-value input-sku-quantity]} form-elements]
+     (let [{:keys [uploaded-photos quill-editor selected-category-seq]} (om/get-state component)
+           {:keys [input-price input-name input-sku-price input-sku-value input-sku-quantity]} form-elements
+           selected-category (last selected-category-seq)]
        {:store.item/name        (utils/input-value-or-nil-by-id input-name)
         :store.item/price       (utils/input-value-or-nil-by-id input-price)
         :store.item/currency    "CAD"
         :store.item/photos      uploaded-photos
-        :store.item/description (quill/get-HTML quill-editor)})))
+        :store.item/description (quill/get-HTML quill-editor)
+        :store.item/category    (:db/id selected-category)})))
 
 (defn input-skus [component product]
   #?(:cljs
@@ -117,24 +123,46 @@
               (number? (:value selected-section))
               (assoc :db/id (:value selected-section))))))
 
+(defn category-seq [component c]
+  (let [{:query/keys [categories]} (om/props component)
+        product-category (loop [cur c
+                                l []]
+                           (if (not-empty (:category/_children cur))
+                             (recur (:category/_children cur) (cons cur l))
+                             (cons cur l)))]
+    (loop [cs categories
+           cat-seq product-category
+           l []]
+      (if-let [c (first cat-seq)]
+        (let [new-c (some #(when (= (:db/id %) (:db/id c)) %) cs)]
+          (recur (:category/children new-c) (rest cat-seq) (conj l new-c)))
+        l))))
+
 (defui ProductEditForm
   static om/IQuery
   (query [_]
     [:query/current-route
      :query/messages
-     {:query/navigation [:category/name :category/label :category/path :category/href]}])
-  ;static store-common/IDashboardNavbarContent
-
-  ;(render-subnav [_ current-route]
-  ;  (menu/breadcrumbs
-  ;    nil
-  ;    (menu/item nil (dom/a {:href (routes/url :store-dashboard/product-list (:route-params current-route))}
-  ;                          "Products"))
-  ;    (menu/item nil (dom/span nil
-  ;                             (cond (= (:route current-route) :store-dashboard/create-product)
-  ;                                   "New"
-  ;                                   (= (:route current-route) :store-dashboard/product)
-  ;                                   "Edit")))))
+     {:query/navigation [:category/name :category/label :category/path :category/href]}
+     {:query/categories [:db/id :category/name :category/label
+                         :category/_children
+                         {:category/children [:db/id :category/name :category/label
+                                              :category/_children
+                                              {:category/children [:db/id :category/name :category/label
+                                                                   :category/_children]}]}]}
+     {:query/item [:store.item/name
+                   :store.item/description
+                   :store.item/section
+                   :store.item/price
+                   {:store.item/skus [:store.item.sku/variation
+                                      {:store.item.sku/inventory [:store.item.sku.inventory/value]}]}
+                   {:store.item/photos [{:store.item.photo/photo [:photo/id]}
+                                        :store.item.photo/index]}
+                   {:store.item/category [:category/label
+                                          :category/path
+                                          :db/id
+                                          {:category/_children [:db/id :category/label :category/path
+                                                                {:category/_children [:db/id :category/label :category/path]}]}]}]}])
 
   Object
   (componentDidUpdate [this _ _]
@@ -143,7 +171,7 @@
                                       'store/create-product
                                       'store/delete-product])]
       (msg/clear-one-message! this action-finished)
-      (routes/set-url! this :store-dashboard/product-list {:store-id (:store-id (get-route-params this))})
+      ;(routes/set-url! this :store-dashboard/product-list {:store-id (:store-id (get-route-params this))})
       ))
   (delete-product [this]
     (let [{:keys [product-id store-id]} (get-route-params this)]
@@ -153,6 +181,7 @@
 
   (update-product [this]
     (let [{:keys [product-id store-id]} (get-route-params this)
+          {:keys [selected-category-seq]} (om/get-state this)
           product (input-product this)
           skus (input-skus this product)
           selected-section (selected-section-entity this)]
@@ -164,6 +193,7 @@
                                                                            (assoc :store.item/section selected-section))
                                                        :product-id product-id
                                                        :store-id   store-id})
+                               :query/item
                                :query/store])
       (om/update-state! this dissoc :uploaded-photo)))
   (create-product [this]
@@ -178,11 +208,31 @@
                                                                          (some? selected-section)
                                                                          (assoc :store.item/section selected-section))
                                                        :store-id store-id})
+                               :query/item
                                :query/store])
       (om/update-state! this dissoc :uploaded-photo)))
   (remove-uploaded-photo [this index]
     (om/update-state! this update :uploaded-photos (fn [ps]
                                                      (into [] (remove nil? (assoc ps index nil))))))
+
+  (select-category [this category-id old-seq]
+
+    (let [{:query/keys [categories]} (om/props this)
+          parent (last old-seq)
+          category-id (c/parse-long-safe category-id)
+          category (some #(when (= (:db/id %) category-id) %)
+                         (if parent
+                           (:category/children parent)
+                           categories))]
+      (debug "Category id to select: " {:id         category-id
+                                        :category   category
+                                        :old-seq    old-seq
+                                        ;:parent     parent
+                                        :categories (if parent (:category/children parent) categories)})
+      (debug "Select category: " category)
+
+      (om/update-state! this assoc :selected-category-seq (conj old-seq category))))
+
   (componentDidMount [this]
     (let [{:keys [product store]} (om/get-computed this)
           {:store.item/keys [photos skus]} product
@@ -195,26 +245,42 @@
                                                 {:label (:store.section/label s)
                                                  :value (:db/id s)})
                                               (:store/sections store)))))
-  (initLocalState [_]
-    {:sku-count 1})
+  (componentWillReceiveProps [this next-props]
+    (debug "Component will receive props: " next-props)
+    (when-not (= (:query/item next-props) (:query/item (om/props this)))
+      (let [{:query/keys [item]} next-props
+            {:store.item/keys [category]} item]
+        (om/update-state! this assoc :selected-category-seq (category-seq this category)))))
+
+  (initLocalState [this]
+    (let [{:query/keys [item]} (om/props this)
+          {:store.item/keys [category]} item]
+      {:sku-count             1
+       :selected-category-seq (category-seq this category)}))
 
   (render [this]
-    (let [{:keys [uploaded-photos queue-photo did-mount? sku-count selected-section store-sections]} (om/get-state this)
-          {:query/keys [navigation current-route]} (om/props this)
+    (let [{:keys [uploaded-photos queue-photo did-mount? sku-count selected-section store-sections selected-category-seq]} (om/get-state this)
+          {:query/keys [navigation current-route categories item]} (om/props this)
           {:keys [product-id store-id]} (get-route-params this)
-          {:keys [product]} (om/get-computed this)
-          {:store.item/keys [price photos skus description]
+          ;{:keys [product]} (om/get-computed this)
+          product item
+          {:store.item/keys [price photos skus description category]
            item-name        :store.item/name} product
           message-pending-fn (fn [m] (when m (msg/pending? m)))
           update-resp (msg/last-message this 'store/update-product)
           create-resp (msg/last-message this 'store/create-product)
           delete-resp (msg/last-message this 'store/delete-product)
           is-loading? (or (message-pending-fn update-resp) (message-pending-fn create-resp) (message-pending-fn delete-resp))
+          [top-category sub-category subsub-category] selected-category-seq
           ]
 
-      (debug "Messages: " {:update update-resp
-                           :create create-resp
-                           :delete delete-resp})
+      ;(debug "Categories: " categories)
+      ;(debug "Selected category: " category)
+      (debug "Selected category seq: " selected-category-seq)
+      (debug "Selected " {:top top-category :sub sub-category :subsub subsub-category})
+      ;(debug "Messages: " {:update update-resp
+      ;                     :create create-resp
+      ;                     :delete delete-resp})
       (dom/div
         {:id "sulo-edit-product"}
         (when (or (not did-mount?) is-loading?)
@@ -349,14 +415,60 @@
                 nil
                 (dom/label nil "Category"))
               (grid/column
-                nil
-                (dom/select {:disabled     true
-                             :defaultValue "clothing"}
-                            (dom/option {:value "clothing"} "Accessories"))
-                (dom/p nil (dom/small nil "Add a category to your products to let customers find them on the SULO marketplace."))
-                (callout/callout-small
-                  (css/add-class :warning)
-                  (dom/small nil "Categories are disabled while the feature is receiving more love from us to work perfectly for the public launch. Thank you for waiting!"))))))
+                (grid/column-size {:small 12 :medium 3})
+                (dom/select
+                  {:defaultValue (:db/id top-category "")
+                   :id           (:select-top-category form-elements)
+                   :onChange     #(do (.select-category this (.-value (.-target %)) [])
+                                      #?(:cljs
+                                         (do
+                                           (set! (.-value (utils/element-by-id (:select-sub-category form-elements))) "")
+                                           (set! (.-value (utils/element-by-id (:select-subsub-category form-elements))) ""))))}
+                  (dom/option {:value "" :disabled true} "--- Select category ---")
+                  (map (fn [c]
+                         (dom/option {:value (:db/id c)} (:category/label c)))
+                       categories))
+
+
+                ;(callout/callout-small
+                ;  (css/add-class :warning)
+                ;  (dom/small nil "Categories are disabled while the feature is receiving more love from us to work perfectly for the public launch. Thank you for waiting!"))
+                )
+              (grid/column
+                (grid/column-size {:small 12 :medium 3})
+                (dom/select
+                  (cond->>
+                    {:defaultValue (:db/id sub-category "")
+                     :id           (:select-sub-category form-elements)
+                     :onChange     #(do (.select-category this (.-value (.-target %)) [top-category])
+                                        #?(:cljs
+                                           (set! (.-value (utils/element-by-id (:select-subsub-category form-elements))) "")))}
+                    (or (nil? top-category) (empty? (:category/children top-category)))
+                    (css/add-class :hide))
+                  (dom/option {:value "" :disabled true} "--- Select category ---")
+                  (map (fn [c]
+                         (dom/option {:value (:db/id c)} (:category/label c)))
+                       (:category/children top-category))))
+
+              (grid/column
+                (grid/column-size {:small 12 :medium 3})
+                (dom/select
+                  (cond->>
+                    {:defaultValue (:db/id subsub-category "")
+                     :id           (:select-subsub-category form-elements)
+                     :onChange     #(.select-category this (.-value (.-target %)) [top-category sub-category])}
+                    (or (nil? sub-category) (empty? (:category/children sub-category)))
+                    (css/add-class :hide))
+                  (dom/option {:value "" :disabled true} "--- Select category ---")
+                  (map (fn [c]
+                         (dom/option {:value (:db/id c)} (:category/label c)))
+                       (:category/children sub-category)))))
+            (grid/row
+              nil
+              (grid/column
+                (->> (grid/column-size {:small 12 :medium 10})
+                     (grid/column-offset {:medium 2}))
+                (dom/p nil (dom/small nil "Add a category to your products to let customers find them on the SULO marketplace."))))))
 
 
 
@@ -429,7 +541,7 @@
                               (css/add-class :shrink)
                               (button/user-setting-default
                                 {:onClick #(om/update-state! this update :sku-count dec)}
-                                (dom/i {:classes ["fa fa-trash-o fa-fw"]}))))))))
+                                (dom/span nil "remove"))))))))
                   (range sku-count)))
               (dom/div
                 nil
