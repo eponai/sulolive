@@ -28,7 +28,8 @@
     [prone.middleware :as prone]
     [prone.debug]
     [cheshire.core :as json]
-    [medley.core :as medley])
+    [medley.core :as medley]
+    [eponai.server.log :as log])
   (:import (datomic.query EntityMap)))
 
 (defn wrap-timing [handler]
@@ -57,6 +58,7 @@
               (-> (handler request)
                   (deferred/catch Throwable
                     (fn [e]
+                      (log/error! (::logger request) ::request-error {:exception (log/render-exception e)})
                       (error "Error for request: " (into {} request) " message: " (.getMessage e))
                       (error e)
                       (let [error (ex-data e)
