@@ -2,20 +2,38 @@
 	.reveal {
 		background: rgba($white, 0.97);
 	}
-	.button.hollow {
-		background: $white;
-	}
+	// .button.hollow {
+	// 	background: $white;
+	// }
 
-	.menu.navigation {
-		padding: 1rem 0;
-		> li {
-			border-bottom: $global-border;
-			&:first-child {
-				border-top: $global-border;
+	// .navigation {
+	// 	padding: 1rem 0;
+	// 	> li {
+	// 		border-bottom: $global-border;
+	// 		&:first-child {
+	// 			border-top: $global-border;
+	// 		}
+	// 	}
+	// }
+
+	.navigation {
+		> ul > li {
+			.submenu {
+				display: block;
+				li {
+					height: 0;
+					transition: height .25s ease-in-out;
+				}
+			}
+			&.is-active {
+				.submenu {
+					li {
+						height: 2.5rem;
+					}
+				}
 			}
 		}
 	}
-
 	.submenu {
 		// display: none;
 		overflow: hidden;

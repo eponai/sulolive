@@ -21,11 +21,15 @@
     [eponai.web.ui.footer :as foot]
     [clojure.string :as string]))
 
+;(def sorting-vals
+;  {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
+;   :sort/name-dec  {:key [:store.item/name :store.item/price] :reverse? true}
+;   :sort/price-inc {:key [:store.item/price :store.item/name] :reverse? false}
+;   :sort/price-dec {:key [:store.item/price :store.item/name] :reverse? true}})
+
 (def sorting-vals
-  {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
-   :sort/name-dec  {:key [:store.item/name :store.item/price] :reverse? true}
-   :sort/price-inc {:key [:store.item/price :store.item/name] :reverse? false}
-   :sort/price-dec {:key [:store.item/price :store.item/name] :reverse? true}})
+  {"price_asc"  {:key [:store.item/price :store.item/name ] :comp #(compare %1 %2) :label "Price (low to high)"}
+   "price_desc" {:key [:store.item/price :store.item/name] :comp #(compare %2 %1) :label "Price (high to low)"}})
 
 (defn- vertical-category-menu [children current-category]
   (menu/vertical
@@ -90,10 +94,14 @@
   (render [this]
     (let [{:proxy/keys [navbar product-filters footer]
            :query/keys [browse-items navigation locations current-route countries]} (om/props this)
-          {:keys [sorting filters-open?]} (om/get-state this)
+          {:keys [filters-open?]} (om/get-state this)
           [top-category sub-category :as categories] (category-seq this)
           {:keys [route route-params query-params]} current-route
-          items browse-items]
+          items browse-items
+          default-sort-key (key (first sorting-vals))
+          sorting (get sorting-vals (:sort_by query-params default-sort-key) )]
+
+      (debug "Sorting: " sorting)
 
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse" :footer footer}
@@ -123,10 +131,11 @@
           (grid/column
             nil
             (button/button
-              (->> {:onClick #(om/update-state! this assoc :filters-open? true)}
+              (->> {:onClick #(om/update-state! this assoc :filters-open? true)
+                    :classes [:sulo-dark]}
                    (button/hollow)
                    (button/expanded))
-              (dom/span nil "Filter Products"))))
+              (dom/span nil "Filter products"))))
         (grid/row
           nil
           (grid/column
@@ -149,7 +158,7 @@
               nil
               (dom/label nil "Ship to")
               (dom/select {:defaultValue "anywhere"
-                           :onChange  #(.select-shipping-destination this (.-value (.-target %)))}
+                           :onChange     #(.select-shipping-destination this (.-value (.-target %)))}
                           (dom/option {:value "anywhere"} "Anywhere")
                           (dom/optgroup
                             {:label "---"}
@@ -191,7 +200,8 @@
               (css/add-class :sulo-items-container)
               (grid/row
                 (->> (css/align :bottom)
-                     (css/show-for :large))
+                     ;(css/show-for :large)
+                     )
                 (grid/column
                   nil
                   (dom/small nil
@@ -200,17 +210,18 @@
 
                 (grid/column
                   (->> (grid/column-size {:large 4})
-                       (css/add-class :sort))
+                       (css/add-class :sort)
+                       (css/show-for :large))
                   (dom/label nil (dom/small nil "Sort"))
                   (dom/select
-                    {:defaultValue (name :sort/name-inc)
-                     :onChange     #(om/update-state! this assoc :sorting (get sorting-vals (keyword "sort" (.. % -target -value))))}
-                    ;(dom/option #js {:value (name :sort/name-inc)} "Alphabetical (ascending)")
-                    ;(dom/option #js {:value (name :sort/name-dec)} "Alphabetical (descending)")
-                    (dom/option {:value (name :sort/price-inc)} "Price (low to high)")
-                    (dom/option {:value (name :sort/price-dec)} "Price (high to low)"))))
+                    {:defaultValue (:sort_by query-params default-sort-key)
+                     :onChange     #(routes/set-url! this route route-params (assoc query-params :sort_by (.-value (.-target %))))}
+                    (map (fn [[k v]]
+                           (let [{:keys [comp key label]} v]
+                             (dom/option {:value k} (str label))))
+                         sorting-vals))))
 
-              (let [sorted (sort-by (apply juxt (:key sorting)) items)
+              (let [sorted (sort-by (apply juxt (:key sorting)) (:comp sorting) items)
                     ordered-products (if (:reverse? sorting)
                                        (reverse sorted)
                                        sorted)]
