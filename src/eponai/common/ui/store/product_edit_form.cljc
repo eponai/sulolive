@@ -417,14 +417,14 @@
               (grid/column
                 (grid/column-size {:small 12 :medium 3})
                 (dom/select
-                  {:defaultValue (:db/id top-category "")
-                   :id           (:select-top-category form-elements)
-                   :onChange     #(do (.select-category this (.-value (.-target %)) [])
-                                      #?(:cljs
-                                         (do
-                                           (set! (.-value (utils/element-by-id (:select-sub-category form-elements))) "")
-                                           ;(set! (.-value (utils/element-by-id (:select-subsub-category form-elements))) "")
-                                           )))}
+                  {:value    (:db/id top-category "")
+                   :id       (:select-top-category form-elements)
+                   :onChange #(do (.select-category this (.-value (.-target %)) [])
+                                  #?(:cljs
+                                     (do
+                                       (set! (.-value (utils/element-by-id (:select-sub-category form-elements))) "")
+                                       ;(set! (.-value (utils/element-by-id (:select-subsub-category form-elements))) "")
+                                       )))}
                   (dom/option {:value "" :disabled true} "--- Select category ---")
                   (map (fn [c]
                          (dom/option {:value (:db/id c)} (:category/label c)))
@@ -439,11 +439,9 @@
                 (grid/column-size {:small 12 :medium 3})
                 (dom/select
                   (cond->>
-                    {:defaultValue (:db/id sub-category "")
-                     :id           (:select-sub-category form-elements)
-                     :onChange     #(do (.select-category this (.-value (.-target %)) [top-category])
-                                        #?(:cljs
-                                           (set! (.-value (utils/element-by-id (:select-subsub-category form-elements))) "")))}
+                    {:value    (:db/id sub-category "")
+                     :id       (:select-sub-category form-elements)
+                     :onChange #(.select-category this (.-value (.-target %)) [top-category])}
                     (or (nil? top-category) (empty? (:category/children top-category)))
                     (css/add-class :hide))
                   (dom/option {:value "" :disabled true} "--- Select category ---")
