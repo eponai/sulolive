@@ -1,5 +1,6 @@
 (ns eponai.common.ui.store.product-edit-form
   (:require
+    [clojure.spec :as s]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.om-quill :as quill]
@@ -20,7 +21,8 @@
     [eponai.web.ui.photo :as photo]
     [eponai.common.ui.components.select :as sel]
     [eponai.common.mixpanel :as mixpanel]
-    [eponai.web.ui.button :as button]))
+    [eponai.web.ui.button :as button]
+    [eponai.common.ui.elements.input-validate :as v]))
 
 (def form-elements
   {:input-price            "input-price"
@@ -35,9 +37,15 @@
 
    :input-sku-group        "input-sku-group"
 
-   :select-top-category    "select.top-category"
-   :select-sub-category    "select.sub-category"
-   :select-subsub-category "select.subsub-category"})
+   ::select-top-category    "select.top-category"
+   ::select-sub-category    "select.sub-category"
+   ::select-subsub-category "select.subsub-category"})
+
+
+(s/def ::select-top-category (s/keys :req [:db/id]))
+(s/def ::select-sub-category (s/keys :req [:db/id]))
+(s/def ::category-seq (s/keys :req [::select-top-category ::select-sub-category]))
+(s/def ::category-single (s/keys :req [::select-top-category]))
 
 (defn get-route-params [component]
   (get-in (om/props component) [:query/current-route :route-params]))
@@ -171,8 +179,7 @@
                                       'store/create-product
                                       'store/delete-product])]
       (msg/clear-one-message! this action-finished)
-      ;(routes/set-url! this :store-dashboard/product-list {:store-id (:store-id (get-route-params this))})
-      ))
+      (routes/set-url! this :store-dashboard/product-list {:store-id (:store-id (get-route-params this))})))
   (delete-product [this]
     (let [{:keys [product-id store-id]} (get-route-params this)]
       (mixpanel/track "Store: Delete product" {:product-id product-id})
@@ -184,33 +191,53 @@
           {:keys [selected-category-seq]} (om/get-state this)
           product (input-product this)
           skus (input-skus this product)
-          selected-section (selected-section-entity this)]
-      (mixpanel/track "Store: Update product" {:product product})
-      (msg/om-transact! this `[(store/update-product ~{:product    (cond-> product
+          selected-section (selected-section-entity this)
+          [top-category sub-category] selected-category-seq
+          validation (if (not-empty (:category/children top-category))
+                       (v/validate ::category-seq {::select-top-category top-category
+                                                   ::select-sub-category sub-category} form-elements)
+                       (v/validate ::category-single {::select-top-category top-category} form-elements))]
+      (debug "Validation: " validation)
+      (when (nil? validation)
+        (mixpanel/track "Store: Update product" {:product product})
+        (msg/om-transact! this `[(store/update-product ~{:product    (cond-> product
+                                                                             (not-empty skus)
+                                                                             (assoc :store.item/skus skus)
+                                                                             (some? selected-section)
+                                                                             (assoc :store.item/section selected-section))
+                                                         :product-id product-id
+                                                         :store-id   store-id})
+                                 :query/item
+                                 :query/store]))
+      (om/update-state! this (fn [st]
+                               (-> st
+                                   (dissoc :uploaded-photo)
+                                   (assoc :input-validation validation))))))
+  (create-product [this]
+    (let [{:keys [store-id]} (get-route-params this)
+          {:keys [selected-category-seq]} (om/get-state this)
+          product (input-product this)
+          skus (input-skus this product)
+          selected-section (selected-section-entity this)
+          [top-category sub-category] selected-category-seq
+          validation (if (not-empty (:category/children top-category))
+                       (v/validate ::category-seq {::select-top-category top-category
+                                                   ::select-sub-category sub-category} form-elements)
+                       (v/validate ::category-single {::select-top-category top-category} form-elements))]
+      (when (nil? validation)
+        (mixpanel/track "Store: Create new product" {:product product})
+        (msg/om-transact! this `[(store/create-product ~{:product  (cond-> product
                                                                            (not-empty skus)
                                                                            (assoc :store.item/skus skus)
                                                                            (some? selected-section)
                                                                            (assoc :store.item/section selected-section))
-                                                       :product-id product-id
-                                                       :store-id   store-id})
-                               :query/item
-                               :query/store])
-      (om/update-state! this dissoc :uploaded-photo)))
-  (create-product [this]
-    (let [{:keys [store-id]} (get-route-params this)
-          product (input-product this)
-          skus (input-skus this product)
-          selected-section (selected-section-entity this)]
-      (mixpanel/track "Store: Create new product" {:product product})
-      (msg/om-transact! this `[(store/create-product ~{:product  (cond-> product
-                                                                         (not-empty skus)
-                                                                         (assoc :store.item/skus skus)
-                                                                         (some? selected-section)
-                                                                         (assoc :store.item/section selected-section))
-                                                       :store-id store-id})
-                               :query/item
-                               :query/store])
-      (om/update-state! this dissoc :uploaded-photo)))
+                                                         :store-id store-id})
+                                 :query/item
+                                 :query/store]))
+      (om/update-state! this (fn [st]
+                               (-> st
+                                 (dissoc :uploaded-photo)
+                                   (assoc :input-validation validation))))))
   (remove-uploaded-photo [this index]
     (om/update-state! this update :uploaded-photos (fn [ps]
                                                      (into [] (remove nil? (assoc ps index nil))))))
@@ -231,7 +258,7 @@
                                         :categories (if parent (:category/children parent) categories)})
       (debug "Select category: " category)
 
-      (om/update-state! this assoc :selected-category-seq (conj old-seq category))))
+      (om/update-state! this assoc :selected-category-seq (conj old-seq category) :input-validation nil)))
 
   (componentDidMount [this]
     (let [{:keys [product store]} (om/get-computed this)
@@ -259,7 +286,7 @@
        :selected-category-seq (category-seq this category)}))
 
   (render [this]
-    (let [{:keys [uploaded-photos queue-photo did-mount? sku-count selected-section store-sections selected-category-seq]} (om/get-state this)
+    (let [{:keys [uploaded-photos queue-photo did-mount? sku-count selected-section store-sections selected-category-seq input-validation]} (om/get-state this)
           {:query/keys [navigation current-route categories item]} (om/props this)
           {:keys [product-id store-id]} (get-route-params this)
           ;{:keys [product]} (om/get-computed this)
@@ -416,15 +443,16 @@
                 (dom/label nil "Category"))
               (grid/column
                 (grid/column-size {:small 12 :medium 3})
-                (dom/select
-                  {:value    (:db/id top-category "")
-                   :id       (:select-top-category form-elements)
-                   :onChange #(do (.select-category this (.-value (.-target %)) [])
-                                  #?(:cljs
-                                     (do
-                                       (set! (.-value (utils/element-by-id (:select-sub-category form-elements))) "")
-                                       ;(set! (.-value (utils/element-by-id (:select-subsub-category form-elements))) "")
-                                       )))}
+                (v/select
+                  (cond->> {:value    (:db/id top-category "")
+                            :id       (::select-top-category form-elements)
+                            :onChange #(do (.select-category this (.-value (.-target %)) [])
+                                           #?(:cljs
+                                              (do
+                                                (set! (.-value (utils/element-by-id (::select-sub-category form-elements))) "")
+                                                ;(set! (.-value (utils/element-by-id (:select-subsub-category form-elements))) "")
+                                                )))})
+                  input-validation
                   (dom/option {:value "" :disabled true} "--- Select category ---")
                   (map (fn [c]
                          (dom/option {:value (:db/id c)} (:category/label c)))
@@ -437,13 +465,14 @@
                 )
               (grid/column
                 (grid/column-size {:small 12 :medium 3})
-                (dom/select
+                (v/select
                   (cond->>
                     {:value    (:db/id sub-category "")
-                     :id       (:select-sub-category form-elements)
+                     :id       (::select-sub-category form-elements)
                      :onChange #(.select-category this (.-value (.-target %)) [top-category])}
                     (or (nil? top-category) (empty? (:category/children top-category)))
                     (css/add-class :hide))
+                  input-validation
                   (dom/option {:value "" :disabled true} "--- Select category ---")
                   (map (fn [c]
                          (dom/option {:value (:db/id c)} (:category/label c)))
