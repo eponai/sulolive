@@ -51,5 +51,14 @@
           (dom/script {:src "//www.powr.io/powr.js"
                        :external-type "html"})
 
-          (when-not (= cljs-build-id "devcards")
+          (cond
+            (= cljs-build-id "release")
+            (if release?
+              (common/inline-javascript ["env.web.main.runsulo()"])
+              (common/inline-javascript ["env.web.main.run_fake_sulo()"]))
+
+            (= cljs-build-id "devcards")
+            nil
+
+            :else
             (common/inline-javascript ["env.web.main.runsulo()"])))))))
