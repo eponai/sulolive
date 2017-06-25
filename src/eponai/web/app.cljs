@@ -29,7 +29,8 @@
     [eponai.client.auth :as client.auth]
     [eponai.common.database :as db]
     [eponai.client.cart :as client.cart]
-    [eponai.web.utils :as web.utils]))
+    [eponai.web.utils :as web.utils]
+    [eponai.client.routes :as client.routes]))
 
 (defn add-root! [reconciler]
   (binding [parser/*parser-allow-remote* false]
@@ -96,6 +97,30 @@
                   (pushy/set-token! (routes/url :landing-page/locality))))
             (error "Error when transacting route: " e)))))))
 
+(defn fetch-route-data!
+  "Fetches and merges client data given a route-map with route, route-params and query-params."
+  [reconciler send-fn route-map]
+  (let [parser (client.utils/reconciler-parser reconciler)
+        env (assoc (#'om/to-env reconciler) :reconciler reconciler)
+        db (db/db (:state env))
+        fake-conn (atom db)]
+    ;; Make sure we can create an url from the route-map
+    (client.routes/url (:route route-map)
+                       (:route-params route-map)
+                       (:query-params route-map))
+    ;; puts the route to fetch in our fake-conn
+    (parser (assoc env :conn fake-conn) [(list 'routes/set-route! route-map)])
+    (client.utils/send! reconciler send-fn
+                        {:remote
+                         (parser (assoc env :conn fake-conn)
+                                 (om/get-query (om/app-root reconciler))
+                                 :remote)})))
+
+(defn fetch-cover-photos! [reconciler]
+  (binding [parser/*parser-allow-local-read* false]
+    (om/transact! reconciler '[{:query/stores [{:store/status [:status/type]}
+                                               {:store/profile [{:store.profile/cover [:photo/path :photo/id]}]}]}])))
+
 (def skus-pattern [{:store.item/_skus
                     [:store.item/price
                      {:store.item/photos [:photo/path]}
@@ -104,7 +129,10 @@
                       [{:store/profile
                         [:store.profile/name]}]}]}])
 
-(defn init-user-cart! [reconciler]
+(defn init-user-cart!
+  "Initializing user cart. If the user has done anything when it was not
+  logged in, it gets put in the cart once it has logged in."
+  [reconciler]
   (let [skus (client.cart/get-skus reconciler)]
     (if (client.auth/current-auth (db/to-db reconciler))
       (when (seq skus)
@@ -211,11 +239,22 @@
       (async/<! initial-module-loaded-chan)
       (client.utils/init-state! reconciler send-fn (om/get-query router/Router))
       (async/<! initial-merge-chan)
-      (debug "Adding reconciler to root.")
+      (debug "init user cart...")
       (init-user-cart! reconciler)
+      (debug "Adding reconciler to root!")
       (add-root! reconciler)
-      ;; Pre fetch all routes so the scroll doesn't freak out as much.
-      (run! #(modules/prefetch-route modules %) [:index :store :browse]))))
+      ;; Pre fetch all routes
+      (debug "Pre-fetching modules..")
+      (run! #(modules/prefetch-route modules %) [:index :store :browse])
+      ;; Pre fetch data which makes the site less jumpy
+      (debug "Pre-fetching the :index route...")
+      (when (not= :index (:route (routes/current-route reconciler)))
+        (fetch-route-data! reconciler send-fn {:route :index
+                                               :route-params {:locality (:sulo-locality/path (client.auth/current-locality reconciler))}}))
+      (debug "Fetching all cover photos...")
+      (fetch-cover-photos! reconciler)
+      (debug "Initial app load done!")
+      )))
 
 (defn run-prod []
   (run {}))

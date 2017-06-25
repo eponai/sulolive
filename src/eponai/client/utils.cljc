@@ -54,17 +54,18 @@
       (parser env query target)
       (parser env query))))
 
-(defn init-state! [reconciler send-fn root-query]
-  (let [remote-queries (into {}
-                             (map (fn [remote]
-                                    [remote (parse reconciler root-query remote)]))
-                             (reconciler-remotes reconciler))]
-    ;(debug "Root-query: " root-query "Remote-queries: " remote-queries)
-    (send-fn remote-queries
-             (fn send-cb
-               [res & [query]]
-               (om/merge! reconciler res query)))))
+(defn send! [reconciler send-fn queries]
+  (send-fn queries
+           (fn send-cb
+             [res & [query]]
+             (om/merge! reconciler res query))))
 
+(defn init-state! [reconciler send-fn root-query]
+  ;(debug "Root-query: " root-query "Remote-queries: " remote-queries)
+  (send! reconciler send-fn (into {}
+                                  (map (fn [remote]
+                                         [remote (parse reconciler root-query remote)]))
+                                  (reconciler-remotes reconciler))))
 
 ;; --------------------------
 ;; -- Mutation queue protocol
