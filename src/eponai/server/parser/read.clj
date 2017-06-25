@@ -341,7 +341,7 @@
    :log     [:product-id]
    :uniq-by [[:product-id product-id]]}
   {:value (query/one db db-history query
-                     {:where   '[[?e :store.item/name]]
+                     {:where   '[[?e _ _]]
                       :symbols {'?e product-id}})})
 
 (defread query/auth
