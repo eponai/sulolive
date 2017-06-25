@@ -160,10 +160,11 @@
                                                                    :category/_children]}]}]}
      {:query/item [:store.item/name
                    :store.item/description
-                   :store.item/section
                    :store.item/price
-                   {:store.item/skus [:store.item.sku/variation
-                                      {:store.item.sku/inventory [:store.item.sku.inventory/value]}]}
+                   {:store.item/section [:db/id :store.section/label]}
+                   {:store.item/skus [:db/id
+                                      :store.item.sku/inventory
+                                      :store.item.sku/variation]}
                    {:store.item/photos [{:store.item.photo/photo [:photo/id]}
                                         :store.item.photo/index]}
                    {:store.item/category [:category/label
@@ -236,7 +237,7 @@
                                  :query/store]))
       (om/update-state! this (fn [st]
                                (-> st
-                                 (dissoc :uploaded-photo)
+                                   (dissoc :uploaded-photo)
                                    (assoc :input-validation validation))))))
   (remove-uploaded-photo [this index]
     (om/update-state! this update :uploaded-photos (fn [ps]
@@ -621,6 +622,10 @@
               (if is-loading?
                 (dom/i {:classes ["fa fa-spinner fa-spin"]})
                 (dom/span nil "Save product")))))
+        (when (some? input-validation)
+          (grid/row-column
+            (css/text-align :right)
+            (dom/p (css/add-class :text-alert) (dom/small nil "You have errors that need to be fixed before saving."))))
         (grid/row-column
           (css/add-class :go-back)
           (dom/a

@@ -437,9 +437,7 @@
   (when-let [product-id (c/parse-long-safe (:product-id route-params))]
     (if target
       {:remote (assoc-in ast [:params :product-id] product-id)}
-      {:value (db/pull-one-with db query
-                                {:where   '[[?e :store.item/name]]
-                                 :symbols {'?e product-id}})})))
+      {:value (db/pull db query product-id)})))
 
 (defmethod client-read :query/auth
   [{:keys [target db query]} _ _]
