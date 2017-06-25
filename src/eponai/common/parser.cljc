@@ -21,7 +21,7 @@
             [clojure.set :as set]
             [medley.core :as medley]
             [cemerick.url :as url]
-            #?(:clj
+    #?(:clj
             [eponai.server.log :as log]))
   #?(:clj
      (:import (clojure.lang ExceptionInfo))))
@@ -409,7 +409,7 @@
 
 #?(:clj
    (defn read-returning-basis-t [read]
-     (fn [{:keys [db query locations]
+     (fn [{:keys  [db query locations]
            ::keys [force-read-without-history read-basis-t-graph] :as env} k p]
        {:pre [(some? db)]}
        (if (or (is-proxy? k) (is-routing? k))
@@ -568,7 +568,7 @@
                                   (if read? "read" "mutate"))
                          (merge {:parser-key    k
                                  :response-type (if error? :error :success)
-                                 :event-time-ms  (- end start)}
+                                 :event-time-ms (- end start)}
                                 (cond
                                   error?
                                   {:exception (log/render-exception x)}
@@ -685,26 +685,26 @@
 
 (defn- make-parser [{:keys [read mutate] :as state} parser-mw read-mw mutate-mw]
   (let [read (-> read
-                   with-remote-guard
-                   with-local-read-guard
-                   read-with-dbid-in-query
-                   (read-mw state))
+                 with-remote-guard
+                 with-local-read-guard
+                 read-with-dbid-in-query
+                 (read-mw state))
         mutate (-> mutate
-            with-remote-guard
-            mutate-with-error-logging
-            (mutate-mw state))]
-    (-> (om/parser {:read read
-                    :mutate mutate
+                   with-remote-guard
+                   mutate-with-error-logging
+                   (mutate-mw state))]
+    (-> (om/parser {:read        read
+                    :mutate      mutate
                     :elide-paths (:elide-paths state)})
         (parser-mw (assoc state ::read read)))))
 
 (defn client-parser-state [& [custom-state]]
-  (merge {:read              client-read
-          :mutate            client-mutate
+  (merge {:read           client-read
+          :mutate         client-mutate
           ;; We do it manually now.
-          :elide-paths       true
-          :txs-by-project    (atom {})
-          ::db-state         (atom {})}
+          :elide-paths    true
+          :txs-by-project (atom {})
+          ::db-state      (atom {})}
          custom-state))
 
 (defn- client-db-state [env state]
@@ -831,8 +831,6 @@
                 (merge-queries [a b])
                 (throw (ex-info "Unknown merge conflict" {:a a :b b})))
               (or a b)))
-          (merge-queries [queries]
-            (apply merge-with merge-fn (into [] (map map-pattern) queries)))
           (unwrap-query [query]
             (into []
                   (if (map? query)
@@ -846,11 +844,11 @@
                                       :else
                                       (throw (ex-info "Unable to unwrap query" {:query query
                                                                                 :x     x}))))))
-                  query))]
-    (if-let [query (->> (merge-queries (map :query asts))
-                        (unwrap-query)
-                        (seq))]
-      {ast-key (vec query)}
+                  query))
+          (merge-queries [queries]
+            (unwrap-query (apply merge-with merge-fn (map map-pattern queries))))]
+    (if-let [query (not-empty (merge-queries (map :query asts)))]
+      {ast-key query}
       ast-key)))
 
 (defn- flatten-reads
