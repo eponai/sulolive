@@ -158,6 +158,7 @@
           is-live? false                                    ;(= :stream.state/live (:stream/state stream))
           show-chat? (:show-chat? st is-live?)
           {:keys [route route-params]} current-route]
+      (debug "Store: " store)
       (common/page-container
         {:navbar navbar
          :footer footer
@@ -175,10 +176,10 @@
                (dom/div (css/add-class :sl-tooltip)
                       (dom/p
                         (css/add-class :closed)
-                        (dom/h3 nil "Closed - ")
-                        (dom/a {:href (routes/url :store-dashboard/profile#options route-params)} "Go to options"))
+                        (dom/h3 nil "Closed - "))
                       (dom/span (css/add-class :sl-tooltip-text)
-                                "Only you can see your store. Customers who try to view your store will see a not found page."))))
+                                "Only you can see your store. Customers who try to view your store will see a not found page."))
+               (dom/a {:href (routes/url :store-dashboard/profile#options route-params)} "Go to options")))
            (grid/row
              (->> (grid/columns-in-row {:small 1})
                   (css/add-class :collapse)

@@ -55,7 +55,8 @@
                                       :store.profile/name]}
                      {:store/locality [:sulo-locality/path]}
                      {:store/shipping [{:shipping/rules [{:shipping.rule/destinations [:country/code]}]}]}
-                     {:store/status [:status/type]}]}])
+                     {:store/status [:status/type]}
+                     :store/username]}])
 
   Object
   (initLocalState [_]

@@ -15,13 +15,16 @@
 		h3 {
 			margin: 0;
 		}
+		display: flex;
+		justify-content: center;
+		align-items: center;
 		p {
-			display: flex;
-			justify-content: center;
-			margin-bottom: 0;
-			a {
-				margin-left: 0.5rem;
-			}
+			margin: 0;
+			margin-right: 0.5rem;
+		}
+		.sl-tooltip-text {
+			max-width: 100%;
+			min-width: 10rem;
 		}
 	}
 	.callout {

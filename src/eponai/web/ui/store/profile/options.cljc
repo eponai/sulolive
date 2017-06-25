@@ -148,7 +148,7 @@
         (css/add-class :username-input)
 
         (dom/input {:type        "text"
-                    :defaultValue (:store/username store)
+                    :value       (or input-username (:store/username store ""))
                     :placeholder (url-name (string/join (remove string/blank? (get-in store [:store/profile :store.profile/name]))))
                     :onChange    #(om/update-state! component assoc :input-username (url-name (.-value (.-target %))))}))
       (dom/p (css/add-class :text-alert) (dom/small nil (:message error-message)))

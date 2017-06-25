@@ -23,13 +23,16 @@
                       {:stream/store [{:store/profile [:store.profile/name
                                                        {:store.profile/photo [:photo/path
                                                                               :photo/id]}]}
-                                      :store/locality]}]}
+                                      :store/username
+                                      :store/locality
+                                      {:store/status [:status/type]}]}]}
      {:query/stores [:db/id
                      {:stream/_store [:stream/state]}
                      :store/locality
                      {:store/profile [:store.profile/name
                                       {:store.profile/photo [:photo/path
                                                              :photo/id]}]}
+                     :store/username
                      {:store/status [:status/type]}]}
      :query/locations])
   Object
@@ -88,12 +91,12 @@
                              (->> (css/add-class :content-item)
                                   (css/add-class :stream-item))
                              (my-dom/a
-                               {:href (routes/url :store {:store-id (:db/id store)})}
+                               {:href (routes/store-url store :store)}
                                (photo/store-photo store {:transformation :transformation/thumbnail-large}))
                              (my-dom/div
                                (->> (css/add-class :text)
                                     (css/add-class :header))
-                               (my-dom/a {:href (routes/url :store {:store-id (:db/id store)})}
+                               (my-dom/a {:href (routes/store-url store :store)}
                                          (my-dom/strong nil store-name)))))))
                      stores)))))))))
 

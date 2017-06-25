@@ -103,7 +103,7 @@
              ;"products"                    product-routes
              ;"browse"                      browse-categories
              "store"                            :index/store
-             ["store/" [#"\d+" :store-id]]      store-routes
+             ["store/" :store-id]      store-routes
              "help"                             help-routes
              "about"                            :about
              ["checkout/" :store-id]            checkout-routes

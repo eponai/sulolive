@@ -205,7 +205,8 @@
   {:auth    ::auth/public
    :log     [:store-id]
    :uniq-by [[:store-id store-id]]}
-  {:value (let [{:store/keys [status owners]} (db/pull db
+  {:value (let [store-id (db/store-id->dbid db store-id)
+                {:store/keys [status owners]} (db/pull db
                                                        [{:store/status [:status/type]}
                                                         {:store/owners [{:store.owner/user [:user/email]}]}]
                                                        store-id)]
@@ -213,7 +214,7 @@
             (if (or (= (:status/type status)
                        :status.type/open)
                     (= (:email auth) (get-in owners [:store.owner/user :user/email])))
-              (query/one db db-history query {:where   '[[?e :store/profile]]
+              (query/one db db-history query {:where   '[[?e _ _]]
                                               :symbols {'?e store-id}})
               {:db/id            store-id
                :store/not-found? true}))})
@@ -223,7 +224,8 @@
   {:auth    ::auth/public
    :log     [:store-id :navigation]
    :uniq-by [[:store-id store-id] [:nav-path (hash navigation)]]}
-  {:value (let [params (if (not-empty navigation)
+  {:value (let [store-id (db/store-id->dbid db store-id)
+                params (if (not-empty navigation)
                          {:where   '[[?s :store/items ?e]
                                      [?e :store.item/section ?n]
                                      [?n :store.section/path ?p]]
@@ -245,7 +247,7 @@
    :uniq-by [[:val (if (some? store-id)
                      [:store-id store-id]
                      [:user-id (hash (:email auth))])]]}
-  {:value (if (some? store-id)
+  {:value (if-let [store-id (db/store-id->dbid db store-id)]
             (db/pull-all-with db query {:where   '[[?e :order/store ?s]]
                                         :symbols {'?s store-id}})
             (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
@@ -256,7 +258,8 @@
   {:auth    {::auth/store-owner store-id}
    :log     [:store-id]
    :uniq-by [[:store-id store-id]]}
-  {:value (let [items (db/pull-all-with db query {:where   '[[?s :store/items ?e]]
+  {:value (let [store-id (db/store-id->dbid db store-id)
+                items (db/pull-all-with db query {:where   '[[?s :store/items ?e]]
                                                   :symbols {'?s store-id}})]
             ;(debug "Found items: " (into [] items))
             items)})
@@ -268,7 +271,7 @@
    :uniq-by [[:val (if (some? store-id)
                      [:store-id store-id]
                      [:user-id (hash (:email auth))])] [:order-id order-id]]}
-  {:value (if (some? store-id)
+  {:value (if-let [store-id (db/store-id->dbid db store-id)]
             (db/pull-one-with db query {:where   '[[?e :order/store ?s]]
                                         :symbols {'?e order-id
                                                   '?s store-id}})
@@ -283,7 +286,7 @@
    :uniq-by [[:val (if (some? store-id)
                      [:store-id store-id]
                      [:user-id (hash (:email auth))])] [:order-id order-id]]}
-  {:value (when-let [charge (if (some? store-id)
+  {:value (when-let [charge (if-let [store-id (db/store-id->dbid db store-id)]
                               (db/pull-one-with db [:db/id :charge/id] {:where   '[[?o :order/store ?s]
                                                                                    [?o :order/charge ?e]]
                                                                         :symbols {'?o order-id
@@ -295,18 +298,18 @@
             (assoc (stripe/get-charge (:system/stripe system) (:charge/id charge)) :db/id (:db/id charge)))})
 
 (defread query/stripe-account
-  [env _ {:keys [store-id]}]
+  [{:keys [db] :as env} _ {:keys [store-id]}]
   {:auth    {::auth/store-owner store-id}
    :log     [:store-id]
    :uniq-by [[:store-id store-id]]}
-  {:value (store/account env store-id)})
+  {:value (store/account env (db/store-id->dbid db store-id))})
 
 (defread query/stripe-balance
-  [env _ {:keys [store-id]}]
+  [{:keys [db] :as env} _ {:keys [store-id]}]
   {:auth    {::auth/store-owner store-id}
    :log     [:store-id]
    :uniq-by [[:store-id store-id]]}
-  {:value (store/balance env store-id)})
+  {:value (store/balance env (db/store-id->dbid db store-id))})
 
 (defread query/stripe-customer
   [env _ _]
@@ -375,8 +378,9 @@
   {:auth    ::auth/public
    :log     [:store-id]
    :uniq-by [[:store-id store-id]]}
-  {:value (query/one db db-history query {:where   '[[?e :stream/store ?store-id]]
-                                          :symbols {'?store-id store-id}})})
+  {:value (when-let [store-id (db/store-id->dbid db store-id)]
+            (query/one db db-history query {:where   '[[?e :stream/store ?store-id]]
+                                            :symbols {'?store-id store-id}}))})
 
 (defread query/locations
   [{:keys [db db-history query locations]} _ _]
@@ -409,7 +413,8 @@
     (do (warn "No store :db/id passed in params for read: " k " with params: " params)
         {:value (parser/value-with-basis-t {} {:chat-db (:chat-db read-basis-t-for-this-key)
                                                :sulo-db (datomic/basis-t db)})})
-    (let [chat (:system/chat system)
+    (let [store (assoc store :db/id (db/store-id->dbid db (:db/id store)))
+          chat (:system/chat system)
           _ (when chat-update-basis-t
               (chat/sync-up-to! chat chat-update-basis-t))
           chat-reader (chat/store-chat-reader chat (when (datomic/is-filtered db)

@@ -10,7 +10,8 @@
     [datomic.api :as datomic])
     [datascript.core :as datascript]
     [inflections.core :as inflections]
-    [medley.core :as medley])
+    [medley.core :as medley]
+    [eponai.common :as c])
   #?(:clj
      (:import [clojure.lang ExceptionInfo]
               [datomic Connection]
@@ -508,3 +509,10 @@
     (-> []
         (into retract-xf e-datoms)
         (into retract-xf v-datoms))))
+
+(defn store-id->dbid [db store-id]
+  (debug "Find store " store-id)
+  (let [store (or (lookup-entity db [:store/username store-id])
+                  (lookup-entity db (c/parse-long-safe store-id)))]
+    (debug "Got store: " store)
+    (:db/id store)))
