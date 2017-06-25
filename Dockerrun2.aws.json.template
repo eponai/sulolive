@@ -33,7 +33,7 @@
    {
      "name": "sulo-live-webserver",
      "image": "<DOCKER_IMAGE>",
-     "memory": "1744",
+     "memory": "1500",
      "environment": [
        {
          "name": "ASSET_VERSION",
@@ -56,12 +56,8 @@
          "name": "API_KEY",
          "value": "<DATADOG_API_KEY>"
        },
-       {
-         "name": "TAGS",
-         "value": "instance.type:datadog-agent"
-       }
      ]
-     "memory": 128,
+     "memory": 200,
      "mountPoints": [
        {
          "sourceVolume": "docker_sock",
@@ -78,7 +74,8 @@
          "containerPath": "/host/sys/fs/cgroup",
          "readOnly": true
        }
-     ]
+     ],
+     "essential": true
    }
  ]
 }
