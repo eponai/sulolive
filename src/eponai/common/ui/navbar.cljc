@@ -555,69 +555,81 @@
                (when (some? owned-store)
                  [
                   (menu/item
-                    (when (= :store-dashboard (:route current-route))
-                      (css/add-class :is-active))
-                    (dom/a {:href    (routes/url :store-dashboard {:store-id (:db/id owned-store)})
-                            :onClick #(track-event ::mixpanel/go-to-dashboard)}
-                           (dom/div {:classes ["icon icon-home"]})
-                           (dom/span nil "Home")))
+                    nil
+                    (menu/vertical
+                      nil
+                      (menu/item
+                        (when (= :store-dashboard (:route current-route))
+                          (css/add-class :is-active))
+                        (dom/a {:href    (routes/url :store-dashboard {:store-id (:db/id owned-store)})
+                                :onClick #(track-event ::mixpanel/go-to-dashboard)}
+                               (dom/div {:classes ["icon icon-home"]})
+                               (dom/span nil "Home")))
+                      (menu/item
+                        (when (= :store-dashboard/stream (:route current-route))
+                          (css/add-class :is-active))
+                        (dom/a {:href    (routes/url :store-dashboard/stream {:store-id (:db/id owned-store)})
+                                :onClick #(track-event ::mixpanel/go-to-stream-settings)}
+                               (dom/div {:classes ["icon icon-stream"]})
+                               (dom/span nil "Live stream")))
+
+                      (menu/item
+                        (when (contains? #{:store-dashboard/product-list
+                                           :store-dashboard/create-product
+                                           :store-dashboard/product} (:route current-route))
+                          (css/add-class :is-active))
+                        (dom/a {:href    (routes/url :store-dashboard/product-list {:store-id (:db/id owned-store)})
+                                :onClick #(track-event ::mixpanel/go-to-products)}
+                               (dom/div {:classes ["icon icon-product"]})
+                               (dom/span nil "Products")))
+                      (menu/item
+                        (when (contains? #{:store-dashboard/order-list
+                                           :store-dashboard/order-list-new
+                                           :store-dashboard/order-list-fulfilled
+                                           :store-dashboard/order} (:route current-route))
+                          (css/add-class :is-active))
+                        (dom/a {:href    (routes/url :store-dashboard/order-list {:store-id (:db/id owned-store)})
+                                :onClick #(track-event ::mixpanel/go-to-orders)}
+                               (dom/div {:classes ["icon icon-order"]})
+                               (dom/span nil "Orders")))))
                   (menu/item
-                    (when (= :store-dashboard/stream (:route current-route))
-                      (css/add-class :is-active))
-                    (dom/a {:href    (routes/url :store-dashboard/stream {:store-id (:db/id owned-store)})
-                            :onClick #(track-event ::mixpanel/go-to-stream-settings)}
-                           (dom/div {:classes ["icon icon-stream"]})
-                           (dom/span nil "Live stream")))
-                  (menu/item
-                    (when (= :store-dashboard/profile (:route current-route))
-                      (css/add-class :is-active))
-                    (dom/a {:href    (routes/url :store-dashboard/profile {:store-id (:db/id owned-store)})
-                            :onClick #(track-event ::mixpanel/go-to-store-info)}
-                           (dom/div {:classes ["icon icon-shop"]})
-                           (dom/span nil "Store info")))
-                  (menu/item
-                    (when (contains? #{:store-dashboard/product-list
-                                       :store-dashboard/create-product
-                                       :store-dashboard/product} (:route current-route))
-                      (css/add-class :is-active))
-                    (dom/a {:href    (routes/url :store-dashboard/product-list {:store-id (:db/id owned-store)})
-                            :onClick #(track-event ::mixpanel/go-to-products)}
-                           (dom/div {:classes ["icon icon-product"]})
-                           (dom/span nil "Products")))
-                  (menu/item
-                    (when (contains? #{:store-dashboard/order-list
-                                       :store-dashboard/order-list-new
-                                       :store-dashboard/order-list-fulfilled
-                                       :store-dashboard/order} (:route current-route))
-                      (css/add-class :is-active))
-                    (dom/a {:href    (routes/url :store-dashboard/order-list {:store-id (:db/id owned-store)})
-                            :onClick #(track-event ::mixpanel/go-to-orders)}
-                           (dom/div {:classes ["icon icon-order"]})
-                           (dom/span nil "Orders")))
-                  (menu/item
-                    (when (contains? #{:store-dashboard/shipping} (:route current-route))
-                      (css/add-class :is-active))
-                    (dom/a {:href (routes/url :store-dashboard/shipping {:store-id (:db/id owned-store)})
-                            ;:onClick #(track-event ::mixpanel/go-to-orders)
-                            }
-                           (dom/div {:classes ["icon icon-truck"]})
-                           (dom/span nil "Shipping")))
-                  (menu/item
-                    (when (#{:store-dashboard/business
-                             :store-dashboard/business#verify} (:route current-route))
-                      (css/add-class :is-active))
-                    (dom/a {:href    (routes/url :store-dashboard/business {:store-id (:db/id owned-store)})
-                            :onClick #(track-event ::mixpanel/go-to-business)}
-                           (dom/div {:classes ["icon icon-business"]})
-                           (dom/span nil "Business")))
-                  (menu/item
-                    (when (#{:store-dashboard/finances
-                             :store-dashboard/finances#settings} (:route current-route))
-                      (css/add-class :is-active))
-                    (dom/a {:href    (routes/url :store-dashboard/finances {:store-id (:db/id owned-store)})
-                            :onClick #(track-event ::mixpanel/go-to-business)}
-                           (dom/div {:classes ["icon icon-finances"]})
-                           (dom/span nil "Finances")))]))
+                    nil
+                    (dom/label nil "Settings")
+                    (menu/vertical
+                      nil
+                      (menu/item
+                        (when (#{:store-dashboard/profile
+                                 :store-dashboard/profile#options} (:route current-route))
+                          (css/add-class :is-active))
+                        (dom/a {:href    (routes/url :store-dashboard/profile {:store-id (:db/id owned-store)})
+                                :onClick #(track-event ::mixpanel/go-to-store-info)}
+                               (dom/div {:classes ["icon icon-shop"]})
+                               (dom/span nil "Store info")))
+
+                      (menu/item
+                        (when (contains? #{:store-dashboard/shipping} (:route current-route))
+                          (css/add-class :is-active))
+                        (dom/a {:href (routes/url :store-dashboard/shipping {:store-id (:db/id owned-store)})
+                                :onClick #(track-event ::mixpanel/go-to-shipping)
+                                }
+                               (dom/div {:classes ["icon icon-truck"]})
+                               (dom/span nil "Shipping")))
+                      (menu/item
+                        (when (#{:store-dashboard/business
+                                 :store-dashboard/business#verify} (:route current-route))
+                          (css/add-class :is-active))
+                        (dom/a {:href    (routes/url :store-dashboard/business {:store-id (:db/id owned-store)})
+                                :onClick #(track-event ::mixpanel/go-to-business)}
+                               (dom/div {:classes ["icon icon-business"]})
+                               (dom/span nil "Business")))
+                      (menu/item
+                        (when (#{:store-dashboard/finances
+                                 :store-dashboard/finances#settings} (:route current-route))
+                          (css/add-class :is-active))
+                        (dom/a {:href    (routes/url :store-dashboard/finances {:store-id (:db/id owned-store)})
+                                :onClick #(track-event ::mixpanel/go-to-finances)}
+                               (dom/div {:classes ["icon icon-finances"]})
+                               (dom/span nil "Finances")))))]))
              (menu/vertical
                (css/add-class :footer-menu)
                (menu/item

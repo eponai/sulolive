@@ -1,39 +1,5 @@
 // $user-dashboard-background: 
 
-.menu.section-list {
-	border-top: $global-border-secondary;
-	border-bottom: $global-border-secondary;
-	li {
-		padding: 1rem 0;
-		border-bottom: $global-border-secondary;
-		&:last-child {
-			border: none;
-		}
-	}
-	small {
-		color: $dark-gray;
-	}
-
-	label {
-		color: $body-font-color;
-		font-size: 120%;
-	}
-
-	.user-profile {
-		display: flex;
-		flex-direction: row;
-		align-items: center;
-		justify-content: flex-end;
-		.photo-container {
-			max-width: 3rem;
-			width: 3rem;
-			margin: 0.5rem;
-		}
-		span {
-			font-weight: $global-weight-bold;
-		}
-	}
-}
 .section-form.section-form--address {
 	border-top: $global-border-secondary;
 	border-bottom: $global-border-secondary;
@@ -135,11 +101,11 @@
 	}
 }
 
-.section-title {
-	margin-top: 2rem;
-	letter-spacing: 1px;
-	margin-bottom: 0.2rem;
-}
+// .section-title {
+// 	margin-top: 2rem;
+// 	letter-spacing: 1px;
+// 	margin-bottom: 0.2rem;
+// }
 
 #sulo-user-settings {
 	.page-content .row {
@@ -154,6 +120,20 @@
 	
 	.section-list {
 		margin-bottom: 4rem;
+			.user-profile {
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			justify-content: flex-end;
+			.photo-container {
+				max-width: 3rem;
+				width: 3rem;
+				margin: 0.5rem;
+			}
+			span {
+				font-weight: $global-weight-bold;
+			}
+		}
 	}
 	
 	.callout.warning {

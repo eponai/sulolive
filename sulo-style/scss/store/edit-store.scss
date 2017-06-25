@@ -1,26 +1,20 @@
 #sulo-store-dashboard {
-	.action-buttons {
-		display: flex;
-		justify-content: flex-end;
-		.button:first-child {
-			margin-right: 0.5rem;
-		}
+	.page-content {
+		padding-bottom: 5rem;
 	}
+
 	.section-title {
 		display: flex;
 		align-items: flex-end;
 		justify-content: space-between;
-		margin-bottom: 0.5rem;
-		margin-top: 2rem;
-		h1 {
-			margin: 0;
-		}
-		.button {
-			margin-bottom: 0;
-		}
 
 		div:last-child {
 			display: flex;	
+		}
+		.action-buttons {
+			.button {
+				margin-bottom: $global-margin;
+			}
 		}
 	}
 	.button {
@@ -36,21 +30,23 @@
 			text-align: left;
 		}
 		h1 {
-			margin-left: 0.5rem;
+			// margin-left: 0.5rem;
 		}
 		> h1:first-child {
 			margin-top: 0;
 		}
 	}
 	#sulo-store.edit-store {
-		max-width: $global-width;
-		padding: 0;
+		max-width: $dashboard-content-width;
+		margin: 0 auto;
+		// padding: 0;
 		.section-error {
 			text-align: center;
 		}
 		.sl-quill-editor-container {
 			// color: $dark-gray;
 		}
+		
 
 		.callout {
 			@include breakpoint(large) {
@@ -189,4 +185,23 @@
 			// .edit-item-
 		}
 	}
+
+	#sulo-store #sulo-store-info-status {
+		.section-list {
+			p strong small {
+				color: $body-font-color;
+			}
+		}
+		.store-status-reasons {
+			 a {
+			 	// display: block;
+				margin-right: 1rem;
+				// color: $primary-color;
+				small {
+					color: inherit;
+				}
+			}
+		}
+	}
+
 }

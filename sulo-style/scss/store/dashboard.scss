@@ -13,12 +13,18 @@
 		margin-bottom: $global-margin;
 	}
 	.action-buttons {
+		display: flex;
+		justify-content: flex-end;
 		align-items: center;
 		.button {
+			// flex: 0;
 			&:nth-child(2) {
-				margin-left: 0.25rem;
+				margin-left: 0.5rem;
 			}
 			margin-bottom: 0;
+		}
+		&.text-left {
+			justify-content: flex-start;
 		}
 	}
 
@@ -28,16 +34,12 @@
 		label {
 			font-size: 110%;
 		}
-		li {
-			// padding: 0;
+		> li {
 			&:first-child {
 				padding-top: 0;
 			}
 			&:last-child {
 				padding-bottom: 0;
-			}
-			p {
-				margin-bottom: 0.5rem;
 			}
 		}
 		&.section-list--bank-accounts {
@@ -48,7 +50,7 @@
 	}
 
 	.callout.submenu {
-		padding: 1rem;
+		padding: $global-padding;
 		li {
 			font-size: 90%;
 			a:not(.button) {
@@ -63,13 +65,13 @@
 				}
 			}
 			&.search-input {
-				padding: 0 1rem;
+				padding: 0 $global-padding;
 				flex: 1;
 			}
 		}
 	}
 	.go-back {
-		padding-top: 1rem;
+		padding-top: $global-padding;
 		padding-left: 0.5rem;
 		font-weight: $global-weight-bold;
 		font-size: 90%;
@@ -87,45 +89,13 @@
 	.navbar, footer, .footer .row, .row {
 		max-width: $dashboard-max-width;
 	}
-	// .callout label {
-	// 	@include breakpoint(large) {
-	// 		text-align: right;
-	// 	}
-	// }
-	.callout {
-		border: none;
-	}
+
 	.footer {
 		display: none;
 	}
-	.page-content .callout .callout {
-		border: none;
-	}
-	h2 {
-		margin-bottom: 0.5rem;
-	}
-	h3 {
-		text-transform: none;
-		margin-top: 0.5rem;
-		color: $dark-gray;
-		font-size: 120%;
-		@include breakpoint(medium) {
-			font-size: 130%;
-		}	
-	}
-	.section-title {
-		margin-left: 0.5rem;
-		letter-spacing: 0.5px;
-	}
-	#sulo-navbar .navbar-container {
-		box-shadow: none;
-		border-bottom: $global-border-secondary;
-	}
+
 	#sulo-navbar {
 		.top-bar {
-			ul {
-				font-size: 100%;
-			}
 			.top-bar-right {
 					@include breakpoint(large) {
 						font-size: 120%;
@@ -145,44 +115,15 @@
 		}
 	}
 	#store-navbar {
-		$background: map-get($foundation-palette, secondary);
-		background: transparent;
-		border-bottom: none;//$global-border-secondary;
-		a {
-			transition: color .25s ease-in-out;
-			color: $dark-gray;
-			font-size: 0.9rem;
-		}
-		// position: absolute;
-		// top: 0;
-		// left: 0;
-		// width: 100%;
-		height: $subnav-height;
-		@include breakpoint(large) {
-			// position: fixed;
-			// top: $navbar-height;
-			// z-index: $subnav-zindex;
-		}
-		.navbar {
-			max-width: $dashboard-max-width;
-			margin: 0 auto;
-			height: 100%;
-		}
-		ul, li {
-			height: 100%;
-			display: flex;
-			align-items: center;
-		}
-		ul:not(.breadcrumbs) {
-			li {
-				border-bottom: 3px solid transparent;
-				margin-right: 1rem;
-				transition: border-color .25s ease-in-out;
-			}
-			li:not(.menu-text) {
+		margin-bottom: $global-margin;
+		ul {
+			> li {
+				> a {
+					transition: color .25s ease-in-out;
+					color: $dark-gray;
+				}
+
 				&:hover, &.is-active {
-					$border-color: map-get($foundation-palette, primary);
-					// border-bottom: 3px solid $border-color;
 					a {
 						color: $black;
 					}
@@ -194,9 +135,6 @@
 					}
 				}
 			}
-		}
-		ul.breadcrumbs {
-			margin: 0 1rem;
 		}
 	}
 

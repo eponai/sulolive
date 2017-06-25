@@ -335,28 +335,23 @@
           (css/add-class :section-title)
           (dom/h1 nil "Business"))
         (dom/div
-          (->> {:id "store-navbar"}
-               (css/add-class :navbar-container))
-          (dom/nav
-            (->> (css/add-class :navbar)
-                 (css/add-class :top-bar))
-            (menu/horizontal
-              nil
+          {:id "store-navbar"}
+          (menu/horizontal
+            nil
+            (menu/item
+              (when (= route :store-dashboard/business)
+                (css/add-class :is-active))
+              (dom/a {:href (routes/url :store-dashboard/business route-params)}
+                     (dom/span nil "Business info")))
+            (when (not-empty (:stripe.verification/fields-needed verification))
               (menu/item
                 (when (= route :store-dashboard/business#verify)
                   (css/add-class :is-active))
                 (dom/a {:href (routes/url :store-dashboard/business#verify route-params)}
-                       (dom/span nil "Verify")))
-              (menu/item
-                (when (= route :store-dashboard/business)
-                  (css/add-class :is-active))
-                (dom/a {:href (routes/url :store-dashboard/business route-params)}
-                       (dom/span nil "Business info")))
-              )
-            ))
+                       (dom/span nil "Verify"))))))
         (when (or (msg/pending? last-message)
                   (msg/pending? shipping-msg))
-              (common/loading-spinner nil (dom/span nil "Saving info...")))
+          (common/loading-spinner nil (dom/span nil "Saving info...")))
 
         (cond (= modal :modal/edit-info)
               (edit-business-modal this)

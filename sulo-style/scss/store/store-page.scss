@@ -5,6 +5,25 @@
 	// .sl-global-spinner {
 	// 	position: absolute;
 	// }
+	.store-not-found {
+		// margin: $global-margin auto;
+		padding: 4rem;
+	}
+	.store-closed {
+		padding: $global-padding;
+		margin: 0;
+		h3 {
+			margin: 0;
+		}
+		p {
+			display: flex;
+			justify-content: center;
+			margin-bottom: 0;
+			a {
+				margin-left: 0.5rem;
+			}
+		}
+	}
 	.callout {
 		border: none;
 	}

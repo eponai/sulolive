@@ -29,7 +29,8 @@
                      :store/locality
                      {:store/profile [:store.profile/name
                                       {:store.profile/photo [:photo/path
-                                                             :photo/id]}]}]}
+                                                             :photo/id]}]}
+                     {:store/status [:status/type]}]}
      :query/locations])
   Object
   (render [this]

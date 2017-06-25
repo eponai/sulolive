@@ -292,7 +292,7 @@ $buttongroup-expand-max: 6;
 
 $callout-background: $white;
 $callout-background-fade: 85%;
-$callout-border: $global-border;//none;//1px solid rgba($black, 0.25);
+$callout-border: none;//1px solid rgba($black, 0.25);
 $callout-margin: 0 0 1rem 0;
 $callout-padding: 1rem;
 $callout-font-color: $body-font-color;
@@ -512,11 +512,11 @@ $switch-height: 2rem;
 $switch-height-tiny: 1.5rem;
 $switch-height-small: 1.75rem;
 $switch-height-large: 2.5rem;
-$switch-radius: 100px;//$global-radius;
+$switch-radius: $global-radius;
 $switch-margin: $global-margin;
 $switch-paddle-background: $white;
 $switch-paddle-offset: 0.25rem;
-$switch-paddle-radius: 50%;//$global-radius;
+$switch-paddle-radius: $global-radius;
 $switch-paddle-transition: all 0.25s ease-out;
 
 // 31. Table

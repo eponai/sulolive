@@ -148,6 +148,19 @@
     (debug "Transacting shipping: " txs)
     (debug "TranactedL " (db/transact state txs))))
 
+(defn update-status [{:keys [state]} store-id status]
+  (let [db-store (db/pull (db/db state) [:store/status] store-id)
+        old-status (:store/status db-store)
+        new-status (cond-> (cf/add-tempid (select-keys status [:status/type]))
+                           (some? (:db/id old-status))
+                           (assoc :db/id (:db/id old-status)))
+
+        txs (cond-> [new-status]
+                    (db/tempid? (:db/id new-status))
+                    (conj [:db/add store-id :store/status (:db/id new-status)]))]
+
+    (db/transact state txs)))
+
 (defn delete-product [{:keys [state]} product-id]
   (db/transact state [[:db.fn/retractEntity product-id]]))
 
@@ -278,3 +291,20 @@
             stripe-address (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/address])
             {:stripe.legal-entity.address/keys [line1 city state postal country]} stripe-address]
         (zipmap address-keys [line1 postal city state {:country/code country}])))))
+
+
+(defn stripe-account-updated [{:keys [state]} updated-stripe-account]
+  (let [{:stripe/keys                                  [id details-submitted? tos-acceptance payouts-enabled? charges-enabled?]
+         {:stripe.verification/keys [disabled-reason]} :stripe/verification} updated-stripe-account
+        stripe (db/pull (db/db state) [:stripe/status] [:stripe/id id])
+        new-status (if (or (some? disabled-reason)
+                           (some false? [details-submitted? tos-acceptance payouts-enabled? charges-enabled?]))
+                     :status.type/inactive
+                     :status.type/active)]
+
+    (if-let [old-status (:stripe/status stripe)]
+      (when-not (= (:status/type old-status) new-status)
+        (db/transact-one state [:db/add (:db/id old-status) :status/type new-status]))
+
+      (db/transact-one state {:stripe/id     id
+                              :stripe/status {:status/type new-status}}))))

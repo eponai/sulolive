@@ -1,10 +1,10 @@
-.callout {
+.callout, .reveal {
 	// width: 100%;
 	> .header {
 		font-weight: $global-weight-bold;
-		border-bottom: $global-border;
-		padding-bottom: 0.1rem;
-		margin-bottom: 1.5rem;
+		// border-bottom: $global-border;
+		// padding-bottom: 0.1rem;
+		// margin-bottom: 1.5rem;
 	}
 	padding: 1rem 0.5rem;
 	@include breakpoint(medium) {

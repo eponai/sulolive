@@ -30,7 +30,7 @@
               (dom/span (css/add-class :sl-shipping--address) (str street))
               (dom/br nil)])
            (dom/span (css/add-class :sl-shipping--address) (string/join ", " (filter not-empty [(str locality " " postal) region (or (:country/name country)
-                                                                     (:country/code country))]))))))
+                                                                                                                                     (:country/code country))]))))))
 
 (defn order-status-element [order]
   (let [status (:order/status order)]
@@ -86,7 +86,7 @@
   (let [{:stream/keys [store]
          stream-name  :stream/title} channel
         {{:store.profile/keys [photo]
-          store-name :store.profile/name} :store/profile} store
+          store-name          :store.profile/name} :store/profile} store
         store-link (routes/url :store {:store-id (:db/id store)})]
     (dom/div
       (->> (css/add-class :content-item)
@@ -122,11 +122,8 @@
              (css/text-align :center))
         (button/button
           (css/add-classes [:hollow :sulo-dark] (cond-> {:href href}
-                                                   (some? target)
-                                                   (assoc :target target))) footer)))))
-
-(defn page-footer [{:keys [sulo-localities selected-locality]}]
-  )
+                                                        (some? target)
+                                                        (assoc :target target))) footer)))))
 
 (defn city-banner [component locations]
   (let [{:sulo-locality/keys [title photo]} locations]

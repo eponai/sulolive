@@ -41,6 +41,8 @@
     {:remote true}
     {:value (when-let [loc (client.auth/current-locality db)]
               (db/pull-all-with db query {:where   '[[?e :store/locality ?l]
+                                                     [?st :status/type :status.type/open]
+                                                     [?e :store/status ?st]
                                                      [?s :stream/state ?states]
                                                      [?s :stream/store ?e]]
                                           :symbols {'[?states ...] [:stream.state/online
@@ -54,6 +56,8 @@
     {:remote true}
     {:value (when-let [loc (client.auth/current-locality db)]
               (db/pull-all-with db query {:where   '[[?s :store/locality ?l]
+                                                     [?st :status/type :status.type/open]
+                                                     [?s :store/status ?st]
                                                      [?e :stream/store ?s]
                                                      [?e :stream/state :stream.state/live]]
                                           :symbols {'?l (:db/id loc)}}))}))

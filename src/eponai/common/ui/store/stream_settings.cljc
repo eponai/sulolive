@@ -46,9 +46,11 @@
           message (msg/last-message this 'stream-token/generate)]
       (dom/div
         {:id "sulo-stream-settings"}
-        (dom/h1
-          (css/show-for-sr)
-          "Stream settings")
+        (grid/row-column
+          nil
+          (dom/div
+            (css/add-class :section-title)
+            (dom/h1 nil "Live stream")))
         (grid/row
           nil
           (grid/column
@@ -58,7 +60,7 @@
               (dom/div
                 (css/add-class :section-title)
                 (dom/h2 nil
-                        (dom/span nil "Stream"))
+                        (dom/span nil "Preview"))
                 (dom/h3 (css/add-class :sl-tooltip)
                         (dom/span
                           (cond->> (css/add-classes [:label ])

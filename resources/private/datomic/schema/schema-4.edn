@@ -28,4 +28,13 @@
   :db/cardinality        :db.cardinality/one
   :db/doc                "Photo for this SULO locality (shown on landing-page etc)."
   :db.install/_attribute :db.part/db}
+
+
+
+ ;{:db/id                 #db/id[:db.part/db]
+ ; :db/ident              :stripe/verification
+ ; :db/valueType          :db.type/keyword
+ ; :db/cardinality        :db.cardinality/one
+ ; :db/doc                "Verification of this Stripe account (e.g. if pending, verified, unverified, etc)"
+ ; :db.install/_attribute :db.part/db}
  ]

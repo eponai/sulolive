@@ -1,0 +1,35 @@
+.menu.section-list {
+	border-top: $global-border-secondary;
+	border-bottom: $global-border-secondary;
+	li {
+		padding: 1rem 0;
+		border-bottom: $global-border-secondary;
+		&:last-child {
+			border: none;
+		}
+		.column.text-right {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-end;
+		}
+		p {
+			margin-bottom: 0.5rem;
+		}
+	}
+	small {
+		color: $dark-gray;
+	}
+
+	label {
+		color: $body-font-color;
+		font-size: 120%;
+	}
+	.switch {
+		// .switch-input {
+			margin: 0;
+		// }
+	}
+	.button {
+		margin: 0;
+	}
+}

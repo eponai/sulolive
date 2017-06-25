@@ -4,14 +4,13 @@
     [taoensso.timbre :refer [debug]]
     [eponai.server.external.email :as email]
     [eponai.common.database :as db]
-    [eponai.common.format :as f]))
+    [eponai.common.format :as f]
+    [eponai.server.api.store :as store]
+    [eponai.server.external.stripe.format :as stripe-format]))
+
+;; ############### SULO ACCOUNT ####################
 
 (defmulti handle-account-webhook (fn [_ event] (debug "Webhook event: " (:type event)) (:type event)))
-(defmulti handle-connected-webhook (fn [_ event] (:type event)))
-
-(defmethod handle-connected-webhook :default
-  [_ event]
-  (debug "No handler implemented for connected webhook event " (:type event) ", doing nothing."))
 
 (defmethod handle-account-webhook :default
   [_ event]
@@ -51,3 +50,18 @@
   [{:keys [state system] :as env} event]
   ;(debug "Will handle captured succeeded:  " event)
   (send-order-receipt env event))
+
+;; ############## CONNECTED ACCOUNT ################
+
+(defmulti handle-connected-webhook (fn [_ event] (debug "Webhook event: " (:type event)) (:type event)))
+
+(defmethod handle-connected-webhook :default
+  [_ event]
+  (debug "No handler implemented for connected webhook event " (:type event) ", doing nothing."))
+
+(defmethod handle-connected-webhook "account.updated"
+  [env event]
+  (let [account (get-in event [:data :object])]
+    (store/stripe-account-updated env (stripe-format/stripe->account account))
+    ;(utils/account-updated env (stripe-format/stripe->account account))
+    ))
