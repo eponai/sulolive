@@ -202,6 +202,20 @@
 				}
 			}
 		}
+
+		.store-username-modal {
+			p {
+					margin-right: 1rem;
+					.host {
+						color: $dark-gray;
+					}
+				}
+			.username-input {
+				display: flex;
+				align-items: center;
+				
+			}
+		}
 	}
 
 }

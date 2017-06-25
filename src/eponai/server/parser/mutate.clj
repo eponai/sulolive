@@ -383,6 +383,27 @@
              (debug "store/update-shipping-rule with params: " p)
              (store/update-shipping-rule env (:db/id shipping-rule) shipping-rule))})
 
+(defmutation store/update-username
+  [{:keys [state ::parser/exception]} _ {:keys [store-id username] :as p}]
+  {:auth {::auth/store-owner store-id}
+   :log  {:store-id store-id}
+   :resp {:success "Your username was successfully updated."
+          :error   (if exception
+                     (ex-data exception)
+                     "Sorry, something went wrong when updating your username.")}}
+  {:action (fn []
+             (debug "store/update-username with params: " p)
+             (when (some? store-id)
+               (if (not-empty username)
+                 (if-let [store-with-username (db/pull (db/db state) [:db/id] [:store/username username])]
+                   (when-not (= (:db/id store-with-username) store-id)
+                     (throw (ex-info "Store username is already taken"
+                                     {:message  "Store username is already taken"
+                                      :store-id (:db/id store-with-username)})))
+                   (db/transact state [[:db/add store-id :store/username username]]))
+                 (let [store (db/pull (db/db state) [:store/username] store-id)]
+                   (db/transact state [[:db/retract store-id :store/username (:store/username store)]])))))})
+
 ;######## STRIPE ########
 
 (comment

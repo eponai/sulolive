@@ -1,4 +1,4 @@
-(ns eponai.web.ui.store.profile.status
+(ns eponai.web.ui.store.profile.options
   (:require
     [om.next :as om :refer [defui]]
     [eponai.common.ui.dom :as dom]
@@ -11,7 +11,9 @@
     [eponai.client.routes :as routes]
     [taoensso.timbre :refer [debug]]
     [eponai.client.parser.message :as msg]
-    [eponai.common.ui.common :as common]))
+    [eponai.common.ui.common :as common]
+    [clojure.string :as string]
+    [cemerick.url :as url]))
 
 (defn store-missing-information [store]
   (let [{:store/keys [items profile]} store]
@@ -127,6 +129,38 @@
                          (on-close))}
           (dom/span nil "Yes, close store"))))))
 
+(defn username-modal [component]
+  (let [on-close #(om/update-state! component dissoc :modal)
+        {:keys [input-username error-message]} (om/get-state component)
+        {:query/keys [store]} (om/props component)
+        url-name #(url/url-encode (string/lower-case %))]
+    (common/modal
+      {:on-close on-close
+       :classes  [:store-username-modal]
+       :size     "tiny"}
+      (dom/p (css/add-class :header) "Change store username")
+      (dom/p nil (dom/small nil "Your store username is the same as your store address."))
+      ;(dom/p nil )
+      (dom/p nil
+             (dom/span (css/add-class :host) "sulo.live/")
+             (dom/strong nil input-username))
+      (dom/div
+        (css/add-class :username-input)
+
+        (dom/input {:type        "text"
+                    :defaultValue (:store/username store)
+                    :placeholder (url-name (string/join (remove string/blank? (get-in store [:store/profile :store.profile/name]))))
+                    :onChange    #(om/update-state! component assoc :input-username (url-name (.-value (.-target %))))}))
+      (dom/p (css/add-class :text-alert) (dom/small nil (:message error-message)))
+      (dom/div
+        (css/add-class :action-buttons)
+        (button/user-setting-default
+          {:onClick on-close}
+          (dom/span nil "Cancel"))
+        (button/user-setting-cta
+          {:onClick #(.save-username component)}
+          (dom/span nil "Save"))))))
+
 (defui StoreStatus
   static om/IQuery
   (query [_]
@@ -136,6 +170,7 @@
                                      :store.profile/cover
                                      :store.profile/email]}
                     {:store/shipping [:shipping/rules]}
+                    :store/username
                     :store/items
                     {:store/stripe [{:stripe/status [:status/type]}]}]}
      {:query/stripe-account [:stripe/details-submitted?
@@ -160,13 +195,28 @@
                               :query/store])
       (debug "Close store")))
 
+  (save-username [this]
+    (let [{:keys [input-username]} (om/get-state this)
+          {:query/keys [store]} (om/props this)]
+      (msg/om-transact! this [(list 'store/update-username {:store-id (:db/id store)
+                                                            :username input-username})
+                              :query/store])))
+
+  (componentDidUpdate [this _ _]
+    (let [username-msg (msg/last-message this 'store/update-username)]
+      (when (msg/final? username-msg)
+        (msg/clear-messages! this 'store/update-username)
+        (if (msg/success? username-msg)
+          (om/update-state! this dissoc :modal :error-message)
+          (om/update-state! this assoc :error-message (msg/message username-msg))))))
+
   (render [this]
     (let [{:query/keys [store stripe-account current-route]} (om/props this)
           {:keys [route-params]} current-route
           store-status (get-in store [:store/status :status/type])
           {:stripe/keys [charges-enabled? payouts-enabled? verification]} stripe-account
           {:stripe.verification/keys [due-by fields-needed disabled-reason]} verification
-          {:keys [modal]} (om/get-state this)
+          {:keys [modal input-username]} (om/get-state this)
 
           stripe-status (get-in store [:store/stripe :stripe/status :status/type])]
       (debug "Status props: " (om/props this))
@@ -175,7 +225,38 @@
         {:id "sulo-store-info-status"}
 
         (cond (= modal :modal/close-store)
-              (close-store-modal this))
+              (close-store-modal this)
+              (= modal :modal/username)
+              (username-modal this))
+
+        (dom/div
+          (css/add-class :section-title)
+          (dom/h2 nil "General"))
+        (callout/callout
+          nil
+          (menu/vertical
+            (css/add-class :section-list)
+            (menu/item
+              nil
+              (grid/row
+                (->> (css/add-class :collapse)
+                     (css/align :middle))
+                (grid/column
+                  nil
+                  (dom/label nil "Store username")
+                  (dom/p nil (dom/small nil "Your store username is the same as your store address.")
+                         ;(dom/br nil)
+                         ;(dom/small nil (dom/strong nil input-username))
+                         ))
+                (grid/column
+                  (css/text-align :right)
+                  (dom/p nil
+                         (dom/small nil "sulo.live/ ")
+                         (dom/span nil (or (:store/username store)
+                                           (:db/id store))))
+                  (button/user-setting-default
+                    {:onClick #(om/update-state! this assoc :modal :modal/username)}
+                    (dom/span nil "Change username")))))))
 
         (dom/div
           (css/add-class :section-title)
