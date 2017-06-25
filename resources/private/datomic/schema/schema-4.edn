@@ -25,7 +25,6 @@
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :sulo-locality/photo
   :db/valueType          :db.type/ref
-  :db/unique             :db.unique/value
   :db/cardinality        :db.cardinality/one
   :db/doc                "Photo for this SULO locality (shown on landing-page etc)."
   :db.install/_attribute :db.part/db}
