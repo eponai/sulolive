@@ -74,7 +74,7 @@
                         m/wrap-trace-request
                         (cond-> (and in-production? (not disable-ssl))
                                 m/wrap-ssl)
-                        (m/wrap-error in-production?))
+                        (m/wrap-error in-production? logger))
             ;; Wraps handler in an atom in development, so we can swap implementation
             ;; at runtime/reload-time.
             handler-atom (atom handler)

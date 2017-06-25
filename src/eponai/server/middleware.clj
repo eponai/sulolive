@@ -52,13 +52,13 @@
       ;; The value 86400 (24 hours) is taken from what instagram.com uses.
       (defer-response-fn ring.response/header "Strict-Transport-Security" (#'ssl/build-hsts-header {:max-age 86400 :include-subdomains? false}))))
 
-(defn wrap-error [handler in-prod?]
+(defn wrap-error [handler in-prod? logger]
   (letfn [(wrap-error-prod [handler]
             (fn [request]
               (-> (handler request)
                   (deferred/catch Throwable
                     (fn [e]
-                      (log/error! (::logger request) ::request-error {:exception (log/render-exception e)})
+                      (log/error! logger ::request-error {:exception (log/render-exception e)})
                       (error "Error for request: " (into {} request) " message: " (.getMessage e))
                       (error e)
                       (let [error (ex-data e)
