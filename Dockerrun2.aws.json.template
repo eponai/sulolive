@@ -55,8 +55,8 @@
        {
          "name": "API_KEY",
          "value": "<DATADOG_API_KEY>"
-       },
-     ]
+       }
+     ],
      "memory": 200,
      "mountPoints": [
        {
