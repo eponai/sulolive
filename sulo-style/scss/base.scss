@@ -41,10 +41,11 @@ html, body {
 		font-size: $global-font-size;
 	}
 }
-#sulo-not-found {
+#sulo-not-found, #sulo-unauthorized {
 	$sulo-color: map-get($foundation-palette, sulo-dark);
 	.page-content {
-		padding: 4rem 0;
+		padding-top: 4rem;
+		padding-bottom: 8rem;
 		.empty-container {
 			padding: $global-padding;
 		}
