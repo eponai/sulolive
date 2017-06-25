@@ -34,7 +34,7 @@ DOCKERRUN_S3_FILE="docker/$EB_APP_NAME/$EB_ENV_NAME/$DOCKERRUN_FILE"
 
 # Create dockerrun file for elastic beanstalk
 # Using comma (,) instead of slash (/) in sed because DOCKER_IMAGE contains slashes
-cat Dockerrun2.aws.json.template | sed "s,<ASSET_VERSION>,$ASSET_VERSION," | sed  "s,<DOCKER_IMAGE>,$DOCKER_IMAGE," > $DOCKERRUN_FILE
+cat Dockerrun2.aws.json.template | sed "s,<ASSET_VERSION>,$ASSET_VERSION," | sed  "s,<DOCKER_IMAGE>,$DOCKER_IMAGE," | sed  "s,<DATADOG_API_KEY>,$DATADOG_API_KEY," > $DOCKERRUN_FILE
 
 aws --region=$REGION s3 cp "$DOCKERRUN_FILE" "s3://$EB_BUCKET/$DOCKERRUN_S3_FILE"
 aws --region=$REGION elasticbeanstalk create-application-version --application-name "$EB_APP_NAME" \

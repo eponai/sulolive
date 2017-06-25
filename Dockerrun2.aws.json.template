@@ -5,6 +5,24 @@
      "host": {
        "sourcePath": "/var/app/current"
      }
+   },
+   {
+     "name": "docker_sock",
+     "host": {
+       "sourcePath": "/var/run/docker.sock"
+     }
+   },
+   {
+     "name": "proc",
+     "host": {
+       "sourcePath": "/proc/"
+     }
+   },
+   {
+     "name": "cgroup",
+     "host": {
+       "sourcePath": "/cgroup/"
+     }
    }
  ],
  "authentication": {
@@ -15,7 +33,7 @@
    {
      "name": "sulo-live-webserver",
      "image": "<DOCKER_IMAGE>",
-     "memory": "1500",
+     "memory": "1744",
      "environment": [
        {
          "name": "ASSET_VERSION",
@@ -29,6 +47,38 @@
        }
      ],
      "essential": true
+   },
+   {
+     "name": "dd-agent",
+     "image": "datadog/docker-dd-agent:latest",
+     "environment": [
+       {
+         "name": "API_KEY",
+         "value": "<DATADOG_API_KEY>"
+       },
+       {
+         "name": "TAGS",
+         "value": "instance.type:datadog-agent"
+       }
+     ]
+     "memory": 128,
+     "mountPoints": [
+       {
+         "sourceVolume": "docker_sock",
+         "containerPath": "/var/run/docker.sock",
+         "readOnly": false
+       },
+       {
+         "sourceVolume": "proc",
+         "containerPath": "/host/proc",
+         "readOnly": true
+       },
+       {
+         "sourceVolume": "cgroup",
+         "containerPath": "/host/sys/fs/cgroup",
+         "readOnly": true
+       }
+     ]
    }
  ]
 }
