@@ -248,7 +248,7 @@
         (menu/horizontal
           nil
           (menu/item-link
-            (->> {:href    (routes/url :store (:route-params current-route))
+            (->> {:href    (routes/store-url owned-store :store (:route-params current-route))
                   :classes ["store-name"]})
             (dom/span nil (get-in owned-store [:store/profile :store.profile/name])))
           (user-menu-item component))))))
@@ -380,6 +380,7 @@
                    {:user/profile [{:user.profile/photo [:photo/path :photo/id]}]}]}
      :query/locations
      {:query/owned-store [:db/id
+                          :store/username
                           {:store/locality [:sulo-locality/path]}
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.
@@ -561,14 +562,14 @@
                       (menu/item
                         (when (= :store-dashboard (:route current-route))
                           (css/add-class :is-active))
-                        (dom/a {:href    (routes/url :store-dashboard {:store-id (:db/id owned-store)})
+                        (dom/a {:href    (routes/store-url owned-store :store-dashboard)
                                 :onClick #(track-event ::mixpanel/go-to-dashboard)}
                                (dom/div {:classes ["icon icon-home"]})
                                (dom/span nil "Home")))
                       (menu/item
                         (when (= :store-dashboard/stream (:route current-route))
                           (css/add-class :is-active))
-                        (dom/a {:href    (routes/url :store-dashboard/stream {:store-id (:db/id owned-store)})
+                        (dom/a {:href    (routes/store-url owned-store :store-dashboard/stream)
                                 :onClick #(track-event ::mixpanel/go-to-stream-settings)}
                                (dom/div {:classes ["icon icon-stream"]})
                                (dom/span nil "Live stream")))
@@ -578,7 +579,7 @@
                                            :store-dashboard/create-product
                                            :store-dashboard/product} (:route current-route))
                           (css/add-class :is-active))
-                        (dom/a {:href    (routes/url :store-dashboard/product-list {:store-id (:db/id owned-store)})
+                        (dom/a {:href    (routes/store-url owned-store :store-dashboard/product-list)
                                 :onClick #(track-event ::mixpanel/go-to-products)}
                                (dom/div {:classes ["icon icon-product"]})
                                (dom/span nil "Products")))
@@ -588,7 +589,7 @@
                                            :store-dashboard/order-list-fulfilled
                                            :store-dashboard/order} (:route current-route))
                           (css/add-class :is-active))
-                        (dom/a {:href    (routes/url :store-dashboard/order-list {:store-id (:db/id owned-store)})
+                        (dom/a {:href    (routes/store-url owned-store :store-dashboard/order-list)
                                 :onClick #(track-event ::mixpanel/go-to-orders)}
                                (dom/div {:classes ["icon icon-order"]})
                                (dom/span nil "Orders")))))
@@ -601,7 +602,7 @@
                         (when (#{:store-dashboard/profile
                                  :store-dashboard/profile#options} (:route current-route))
                           (css/add-class :is-active))
-                        (dom/a {:href    (routes/url :store-dashboard/profile {:store-id (:db/id owned-store)})
+                        (dom/a {:href    (routes/store-url owned-store :store-dashboard/profile)
                                 :onClick #(track-event ::mixpanel/go-to-store-info)}
                                (dom/div {:classes ["icon icon-shop"]})
                                (dom/span nil "Store info")))
@@ -609,7 +610,7 @@
                       (menu/item
                         (when (contains? #{:store-dashboard/shipping} (:route current-route))
                           (css/add-class :is-active))
-                        (dom/a {:href (routes/url :store-dashboard/shipping {:store-id (:db/id owned-store)})
+                        (dom/a {:href (routes/store-url owned-store :store-dashboard/shipping)
                                 :onClick #(track-event ::mixpanel/go-to-shipping)
                                 }
                                (dom/div {:classes ["icon icon-truck"]})
@@ -618,7 +619,7 @@
                         (when (#{:store-dashboard/business
                                  :store-dashboard/business#verify} (:route current-route))
                           (css/add-class :is-active))
-                        (dom/a {:href    (routes/url :store-dashboard/business {:store-id (:db/id owned-store)})
+                        (dom/a {:href    (routes/store-url owned-store :store-dashboard/business)
                                 :onClick #(track-event ::mixpanel/go-to-business)}
                                (dom/div {:classes ["icon icon-business"]})
                                (dom/span nil "Business")))
@@ -626,7 +627,7 @@
                         (when (#{:store-dashboard/finances
                                  :store-dashboard/finances#settings} (:route current-route))
                           (css/add-class :is-active))
-                        (dom/a {:href    (routes/url :store-dashboard/finances {:store-id (:db/id owned-store)})
+                        (dom/a {:href    (routes/store-url owned-store :store-dashboard/finances)
                                 :onClick #(track-event ::mixpanel/go-to-finances)}
                                (dom/div {:classes ["icon icon-finances"]})
                                (dom/span nil "Finances")))))]))
@@ -706,7 +707,7 @@
                      (let [store-name (get-in owned-store [:store/profile :store.profile/name])]
                        (menu/item
                          nil
-                         (dom/a {:href    (routes/url :store-dashboard {:store-id (:db/id owned-store)})
+                         (dom/a {:href    (routes/store-url owned-store :store-dashboard)
                                  :onClick #(do (track-event ::mixpanel/go-to-manage-store {:store-id   (:db/id owned-store)
                                                                                            :store-name store-name})
                                                ;#?(:cljs (when (empty? locations)

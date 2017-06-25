@@ -7,7 +7,7 @@
        [eponai.web.utils :as utils])
     [eponai.common.ui.utils :refer [two-decimal-price]]
     [om.next :as om :refer [defui]]
-    [eponai.web.ui.store.profile.status :as status]
+    [eponai.web.ui.store.profile.options :as options]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.web.ui.photo :as photo]
     [eponai.common.ui.elements.css :as css]
@@ -178,7 +178,7 @@
   (query [_]
     [:query/current-route
      :query/messages
-     {:proxy/status (om/get-query status/StoreStatus)}])
+     {:proxy/status (om/get-query options/StoreStatus)}])
 
   Object
   (save-store [this]
@@ -312,7 +312,7 @@
 
 
         (cond (= route :store-dashboard/profile#options)
-              (status/->StoreStatus status)
+              (options/->StoreStatus status)
               :else
               [(edit-about-section this)
 

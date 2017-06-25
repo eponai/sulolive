@@ -300,6 +300,7 @@
                      :store.profile/tagline "Handmade exclusive fashion designer shop."
                      ;:store/cover #db/id[:db.part/user -51]
                      :store.profile/photo   (photo "mocked/isla_500x500.17344782_h4dngp5g")}
+    :store/username "mirimirifashion"
     :store/locality [:sulo-locality/path "yul"]
     :store/items    [{:store.item/name     "Hoodie Dress"
                       :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1088263217_thkk"

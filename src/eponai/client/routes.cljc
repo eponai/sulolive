@@ -60,6 +60,17 @@
            (not (empty? query-params))
            (str "?" (url/map->query query-params)))))
 
+(defn store-url
+  ([store route]
+    (store-url store route nil))
+  ([store route route-params]
+    (store-url store route route-params nil))
+  ([store route route-params query-params]
+   (debug "Store URL: " store)
+   (let [store-id (or (:store/username store)
+                      (:db/id store))]
+     (url route (assoc route-params :store-id store-id) query-params))))
+
 (defn- do-set-url!
   [component url]
   {:pre [(or (nil? url) (string? url))]}

@@ -87,7 +87,7 @@
          stream-name  :stream/title} channel
         {{:store.profile/keys [photo]
           store-name          :store.profile/name} :store/profile} store
-        store-link (routes/url :store {:store-id (:db/id store)})]
+        store-link (routes/store-url store :store)]
     (dom/div
       (->> (css/add-class :content-item)
            (css/add-class :stream-item))

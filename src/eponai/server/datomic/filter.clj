@@ -154,6 +154,7 @@
      :store/items                    public-attr
      :store/profile                  public-attr
      :store/sections                 public-attr
+     :store/username public-attr
      :store.profile/name             public-attr
      :store.profile/description      public-attr
      :store.profile/return-policy    public-attr

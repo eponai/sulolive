@@ -40,7 +40,7 @@
         (dom/small
           nil
           (dom/span nil "by ")
-          (dom/a {:href (routes/url :store {:store-id (:db/id store)})}
+          (dom/a {:href (routes/store-url store :store)}
                  (dom/span nil (:store.profile/name (:store/profile store))))))
 
       (dom/div

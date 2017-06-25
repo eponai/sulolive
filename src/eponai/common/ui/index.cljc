@@ -58,11 +58,13 @@
                              {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                   :store.item.photo/index]}
                              {:store/_items [{:store/profile [:store.profile/name]}
-                                             {:store/locality [:sulo-locality/path]}]}]}
+                                             {:store/locality [:sulo-locality/path]}
+                                             :store/username]}]}
      {:query/featured-stores [:db/id
                               {:store/profile [:store.profile/name
                                                {:store.profile/photo [:photo/path :photo/id]}]}
                               {:store/locality [:sulo-locality/path]}
+                              :store/username
                               :store/created-at
                               :store/featured
                               :store/featured-img-src
@@ -70,7 +72,8 @@
                                                                          :store.item.photo/index]}]}]}
      {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id
                                                                     {:store/locality [:sulo-locality/path]}
-                                                                    {:store/profile [:store.profile/name {:store.profile/photo [:photo/path :photo/id]}]}]}]}
+                                                                    {:store/profile [:store.profile/name {:store.profile/photo [:photo/path :photo/id]}]}
+                                                                    :store/username]}]}
      {:query/auth [:db/id :user/email]}
      {:query/owned-store [:db/id
                           {:store/locality [:sulo-locality/path]}
@@ -141,7 +144,7 @@
                                       "More streams"))
 
             (common/content-section
-              {:href  (routes/url :live)
+              {:href  (routes/url :live route-params)
                :class "new-brands"}
               "New stores"
               ;(grid/row-column
@@ -161,12 +164,12 @@
                                (->> (css/add-class :content-item)
                                     (css/add-class :stream-item))
                                (dom/a
-                                 {:href (routes/url :store {:store-id (:db/id store)})}
+                                 {:href (routes/store-url store :store)}
                                  (photo/store-photo store {:transformation :transformation/thumbnail-large}))
                                (dom/div
                                  (->> (css/add-class :text)
                                       (css/add-class :header))
-                                 (dom/a {:href (routes/url :store {:store-id (:db/id store)})}
+                                 (dom/a {:href (routes/store-url store :store)}
                                         (dom/strong nil store-name)))))))
                        (take 4 featured-stores))))
               "See more stores")

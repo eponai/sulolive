@@ -17,6 +17,8 @@
     [eponai.client.cart :as client.cart]
     [eponai.client.chat :as client.chat]))
 
+
+
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.
 (defmethod client-read :query/ui-state
@@ -134,46 +136,47 @@
 
 (defmethod client-read :query/store
   [{:keys [db query target ast route-params] :as env} _ _]
-  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
+  (when-let [store-id (:store-id route-params) ]
+    (debug "Routeparams for store: " store-id)
     (if target
       {:remote (assoc-in ast [:params :store-id] store-id)}
-      {:value (db/pull db query store-id)})))
+      {:value (db/pull db query (db/store-id->dbid db store-id))})))
 
 (defmethod client-read :query/store-items
   [{:keys [db query target ast route-params]} _ _]
-  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
+  (when-let [store-id (:store-id route-params)]
     (let [navigation (:navigation route-params)]
       (debug "REad store items with nav: " navigation " store- id : ")
       (if target
         {:remote (-> ast
                      (assoc-in [:params :store-id] store-id)
                      (assoc-in [:params :navigation] navigation))}
-        {:value (let [params (if (not-empty navigation)
-                               {:where   '[[?s :store/items ?e]
-                                           [?e :store.item/section ?n]
-                                           [?n :store.section/path ?p]]
-                                :symbols {'?s store-id
-                                          '?p navigation}}
-                               {:where   '[[?s :store/items ?e]]
-                                :symbols {'?s store-id}})]
-                  (db/pull-all-with db query params))}))))
+        {:value (when-let [store-id (db/store-id->dbid db store-id)]
+                  (db/pull-all-with db query (if (not-empty navigation)
+                                               {:where   '[[?s :store/items ?e]
+                                                           [?e :store.item/section ?n]
+                                                           [?n :store.section/path ?p]]
+                                                :symbols {'?s store-id
+                                                          '?p navigation}}
+                                               {:where   '[[?s :store/items ?e]]
+                                                :symbols {'?s store-id}})))}))))
 
 (defmethod client-read :query/store-item-count
   [{:keys [db target route-params]} _ _]
-  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
+  (when-let [store-id (:store-id route-params)]
     (if target
       {:remote (om.parser/expr->ast (list {:query/store [{:store/items [:store.item/name]}]} {:store-id store-id}))}
-      {:value (db/find-with db {:find    '[(count ?e) .]
-                                :where   '[[?store :store/items ?e]]
-                                :symbols {'?store store-id}})})))
+      {:value (when-let [store-id (db/store-id->dbid db store-id)]
+                (db/find-with db {:find    '[(count ?e) .]
+                                  :where   '[[?store :store/items ?e]]
+                                  :symbols {'?store store-id}}))})))
 
 (defmethod client-read :query/orders
   [{:keys [db query target ast route-params] :as env} _ _]
-  (let [{:keys [store-id]} route-params
-        store-id (c/parse-long-safe store-id)]
+  (let [store-id (:store-id route-params)]
     (if target
       {:remote (-> ast (assoc-in [:params :store-id] store-id))}
-      {:value (if (some? store-id)
+      {:value (if-let [store-id (db/store-id->dbid db store-id)]
                 (db/pull-all-with db query {:where   '[[?e :order/store ?s]]
                                             :symbols {'?s store-id}})
                 (when-let [user-id (client.auth/current-auth db)]
@@ -182,11 +185,12 @@
 
 (defmethod client-read :query/inventory
   [{:keys [db query target ast route-params] :as env} _ _]
-  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
+  (when-let [store-id (:store-id route-params)]
     (if target
       {:remote (assoc-in ast [:params :store-id] store-id)}
-      {:value (db/pull-all-with db '[*] {:where   '[[?store :store/items ?e]]
-                                         :symbols {'?store store-id}})})))
+      {:value (when-let [store-id (db/store-id->dbid db (:store-id route-params))]
+                (db/pull-all-with db '[*] {:where   '[[?store :store/items ?e]]
+                                           :symbols {'?store store-id}}))})))
 
 (defn map-all-keys
   "returns nil when all keys couldn't be selected."
@@ -202,7 +206,7 @@
 
 (defmethod client-read :query/order
   [{:keys [db query target ast route-params] :as env} _ _]
-  (let [store-id (c/parse-long-safe (:store-id route-params))
+  (let [store-id (db/store-id->dbid db (:store-id route-params))
         order-id (c/parse-long-safe (:order-id route-params))]
     (when (some? order-id)
       (if target
@@ -213,7 +217,7 @@
 
 (defmethod client-read :query/order-payment
   [{:keys [db query target ast route-params] :as env} _ _]
-  (let [store-id (c/parse-long-safe (:store-id route-params))
+  (let [store-id (db/store-id->dbid db (:store-id route-params))
         order-id (c/parse-long-safe (:order-id route-params))]
     (when (some? order-id)
       (if target
@@ -225,19 +229,21 @@
 
 (defmethod client-read :query/stripe-account
   [{:keys [route-params ast target db query]} _ _]
-  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
+  (when-let [store-id (:store-id route-params)]
     (if target
       {:remote (assoc-in ast [:params :store-id] store-id)}
-      {:value (db/pull-one-with db query {:where   '[[?s :store/stripe ?e]]
-                                          :symbols {'?s store-id}})})))
+      {:value (when-let [store-id (db/store-id->dbid db store-id)]
+                (db/pull-one-with db query {:where   '[[?s :store/stripe ?e]]
+                                            :symbols {'?s store-id}}))})))
 
 (defmethod client-read :query/stripe-balance
   [{:keys [route-params ast target db query]} _ _]
-  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
+  (when-let [store-id (:store-id route-params)]
     (if target
       {:remote (assoc-in ast [:params :store-id] store-id)}
-      {:value (db/pull-one-with db query {:where   '[[?s :store/stripe ?e]]
-                                          :symbols {'?s store-id}})})))
+      {:value (when-let [store-id (db/store-id->dbid db store-id)]
+                (db/pull-one-with db query {:where   '[[?s :store/stripe ?e]]
+                                            :symbols {'?s store-id}}))})))
 
 (defmethod client-read :query/stripe-customer
   [{:keys [ast target db query]} _ _]
@@ -287,23 +293,25 @@
 
 (defmethod client-read :query/checkout
   [{:keys [db query route-params target ast]} _ _]
-  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
+  (when-let [store-id (:store-id route-params)]
     (if target
       {:remote (assoc-in ast [:params :store-id] store-id)}
-      {:value (db/pull-all-with db query {:where   '[[?u :user/cart ?c]
-                                                     [?c :user.cart/items ?e]
-                                                     [?i :store.item/skus ?e]
-                                                     [?s :store/items ?i]]
-                                          :symbols {'?s store-id}})})))
+      {:value (when-let [store-id (db/store-id->dbid db store-id)]
+                (db/pull-all-with db query {:where   '[[?u :user/cart ?c]
+                                                       [?c :user.cart/items ?e]
+                                                       [?i :store.item/skus ?e]
+                                                       [?s :store/items ?i]]
+                                            :symbols {'?s store-id}}))})))
 
 (defmethod client-read :query/taxes
   [{:keys [db query route-params target ast]} _ {:keys [destination] :as p}]
-  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
+  (when-let [store-id (:store-id route-params)]
     (debug "Read query/taxes: " p)
     (if target
       {:remote (when destination (assoc-in ast [:params :store-id] store-id))}
-      {:value (db/pull-one-with db query {:where   '[[?e :taxes/id ?s]]
-                                          :symbols {'?s store-id}})})))
+      {:value (when-let [store-id (db/store-id->dbid db store-id)]
+                (db/pull-one-with db query {:where   '[[?e :taxes/id ?s]]
+                                            :symbols {'?s store-id}}))})))
 
 (defmethod client-read :query/owned-store
   [{:keys [db target query]} _ _]
@@ -460,11 +468,12 @@
 
 (defmethod client-read :query/stream
   [{:keys [db query target ast route-params] :as env} _ _]
-  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
+  (when-let [store-id (:store-id route-params)]
     (if target
       {:remote (assoc-in ast [:params :store-id] store-id)}
-      {:value (db/pull-one-with db query {:where   '[[?e :stream/store ?store-id]]
-                                          :symbols {'?store-id store-id}})})))
+      {:value (when-let [store-id (db/store-id->dbid db store-id)]
+                (db/pull-one-with db query {:where   '[[?e :stream/store ?store-id]]
+                                            :symbols {'?store-id store-id}}))})))
 
 (defmethod client-read :query/stream-config
   [{:keys [db query]} k _]
@@ -499,34 +508,35 @@
 
 (defmethod client-read :query/chat
   [{:keys [ast target db route-params query]} _ _]
-  (when-let [store-id (c/parse-long-safe (:store-id route-params))]
+  (when-let [store-id (:store-id route-params)]
     (if (some? target)
       {:remote/chat (assoc-in ast [:params :store :db/id] store-id)}
-      {:value (when-let [chat-db (client.chat/get-chat-db db)]
-                (let [{:keys [sulo-db-tx chat-db-tx]}
-                      (client.chat/read-chat chat-db
-                                             db
-                                             query
-                                             {:db/id store-id}
-                                             nil)
-                      _ (when (seq sulo-db-tx)
-                          (assert (every? #(contains? % :db/id) sulo-db-tx)
-                                  (str "sulo-db-tx (users) did not have :db/id's in them. Was: " sulo-db-tx)))
-                      users-by-id (into {} (map (juxt :db/id identity)) sulo-db-tx)]
-                  ;; This would be a perfect time for specter
-                  ;;  (comp (mapcat :chat/messages)
-                  ;; (map :chat.message/user)
-                  ;; (map :db/id))
-                  (cond-> chat-db-tx
-                          (contains? chat-db-tx :chat/messages)
-                          (update :chat/messages
-                                  (fn [messages]
-                                    (into []
-                                          (map (fn [message]
-                                                 (update message :chat.message/user
-                                                         (fn [{:keys [db/id]}]
-                                                           (assoc (get users-by-id id) :db/id id)))))
-                                          messages))))))})))
+      {:value (let [store-id (db/store-id->dbid db store-id)]
+                (when-let [chat-db (client.chat/get-chat-db db)]
+                  (let [{:keys [sulo-db-tx chat-db-tx]}
+                        (client.chat/read-chat chat-db
+                                               db
+                                               query
+                                               {:db/id store-id}
+                                               nil)
+                        _ (when (seq sulo-db-tx)
+                            (assert (every? #(contains? % :db/id) sulo-db-tx)
+                                    (str "sulo-db-tx (users) did not have :db/id's in them. Was: " sulo-db-tx)))
+                        users-by-id (into {} (map (juxt :db/id identity)) sulo-db-tx)]
+                    ;; This would be a perfect time for specter
+                    ;;  (comp (mapcat :chat/messages)
+                    ;; (map :chat.message/user)
+                    ;; (map :db/id))
+                    (cond-> chat-db-tx
+                            (contains? chat-db-tx :chat/messages)
+                            (update :chat/messages
+                                    (fn [messages]
+                                      (into []
+                                            (map (fn [message]
+                                                   (update message :chat.message/user
+                                                           (fn [{:keys [db/id]}]
+                                                             (assoc (get users-by-id id) :db/id id)))))
+                                            messages)))))))})))
 
 (defmethod client-read :query/loading-bar
   [{:keys [db query target]} _ _]

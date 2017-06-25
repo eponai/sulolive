@@ -237,6 +237,12 @@
   (if target
     {:remote true}))
 
+(defmethod client-mutate 'store/update-username
+  [{:keys [target]} _ p]
+  (debug "store/update-username with params: " p)
+  (if target
+    {:remote true}))
+
 
 
 (defmethod client-mutate 'stream-token/generate
