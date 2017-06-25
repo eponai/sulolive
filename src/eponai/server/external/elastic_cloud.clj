@@ -15,6 +15,14 @@
            (org.elasticsearch.action.bulk BulkResponse)
            (org.elasticsearch.xpack.client PreBuiltXPackTransportClient)))
 
+(defonce avoid-setting-available-processors
+         (delay (do
+                  ;; When using Netty outside of the use of ElasticSearch's TransportClient
+                  ;; we need to avoid setting available processors with elastic search.
+                  ;; See: https://discuss.elastic.co/t/elasticsearch-5-4-1-availableprocessors-is-already-set/88036/4
+                  (System/setProperty "es.set.netty.runtime.available.processors"
+                                      "false"))))
+
 ;; xpack example:
 ;; https://github.com/elastic/found-shield-example
 
@@ -51,7 +59,8 @@
   (start [this]
     (if (:client this)
       this
-      (let [params [cluster-hostname xpack-user index-name]
+      (let [_ (force avoid-setting-available-processors)
+            params [cluster-hostname xpack-user index-name]
             _ (assert (every? string? params)
                       (str "Missing required ElasticCloud parameters. Were: "
                            (zipmap [:cluster-hostname :xpack-user :index-name] params)))
