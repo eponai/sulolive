@@ -154,7 +154,7 @@
 
 (defmutation store.photo/upload
   [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ {:keys [photo photo-key store-id] :as p}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  [:store-id :photo-key :photo]
    :resp {:success "Your photo was successfully uploaded."
           :error   "Sorry, your photo failed to upload. Try again later."}}
@@ -179,7 +179,7 @@
 
 (defmutation stream-token/generate
   [{:keys [state db parser ::parser/return auth system] :as env} k {:keys [store-id] :as p}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  [:store-id]
    :resp {:success return
           :error   "Error generating stream token"}}
@@ -229,7 +229,7 @@
 
 (defmutation stream/ensure-online
   [{:keys [state auth] :as env} k {:keys [store-id] :as p}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  [:store-id]
    :resp {:success "Stream is online"
           :error   "Could not ensure stream was online"}}
@@ -238,7 +238,7 @@
 
 (defmutation stream/go-live
   [{:keys [state auth] :as env} k {:keys [store-id] :as p}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  [:store-id]
    :resp {:success "Went live!"
           :error   "Could not go live"}}
@@ -248,7 +248,7 @@
 
 (defmutation stream/end-live
   [{:keys [state auth] :as env} k {:keys [store-id] :as p}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  [:store-id]
    :resp {:success "Ended live stream!"
           :error   "Could not end live stream."}}
@@ -257,7 +257,7 @@
 
 (defmutation stream/go-offline
   [{:keys [state auth] :as env} k {:keys [store-id] :as p}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  [:store-id]
    :resp {:success "Went offline!"
           :error   "Could not go offline"}}
@@ -280,21 +280,21 @@
 ;########### STORE @############
 (defmutation store/update-info
   [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [store/profile] :as store}]
-  {:auth {::auth/store-owner (:db/id store)}
+  {:auth {::auth/store-owner {:store-id (:db/id store)}}
    :log  (let [profile (select-keys profile [:store.profile/name
-                                                 :store.profile/description
-                                                 :store.profile/tagline
-                                                 :store.profile/return-policy
-                                                 :store.profile/email])]
-               (cond-> profile
-                       (contains? profile :store.profile/description)
-                       (assoc :store.profile/description true)
-                       (contains? profile :store.profile/return-policy)
-                       (assoc :store.profile/return-policy true)
-                       :always
-                       (assoc :store-id (:db/id store))))
+                                             :store.profile/description
+                                             :store.profile/tagline
+                                             :store.profile/return-policy
+                                             :store.profile/email])]
+           (cond-> profile
+                   (contains? profile :store.profile/description)
+                   (assoc :store.profile/description true)
+                   (contains? profile :store.profile/return-policy)
+                   (assoc :store.profile/return-policy true)
+                   :always
+                   (assoc :store-id (:db/id store))))
    :resp {:success "Your store info was successfully updated."
-              :error   "Sorry, your info could not be updated. Try again later."}}
+          :error   "Sorry, your info could not be updated. Try again later."}}
   {:action (fn []
              (let [db-store (db/pull (db/db state) [:store/profile] (:db/id store))
                    s (-> (select-keys profile [:store.profile/name
@@ -316,7 +316,7 @@
 
 (defmutation store/update-status
   [{:keys [state ::parser/return ::parser/exception auth system] :as env} _ {:keys [store-id status]}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :resp {:success "Your store info was successfully updated."
           :error   "Sorry, your info could not be updated. Try again later."}}
   {:action (fn []
@@ -324,7 +324,7 @@
 
 (defmutation store/update-shipping
   [{:keys [state ::parser/return ::parser/exception auth system] :as env} _ {:keys [shipping store-id]}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  [:store-id]
    :resp {:success "Your store info was successfully updated."
           :error   "Sorry, your info could not be updated. Try again later."}}
@@ -334,7 +334,7 @@
 
 (defmutation store/update-product-order
   [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [items store-id]}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  {:store-id store-id :items (into [] (map :db/id) items)}
    :resp {:success "Your product layout was updated."
           :error   "Sorry, could not update product order. Try again later."}}
@@ -345,7 +345,7 @@
 
 (defmutation store/update-sections
   [env _ {:keys [store-id] :as p}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  [:store-id]
    :resp {:success "Your store sections were updated"
           :error   "Could not update store sections."}}
@@ -355,7 +355,7 @@
 
 (defmutation store/save-shipping-rule
   [env _ {:keys [store-id] :as p}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  [:store-id]
    :resp {:success "Your shipping rule was successfully created."
           :error   "Sorry, failed to create shipping rule. Try again later."}}
@@ -365,7 +365,7 @@
 
 (defmutation store/delete-shipping-rule
   [env _ {:keys [store-id rule] :as p}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  {:store-id store-id :shipping-rule-id (:db/id rule)}
    :resp {:success "Your shipping rule was successfully created."
           :error   "Sorry, failed to create shipping rule. Try again later."}}
@@ -375,7 +375,7 @@
 
 (defmutation store/update-shipping-rule
   [env _ {:keys [store-id shipping-rule] :as p}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  {:store-id store-id :shipping-rule-id (:db/id shipping-rule)}
    :resp {:success "Your shipping rule was successfully updated."
           :error   "Sorry, failed to update shipping rule. Try again later."}}
@@ -385,7 +385,7 @@
 
 (defmutation store/update-username
   [{:keys [state ::parser/exception]} _ {:keys [store-id username] :as p}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  {:store-id store-id}
    :resp {:success "Your username was successfully updated."
           :error   (if exception
@@ -431,7 +431,7 @@
 
 (defmutation stripe/update-account
   [{:keys [state ::parser/return ::parser/exception system] :as env} _ {:keys [store-id account-params]}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  [:store-id]
    :resp {:success "Your account was updated"
           :error   (if (some? exception)
@@ -445,7 +445,7 @@
 
 (defmutation stripe/update-customer
   [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [shipping default-source source remove-source] :as params}]
-  {:auth {::auth/any-user true}
+  {:auth ::auth/any-user
    ;; Do we really want to log params for this mutation?
    :log  nil
    :resp {:success return
@@ -502,7 +502,7 @@
 
 (defmutation store/create-product
   [env _ {:keys [product store-id] :as p}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  (-> (select-keys product [:store.item/name :store.item/price :store.item/uuid])
              (assoc :store-id store-id))
    :resp {:success "Your product was created."
@@ -513,7 +513,7 @@
 
 (defmutation store/update-product
   [env _ {:keys [product store-id product-id] :as p}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  {:store-id store-id :product-id product-id}
    :resp {:success "Your product was updated."
           :error   "Sorry, could not update your product. Try again later."}}
@@ -523,7 +523,7 @@
 
 (defmutation store/delete-product
   [env _ {:keys [product store-id]}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  {:store-id store-id :product-id (:db/id product)}
    :resp {:success "Your product was deleted."
           :error   "Sorry, could not delete your product. Try again later."}}
@@ -532,7 +532,7 @@
 
 (defmutation store/create-order
   [{::parser/keys [return exception] :as env} _ {:keys [order store-id] :as p}]
-  {:auth {::auth/any-user true}
+  {:auth ::auth/any-user
    :log  {:store-id store-id :items (into [] (map :db/id) (:items order))}
    :resp {:success return
           :error   (let [default-msg "Could not create order"]
@@ -544,7 +544,7 @@
 
 (defmutation chat/send-message
   [{::parser/keys [exception] :keys [state system] :as env} k {:keys [store text user]}]
-  {:auth {::auth/exact-user (:db/id user)}
+  {:auth {::auth/exact-user {:user-id (:db/id user)}}
    :log  ::parser/no-logging
    :resp {:success "Message sent"
           :error   (if (some? exception)
@@ -555,7 +555,7 @@
 
 (defmutation store/update-order
   [env _ {:keys [order-id store-id params] :as p}]
-  {:auth {::auth/store-owner store-id}
+  {:auth {::auth/store-owner {:store-id store-id}}
    :log  {:store-id store-id :order-id order-id}
    :resp {:success "Order was updated"
           :error   "Sorry, could not update order. Try again later."}}

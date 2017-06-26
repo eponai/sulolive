@@ -454,17 +454,29 @@
   [v basis-t]
   ((fnil vary-meta {}) v assoc ::value-read-basis-t basis-t))
 
+(defn- validated-auth-role [auth-role k p]
+  (assert (or (keyword? auth-role)
+              (and (map? auth-role)
+                   (== 1 (count auth-role))
+                   (map? (val (first auth-role)))))
+          (str "Return of key: " k
+               " with params: " p
+               " for auth was not either a keyword or a map of auth-params. Was: " auth-role))
+  auth-role)
+
 (defn- wrap-auth [auth-role-method read-or-mutate on-not-authed]
   (fn [env k p]
-    (let [roles (auth-role-method env k p)]
-      (if (auth/is-public-role? roles)
+    (let [auth-role (-> (auth-role-method env k p)
+                        (validated-auth-role k p))]
+      (if (auth/is-public-role? auth-role)
         (read-or-mutate env k p)
-        (let [roles (cond-> roles (keyword? roles) (hash-map true))]
+        (let [role (cond-> auth-role (map? auth-role) (-> first key))
+              auth-params (get auth-role role nil)]
           ;; Use an unfiltered db to check auth.
-          (if-some [user (auth/authed-user-for-params (:raw-db env) (keys roles) (:auth env) roles)]
+          (if-some [user (auth/authed-user-for-params (:raw-db env) role (:auth env) auth-params)]
             (read-or-mutate (update env :auth #(-> (dissoc % :email) (assoc :user-id user)))
                             k p)
-            (on-not-authed (assoc env :auth-roles roles) k p)))))))
+            (on-not-authed (assoc env :auth-roles auth-role) k p)))))))
 
 (defn wrap-server-read-auth [read]
   (let [read-authed (wrap-auth server-auth-role read

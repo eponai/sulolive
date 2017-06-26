@@ -11,12 +11,12 @@
   (-unauthorize [this]))
 
 ;; TODO: Do this with spec instead
-(defn- get-id [role params k]
-  (if-some [ret (or (c/parse-long-safe (get params role))
+(defn- get-id [params k]
+  (if-some [ret (or (get params k)
                     (get-in params [k :db/id])
-                    (->> (keyword nil (str (name k) "-id"))
-                         (get params)
-                         (c/parse-long-safe)))]
+                    ;; Add -id to the key k and parse it to a number
+                    (-> (get params (keyword nil (str (name k) "-id")))
+                        (c/parse-long-safe)))]
     ret
     (throw (ex-info (str "Unable to get id for key: " k) {:type   :missing-id
                                                           :params params
@@ -29,19 +29,19 @@
    :symbols {'?email (:email auth)}})
 
 (defmethod auth-role-query ::exact-user
-  [role _ params]
-  {:symbols {'?user (get-id role params :user)}})
+  [_ _ params]
+  {:symbols {'?user (get-id params :user)}})
 
 (defmethod auth-role-query ::store-owner
-  [role _ params]
+  [_ _ params]
   {:where   '[[?store :store/owners ?owner]
               [?owner :store.owner/user ?user]]
-   :symbols {'?store (get-id role params :store)}})
+   :symbols {'?store (get-id params :store)}})
 
 (defmethod auth-role-query ::exact-store
-  [role _ params]
+  [_ _ params]
   {:where   '[[?store :store/owners _]]
-   :symbols {'?store (get-id role params :store)}})
+   :symbols {'?store (get-id params :store)}})
 
 (defmethod auth-role-query ::any-store-owner
   [_ _ _]

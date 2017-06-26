@@ -241,7 +241,7 @@
 (defread query/orders
   [{:keys [db query auth]} _ {:keys [store-id]}]
   {:auth    (if (some? store-id)
-              {::auth/store-owner store-id}
+              {::auth/store-owner {:store-id store-id}}
               ::auth/any-user)
    :log     [:store-id]
    :uniq-by [[:val (if (some? store-id)
@@ -255,7 +255,7 @@
 
 (defread query/inventory
   [{:keys [query db]} _ {:keys [store-id]}]
-  {:auth    {::auth/store-owner store-id}
+  {:auth    {::auth/store-owner {:store-id store-id}}
    :log     [:store-id]
    :uniq-by [[:store-id store-id]]}
   {:value (let [store-id (db/store-id->dbid db store-id)
@@ -299,14 +299,14 @@
 
 (defread query/stripe-account
   [{:keys [db] :as env} _ {:keys [store-id]}]
-  {:auth    {::auth/store-owner store-id}
+  {:auth    {::auth/store-owner {:store-id store-id}}
    :log     [:store-id]
    :uniq-by [[:store-id store-id]]}
   {:value (store/account env (db/store-id->dbid db store-id))})
 
 (defread query/stripe-balance
   [{:keys [db] :as env} _ {:keys [store-id]}]
-  {:auth    {::auth/store-owner store-id}
+  {:auth    {::auth/store-owner {:store-id store-id}}
    :log     [:store-id]
    :uniq-by [[:store-id store-id]]}
   {:value (store/balance env (db/store-id->dbid db store-id))})
