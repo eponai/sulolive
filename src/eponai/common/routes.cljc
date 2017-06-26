@@ -2,7 +2,8 @@
   (:require [bidi.bidi :as bidi]
             [taoensso.timbre :refer [debug error]]
             [eponai.common.auth :as auth]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [cemerick.url :as url]))
 
 (def store-routes
   {""           :store
@@ -130,14 +131,15 @@
                      :user/order
                      :shopping-bag
                      :about
-                     :not-found}
+                     :not-found
+                     :login}
                    route)
         (= :store-dashboard route)
         (= (name :store-dashboard) (namespace route)))))
 
 (defn auth-roles [handler]
   (cond
-    (#{:landing-page :sell :about :not-found} handler)
+    (#{:landing-page :sell :about :not-found :login} handler)
     ::auth/public
     (= handler :store-dashboard)
     ::auth/store-owner
@@ -152,9 +154,13 @@
 (defn path
   "Takes a route and its route-params and returns a path"
   ([route] (path route nil))
-  ([route route-params]
+  ([route route-params] (path route route-params nil))
+  ([route route-params query-params]
    (try
-     (apply bidi/path-for routes route (some->> route-params (reduce into [])))
+     (let [url (apply bidi/path-for routes route (some->> route-params (reduce into [])))]
+       (cond-> url
+               (not (empty? query-params))
+               (str "?" (url/map->query query-params))))
      (catch #?@(:cljs [:default e]
                 :clj  [Throwable e])
             (error "Error when trying to create url from route: " route

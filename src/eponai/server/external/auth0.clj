@@ -35,7 +35,7 @@
 
 (defrecord Auth0 [client-id client-secret server-address]
   IAuth0
-  (secret [this] (b64/decode client-secret))
+  (secret [this] client-secret)
   (authenticate [this code state]
     (letfn [(code->token [code]
               (read-json

@@ -57,9 +57,7 @@
   ([route] (url route nil))
   ([route route-params] (url route route-params nil))
   ([route route-params query-params]
-   (cond-> (routes/path route route-params)
-           (not (empty? query-params))
-           (str "?" (url/map->query query-params)))))
+   (routes/path route route-params query-params)))
 
 (defn store-url
   ([store route]

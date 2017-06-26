@@ -37,6 +37,8 @@
                        :async true
                        :defer true
                        :type common/text-javascript})
+          (dom/script {:src "https://cdn.auth0.com/js/auth0/8.7/auth0.min.js"
+                       :type common/text-javascript})
 
           ;<script src="//www.powr.io/powr.js" external-type="html"></script>
 
