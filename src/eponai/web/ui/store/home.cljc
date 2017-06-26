@@ -89,12 +89,14 @@
   (query [_]
     [{:query/store [:db/id
                     :store/uuid
+                    :store/username
                     {:store/profile [:store.profile/name
+                                     :store.profile/description
                                      {:store.profile/photo [:photo/path :photo/id]}]}
                     {:store/owners [{:store.owner/user [:user/email]}]}
                     :store/stripe
                     {:store/status [:status/type]}
-                    {:store/shipping [{:shippping/rules [:db/id]}]}
+                    {:store/shipping [:shipping/rules]}
                     {:order/_store [:order/items]}
                     {:stream/_store [:stream/state]}]}
      :query/store-item-count
@@ -106,6 +108,7 @@
           {:keys [store-id]} (:route-params current-route)
           {:keys [route route-params]} current-route
           store-item-count (or store-item-count 0)]
+      (debug "Store: " store)
       (dom/div
         {:id "sulo-main-dashboard"}
 
@@ -137,7 +140,7 @@
               (dom/h3 nil (get-in store [:store/profile :store.profile/name]))
               (photo/store-photo store {:transformation :transformation/thumbnail})
               (button/default-hollow
-                {:href    (routes/url :store-dashboard/profile {:store-id store-id})
+                {:href    (routes/store-url store :store-dashboard/profile)
                  :onClick #(mixpanel/track-key ::mixpanel/go-to-store-info {:source "store-dashboard"})}
                 (dom/span nil "Store info")
                 (dom/i {:classes ["fa fa-chevron-right"]})))
@@ -151,7 +154,7 @@
               (when-not (= :status.type/open
                            (get-in store [:store/status :status/type]))
                 (button/default-hollow
-                  {:href    (routes/url :store-dashboard/profile#options {:store-id store-id})
+                  {:href    (routes/store-url store :store-dashboard/profile#options)
                    :onClick #(mixpanel/track-key ::mixpanel/update-status {:source "store-dashboard"})}
                   (dom/span nil "Options")
                   (dom/i {:classes ["fa fa-chevron-right"]}))))))
@@ -166,7 +169,7 @@
               (dom/h3 nil "Balance")
               (dom/p (css/add-class :stat) "$0.00")
               (button/default-hollow
-                {:href    (routes/url :store-dashboard/finances {:store-id store-id})
+                {:href    (routes/store-url store :store-dashboard/finances)
                  :onClick #(mixpanel/track-key ::mixpanel/go-to-finances {:source "store-dashboard"})}
                 (dom/span nil "Finances")
                 (dom/i {:classes ["fa fa-chevron-right"]})))
@@ -175,7 +178,7 @@
               (dom/h3 nil "Products")
               (dom/p (css/add-class :stat) store-item-count)
               (button/default-hollow
-                {:href    (routes/url :store-dashboard/product-list {:store-id store-id})
+                {:href    (routes/store-url store :store-dashboard/product-list)
                  :onClick #(mixpanel/track-key ::mixpanel/go-to-products {:source "store-dashboard"})}
                 (dom/span nil "Products")
                 (dom/i {:classes ["fa fa-chevron-right"]})))
@@ -184,7 +187,7 @@
               (dom/h3 nil "Orders")
               (dom/p (css/add-class :stat) (count (:order/_store store)))
               (button/default-hollow
-                {:href    (routes/url :store-dashboard/order-list {:store-id store-id})
+                {:href    (routes/store-url store :store-dashboard/order-list)
                  :onClick #(mixpanel/track-key ::mixpanel/go-to-orders {:source "store-dashboard"})}
                 (dom/span nil "Orders")
                 (dom/i {:classes ["fa fa-chevron-right"]})))))
@@ -215,27 +218,27 @@
 
             (check-list-item
               (some? (:store.profile/description (:store/profile store)))
-              (routes/url :store-dashboard/profile {:store-id store-id})
+              (routes/store-url store :store-dashboard/profile)
               (dom/span nil "Describe your store."))
 
             (check-list-item
               (not-empty (get-in store [:store/shipping :shipping/rules]))
-              (routes/url :store-dashboard/shipping {:store-id store-id})
+              (routes/store-url store :store-dashboard/shipping)
               (dom/span nil "Specify shipping options."))
 
             (check-list-item
               (boolean (pos? store-item-count))
-              (routes/url :store-dashboard/create-product {:store-id store-id})
+              (routes/store-url store :store-dashboard/create-product)
               (dom/span nil "Add your first product."))
 
             (check-list-item
               false
-              (routes/url :store-dashboard/stream {:store-id store-id})
+              (routes/store-url store :store-dashboard/stream)
               (dom/span nil "Setup your first stream."))
 
             (check-list-item
               (:stripe/details-submitted? stripe-account)
-              (routes/url :store-dashboard/business#verify {:store-id store-id})
+              (routes/store-url store :store-dashboard/business#verify)
               (dom/span nil "Verify your account, so we know you're real."))))
 
 
@@ -280,7 +283,7 @@
                     (callout/header nil "Verify your account")))
                 (dom/p nil
                        (dom/span nil "Before ")
-                       (dom/a {:href (routes/url :store-dashboard/business#verify {:store-id store-id})} (dom/span nil "verifying your account"))
+                       (dom/a {:href (routes/store-url store :store-dashboard/business#verify)} (dom/span nil "verifying your account"))
                        (dom/span nil ", you can only use SULO Live in test mode. You can manage your store, but it'll not be visible to the public."))
                 (dom/p nil
                        "Once you've verified your account you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our terms of service. If there is a problem, we'll get in touch right away to resolve it as quickly as possible.")))))

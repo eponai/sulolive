@@ -38,7 +38,8 @@
   (read-messages [this store query last-read]
     (let [{:keys [last-read-chat-db]} last-read
           db-history (d/since (d/history chat-db) last-read-chat-db)
-          messages (query/all chat-db db-history query (client.chat/datomic-chat-entity-query store))
+          messages (query/all chat-db db-history query (client.chat/datomic-chat-entity-query (db/store-id->dbid sulo-db (or (:store/username store)
+                                                                                                                             (:db/id store)))))
 
           user-data (db/pull-all-with sulo-db
                                       (client.chat/focus-chat-message-user-query query)

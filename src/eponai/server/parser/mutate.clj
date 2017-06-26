@@ -196,7 +196,7 @@
 (defn- wowza-token-store-owner [{:keys [system state]} token]
   (let [{:keys [user-id store-id]} (jwt/unsign token (wowza/jwt-secret (:system/wowza system)))]
     (db/find-with (db/db state)
-                  (->> (auth/auth-role-query ::auth/store-owner nil {:store-id store-id})
+                  (->> (auth/auth-role-query (db/db state) ::auth/store-owner nil {:store-id store-id})
                        (db/merge-query {:find    '[?store .]
                                         :where   '[[?stream :stream/store ?store]
                                                    [?stream :stream/token ?token]]
@@ -330,7 +330,7 @@
           :error   "Sorry, your info could not be updated. Try again later."}}
   {:action (fn []
              (debug "Update shipping: " shipping)
-             (store/update-shipping env (c/parse-long store-id) shipping))})
+             (store/update-shipping env (db/store-id->dbid (db/db state) store-id) shipping))})
 
 (defmutation store/update-product-order
   [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [items store-id]}]
@@ -344,34 +344,34 @@
                                      items)))})
 
 (defmutation store/update-sections
-  [env _ {:keys [store-id] :as p}]
+  [{:keys [db] :as env} _ {:keys [store-id] :as p}]
   {:auth {::auth/store-owner {:store-id store-id}}
    :log  [:store-id]
    :resp {:success "Your store sections were updated"
           :error   "Could not update store sections."}}
   {:action (fn []
              (debug "store/update-sections with params: " p)
-             (store/update-sections env (c/parse-long store-id) p))})
+             (store/update-sections env (db/store-id->dbid db store-id) p))})
 
 (defmutation store/save-shipping-rule
-  [env _ {:keys [store-id] :as p}]
+  [{:keys [db] :as env} _ {:keys [store-id] :as p}]
   {:auth {::auth/store-owner {:store-id store-id}}
    :log  [:store-id]
    :resp {:success "Your shipping rule was successfully created."
           :error   "Sorry, failed to create shipping rule. Try again later."}}
   {:action (fn []
              (debug "store/update-sections with params: " p)
-             (store/create-shipping-rule env (c/parse-long store-id) p))})
+             (store/create-shipping-rule env (db/store-id->dbid db store-id) p))})
 
 (defmutation store/delete-shipping-rule
-  [env _ {:keys [store-id rule] :as p}]
+  [{:keys [db] :as env} _ {:keys [store-id rule] :as p}]
   {:auth {::auth/store-owner {:store-id store-id}}
    :log  {:store-id store-id :shipping-rule-id (:db/id rule)}
    :resp {:success "Your shipping rule was successfully created."
           :error   "Sorry, failed to create shipping rule. Try again later."}}
   {:action (fn []
              (debug "store/update-sections with params: " p)
-             (store/delete-shipping-rule env (c/parse-long store-id) rule))})
+             (store/delete-shipping-rule env (db/store-id->dbid db store-id) rule))})
 
 (defmutation store/update-shipping-rule
   [env _ {:keys [store-id shipping-rule] :as p}]
@@ -384,10 +384,10 @@
              (store/update-shipping-rule env (:db/id shipping-rule) shipping-rule))})
 
 (defmutation store/update-username
-  [{:keys [state ::parser/exception]} _ {:keys [store-id username] :as p}]
+  [{:keys [state ::parser/exception ::parser/return]} _ {:keys [store-id username] :as p}]
   {:auth {::auth/store-owner {:store-id store-id}}
    :log  {:store-id store-id}
-   :resp {:success "Your username was successfully updated."
+   :resp {:success return                                   ;"Your username was successfully updated."
           :error   (if exception
                      (ex-data exception)
                      "Sorry, something went wrong when updating your username.")}}
@@ -400,9 +400,12 @@
                      (throw (ex-info "Store username is already taken"
                                      {:message  "Store username is already taken"
                                       :store-id (:db/id store-with-username)})))
-                   (db/transact state [[:db/add store-id :store/username username]]))
+                   (do
+                     (db/transact state [[:db/add store-id :store/username username]])
+                     {:username username}))
                  (let [store (db/pull (db/db state) [:store/username] store-id)]
-                   (db/transact state [[:db/retract store-id :store/username (:store/username store)]])))))})
+                   (db/transact state [[:db/retract store-id :store/username (:store/username store)]])
+                   {:username username}))))})
 
 ;######## STRIPE ########
 
@@ -438,7 +441,7 @@
                      (or (.getMessage exception) "Something went wrong")
                      "Something went wrong!")}}
   {:action (fn []
-             (let [{:stripe/keys [id]} (stripe/pull-stripe (db/db state) store-id)
+             (let [{:stripe/keys [id]} (stripe/pull-stripe (db/db state) (db/store-id->dbid (db/db state) store-id))
                    new-account (stripe/update-account (:system/stripe system) id account-params)]
                (store/stripe-account-updated env new-account)
                new-account))})
@@ -501,7 +504,7 @@
                  (store/create env params))))})
 
 (defmutation store/create-product
-  [env _ {:keys [product store-id] :as p}]
+  [{:keys [db] :as env} _ {:keys [product store-id] :as p}]
   {:auth {::auth/store-owner {:store-id store-id}}
    :log  (-> (select-keys product [:store.item/name :store.item/price :store.item/uuid])
              (assoc :store-id store-id))
@@ -509,17 +512,17 @@
           :error   "Sorry, could not create your product. Try again later."}}
   {:action (fn []
              (debug "store/create-product with params: " p)
-             (store/create-product env (c/parse-long store-id) product))})
+             (store/create-product env (db/store-id->dbid db store-id) product))})
 
 (defmutation store/update-product
-  [env _ {:keys [product store-id product-id] :as p}]
+  [{:keys [db] :as env} _ {:keys [product store-id product-id] :as p}]
   {:auth {::auth/store-owner {:store-id store-id}}
    :log  {:store-id store-id :product-id product-id}
    :resp {:success "Your product was updated."
           :error   "Sorry, could not update your product. Try again later."}}
   {:action (fn []
              (debug "store/update-product with params: " p)
-             (store/update-product env (c/parse-long product-id) product))})
+             (store/update-product env (db/store-id->dbid db store-id) product))})
 
 (defmutation store/delete-product
   [env _ {:keys [product store-id]}]
@@ -531,7 +534,7 @@
              (store/delete-product env (:db/id product)))})
 
 (defmutation store/create-order
-  [{::parser/keys [return exception] :as env} _ {:keys [order store-id] :as p}]
+  [{::parser/keys [return exception db] :as env} _ {:keys [order store-id] :as p}]
   {:auth ::auth/any-user
    :log  {:store-id store-id :items (into [] (map :db/id) (:items order))}
    :resp {:success return
@@ -540,7 +543,7 @@
                        (:message (ex-data exception) default-msg)
                        default-msg))}}
   {:action (fn []
-             (store/create-order env store-id order))})
+             (store/create-order env (db/store-id->dbid db store-id) order))})
 
 (defmutation chat/send-message
   [{::parser/keys [exception] :keys [state system] :as env} k {:keys [store text user]}]
@@ -554,13 +557,13 @@
              (chat/write-message (:system/chat system) store user text))})
 
 (defmutation store/update-order
-  [env _ {:keys [order-id store-id params] :as p}]
+  [{:keys [db] :as env} _ {:keys [order-id store-id params] :as p}]
   {:auth {::auth/store-owner {:store-id store-id}}
    :log  {:store-id store-id :order-id order-id}
    :resp {:success "Order was updated"
           :error   "Sorry, could not update order. Try again later."}}
   {:action (fn []
-             (store/update-order env (c/parse-long store-id) (c/parse-long order-id) params))})
+             (store/update-order env (db/store-id->dbid db store-id) (c/parse-long order-id) params))})
 
 (defmutation user/request-store-access
   [{:keys [system auth state]} _ params]

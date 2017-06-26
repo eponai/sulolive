@@ -48,9 +48,9 @@
   It's based on routing, so we'll only return a store-id if we're at a store."
   [x]
   {:post [(or (nil? %) (number? %))]}
-  (some-> (routes/current-route x)
-          (get-in [:route-params :store-id])
-          (eponai.common/parse-long)))
+  (let [db (db/to-db x)
+        store-id (get-in (routes/current-route x) [:route-params :store-id])]
+    (db/store-id->dbid db store-id)))
 
 ;; ###########
 ;; ## Query
@@ -66,9 +66,9 @@
   (memoize (fn [query]
              (parser.util/focus-subquery query [:chat/messages]))))
 
-(defn datomic-chat-entity-query [store]
+(defn datomic-chat-entity-query [store-id]
   {:where   '[[?e :chat/store ?store-id]]
-   :symbols {'?store-id (:db/id store)}})
+   :symbols {'?store-id store-id}})
 
 (defn- read-chat-messages [chat-db sulo-db query chat-id limit]
   (let [chat-messages (if (nil? limit)
@@ -95,7 +95,8 @@
      :chat-db-tx (assoc pulled-chat :chat/messages pulled-messages)}))
 
 (defn read-chat [chat-db sulo-db query store limit]
-  (if-let [chat-id (db/one-with chat-db (datomic-chat-entity-query store))]
+  (if-let [chat-id (db/one-with chat-db (datomic-chat-entity-query (db/store-id->dbid sulo-db (or (:store/username store)
+                                                                                                  (:db/id store)))))]
     (read-chat-messages chat-db sulo-db query chat-id limit)
     {:sulo-db-tx []
      :chat-db-tx {}}))

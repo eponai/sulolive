@@ -23,6 +23,7 @@
   (missing-personal-id-account))
 
 (def test-user-email "dev@sulo.live")
+(def test-user-2-email "dev2@sulo.live")
 
 (defn photo [id]
   {:db/id      (db/tempid :db.part/user)
@@ -105,6 +106,8 @@
     :store/profile    {:store.profile/name  "ikcha"
                        :store.profile/photo (photo "mocked/isla_500x500.24111301_nvjpi6zo")
                        :store.profile/cover (photo "mocked/isbl_3360x840.20468865_f7kumdbt")}
+    :store/username   "ikcha"
+    :store/status     {:status/type :status.type/open}
     ;:store/locality   [:sulo-locality/path "yvr"]
     :store/created-at 1
     :store/stripe     (stripe-account)
@@ -147,8 +150,7 @@
                         :store.item/category [:category/path (category-path "jewelry" "women")]}]
     :store/owners     {:store.owner/user {:db/id        (db/tempid :db.part/user)
                                           :user/email   test-user-email
-                                          :user/profile {:user.profile/photo (photo "static/men")
-                                                         :user.profile/name  "Diana"}
+                                          :user/profile {:user.profile/name "Diana"}
                                           :user/stripe  {:stripe/id "cus_A9paOisnJJQ0wS"}}
                        :store.owner/role :store.owner.role/admin}}
    ;; MagicLinen
@@ -156,6 +158,12 @@
     :store/profile    {:store.profile/name  "MagicLinen"
                        :store.profile/cover (photo "mocked/isbl_3360x840.22956500_1bj341c6")
                        :store.profile/photo (photo "mocked/isla_500x500.17338368_6u0a6c4s")}
+    :store/owners     {:store.owner/user {:db/id        (db/tempid :db.part/user)
+                                          :user/email   test-user-2-email
+                                          :user/profile {:user.profile/name "Test2"}
+                                          :user/stripe  {:stripe/id "cus_A9paOisnJJQ0wS"}}
+                       :store.owner/role :store.owner.role/admin}
+    :store/stripe     (no-details-account)
     :store/created-at 2
     ;:store/locality   [:sulo-locality/path "yvr"]
 
@@ -213,7 +221,7 @@
    ;; Nafsika
    {:db/id            (db/tempid :db.part/user)
     :store/created-at 4
-    :store/profile    {:store.profile/name  "Nafsika"
+    :store/profile    {:store.profile/name "Nafsika"
                        ;:store.profile/photo (photo "mocked/isla_500x500.22177516_ath1ugrh")
                        }
     :store/status     {:status/type :status.type/open}
@@ -269,13 +277,13 @@
 
    ;; BangiShop
 
-   {:db/id         (db/tempid :db.part/user)
-    :store/profile {:store.profile/name  "BangiShop"
-                    :store.profile/cover (photo "mocked/isbl_3360x840.24031443_roffucs6")
-                    :store.profile/photo (photo "mocked/isla_500x500.18128391_dro0qzqd")}
+   {:db/id          (db/tempid :db.part/user)
+    :store/profile  {:store.profile/name  "BangiShop"
+                     :store.profile/cover (photo "mocked/isbl_3360x840.24031443_roffucs6")
+                     :store.profile/photo (photo "mocked/isla_500x500.18128391_dro0qzqd")}
     :store/locality [:sulo-locality/path "yul"]
     :store/stripe   {:stripe/id "acct_19jze1BbOp8CGZPS"}
-    :store/status     {:status/type :status.type/open}
+    :store/status   {:status/type :status.type/open}
     :store/items    [{:store.item/name     "Leather Shoes (silver)"
                       :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1040522475_mbon"
                                                                              "mocked/il_570xN.993989824_3pdl"])

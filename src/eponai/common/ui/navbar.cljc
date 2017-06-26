@@ -45,7 +45,7 @@
               (css/add-class :nested)
               (let [store-name (get-in owned-store [:store/profile :store.profile/name])]
                 (menu/item-link
-                  {:href    (routes/url :store-dashboard {:store-id (:db/id owned-store)})
+                  {:href    (routes/store-url owned-store :store-dashboard)
                    :onClick #(do (track-event ::mixpanel/go-to-manage-store {:store-id   (:db/id owned-store)
                                                                              :store-name store-name})
                                  ;#?(:cljs (when (empty? locations)

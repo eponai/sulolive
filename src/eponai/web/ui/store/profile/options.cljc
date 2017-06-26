@@ -203,11 +203,15 @@
                               :query/store])))
 
   (componentDidUpdate [this _ _]
-    (let [username-msg (msg/last-message this 'store/update-username)]
+    (let [{:query/keys [current-route]} (om/props this)
+          username-msg (msg/last-message this 'store/update-username)]
       (when (msg/final? username-msg)
         (msg/clear-messages! this 'store/update-username)
         (if (msg/success? username-msg)
-          (om/update-state! this dissoc :modal :error-message)
+          (do
+            ;(debug "New store success: " (msg/message username-msg))
+            (routes/set-url! this (:route current-route) (assoc (:route-params current-route) :store-id (:username (msg/message username-msg))))
+            (om/update-state! this dissoc :modal :error-message))
           (om/update-state! this assoc :error-message (msg/message username-msg))))))
 
   (render [this]
