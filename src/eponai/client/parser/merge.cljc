@@ -142,7 +142,7 @@
 
   ;; Dispatch proxy first, so our merge-fn doesn't have to
   ;; implement that themselves.
-  (if (#{"proxy" "routing"} (namespace key))
+  (if (parser/is-special-key? key)
     (reduce-kv (fn [db k v] (merge-read merge-fn db k v))
                db
                val)

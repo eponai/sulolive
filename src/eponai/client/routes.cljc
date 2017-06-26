@@ -7,7 +7,8 @@
     [eponai.common.database :as db]
     [taoensso.timbre :as timbre :refer [error debug warn]]
     [cemerick.url :as url]
-    [eponai.common.shared :as shared]))
+    [eponai.common.shared :as shared]
+    [eponai.common :as c]))
 
 (def root-route-key :routing/app-root)
 
@@ -97,10 +98,27 @@
        (do-set-url! component bidi-url))
      (warn "Unable to create a url with route: " route " route-params: " route-params))))
 
+(def route-param-normalizers
+  {:store-id   (fn [db store-id] (db/store-id->dbid db store-id))
+   :order-id   (fn [_ order-id] (c/parse-long-safe order-id))
+   :user-id    (fn [_ user-id] (c/parse-long-safe user-id))
+   :product-id (fn [_ product-id] (c/parse-long-safe product-id))})
+
+(defn normalize-route-params [db route-params]
+  (->> (keys route-params)
+       (filter #(contains? route-param-normalizers %))
+       (reduce
+         (fn [m k]
+           (let [normalizer (get route-param-normalizers k)]
+             (update m k #(normalizer db %))))
+         route-params)))
+
 (defn current-route [x]
-  (-> (db/to-db x)
-      (db/entity [:ui/singleton :ui.singleton/routes])
-      (->> (into {}))
-      (set/rename-keys {:ui.singleton.routes/current-route :route
-                        :ui.singleton.routes/route-params  :route-params
-                        :ui.singleton.routes/query-params  :query-params})))
+  (let [db (db/to-db x)]
+    (-> db
+        (db/entity [:ui/singleton :ui.singleton/routes])
+        (->> (into {}))
+        (set/rename-keys {:ui.singleton.routes/current-route :route
+                          :ui.singleton.routes/route-params  :route-params
+                          :ui.singleton.routes/query-params  :query-params})
+        (update :route-params #(normalize-route-params db %)))))

@@ -7,7 +7,7 @@
             [eponai.client.auth :as client.auth]
             [eponai.client.utils :as client.utils]
             [eponai.client.routes :as client.routes]
-            [eponai.common.routes :as routes]
+            [eponai.common.routes :as common.routes]
             [eponai.common.auth :as auth]
             [eponai.common.database :as db]
             [eponai.common.format.date :as date]
@@ -133,9 +133,13 @@
 (defn is-routing? [k]
   (= "routing" (namespace k)))
 
+(defn is-read-with-state? [k]
+  (= :read/with-state k))
+
 (defn is-special-key? [k]
   (or (is-proxy? k)
-      (is-routing? k)))
+      (is-routing? k)
+      (is-read-with-state? k)))
 
 (defn default-read [e k p type]
   (cond
@@ -150,6 +154,9 @@
 
 (defmethod client-read :default [e k p] (default-read e k p :client))
 (defmethod server-read :default [e k p] (default-read e k p :server))
+
+(defmethod client-read :read/with-state [env k p] (util/read-with-state env k p))
+(defmethod server-read :read/with-state [env k p] (util/read-with-state env k p))
 
 (defmethod server-message :default
   [e k p]
@@ -270,7 +277,7 @@
   (fn [{:keys [query] :as env} k p]
     (let [env (if-not query
                 env
-                (assoc env :query (if (#{"proxy" "routing"} (namespace k))
+                (assoc env :query (if (is-special-key? k)
                                     query
                                     (util/put-db-id-in-query query))))]
       (read env k p))))
@@ -951,6 +958,8 @@
                                     (parser-read env k p)
                                     (is-proxy? k)
                                     (util/read-join env k p)
+                                    (is-read-with-state? k)
+                                    (util/read-with-state env k p)
                                     :else
                                     (when-let [v (get-in deduped-parse
                                                          [(key-params->dedupe-key k p) k])]
@@ -958,7 +967,10 @@
             ret (if (some? target)
                   (cond-> mutate-ret
                           (seq deduped-query)
-                          ((fnil into []) deduped-parse))
+                          ;; We wrap all reads with state that the reads depend on.
+                          ;; This is only used for client-parsers (they are the ones getting :target).
+                          ((fnil conj []) (list {:read/with-state deduped-parse}
+                                                (select-keys env [:route :route-params :query-params]))))
                   (cond->> mutate-ret
                            (seq reads)
                            (merge (-> (deduped-result-parser env query target)
