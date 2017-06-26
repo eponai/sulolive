@@ -66,8 +66,7 @@
   ([store route route-params]
     (store-url store route route-params nil))
   ([store route route-params query-params]
-   (debug "Store URL: " store)
-   (let [store-id (or (:store/username store)
+   (when-let [store-id (or (:store/username store)
                       (:db/id store))]
      (url route (assoc route-params :store-id store-id) query-params))))
 

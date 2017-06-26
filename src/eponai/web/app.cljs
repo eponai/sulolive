@@ -248,9 +248,9 @@
       (run! #(modules/prefetch-route modules %) [:index :store :browse])
       ;; Pre fetch data which makes the site less jumpy
       (debug "Pre-fetching the :index route...")
-      (when (not= :index (:route (routes/current-route reconciler)))
-        (fetch-route-data! reconciler send-fn {:route :index
-                                               :route-params {:locality (:sulo-locality/path (client.auth/current-locality reconciler))}}))
+      ;(when (not= :index (:route (routes/current-route reconciler)))
+      ;  (fetch-route-data! reconciler send-fn {:route :index
+      ;                                         :route-params {:locality (:sulo-locality/path (client.auth/current-locality reconciler))}}))
       (debug "Fetching all cover photos...")
       (fetch-cover-photos! reconciler)
       (debug "Initial app load done!")

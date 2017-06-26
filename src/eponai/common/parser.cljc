@@ -239,11 +239,11 @@
                             filter
                             (let [authed-user-id
                                   (when (:email auth)
-                                    (db/find-with db (db/merge-query (auth/auth-role-query ::auth/any-user auth {})
+                                    (db/find-with db (db/merge-query (auth/auth-role-query db ::auth/any-user auth {})
                                                                      {:find '[?user .]})))
                                   authed-store-ids
                                   (when authed-user-id
-                                    (db/find-with db (db/merge-query (auth/auth-role-query ::auth/any-store-owner auth {})
+                                    (db/find-with db (db/merge-query (auth/auth-role-query db ::auth/any-store-owner auth {})
                                                                      {:symbols {'?user authed-user-id}
                                                                       :find    '[[?store ...]]})))
                                   filter (filter/filter-authed authed-user-id authed-store-ids)]

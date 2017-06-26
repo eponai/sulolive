@@ -327,6 +327,7 @@
           last-message (msg/last-message this 'stripe/update-account)
           shipping-msg (msg/last-message this 'store/update-shipping)
           ]
+      (debug "stripe account: " stripe-account)
 
       (debug "Finances: " finances)
       (dom/div

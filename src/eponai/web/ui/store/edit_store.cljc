@@ -302,12 +302,12 @@
                 (menu/item
                   (when (= route :store-dashboard/profile)
                     (css/add-class :is-active))
-                  (dom/a {:href (routes/url :store-dashboard/profile route-params)}
+                  (dom/a {:href (routes/store-url store :store-dashboard/profile)}
                          (dom/span nil "Info & appearance")))
                 (menu/item
                   (when (= route :store-dashboard/profile#options)
                     (css/add-class :is-active))
-                  (dom/a {:href (routes/url :store-dashboard/profile#options route-params)}
+                  (dom/a {:href (routes/store-url store :store-dashboard/profile#options)}
                          (dom/span nil "Options")))))))
 
 
