@@ -156,7 +156,14 @@
 (defmethod server-read :default [e k p] (default-read e k p :server))
 
 (defmethod client-read :read/with-state [env k p] (util/read-with-state env k p))
-(defmethod server-read :read/with-state [env k p] (util/read-with-state env k p))
+(defmethod server-read :read/with-state
+  [{:keys [db] :as env} k {:keys [route-params] :as params}]
+  ;; Normalize the route params, even though we've already done it client side
+  ;; to know that we're getting the right stuff.
+  (util/read-with-state env k
+                        (cond-> params
+                                (seq route-params)
+                                (update :route-params #(client.routes/normalize-route-params db %)))))
 
 (defmethod server-message :default
   [e k p]

@@ -99,10 +99,12 @@
      (warn "Unable to create a url with route: " route " route-params: " route-params))))
 
 (def route-param-normalizers
-  {:store-id   (fn [db store-id] (db/store-id->dbid db store-id))
-   :order-id   (fn [_ order-id] (c/parse-long-safe order-id))
+  {:order-id   (fn [_ order-id] (c/parse-long-safe order-id))
    :user-id    (fn [_ user-id] (c/parse-long-safe user-id))
-   :product-id (fn [_ product-id] (c/parse-long-safe product-id))})
+   :product-id (fn [_ product-id] (c/parse-long-safe product-id))
+   :store-id   (fn [db store-id] (cond->> store-id
+                                          (not (number? store-id))
+                                          (db/store-id->dbid db)))})
 
 (defn normalize-route-params [db route-params]
   (->> (keys route-params)
