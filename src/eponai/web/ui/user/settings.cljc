@@ -12,9 +12,9 @@
     [eponai.common.ui.elements.input-validate :as v]
     [eponai.common.mixpanel :as mixpanel]
     [eponai.web.ui.photo :as photo]
-    #?(:cljs [cljs.spec :as s]
+    #?(:cljs [cljs.spec.alpha :as s]
        :clj
-    [clojure.spec :as s])
+    [clojure.spec.alpha :as s])
     #?(:cljs
        [eponai.web.utils :as utils])
     #?(:cljs

@@ -10,7 +10,7 @@
     [taoensso.timbre :refer [debug error info]]
     ;; Dev/debug require
     [eponai.server.system :as system]
-    [clojure.spec :as s]
+    [clojure.spec.alpha :as s]
     [eponai.common.mixpanel :as mixpanel]))
 
 (defn- make-system [{::keys [system-fn] :as opts}]

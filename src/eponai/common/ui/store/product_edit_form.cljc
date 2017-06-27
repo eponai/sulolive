@@ -1,6 +1,6 @@
 (ns eponai.common.ui.store.product-edit-form
   (:require
-    [clojure.spec :as s]
+    [clojure.spec.alpha :as s]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.om-quill :as quill]

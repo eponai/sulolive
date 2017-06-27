@@ -5,7 +5,7 @@
     [eponai.devcards.checkout-cards]
     [eponai.devcards.business-graphs]
     [om.dom :as dom]
-    [cljs.spec :as s])
+    [cljs.spec.alpha :as s])
   (:require-macros
     [devcards.core :refer [defcard]]))
 

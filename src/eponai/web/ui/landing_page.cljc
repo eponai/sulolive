@@ -1,7 +1,7 @@
 (ns eponai.web.ui.landing-page
   (:require
     [cemerick.url :as url]
-    [clojure.spec :as s]
+    [clojure.spec.alpha :as s]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
     [om.next :as om :refer [defui]]
