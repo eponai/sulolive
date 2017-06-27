@@ -50,6 +50,7 @@
   {:post [(or (nil? %) (number? %))]}
   (let [db (db/to-db x)]
     (-> (routes/current-route db)
+        (:route-params)
         (select-keys [:store-id])
         (routes/normalize-route-params db)
         (:store-id))))

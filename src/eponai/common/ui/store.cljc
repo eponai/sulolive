@@ -176,7 +176,7 @@
                (dom/div (css/add-class :sl-tooltip)
                       (dom/p
                         (css/add-class :closed)
-                        (dom/h3 nil "Closed - "))
+                        (dom/strong nil "Closed - "))
                       (dom/span (css/add-class :sl-tooltip-text)
                                 "Only you can see your store. Customers who try to view your store will see a not found page."))
                (dom/a {:href (routes/url :store-dashboard/profile#options route-params)} "Go to options")))

@@ -236,24 +236,28 @@
                               (debug "Initial module has loaded for route: " route)
                               (async/close! initial-module-loaded-chan)))
     (go
-      (async/<! initial-module-loaded-chan)
-      (client.utils/init-state! reconciler send-fn (om/get-query router/Router))
-      (async/<! initial-merge-chan)
-      (debug "init user cart...")
-      (init-user-cart! reconciler)
-      (debug "Adding reconciler to root!")
-      (add-root! reconciler)
-      ;; Pre fetch all routes
-      (debug "Pre-fetching modules..")
-      (run! #(modules/prefetch-route modules %) [:index :store :browse])
-      ;; Pre fetch data which makes the site less jumpy
-      (debug "Pre-fetching the :index route...")
-      ;(when (not= :index (:route (routes/current-route reconciler)))
-      ;  (fetch-route-data! reconciler send-fn {:route :index
-      ;                                         :route-params {:locality (:sulo-locality/path (client.auth/current-locality reconciler))}}))
-      (debug "Fetching all cover photos...")
-      (fetch-cover-photos! reconciler)
-      (debug "Initial app load done!")
+      (try
+        (do
+         (async/<! initial-module-loaded-chan)
+         (client.utils/init-state! reconciler send-fn (om/get-query router/Router))
+         (async/<! initial-merge-chan)
+         (debug "init user cart...")
+         (init-user-cart! reconciler)
+         (debug "Adding reconciler to root!")
+         (add-root! reconciler)
+         ;; Pre fetch all routes
+         (debug "Pre-fetching modules..")
+         (run! #(modules/prefetch-route modules %) [:index :store :browse])
+         ;; Pre fetch data which makes the site less jumpy
+         (debug "Pre-fetching the :index route...")
+         ;(when (not= :index (:route (routes/current-route reconciler)))
+         ;  (fetch-route-data! reconciler send-fn {:route :index
+         ;                                         :route-params {:locality (:sulo-locality/path (client.auth/current-locality reconciler))}}))
+         (debug "Fetching all cover photos...")
+         (fetch-cover-photos! reconciler)
+         (debug "Initial app load done!"))
+        (catch :default e
+          (error "Init app error: " e)))
       )))
 
 (defn run-prod []

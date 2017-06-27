@@ -538,11 +538,12 @@
                                (do (auth/-prompt-login auth-responder nil)
                                    "You need to log in to perform this action")
                                (do (auth/-unauthorize auth-responder)
-                                   (log/info! logger
-                                              :eponai.server.parser/auth
-                                              {:response-type :unauthorized
-                                               :parser-key    k
-                                               :parser-type   :mutate})
+                                   #?(:clj
+                                      (log/info! logger
+                                                 :eponai.server.parser/auth
+                                                 {:response-type :unauthorized
+                                                  :parser-key    k
+                                                  :parser-type   :mutate}))
                                    "You are unauthorized to perform this action"))]
                  {::mutation-message {::error-message message}}))))
 
@@ -766,50 +767,61 @@
 
 (defn- client-db-state [env state]
   (let [db (db/db (:state env))
-        db-state (deref (::db-state state))]
-    (if (identical? db (:db db-state))
-      db-state
-      (let [{:keys [route route-params query-params]} (client.routes/current-route db)]
-        (reset! (::db-state state)
-                {:db               db
-                 :route            route
-                 :route-params     (if (nil? (:target env))
-                                     (client.routes/normalize-route-params route-params db)
-                                     ;; We're not normalizing route-params when we've got a target
-                                     ;; since normalizing a param can change it's value. But since
-                                     ;; we're not supposed to use the values in :route-params when
-                                     ;; we've got a target, but we want to check for the existence
-                                     ;; of a route-param, we put a fake value for all of its keys.
-                                     (medley/map-vals (constantly ::use-only-to-check-if-one-got-the-param)
-                                                      route-params))
-                 ;; The non-normalized route-params if we need it.
-                 :raw-route-params route-params
-                 :query-params     query-params
-                 :auth             (when-let [email (client.auth/authed-email db)]
-                                     {:email email})
-                 ::auth-responder  (reify
-                                     auth/IAuthResponder
-                                     (-redirect [this path]
-                                       ;; This redirect could be done cljs side with pushy and :shared/browser-history
-                                       ;; but we don't use this yet, so let's not implement it yet.
-                                       (throw (ex-info "Unsupported function -redirect. Implement if needed"
-                                                       {:this this :path path :method :IAuthResponder/-redirect})))
-                                     (-prompt-login [this anything]
-                                       (client.auth/show-lock (:shared/auth-lock (:shared env))))
-                                     (-unauthorize [this]
-                                       ;;TODO: When :shared/jumbotron is implemented (a place where we
-                                       ;;      can show messages to a user), call the jumbotron with
-                                       ;;      an unauthorized message
-                                       #?(:cljs (js/alert "You're unauthorized to do that action"))
-                                       ))})))))
+        db-state (deref (::db-state state))
+        state (if (identical? db (:db db-state))
+                db-state
+                (let [{:keys [route route-params query-params]} (client.routes/current-route db)]
+                  (reset! (::db-state state)
+                          {:db                       db
+                           :route                    route
+                           ;; Stores different versions of route-params since they differ between
+                           ;; target=nil and target=<anything>
+                           ::route-params-nil-target  (client.routes/normalize-route-params route-params db)
+                           ;; We're not normalizing route-params when we've got a target
+                           ;; since normalizing a param can change it's value. But since
+                           ;; we're not supposed to use the values in :route-params when
+                           ;; we've got a target, but we want to check for the existence
+                           ;; of a route-param, we put a fake value for all of its keys.
+                           ::route-params-some-target (medley/map-vals (constantly ::use-only-to-check-if-one-got-the-param)
+                                                                      route-params)
+                           ;; The non-normalized route-params if we need it.
+                           :raw-route-params         route-params
+
+                           :query-params             query-params
+                           :auth                     (when-let [email (client.auth/authed-email db)]
+                                                       {:email email})
+                           ::auth-responder          (reify
+                                                       auth/IAuthResponder
+                                                       (-redirect [this path]
+                                                         ;; This redirect could be done cljs side with pushy and :shared/browser-history
+                                                         ;; but we don't use this yet, so let's not implement it yet.
+                                                         (throw (ex-info "Unsupported function -redirect. Implement if needed"
+                                                                         {:this this :path path :method :IAuthResponder/-redirect})))
+                                                       (-prompt-login [this anything]
+                                                         (client.auth/show-lock (:shared/auth-lock (:shared env))))
+                                                       (-unauthorize [this]
+                                                         ;;TODO: When :shared/jumbotron is implemented (a place where we
+                                                         ;;      can show messages to a user), call the jumbotron with
+                                                         ;;      an unauthorized message
+                                                         #?(:cljs (js/alert "You're unauthorized to do that action"))
+                                                         ))})))]
+    (-> state
+        (assoc :route-params (if (nil? (:target env))
+                               (::route-params-nil-target state)
+                               (::route-params-some-target state)))
+        (dissoc ::route-params-nil-target
+                ::route-params-some-target))))
 
 (declare dedupe-parser)
 
 (defn db-state-parser [parser state]
-  (fn [env query & [target]]
-    (parser (into env (-> (client-db-state env state)
-                          (assoc ::server? false)))
-            query target)))
+  (fn self
+    ([env query]
+     (self env query nil))
+    ([env query target]
+     (parser (into env (-> (client-db-state (assoc env :target target) state)
+                           (assoc ::server? false)))
+             query target))))
 
 (defn client-parser
   ([] (client-parser (client-parser-state)))

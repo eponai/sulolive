@@ -165,6 +165,10 @@
 ;; If we query for :query/skus, we want to re-read :query/cart.
 (defmethod multiply-key :query/skus [_] [:query/cart])
 
+(defn unwrap-keys [[k v]]
+  (if (parser/is-special-key? k)
+    (mapcat unwrap-keys v)
+    [k]))
 
 (defn merge-novelty-by-key
   "Merges server response for each [k v] in novelty. Returns the next db and the keys to re-read."
@@ -189,9 +193,7 @@
               (assoc :next (merge-read merge-fn next key value))
               (update :keys into
                       (mapcat (fn [k] (cons k (multiply-key k))))
-                      (if (parser/is-special-key? key)
-                        (map (fn [[k _]] k) value)
-                        [key])))))
+                      (unwrap-keys [key value])))))
       {:keys [] :next db}
       ordered-novelty)))
 
