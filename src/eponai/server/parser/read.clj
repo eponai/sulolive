@@ -33,6 +33,8 @@
   (assert (and (map? auth-and-basis-params) (contains? auth-and-basis-params :auth))
           (str "defreads's auth and basis-params requires an :auth key"
                " was: " auth-and-basis-params))
+  (assert (== 3 (count args))
+          (str "defread needs argument vector to take 3 arguments, was: " args))
   (let [read-key# (keyword (namespace read-sym) (name read-sym))
         basis-params-body# (when-let [bp# (:uniq-by auth-and-basis-params)]
                              `(defmethod parser/read-basis-params ~read-key# ~args ~bp#))
@@ -338,7 +340,7 @@
                       :symbols {'[?e ...] sku-ids}})})
 
 (defread query/item
-  [{:keys [db db-history query route-params]} _]
+  [{:keys [db db-history query route-params]} _ _]
   {:auth    ::auth/public
    :uniq-by {:route-params [:product-id]}}
   {:value (query/one db db-history query

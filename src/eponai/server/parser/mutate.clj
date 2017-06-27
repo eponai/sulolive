@@ -32,6 +32,8 @@
   (assert (and (map? auth-and-message) (every? (set (keys auth-and-message)) #{:auth :resp}))
           (str "defmutation's auth and message body needs to be a map with :auth and :resp."
                " was: " auth-and-message))
+  (assert (== 3 (count args))
+          (str "defread needs argument vector to take 3 arguments, was: " args))
   ;; For return values of :log, see comment in parser/log-param-keys
   (let [log-param-key# (when-let [pk# (:log auth-and-message)]
                          `(defmethod parser/log-param-keys (quote ~sym) ~args ~pk#))]

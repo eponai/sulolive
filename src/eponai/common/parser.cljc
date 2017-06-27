@@ -516,7 +516,7 @@
                                (fn [{:keys [auth logger] :as env} k p]
                                  #?(:clj
                                     (when (not-empty auth)
-                                      (log/info! logger k {:response-type :unauthorized})))
+                                      (log/warn! logger :eponai.server.parser/auth {:response-type :unauthorized})))
                                  (debug "Not authed enough for read: " k
                                         " params: " p
                                         " auth-roles: " (:auth-roles env))))]
