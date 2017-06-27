@@ -7,7 +7,7 @@
             [eponai.client.auth :as client.auth]
             [eponai.client.utils :as client.utils]
             [eponai.client.routes :as client.routes]
-            [eponai.common.routes :as routes]
+            [eponai.common.routes :as common.routes]
             [eponai.common.auth :as auth]
             [eponai.common.database :as db]
             [eponai.common.format.date :as date]
@@ -22,7 +22,8 @@
             [medley.core :as medley]
             [cemerick.url :as url]
     #?(:clj
-            [eponai.server.log :as log]))
+            [eponai.server.log :as log])
+            [eponai.common.format :as f])
   #?(:clj
      (:import (clojure.lang ExceptionInfo))))
 
@@ -133,9 +134,13 @@
 (defn is-routing? [k]
   (= "routing" (namespace k)))
 
+(defn is-read-with-state? [k]
+  (= :read/with-state k))
+
 (defn is-special-key? [k]
   (or (is-proxy? k)
-      (is-routing? k)))
+      (is-routing? k)
+      (is-read-with-state? k)))
 
 (defn default-read [e k p type]
   (cond
@@ -150,6 +155,14 @@
 
 (defmethod client-read :default [e k p] (default-read e k p :client))
 (defmethod server-read :default [e k p] (default-read e k p :server))
+
+(defmethod client-read :read/with-state [env k p] (util/read-with-state env k p))
+(defmethod server-read :read/with-state
+  [{:keys [db] :as env} k {:keys [route-params] :as params}]
+  (util/read-with-state env k
+                        (cond-> params
+                                (seq route-params)
+                                (update :route-params client.routes/normalize-route-params db))))
 
 (defmethod server-message :default
   [e k p]
@@ -239,11 +252,11 @@
                             filter
                             (let [authed-user-id
                                   (when (:email auth)
-                                    (db/find-with db (db/merge-query (auth/auth-role-query db ::auth/any-user auth {})
+                                    (db/find-with db (db/merge-query (auth/auth-role-query ::auth/any-user auth {})
                                                                      {:find '[?user .]})))
                                   authed-store-ids
                                   (when authed-user-id
-                                    (db/find-with db (db/merge-query (auth/auth-role-query db ::auth/any-store-owner auth {})
+                                    (db/find-with db (db/merge-query (auth/auth-role-query ::auth/any-store-owner auth {})
                                                                      {:symbols {'?user authed-user-id}
                                                                       :find    '[[?store ...]]})))
                                   filter (filter/filter-authed authed-user-id authed-store-ids)]
@@ -270,7 +283,7 @@
   (fn [{:keys [query] :as env} k p]
     (let [env (if-not query
                 env
-                (assoc env :query (if (#{"proxy" "routing"} (namespace k))
+                (assoc env :query (if (is-special-key? k)
                                     query
                                     (util/put-db-id-in-query query))))]
       (read env k p))))
@@ -405,7 +418,23 @@
 #?(:clj
    (defmethod read-basis-params :default
      [_ _ _]
-     []))
+     nil))
+
+#?(:clj
+   (defn validate-read-basis-params [env k p x]
+     (if (or (nil? x)
+             (and (map? x)
+                  (every? #(and (vector? %) (== 2 (count %)))
+                          (:custom x))
+                  (every? keyword? (mapcat #(get x %) [:params :route-params :query-params]))))
+       x
+       (throw (ex-info (str "Return from read-basis-params for key: " k
+                            " was not valid. Was: " x)
+                       {:key          k
+                        :params       p
+                        :route-params (:route-params env)
+                        :query-params (:query-params env)
+                        :return       x})))))
 
 #?(:clj
    (defn read-returning-basis-t [read]
@@ -415,15 +444,21 @@
        (if (or (is-proxy? k) (is-routing? k))
          ;; Do nothing special for routing and proxy keys
          (read env k p)
-         (let [read-basis-params (read-basis-params env k p)
-               _ (assert (or (nil? read-basis-params)
-                             (and (sequential? read-basis-params)
-                                  (every? #(and (vector? %) (= 2 (count %)))
-                                          read-basis-params)))
-                         (str "Path returned from read-basis-param-path for key: " k
-                              " params: " p
-                              " was not nil or sequential with [k v] pairs. Was: " read-basis-params))
-               read-basis-params (into [[:locations locations] [:query-hash (hash query)]] read-basis-params)
+         (let [read-basis-params (->> (read-basis-params env k p)
+                                      (validate-read-basis-params env k p))
+               route-basis-kvs (or (:custom read-basis-params)
+                                   (into []
+                                         (mapcat (fn [[param-key param-map]]
+                                                   (let [params-order (get read-basis-params param-key)]
+                                                     (map (juxt identity #(get param-map %))
+                                                          params-order))))
+                                         [[:route-params (:route-params env)]
+                                          [:query-params (:query-params env)]
+                                          [:params p]]))
+               read-basis-params (-> []
+                                     (conj [:locations locations])
+                                     (into route-basis-kvs)
+                                     (conj [:query-hash (hash query)]))
                basis-t-for-this-key (util/get-basis-t @read-basis-t-graph k read-basis-params)
                env (if (contains? @force-read-without-history k)
                      (do
@@ -483,7 +518,11 @@
                                (fn [{:keys [auth logger] :as env} k p]
                                  #?(:clj
                                     (when (not-empty auth)
-                                      (log/info! logger k {:response-type :unauthorized})))
+                                      (log/info! logger
+                                                 :eponai.server.parser/auth
+                                                 {:response-type :unauthorized
+                                                  :parser-key    k
+                                                  :parser-type   :read})))
                                  (debug "Not authed enough for read: " k
                                         " params: " p
                                         " auth-roles: " (:auth-roles env))))]
@@ -494,11 +533,17 @@
 
 (defn wrap-server-mutate-auth [mutate]
   (wrap-auth server-auth-role mutate
-             (fn [{::keys [auth-responder] :keys [auth logger]} _ _]
+             (fn [{::keys [auth-responder] :keys [auth logger]} k _]
                (let [message (if (empty? auth)
                                (do (auth/-prompt-login auth-responder nil)
                                    "You need to log in to perform this action")
                                (do (auth/-unauthorize auth-responder)
+                                   #?(:clj
+                                      (log/info! logger
+                                                 :eponai.server.parser/auth
+                                                 {:response-type :unauthorized
+                                                  :parser-key    k
+                                                  :parser-type   :mutate}))
                                    "You are unauthorized to perform this action"))]
                  {::mutation-message {::error-message message}}))))
 
@@ -579,13 +624,14 @@
                          (keyword (str "eponai.server.parser")
                                   (if read? "read" "mutate"))
                          (merge {:parser-key    k
+                                 :parser-type   (if read? :read :mutate)
                                  :response-type (if error? :error :success)
                                  :event-time-ms (- end start)}
                                 (cond
                                   error?
                                   {:exception (log/render-exception x)}
                                   read?
-                                  (cond-> nil
+                                  (cond-> (f/remove-nil-keys (select-keys env [:route :route-params :query-params]))
                                           (coll? x)
                                           (assoc :return-empty? (empty? x))
                                           (counted? x)
@@ -721,40 +767,61 @@
 
 (defn- client-db-state [env state]
   (let [db (db/db (:state env))
-        db-state (deref (::db-state state))]
-    (if (identical? db (:db db-state))
-      db-state
-      (let [{:keys [route route-params query-params]} (client.routes/current-route db)]
-        (reset! (::db-state state)
-                {:db              db
-                 :route           route
-                 :route-params    route-params
-                 :query-params    query-params
-                 :auth            (when-let [email (client.auth/authed-email db)]
-                                    {:email email})
-                 ::auth-responder (reify
-                                    auth/IAuthResponder
-                                    (-redirect [this path]
-                                      ;; This redirect could be done cljs side with pushy and :shared/browser-history
-                                      ;; but we don't use this yet, so let's not implement it yet.
-                                      (throw (ex-info "Unsupported function -redirect. Implement if needed"
-                                                      {:this this :path path :method :IAuthResponder/-redirect})))
-                                    (-prompt-login [this anything]
-                                      (client.auth/show-lock (:shared/auth-lock (:shared env))))
-                                    (-unauthorize [this]
-                                      ;;TODO: When :shared/jumbotron is implemented (a place where we
-                                      ;;      can show messages to a user), call the jumbotron with
-                                      ;;      an unauthorized message
-                                      #?(:cljs (js/alert "You're unauthorized to do that action"))
-                                      ))})))))
+        db-state (deref (::db-state state))
+        state (if (identical? db (:db db-state))
+                db-state
+                (let [{:keys [route route-params query-params]} (client.routes/current-route db)]
+                  (reset! (::db-state state)
+                          {:db                       db
+                           :route                    route
+                           ;; Stores different versions of route-params since they differ between
+                           ;; target=nil and target=<anything>
+                           ::route-params-nil-target  (client.routes/normalize-route-params route-params db)
+                           ;; We're not normalizing route-params when we've got a target
+                           ;; since normalizing a param can change it's value. But since
+                           ;; we're not supposed to use the values in :route-params when
+                           ;; we've got a target, but we want to check for the existence
+                           ;; of a route-param, we put a fake value for all of its keys.
+                           ::route-params-some-target (medley/map-vals (constantly ::use-only-to-check-if-one-got-the-param)
+                                                                      route-params)
+                           ;; The non-normalized route-params if we need it.
+                           :raw-route-params         route-params
+
+                           :query-params             query-params
+                           :auth                     (when-let [email (client.auth/authed-email db)]
+                                                       {:email email})
+                           ::auth-responder          (reify
+                                                       auth/IAuthResponder
+                                                       (-redirect [this path]
+                                                         ;; This redirect could be done cljs side with pushy and :shared/browser-history
+                                                         ;; but we don't use this yet, so let's not implement it yet.
+                                                         (throw (ex-info "Unsupported function -redirect. Implement if needed"
+                                                                         {:this this :path path :method :IAuthResponder/-redirect})))
+                                                       (-prompt-login [this anything]
+                                                         (client.auth/show-lock (:shared/auth-lock (:shared env))))
+                                                       (-unauthorize [this]
+                                                         ;;TODO: When :shared/jumbotron is implemented (a place where we
+                                                         ;;      can show messages to a user), call the jumbotron with
+                                                         ;;      an unauthorized message
+                                                         #?(:cljs (js/alert "You're unauthorized to do that action"))
+                                                         ))})))]
+    (-> state
+        (assoc :route-params (if (nil? (:target env))
+                               (::route-params-nil-target state)
+                               (::route-params-some-target state)))
+        (dissoc ::route-params-nil-target
+                ::route-params-some-target))))
 
 (declare dedupe-parser)
 
 (defn db-state-parser [parser state]
-  (fn [env query & [target]]
-    (parser (into env (-> (client-db-state env state)
-                          (assoc ::server? false)))
-            query target)))
+  (fn self
+    ([env query]
+     (self env query nil))
+    ([env query target]
+     (parser (into env (-> (client-db-state (assoc env :target target) state)
+                           (assoc ::server? false)))
+             query target))))
 
 (defn client-parser
   ([] (client-parser (client-parser-state)))
@@ -951,6 +1018,8 @@
                                     (parser-read env k p)
                                     (is-proxy? k)
                                     (util/read-join env k p)
+                                    (is-read-with-state? k)
+                                    (util/read-with-state env k p)
                                     :else
                                     (when-let [v (get-in deduped-parse
                                                          [(key-params->dedupe-key k p) k])]
@@ -958,7 +1027,14 @@
             ret (if (some? target)
                   (cond-> mutate-ret
                           (seq deduped-query)
-                          ((fnil into []) deduped-parse))
+                          ;; We wrap all reads with state that the reads depend on.
+                          ;; This is only used for client-parsers (they are the ones getting :target).
+                          ((fnil conj []) (list {:read/with-state deduped-parse}
+                                                (-> (select-keys env [:route :raw-route-params :query-params])
+                                                    ;; Using the raw route-params when sending to server
+                                                    ;; so the server gets a chance to normalize them.
+                                                    (set/rename-keys {:raw-route-params :route-params})
+                                                    (f/remove-nil-keys)))))
                   (cond->> mutate-ret
                            (seq reads)
                            (merge (-> (deduped-result-parser env query target)

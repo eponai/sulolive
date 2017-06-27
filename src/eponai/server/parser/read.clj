@@ -33,6 +33,8 @@
   (assert (and (map? auth-and-basis-params) (contains? auth-and-basis-params :auth))
           (str "defreads's auth and basis-params requires an :auth key"
                " was: " auth-and-basis-params))
+  (assert (== 3 (count args))
+          (str "defread needs argument vector to take 3 arguments, was: " args))
   (let [read-key# (keyword (namespace read-sym) (name read-sym))
         basis-params-body# (when-let [bp# (:uniq-by auth-and-basis-params)]
                              `(defmethod parser/read-basis-params ~read-key# ~args ~bp#))
@@ -58,20 +60,19 @@
                                           :symbols {'?u (:user-id auth)}})})
 
 (defread query/checkout
-  [{:keys [db db-history query auth]} _ {:keys [store-id]}]
-  {:auth ::auth/any-user
-   :log  [:store-id]}
+  [{:keys [db db-history query auth route-params]} _ _]
+  {:auth ::auth/any-user}
   {:value (db/pull-all-with db query {:where   '[[?u :user/cart ?c]
                                                  [?c :user.cart/items ?e]
                                                  [?i :store.item/skus ?e]
                                                  [?s :store/items ?i]]
-                                      :symbols {'?s store-id
+                                      :symbols {'?s (:store-id route-params)
                                                 '?u (:user-id auth)}})})
 
 (defread query/taxes
-  [{:keys [db db-history query auth system state] :as env} _ {:keys [destination store-id subtotal shipping]}]
+  [{:keys [db db-history query auth system state route-params] :as env} _ {:keys [destination subtotal shipping]}]
   {:auth ::auth/any-user}
-  {:value (do
+  {:value (let [store-id (:store-id route-params)]
             (debug "Query/taxes")
             (when-let [destination-address (:shipping/address destination)]
               (let [taxes (taxjar/calculate (:system/taxjar system)
@@ -91,16 +92,14 @@
   {:value (do
             (debug "Read stores: " locations)
             (when (some? (:db/id locations))
-                (query/all db db-history query {:where   '[[?e :store/locality ?l]
-                                                           [?status :status/type :status.type/open]
-                                                           [?e :store/status ?status]
-                                                           [?s :stream/state ?states]
-                                                           [?e :store/profile ?p]
-                                                           [?p :store.profile/photo _]
-                                                           [?s :stream/store ?e]]
-                                                :symbols {'[?states ...] [:stream.state/online
-                                                                          :stream.state/offline]
-                                                          '?l            (:db/id locations)}})))})
+              (query/all db db-history query {:where   '[[?e :store/locality ?l]
+                                                         [?status :status/type :status.type/open]
+                                                         [?e :store/status ?status]
+                                                         [?s :stream/state _]
+                                                         [?e :store/profile ?p]
+                                                         [?p :store.profile/photo _]
+                                                         [?s :stream/store ?e]]
+                                              :symbols {'?l (:db/id locations)}})))})
 
 (defread query/streams
   [{:keys [db db-history query locations]} _ _]
@@ -114,17 +113,20 @@
                                             :symbols {'?l (:db/id locations)}}))})
 
 (defread query/browse-items
-  [{:keys [db db-history query locations]} _ {{:keys [top-category sub-category] :as categories} :route-params
-                                              {:keys [search]}                                   :query-params}]
+  [{db                                                 :db
+    db-history                                         :db-history
+    query                                              :query
+    locations                                          :location
+    {:keys [top-category sub-category] :as categories} :route-params
+    {:keys [search]}                                   :query-params} _ _]
   {:auth    ::auth/public
-   :log     (f/remove-nil-keys {:search search :top-category top-category :sub-category sub-category})
-   :uniq-by [[:filter (cond
-                        (seq search)
-                        [:search search]
-                        (some? top-category)
-                        [:tc top-category]
-                        (some? sub-category)
-                        [:sc sub-category])]]}
+   :uniq-by {:custom [[:filter (cond
+                                 (seq search)
+                                 [:search search]
+                                 (some? top-category)
+                                 [:tc top-category]
+                                 (some? sub-category)
+                                 [:sc sub-category])]]}}
   {:value (when (some? (:db/id locations))
             (query/all db db-history query (cond
                                              (seq search)
@@ -201,11 +203,10 @@
 ;; ##############
 
 (defread query/store
-  [{:keys [db db-history query auth]} _ {:keys [store-id]}]
+  [{:keys [db db-history query auth route-params]} _ _]
   {:auth    ::auth/public
-   :log     [:store-id]
-   :uniq-by [[:store-id store-id]]}
-  {:value (let [store-id (db/store-id->dbid db store-id)
+   :uniq-by {:route-params [:store-id]}}
+  {:value (let [store-id (:store-id route-params)
                 {:store/keys [status owners]} (db/pull db
                                                        [{:store/status [:status/type]}
                                                         {:store/owners [{:store.owner/user [:user/email]}]}]
@@ -220,11 +221,10 @@
                :store/not-found? true}))})
 
 (defread query/store-items
-  [{:keys [db db-history query]} _ {:keys [store-id navigation]}]
+  [{:keys [db db-history query route-params]} _ _]
   {:auth    ::auth/public
-   :log     [:store-id :navigation]
-   :uniq-by [[:store-id store-id] [:nav-path (hash navigation)]]}
-  {:value (let [store-id (db/store-id->dbid db store-id)
+   :uniq-by {:route-params [:store-id :navigation]}}
+  {:value (let [{:keys [store-id navigation]} route-params
                 params (if (not-empty navigation)
                          {:where   '[[?s :store/items ?e]
                                      [?e :store.item/section ?n]
@@ -234,44 +234,46 @@
 
                          {:where   '[[?s :store/items ?e]]
                           :symbols {'?s store-id}}
-
                          )]
             (query/all db db-history query params))})
 
+;; TODO: Separate out this query?
+;; making it query/user-orders
+;;           query/store-orders
 (defread query/orders
-  [{:keys [db query auth]} _ {:keys [store-id]}]
+  [{:keys              [db query auth]
+    {:keys [store-id]} :route-params} _ _]
   {:auth    (if (some? store-id)
               {::auth/store-owner {:store-id store-id}}
               ::auth/any-user)
-   :log     [:store-id]
-   :uniq-by [[:val (if (some? store-id)
-                     [:store-id store-id]
-                     [:user-id (hash (:email auth))])]]}
-  {:value (if-let [store-id (db/store-id->dbid db store-id)]
+   :uniq-by {:custom [[:val (if (some? store-id)
+                              [:store-id store-id]
+                              [:user-id (hash (:email auth))])]]}}
+  {:value (if (some? store-id)
             (db/pull-all-with db query {:where   '[[?e :order/store ?s]]
                                         :symbols {'?s store-id}})
             (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
                                         :symbols {'?u (:user-id auth)}}))})
 
 (defread query/inventory
-  [{:keys [query db]} _ {:keys [store-id]}]
+  [{:keys              [query db]
+    {:keys [store-id]} :route-params} _ _]
   {:auth    {::auth/store-owner {:store-id store-id}}
-   :log     [:store-id]
-   :uniq-by [[:store-id store-id]]}
-  {:value (let [store-id (db/store-id->dbid db store-id)
-                items (db/pull-all-with db query {:where   '[[?s :store/items ?e]]
+   :uniq-by {:route-params [:store-id]}}
+  {:value (let [items (db/pull-all-with db query {:where   '[[?s :store/items ?e]]
                                                   :symbols {'?s store-id}})]
             ;(debug "Found items: " (into [] items))
             items)})
 
 (defread query/order
-  [{:keys [state query db auth] :as env} _ {:keys [order-id store-id]}]
+  [{:keys [query db auth]
+    {:keys [store-id order-id]} :route-params} _ _]
   {:auth    ::auth/any-user
-   :log     [:store-id :order-id]
-   :uniq-by [[:val (if (some? store-id)
-                     [:store-id store-id]
-                     [:user-id (hash (:email auth))])] [:order-id order-id]]}
-  {:value (if-let [store-id (db/store-id->dbid db store-id)]
+   :uniq-by {:custom [[:val (if (some? store-id)
+                              [:store-id store-id]
+                              [:user-id (hash (:email auth))])]
+                      [:order-id order-id]]}}
+  {:value (if (some? store-id)
             (db/pull-one-with db query {:where   '[[?e :order/store ?s]]
                                         :symbols {'?e order-id
                                                   '?s store-id}})
@@ -280,13 +282,14 @@
                                                   '?u (:user-id auth)}}))})
 
 (defread query/order-payment
-  [{:keys [state query db auth system] :as env} _ {:keys [order-id store-id]}]
+  [{:keys                       [query db auth system]
+    {:keys [store-id order-id]} :route-params} _ _]
   {:auth    ::auth/any-user
-   :log     [:store-id :order-id]
-   :uniq-by [[:val (if (some? store-id)
-                     [:store-id store-id]
-                     [:user-id (hash (:email auth))])] [:order-id order-id]]}
-  {:value (when-let [charge (if-let [store-id (db/store-id->dbid db store-id)]
+   :uniq-by {:custom [[:val (if (some? store-id)
+                              [:store-id store-id]
+                              [:user-id (hash (:email auth))])]
+                      [:order-id order-id]]}}
+  {:value (when-let [charge (if (some? store-id)
                               (db/pull-one-with db [:db/id :charge/id] {:where   '[[?o :order/store ?s]
                                                                                    [?o :order/charge ?e]]
                                                                         :symbols {'?o order-id
@@ -298,18 +301,20 @@
             (assoc (stripe/get-charge (:system/stripe system) (:charge/id charge)) :db/id (:db/id charge)))})
 
 (defread query/stripe-account
-  [{:keys [db] :as env} _ {:keys [store-id]}]
+  [{:keys [db route-params]
+    {:keys [store-id]} :route-params
+    :as env} _ _]
   {:auth    {::auth/store-owner {:store-id store-id}}
-   :log     [:store-id]
-   :uniq-by [[:store-id store-id]]}
-  {:value (store/account env (db/store-id->dbid db store-id))})
+   :uniq-by {:route-params [:store-id]}}
+  {:value (store/account env store-id)})
 
 (defread query/stripe-balance
-  [{:keys [db] :as env} _ {:keys [store-id]}]
+  [{:keys [db]
+    {:keys [store-id]} :route-params
+    :as env} _ _]
   {:auth    {::auth/store-owner {:store-id store-id}}
-   :log     [:store-id]
-   :uniq-by [[:store-id store-id]]}
-  {:value (store/balance env (db/store-id->dbid db store-id))})
+   :uniq-by {:route-params [:store-id]}}
+  {:value (store/balance env store-id)})
 
 (defread query/stripe-customer
   [env _ _]
@@ -318,52 +323,27 @@
             (debug "Query/stripe-customer " c)
             c)})
 
-
 (defread query/stripe-country-spec
   [{:keys [system ast target db query]} _ _]
   {:auth ::auth/any-store-owner}
   {:value (stripe/get-country-spec (:system/stripe system) "CA")})
 
-(defread query/user
-  [{:keys [db db-history query]} _ {:keys [user-id]}]
-  {:auth ::auth/any-user
-   :log  [:user-id]}
-  {:value (query/one db db-history query {:where   '[[?e]]
-                                          :symbols {'?e user-id}})})
-
-(defread query/top-categories
-  [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
-  {:auth    ::auth/public
-   :log     [:category]
-   :uniq-by [[:category (or category (:category route-params))]]}
-  {:value (db/pull-all-with db query {:where '[[?e :category/path]
-                                               (not [_ :category/children ?e])]})})
-
-(defread query/category
-  [{:keys [db db-history query route-params]} _ {:keys [category search] :as p}]
-  {:auth    ::auth/public
-   :log     [:category]
-   :uniq-by [[:category (or category (:category route-params))]]}
-  {:value (db/pull-one-with db query {:where   '[[?e :category/path ?p]]
-                                      :symbols {'?p (or category (:category route-params))}})})
-
 (defread query/skus
   [{:keys [db db-history query]} _ {:keys [sku-ids]}]
   {:auth    ::auth/public
    :log     [:sku-ids]
-   :uniq-by [[:sku-id sku-ids]]}
+   :uniq-by {:params [:sku-ids]}}
   {:value (query/all db db-history query
                      {:where   '[[_ :store.item/skus ?e]]
                       :symbols {'[?e ...] sku-ids}})})
 
 (defread query/item
-  [{:keys [db db-history query]} _ {:keys [product-id]}]
+  [{:keys [db db-history query route-params]} _ _]
   {:auth    ::auth/public
-   :log     [:product-id]
-   :uniq-by [[:product-id product-id]]}
+   :uniq-by {:route-params [:product-id]}}
   {:value (query/one db db-history query
                      {:where   '[[?e _ _]]
-                      :symbols {'?e product-id}})})
+                      :symbols {'?e (:product-id route-params)}})})
 
 (defread query/auth
   [{:keys [auth query db]} _ _]
@@ -374,11 +354,10 @@
               (assoc authed-user :user/can-open-store? can-open-store?)))})
 
 (defread query/stream
-  [{:keys [db db-history query]} _ {:keys [store-id]}]
+  [{:keys [db db-history query route-params]} _ _]
   {:auth    ::auth/public
-   :log     [:store-id]
-   :uniq-by [[:store-id store-id]]}
-  {:value (when-let [store-id (db/store-id->dbid db store-id)]
+   :uniq-by {:route-params [:store-id]}}
+  {:value (when-let [store-id (:store-id route-params)]
             (query/one db db-history query {:where   '[[?e :stream/store ?store-id]]
                                             :symbols {'?store-id store-id}}))})
 
@@ -404,16 +383,13 @@
                :ui.singleton.stream-config/publisher-url  (wowza/publisher-url wowza)}})))
 
 (defread query/chat
-  [{:keys         [db query system]
-    ::parser/keys [read-basis-t-for-this-key chat-update-basis-t]} k {:keys [store] :as params}]
+  [{:keys         [db query system route-params]
+    ::parser/keys [read-basis-t-for-this-key chat-update-basis-t]} k _]
   {:auth    ::auth/public
    :log     ::parser/no-logging
-   :uniq-by [[:store-id (:db/id store)]]}
-  (if (nil? (:db/id store))
-    (do (warn "No store :db/id passed in params for read: " k " with params: " params)
-        {:value (parser/value-with-basis-t {} {:chat-db (:chat-db read-basis-t-for-this-key)
-                                               :sulo-db (datomic/basis-t db)})})
-    (let [store (assoc store :db/id (db/store-id->dbid db (:db/id store)))
+   :uniq-by {:route-params [:store-id]}}
+  (if-some [store-id (:store-id route-params)]
+    (let [store (db/entity db store-id)
           chat (:system/chat system)
           _ (when chat-update-basis-t
               (chat/sync-up-to! chat chat-update-basis-t))
@@ -422,7 +398,11 @@
       {:value (-> (if (nil? read-basis-t-for-this-key)
                     (chat/initial-read chat-reader store query)
                     (chat/read-messages chat-reader store query read-basis-t-for-this-key))
-                  (parser/value-with-basis-t (chat/last-read chat-reader)))})))
+                  (parser/value-with-basis-t (chat/last-read chat-reader)))})
+    (do (warn "No store :db/id passed in params for read: " k
+              " with route-params: " route-params)
+        {:value (parser/value-with-basis-t {} {:chat-db (:chat-db read-basis-t-for-this-key)
+                                               :sulo-db (datomic/basis-t db)})})))
 
 ;; Get all categories.
 (defread query/navigation

@@ -84,6 +84,20 @@
                  " resulting in route-query: " route-query))
     (read-join (assoc env :query route-query) k p)))
 
+(defn read-with-state
+  "Merges the parameters with env, to be used in later reads."
+  [env k p]
+  (letfn [(merge-fn [a b]
+            (condp = [(some? a) (some? b)]
+              [true true] (if (map? a)
+                            (merge a b)
+                            b)
+              [true false] a
+              [false true] b
+              [false false] nil))]
+    (read-join (merge-with merge-fn env p)
+               k p)))
+
 (defprotocol IReadAtBasisT
   (set-basis-t [this key basis-t params] "Sets basis-t for key and its params as [[k v]...]")
   (get-basis-t [this key params] "Gets basis-t for key and its params as [[k v]...]")

@@ -22,7 +22,8 @@
     [eponai.common.ui.components.select :as sel]
     [eponai.common.mixpanel :as mixpanel]
     [eponai.web.ui.button :as button]
-    [eponai.common.ui.elements.input-validate :as v]))
+    [eponai.common.ui.elements.input-validate :as v]
+    [eponai.common.database :as db]))
 
 (def form-elements
   {:input-price            "input-price"
@@ -184,7 +185,7 @@
   (delete-product [this]
     (let [{:keys [product-id store-id]} (get-route-params this)]
       (mixpanel/track "Store: Delete product" {:product-id product-id})
-      (msg/om-transact! this `[(store/delete-product ~{:store-id store-id
+      (msg/om-transact! this `[(store/delete-product ~{:store-id (db/store-id->dbid this store-id)
                                                        :product  {:db/id (c/parse-long product-id)}})])))
 
   (update-product [this]
@@ -207,7 +208,7 @@
                                                                              (some? selected-section)
                                                                              (assoc :store.item/section selected-section))
                                                          :product-id product-id
-                                                         :store-id   store-id})
+                                                         :store-id   (db/store-id->dbid this store-id)})
                                  :query/item
                                  :query/store]))
       (om/update-state! this (fn [st]
@@ -232,7 +233,7 @@
                                                                            (assoc :store.item/skus skus)
                                                                            (some? selected-section)
                                                                            (assoc :store.item/section selected-section))
-                                                         :store-id store-id})
+                                                         :store-id (db/store-id->dbid this store-id)})
                                  :query/item
                                  :query/store]))
       (om/update-state! this (fn [st]

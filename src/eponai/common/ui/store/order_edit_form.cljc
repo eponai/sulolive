@@ -17,7 +17,8 @@
     [eponai.common.ui.elements.table :as table]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.web.ui.button :as button]
-    [eponai.web.ui.photo :as photo]))
+    [eponai.web.ui.photo :as photo]
+    [eponai.common.database :as db]))
 
 (def form-elements
   {:input-currency "oef-input-currency"
@@ -406,7 +407,7 @@
     (let [{:keys [order-id store-id]} (get-route-params this)]
       (msg/om-transact! this `[(store/update-order ~{:params   params
                                                      :order-id order-id
-                                                     :store-id store-id})
+                                                     :store-id (db/store-id->dbid this store-id)})
                                :query/order])))
   (initLocalState [this]
     {:items             #{}

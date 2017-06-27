@@ -1,7 +1,8 @@
 (ns eponai.server.parser.response
   (:require
     [clojure.core.async :refer [go <!]]
-    [taoensso.timbre :refer [debug error trace info warn]]))
+    [taoensso.timbre :refer [debug error trace info warn]]
+    [eponai.common.parser :as parser]))
 
 (defn empty-coll? [c]
   (or
@@ -14,7 +15,7 @@
   [_ k v]
   (trace "no response-handler for key:" k)
   (cond
-    (#{"proxy" "routing"} (namespace k)) :call
+    (parser/is-special-key? k) :call
     ;; Check for empty responses
     (keyword? k) (when (empty-coll? v) :dissoc)
 

@@ -510,7 +510,8 @@
         (into retract-xf e-datoms)
         (into retract-xf v-datoms))))
 
-(defn store-id->dbid [db store-id]
-  (let [store (or (lookup-entity db [:store/username store-id])
-                  (lookup-entity db (c/parse-long-safe store-id)))]
-    (:db/id store)))
+(defn store-id->dbid [x store-id]
+  (let [db (to-db x)]
+    (let [store (or (lookup-entity db [:store/username store-id])
+                    (lookup-entity db (c/parse-long-safe store-id)))]
+      (:db/id store))))

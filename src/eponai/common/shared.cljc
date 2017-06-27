@@ -16,7 +16,10 @@
       component
       (let [component (shared-component reconciler key env)]
         (swap! components assoc-in [key env] component)
-        component))))
+        component)))
+
+  (defn clear-components! []
+    (reset! components {})))
 
 (defn by-key [x key]
   {:pre [(or (om/reconciler? x) (om/component? x))]}
