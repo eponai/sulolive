@@ -120,11 +120,17 @@
       common.format/add-tempid
       common.format/remove-nil-keys))
 
-(defn auth0->user [auth0]
-  {:db/id           (d/tempid :db.part/user)
-   :user/email      (:email auth0)
-   :user/verified   (:email_verified auth0)
-   :user/created-at (date/current-millis)})
+(defn user-profile [params]
+  (-> (select-keys params [:db/id :user.profile/name :user.profile/photo])
+      cf/add-tempid
+      cf/remove-nil-keys))
+
+(defn user [params]
+  (-> (select-keys params [:db/id :user/email :user/verified :user/name :user/profile])
+      (assoc :user/created-at (date/current-millis))
+      (update :user/profile user-profile)
+      cf/add-tempid
+      cf/remove-nil-keys))
 
 (defn shipping [s]
   (let [address* #(-> (select-keys % [:shipping.address/street

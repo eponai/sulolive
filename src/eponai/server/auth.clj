@@ -83,12 +83,12 @@
     ;; a while before the screen scrolls down to "Vancouver / BC, Enter".
     (r/redirect (routes/path :landing-page))))
 
-(defn authenticate-auth0-user [conn auth0-user]
-  (when auth0-user
-    (let [db-user (db/lookup-entity (db/db conn) [:user/email (:email auth0-user)])]
-      (when-not db-user
-        (let [new-user (f/auth0->user auth0-user)]
-          (db/transact-one conn new-user))))))
+;(defn authenticate-auth0-user [conn auth0-user]
+;  (when auth0-user
+;    (let [db-user (db/lookup-entity (db/db conn) [:user/email (:email auth0-user)])]
+;      (when-not db-user
+;        (let [new-user (f/auth0->user auth0-user)]
+;          (db/transact-one conn new-user))))))
 
 (defn- token-map-from-cookie [request]
   (when-let [token-cookie (get-in request [:cookies auth-token-cookie-name :value])]
@@ -248,12 +248,21 @@
     :eponai.server.middleware/keys [system logger conn]}]
   (debug "AUTHENTICATE: " params)
   (let [auth0 (:system/auth0 system)
-        {:keys [code state]} params
-        {:keys [access_token token profile] :as auth-map} (auth0/authenticate auth0 code state)]
+        ;; Code is passed in first authentication with Auth0.
+        ;; Redirect will be made to /login with the access_token and token for the user to
+        ;; create their account if none exists. When they hit create account
+        ;; they'll be redirected to /login with the token again and we can create set the token in the cookie.
+        {:keys [code state token]} params
+        {:keys [access_token token profile] :as auth-map} (cond (some? code)
+                                                                (auth0/authenticate auth0 code state)
+                                                                (some? token)
+                                                                {:profile (auth0/token-info auth0 token)
+                                                                 :token   token})]
     (debug "Do authenticate: " auth-map)
     ;(debug "Authenticate user: ")
     (or (do-authenticate request auth-map)
-        (let [path (routes/path :login nil {:token access_token})]
+        (let [path (routes/path :login nil {:access_token access_token
+                                            :token        token})]
           (debug "Redirect to path: " path)
           (r/redirect path)))))
 

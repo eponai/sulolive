@@ -333,3 +333,8 @@
   (when target
     {:remote true}))
 
+(defmethod client-mutate 'user/create
+  [{:keys [state target]} _ _]
+  (when target
+    {:remote true}))
+

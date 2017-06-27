@@ -15,7 +15,8 @@
     [eponai.client.routes :as routes]
     [eponai.client.utils :as client-utils]
     [eponai.common :as c]
-    [eponai.common.ui.elements.input-validate :as v]))
+    [eponai.common.ui.elements.input-validate :as v]
+    [eponai.client.parser.message :as msg]))
 
 (def form-inputs
   {::email    "sulo.login.email"
@@ -33,7 +34,8 @@
 (defui Login
   static om/IQuery
   (query [this]
-    [:query/current-route])
+    [:query/current-route
+     :query/messages])
 
   Object
   (authorize-social [this provider]
@@ -82,7 +84,31 @@
              validation (v/validate ::create-account {::email    email
                                                       ::username username} form-inputs)]
          (debug "Validation: " validation)
+         (when (nil? validation)
+           (msg/om-transact! this [(list 'user/create {:user {:user/email    email
+                                                              :user/profile  {:user.profile/name username}
+                                                              :user/verified (:email-verified? user)}})]))
          (om/update-state! this assoc :input-validation validation))))
+
+  (componentDidUpdate [this _ _]
+    (let [{:query/keys [current-route]} (om/props this)
+          create-msg (msg/last-message this 'user/create)]
+      (debug "Got create message: " create-msg)
+      (when (msg/final? create-msg)
+        (let [message (msg/message create-msg)]
+          (debug "Got message: " message)
+          (msg/clear-messages! this 'user/create)
+          (if (msg/success? create-msg)
+            (let [new-user (:user message)]
+              (if (:user/verified new-user)
+                (do
+                  (debug "User created routing to: " (routes/url :auth nil (:query-params current-route)))
+                  #?(:cljs
+                     (set! js/window.location (routes/url :auth nil (:query-params current-route))))
+                  ;(routes/set-url! this :login nil (:query-params current-route))
+                  )
+                (om/update-state! this assoc :login-state :verify-email)))
+            (om/update-state! this assoc :error/create-user message))))))
 
   (componentDidMount [this]
     #?(:cljs
@@ -91,13 +117,13 @@
          (debug "Current route: " current-route)
          (let [web-auth (new js/auth0.WebAuth #js {:domain       "sulo.auth0.com"
                                                    :clientID     "olXSYZ7HDqCif7GtNEaxi6jKX9Lk72OR"
-                                                   :redirectUri  "http://localhost:3000/login"
+                                                   :redirectUri  "http://localhost:3000/auth"
                                                    :responseType "code"
                                                    :scope        "openid email"
                                                    })
-               user-info (when (:token query-params)
+               user-info (when (:access_token query-params)
                            (.userInfo (.-client web-auth)
-                                      (:token query-params)
+                                      (:access_token query-params)
                                       (fn [err user]
                                         (cond
                                           err
@@ -128,13 +154,15 @@
   (render [this]
     (let [{:query/keys [current-route]} (om/props this)
           {:keys [route route-params query-params]} current-route
+          {:keys [access_token token]} query-params
           {:keys [login-state error-message input-validation user token-error]} (om/get-state this)]
+      (debug "State " (om/get-state this))
 
       (dom/div
         (css/text-align :center {:id "sulo-login"})
 
         (if (= route :login)
-          (if (some? (:token query-params))
+          (if (some? access_token)
             (dom/h4 nil "Almost there")
             (dom/div
               (css/add-class :header-container)
@@ -145,47 +173,50 @@
 
 
         (cond
-          (and (= route :login) (:token query-params))
+          (and (= route :login) access_token)
           [(dom/p nil (dom/span nil "Finish creating your SULO Live account"))
            (dom/p nil (dom/a {:href (routes/url :login)} (dom/span nil "I already have an account")))
 
-           (if-not (or user token-error)
-             (dom/p nil (dom/i {:classes ["fa fa-spinner fa-pulse"]}))
-             [(dom/label nil "Email")
+           (dom/div
+             (css/add-class :login-content)
+             (if-not (or user token-error)
+               (dom/p nil (dom/i {:classes ["fa fa-spinner fa-pulse"]}))
+               [
+                (dom/label nil "Email")
 
-              (v/input
-                (cond-> {:type         "email"
-                         :id           (::email form-inputs)
-                         :placeholder  "youremail@example.com"
-                         :defaultValue (:email user)}
-                        (not-empty (:email query-params))
-                        (assoc :disabled true))
-                input-validation)
+                (v/input
+                  (cond-> {:type         "email"
+                           :id           (::email form-inputs)
+                           :placeholder  "youremail@example.com"
+                           :defaultValue (:email user)}
+                          (not-empty (:email query-params))
+                          (assoc :disabled true))
+                  input-validation)
 
-              (dom/label nil "Name")
-              (v/input {:type         "text"
-                        :id           (::username form-inputs)
-                        :placeholder  "Your name"
-                        :defaultValue (:nickname user)}
-                       input-validation)])
+                (dom/label nil "Name")
+                (v/input {:type         "text"
+                          :id           (::username form-inputs)
+                          :placeholder  "Your name"
+                          :defaultValue (:nickname user)}
+                         input-validation)])
 
-           (dom/p (css/add-class :info)
-                  (dom/small nil "By creating an account you accept our ")
-                  (dom/a nil (dom/small nil "Terms of Service"))
-                  (dom/small nil " and ")
-                  (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
-                          :className "iubenda-nostyle no-brand iubenda-embed"
-                          :title     "Privacy Policy"
-                          :target    "_blank"} (dom/small nil "Privacy Policy")))
-           (button/default-hollow
-             (css/add-classes [:expanded :sulo-dark] {:onClick #(.create-account this)})
-             (dom/span nil "Create account"))]
+             (dom/p (css/add-class :info)
+                    (dom/small nil "By creating an account you accept our ")
+                    (dom/a nil (dom/small nil "Terms of Service"))
+                    (dom/small nil " and ")
+                    (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
+                            :className "iubenda-nostyle no-brand iubenda-embed"
+                            :title     "Privacy Policy"
+                            :target    "_blank"} (dom/small nil "Privacy Policy")))
+             (button/default-hollow
+               (css/add-classes [:expanded :sulo-dark] {:onClick #(.create-account this)})
+               (dom/span nil "Create account")))]
 
 
           (= login-state :verify-email)
           [(dom/p nil (dom/span nil "We sent you a code to sign in. Please check your inbox and provide the code below."))
            (dom/div
-             (css/add-class :email-signin)
+             (css/add-class :login-content)
              (dom/label nil "Code")
              (dom/input {:id           (::code form-inputs)
                          :type         "number"
@@ -200,7 +231,7 @@
           (= login-state :login-email)
           [(dom/p nil (dom/span nil "Enter your email address to sign in or create an account on SULO Live"))
            (dom/div
-             (css/add-class :email-signin)
+             (css/add-class :login-content)
              ;(dom/label nil "Email")
              (dom/input
                (cond->> {:id           (::email form-inputs)
@@ -228,7 +259,7 @@
           :else
           [(dom/p nil (dom/span nil "Sign in to SULO Live to connect with brands other shoppers in your favourite city."))
            (dom/div
-             (css/add-class :signin-options)
+             (css/add-class :login-content)
              (button/button
                (css/add-classes [:expanded :facebook] {:onClick #(.authorize-social this :social/facebook)})
                (dom/i {:classes ["fa fa-facebook fa-fw"]})

@@ -25,12 +25,12 @@
 }
 
 #sulo-login {	
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	i.fa {
+	// display: flex;
+	// flex-direction: column;
+	// align-items: center;
+	i.fa-spinner {
 		color: $medium-gray;
-		margin: $global-margin 0;
+		margin: $global-margin
 	}
 	.button {
 			max-width: 20rem;
@@ -69,7 +69,7 @@
 				// color: map-get($foundation-palette, sulo-dark);
 			}
 		}
-	.signin-options, .email-signin {
+	.login-content {
 		display: flex;
 		flex-direction: column;
 		align-items: center;

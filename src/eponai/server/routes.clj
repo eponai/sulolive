@@ -211,12 +211,14 @@
 
   (GET "/auth" request (auth/authenticate
                          (assoc request ::m/logger (context-logger request {:route :auth}))))
-  (GET "/login" request (do
-                          (debug "/login endpoint")
-                          (if (get-in request [:params :code])
-                              (auth/authenticate
-                                (assoc request ::m/logger (context-logger request {:route :login})))
-                              (bidi.ring/make-handler common.routes/routes bidi-route-handler))))
+  (GET "/login" request (bidi.ring/make-handler common.routes/routes bidi-route-handler)
+                        ;(do
+                        ;  (debug "/login endpoint")
+                        ;  (if (some #(#{:code :token :access_token} (key %)) (:params request))
+                        ;    (auth/authenticate
+                        ;      (assoc request ::m/logger (context-logger request {:route :login})))
+                        ;    (bidi.ring/make-handler common.routes/routes bidi-route-handler)))
+                        )
 
   (GET "/logout" request
     (let [logger (context-logger request {:route :logout})

@@ -14,6 +14,7 @@
 
 (defprotocol IAuth0
   (secret [this] "Returns the jwt secret for unsigning tokens")
+  (token-info [this token] "Returns the jwt secret for unsigning tokens")
   (authenticate [this code state] "Returns an authentcation map")
   (refresh [this token] "Takes a token and returns a new one with a later :exp value. Return nil if it was not possible.")
   (should-refresh-token? [this parsed-token] "Return true if it's time to refresh a token"))
@@ -36,6 +37,8 @@
 (defrecord Auth0 [client-id client-secret server-address]
   IAuth0
   (secret [this] client-secret)
+  (token-info [this token]
+    (jwt/unsign token (secret this)))
   (authenticate [this code state]
     (letfn [(code->token [code]
               (read-json
@@ -86,6 +89,8 @@
   IAuth0
   (secret [this]
     (.getBytes "sulo-dev-secret"))
+  (token-info [this token]
+    (jwt/unsign token (secret this)))
   (authenticate [this code state]
     (let [email code
           now (quot (System/currentTimeMillis) 1000)
@@ -103,7 +108,7 @@
        :redirect-url state}))
   (refresh [this token]
     (letfn [(token->refreshed-token [token]
-              (let [{:keys [email]} (jwt/unsign token (secret this))]
+              (let [{:keys [email]} (token-info this token)]
                 (:token (authenticate this email ""))))]
       (try
         (token->refreshed-token token)
