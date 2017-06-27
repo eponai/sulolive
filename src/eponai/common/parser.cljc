@@ -516,7 +516,11 @@
                                (fn [{:keys [auth logger] :as env} k p]
                                  #?(:clj
                                     (when (not-empty auth)
-                                      (log/warn! logger :eponai.server.parser/auth {:response-type :unauthorized})))
+                                      (log/info! logger
+                                                 :eponai.server.parser/auth
+                                                 {:response-type :unauthorized
+                                                  :parser-key    k
+                                                  :parser-type   :read})))
                                  (debug "Not authed enough for read: " k
                                         " params: " p
                                         " auth-roles: " (:auth-roles env))))]
@@ -527,11 +531,16 @@
 
 (defn wrap-server-mutate-auth [mutate]
   (wrap-auth server-auth-role mutate
-             (fn [{::keys [auth-responder] :keys [auth logger]} _ _]
+             (fn [{::keys [auth-responder] :keys [auth logger]} k _]
                (let [message (if (empty? auth)
                                (do (auth/-prompt-login auth-responder nil)
                                    "You need to log in to perform this action")
                                (do (auth/-unauthorize auth-responder)
+                                   (log/info! logger
+                                              :eponai.server.parser/auth
+                                              {:response-type :unauthorized
+                                               :parser-key    k
+                                               :parser-type   :mutate})
                                    "You are unauthorized to perform this action"))]
                  {::mutation-message {::error-message message}}))))
 
@@ -612,6 +621,7 @@
                          (keyword (str "eponai.server.parser")
                                   (if read? "read" "mutate"))
                          (merge {:parser-key    k
+                                 :parser-type   (if read? :read :mutate)
                                  :response-type (if error? :error :success)
                                  :event-time-ms (- end start)}
                                 (cond
