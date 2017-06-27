@@ -79,10 +79,10 @@
                   {:cause "datomic.format/user-account-map does not exist anymore."
                    :args  args})))
 
-(defn photo [url]
-  {:pre [(string? url)]}
-  {:db/id      (d/tempid :db.part/user)
-   :photo/path url})
+(defn photo [params]
+  (-> (select-keys params [:db/id :photo/id :photo/path])
+      cf/remove-nil-keys
+      cf/add-tempid))
 
 (defn item-photo [p index]
   {:db/id                  (d/tempid :db.part/user)
@@ -122,6 +122,7 @@
 
 (defn user-profile [params]
   (-> (select-keys params [:db/id :user.profile/name :user.profile/photo])
+      (update :user.profile/photo photo)
       cf/add-tempid
       cf/remove-nil-keys))
 

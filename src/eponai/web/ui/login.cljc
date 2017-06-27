@@ -86,7 +86,8 @@
          (debug "Validation: " validation)
          (when (nil? validation)
            (msg/om-transact! this [(list 'user/create {:user {:user/email    email
-                                                              :user/profile  {:user.profile/name username}
+                                                              :user/profile  {:user.profile/name  username
+                                                                              :user.profile/photo {:photo/path (:picture user)}}
                                                               :user/verified (:email-verified? user)}})]))
          (om/update-state! this assoc :input-validation validation))))
 
@@ -107,7 +108,7 @@
                      (set! js/window.location (routes/url :auth nil (:query-params current-route))))
                   ;(routes/set-url! this :login nil (:query-params current-route))
                   )
-                (om/update-state! this assoc :login-state :verify-email)))
+                (.authorize-email this)))
             (om/update-state! this assoc :error/create-user message))))))
 
   (componentDidMount [this]
@@ -131,7 +132,10 @@
                                           user
                                           (om/update-state! this assoc :user {:email           (.-email user)
                                                                               :email-verified? (.-email_verified user)
-                                                                              :nickname        (.-nickname user)}))
+                                                                              :nickname        (or (.-given_name user)
+                                                                                                   (.-screen_name user)
+                                                                                                   (.-nickname user))
+                                                                              :picture           (.-picture_large user)}))
                                         (debug "User info: " user)
                                         (debug "error " err))))]
 
@@ -173,7 +177,7 @@
 
 
         (cond
-          (and (= route :login) access_token)
+          (and (= route :login) (= login-state :login) access_token)
           [(dom/p nil (dom/span nil "Finish creating your SULO Live account"))
            (dom/p nil (dom/a {:href (routes/url :login)} (dom/span nil "I already have an account")))
 
@@ -182,6 +186,8 @@
              (if-not (or user token-error)
                (dom/p nil (dom/i {:classes ["fa fa-spinner fa-pulse"]}))
                [
+                ;(when (:picture user)
+                ;  (photo/circle {:src (:picture user)}))
                 (dom/label nil "Email")
 
                 (v/input
