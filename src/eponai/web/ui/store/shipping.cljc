@@ -21,7 +21,8 @@
     [eponai.common :as c]
     [eponai.common.mixpanel :as mixpanel]
     [eponai.common.format :as f]
-    [eponai.client.routes :as routes]))
+    [eponai.client.routes :as routes]
+    [eponai.common.database :as db]))
 
 (def form-inputs
   {:shipping.rate/title       "shipping.rate.title"
@@ -438,7 +439,7 @@
          (when (nil? input-validation)
            (mixpanel/track "Store: Save shipping rule")
            (msg/om-transact! this [(list 'store/save-shipping-rule {:shipping-rule input-map
-                                                                    :store-id      (:store-id (:route-params current-route))})
+                                                                    :store-id      (db/store-id->dbid this (:store-id (:route-params current-route)))})
                                    :query/store]))
          (om/update-state! this assoc :input-validation input-validation))))
 
@@ -470,7 +471,7 @@
          (when (nil? input-validation)
            (mixpanel/track "Store: Save shipping from address")
            (msg/om-transact! this [(list 'store/update-shipping {:shipping input-map
-                                                                 :store-id (:store-id (:route-params current-route))})
+                                                                 :store-id (db/store-id->dbid this (:store-id (:route-params current-route)))})
                                    :query/store]))
          (om/update-state! this assoc :input-validation input-validation))))
   (save-shipping-rate [this]
@@ -494,7 +495,7 @@
          (when (nil? input-validation)
            (mixpanel/track "Store: Save shipping rate")
            (msg/om-transact! this [(list 'store/update-shipping-rule {:shipping-rule (update edit-rule :shipping.rule/rates conj input-map)
-                                                                      :store-id      (:store-id (:route-params current-route))})
+                                                                      :store-id      (db/store-id->dbid this (:store-id (:route-params current-route)))})
                                    :query/store]))
          (om/update-state! this assoc :input-validation input-validation))))
 
@@ -512,7 +513,7 @@
       (debug "Edit rule: " rule)
       (debug "Delete rate: " rate)
       (msg/om-transact! this [(list 'store/update-shipping-rule {:shipping-rule (update rule :shipping.rule/rates remove-rate-fn)
-                                                                 :store-id      (:store-id (:route-params current-route))})
+                                                                 :store-id      (db/store-id->dbid this (:store-id (:route-params current-route)))})
                               :query/store])))
 
   (componentDidUpdate [this _ _]

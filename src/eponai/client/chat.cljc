@@ -48,9 +48,11 @@
   It's based on routing, so we'll only return a store-id if we're at a store."
   [x]
   {:post [(or (nil? %) (number? %))]}
-  (let [db (db/to-db x)
-        store-id (get-in (routes/current-route x) [:route-params :store-id])]
-    (db/store-id->dbid db store-id)))
+  (let [db (db/to-db x)]
+    (-> (routes/current-route db)
+        (select-keys [:store-id])
+        (routes/normalize-route-params db)
+        (:store-id))))
 
 ;; ###########
 ;; ## Query
@@ -95,8 +97,7 @@
      :chat-db-tx (assoc pulled-chat :chat/messages pulled-messages)}))
 
 (defn read-chat [chat-db sulo-db query store limit]
-  (if-let [chat-id (db/one-with chat-db (datomic-chat-entity-query (db/store-id->dbid sulo-db (or (:store/username store)
-                                                                                                  (:db/id store)))))]
+  (if-let [chat-id (db/one-with chat-db (datomic-chat-entity-query (:db/id store)))]
     (read-chat-messages chat-db sulo-db query chat-id limit)
     {:sulo-db-tx []
      :chat-db-tx {}}))

@@ -106,7 +106,7 @@
                                           (not (number? store-id))
                                           (db/store-id->dbid db)))})
 
-(defn normalize-route-params [db route-params]
+(defn normalize-route-params [route-params db]
   (->> (keys route-params)
        (filter #(contains? route-param-normalizers %))
        (reduce
@@ -122,5 +122,4 @@
         (->> (into {}))
         (set/rename-keys {:ui.singleton.routes/current-route :route
                           :ui.singleton.routes/route-params  :route-params
-                          :ui.singleton.routes/query-params  :query-params})
-        (update :route-params #(normalize-route-params db %)))))
+                          :ui.singleton.routes/query-params  :query-params}))))

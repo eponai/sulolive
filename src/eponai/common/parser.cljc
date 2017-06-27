@@ -158,12 +158,10 @@
 (defmethod client-read :read/with-state [env k p] (util/read-with-state env k p))
 (defmethod server-read :read/with-state
   [{:keys [db] :as env} k {:keys [route-params] :as params}]
-  ;; Normalize the route params, even though we've already done it client side
-  ;; to know that we're getting the right stuff.
   (util/read-with-state env k
                         (cond-> params
                                 (seq route-params)
-                                (update :route-params #(client.routes/normalize-route-params db %)))))
+                                (update :route-params client.routes/normalize-route-params db))))
 
 (defmethod server-message :default
   [e k p]
@@ -253,11 +251,11 @@
                             filter
                             (let [authed-user-id
                                   (when (:email auth)
-                                    (db/find-with db (db/merge-query (auth/auth-role-query db ::auth/any-user auth {})
+                                    (db/find-with db (db/merge-query (auth/auth-role-query ::auth/any-user auth {})
                                                                      {:find '[?user .]})))
                                   authed-store-ids
                                   (when authed-user-id
-                                    (db/find-with db (db/merge-query (auth/auth-role-query db ::auth/any-store-owner auth {})
+                                    (db/find-with db (db/merge-query (auth/auth-role-query ::auth/any-store-owner auth {})
                                                                      {:symbols {'?user authed-user-id}
                                                                       :find    '[[?store ...]]})))
                                   filter (filter/filter-authed authed-user-id authed-store-ids)]
@@ -419,7 +417,23 @@
 #?(:clj
    (defmethod read-basis-params :default
      [_ _ _]
-     []))
+     nil))
+
+#?(:clj
+   (defn validate-read-basis-params [env k p x]
+     (if (or (nil? x)
+             (and (map? x)
+                  (every? #(and (vector? %) (== 2 (count %)))
+                          (:custom x))
+                  (every? keyword? (mapcat #(get x %) [:params :route-params :query-params]))))
+       x
+       (throw (ex-info (str "Return from read-basis-params for key: " k
+                            " was not valid. Was: " x)
+                       {:key          k
+                        :params       p
+                        :route-params (:route-params env)
+                        :query-params (:query-params env)
+                        :return       x})))))
 
 #?(:clj
    (defn read-returning-basis-t [read]
@@ -429,15 +443,20 @@
        (if (or (is-proxy? k) (is-routing? k))
          ;; Do nothing special for routing and proxy keys
          (read env k p)
-         (let [read-basis-params (read-basis-params env k p)
-               _ (assert (or (nil? read-basis-params)
-                             (and (sequential? read-basis-params)
-                                  (every? #(and (vector? %) (= 2 (count %)))
-                                          read-basis-params)))
-                         (str "Path returned from read-basis-param-path for key: " k
-                              " params: " p
-                              " was not nil or sequential with [k v] pairs. Was: " read-basis-params))
-               read-basis-params (into [[:locations locations] [:query-hash (hash query)]] read-basis-params)
+         (let [read-basis-params (->> (read-basis-params env k p)
+                                      (validate-read-basis-params env k p))
+               route-basis-kvs (or (:custom read-basis-params)
+                                   (into []
+                                         (mapcat (fn [param-key]
+                                                   (let [param-map (get env param-key)
+                                                         params-order (get read-basis-params param-key)]
+                                                     (map (juxt identity #(get param-map %))
+                                                          params-order))))
+                                         [:route-params :query-params :params]))
+               read-basis-params (-> []
+                                     (conj [:locations locations])
+                                     (into route-basis-kvs)
+                                     (conj [:query-hash (hash query)]))
                basis-t-for-this-key (util/get-basis-t @read-basis-t-graph k read-basis-params)
                env (if (contains? @force-read-without-history k)
                      (do
@@ -740,27 +759,37 @@
       db-state
       (let [{:keys [route route-params query-params]} (client.routes/current-route db)]
         (reset! (::db-state state)
-                {:db              db
-                 :route           route
-                 :route-params    route-params
-                 :query-params    query-params
-                 :auth            (when-let [email (client.auth/authed-email db)]
-                                    {:email email})
-                 ::auth-responder (reify
-                                    auth/IAuthResponder
-                                    (-redirect [this path]
-                                      ;; This redirect could be done cljs side with pushy and :shared/browser-history
-                                      ;; but we don't use this yet, so let's not implement it yet.
-                                      (throw (ex-info "Unsupported function -redirect. Implement if needed"
-                                                      {:this this :path path :method :IAuthResponder/-redirect})))
-                                    (-prompt-login [this anything]
-                                      (client.auth/show-lock (:shared/auth-lock (:shared env))))
-                                    (-unauthorize [this]
-                                      ;;TODO: When :shared/jumbotron is implemented (a place where we
-                                      ;;      can show messages to a user), call the jumbotron with
-                                      ;;      an unauthorized message
-                                      #?(:cljs (js/alert "You're unauthorized to do that action"))
-                                      ))})))))
+                {:db               db
+                 :route            route
+                 :route-params     (if (nil? (:target env))
+                                     (client.routes/normalize-route-params route-params db)
+                                     ;; We're not normalizing route-params when we've got a target
+                                     ;; since normalizing a param can change it's value. But since
+                                     ;; we're not supposed to use the values in :route-params when
+                                     ;; we've got a target, but we want to check for the existence
+                                     ;; of a route-param, we put a fake value for all of its keys.
+                                     (medley/map-vals (constantly ::use-only-to-check-if-one-got-the-param)
+                                                      route-params))
+                 ;; The non-normalized route-params if we need it.
+                 :raw-route-params route-params
+                 :query-params     query-params
+                 :auth             (when-let [email (client.auth/authed-email db)]
+                                     {:email email})
+                 ::auth-responder  (reify
+                                     auth/IAuthResponder
+                                     (-redirect [this path]
+                                       ;; This redirect could be done cljs side with pushy and :shared/browser-history
+                                       ;; but we don't use this yet, so let's not implement it yet.
+                                       (throw (ex-info "Unsupported function -redirect. Implement if needed"
+                                                       {:this this :path path :method :IAuthResponder/-redirect})))
+                                     (-prompt-login [this anything]
+                                       (client.auth/show-lock (:shared/auth-lock (:shared env))))
+                                     (-unauthorize [this]
+                                       ;;TODO: When :shared/jumbotron is implemented (a place where we
+                                       ;;      can show messages to a user), call the jumbotron with
+                                       ;;      an unauthorized message
+                                       #?(:cljs (js/alert "You're unauthorized to do that action"))
+                                       ))})))))
 
 (declare dedupe-parser)
 
@@ -977,7 +1006,10 @@
                           ;; We wrap all reads with state that the reads depend on.
                           ;; This is only used for client-parsers (they are the ones getting :target).
                           ((fnil conj []) (list {:read/with-state deduped-parse}
-                                                (select-keys env [:route :route-params :query-params]))))
+                                                (-> (select-keys env [:route :raw-route-params :query-params])
+                                                    ;; Using the raw route-params when sending to server
+                                                    ;; so the server gets a chance to normalize them.
+                                                    (set/rename-keys {:raw-route-params :route-params})))))
                   (cond->> mutate-ret
                            (seq reads)
                            (merge (-> (deduped-result-parser env query target)

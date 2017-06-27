@@ -16,10 +16,12 @@ pom.xml.asc
 .hg/
 profiles.clj
 
+
 # IntelliJ files
 #
 .idea/
 *.iml
+/out
 
 # Figwheel
 #

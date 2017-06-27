@@ -22,7 +22,8 @@
     [eponai.common.mixpanel :as mixpanel]
     [taoensso.timbre :as timbre]
     [eponai.server.log :as log]
-    [cemerick.url :as url]))
+    [cemerick.url :as url]
+    [eponai.client.routes :as client.routes]))
 
 (def auth-token-cookie-name "sulo-auth-token")
 (def auth-token-remove-value "kill")
@@ -218,13 +219,15 @@
   [route]
   (let [auth-roles (routes/auth-roles route)]
     {:handler  (fn [{:keys [identity route-params headers] :as request}]
-                 (let [auth-val {:route        route
+                 (let [db (db/db (:eponai.server.middleware/conn request))
+                       route-params (client.routes/normalize-route-params route-params db)
+                       auth-val {:route        route
                                  :route-params route-params
                                  :auth-roles   auth-roles
                                  :auth         identity}]
                    (if (or (agent-whitelisted? request)
                            (auth/authed-for-roles?
-                             (db/db (:eponai.server.middleware/conn request))
+                             db
                              auth-roles
                              identity
                              route-params))

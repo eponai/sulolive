@@ -21,14 +21,14 @@
 ;                                                          :params params
 ;                                                          :id-key k}))))
 
-(defmulti auth-role-query (fn [db role auth params] role))
+(defmulti auth-role-query (fn [role auth params] role))
 (defmethod auth-role-query ::any-user
-  [_ _ auth _]
+  [_ auth _]
   {:where   '[[?user :user/email ?email]]
    :symbols {'?email (:email auth)}})
 
 (defmethod auth-role-query ::exact-user
-  [_ _ _ params]
+  [_ _ params]
   (if-let [user-id (or (:user-id params)
                        (get-in params [:user :db/id]))]
     {:symbols {'?user user-id}}
@@ -37,10 +37,12 @@
                                         :params    params}))))
 
 (defmethod auth-role-query ::store-owner
-  [db _ _ params]
-  (if-let [store-id (db/store-id->dbid db (or (:store-id params)
-                                              (get-in params [:store :db/id])))]
+  [_ _ params]
+  (if-let [store-id (or (:store-id params)
+                        (get-in params [:store :db/id]))]
     (do
+      (assert (number? store-id)
+              (str ":store-id was not a number, was: " store-id " params: " params))
       {:where   '[[?store :store/owners ?owner]
                   [?owner :store.owner/user ?user]]
        :symbols {'?store store-id}})
@@ -49,20 +51,20 @@
                                         :params    params}))))
 
 (defmethod auth-role-query ::any-store-owner
-  [_ _ _ _]
+  [_ _ _]
   {:where '[[?owner :store.owner/user ?user]
             [?store :store/owners ?owner]]})
 
-(defn auth-query [db roles {:keys [email] :as auth} params]
+(defn auth-query [roles {:keys [email] :as auth} params]
   (let [roles (cond-> roles
                       (keyword? roles) (hash-set))]
     (when (and (seq roles) (string? email))
       (let [query-by-role (into {}
-                                (map (juxt identity #(auth-role-query db % auth params)))
+                                (map (juxt identity #(auth-role-query % auth params)))
                                 (seq roles))
             query (reduce db/merge-query
                           (or (get query-by-role ::any-user)
-                              (auth-role-query db ::any-user auth params))
+                              (auth-role-query ::any-user auth params))
                           (vals (dissoc query-by-role ::any-user)))]
         (assoc query :find '[?user .])))))
 
@@ -78,7 +80,7 @@
 
 (defn authed-user-for-params [db roles auth params]
   (try
-    (when-let [query (auth-query db roles auth params)]
+    (when-let [query (auth-query roles auth params)]
       (db/find-with db query))
     (catch #?@(:clj  [ExceptionInfo e]
                :cljs [:default e])

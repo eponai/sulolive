@@ -120,13 +120,13 @@
     {:keys [top-category sub-category] :as categories} :route-params
     {:keys [search]}                                   :query-params} _ _]
   {:auth    ::auth/public
-   :uniq-by [[:filter (cond
-                        (seq search)
-                        [:search search]
-                        (some? top-category)
-                        [:tc top-category]
-                        (some? sub-category)
-                        [:sc sub-category])]]}
+   :uniq-by {:custom [[:filter (cond
+                                 (seq search)
+                                 [:search search]
+                                 (some? top-category)
+                                 [:tc top-category]
+                                 (some? sub-category)
+                                 [:sc sub-category])]]}}
   {:value (when (some? (:db/id locations))
             (query/all db db-history query (cond
                                              (seq search)
@@ -205,7 +205,6 @@
 (defread query/store
   [{:keys [db db-history query auth route-params]} _ _]
   {:auth    ::auth/public
-   :log     nil
    :uniq-by {:route-params [:store-id]}}
   {:value (let [store-id (:store-id route-params)
                 {:store/keys [status owners]} (db/pull db
@@ -224,7 +223,6 @@
 (defread query/store-items
   [{:keys [db db-history query route-params]} _ _]
   {:auth    ::auth/public
-   :log     [:store-id :navigation]
    :uniq-by {:route-params [:store-id :navigation]}}
   {:value (let [{:keys [store-id navigation]} route-params
                 params (if (not-empty navigation)
@@ -236,7 +234,6 @@
 
                          {:where   '[[?s :store/items ?e]]
                           :symbols {'?s store-id}}
-
                          )]
             (query/all db db-history query params))})
 
@@ -263,8 +260,7 @@
     {:keys [store-id]} :route-params} _ _]
   {:auth    {::auth/store-owner {:store-id store-id}}
    :uniq-by {:route-params [:store-id]}}
-  {:value (let [store-id (db/store-id->dbid db store-id)
-                items (db/pull-all-with db query {:where   '[[?s :store/items ?e]]
+  {:value (let [items (db/pull-all-with db query {:where   '[[?s :store/items ?e]]
                                                   :symbols {'?s store-id}})]
             ;(debug "Found items: " (into [] items))
             items)})
@@ -273,7 +269,6 @@
   [{:keys [query db auth]
     {:keys [store-id order-id]} :route-params} _ _]
   {:auth    ::auth/any-user
-   :log     [:store-id :order-id]
    :uniq-by {:custom [[:val (if (some? store-id)
                               [:store-id store-id]
                               [:user-id (hash (:email auth))])]
@@ -292,7 +287,8 @@
   {:auth    ::auth/any-user
    :uniq-by {:custom [[:val (if (some? store-id)
                               [:store-id store-id]
-                              [:user-id (hash (:email auth))])] [:order-id order-id]]}}
+                              [:user-id (hash (:email auth))])]
+                      [:order-id order-id]]}}
   {:value (when-let [charge (if (some? store-id)
                               (db/pull-one-with db [:db/id :charge/id] {:where   '[[?o :order/store ?s]
                                                                                    [?o :order/charge ?e]]
@@ -305,18 +301,20 @@
             (assoc (stripe/get-charge (:system/stripe system) (:charge/id charge)) :db/id (:db/id charge)))})
 
 (defread query/stripe-account
-  [{:keys [db route-params] :as env} _ _]
-  {:auth    {::auth/store-owner {:store-id (:store-id route-params)}}
-   :log     [:store-id]
+  [{:keys [db route-params]
+    {:keys [store-id]} :route-params
+    :as env} _ _]
+  {:auth    {::auth/store-owner {:store-id store-id}}
    :uniq-by {:route-params [:store-id]}}
-  {:value (store/account env (db/store-id->dbid db (:store-id route-params)))})
+  {:value (store/account env store-id)})
 
 (defread query/stripe-balance
-  [{:keys [db] :as env} _ {:keys [store-id]}]
+  [{:keys [db]
+    {:keys [store-id]} :route-params
+    :as env} _ _]
   {:auth    {::auth/store-owner {:store-id store-id}}
-   :log     [:store-id]
    :uniq-by {:route-params [:store-id]}}
-  {:value (store/balance env (db/store-id->dbid db store-id))})
+  {:value (store/balance env store-id)})
 
 (defread query/stripe-customer
   [env _ _]
@@ -334,7 +332,7 @@
   [{:keys [db db-history query]} _ {:keys [sku-ids]}]
   {:auth    ::auth/public
    :log     [:sku-ids]
-   :uniq-by [[:sku-id sku-ids]]}
+   :uniq-by {:params [:sku-ids]}}
   {:value (query/all db db-history query
                      {:where   '[[_ :store.item/skus ?e]]
                       :symbols {'[?e ...] sku-ids}})})
@@ -358,7 +356,6 @@
 (defread query/stream
   [{:keys [db db-history query route-params]} _ _]
   {:auth    ::auth/public
-   :log     [:store-id]
    :uniq-by {:route-params [:store-id]}}
   {:value (when-let [store-id (:store-id route-params)]
             (query/one db db-history query {:where   '[[?e :stream/store ?store-id]]

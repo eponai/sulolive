@@ -87,7 +87,13 @@
 (defn read-with-state
   "Merges the parameters with env, to be used in later reads."
   [env k p]
-  (read-join (merge env p) k p))
+  (letfn [(merge-fn [a b]
+            (cond (map? a)
+                  (merge a b)
+                  b b
+                  a a))]
+    (read-join (merge-with merge-fn env p)
+               k p)))
 
 (defprotocol IReadAtBasisT
   (set-basis-t [this key basis-t params] "Sets basis-t for key and its params as [[k v]...]")

@@ -23,7 +23,8 @@
     [eponai.web.ui.button :as button]
     [eponai.common.mixpanel :as mixpanel]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.common :as common]))
+    [eponai.common.ui.common :as common]
+    [eponai.common.database :as db]))
 
 (defn products->grid-layout [component products]
   (let [num-cols 3
@@ -174,7 +175,7 @@
           products (grid-layout->products this layout)]
       (debug "Save products: " (into [] (grid-layout->products this layout)))
       (msg/om-transact! this [(list 'store/update-product-order {:items    products
-                                                                 :store-id (get-in current-route [:route-params :store-id])})
+                                                                 :store-id (db/store-id->dbid this (get-in current-route [:route-params :store-id]))})
                               :query/inventory])
       (om/update-state! this assoc :grid-editable? false)))
   (save-sections [this]
@@ -182,7 +183,7 @@
           {:query/keys [current-route]} (om/props this)
           new-sections (filter #(not-empty (string/trim (:store.section/label % ""))) edit-sections)]
       (msg/om-transact! this [(list 'store/update-sections {:sections new-sections
-                                                            :store-id (get-in current-route [:route-params :store-id])})
+                                                            :store-id (db/store-id->dbid this (get-in current-route [:route-params :store-id]))})
                               :query/store])
       (om/update-state! this dissoc :products/edit-sections)))
 
