@@ -727,8 +727,12 @@
 
 (defn with-local-read-guard [read]
   (fn [{:keys [target] :as env} k p]
-    (when (or *parser-allow-local-read*
-              (some? target))
+    (if (and (not *parser-allow-local-read*)
+             (nil? target)
+             (not (is-special-key? k)))
+      ;; If there's a regular read, when reading without target, and we don't care about read results
+      ;; return an empty value, making om.next's transact* as efficient as possible.
+      {:value {}}
       (read env k p))))
 
 (defn with-elided-paths [read-or-mutate child-parser]
