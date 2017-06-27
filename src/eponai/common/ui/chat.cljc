@@ -83,21 +83,13 @@
 (defui StreamChat
   static om/IQuery
   (query [_]
-    [{:query/chat [:chat/store
-                   ;; ex chat modes: :chat.mode/public :chat.mode/sub-only :chat.mode/fb-authed :chat.mode/owner-only
-                   :chat/modes
-                   {:chat/messages [:chat.message/client-side-message?
-                                    {:chat.message/user [:user/email
-                                                         :db/id
-                                                         {:user/profile [{:user.profile/photo [:photo/id]}
-                                                                         :user.profile/name]}]}
-                                    :chat.message/text
-                                    :chat.message/created-at]}]}])
+    [{:query/chat client.chat/query-chat-pattern}])
   client.chat/IStoreChatListener
   (start-listening! [this store-id]
     (debug "Will start listening to store-id: " store-id)
     (client.chat/start-listening! (shared/by-key this :shared/store-chat-listener) store-id))
   (stop-listening! [this store-id]
+    (debug "Will stop listening to store-id: " store-id)
     (client.chat/stop-listening! (shared/by-key this :shared/store-chat-listener) store-id))
   Object
   (componentWillUnmount [this]

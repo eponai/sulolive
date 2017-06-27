@@ -257,8 +257,7 @@
          (fetch-cover-photos! reconciler)
          (debug "Initial app load done!"))
         (catch :default e
-          (error "Init app error: " e)))
-      )))
+          (error "Init app error: " e))))))
 
 (defn run-prod []
   (run {}))
@@ -277,4 +276,5 @@
 (defn on-reload! []
   (when-let [chat-listener (some-> reconciler-atom (deref) (shared/by-key :shared/store-chat-listener))]
     (client.chat/shutdown! chat-listener))
+  (shared/clear-components!)
   (run-dev))

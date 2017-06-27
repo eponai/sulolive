@@ -15,6 +15,19 @@
 (defprotocol IStopChatListener
   (shutdown! [this]))
 
+;; Puts the pattern here because it's important that we get exactly the same pattern.
+;; The reasons is we use :query-hash in the read-basis-t-graph.
+(def query-chat-pattern [:chat/store
+                         ;; ex chat modes: :chat.mode/public :chat.mode/sub-only :chat.mode/fb-authed :chat.mode/owner-only
+                         :chat/modes
+                         {:chat/messages [:chat.message/client-side-message?
+                                          {:chat.message/user [:user/email
+                                                               :db/id
+                                                               {:user/profile [{:user.profile/photo [:photo/id]}
+                                                                               :user.profile/name]}]}
+                                          :chat.message/text
+                                          :chat.message/created-at]}])
+
 (defn- read-basis-t-graph [db]
   (::parser/read-basis-t-graph
     (db/entity db [:ui/singleton ::parser/read-basis-t])))

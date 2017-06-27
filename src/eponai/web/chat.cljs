@@ -20,8 +20,9 @@
                   (if (and (some? current-basis-t) (>= current-basis-t basis-t))
                     (debug "Already had the chat update.")
                     (do (debug "Will request query chat because we're not up to date.")
-                        (om/transact! reconciler (into [(list 'chat/queue-update {:store-id store-id :basis-t basis-t})]
-                                                       (om/transform-reads reconciler [:query/chat])))))))))]
+                        (om/transact! reconciler [(list 'chat/queue-update {:store-id store-id :basis-t basis-t})
+                                                  {:query/chat chat/query-chat-pattern}]
+                                      (om/transform-reads reconciler [:query/chat]))))))))]
     (reify
       sente/ISenteEventHandler
       (event-received [this event-id event-data]
@@ -45,6 +46,7 @@
     (sente/stop-sente! sente-sender)))
 
 (defmethod shared/shared-component [:shared/store-chat-listener ::shared/prod] [reconciler _ _]
+  (debug "Creating chat listener!")
   (let [chat-event-handler (chat-update-handler reconciler)
         sente-sender (sente/delayed-start "/ws/chat" [chat-event-handler])]
     (->StoreChatListener sente-sender)))

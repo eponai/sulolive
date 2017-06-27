@@ -1033,7 +1033,8 @@
                                                 (-> (select-keys env [:route :raw-route-params :query-params])
                                                     ;; Using the raw route-params when sending to server
                                                     ;; so the server gets a chance to normalize them.
-                                                    (set/rename-keys {:raw-route-params :route-params})))))
+                                                    (set/rename-keys {:raw-route-params :route-params})
+                                                    (f/remove-nil-keys)))))
                   (cond->> mutate-ret
                            (seq reads)
                            (merge (-> (deduped-result-parser env query target)
