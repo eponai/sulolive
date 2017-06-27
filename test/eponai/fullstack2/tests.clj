@@ -216,7 +216,7 @@
              (let [parsed-auth (parser env [{:query/auth [:db/id]}])]
                (debug "Parsed auth: " parsed-auth)
                (when (empty? (:query/auth parsed-auth))
-                 (let [lock (auth/show-lock (:shared/auth-lock shared))]
+                 (let [lock (auth/show-login (:shared/login shared))]
                    (assert (fn? lock) (str "show-lock did not return a function. Was: " lock))
                    (lock {:email email})))
                nil))})

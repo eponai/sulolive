@@ -47,7 +47,8 @@
                              local-storage
                              store-chat-listener
                              modules
-                             stripe]
+                             stripe
+                             login]
                :or   {conn          (utils/create-conn)
                       local-storage (local-storage/->local-storage)
                       remotes       (remote-order)
@@ -67,7 +68,8 @@
                                                       :shared/browser-history     browser-history
                                                       :shared/local-storage       local-storage
                                                       :shared/auth-lock           auth-lock
-                                                      :shared/store-chat-listener store-chat-listener}
+                                                      :shared/store-chat-listener store-chat-listener
+                                                      :shared/login login}
                                          :tx-listen  tx-listen
                                          :migrate    nil
                                          :instrument instrument}))]

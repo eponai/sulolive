@@ -20,7 +20,8 @@
      {:proxy/footer (om/get-query foot/Footer)}
      {:query/streams [:stream/title
                       :stream/state
-                      {:stream/store [{:store/profile [:store.profile/name
+                      {:stream/store [:db/id
+                                      {:store/profile [:store.profile/name
                                                        {:store.profile/photo [:photo/path
                                                                               :photo/id]}]}
                                       :store/username

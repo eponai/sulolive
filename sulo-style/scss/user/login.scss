@@ -6,7 +6,21 @@
 		}
 	}
 }
+#sulo-login-modal {
+	text-align: center;
+	// h1
+	.photo-container {
+		max-width: 3rem;
+		background: $white;
+		padding: 0.25rem;
+		margin: 0 auto;
+		margin-bottom: $global-margin;
+		// border: none;
+	}
+}
+
 #sulo-login {
+
 	.button {
 			max-width: 20rem;
 			padding: $global-padding;
@@ -17,7 +31,23 @@
 		}
 		input {
 			max-width: 20rem;
+			// padding: $global-padding;
+			height: auto;
+			border-color: $medium-gray;
+			font-size: 110%;
+			&[type="number"] {
+				font-size: 150%;
+				font-weight: $global-weight-bold;
+				text-align: center;
+				&::-webkit-outer-spin-button,
+				&::-webkit-inner-spin-button {
+				    /* display: none; <- Crashes Chrome on hover */
+				    -webkit-appearance: none;
+				    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+				}
+			}
 		}
+
 		a:not(.button) {
 			text-decoration: underline;
 			color: $dark-gray;

@@ -1,20 +1,17 @@
 (ns eponai.web.ui.login
   (:require
     [eponai.common.ui.dom :as dom]
-    [eponai.common.ui.index :as index]
     [eponai.common.ui.router :as router]
-    [eponai.common.shared :as shared]
-    [eponai.client.auth :as auth]
     [om.next :as om :refer [defui]]
     [eponai.web.ui.button :as button]
     [eponai.common.ui.elements.css :as css]
-    [eponai.common.ui.navbar :as nav]
-    [eponai.web.ui.footer :as foot]
-    [eponai.common.ui.common :as common]
+    [eponai.web.ui.modal :as modal]
     [eponai.common.ui.elements.grid :as grid]
     #?(:cljs
        [eponai.web.utils :as web-utils])
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.web.ui.photo :as photo]
+    [eponai.client.routes :as routes]))
 
 (def form-inputs
   {::email "sulo.login.email"
@@ -29,17 +26,7 @@
   (authorize-social [this provider]
     #?(:cljs
        (when-let [auth0 (:auth0 (om/get-state this))]
-         (cond (= provider :social/facebook)
-               (.authorize auth0 #js {:connection "facebook"})
-               )))
-    ;https://sulo.auth0.com/authorize?
-    ;response_type=code|token&
-    ;client_id=JMqCBngHgOcSYBwlVCG2htrKxQFldzDh&
-    ;connection=CONNECTION&
-    ;redirect_uri=http://localhost:3000/auth&
-    ;state=STATE&
-    ;additional-parameter=ADDITIONAL_PARAMETERS
-    )
+         (.authorize auth0 #js {:connection   (name provider)}))))
   (authorize-email [this]
     #?(:cljs
        (do
@@ -98,7 +85,7 @@
   ;          }
 
   (initLocalState [this]
-    {:login-state nil})
+    {:login-state :login})
   (render [this]
     (let [{:keys [login-state error-message]} (om/get-state this)]
 
@@ -107,30 +94,25 @@
 
         (cond
           (= login-state :verify-email)
-          [(dom/p (css/add-class :header) (dom/span nil "We sent you a code to sign in. Please check your inbox and provide the code below."))
+          [(dom/p nil (dom/span nil "We sent you a code to sign in. Please check your inbox and provide the code below."))
            (dom/div
              (css/add-class :email-signin)
              (dom/label nil "Code")
              (dom/input {:id           (::code form-inputs)
-                         :type         "text"
+                         :type         "number"
+                         :placeholder "000000"
                          :maxLength    6
                          :defaultValue ""})
              (button/default-hollow
                (css/add-class :sulo-dark {:onClick #(.verify-email this)})
                (dom/span nil "Sign me in"))
-
-             (dom/p (css/add-class :info)
-                    (dom/small nil "By signing up you accept our ")
-                    (dom/a nil (dom/small nil "Terms of Service"))
-                    (dom/small nil " and ")
-                    (dom/a nil (dom/small nil "Privacy Policy"))
-                    (dom/small nil ".")))]
+             )]
 
           (= login-state :login-email)
-          [(dom/p (css/add-class :header) (dom/span nil "Enter your email address to sign in or create an account on SULO Live"))
+          [(dom/p nil (dom/span nil "Enter your email address to sign in or create an account on SULO Live"))
            (dom/div
              (css/add-class :email-signin)
-             (dom/label nil "Email")
+             ;(dom/label nil "Email")
              (dom/input
                (cond->> {:id           (::email form-inputs)
                          :type         "email"
@@ -141,17 +123,18 @@
              (when error-message
                (dom/p (css/add-class :text-alert) (dom/small nil error-message)))
              (button/default-hollow
-               (css/add-class :sulo-dark {:onClick #(.authorize-email this)})
+               (css/add-classes [:expanded :sulo-dark] {:onClick #(.authorize-email this)})
                (dom/i {:classes ["fa fa-envelope-o fa-fw"]})
-               (dom/span nil "Email me a sign in code"))
-             (dom/p (css/add-class :go-back) (dom/a {:onClick #(om/update-state! this assoc :show-email? false)}
-                                                    (dom/span nil "Or sign in with Facebook")))
-             (dom/p (css/add-class :info)
-                    (dom/small nil "By signing up you accept our ")
-                    (dom/a nil (dom/small nil "Terms of Service"))
-                    (dom/small nil " and ")
-                    (dom/a nil (dom/small nil "Privacy Policy"))
-                    (dom/small nil ".")))]
+               (dom/span nil "Email me a code to sign in"))
+             (dom/p (css/add-class :go-back) (dom/a {:onClick #(om/update-state! this assoc :login-state :login)}
+                                                    (dom/span nil "Or sign in with Facebook or Twitter")))
+             ;(dom/p (css/add-class :info)
+             ;       (dom/small nil "By signing up you accept our ")
+             ;       (dom/a nil (dom/small nil "Terms of Service"))
+             ;       (dom/small nil " and ")
+             ;       (dom/a nil (dom/small nil "Privacy Policy"))
+             ;       (dom/small nil "."))
+             )]
 
           :else
           [(dom/p nil (dom/span nil "Sign in to SULO Live to connect with brands other shoppers in your favourite city."))
@@ -173,31 +156,73 @@
                   (dom/small nil "By signing up you accept our ")
                   (dom/a nil (dom/small nil "Terms of Service"))
                   (dom/small nil " and ")
-                  (dom/a nil (dom/small nil "Privacy Policy"))
+                  (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
+                          :className "iubenda-nostyle no-brand iubenda-embed"
+                          :title     "Privacy Policy"
+                          :target "_blank"} (dom/small nil "Privacy Policy"))
                   (dom/small nil ". To use SULO Live you must have cookies enabled. We’ll never post to Twitter or Facebook without your permission."))])
         ))))
 
 (def ->Login (om/factory Login))
 
+(defui LoginModal
+  static om/IQuery
+  (query [_]
+    [{:proxy/login (om/get-query Login)}
+     {:query/login-modal [:ui.singleton.login-modal/show?]}])
+  Object
+  (close-modal [this]
+    (om/transact! this [(list 'login-modal/hide)
+                        :query/login-modal]))
+  (render [this]
+    (let [{:query/keys [login-modal]
+           :proxy/keys [login]} (om/props this)]
+      (debug "Login modal props: " (om/props this))
+      (when (:ui.singleton.login-modal/show? login-modal)
+        (modal/modal
+          {:id       "sulo-login-modal"
+           :size     "tiny"
+           :on-close #(.close-modal this)}
+          (photo/circle {:src "assets/img/auth0-icon.png"})
+          (dom/h4 nil "Sign up or sign in")
+          (->Login login))))))
+
+(def ->LoginModal (om/factory LoginModal))
+
 (defui LoginPage
   static om/IQuery
   (query [this]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/footer (om/get-query foot/Footer)}
+    [:query/auth
+     ;{:proxy/navbar (om/get-query nav/Navbar)}
+     ;{:proxy/footer (om/get-query foot/Footer)}
      {:proxy/login (om/get-query Login)}])
   Object
   ;(componentDidMount [this]
   ;  (auth/show-lock (shared/by-key this :shared/auth-lock)))
+  (close-modal [this]
+    (routes/set-url! this :landing-page))
   (render [this]
     (let [{:proxy/keys [navbar footer login]} (om/props this)]
       ;(index/->Index (:proxy/index (om/props this)))
-      (common/page-container
-        {:id     "sulo-login-page"
-         :navbar navbar
-         :footer footer}
-        (grid/row-column
-          (css/text-align :center)
-          (dom/h1 nil "Sign up / Sign in")
-          (->Login login))))))
+      (modal/modal
+        {:id       "sulo-login-modal"
+         :size     "tiny"
+         :on-close #(.close-modal this)
+         :require-close? true}
+        (dom/div
+          (css/add-class :header-container)
+          (photo/circle {:src "assets/img/auth0-icon.png"})
+          (dom/h1 nil "SULO Live"))
+        ;(photo/circle {:src "assets/img/auth0-icon.png"})
+        ;(dom/h2 nil "Sign up  / Sign in")
+        (->Login login))
+      ;(debug "Props: ")
+      ;(dom/div
+      ;  {:id     "sulo-login-page"}
+      ;  (grid/row-column
+      ;    (css/text-align :center)
+      ;    (dom/h1 nil "Sign up / Sign in")
+      ;    (->Login login)))
+      )))
 
 (router/register-component :login LoginPage)

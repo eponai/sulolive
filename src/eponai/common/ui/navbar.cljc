@@ -17,6 +17,7 @@
     [clojure.string :as string]
     [eponai.common.ui.router :as router]
     [eponai.web.social :as social]
+    [eponai.web.ui.login :as login]
     [eponai.web.ui.button :as button]
     [eponai.common.mixpanel :as mixpanel]
     [eponai.client.utils :as client.utils]))
@@ -157,7 +158,7 @@
        (menu/item
          nil
          (dom/a
-           {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
+           {:onClick #(auth/show-login (shared/by-key component :shared/login))}
            (dom/strong nil (dom/small nil "Sign in")))))
      ;(when (some? auth)
      ;  (menu/item
@@ -194,7 +195,7 @@
                :onClick  #(.open-dropdown component :dropdown/user)}
               (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
             (dom/a
-              {:onClick #(auth/show-lock (shared/by-key component :shared/auth-lock))}
+              {:onClick #(auth/show-login (shared/by-key component :shared/login))}
               (dom/span nil "Sign in"))))))))
 
 
@@ -387,6 +388,7 @@
                           {:store/owners [{:store.owner/user [:db/id]}]}]}
      {:query/navigation [:category/name :category/label :category/path :category/href]}
      {:proxy/loading-bar (om/get-query LoadingBar)}
+     {:proxy/login-modal (om/get-query login/LoginModal)}
      :query/current-route])
   Object
   #?(:cljs
@@ -468,7 +470,7 @@
 
   (render [this]
     (let [{:query/keys [current-route navigation]
-           :proxy/keys [loading-bar]} (om/props this)
+           :proxy/keys [loading-bar login-modal]} (om/props this)
           {:keys [route]} current-route]
       (dom/div
         nil
@@ -501,6 +503,8 @@
                 :else
                 (standard-navbar this)))))
         ;(let [is-loading? (:ui.singleton.loading-bar/show? loading-bar)])
+
+        (login/->LoginModal login-modal)
         (->LoadingBar loading-bar)))))
 
 (def ->Navbar (om/factory Navbar))
@@ -641,7 +645,7 @@
                                                          :onClick #(track-event ::mixpanel/signout)} (dom/small nil "Sign out")))
                                   (menu/item nil (dom/a (css/button {:onClick #(do
                                                                                 (track-event ::mixpanel/open-signin)
-                                                                                (auth/show-lock (shared/by-key this :shared/auth-lock)))}) (dom/span nil "Sign in"))))))
+                                                                                (auth/show-login (shared/by-key this :shared/login)))}) (dom/span nil "Sign in"))))))
                (menu/item
                  nil
                  (menu/horizontal
@@ -773,7 +777,7 @@
                                   (menu/item nil (dom/a
                                                    (->> {:onClick #(do
                                                                     (track-event ::mixpanel/open-signin)
-                                                                    (auth/show-lock (shared/by-key this :shared/auth-lock)))}
+                                                                    (auth/show-login (shared/by-key this :shared/login)))}
                                                         (css/button)) (dom/span nil "Sign in")))
                                   ;(menu/item nil (dom/a (css/button {:onClick #(auth/show-lock (shared/by-key this :shared/auth-lock))})
                                   ;                      (dom/span nil "Sign in")))

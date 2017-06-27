@@ -802,7 +802,7 @@
                                                          (throw (ex-info "Unsupported function -redirect. Implement if needed"
                                                                          {:this this :path path :method :IAuthResponder/-redirect})))
                                                        (-prompt-login [this anything]
-                                                         (client.auth/show-lock (:shared/auth-lock (:shared env))))
+                                                         (client.auth/show-login (:shared/login (:shared env))))
                                                        (-unauthorize [this]
                                                          ;;TODO: When :shared/jumbotron is implemented (a place where we
                                                          ;;      can show messages to a user), call the jumbotron with

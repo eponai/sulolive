@@ -13,7 +13,7 @@
     [eponai.client.reconciler :as reconciler]
     [goog.dom :as gdom]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre  :as timbre :refer [error debug warn info]]
+    [taoensso.timbre :as timbre :refer [error debug warn info]]
     [bidi.bidi :as bidi]
     [pushy.core :as pushy]
     [eponai.client.routes :as routes]
@@ -44,9 +44,9 @@
     (throw (ex-info (str "Unable to set route: " handler
                          " route-params: " route-params
                          " because we didn't have location set.")
-                    {:route handler
+                    {:route        handler
                      :route-params route-params
-                     :type ::location-not-set}))))
+                     :type         ::location-not-set}))))
 
 (defn update-route-fn [reconciler-atom]
   (fn [{:keys [handler route-params] :as match}]
@@ -68,8 +68,8 @@
             (js/ga "set" "page" path)
             (js/ga "send" "pageview"))
           (catch :default e
-            (error "Google analytics error: " e)))                        ;('set', 'page', '/new-page.html')
-        
+            (error "Google analytics error: " e)))          ;('set', 'page', '/new-page.html')
+
         ;; There's no reason to read local reads when transacting.
         ;; Should this go into om.next?
         (binding [parser/*parser-allow-local-read* false]
@@ -190,8 +190,9 @@
 (defonce history-atom (atom nil))
 (defonce reconciler-atom (atom nil))
 
-(defn- run [{:keys [auth-lock modules loading-bar]
-             :or   {auth-lock   (auth/auth0-lock)
+(defn- run [{:keys [login modules loading-bar]
+             :or   {login       (auth/login reconciler-atom)
+                    ;auth-lock   (auth/log)
                     loading-bar (loading-bar/loading-bar)}
              :as   run-options}]
   (let [modules (or modules (modules/advanced-compilation-modules router/routes))
@@ -237,7 +238,7 @@
                                        :shared/browser-history     history
                                        :shared/store-chat-listener ::shared/prod
                                        :shared/stripe              ::shared/client-env
-                                       :shared/auth-lock           auth-lock
+                                       :shared/login               login
                                        :instrument                 (::plomber run-options)})]
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
@@ -277,13 +278,13 @@
 (defn run-simple [& [deps]]
   (when-not-timbre-level
     (timbre/set-level! :debug))
-  (run (merge {:auth-lock (auth/fake-lock)}
+  (run (merge {:login (auth/fake-lock)}
               deps)))
 
 (defn run-dev [& [deps]]
   (run (merge {
-               :auth-lock (auth/fake-lock)
-               :modules   (modules/dev-modules router/routes)
+               :login   (auth/fake-lock)
+               :modules (modules/dev-modules router/routes)
                }
               deps)))
 

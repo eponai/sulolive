@@ -26,6 +26,16 @@
   (when (nil? target)
     {:value (db/pull-one-with db query {:where '[[?e :ui/singleton :ui.singleton/state]]})}))
 
+(defmethod client-read :query/loading-bar
+  [{:keys [db query target]} _ _]
+  (when-not target
+    {:value (db/pull-one-with db query {:where '[[?e :ui/singleton :ui.singleton/loading-bar]]})}))
+
+(defmethod client-read :query/login-modal
+  [{:keys [db query target]} _ _]
+  (when-not target
+    {:value (db/pull-one-with db query {:where '[[?e :ui/singleton :ui.singleton/login-modal]]})}))
+
 
 ;; ################ Remote reads ####################
 ;; Remote reads goes here. We share these reads
@@ -496,11 +506,6 @@
                                                          (fn [{:keys [db/id]}]
                                                            (assoc (get users-by-id id) :db/id id)))))
                                           messages))))))})))
-
-(defmethod client-read :query/loading-bar
-  [{:keys [db query target]} _ _]
-  (when-not target
-    {:value (db/pull-one-with db query {:where '[[?e :ui/singleton :ui.singleton/loading-bar]]})}))
 
 (defmethod client-read :datascript/schema
   [{:keys [target]} _ _]

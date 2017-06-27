@@ -6,6 +6,7 @@
 		// padding-bottom: 0.1rem;
 		// margin-bottom: 1.5rem;
 	}
+
 	padding: 1rem 0.5rem;
 	@include breakpoint(medium) {
 		padding: 1rem;
@@ -40,6 +41,11 @@
 	z-index: $modal-zindex;
 }
 .reveal {
+	@include breakpoint(medium) {
+		min-width: 25rem;
+	}
+	// min-width: 22rem;
+	max-width: 25rem;
 	z-index: $modal-zindex;
 	.button {
 		// margin-bottom: 0 !important; 
