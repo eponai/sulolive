@@ -8,6 +8,11 @@
 }
 #sulo-login-modal {
 	text-align: center;
+	@include breakpoint(medium) {
+		min-width: 25rem;
+	}
+	// min-width: 22rem;
+	max-width: 25rem;
 	// h1
 	.photo-container {
 		max-width: 3rem;
@@ -19,8 +24,14 @@
 	}
 }
 
-#sulo-login {
-
+#sulo-login {	
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	i.fa {
+		color: $medium-gray;
+		margin: $global-margin 0;
+	}
 	.button {
 			max-width: 20rem;
 			padding: $global-padding;
@@ -33,7 +44,7 @@
 			max-width: 20rem;
 			// padding: $global-padding;
 			height: auto;
-			border-color: $medium-gray;
+			// border-color: $medium-gray;
 			font-size: 110%;
 			&[type="number"] {
 				font-size: 150%;

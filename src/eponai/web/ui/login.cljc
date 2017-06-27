@@ -1,5 +1,6 @@
 (ns eponai.web.ui.login
   (:require
+    [clojure.spec :as s]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.router :as router]
     [om.next :as om :refer [defui]]
@@ -11,11 +12,23 @@
        [eponai.web.utils :as web-utils])
     [taoensso.timbre :refer [debug]]
     [eponai.web.ui.photo :as photo]
-    [eponai.client.routes :as routes]))
+    [eponai.client.routes :as routes]
+    [eponai.client.utils :as client-utils]
+    [eponai.common :as c]
+    [eponai.common.ui.elements.input-validate :as v]))
 
 (def form-inputs
-  {::email "sulo.login.email"
-   ::code  "sulo.login.code"})
+  {::email    "sulo.login.email"
+   ::username "sulo.login.name"
+   ::code     "sulo.login.code"})
+
+(s/def ::email #(client-utils/valid-email? %))
+(s/def ::username (s/and #(string? (not-empty %))
+                         #(< 3 (count %))))
+(s/def ::code (s/and #(number? (c/parse-long-safe %))
+                     #(= 6 (count %))))
+
+(s/def ::create-account (s/keys :req [::username ::email]))
 
 (defui Login
   static om/IQuery
@@ -26,7 +39,7 @@
   (authorize-social [this provider]
     #?(:cljs
        (when-let [auth0 (:auth0 (om/get-state this))]
-         (.authorize auth0 #js {:connection   (name provider)}))))
+         (.authorize auth0 #js {:connection (name provider)}))))
   (authorize-email [this]
     #?(:cljs
        (do
@@ -60,16 +73,42 @@
                                     (debug "Verified response: " res)
                                     (debug "Verified error: " err))))))))
 
+  (create-account [this]
+    #?(:cljs
+       (let [{:keys [user]} (om/get-state this)
+             email (or (:email user)
+                       (web-utils/input-value-by-id (::email form-inputs)))
+             username (web-utils/input-value-by-id (::username form-inputs))
+             validation (v/validate ::create-account {::email    email
+                                                      ::username username} form-inputs)]
+         (debug "Validation: " validation)
+         (om/update-state! this assoc :input-validation validation))))
+
   (componentDidMount [this]
     #?(:cljs
-       (let [{:query/keys [current-route]} (om/props this)]
+       (let [{:query/keys [current-route]} (om/props this)
+             {:keys [query-params]} current-route]
          (debug "Current route: " current-route)
          (let [web-auth (new js/auth0.WebAuth #js {:domain       "sulo.auth0.com"
                                                    :clientID     "olXSYZ7HDqCif7GtNEaxi6jKX9Lk72OR"
                                                    :redirectUri  "http://localhost:3000/login"
                                                    :responseType "code"
                                                    :scope        "openid email"
-                                                   })]
+                                                   })
+               user-info (when (:token query-params)
+                           (.userInfo (.-client web-auth)
+                                      (:token query-params)
+                                      (fn [err user]
+                                        (cond
+                                          err
+                                          (om/update-state! this assoc :token-error {:code (.-code err)})
+                                          user
+                                          (om/update-state! this assoc :user {:email           (.-email user)
+                                                                              :email-verified? (.-email_verified user)
+                                                                              :nickname        (.-nickname user)}))
+                                        (debug "User info: " user)
+                                        (debug "error " err))))]
+
            (om/update-state! this assoc :auth0 web-auth)))))
   ;auth0 = new auth0.WebAuth ({
   ;                            domain:       'sulo.auth0.com',
@@ -87,12 +126,62 @@
   (initLocalState [this]
     {:login-state :login})
   (render [this]
-    (let [{:keys [login-state error-message]} (om/get-state this)]
+    (let [{:query/keys [current-route]} (om/props this)
+          {:keys [route route-params query-params]} current-route
+          {:keys [login-state error-message input-validation user token-error]} (om/get-state this)]
 
       (dom/div
         (css/text-align :center {:id "sulo-login"})
 
+        (if (= route :login)
+          (if (some? (:token query-params))
+            (dom/h4 nil "Almost there")
+            (dom/div
+              (css/add-class :header-container)
+              (photo/circle {:src "assets/img/auth0-icon.png"})
+              (dom/h1 nil "SULO Live")))
+          (dom/h4 nil "Sign up or sign in"))
+
+
+
         (cond
+          (and (= route :login) (:token query-params))
+          [(dom/p nil (dom/span nil "Finish creating your SULO Live account"))
+           (dom/p nil (dom/a {:href (routes/url :login)} (dom/span nil "I already have an account")))
+
+           (if-not (or user token-error)
+             (dom/p nil (dom/i {:classes ["fa fa-spinner fa-pulse"]}))
+             [(dom/label nil "Email")
+
+              (v/input
+                (cond-> {:type         "email"
+                         :id           (::email form-inputs)
+                         :placeholder  "youremail@example.com"
+                         :defaultValue (:email user)}
+                        (not-empty (:email query-params))
+                        (assoc :disabled true))
+                input-validation)
+
+              (dom/label nil "Name")
+              (v/input {:type         "text"
+                        :id           (::username form-inputs)
+                        :placeholder  "Your name"
+                        :defaultValue (:nickname user)}
+                       input-validation)])
+
+           (dom/p (css/add-class :info)
+                  (dom/small nil "By creating an account you accept our ")
+                  (dom/a nil (dom/small nil "Terms of Service"))
+                  (dom/small nil " and ")
+                  (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
+                          :className "iubenda-nostyle no-brand iubenda-embed"
+                          :title     "Privacy Policy"
+                          :target    "_blank"} (dom/small nil "Privacy Policy")))
+           (button/default-hollow
+             (css/add-classes [:expanded :sulo-dark] {:onClick #(.create-account this)})
+             (dom/span nil "Create account"))]
+
+
           (= login-state :verify-email)
           [(dom/p nil (dom/span nil "We sent you a code to sign in. Please check your inbox and provide the code below."))
            (dom/div
@@ -100,7 +189,7 @@
              (dom/label nil "Code")
              (dom/input {:id           (::code form-inputs)
                          :type         "number"
-                         :placeholder "000000"
+                         :placeholder  "000000"
                          :maxLength    6
                          :defaultValue ""})
              (button/default-hollow
@@ -153,13 +242,13 @@
                ;(dom/i {:classes ["fa fa-envelope-o fa-fw"]})
                (dom/span nil "Sign up or sign in with email")))
            (dom/p (css/add-class :info)
-                  (dom/small nil "By signing up you accept our ")
+                  (dom/small nil "By signing in you accept our ")
                   (dom/a nil (dom/small nil "Terms of Service"))
                   (dom/small nil " and ")
                   (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
                           :className "iubenda-nostyle no-brand iubenda-embed"
                           :title     "Privacy Policy"
-                          :target "_blank"} (dom/small nil "Privacy Policy"))
+                          :target    "_blank"} (dom/small nil "Privacy Policy"))
                   (dom/small nil ". To use SULO Live you must have cookies enabled. We’ll never post to Twitter or Facebook without your permission."))])
         ))))
 
@@ -184,7 +273,7 @@
            :size     "tiny"
            :on-close #(.close-modal this)}
           (photo/circle {:src "assets/img/auth0-icon.png"})
-          (dom/h4 nil "Sign up or sign in")
+
           (->Login login))))))
 
 (def ->LoginModal (om/factory LoginModal))
@@ -205,14 +294,11 @@
     (let [{:proxy/keys [navbar footer login]} (om/props this)]
       ;(index/->Index (:proxy/index (om/props this)))
       (modal/modal
-        {:id       "sulo-login-modal"
-         :size     "tiny"
-         :on-close #(.close-modal this)
+        {:id             "sulo-login-modal"
+         :size           "tiny"
+         :on-close       #(.close-modal this)
          :require-close? true}
-        (dom/div
-          (css/add-class :header-container)
-          (photo/circle {:src "assets/img/auth0-icon.png"})
-          (dom/h1 nil "SULO Live"))
+
         ;(photo/circle {:src "assets/img/auth0-icon.png"})
         ;(dom/h2 nil "Sign up  / Sign in")
         (->Login login))

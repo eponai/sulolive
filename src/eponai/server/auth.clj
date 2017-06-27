@@ -197,30 +197,51 @@
         (wrap-authorization auth-backend)
         (wrap-http-responders))))
 
+
+(defn existing-user [db auth0-profile]
+  (when-let [email (:email auth0-profile)]
+    (db/lookup-entity db [:user/email email])))
+
 (defn- do-authenticate
   "Returns a logged in response if authenticate went well."
   [{:eponai.server.middleware/keys [logger conn] :as request}
-   {:keys [redirect-url token profile]}]
-  (when-let [email (:email profile)]
-    (let [old-user (db/lookup-entity (db/db conn) [:user/email email])
-          user (if-not (some? old-user)
-                 (let [new-user (f/auth0->user profile)
-                       _ (info "Auth - authenticated user did not exist, creating new user: " new-user)
-                       result (db/transact-one conn new-user)]
-                   (debug "Auth - new user: " new-user)
-                   (db/lookup-entity (:db-after result) [:user/email email]))
-                 old-user)]
-      (when-not (some? old-user)
-        (log/info! logger ::user-created {:user-id (:db/id user)}))
-      (when token
-        (let [loc (requested-location request)
-              redirect-url (if (:sulo-locality/path loc)
-                             (routes/path :index {:locality (:sulo-locality/path loc)})
-                             (routes/path :landing-page))]
-          (debug "Redirect to URL: " redirect-url)
-          (mixpanel/track "Sign in user" {:distinct_id (:db/id user)
-                                          :ip          (:remote-addr request)})
-          (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token} {:path "/"}))))))
+   {:keys [token profile]}]
+  (when-let [sulo-user (existing-user (db/db conn) profile)]
+    (let [loc (requested-location request)
+          redirect-url (if (:sulo-locality/path loc)
+                         (routes/path :index {:locality (:sulo-locality/path loc)})
+                         (routes/path :landing-page))]
+      (mixpanel/track "Sign in user" {:distinct_id (:db/id sulo-user)
+                                      :ip          (:remote-addr request)})
+      (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token} {:path "/"})))
+
+
+
+  ;(when-let [email (:email profile)]
+  ;  (let [old-user (db/lookup-entity (db/db conn) [:user/email email])
+  ;        user (if-not (some? old-user)
+  ;               (let [new-user (f/auth0->user profile)
+  ;                     _ (info "Auth - authenticated user did not exist, creating new user: " new-user)
+  ;                     result (db/transact-one conn new-user)]
+  ;                 (debug "Auth - new user: " new-user)
+  ;                 (db/lookup-entity (:db-after result) [:user/email email]))
+  ;               old-user)]
+  ;    (when-not (some? old-user)
+  ;      (log/info! logger ::user-created {:user-id (:db/id user)}))
+  ;    (when token
+  ;      (let [loc (requested-location request)
+  ;            redirect-url (if (:sulo-locality/path loc)
+  ;                           (routes/path :index {:locality (:sulo-locality/path loc)})
+  ;                           (routes/path :landing-page))]
+  ;        (debug "Redirect to URL: " redirect-url)
+  ;        (mixpanel/track "Sign in user" {:distinct_id (:db/id user)
+  ;                                        :ip          (:remote-addr request)})
+  ;        (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token} {:path "/"})))))
+  )
+
+
+
+
 
 (defn authenticate
   [{:keys                          [params] :as request
@@ -228,11 +249,11 @@
   (debug "AUTHENTICATE: " params)
   (let [auth0 (:system/auth0 system)
         {:keys [code state]} params
-        {:keys [redirect-url token profile] :as auth-map} (auth0/authenticate auth0 code state)]
+        {:keys [access_token token profile] :as auth-map} (auth0/authenticate auth0 code state)]
     (debug "Do authenticate: " auth-map)
     ;(debug "Authenticate user: ")
     (or (do-authenticate request auth-map)
-        (let [path (routes/path :login nil {:token token})]
+        (let [path (routes/path :login nil {:token access_token})]
           (debug "Redirect to path: " path)
           (r/redirect path)))))
 

@@ -66,7 +66,8 @@
    :system/chat-websocket (c/using (websocket/map->StoreChatWebsocket {})
                                    {:chat :system/chat})
    :system/client-env     (client-env/map->ClientEnvironment
-                            {:client-env (select-keys env [:stripe-publishable-key])})
+                            {:client-env (select-keys env [:stripe-publishable-key
+                                                           :auth0-client-id])})
    :system/datomic        (datomic/map->Datomic
                             {:db-url           (:db-url env)
                              :provided-conn    (::provided-conn config)
@@ -187,7 +188,7 @@
   (fake-system (dev-config config)
                ;; Put keys under here to use the real implementation
                ;:system/stripe
-               ;:system/auth0
+               :system/auth0
                ;:system/email
                ;:system/mailchimp
                ;:system/taxjar

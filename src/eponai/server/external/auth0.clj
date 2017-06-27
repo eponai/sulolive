@@ -59,6 +59,7 @@
           ;; profile (token->profile access_token)
           (debug "Got Token auth0: " to)
           {:token        id_token
+           :access_token access_token
            :profile      profile
            :redirect-url state
            :token-type   token_type})

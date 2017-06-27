@@ -41,11 +41,7 @@
 	z-index: $modal-zindex;
 }
 .reveal {
-	@include breakpoint(medium) {
-		min-width: 25rem;
-	}
-	// min-width: 22rem;
-	max-width: 25rem;
+	
 	z-index: $modal-zindex;
 	.button {
 		// margin-bottom: 0 !important; 
