@@ -22,7 +22,8 @@
             [medley.core :as medley]
             [cemerick.url :as url]
     #?(:clj
-            [eponai.server.log :as log]))
+            [eponai.server.log :as log])
+            [eponai.common.format :as f])
   #?(:clj
      (:import (clojure.lang ExceptionInfo))))
 
@@ -628,7 +629,7 @@
                                   error?
                                   {:exception (log/render-exception x)}
                                   read?
-                                  (cond-> nil
+                                  (cond-> (f/remove-nil-keys (select-keys env [:route :route-params :query-params]))
                                           (coll? x)
                                           (assoc :return-empty? (empty? x))
                                           (counted? x)

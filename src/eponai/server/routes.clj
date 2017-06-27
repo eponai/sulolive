@@ -70,7 +70,10 @@
              (some? user-id)
              (log/with #(assoc % :user-id user-id))
              (seq route)
-             (log/with #(merge % route))))))
+             ;; Merging what ever is in the log message in to the route because we don't want to
+             ;; overwrite what's already being logged. Route data can be different from what's in
+             ;; the current request.
+             (log/with #(merge route %))))))
 
 (defn request->props [request]
   (let [state (::m/conn request)
