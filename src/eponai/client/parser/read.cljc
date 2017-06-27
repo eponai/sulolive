@@ -96,7 +96,6 @@
   [{:keys [db query]} _ _]
   {:remote true
    :value  (when-let [loc (client.auth/current-locality db)]
-             (debug "Featured items: " loc)
              (let [items (db/all-with db {:where   '[[?s :store/locality ?l]
                                                      [?s :store/items ?e]
                                                      [?e :store.item/featured]]
