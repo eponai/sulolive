@@ -21,8 +21,7 @@
                     (debug "Already had the chat update.")
                     (do (debug "Will request query chat because we're not up to date.")
                         (om/transact! reconciler [(list 'chat/queue-update {:store-id store-id :basis-t basis-t})
-                                                  {:query/chat chat/query-chat-pattern}]
-                                      (om/transform-reads reconciler [:query/chat]))))))))]
+                                                  {:query/chat chat/query-chat-pattern}])))))))]
     (reify
       sente/ISenteEventHandler
       (event-received [this event-id event-data]
