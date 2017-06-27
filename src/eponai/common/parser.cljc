@@ -448,12 +448,13 @@
                                       (validate-read-basis-params env k p))
                route-basis-kvs (or (:custom read-basis-params)
                                    (into []
-                                         (mapcat (fn [param-key]
-                                                   (let [param-map (get env param-key)
-                                                         params-order (get read-basis-params param-key)]
+                                         (mapcat (fn [[param-key param-map]]
+                                                   (let [params-order (get read-basis-params param-key)]
                                                      (map (juxt identity #(get param-map %))
                                                           params-order))))
-                                         [:route-params :query-params :params]))
+                                         [[:route-params (:route-params env)]
+                                          [:query-params (:query-params env)]
+                                          [:params p]]))
                read-basis-params (-> []
                                      (conj [:locations locations])
                                      (into route-basis-kvs)
