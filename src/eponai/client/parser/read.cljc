@@ -471,32 +471,32 @@
   [{:keys [target db route-params query]} _ _]
   (when-let [store-id (:store-id route-params)]
     (if (some? target)
-     {:remote/chat true}
-     {:value (when-let [chat-db (client.chat/get-chat-db db)]
-               (let [{:keys [sulo-db-tx chat-db-tx]}
-                     (client.chat/read-chat chat-db
-                                            db
-                                            query
-                                            {:db/id store-id}
-                                            nil)
-                     _ (when (seq sulo-db-tx)
-                         (assert (every? #(contains? % :db/id) sulo-db-tx)
-                                 (str "sulo-db-tx (users) did not have :db/id's in them. Was: " sulo-db-tx)))
-                     users-by-id (into {} (map (juxt :db/id identity)) sulo-db-tx)]
-                 ;; This would be a perfect time for specter
-                 ;;  (comp (mapcat :chat/messages)
-                 ;; (map :chat.message/user)
-                 ;; (map :db/id))
-                 (cond-> chat-db-tx
-                         (contains? chat-db-tx :chat/messages)
-                         (update :chat/messages
-                                 (fn [messages]
-                                   (into []
-                                         (map (fn [message]
-                                                (update message :chat.message/user
-                                                        (fn [{:keys [db/id]}]
-                                                          (assoc (get users-by-id id) :db/id id)))))
-                                         messages))))))})))
+      {:remote/chat true}
+      {:value (when-let [chat-db (client.chat/get-chat-db db)]
+                (let [{:keys [sulo-db-tx chat-db-tx]}
+                      (client.chat/read-chat chat-db
+                                             db
+                                             query
+                                             {:db/id store-id}
+                                             nil)
+                      _ (when (seq sulo-db-tx)
+                          (assert (every? #(contains? % :db/id) sulo-db-tx)
+                                  (str "sulo-db-tx (users) did not have :db/id's in them. Was: " sulo-db-tx)))
+                      users-by-id (into {} (map (juxt :db/id identity)) sulo-db-tx)]
+                  ;; This would be a perfect time for specter
+                  ;;  (comp (mapcat :chat/messages)
+                  ;; (map :chat.message/user)
+                  ;; (map :db/id))
+                  (cond-> chat-db-tx
+                          (contains? chat-db-tx :chat/messages)
+                          (update :chat/messages
+                                  (fn [messages]
+                                    (into []
+                                          (map (fn [message]
+                                                 (update message :chat.message/user
+                                                         (fn [{:keys [db/id]}]
+                                                           (assoc (get users-by-id id) :db/id id)))))
+                                          messages))))))})))
 
 (defmethod client-read :query/loading-bar
   [{:keys [db query target]} _ _]
