@@ -20,14 +20,18 @@
                    (parser {:state (:conn datomic)
                             :auth  {:email email}
                             ::parser/read-basis-t-graph
-                                   (when use-history?
-                                     (atom
-                                       (reify
-                                         parser.util/IReadAtBasisT
-                                         (set-basis-t [this key basis-t params]
-                                           nil)
-                                         (get-basis-t [this key params] 0)
-                                         (has-basis-t? [this key] true))))}
+                                   (atom
+                                     (reify
+                                       parser.util/IReadAtBasisT
+                                       (set-basis-t [this key basis-t params]
+                                         this)
+                                       (get-basis-t [this key params]
+                                         (when use-history?
+                                           0))
+                                       (has-basis-t? [this key]
+                                         (if use-history?
+                                           true
+                                           false))))}
                            query))))
 
         [store-id owner-email stripe-publ stripe-id]
@@ -40,10 +44,11 @@
                                        [?store :store/stripe ?stripe]
                                        [?stripe :stripe/publ ?publ]
                                        [?stripe :stripe/id ?id]]}))
-        store-query `[({:query/store [{:store/stripe [:stripe/id :stripe/publ]}
-                                      {:stream/_store [:stream/token]}
-                                      {:store/owners [{:store.owner/user [{:user/profile [:user.profile/name]}]}]}]}
-                        ~{:store-id store-id})]
+        store-query `[({:read/with-state
+                        [{:query/store [{:store/stripe [:stripe/id :stripe/publ]}
+                                        {:stream/_store [:stream/token]}
+                                        {:store/owners [{:store.owner/user [{:user/profile [:user.profile/name]}]}]}]}]}
+                        {:route-params ~{:store-id store-id}})]
         datascript-schema (:datascript/schema (parse nil [:datascript/schema]))
         ds-db (db/db (datascript/create-conn datascript-schema))]
     (db/transact (:conn datomic)
@@ -62,6 +67,7 @@
          (map (fn [[user db-history?]]
                 {:user   user
                  :result (-> (parse user store-query db-history?)
+                             :read/with-state
                              :query/store
                              (cond-> db-history? (->> (datascript/db-with ds-db))
                                      db-history? (db/entity store-id)))}))
@@ -102,10 +108,10 @@
                                  server-response (server-parse remote-query)]
                              ;; Poor man's merge
                              (reduce (fn self [conn [k v]]
-                                          (if (parser/is-special-key? k)
-                                            (reduce self conn v)
-                                            (datascript/transact conn v))
-                                          conn)
+                                       (if (parser/is-special-key? k)
+                                         (reduce self conn v)
+                                         (datascript/transact conn v))
+                                       conn)
                                      ds-conn
                                      server-response)
                              ((parser/client-parser) {:state ds-conn} query)))]

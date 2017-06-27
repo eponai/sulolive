@@ -88,10 +88,13 @@
   "Merges the parameters with env, to be used in later reads."
   [env k p]
   (letfn [(merge-fn [a b]
-            (cond (map? a)
-                  (merge a b)
-                  b b
-                  a a))]
+            (condp = [(some? a) (some? b)]
+              [true true] (if (map? a)
+                            (merge a b)
+                            b)
+              [true false] a
+              [false true] b
+              [false false] nil))]
     (read-join (merge-with merge-fn env p)
                k p)))
 
