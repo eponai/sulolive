@@ -208,8 +208,7 @@
    token sulo-user]
   ;(when-let [sulo-user (existing-user (db/db conn) profile)])
   ;(when (:user/verified sulo-user))
-  (let [primary-account (get-in request [:cookies "sulo.primary" :value])
-        loc (requested-location request)
+  (let [loc (requested-location request)
         redirect-url (if (:sulo-locality/path loc)
                        (routes/path :index {:locality (:sulo-locality/path loc)})
                        (routes/path :landing-page))]
@@ -250,23 +249,40 @@
     :eponai.server.middleware/keys [system logger conn]}]
   (debug "AUTHENTICATE: " params)
   (let [auth0 (:system/auth0 system)
-        {:keys [code state]} params
-        {:keys [access-token token profile]} (when (some? code)
-                                               (auth0/authenticate auth0 code state))
+        auth0management (:system/auth0management system)
+        {:keys [code state token]} params
+
+        ;; A code in the request means we want to login
+        auth-map (when (some? code) (auth0/authenticate auth0 code state))
+
+        ;; If we have a token in the request, it means this was the first login.
+        ;; An account was created and we want to authenticate again
+        token-info (when (some? token) {:profile (auth0/token-info auth0 token)
+                                        :token token})
+
+        ;; access-token is only present in case of login first step
+        {:keys [profile token access-token]} (or auth-map token-info)
 
         ;; Get our user from Datomic
-        sulo-user (existing-user (db/db conn) profile)]
+        sulo-user (existing-user (db/db conn) profile)
+        user-id (or (:user_id profile) (:sub profile))]
+    (debug "Got profile: " profile)
     (debug "Got sulo user: " (into {} sulo-user))
 
     ;; If we already have a user for this account and they're verified, we can authenticate
     (cond (:user/verified sulo-user)
-          (do-authenticate request token sulo-user)
+          (do
+            (debug "User is verified")
+            (auth0/link-user auth0management (assoc profile :user_id user-id) sulo-user)
+            (do-authenticate request token sulo-user))
 
           ;; User exists but has not verified their email
           (and (some? sulo-user)
                (not-empty (:email profile)))
           (do
+            (debug "Transacting verified email")
             (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]])
+            (auth0/link-user auth0management (assoc profile :user_id user-id) sulo-user)
             (do-authenticate request token sulo-user))
 
           ;; User is signin in for the first time, and should go through creating an account.

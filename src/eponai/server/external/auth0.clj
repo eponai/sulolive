@@ -24,7 +24,8 @@
 (defprotocol IAuth0Management
   (get-token [this])
   (update-user [this user-id params])
-  (create-and-link-new-user [this auth0-user db-user]))
+  (create-and-link-new-user [this auth0-user db-user])
+  (link-user [this auth0-user db-user]))
 
 (defn- read-json [json]
   (json/read-json json true))
@@ -65,23 +66,45 @@
   ;                                                      {:form-params (assoc params :client_id client-id)
   ;                                                       :headers     {"Authorization" (str token_type " " access_token)}})) :key-fn keyword)]
   ;    (debug "Updated user: " update-user)))
+  (link-user [this auth0-user db-user]
+    (when (not-empty (:email auth0-user))
+      (let [{:keys [access_token token_type]} (get-token this)
+
+            query-string (str "email.raw:\"" (:email auth0-user) "\" -user_id:\"" (:user_id auth0-user) "\"")
+            ;user-accounts (qs: {
+            ;                    search_engine: 'v2',
+            ;                    q: 'email.raw:"' + user.email + '" -user_id:"' + user.user_id + '"',
+            ;                                       })
+            account (first (json/read-str (:body (http/get (str auth0management-api-host "users")
+                                                            {:query-params {:search_engine "v2"
+                                                                            :q             query-string}
+                                                             :headers      {"Authorization" (str token_type " " access_token)}})) :key-fn keyword))]
+        (debug "Will get auth0 users with query: " query-string)
+        (debug "Got other accounts with email: " account)
+        (when account
+          (let [provider (first (string/split (:user_id auth0-user) #"\|"))
+                link (json/read-str (:body (http/post (str auth0management-api-host "users/" (:user_id account) "/identities")
+                                                      {:form-params {:provider provider
+                                                                     :user_id  (:user_id auth0-user)}
+                                                       :headers     {"Authorization" (str token_type " " access_token)}})))]
+            (debug "Linked Auth0 on authentication users: " link))))))
+
   (create-and-link-new-user [this auth0-user db-user]
-    ;(let [])
-    ;(when (not= "email" provider))
-    (let [{:keys [access_token token_type]} (get-token this)
-          created-user (json/read-str (:body (http/post (str auth0management-api-host "users")
-                                                        {:form-params {:connection     "email"
-                                                                       :email          (:user/email db-user)
-                                                                       :email_verified true
-                                                                       :verify_email   false}
-                                                         :headers     {"Authorization" (str token_type " " access_token)}})) :key-fn keyword)
-          _ (debug "Created Auth0 user: " created-user)
-          provider (first (string/split (:user-id auth0-user) #"\|"))
-          link (json/read-str (:body (http/post (str auth0management-api-host "users/" (:user_id created-user) "/identities")
-                                                {:form-params {:provider provider
-                                                               :user_id  (:user-id auth0-user)}
-                                                 :headers     {"Authorization" (str token_type " " access_token)}})))]
-      (debug "Linked Auth0 users: " link))))
+    (let [provider (first (string/split (:user_id auth0-user) #"\|"))]
+      (when (not= "email" provider)
+        (let [{:keys [access_token token_type]} (get-token this)
+              created-user (json/read-str (:body (http/post (str auth0management-api-host "users")
+                                                            {:form-params {:connection     "email"
+                                                                           :email          (:user/email db-user)
+                                                                           :email_verified true
+                                                                           :verify_email   false}
+                                                             :headers     {"Authorization" (str token_type " " access_token)}})) :key-fn keyword)
+              _ (debug "Created Auth0 user: " created-user)
+              link (json/read-str (:body (http/post (str auth0management-api-host "users/" (:user_id created-user) "/identities")
+                                                    {:form-params {:provider provider
+                                                                   :user_id  (:user_id auth0-user)}
+                                                     :headers     {"Authorization" (str token_type " " access_token)}})))]
+          (debug "Linked Auth0 users: " link))))))
 
 (defrecord Auth0 [client-id client-secret server-address]
   IAuth0

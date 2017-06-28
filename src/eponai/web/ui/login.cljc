@@ -54,9 +54,7 @@
            (let [email (web-utils/input-value-by-id (::email form-inputs))
                  {:keys [login-state user]} (om/get-state this)
 
-                 params (cond-> {:connection "email" :send "code" :email email}
-                                (some? (:user-id user))
-                                (assoc :redirectUri (redirect-to (routes/url :auth nil {:user-id (:user-id user)}))))]
+                 params {:connection "email" :send "code" :email email}]
              (debug "Params: " params)
              (.passwordlessStart auth0 (clj->js params)
                                  (fn [err res]
@@ -104,7 +102,7 @@
          (when (nil? validation)
            (msg/om-transact! this [(list 'user/create {:user {:user/email    email
                                                               :user/profile  {:user.profile/name  username}
-                                                              :user/verified (:email-verified? user)}
+                                                              :user/verified (:email_verified user)}
                                                        :auth0-user user})]))
          (om/update-state! this assoc :input-validation validation))))
 
@@ -137,8 +135,7 @@
                                                    :clientID     "olXSYZ7HDqCif7GtNEaxi6jKX9Lk72OR"
                                                    :redirectUri  (redirect-to (routes/url :auth))
                                                    :responseType "code"
-                                                   :scope        "openid email"
-                                                   })]
+                                                   :scope        "openid email"})]
            (when (:access_token query-params)
              (.userInfo (.-client web-auth)
                         (:access_token query-params)
@@ -147,9 +144,9 @@
                             err
                             (om/update-state! this assoc :token-error {:code (.-code err)})
                             user
-                            (om/update-state! this assoc :user {:user-id         (.-user_id user)
+                            (om/update-state! this assoc :user {:user_id         (.-user_id user)
                                                                 :email           (.-email user)
-                                                                :email-verified? (boolean (.-email_verified user))
+                                                                :email_verified (boolean (.-email_verified user))
                                                                 :nickname        (or (.-given_name user)
                                                                                      (.-screen_name user)
                                                                                      (.-nickname user))
@@ -172,7 +169,11 @@
 
         (if (= route :login)
           (if (some? access_token)
-            (dom/h4 nil "Almost there")
+            (dom/div
+              (css/add-class :header-container)
+              (photo/circle {:src "assets/img/auth0-icon.png"})
+              (dom/h4 nil "Almost there"))
+
             (dom/div
               (css/add-class :header-container)
               (photo/circle {:src "assets/img/auth0-icon.png"})
