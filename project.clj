@@ -151,7 +151,7 @@
                  [cljs-http "0.1.39"]
                  [org.clojure/tools.reader "1.0.0-beta4"]
                  [garden "1.3.2"]
-                 [org.clojars.petterik/datascript "0.16.1-direct-link-fix"]
+                 [datascript "0.15.5"]
                  [datascript-transit "0.2.2"
                   :exclusions [com.cognitect/transit-clj
                                com.cognitect/transit-cljs]]
@@ -367,6 +367,7 @@
              :web-prod {:dependencies [[amazonica "0.3.85"
                                         :exclusions [com.taoensso/encore
                                                      com.google.protobuf/protobuf-java]]
+                                       ;; [binaryage/devtools "0.9.4"]
                                        ]
                         :jvm-opts     ^:replace ["-Xmx3g" "-server"]
                         :cljsbuild    {:builds [{:id           "release"
@@ -383,7 +384,7 @@
                                                                 :infer-externs   true
                                                                 ;; :preloads [env.web.preloads]
                                                                 :language-in     :ecmascript5
-                                                                ;; :parallel-build  true
+                                                                :parallel-build  true
                                                                 ;; :pseudo-names true
                                                                 ;; :pretty-print true
                                                                 :elide-asserts   true

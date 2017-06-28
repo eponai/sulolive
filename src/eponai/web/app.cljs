@@ -1,5 +1,6 @@
 (ns eponai.web.app
-  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:require-macros [cljs.core.async.macros :refer [go]]
+                   [eponai.common.macros :refer [when-not-timbre-level]])
   (:require
     [eponai.web.modules :as modules]
     [eponai.client.utils :as client.utils]
@@ -12,7 +13,7 @@
     [eponai.client.reconciler :as reconciler]
     [goog.dom :as gdom]
     [om.next :as om :refer [defui]]
-    [taoensso.timbre :refer [error debug warn info]]
+    [taoensso.timbre  :as timbre :refer [error debug warn info]]
     [bidi.bidi :as bidi]
     [pushy.core :as pushy]
     [eponai.client.routes :as routes]
@@ -87,11 +88,17 @@
                                                             (if-let [app-root (om/app-root reconciler)]
                                                               (do (debug "Required route: " handler "! Reindexing...")
                                                                   (debug "query before reindex: " (om/get-query app-root))
-                                                                  (add-root! reconciler)
+                                                                  ;; Make sure we allow local reads when adding root.
+                                                                  (binding [parser/*parser-allow-local-read* true]
+                                                                    (add-root! reconciler))
                                                                   (debug "query after reindex: " (om/get-query (om/app-root reconciler)))
                                                                   (debug "Re indexed! Queuing reads..")
+                                                                  ;; Don't allow local reads for the queued reads.
+                                                                  ;; The reads will be called with om/transact!
+                                                                  ;; and there's no use for the local return values.
                                                                   (binding [parser/*parser-allow-local-read* false]
-                                                                    (queue-cb)))
+                                                                    (queue-cb))
+                                                                  (debug "called queue-cb!"))
                                                               (debug "No root query, nothing to queue..")))))))})))
       (catch :default e
         (let [data (ex-data e)]
@@ -268,6 +275,8 @@
   (run {}))
 
 (defn run-simple [& [deps]]
+  (when-not-timbre-level
+    (timbre/set-level! :debug))
   (run (merge {:auth-lock (auth/fake-lock)}
               deps)))
 
