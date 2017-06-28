@@ -85,7 +85,7 @@
                      #(try
                         (callback route)
                         (catch :default e
-                          (error "Error after calling callback: " e))))
+                          (error "Error after calling callback: " e " route: " route))))
         (catch :default e
           (error "Exception calling execOnLoad: " e " route: " route)))))
   (prefetch-route [this route]

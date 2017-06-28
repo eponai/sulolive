@@ -367,6 +367,7 @@
              :web-prod {:dependencies [[amazonica "0.3.85"
                                         :exclusions [com.taoensso/encore
                                                      com.google.protobuf/protobuf-java]]
+                                       ;; [binaryage/devtools "0.9.4"]
                                        ]
                         :jvm-opts     ^:replace ["-Xmx3g" "-server"]
                         :cljsbuild    {:builds [{:id           "release"
@@ -382,8 +383,8 @@
                                                                                   "src-hacks/js/externs/hls.js"]
                                                                 :infer-externs   true
                                                                 ;; :preloads [env.web.preloads]
-                                                                ;; :language-in     :ecmascript5
-                                                                ;; :parallel-build  true
+                                                                :language-in     :ecmascript5
+                                                                :parallel-build  true
                                                                 ;; :pseudo-names true
                                                                 ;; :pretty-print true
                                                                 :elide-asserts   true
