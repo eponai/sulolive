@@ -68,26 +68,31 @@
             (js/ga "send" "pageview"))
           (catch :default e
             (error "Google analytics error: " e)))                        ;('set', 'page', '/new-page.html')
-        (routes/transact-route! reconciler handler
-                                {:route-params  route-params
-                                 :query-params  query-params
-                                 :queue?        (and loaded-route?
-                                                     (some? (om/app-root reconciler)))
-                                 :delayed-queue (when-not loaded-route?
-                                                  (fn [queue-cb]
-                                                    (modules/require-route!
-                                                      modules handler
-                                                      (fn []
-                                                        (binding [parser/*parser-allow-remote* allow-remotes?]
-                                                          (debug "Allow remotes?: " allow-remotes?)
-                                                          (if-let [app-root (om/app-root reconciler)]
-                                                            (do (debug "Required route: " handler "! Reindexing...")
-                                                                (debug "query before reindex: " (om/get-query app-root))
-                                                                (add-root! reconciler)
-                                                                (debug "query after reindex: " (om/get-query (om/app-root reconciler)))
-                                                                (debug "Re indexed! Queuing reads..")
-                                                                (queue-cb))
-                                                            (debug "No root query, nothing to queue..")))))))}))
+        
+        ;; There's no reason to read local reads when transacting.
+        ;; Should this go into om.next?
+        (binding [parser/*parser-allow-local-read* false]
+          (routes/transact-route! reconciler handler
+                                  {:route-params  route-params
+                                   :query-params  query-params
+                                   :queue?        (and loaded-route?
+                                                       (some? (om/app-root reconciler)))
+                                   :delayed-queue (when-not loaded-route?
+                                                    (fn [queue-cb]
+                                                      (modules/require-route!
+                                                        modules handler
+                                                        (fn []
+                                                          (binding [parser/*parser-allow-remote* allow-remotes?]
+                                                            (debug "Allow remotes?: " allow-remotes?)
+                                                            (if-let [app-root (om/app-root reconciler)]
+                                                              (do (debug "Required route: " handler "! Reindexing...")
+                                                                  (debug "query before reindex: " (om/get-query app-root))
+                                                                  (add-root! reconciler)
+                                                                  (debug "query after reindex: " (om/get-query (om/app-root reconciler)))
+                                                                  (debug "Re indexed! Queuing reads..")
+                                                                  (binding [parser/*parser-allow-local-read* false]
+                                                                    (queue-cb)))
+                                                              (debug "No root query, nothing to queue..")))))))})))
       (catch :default e
         (let [data (ex-data e)]
           (if (= ::location-not-set (:type data))

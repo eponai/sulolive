@@ -1,7 +1,7 @@
 (ns eponai.common.ui.elements.input-validate
   (:require
-    #?(:cljs [cljs.spec :as s]
-       :clj [clojure.spec :as s])
+    #?(:cljs [cljs.spec.alpha :as s]
+       :clj [clojure.spec.alpha :as s])
             [eponai.common.ui.dom :as my-dom]
             [eponai.common.ui.elements.css :as css]
             [taoensso.timbre :refer [debug]]))

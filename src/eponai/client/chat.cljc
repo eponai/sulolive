@@ -6,7 +6,8 @@
     [eponai.common.database :as db]
     [eponai.common.parser :as parser]
     [eponai.common.parser.util :as parser.util]
-    [taoensso.timbre :refer [warn debug error]]))
+    [taoensso.timbre :refer [warn debug error]]
+    [eponai.client.auth :as client.auth]))
 
 (defprotocol IStoreChatListener
   (start-listening! [this store-id])
@@ -35,7 +36,8 @@
 (defn chat-basis-t [db store-id]
   (try
     (some-> (read-basis-t-graph db)
-            (parser.util/get-basis-t :query/chat {:store-id store-id})
+            (parser.util/get-basis-t :query/chat {:locations (:sulo-locality/path (client.auth/current-locality db))
+                                                  :store-id  store-id})
             ;; Basis-t for query/chat consists of two basis-t. Once
             ;; for each db (:chat-db and :sulo-db).
             (:chat-db))

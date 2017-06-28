@@ -456,7 +456,7 @@
                                           [:query-params (:query-params env)]
                                           [:params p]]))
                read-basis-params (-> []
-                                     (conj [:locations locations])
+                                     (conj [:locations (:sulo-locality/path locations)])
                                      (into route-basis-kvs)
                                      (conj [:query-hash (hash query)]))
                basis-t-for-this-key (util/get-basis-t @read-basis-t-graph k read-basis-params)
@@ -727,8 +727,12 @@
 
 (defn with-local-read-guard [read]
   (fn [{:keys [target] :as env} k p]
-    (when (or *parser-allow-local-read*
-              (some? target))
+    (if (and (not *parser-allow-local-read*)
+             (nil? target)
+             (not (is-special-key? k)))
+      ;; If there's a regular read, when reading without target, and we don't care about read results
+      ;; return an empty value, making om.next's transact* as efficient as possible.
+      {:value {}}
       (read env k p))))
 
 (defn with-elided-paths [read-or-mutate child-parser]

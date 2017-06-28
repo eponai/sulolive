@@ -16,7 +16,7 @@
     [eponai.common.auth :as auth]
     [eponai.common.location :as location]
     [eponai.common :as c]
-    [clojure.spec :as s]
+    [clojure.spec.alpha :as s]
     [medley.core :as medley]
     [clojure.string :as string]
     [eponai.common.mixpanel :as mixpanel]

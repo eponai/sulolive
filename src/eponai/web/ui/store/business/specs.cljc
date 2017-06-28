@@ -1,6 +1,6 @@
 (ns eponai.web.ui.store.business.specs
   (:require
-    [clojure.spec :as s]
+    [clojure.spec.alpha :as s]
     [eponai.common :as c]
     [eponai.client.utils :as client-utils]))
 
