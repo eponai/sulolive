@@ -151,7 +151,7 @@
                  [cljs-http "0.1.39"]
                  [org.clojure/tools.reader "1.0.0-beta4"]
                  [garden "1.3.2"]
-                 [datascript "0.15.5"]
+                 [org.clojars.petterik/datascript "0.16.1-direct-link-fix"]
                  [datascript-transit "0.2.2"
                   :exclusions [com.cognitect/transit-clj
                                com.cognitect/transit-cljs]]
