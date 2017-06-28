@@ -82,10 +82,10 @@
             (reconciler/remote-config conn)
             (reconciler/remote-order))))
 
-(defn- clj-auth-lock [system cookie-store]
+(defn- clj-auth-login [system cookie-store]
   (reify
-    auth/IAuthLock
-    (show-lock [this]
+    auth/ILogin
+    (show-login [this]
       (fn [{:keys [email]}]
         (let [ret (test-util/auth-user! system email cookie-store)]
           (info "Got auth response: " ret))))))
@@ -95,14 +95,14 @@
         conn (client.utils/create-conn)
         cookie-store (cookies/cookie-store)
         remote-config (remote-config-with-server-url conn system cookie-store)
-        reconciler (reconciler/create {:conn             conn
-                                       :parser           (parser/client-parser)
-                                       :send-fn          (backend/send! reconciler-atom remote-config
-                                                                        {:did-merge-fn (fn [reconciler]
-                                                                                         (go (>! merge-chan reconciler)))})
-                                       :history          1000
-                                       :route            :landing-page
-                                       :shared/auth-lock (clj-auth-lock system cookie-store)})]
+        reconciler (reconciler/create {:conn         conn
+                                       :parser       (parser/client-parser)
+                                       :send-fn      (backend/send! reconciler-atom remote-config
+                                                                    {:did-merge-fn (fn [reconciler]
+                                                                                     (go (>! merge-chan reconciler)))})
+                                       :history      1000
+                                       :route        :landing-page
+                                       :shared/login (clj-auth-login system cookie-store)})]
     (reset! reconciler-atom reconciler)
     reconciler))
 

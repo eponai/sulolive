@@ -264,8 +264,7 @@
         {:keys [profile token access-token]} (or auth-map token-info)
 
         ;; Get our user from Datomic
-        sulo-user (existing-user (db/db conn) profile)
-        user-id (or (:user_id profile) (:sub profile))]
+        sulo-user (existing-user (db/db conn) profile)]
     (debug "Got profile: " profile)
     (debug "Got sulo user: " (into {} sulo-user))
 
@@ -273,7 +272,7 @@
     (cond (:user/verified sulo-user)
           (do
             (debug "User is verified")
-            (auth0/link-user auth0management (assoc profile :user_id user-id) sulo-user)
+            (auth0/link-user auth0management profile sulo-user)
             (do-authenticate request token sulo-user))
 
           ;; User exists but has not verified their email
@@ -282,7 +281,7 @@
           (do
             (debug "Transacting verified email")
             (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]])
-            (auth0/link-user auth0management (assoc profile :user_id user-id) sulo-user)
+            (auth0/link-user auth0management profile sulo-user)
             (do-authenticate request token sulo-user))
 
           ;; User is signin in for the first time, and should go through creating an account.

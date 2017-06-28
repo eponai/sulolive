@@ -192,4 +192,7 @@
 
   IAuth0Management
   (update-user [this user-id params]
-    (debug "Update user " user-id " with params " params)))
+    (debug "Update user " user-id " with params " params))
+  (get-token [_])
+  (link-user [_ _ _])
+  (create-and-link-new-user [_ _ _]))

@@ -40,6 +40,9 @@
 				margin-right: 0.25rem;
 			}
 			// height: auto;
+			// &:last-child {
+			// 	margin-bottom: 0;
+			// }
 		}
 		input {
 			max-width: 20rem;
@@ -75,6 +78,9 @@
 		flex-direction: column;
 		align-items: center;
 		padding: $global-padding 0;
+		:last-child {
+			margin-bottom: 0;
+		}
 		
 	}
 	.info {

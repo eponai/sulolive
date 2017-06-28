@@ -1,6 +1,6 @@
 (ns eponai.web.ui.login
   (:require
-    [clojure.spec :as s]
+    [clojure.spec.alpha :as s]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.router :as router]
     [om.next :as om :refer [defui]]
@@ -104,7 +104,7 @@
                                                               :user/profile  {:user.profile/name  username}
                                                               :user/verified (:email_verified user)}
                                                        :auth0-user user})]))
-         (om/update-state! this assoc :input-validation validation))))
+         (om/update-state! this assoc :input-validation validation :error/create-user nil))))
 
   (componentDidUpdate [this _ _]
     (let [{:query/keys [current-route]} (om/props this)
@@ -161,7 +161,8 @@
     (let [{:query/keys [current-route]} (om/props this)
           {:keys [route route-params query-params]} current-route
           {:keys [access_token token]} query-params
-          {:keys [login-state error-message input-validation user token-error]} (om/get-state this)]
+          {:keys [login-state error-message input-validation user token-error]
+           :error/keys [create-user] :as state} (om/get-state this)]
       (debug "State " (om/get-state this))
 
       (dom/div
@@ -220,9 +221,12 @@
                             :className "iubenda-nostyle no-brand iubenda-embed"
                             :title     "Privacy Policy"
                             :target    "_blank"} (dom/small nil "Privacy Policy")))
+             (when-let [err (:error/create-user state)]
+               (dom/p (css/add-class :text-alert) (dom/small nil (str (:message err)))))
              (button/default-hollow
                (css/add-classes [:expanded :sulo-dark] {:onClick #(.create-account this)})
-               (dom/span nil "Create account")))]
+               (dom/span nil "Create account"))
+             )]
 
 
           (= login-state :verify-email)
@@ -254,12 +258,13 @@
                         (css/add-class :is-invalid-input)))
              (when error-message
                (dom/p (css/add-class :text-alert) (dom/small nil error-message)))
+             (dom/p (css/add-class :go-back) (dom/a {:onClick #(om/update-state! this assoc :login-state :login)}
+                                                    (dom/span nil "Or sign in with Facebook or Twitter")))
              (button/default-hollow
                (css/add-classes [:expanded :sulo-dark] {:onClick #(.authorize-email this)})
                (dom/i {:classes ["fa fa-envelope-o fa-fw"]})
                (dom/span nil "Email me a code to sign in"))
-             (dom/p (css/add-class :go-back) (dom/a {:onClick #(om/update-state! this assoc :login-state :login)}
-                                                    (dom/span nil "Or sign in with Facebook or Twitter")))
+
              ;(dom/p (css/add-class :info)
              ;       (dom/small nil "By signing up you accept our ")
              ;       (dom/a nil (dom/small nil "Terms of Service"))
@@ -283,16 +288,16 @@
              (button/default-hollow
                (css/add-classes [:sulo-dark :expanded] {:onClick #(om/update-state! this assoc :login-state :login-email)})
                ;(dom/i {:classes ["fa fa-envelope-o fa-fw"]})
-               (dom/span nil "Sign up or sign in with email")))
-           (dom/p (css/add-class :info)
-                  (dom/small nil "By signing in you accept our ")
-                  (dom/a nil (dom/small nil "Terms of Service"))
-                  (dom/small nil " and ")
-                  (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
-                          :className "iubenda-nostyle no-brand iubenda-embed"
-                          :title     "Privacy Policy"
-                          :target    "_blank"} (dom/small nil "Privacy Policy"))
-                  (dom/small nil ". To use SULO Live you must have cookies enabled. We’ll never post to Twitter or Facebook without your permission."))])
+               (dom/span nil "Sign up or sign in with email"))
+             (dom/p (css/add-class :info)
+                    (dom/small nil "By signing in you accept our ")
+                    (dom/a nil (dom/small nil "Terms of Service"))
+                    (dom/small nil " and ")
+                    (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
+                            :className "iubenda-nostyle no-brand iubenda-embed"
+                            :title     "Privacy Policy"
+                            :target    "_blank"} (dom/small nil "Privacy Policy"))
+                    (dom/small nil ". To use SULO Live you must have cookies enabled. We’ll never post to Twitter or Facebook without your permission.")))])
         ))))
 
 (def ->Login (om/factory Login))
