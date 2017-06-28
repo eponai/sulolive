@@ -31,6 +31,10 @@
 
 (s/def ::create-account (s/keys :req [::username ::email]))
 
+(defn redirect-to [path]
+  #?(:cljs
+     (str js/window.location.origin path)))
+
 (defui Login
   static om/IQuery
   (query [this]
@@ -47,8 +51,14 @@
        (do
          (om/update-state! this dissoc :error-message)
          (when-let [auth0 (:auth0 (om/get-state this))]
-           (when-let [email (web-utils/input-value-by-id (::email form-inputs))]
-             (.passwordlessStart auth0 #js {:connection "email" :send "code" :email email}
+           (let [email (web-utils/input-value-by-id (::email form-inputs))
+                 {:keys [login-state user]} (om/get-state this)
+
+                 params (cond-> {:connection "email" :send "code" :email email}
+                                (some? (:user-id user))
+                                (assoc :redirectUri (redirect-to (routes/url :auth nil {:user-id (:user-id user)}))))]
+             (debug "Params: " params)
+             (.passwordlessStart auth0 (clj->js params)
                                  (fn [err res]
                                    (let [error-code (when err (.-code err))
                                          error-message (cond (= error-code "bad.email")
@@ -65,13 +75,20 @@
                                    (debug "Error: " err))))))))
   (verify-email [this]
     #?(:cljs
-       (let [{:keys [auth0 input-email]} (om/get-state this)]
+       (let [{:keys [auth0 auth0-manage input-email user]} (om/get-state this)
+             {:query/keys [current-route]} (om/props this)
+             {:keys [query-params]} current-route]
          (when auth0
            (let [code (web-utils/input-value-by-id (::code form-inputs))]
+             (when (:token query-params)
+               (web-utils/set-cookie "sulo.primary" (:token query-params)))
+             ;(.setItem js/localStorage "old.token" (:token query-params))
              (.passwordlessVerify auth0 #js {:connection       "email"
                                              :email            input-email
                                              :verificationCode code}
                                   (fn [err res]
+                                    ;(when (and res auth0-manage)
+                                    ;  (.linkUser auth0-manage (.-user_id res)))
                                     (debug "Verified response: " res)
                                     (debug "Verified error: " err))))))))
 
@@ -86,9 +103,9 @@
          (debug "Validation: " validation)
          (when (nil? validation)
            (msg/om-transact! this [(list 'user/create {:user {:user/email    email
-                                                              :user/profile  {:user.profile/name  username
-                                                                              :user.profile/photo {:photo/path (:picture user)}}
-                                                              :user/verified (:email-verified? user)}})]))
+                                                              :user/profile  {:user.profile/name  username}
+                                                              :user/verified (:email-verified? user)}
+                                                       :auth0-user user})]))
          (om/update-state! this assoc :input-validation validation))))
 
   (componentDidUpdate [this _ _]
@@ -118,40 +135,28 @@
          (debug "Current route: " current-route)
          (let [web-auth (new js/auth0.WebAuth #js {:domain       "sulo.auth0.com"
                                                    :clientID     "olXSYZ7HDqCif7GtNEaxi6jKX9Lk72OR"
-                                                   :redirectUri  "http://localhost:3000/auth"
+                                                   :redirectUri  (redirect-to (routes/url :auth))
                                                    :responseType "code"
                                                    :scope        "openid email"
-                                                   })
-               user-info (when (:access_token query-params)
-                           (.userInfo (.-client web-auth)
-                                      (:access_token query-params)
-                                      (fn [err user]
-                                        (cond
-                                          err
-                                          (om/update-state! this assoc :token-error {:code (.-code err)})
-                                          user
-                                          (om/update-state! this assoc :user {:email           (.-email user)
-                                                                              :email-verified? (.-email_verified user)
-                                                                              :nickname        (or (.-given_name user)
-                                                                                                   (.-screen_name user)
-                                                                                                   (.-nickname user))
-                                                                              :picture           (.-picture_large user)}))
-                                        (debug "User info: " user)
-                                        (debug "error " err))))]
-
+                                                   })]
+           (when (:access_token query-params)
+             (.userInfo (.-client web-auth)
+                        (:access_token query-params)
+                        (fn [err user]
+                          (cond
+                            err
+                            (om/update-state! this assoc :token-error {:code (.-code err)})
+                            user
+                            (om/update-state! this assoc :user {:user-id         (.-user_id user)
+                                                                :email           (.-email user)
+                                                                :email-verified? (boolean (.-email_verified user))
+                                                                :nickname        (or (.-given_name user)
+                                                                                     (.-screen_name user)
+                                                                                     (.-nickname user))
+                                                                :picture         (.-picture_large user)}))
+                          (debug "User info: " user)
+                          (debug "error " err))))
            (om/update-state! this assoc :auth0 web-auth)))))
-  ;auth0 = new auth0.WebAuth ({
-  ;                            domain:       'sulo.auth0.com',
-  ;                            clientID:     'JMqCBngHgOcSYBwlVCG2htrKxQFldzDh',
-  ;                            redirectUri:  'http:// localhost:3000',
-  ;                                          audience: 'https:// sulo.auth0.com/userinfo',
-  ;                            responseType: 'token id_token',
-  ;                                          scope: 'openid'
-  ;                            })                            ;
-  ;
-  ;login () {
-  ;          this.auth0.authorize ()                         ;
-  ;          }
 
   (initLocalState [this]
     {:login-state :login})

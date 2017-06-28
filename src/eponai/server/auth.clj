@@ -204,16 +204,18 @@
 
 (defn- do-authenticate
   "Returns a logged in response if authenticate went well."
-  [{:eponai.server.middleware/keys [logger conn] :as request}
-   {:keys [token profile]}]
-  (when-let [sulo-user (existing-user (db/db conn) profile)]
-    (let [loc (requested-location request)
-          redirect-url (if (:sulo-locality/path loc)
-                         (routes/path :index {:locality (:sulo-locality/path loc)})
-                         (routes/path :landing-page))]
-      (mixpanel/track "Sign in user" {:distinct_id (:db/id sulo-user)
-                                      :ip          (:remote-addr request)})
-      (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token} {:path "/"})))
+  [{:eponai.server.middleware/keys [system logger conn] :as request}
+   token sulo-user]
+  ;(when-let [sulo-user (existing-user (db/db conn) profile)])
+  ;(when (:user/verified sulo-user))
+  (let [primary-account (get-in request [:cookies "sulo.primary" :value])
+        loc (requested-location request)
+        redirect-url (if (:sulo-locality/path loc)
+                       (routes/path :index {:locality (:sulo-locality/path loc)})
+                       (routes/path :landing-page))]
+    (mixpanel/track "Sign in user" {:distinct_id (:db/id sulo-user)
+                                    :ip          (:remote-addr request)})
+    (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token} {:path "/"}))
 
 
 
@@ -248,23 +250,34 @@
     :eponai.server.middleware/keys [system logger conn]}]
   (debug "AUTHENTICATE: " params)
   (let [auth0 (:system/auth0 system)
-        ;; Code is passed in first authentication with Auth0.
-        ;; Redirect will be made to /login with the access_token and token for the user to
-        ;; create their account if none exists. When they hit create account
-        ;; they'll be redirected to /login with the token again and we can create set the token in the cookie.
-        {:keys [code state token]} params
-        {:keys [access_token token profile] :as auth-map} (cond (some? code)
-                                                                (auth0/authenticate auth0 code state)
-                                                                (some? token)
-                                                                {:profile (auth0/token-info auth0 token)
-                                                                 :token   token})]
-    (debug "Do authenticate: " auth-map)
-    ;(debug "Authenticate user: ")
-    (or (do-authenticate request auth-map)
-        (let [path (routes/path :login nil {:access_token access_token
-                                            :token        token})]
-          (debug "Redirect to path: " path)
-          (r/redirect path)))))
+        {:keys [code state]} params
+        {:keys [access-token token profile]} (when (some? code)
+                                               (auth0/authenticate auth0 code state))
+
+        ;; Get our user from Datomic
+        sulo-user (existing-user (db/db conn) profile)]
+    (debug "Got sulo user: " (into {} sulo-user))
+
+    ;; If we already have a user for this account and they're verified, we can authenticate
+    (cond (:user/verified sulo-user)
+          (do-authenticate request token sulo-user)
+
+          ;; User exists but has not verified their email
+          (and (some? sulo-user)
+               (not-empty (:email profile)))
+          (do
+            (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]])
+            (do-authenticate request token sulo-user))
+
+          ;; User is signin in for the first time, and should go through creating an account.
+          :else
+          ;; If no user exists or is not verified, redirect back with the token to the login page
+          (let [path (routes/path :login nil (cond-> {:access_token access-token
+                                                      :token        token}
+                                                     (some? sulo-user)
+                                                     (assoc :verified false)))]
+            (debug "Redirect to path: " path)
+            (r/redirect path)))))
 
 (defn agent-whitelisted? [request]
   (let [whitelist #{"facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"
