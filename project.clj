@@ -382,7 +382,7 @@
                                                                                   "src-hacks/js/externs/hls.js"]
                                                                 :infer-externs   true
                                                                 ;; :preloads [env.web.preloads]
-                                                                ;; :language-in     :ecmascript5
+                                                                :language-in     :ecmascript5
                                                                 ;; :parallel-build  true
                                                                 ;; :pseudo-names true
                                                                 ;; :pretty-print true
