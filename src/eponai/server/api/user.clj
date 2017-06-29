@@ -22,7 +22,7 @@
       (info "User - authenticated user did not exist, creating new user: " new-user)
       (db/transact-one state new-user)
       (auth0/create-and-link-new-user (:system/auth0management system) auth0-user user)
-      {:user new-user})))
+      {:user (db/pull (db/db state) [:user/verified :db/id] [:user/email (:user/email new-user)])})))
 
 (defn customer [{:keys [auth state system]}]
   (debug "Pull stripe " auth)

@@ -206,39 +206,13 @@
   "Returns a logged in response if authenticate went well."
   [{:eponai.server.middleware/keys [system logger conn] :as request}
    token sulo-user]
-  ;(when-let [sulo-user (existing-user (db/db conn) profile)])
-  ;(when (:user/verified sulo-user))
   (let [loc (requested-location request)
         redirect-url (if (:sulo-locality/path loc)
                        (routes/path :index {:locality (:sulo-locality/path loc)})
                        (routes/path :landing-page))]
     (mixpanel/track "Sign in user" {:distinct_id (:db/id sulo-user)
                                     :ip          (:remote-addr request)})
-    (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token} {:path "/"}))
-
-
-
-  ;(when-let [email (:email profile)]
-  ;  (let [old-user (db/lookup-entity (db/db conn) [:user/email email])
-  ;        user (if-not (some? old-user)
-  ;               (let [new-user (f/auth0->user profile)
-  ;                     _ (info "Auth - authenticated user did not exist, creating new user: " new-user)
-  ;                     result (db/transact-one conn new-user)]
-  ;                 (debug "Auth - new user: " new-user)
-  ;                 (db/lookup-entity (:db-after result) [:user/email email]))
-  ;               old-user)]
-  ;    (when-not (some? old-user)
-  ;      (log/info! logger ::user-created {:user-id (:db/id user)}))
-  ;    (when token
-  ;      (let [loc (requested-location request)
-  ;            redirect-url (if (:sulo-locality/path loc)
-  ;                           (routes/path :index {:locality (:sulo-locality/path loc)})
-  ;                           (routes/path :landing-page))]
-  ;        (debug "Redirect to URL: " redirect-url)
-  ;        (mixpanel/track "Sign in user" {:distinct_id (:db/id user)
-  ;                                        :ip          (:remote-addr request)})
-  ;        (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token} {:path "/"})))))
-  )
+    (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token} {:path "/"})))
 
 
 
@@ -264,15 +238,14 @@
         {:keys [profile token access-token]} (or auth-map token-info)
 
         ;; Get our user from Datomic
-        sulo-user (existing-user (db/db conn) profile)]
-    (debug "Got profile: " profile)
-    (debug "Got sulo user: " (into {} sulo-user))
+        sulo-user (existing-user (db/db conn) profile)
+        user-id (or (:user_id profile) (:sub profile))]
 
     ;; If we already have a user for this account and they're verified, we can authenticate
     (cond (:user/verified sulo-user)
           (do
             (debug "User is verified")
-            (auth0/link-user auth0management profile sulo-user)
+            (auth0/link-user auth0management (assoc profile :user_id user-id) sulo-user)
             (do-authenticate request token sulo-user))
 
           ;; User exists but has not verified their email
@@ -281,7 +254,7 @@
           (do
             (debug "Transacting verified email")
             (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]])
-            (auth0/link-user auth0management profile sulo-user)
+            (auth0/link-user auth0management (assoc profile :user_id user-id) sulo-user)
             (do-authenticate request token sulo-user))
 
           ;; User is signin in for the first time, and should go through creating an account.

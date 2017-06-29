@@ -12,7 +12,8 @@
     [taoensso.timbre :refer [debug error]]
     [buddy.sign.jws :as jws]
     [clojure.string :as string]
-    [cemerick.url :as url]))
+    [cemerick.url :as url]
+    [eponai.common :as c]))
 
 (defprotocol IAuth0
   (secret [this] "Returns the jwt secret for unsigning tokens")
@@ -57,15 +58,7 @@
           response (http/post "https://sulo.auth0.com/oauth/token"
                               {:form-params params})]
       (json/read-str (:body response) :key-fn keyword)))
-  ;(update-user [this user-id params]
-  ;  (let [{:keys [access_token token_type]} (get-token this)
-  ;        _ (debug "Update user: " user-id " params: " params)
-  ;        ;(string/split user-id #"\|")
-  ;        _ (debug "Update user with params: " (assoc params :client_id client-id))
-  ;        update-user (json/read-str (:body (http/patch (str auth0management-api-host "users/" (url/url-encode user-id))
-  ;                                                      {:form-params (assoc params :client_id client-id)
-  ;                                                       :headers     {"Authorization" (str token_type " " access_token)}})) :key-fn keyword)]
-  ;    (debug "Updated user: " update-user)))
+
   (link-user [this auth0-user db-user]
     (when (not-empty (:email auth0-user))
       (let [{:keys [access_token token_type]} (get-token this)
@@ -76,9 +69,9 @@
             ;                    q: 'email.raw:"' + user.email + '" -user_id:"' + user.user_id + '"',
             ;                                       })
             account (first (json/read-str (:body (http/get (str auth0management-api-host "users")
-                                                            {:query-params {:search_engine "v2"
-                                                                            :q             query-string}
-                                                             :headers      {"Authorization" (str token_type " " access_token)}})) :key-fn keyword))]
+                                                           {:query-params {:search_engine "v2"
+                                                                           :q             query-string}
+                                                            :headers      {"Authorization" (str token_type " " access_token)}})) :key-fn keyword))]
         (debug "Will get auth0 users with query: " query-string)
         (debug "Got other accounts with email: " account)
         (when account
@@ -169,6 +162,7 @@
           tomorrow (+ now (* 24 3600))
           auth-data {:email          email
                      :email_verified true
+                     :nickname       "dev"
                      :iss            "localhost"
                      :iat            now
                      :exp            tomorrow}
@@ -176,6 +170,7 @@
       (debug "Authing self-signed jwt token on localhost with auth-data: " auth-data)
       {:token        (jwt/sign auth-data jwt-secret)
        :profile      auth-data
+       :access-token (url/url-encode (c/write-transit auth-data))
        :token-type   "Bearer"
        :redirect-url state}))
   (refresh [this token]

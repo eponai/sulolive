@@ -4,7 +4,7 @@
   (:require
     [eponai.web.modules :as modules]
     [eponai.client.utils :as client.utils]
-    [eponai.web.auth :as auth]
+    [eponai.client.auth :as auth]
     [eponai.common.parser :as parser]
     [eponai.client.parser.read]
     [eponai.client.parser.mutate]
@@ -190,11 +190,10 @@
 (defonce history-atom (atom nil))
 (defonce reconciler-atom (atom nil))
 
-(defn- run [{:keys [login modules loading-bar]
-             :or   {login       (auth/login reconciler-atom)
-                    ;auth-lock   (auth/log)
-                    loading-bar (loading-bar/loading-bar)}
-             :as   run-options}]
+(defn- run [{:keys        [login modules loading-bar]
+             :shared/keys [login modules auth0]
+             :or          {loading-bar (loading-bar/loading-bar)}
+             :as          run-options}]
   (let [modules (or modules (modules/advanced-compilation-modules router/routes))
         init? (atom false)
         _ (when-let [h @history-atom]
@@ -238,6 +237,7 @@
                                        :shared/browser-history     history
                                        :shared/store-chat-listener ::shared/prod
                                        :shared/stripe              ::shared/client-env
+                                       :shared/auth0               auth0
                                        :shared/login               login
                                        :instrument                 (::plomber run-options)})]
     (reset! reconciler-atom reconciler)
@@ -273,18 +273,21 @@
           (error "Init app error: " e))))))
 
 (defn run-prod []
-  (run {}))
+  (run {:shared/auth0 :env/prod
+        :shared/login (auth/login reconciler-atom)}))
 
 (defn run-simple [& [deps]]
   (when-not-timbre-level
     (timbre/set-level! :debug))
-  (run (merge {:login (auth/fake-lock)}
+  (run (merge {:shared/auth0 :env/dev
+               :shared/login (auth/login reconciler-atom)}
               deps)))
 
 (defn run-dev [& [deps]]
   (run (merge {
-               :login   (auth/fake-lock)
-               :modules (modules/dev-modules router/routes)
+               :shared/auth0   :env/dev
+               :shared/login   (auth/login reconciler-atom)
+               :shared/modules (modules/dev-modules router/routes)
                }
               deps)))
 

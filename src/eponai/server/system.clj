@@ -68,7 +68,8 @@
                                    {:chat :system/chat})
    :system/client-env     (client-env/map->ClientEnvironment
                             {:client-env (select-keys env [:stripe-publishable-key
-                                                           :auth0-client-id])})
+                                                           :auth0-client-id
+                                                           :auth0-domain])})
    :system/datomic        (datomic/map->Datomic
                             {:db-url           (:db-url env)
                              :provided-conn    (::provided-conn config)
