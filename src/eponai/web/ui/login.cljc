@@ -207,7 +207,7 @@
           (msg/clear-messages! this 'user/create)
           (if (msg/success? create-msg)
             (let [new-user (:user message)]
-              (mixpanel/alias (:db/id new-user))
+              (mixpanel/set-alias (:db/id new-user))
               (if (:user/verified new-user)
                 (do
                   (debug "User created routing to: " (routes/url :auth nil (:query-params current-route)))
