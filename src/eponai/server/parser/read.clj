@@ -452,3 +452,74 @@
   [{:keys [target db query]} _ _]
   {:auth ::auth/public}
   {:value (db/pull-all-with db query {:where '[[?e :sulo-locality/title _]]})})
+
+(defn- price-where-clause [{:keys [from-price to-price] :as price-range}]
+  (condp = [(some? from-price) (some? to-price)]
+    [true true] '[(< from-price ?price to-price)]
+    [false true] '[(< ?price to-price)]
+    [true false] '[(< from-price ?price)]
+    nil))
+
+(defn store-item-price-distribution [prices]
+  (when-let [[price & prices] (seq prices)]
+    (let [[min-price max-price]
+          (reduce (fn [[mi ma :as v] price]
+                    (-> v
+                        (assoc! 0 (min mi price))
+                        (assoc! 1 (max ma price))))
+                  (transient [price price])
+                  prices)]
+      {:min min-price
+       :max max-price})))
+
+(defn- sort-items [sorting items]
+  (let [price-fn #(nth % 1)
+        created-at-fn #(nth % 2)
+        reverse-order #(compare %2 %1)
+        [key-fn comparator]
+        (condp = sorting
+          :lowest-price [price-fn compare]
+          :highest-price [price-fn reverse-order]
+          :newest [created-at-fn reverse-order])]
+    (sort-by key-fn comparator items)))
+
+(defn browse-category
+  "Returns items and their prices based on selected category"
+  [db {:keys [locations categories price-range sorting]}]
+  (let [{:keys [top-category sub-category]} categories
+        items-by-cat (cond (some? top-category)
+                           (products/find-with-category-names locations (select-keys categories [:top-category]))
+                           (some? sub-category)
+                           (products/find-with-category-names locations (select-keys categories [:sub-category])))
+        price-filter (price-where-clause price-range)
+        item-query (cond-> items-by-cat
+                           (some? price-filter)
+                           (db/merge-query {:where ['[?e :store.item/price ?price]
+                                                    price-filter]}))
+        items-with-price (db/find-with
+                           db
+                           (db/merge-query
+                             item-query
+                             {:find  '[?e ?price ?at]
+                              :where '[[?e :store.item/price ?price]
+                                       [?e :store.item/created-at ?created-at]]}))
+        price-dist (store-item-price-distribution (map second items-with-price))]
+
+    ;; This is everything within this category, without pagination.
+    {:items  (sort-items sorting (map first items-with-price))
+     :prices price-dist}
+    ;; Pagination can be implemented client side as long as we return all items in the correct order.
+    ))
+
+(defn browse-search
+  "Remember that we have ?score here."
+  [db last-read {:keys [locations search category page-range price-range sorting]}]
+  (let [items-by-search (products/find-with-search locations search)
+        price-filter (price-where-clause price-range)
+        ;; ->> because we want the price filter right after searching
+        item-query (cond->> items-by-search
+                            (some? price-filter)
+                            (db/merge-query price-filter))]
+    
+    ))
+

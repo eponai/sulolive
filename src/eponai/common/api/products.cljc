@@ -47,18 +47,17 @@
             ]
    :symbols {'?l (:db/id locality)}})
 
-(defn find-with-search [locality search]
-  {:where    ['[?s :store/locality ?l]
-              '[?status :status/type :status.type/open]
-              '[?s :store/status ?status]
-              '[?s :store/profile ?p]
-              '[?p :store.profile/photo _]
-              '[?s :store/items ?e]
-              {:fulltext-id 1}]
+(defn find-with-search
+  [locality search]
+  {:where    '[[?s :store/items ?e]
+               [?s :store/locality ?l]
+               [?s :store/status ?status]
+               [?status :status/type :status.type/open]
+               [?s :store/profile ?p]
+               [?p :store.profile/photo _]]
    :symbols  {'?search search
               '?l      (:db/id locality)}
-   :fulltext [{:id     1
-               :attr   :store.item/name
+   :fulltext [{:attr   :store.item/name
                :arg    '?search
                :return '[[?e ?item-name _ ?score]]}]})
 
@@ -97,8 +96,8 @@
                                  (smallest-category category-names)
                                  '?item-category)
                            '[?s :store/locality ?l]
-                           '[?status :status/type :status.type/open]
                            '[?s :store/status ?status]
+                           '[?status :status/type :status.type/open]
                            '[?s :store/profile ?p]
                            '[?p :store.profile/photo _]
                            '[?s :store/items ?e]
