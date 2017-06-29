@@ -278,15 +278,13 @@
 (defn run-simple [& [deps]]
   (when-not-timbre-level
     (timbre/set-level! :debug))
-  (run (merge {
-               ;:shared/login (auth/fake-lock)
-               }
+  (run (merge {:shared/login (auth/login reconciler-atom)}
               deps)))
 
 (defn run-dev [& [deps]]
   (run (merge {
-               :shared/auth0   :env/prod
-               ;:shared/login   (auth/fake-lock)
+               :shared/auth0   :env/dev
+               :shared/login   (auth/login reconciler-atom)
                :shared/modules (modules/dev-modules router/routes)
                }
               deps)))

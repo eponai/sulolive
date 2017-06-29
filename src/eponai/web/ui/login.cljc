@@ -27,7 +27,7 @@
 
 (s/def ::email #(client-utils/valid-email? %))
 (s/def ::username (s/and #(string? (not-empty %))
-                         #(< 3 (count %))))
+                         #(<= 3 (count %))))
 (s/def ::code (s/and #(number? (c/parse-long-safe %))
                      #(= 6 (count %))))
 
