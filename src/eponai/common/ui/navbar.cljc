@@ -154,6 +154,7 @@
                :href     "#"
                :onClick  #(.open-dropdown component :dropdown/user)}
               (css/show-for :large))
+         (dom/strong nil (dom/small nil (:user.profile/name (:user/profile auth))))
          (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
        (menu/item
          nil
@@ -378,7 +379,8 @@
      {:query/auth [:db/id
                    :user/email
                    {:user/stripe [:stripe/id]}
-                   {:user/profile [{:user.profile/photo [:photo/path :photo/id]}]}]}
+                   {:user/profile [:user.profile/name
+                                   {:user.profile/photo [:photo/path :photo/id]}]}]}
      :query/locations
      {:query/owned-store [:db/id
                           :store/username

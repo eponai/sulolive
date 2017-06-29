@@ -44,8 +44,14 @@
     (debug "Shutting down ChatStoreListener: " this)
     (sente/stop-sente! sente-sender)))
 
-(defmethod shared/shared-component [:shared/store-chat-listener ::shared/prod] [reconciler _ _]
+(defmethod shared/shared-component [:shared/store-chat-listener ::shared/prod]
+  [reconciler _ _]
   (debug "Creating chat listener!")
   (let [chat-event-handler (chat-update-handler reconciler)
         sente-sender (sente/delayed-start "/ws/chat" [chat-event-handler])]
     (->StoreChatListener sente-sender)))
+
+(defmethod shared/shared-component [:shared/store-chat-listener ::shared/dev]
+  [reconciler _ _]
+  (debug "Creating FAKE chat listener!")
+  )

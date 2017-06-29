@@ -7,14 +7,8 @@
     [eponai.common.shared :as shared]
     [om.next :as om]))
 
-(def urls-redirecting-to-index
-  (into #{} (map routes/url) [:login :landing-page]))
-
-(defn- redirect-to-after-login []
-  (let [current-url (str js/window.location.pathname)]
-    (if (contains? urls-redirecting-to-index current-url)
-      (routes/url :landing-page)
-      current-url)))
+(defprotocol IAuth0
+  (passwordless-start [this email]))
 
 ;(extend-type js/Auth0Lock
 ;  auth/IAuthLock
@@ -33,19 +27,10 @@
 ;                                      :logo                "/assets/img/auth0-icon.png"
 ;                                      :labeledSubmitButton false}
 ;                 :allowForgotPassword false})))
-(defn fake-lock []
-  (reify auth/ILogin
-    (show-login [this]
-      (if-let [email (js/prompt "Enter the email you want to log in as" "dev@sulo.live")]
-        (let [auth-url (-> (url/url (str js/window.location.origin (routes/url :auth)))
-                           (assoc :query {:code email :state (redirect-to-after-login)})
-                           (str))]
-          (debug "Replacing the current url with auth-url: " auth-url)
-          (js/window.location.replace auth-url))
-        (debug "Cancelled log in.")))))
 
-(defn login [reconciler-atom]
-  (reify auth/ILogin
-    (show-login [_]
-      (om/transact! @reconciler-atom [(list 'login-modal/show)
-                                      {:query/login-modal [:ui.singleton.loading-bar/show?]}]))))
+(defn auth0 []
+  )
+
+(defn fake-auth0 []
+  )
+

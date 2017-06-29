@@ -68,7 +68,8 @@
                                    {:chat :system/chat})
    :system/client-env     (client-env/map->ClientEnvironment
                             {:client-env (select-keys env [:stripe-publishable-key
-                                                           :auth0-client-id])})
+                                                           :auth0-client-id
+                                                           :auth0-domain])})
    :system/datomic        (datomic/map->Datomic
                             {:db-url           (:db-url env)
                              :provided-conn    (::provided-conn config)
@@ -195,8 +196,8 @@
   (fake-system (dev-config config)
                ;; Put keys under here to use the real implementation
                ;:system/stripe
-               ;:system/auth0
-               ;:system/auth0management
+               :system/auth0
+               :system/auth0management
                ;:system/email
                ;:system/mailchimp
                ;:system/taxjar

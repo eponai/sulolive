@@ -51,7 +51,10 @@
 	}
 	.user-photo-item > a {
 		padding: 0 0.5rem;
+		display: flex;
+		align-items: center;
 		.photo-container {
+			margin-left: 0.5rem;
 			border-color: $medium-gray;
 			min-width: 2rem;
 		}

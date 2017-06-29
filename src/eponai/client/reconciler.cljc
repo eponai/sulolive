@@ -26,20 +26,20 @@
 
 ;; TODO: Use this from run.cljs and from fullstack tests.
 
-(defn create [{:keys [parser
-                      ui->props
-                      send-fn
-                      ;; Optional
-                      history
-                      route
-                      route-params
-                      query-params
-                      instrument
-                      tx-listen
-                      ;; With defaults:
-                      conn
-                      remotes
-                      merge]
+(defn create [{:keys        [parser
+                             ui->props
+                             send-fn
+                             ;; Optional
+                             history
+                             route
+                             route-params
+                             query-params
+                             instrument
+                             tx-listen
+                             ;; With defaults:
+                             conn
+                             remotes
+                             merge]
                :shared/keys [scroll-helper
                              loading-bar
                              browser-history
@@ -48,12 +48,13 @@
                              store-chat-listener
                              modules
                              stripe
+                             auth0
                              login]
-               :or   {conn          (utils/create-conn)
-                      local-storage (local-storage/->local-storage)
-                      remotes       (remote-order)
-                      merge         (merge/merge!)}
-               :as reconciler-config}]
+               :or          {conn          (utils/create-conn)
+                             local-storage (local-storage/->local-storage)
+                             remotes       (remote-order)
+                             merge         (merge/merge!)}
+               :as          reconciler-config}]
   (let [overwrites (select-keys reconciler-config [:ui->props :history :logger :root-render :root-unmount])
         reconciler (om/reconciler (into overwrites
                                         {:state      conn
@@ -67,9 +68,9 @@
                                                       :shared/modules             modules
                                                       :shared/browser-history     browser-history
                                                       :shared/local-storage       local-storage
-                                                      :shared/auth-lock           auth-lock
+                                                      :shared/auth0               auth0
                                                       :shared/store-chat-listener store-chat-listener
-                                                      :shared/login login}
+                                                      :shared/login               login}
                                          :tx-listen  tx-listen
                                          :migrate    nil
                                          :instrument instrument}))]

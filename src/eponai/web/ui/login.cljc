@@ -7,7 +7,8 @@
     [eponai.web.ui.button :as button]
     [eponai.common.ui.elements.css :as css]
     [eponai.web.ui.modal :as modal]
-    [eponai.common.ui.elements.grid :as grid]
+    #?(:cljs
+       [eponai.web.auth0 :as auth0])
     #?(:cljs
        [eponai.web.utils :as web-utils])
     [taoensso.timbre :refer [debug]]
@@ -16,7 +17,8 @@
     [eponai.client.utils :as client-utils]
     [eponai.common :as c]
     [eponai.common.ui.elements.input-validate :as v]
-    [eponai.client.parser.message :as msg]))
+    [eponai.client.parser.message :as msg]
+    [eponai.common.shared :as shared]))
 
 (def form-inputs
   {::email    "sulo.login.email"
@@ -44,33 +46,44 @@
   Object
   (authorize-social [this provider]
     #?(:cljs
-       (when-let [auth0 (:auth0 (om/get-state this))]
-         (.authorize auth0 #js {:connection (name provider)}))))
+       (auth0/authorize-social (shared/by-key this :shared/auth0) (name provider))))
   (authorize-email [this]
     #?(:cljs
        (do
          (om/update-state! this dissoc :error-message)
          (when-let [auth0 (:auth0 (om/get-state this))]
            (let [email (web-utils/input-value-by-id (::email form-inputs))
-                 {:keys [login-state user]} (om/get-state this)
-
-                 params {:connection "email" :send "code" :email email}]
-             (debug "Params: " params)
-             (.passwordlessStart auth0 (clj->js params)
-                                 (fn [err res]
-                                   (let [error-code (when err (.-code err))
-                                         error-message (cond (= error-code "bad.email")
-                                                             "Please provide a valid email")]
-                                     (om/update-state! this (fn [st]
-                                                              (cond-> (assoc st :input-email email)
-                                                                      (some? error-message)
-                                                                      (assoc :error-message error-message)
-                                                                      (nil? error-message)
-                                                                      (assoc :login-state :verify-email))))
-                                     ;(om/update-state! this assoc :input-email email :login-state :verify-email)
-                                     )
-                                   (debug "Response: " res)
-                                   (debug "Error: " err))))))))
+                 {:keys [login-state user]} (om/get-state this)]
+             (auth0/passwordless-start (shared/by-key this :shared/auth0)
+                                       email
+                                       (fn [res err]
+                                         (debug "Got response: res")
+                                         (debug "Got error: " err)
+                                         (om/update-state! this (fn [st]
+                                                                  (cond-> (assoc st :input-email email)
+                                                                          (some? err)
+                                                                          (assoc :error-message err)
+                                                                          (nil? err)
+                                                                          (assoc :login-state :verify-email))
+                                                                  ))))
+             ;(debug "Params: " params)
+             ;(auth/passwordless-start (shared/by-key this :shared/stripe) email)
+             ;(.passwordlessStart auth0
+             ;                    (fn [err res]
+             ;                      (let [error-code (when err (.-code err))
+             ;                            error-message (cond (= error-code "bad.email")
+             ;                                                "Please provide a valid email")]
+             ;                        (om/update-state! this (fn [st]
+             ;                                                 (cond-> (assoc st :input-email email)
+             ;                                                         (some? error-message)
+             ;                                                         (assoc :error-message error-message)
+             ;                                                         (nil? error-message)
+             ;                                                         (assoc :login-state :verify-email))))
+             ;                        ;(om/update-state! this assoc :input-email email :login-state :verify-email)
+             ;                        )
+             ;                      (debug "Response: " res)
+             ;                      (debug "Error: " err)))
+             )))))
   (verify-email [this]
     #?(:cljs
        (let [{:keys [auth0 auth0-manage input-email user]} (om/get-state this)
@@ -78,17 +91,19 @@
              {:keys [query-params]} current-route]
          (when auth0
            (let [code (web-utils/input-value-by-id (::code form-inputs))]
-             (when (:token query-params)
-               (web-utils/set-cookie "sulo.primary" (:token query-params)))
+             (auth0/passwordless-verify (shared/by-key this :shared/auth0) input-email code)
+             ;(when (:token query-params)
+             ;  (web-utils/set-cookie "sulo.primary" (:token query-params)))
              ;(.setItem js/localStorage "old.token" (:token query-params))
-             (.passwordlessVerify auth0 #js {:connection       "email"
-                                             :email            input-email
-                                             :verificationCode code}
-                                  (fn [err res]
-                                    ;(when (and res auth0-manage)
-                                    ;  (.linkUser auth0-manage (.-user_id res)))
-                                    (debug "Verified response: " res)
-                                    (debug "Verified error: " err))))))))
+             ;(.passwordlessVerify auth0 #js {:connection       "email"
+             ;                                :email            input-email
+             ;                                :verificationCode code}
+             ;                     (fn [err res]
+             ;                       ;(when (and res auth0-manage)
+             ;                       ;  (.linkUser auth0-manage (.-user_id res)))
+             ;                       (debug "Verified response: " res)
+             ;                       (debug "Verified error: " err)))
+             )))))
 
   (create-account [this]
     #?(:cljs
@@ -100,9 +115,9 @@
                                                       ::username username} form-inputs)]
          (debug "Validation: " validation)
          (when (nil? validation)
-           (msg/om-transact! this [(list 'user/create {:user {:user/email    email
-                                                              :user/profile  {:user.profile/name  username}
-                                                              :user/verified (:email_verified user)}
+           (msg/om-transact! this [(list 'user/create {:user       {:user/email    email
+                                                                    :user/profile  {:user.profile/name username}
+                                                                    :user/verified (:email_verified user)}
                                                        :auth0-user user})]))
          (om/update-state! this assoc :input-validation validation :error/create-user nil))))
 
@@ -137,22 +152,42 @@
                                                    :responseType "code"
                                                    :scope        "openid email"})]
            (when (:access_token query-params)
-             (.userInfo (.-client web-auth)
-                        (:access_token query-params)
-                        (fn [err user]
-                          (cond
-                            err
-                            (om/update-state! this assoc :token-error {:code (.-code err)})
-                            user
-                            (om/update-state! this assoc :user {:user_id         (.-user_id user)
-                                                                :email           (.-email user)
-                                                                :email_verified (boolean (.-email_verified user))
-                                                                :nickname        (or (.-given_name user)
-                                                                                     (.-screen_name user)
-                                                                                     (.-nickname user))
-                                                                :picture         (.-picture_large user)}))
-                          (debug "User info: " user)
-                          (debug "error " err))))
+             (debug "Found access token, getting user info....")
+             (auth0/user-info (shared/by-key this :shared/auth0)
+                              (:access_token query-params)
+                              (fn [user err]
+                                (debug "Got user info: " user)
+                                (debug "Got error: " err)
+                                (om/update-state! this assoc :user user)
+                                ;(cond
+                                ;  err
+                                ;  (om/update-state! this assoc :token-error {:code (.-code err)})
+                                ;  user
+                                ;  (om/update-state! this assoc :user {:user_id        (.-user_id user)
+                                ;                                      :email          (.-email user)
+                                ;                                      :email_verified (boolean (.-email_verified user))
+                                ;                                      :nickname       (or (.-given_name user)
+                                ;                                                          (.-screen_name user)
+                                ;                                                          (.-nickname user))
+                                ;                                      :picture        (.-picture_large user)}))
+                                ))
+             ;(.userInfo (.-client web-auth)
+             ;           (:access_token query-params)
+             ;           (fn [err user]
+             ;             (cond
+             ;               err
+             ;               (om/update-state! this assoc :token-error {:code (.-code err)})
+             ;               user
+             ;               (om/update-state! this assoc :user {:user_id        (.-user_id user)
+             ;                                                   :email          (.-email user)
+             ;                                                   :email_verified (boolean (.-email_verified user))
+             ;                                                   :nickname       (or (.-given_name user)
+             ;                                                                       (.-screen_name user)
+             ;                                                                       (.-nickname user))
+             ;                                                   :picture        (.-picture_large user)}))
+             ;             (debug "User info: " user)
+             ;             (debug "error " err)))
+             )
            (om/update-state! this assoc :auth0 web-auth)))))
 
   (initLocalState [this]
@@ -161,7 +196,7 @@
     (let [{:query/keys [current-route]} (om/props this)
           {:keys [route route-params query-params]} current-route
           {:keys [access_token token]} query-params
-          {:keys [login-state error-message input-validation user token-error]
+          {:keys       [login-state error-message input-validation user token-error]
            :error/keys [create-user] :as state} (om/get-state this)]
       (debug "State " (om/get-state this))
 
