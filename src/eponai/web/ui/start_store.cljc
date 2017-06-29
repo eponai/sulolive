@@ -132,7 +132,7 @@
               (dom/h1 nil "You are invited to open a SULO store!")
               (dom/h1 nil "Connect with your community on SULO Live"))))
 
-        (if (or true                                        ;(:user/can-open-store? auth)
+        (if (or (:user/can-open-store? auth)
                 (some? store))
           (dom/div
             nil
