@@ -38,6 +38,9 @@
                              {:event      event
                               :properties properties})))))
 
+(defn alias [user-id]
+  #?(:cljs (.alias js/mixpanel (str user-id))))
+
 (def events
   {
    ;; Store menu

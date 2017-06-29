@@ -160,7 +160,7 @@
          nil
          (dom/a
            {:onClick #(auth/show-login (shared/by-key component :shared/login))}
-           (dom/strong nil (dom/small nil "Sign in")))))
+           (dom/strong nil (dom/small nil "Sign up / Sign in")))))
      ;(when (some? auth)
      ;  (menu/item
      ;    (->> (css/hide-for :large)
@@ -197,7 +197,7 @@
               (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
             (dom/a
               {:onClick #(auth/show-login (shared/by-key component :shared/login))}
-              (dom/span nil "Sign in"))))))))
+              (dom/span nil "Sign up / Sign in"))))))))
 
 
 (defn manage-store-navbar [component]
@@ -461,15 +461,6 @@
        (let [{:keys [lock on-click-event-fn]} (om/get-state this)]
          (.removeEventListener js/document "click" on-click-event-fn))))
 
-
-  (componentDidMount [this]
-    ;#?(:cljs (do
-    ;           (when js/Auth0LockPasswordless
-    ;             (let [lock (new js/Auth0LockPasswordless "JMqCBngHgOcSYBwlVCG2htrKxQFldzDh" "sulo.auth0.com")]
-    ;               (om/update-state! this assoc :lock lock)))
-    ;           (om/update-state! this assoc :did-mount? true)))
-    )
-
   (render [this]
     (let [{:query/keys [current-route navigation]
            :proxy/keys [loading-bar login-modal]} (om/props this)
@@ -647,7 +638,7 @@
                                                          :onClick #(track-event ::mixpanel/signout)} (dom/small nil "Sign out")))
                                   (menu/item nil (dom/a (css/button {:onClick #(do
                                                                                 (track-event ::mixpanel/open-signin)
-                                                                                (auth/show-login (shared/by-key this :shared/login)))}) (dom/span nil "Sign in"))))))
+                                                                                (auth/show-login (shared/by-key this :shared/login)))}) (dom/span nil "Sign up / Sign in"))))))
                (menu/item
                  nil
                  (menu/horizontal
@@ -780,7 +771,7 @@
                                                    (->> {:onClick #(do
                                                                     (track-event ::mixpanel/open-signin)
                                                                     (auth/show-login (shared/by-key this :shared/login)))}
-                                                        (css/button)) (dom/span nil "Sign in")))
+                                                        (css/button)) (dom/span nil "Sign up / Sign in")))
                                   ;(menu/item nil (dom/a (css/button {:onClick #(auth/show-lock (shared/by-key this :shared/auth-lock))})
                                   ;                      (dom/span nil "Sign in")))
                                   )))

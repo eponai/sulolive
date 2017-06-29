@@ -30,7 +30,9 @@
         (.authorize web-auth #js {:connection connection}))
 
       (passwordless-start [this email f]
-        (let [params {:connection "email" :send "code" :email email}]
+        (let [params {:connection "email"
+                      :send       "code"
+                      :email      email}]
           (.passwordlessStart web-auth
                               (clj->js params)
                               (fn [err res]
