@@ -5,12 +5,28 @@
     [eponai.server.external.stripe :as stripe]
     [eponai.server.datomic.format :as f]
     [taoensso.timbre :refer [info debug]]
-    [eponai.server.external.auth0 :as auth0]))
+    [eponai.server.external.auth0 :as auth0]
+    [eponai.common.format :as cf]))
 
 (defn ->order [state o store-id user-id]
   (let [store (db/lookup-entity (db/db state) store-id)]
     (-> o
         (assoc :order/store store :order/user user-id))))
+
+(defn user-info [{:keys [system auth]}]
+  (let [user (auth0/get-user (:system/auth0management system) (:sub auth))
+        ;_ (debug "Got user: " user)
+        identity* (fn [i]
+                    (debug "Getting identity: " i)
+                    (let [{:keys [profileData provider connection]} i]
+                      (cf/remove-nil-keys
+                        {:auth0.identity/connection  connection
+                         :auth0.identity/provider    provider
+                         :auth0.identity/name        (:name profileData)
+                         :auth0.identity/picture     (:picture profileData)
+                         :auth0.identity/screen-name (:screen_name profileData)})))]
+    {:auth0/identities (map identity* (:identities user))
+     :auth0/nickname   (:nickname user)}))
 
 (defn create [{:keys [state system]} {:keys [user auth0-user]}]
   (if-let [old-user (db/lookup-entity (db/db state) [:user/email (:user/email user)])]

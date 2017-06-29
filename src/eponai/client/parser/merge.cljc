@@ -65,6 +65,12 @@
                   [:db/add [:ui/singleton :ui.singleton/auth] :ui.singleton.auth/user (:db/id val)]])
     db))
 
+(defmethod client-merge :query/auth0-info
+  [db _ val]
+  (cond-> db
+          (not-empty val)
+          (db-with [[:db/add [:ui/singleton :ui.singleton/auth] :ui.singleton.auth/auth0 val]])))
+
 (defmethod client-merge :query/locations
   [db k val]
   (if (not-empty val)

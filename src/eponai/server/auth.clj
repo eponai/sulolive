@@ -214,10 +214,6 @@
                                     :ip          (:remote-addr request)})
     (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token} {:path "/"})))
 
-
-
-
-
 (defn authenticate
   [{:keys                          [params] :as request
     :eponai.server.middleware/keys [system logger conn]}]
@@ -232,7 +228,7 @@
         ;; If we have a token in the request, it means this was the first login.
         ;; An account was created and we want to authenticate again
         token-info (when (some? token) {:profile (auth0/token-info auth0 token)
-                                        :token token})
+                                        :token   token})
 
         ;; access-token is only present in case of login first step
         {:keys [profile token access-token]} (or auth-map token-info)
@@ -266,6 +262,31 @@
                                                      (assoc :verified false)))]
             (debug "Redirect to path: " path)
             (r/redirect path)))))
+
+(defn link-user [{:keys                          [params] :as request
+                  :eponai.server.middleware/keys [system logger conn]}]
+  (let [auth0 (:system/auth0 system)
+        auth0management (:system/auth0management system)
+        primary-token (token-map-from-cookie request)
+        primary-profile (auth0/token-info auth0 (:token primary-token))
+
+        {:keys [code state token]} params
+        secondary-info (auth0/authenticate auth0 code state)
+
+        primary-user-id (or (:user_id primary-profile) (:sub primary-profile))
+        secondary-user-id (or (:user_id secondary-info) (:sub secondary-info))]
+    ;(debug "Primary: " primary-profile)
+    ;(debug "Secondary: " (:profile secondary-info))
+    (when-not (= primary-user-id secondary-user-id)
+      (try
+        (auth0/link-social auth0management
+                           {:user_id primary-user-id :token (:token primary-token)}
+                           {:user_id secondary-user-id :token (:token secondary-info)})
+        (r/redirect (routes/path :user-settings))
+        (catch Exception e
+          (error e)
+          (r/redirect (routes/path :user-settings)))))))
+
 
 (defn agent-whitelisted? [request]
   (let [whitelist #{"facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"

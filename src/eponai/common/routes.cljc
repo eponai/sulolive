@@ -8,7 +8,7 @@
 (def store-routes
   {""           :store
    "/dashboard" {""          :store-dashboard
-                 "/profile"  {""        :store-dashboard/profile
+                 "/profile"  {""         :store-dashboard/profile
                               "/options" :store-dashboard/profile#options}
                  "/policies" :store-dashboard/policies
                  "/shipping" :store-dashboard/shipping
@@ -104,7 +104,7 @@
              ;"products"                    product-routes
              ;"browse"                      browse-categories
              "store"                            :index/store
-             ["store/" :store-id]      store-routes
+             ["store/" :store-id]               store-routes
              "help"                             help-routes
              "about"                            :about
              ["checkout/" :store-id]            checkout-routes
@@ -117,6 +117,7 @@
              "auth"                             :auth
              "login"                            :login
              "logout"                           :logout
+             "link-social"                      :link-social
              "unauthorized"                     :unauthorized}]
        [true :not-found]]])
 
@@ -132,7 +133,8 @@
                      :shopping-bag
                      :about
                      :not-found
-                     :login}
+                     :login
+                     :link-social}
                    route)
         (= :store-dashboard route)
         (= (name :store-dashboard) (namespace route)))))
@@ -146,7 +148,7 @@
     (= (namespace handler) "store-dashboard")
     ::auth/store-owner
 
-    (#{:user/order :user/order-list :checkout} handler)
+    (#{:user/order :user/order-list :checkout :link-social} handler)
     ::auth/any-user
     :else
     ::auth/any-user))

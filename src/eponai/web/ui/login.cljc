@@ -158,7 +158,7 @@
   Object
   (authorize-social [this provider]
     #?(:cljs
-       (auth0/authorize-social (shared/by-key this :shared/auth0) (name provider))))
+       (auth0/authorize-social (shared/by-key this :shared/auth0) {:connection (name provider)})))
   (authorize-email [this]
     #?(:cljs
        (let [email (web-utils/input-value-by-id (::email form-inputs))

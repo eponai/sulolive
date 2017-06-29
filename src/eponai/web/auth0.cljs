@@ -8,7 +8,7 @@
     [eponai.common :as c]))
 
 (defprotocol IAuth0Client
-  (authorize-social [this connection])
+  (authorize-social [this opts])
   (passwordless-start [this email f])
   (passwordless-verify [this email code])
   (user-info [this access-token f]))
@@ -26,8 +26,11 @@
                                             :responseType "code"
                                             :scope        "openid email"})]
     (reify IAuth0Client
-      (authorize-social [_ connection]
-        (.authorize web-auth #js {:connection connection}))
+      (authorize-social [_ {:keys [connection redirectUri]}]
+        (let [params (cond-> {:connection connection}
+                             (not-empty redirectUri)
+                             (assoc :redirectUri redirectUri))]
+          (.authorize web-auth (clj->js params))))
 
       (passwordless-start [this email f]
         (let [params {:connection "email"

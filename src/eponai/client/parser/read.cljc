@@ -429,6 +429,12 @@
                   user (client.auth/current-auth db)]
               (db/pull db query user))}))
 
+(defmethod client-read :query/auth0-info
+  [{:keys [target db query]} _ _]
+  (if target
+    {:remote true}
+    {:value (db/singleton-value db :ui.singleton.auth/auth0)}))
+
 (defmethod client-read :query/locations
   [{:keys [target db query]} _ _]
   (if target
@@ -533,3 +539,4 @@
   (if target
     {:remote true}
     {:value (db/pull-all-with db query {:where '[[?e :sulo-locality/title _]]})}))
+

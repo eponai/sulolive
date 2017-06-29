@@ -25,8 +25,10 @@
 (defprotocol IAuth0Management
   (get-token [this])
   (update-user [this user-id params])
+  (get-user [this user-id])
   (create-and-link-new-user [this auth0-user db-user])
-  (link-user [this auth0-user db-user]))
+  (link-user [this auth0-user db-user])
+  (link-social [this primary-token social-token]))
 
 (defn- read-json [json]
   (json/read-json json true))
@@ -49,7 +51,6 @@
 (defrecord Auth0Management [client-id client-secret domain server-address]
   IAuth0Management
   (get-token [this]
-
     (let [params {:grant_type    "client_credentials"
                   :client_id     client-id
                   :client_secret client-secret
@@ -58,16 +59,22 @@
           response (http/post "https://sulo.auth0.com/oauth/token"
                               {:form-params params})]
       (json/read-str (:body response) :key-fn keyword)))
+  (get-user [this user-id]
+    (let [{:keys [access_token token_type]} (get-token this)
+          user (json/read-str (:body (http/get (str auth0management-api-host "users/" user-id)
+                                               {:headers      {"Authorization" (str token_type " " access_token)}})) :key-fn keyword)]
+      user))
+
+  (link-social [this primary social]
+    (debug "Link social account: " {:primary primary :secondary social})
+    (let [account (json/read-str (:body (http/post (str auth0management-api-host "users/" (:user_id primary) "/identities")
+                                                   {:form-params {:link_with (:token social)}
+                                                    :headers     {"Authorization" (str "Bearer " (:token primary))}})))]))
 
   (link-user [this auth0-user db-user]
     (when (not-empty (:email auth0-user))
       (let [{:keys [access_token token_type]} (get-token this)
-
             query-string (str "email.raw:\"" (:email auth0-user) "\" -user_id:\"" (:user_id auth0-user) "\"")
-            ;user-accounts (qs: {
-            ;                    search_engine: 'v2',
-            ;                    q: 'email.raw:"' + user.email + '" -user_id:"' + user.user_id + '"',
-            ;                                       })
             account (first (json/read-str (:body (http/get (str auth0management-api-host "users")
                                                            {:query-params {:search_engine "v2"
                                                                            :q             query-string}
