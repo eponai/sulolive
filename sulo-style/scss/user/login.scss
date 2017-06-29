@@ -1,0 +1,90 @@
+#sulo-login-page {
+	.page-content {
+		padding-top: $global-padding;
+		.row {
+			max-width: $user-dashboard-max-width;
+		}
+	}
+}
+#sulo-login-modal {
+	text-align: center;
+	@include breakpoint(medium) {
+		min-width: 25rem;
+	}
+	// min-width: 22rem;
+	max-width: 25rem;
+	// h1
+	.photo-container {
+		max-width: 3rem;
+		width: 100%;
+		background: $white;
+		padding: 0.25rem;
+		margin: 0 auto;
+		margin-bottom: $global-margin;
+		// border: none;
+	}
+}
+
+#sulo-login {	
+	// display: flex;
+	// flex-direction: column;
+	// align-items: center;
+	i.fa-spinner {
+		color: $medium-gray;
+		margin: $global-margin
+	}
+	.button {
+			max-width: 20rem;
+			padding: $global-padding;
+			i {
+				margin-right: 0.25rem;
+			}
+			// height: auto;
+			// &:last-child {
+			// 	margin-bottom: 0;
+			// }
+		}
+		input {
+			max-width: 20rem;
+			// padding: $global-padding;
+			height: auto;
+			// border-color: $medium-gray;
+			font-size: 110%;
+			&[type="number"] {
+				font-size: 150%;
+				font-weight: $global-weight-bold;
+				text-align: center;
+				&::-webkit-outer-spin-button,
+				&::-webkit-inner-spin-button {
+				    /* display: none; <- Crashes Chrome on hover */
+				    -webkit-appearance: none;
+				    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+				}
+			}
+		}
+
+		a:not(.button) {
+			text-decoration: underline;
+			color: $dark-gray;
+			font-weight: $global-weight-normal;
+		}
+		p.go-back {
+			a {
+				// color: map-get($foundation-palette, sulo-dark);
+			}
+		}
+	.login-content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: $global-padding 0;
+		:last-child {
+			margin-bottom: 0;
+		}
+		
+	}
+	.info {
+		color: $dark-gray;
+		// max-width: 20rem;
+	}
+}

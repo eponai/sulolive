@@ -224,7 +224,7 @@
     (when unauthorized
       (#?(:cljs js/alert :clj error) "You are unauthorized to execute the action"))
     (when prompt-login
-      (auth/show-lock (-> reconciler :config :shared :shared/auth-lock)))
+      (auth/show-login (-> reconciler :config :shared :shared/login)))
     (when (seq redirects)
       (throw (ex-info "Unable to handle redirects at this time." {:redirects redirects})))))
 

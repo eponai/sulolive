@@ -386,7 +386,7 @@
   (testing "Delete product, entity should be retracted."
     (let [
           ;; Prepare existing data to be deleted
-          old-photo (f/photo "old-photo")
+          old-photo (f/photo {:photo/path "old-photo"})
           old-product (assoc (f/product {:store.item/name "product" :store.item/uuid (db/squuid)}) :store.item/photos [old-photo])
           store (assoc (store-test) :store/items [old-product])
 

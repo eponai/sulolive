@@ -147,7 +147,7 @@
                                                                    (debug "Setting locality! " loc)
                                                                    (.select-locality this loc)
                                                                    (if (nil? auth)
-                                                                     (auth/show-lock (shared/by-key this :shared/auth-lock))
+                                                                     (auth/show-login (shared/by-key this :shared/login))
                                                                      (routes/set-url! this :index {:locality (:sulo-locality/path loc)})))})
                            (photo/photo
                              {:photo-id       (:photo/id photo)

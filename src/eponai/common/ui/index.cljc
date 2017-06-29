@@ -64,6 +64,7 @@
                               {:store/profile [:store.profile/name
                                                {:store.profile/photo [:photo/path :photo/id]}]}
                               {:store/locality [:sulo-locality/path]}
+                              {:store/status [:status/type]}
                               :store/username
                               :store/created-at
                               :store/featured
@@ -73,10 +74,12 @@
      {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id
                                                                     {:store/locality [:sulo-locality/path]}
                                                                     {:store/profile [:store.profile/name {:store.profile/photo [:photo/path :photo/id]}]}
+                                                                    {:store/status [:status/type]}
                                                                     :store/username]}]}
      {:query/auth [:db/id :user/email]}
      {:query/owned-store [:db/id
                           {:store/locality [:sulo-locality/path]}
+                          {:store/status [:status/type]}
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.
                           {:store/owners [{:store.owner/user [:db/id]}]}]}])

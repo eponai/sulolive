@@ -22,9 +22,6 @@
           (dom/div {:height "100%" :id router/dom-app-id}
             app-html)
 
-          ; (common/auth0-lock-passwordless release?)
-          (common/auth0-lock release?)
-
           (common/inline-javascript ["GretaOptions = {"
                                      "  accessToken:'" (if release?
                                                          "b554c0b026bb448362dfe657846bf982"
@@ -36,6 +33,9 @@
           (dom/script {:src "//assets.pinterest.com/js/pinit.js"
                        :async true
                        :defer true
+                       :type common/text-javascript})
+
+          (dom/script {:src "https://cdn.auth0.com/js/auth0/8.7/auth0.min.js"
                        :type common/text-javascript})
 
           ;<script src="//www.powr.io/powr.js" external-type="html"></script>
@@ -61,4 +61,5 @@
             nil
 
             :else
-            (common/inline-javascript ["env.web.main.runsulo()"])))))))
+            (common/inline-javascript ["env.web.main.runsulo()"]))))
+      )))

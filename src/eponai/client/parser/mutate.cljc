@@ -24,6 +24,34 @@
   {:action (db/transact-one state {:ui/singleton :ui.singleton/auth
                                    :ui.singleton.auth/locations locality})})
 
+(defmethod client-mutate 'loading-bar/show
+  [{:keys [state target]} _ _]
+  (when-not target
+    {:action (fn []
+               (db/transact state [{:ui/singleton                   :ui.singleton/loading-bar
+                                    :ui.singleton.loading-bar/show? true}]))}))
+
+(defmethod client-mutate 'loading-bar/hide
+  [{:keys [state target]} _ _]
+  (when-not target
+    {:action (fn []
+               (db/transact state [{:ui/singleton                   :ui.singleton/loading-bar
+                                    :ui.singleton.loading-bar/show? false}]))}))
+
+(defmethod client-mutate 'login-modal/show
+  [{:keys [state target]} _ _]
+  (when-not target
+    {:action (fn []
+               (db/transact state [{:ui/singleton                   :ui.singleton/login-modal
+                                    :ui.singleton.login-modal/show? true}]))}))
+
+(defmethod client-mutate 'login-modal/hide
+  [{:keys [state target]} _ _]
+  (when-not target
+    {:action (fn []
+               (db/transact state [{:ui/singleton                   :ui.singleton/login-modal
+                                    :ui.singleton.login-modal/show? false}]))}))
+
 ;; ################ Remote mutations ####################
 ;; Remote mutations goes here. We share these mutations
 ;; with all client platforms (web, ios, android).
@@ -300,21 +328,12 @@
   (if target
     {:remote true}))
 
-(defmethod client-mutate 'loading-bar/show
-  [{:keys [state target]} _ _]
-  (when-not target
-    {:action (fn []
-               (db/transact state [{:ui/singleton                   :ui.singleton/loading-bar
-                                    :ui.singleton.loading-bar/show? true}]))}))
-
-(defmethod client-mutate 'loading-bar/hide
-  [{:keys [state target]} _ _]
-  (when-not target
-    {:action (fn []
-               (db/transact state [{:ui/singleton                   :ui.singleton/loading-bar
-                                    :ui.singleton.loading-bar/show? false}]))}))
-
 (defmethod client-mutate 'user/request-store-access
+  [{:keys [state target]} _ _]
+  (when target
+    {:remote true}))
+
+(defmethod client-mutate 'user/create
   [{:keys [state target]} _ _]
   (when target
     {:remote true}))

@@ -20,7 +20,8 @@
     [eponai.common.ui.om-quill :as quill]
     [eponai.common.auth :as auth]
     [eponai.server.external.cloudinary :as cloudinary]
-    [eponai.server.external.email :as email]))
+    [eponai.server.external.email :as email]
+    [eponai.server.api.user :as user]))
 
 (defmacro defmutation
   "Creates a message and mutate defmethod at the same time.
@@ -556,3 +557,14 @@
                              (db/one-with (db/db state) {:where   '[[?e :user/email ?email]]
                                                          :symbols {'?email (:email auth)}}))]
                (email/-send-store-access-request (:system/email system) (assoc params :user-id user-id))))})
+
+(defmutation user/create
+  [{:keys [system auth state ::parser/exception ::parser/return] :as env} _ params]
+  {:auth ::auth/public
+   :log  nil
+   :resp {:success return
+          :error   (if exception
+                     (ex-data exception)
+                     "Something went wrong when creating your account.")}}
+  {:action (fn []
+             (user/create env params))})

@@ -3,8 +3,8 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.database :as db]))
 
-(defprotocol IAuthLock
-  (show-lock [this]))
+(defprotocol ILogin
+  (show-login [this]))
 
 (defn current-auth [db]
   (some-> (db/lookup-entity db [:ui/singleton :ui.singleton/auth])

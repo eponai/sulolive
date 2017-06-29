@@ -25,7 +25,7 @@
     [cemerick.url :as url]
     [eponai.client.routes :as client.routes]))
 
-(def auth-token-cookie-name "sulo-auth-token")
+(def auth-token-cookie-name "sulo.token")
 (def auth-token-remove-value "kill")
 
 (def restrict buddy/restrict)
@@ -40,10 +40,31 @@
   (auth/-redirect (::auth-responder request) path))
 
 (defn remove-auth-cookie [response]
-  (assoc-in response [:cookies auth-token-cookie-name] {:value {:token auth-token-remove-value} :max-age 1}))
+  (r/set-cookie response auth-token-cookie-name {:token auth-token-remove-value} {:max-age 1}))
 
 (defn prompt-location-picker [request]
   (location/-prompt-location-picker (::location-responder request)))
+
+
+;; Move this to location.clj?
+
+(defn cookie-locality [request]
+  (let [json-str (url/url-decode (get-in request [:cookies location/locality-cookie-name :value]))]
+    (when (not-empty json-str)
+      (try
+        (c/read-transit json-str)
+        (catch Exception e
+          (debug "Exception when parsing cookie-locality: " e)
+          nil)))))
+
+(defn requested-location [request]
+  (let [conn (:eponai.server.middleware/conn request)
+        loc (cookie-locality request)
+        {:keys [locality]} (:route-params request)]
+    (if (and (some? locality)
+             (not= (:sulo-locality/path loc) locality))
+      (db/pull (db/db conn) [:db/id :sulo-locality/path] [:sulo-locality/path locality])
+      loc)))
 
 (defrecord HttpAuthResponder []
   auth/IAuthResponder
@@ -62,12 +83,12 @@
     ;; a while before the screen scrolls down to "Vancouver / BC, Enter".
     (r/redirect (routes/path :landing-page))))
 
-(defn authenticate-auth0-user [conn auth0-user]
-  (when auth0-user
-    (let [db-user (db/lookup-entity (db/db conn) [:user/email (:email auth0-user)])]
-      (when-not db-user
-        (let [new-user (f/auth0->user auth0-user)]
-          (db/transact-one conn new-user))))))
+;(defn authenticate-auth0-user [conn auth0-user]
+;  (when auth0-user
+;    (let [db-user (db/lookup-entity (db/db conn) [:user/email (:email auth0-user)])]
+;      (when-not db-user
+;        (let [new-user (f/auth0->user auth0-user)]
+;          (db/transact-one conn new-user))))))
 
 (defn- token-map-from-cookie [request]
   (when-let [token-cookie (get-in request [:cookies auth-token-cookie-name :value])]
@@ -75,7 +96,8 @@
           (for [^String cookie-val (.split token-cookie "&")]
             (let [[k v] (map (fn [^String x] (.trim x))
                              (.split cookie-val "=" 2))]
-              [(keyword k) v])))))
+              [(keyword k) v]))))
+  )
 
 (defn jwt-cookie-backend [conn auth0]
   (let [jws-backend (backends/jws {:secret   (auth0/secret auth0)
@@ -91,6 +113,7 @@
         ;; Parses the jws token and returns token validation errors
         (try
           (let [auth0-user (auth.protocols/-authenticate jws-backend request data)]
+            (debug "Got auth0-user: " auth0-user)
             (when (some? auth0-user)
               (if-not (some? (:email auth0-user))
                 (warn "Authenticated an auth0 user but it had no email. Auth0-user: " auth0-user)
@@ -101,7 +124,8 @@
           (catch Exception e
             (when (not= data auth-token-remove-value)
               (debug "Authenticate exception. Unable to authenticate data: " data
-                     " exception: " e))
+                     " exception: ")
+              (error e))
             (if-let [token-failure (when-let [data (ex-data e)]
                                      (let [{:keys [type cause]} data]
                                        (when (= type :validation)
@@ -154,7 +178,8 @@
                                                      {:token refreshed-token}
                                                      {:token            token
                                                       :tried-refresh-at (or tried-refresh-at
-                                                                            (System/currentTimeMillis))})))))))))
+                                                                            (System/currentTimeMillis))})
+                                                   {:path "/"}))))))))
 
 (defn wrap-on-auth [handler middleware]
   (let [wrapped (middleware handler)]
@@ -172,34 +197,102 @@
         (wrap-authorization auth-backend)
         (wrap-http-responders))))
 
+
+(defn existing-user [db auth0-profile]
+  (when-let [email (:email auth0-profile)]
+    (db/lookup-entity db [:user/email email])))
+
 (defn- do-authenticate
   "Returns a logged in response if authenticate went well."
-  [{:keys                          [params] :as request
-    :eponai.server.middleware/keys [system logger conn]}]
-  (let [auth0 (:system/auth0 system)
-        {:keys [code state]} params
-        {:keys [redirect-url token profile]} (auth0/authenticate auth0 code state)]
-    (when-let [email (:email profile)]
-      (let [old-user (db/lookup-entity (db/db conn) [:user/email email])
-            user (if-not (some? old-user)
-                   (let [new-user (f/auth0->user profile)
-                         _ (info "Auth - authenticated user did not exist, creating new user: " new-user)
-                         result (db/transact-one conn new-user)]
-                     (debug "Auth - new user: " new-user)
-                     (db/lookup-entity (:db-after result) [:user/email email]))
-                   old-user)]
-        (when-not (some? old-user)
-          (log/info! logger ::user-created {:user-id (:db/id user)}))
-        (when token
-          (mixpanel/track "Sign in user" {:distinct_id (:db/id user)
-                                          :ip          (:remote-addr request)})
-          (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token}))))))
+  [{:eponai.server.middleware/keys [system logger conn] :as request}
+   token sulo-user]
+  ;(when-let [sulo-user (existing-user (db/db conn) profile)])
+  ;(when (:user/verified sulo-user))
+  (let [loc (requested-location request)
+        redirect-url (if (:sulo-locality/path loc)
+                       (routes/path :index {:locality (:sulo-locality/path loc)})
+                       (routes/path :landing-page))]
+    (mixpanel/track "Sign in user" {:distinct_id (:db/id sulo-user)
+                                    :ip          (:remote-addr request)})
+    (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token} {:path "/"}))
+
+
+
+  ;(when-let [email (:email profile)]
+  ;  (let [old-user (db/lookup-entity (db/db conn) [:user/email email])
+  ;        user (if-not (some? old-user)
+  ;               (let [new-user (f/auth0->user profile)
+  ;                     _ (info "Auth - authenticated user did not exist, creating new user: " new-user)
+  ;                     result (db/transact-one conn new-user)]
+  ;                 (debug "Auth - new user: " new-user)
+  ;                 (db/lookup-entity (:db-after result) [:user/email email]))
+  ;               old-user)]
+  ;    (when-not (some? old-user)
+  ;      (log/info! logger ::user-created {:user-id (:db/id user)}))
+  ;    (when token
+  ;      (let [loc (requested-location request)
+  ;            redirect-url (if (:sulo-locality/path loc)
+  ;                           (routes/path :index {:locality (:sulo-locality/path loc)})
+  ;                           (routes/path :landing-page))]
+  ;        (debug "Redirect to URL: " redirect-url)
+  ;        (mixpanel/track "Sign in user" {:distinct_id (:db/id user)
+  ;                                        :ip          (:remote-addr request)})
+  ;        (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token} {:path "/"})))))
+  )
+
+
+
+
 
 (defn authenticate
-  [request]
-  (or
-    (do-authenticate request)
-    (prompt-login request)))
+  [{:keys                          [params] :as request
+    :eponai.server.middleware/keys [system logger conn]}]
+  (debug "AUTHENTICATE: " params)
+  (let [auth0 (:system/auth0 system)
+        auth0management (:system/auth0management system)
+        {:keys [code state token]} params
+
+        ;; A code in the request means we want to login
+        auth-map (when (some? code) (auth0/authenticate auth0 code state))
+
+        ;; If we have a token in the request, it means this was the first login.
+        ;; An account was created and we want to authenticate again
+        token-info (when (some? token) {:profile (auth0/token-info auth0 token)
+                                        :token token})
+
+        ;; access-token is only present in case of login first step
+        {:keys [profile token access-token]} (or auth-map token-info)
+
+        ;; Get our user from Datomic
+        sulo-user (existing-user (db/db conn) profile)]
+    (debug "Got profile: " profile)
+    (debug "Got sulo user: " (into {} sulo-user))
+
+    ;; If we already have a user for this account and they're verified, we can authenticate
+    (cond (:user/verified sulo-user)
+          (do
+            (debug "User is verified")
+            (auth0/link-user auth0management profile sulo-user)
+            (do-authenticate request token sulo-user))
+
+          ;; User exists but has not verified their email
+          (and (some? sulo-user)
+               (not-empty (:email profile)))
+          (do
+            (debug "Transacting verified email")
+            (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]])
+            (auth0/link-user auth0management profile sulo-user)
+            (do-authenticate request token sulo-user))
+
+          ;; User is signin in for the first time, and should go through creating an account.
+          :else
+          ;; If no user exists or is not verified, redirect back with the token to the login page
+          (let [path (routes/path :login nil (cond-> {:access_token access-token
+                                                      :token        token}
+                                                     (some? sulo-user)
+                                                     (assoc :verified false)))]
+            (debug "Redirect to path: " path)
+            (r/redirect path)))))
 
 (defn agent-whitelisted? [request]
   (let [whitelist #{"facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"
@@ -239,29 +332,11 @@
                    ;; For now we send users to :coming-soon
                    ;; TODO: Prompt login then redirect back to where the user came from.
                    (nil? (:auth v))
-                   (redirect request (routes/path :landing-page))
+                   (prompt-login request)
+                   ;(redirect request (routes/path :landing-page))
                    :else
                    (unauthorize request)))}))
 
-;; Move this to location.clj?
-
-(defn cookie-locality [request]
-  (let [json-str (url/url-decode (get-in request [:cookies location/locality-cookie-name :value]))]
-    (when (not-empty json-str)
-      (try
-        (c/read-transit json-str)
-        (catch Exception e
-          (debug "Exception when parsing cookie-locality: " e)
-          nil)))))
-
-(defn requested-location [request]
-  (let [conn (:eponai.server.middleware/conn request)
-        loc (cookie-locality request)
-        {:keys [locality]} (:route-params request)]
-    (if (and (some? locality)
-             (not= (:sulo-locality/path loc) locality))
-      (db/pull (db/db conn) [:db/id :sulo-locality/path] [:sulo-locality/path locality])
-      loc)))
 
 (defn bidi-location-redirect
   [route]

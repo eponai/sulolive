@@ -43,6 +43,7 @@
 (declare handle-parser-request)
 
 (defn request->auth [{conn ::m/conn auth :identity}]
+  (debug "Request->Auth " auth)
   (let [auth-user (when-some [user-email (:email auth)]
                     (db/lookup-entity (db/db conn) [:user/email user-email]))]
     (assoc auth :user-id (:db/id auth-user))))
@@ -76,6 +77,7 @@
              (log/with #(merge route %))))))
 
 (defn request->props [request]
+  ;(debug "Got request: " (into {} request))
   (let [state (::m/conn request)
         route (:handler request)
         system (::m/system request)
@@ -209,6 +211,14 @@
 
   (GET "/auth" request (auth/authenticate
                          (assoc request ::m/logger (context-logger request {:route :auth}))))
+  (GET "/login" request (bidi.ring/make-handler common.routes/routes bidi-route-handler)
+                        ;(do
+                        ;  (debug "/login endpoint")
+                        ;  (if (some #(#{:code :token :access_token} (key %)) (:params request))
+                        ;    (auth/authenticate
+                        ;      (assoc request ::m/logger (context-logger request {:route :login})))
+                        ;    (bidi.ring/make-handler common.routes/routes bidi-route-handler)))
+                        )
 
   (GET "/logout" request
     (let [logger (context-logger request {:route :logout})

@@ -61,6 +61,9 @@
                    (map second))
              key-vals))))
 
+(defn set-cookie [cookie-key val]
+  (set! (.-cookie js/document) (str cookie-key "=" (url/url-encode val) ";path=/")))
+
 (defn get-locality []
   (let [json-str (url/url-decode (get-cookie-val location/locality-cookie-name))]
     (js->clj (c/read-transit json-str))))
