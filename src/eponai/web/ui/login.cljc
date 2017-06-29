@@ -200,7 +200,7 @@
   (componentDidUpdate [this _ _]
     (let [{:query/keys [current-route]} (om/props this)
           create-msg (msg/last-message this 'user/create)]
-      (debug "Got create message: " create-msg)
+      (debug "Got create message : " create-msg)
       (when (msg/final? create-msg)
         (let [message (msg/message create-msg)]
           (debug "Got message: " message)
@@ -212,7 +212,7 @@
                 (do
                   (debug "User created routing to: " (routes/url :auth nil (:query-params current-route)))
                   #?(:cljs
-                     (set! js/window.location (routes/url :auth nil (:query-params current-route)))))
+                     (js/window.location.replace (routes/url :auth nil (:query-params current-route)))))
                 (.authorize-email this)))
             (om/update-state! this assoc :error/create-user message))))))
 
@@ -269,7 +269,8 @@
 (defui LoginModal
   static om/IQuery
   (query [_]
-    [{:proxy/login (om/get-query Login)}
+    [{:query/auth [:db/id]}
+     {:proxy/login (om/get-query Login)}
      {:query/login-modal [:ui.singleton.login-modal/show?]}])
   Object
   (close-modal [this]
@@ -293,7 +294,7 @@
 (defui LoginPage
   static om/IQuery
   (query [this]
-    [:query/auth
+    [{:query/auth [:db/id]}
      {:proxy/login (om/get-query Login)}])
   Object
   (cancel-login [this]

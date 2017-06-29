@@ -24,7 +24,7 @@
                                             :clientID     auth0-client-id
                                             :redirectUri  (redirect-to (routes/url :auth))
                                             :responseType "code"
-                                            :scope        "openid profile email"})]
+                                            :scope        "openid email"})]
     (reify IAuth0Client
       (authorize-social [_ connection]
         (.authorize web-auth #js {:connection connection}))
