@@ -6,7 +6,8 @@
     [eponai.server.datomic.format :as f]
     [taoensso.timbre :refer [info debug]]
     [eponai.server.external.auth0 :as auth0]
-    [eponai.common.format :as cf]))
+    [eponai.common.format :as cf]
+    [clojure.string :as string]))
 
 (defn ->order [state o store-id user-id]
   (let [store (db/lookup-entity (db/db state) store-id)]
@@ -18,15 +19,22 @@
         ;_ (debug "Got user: " user)
         identity* (fn [i]
                     (debug "Getting identity: " i)
-                    (let [{:keys [profileData provider connection]} i]
+                    (let [{:keys [profileData provider connection user_id]} i]
                       (cf/remove-nil-keys
-                        {:auth0.identity/connection  connection
+                        {:auth0.identity/id          user_id
+                         :auth0.identity/connection  connection
                          :auth0.identity/provider    provider
                          :auth0.identity/name        (:name profileData)
                          :auth0.identity/picture     (:picture profileData)
                          :auth0.identity/screen-name (:screen_name profileData)})))]
     {:auth0/identities (map identity* (:identities user))
      :auth0/nickname   (:nickname user)}))
+
+(defn unlink-user [{:keys [system auth]} {:keys [user-id provider]}]
+  (auth0/unlink-user-accounts (:system/auth0management system)
+                              (:sub auth)
+                              user-id
+                              provider))
 
 (defn create [{:keys [state system]} {:keys [user auth0-user]}]
   (if-let [old-user (db/lookup-entity (db/db state) [:user/email (:user/email user)])]

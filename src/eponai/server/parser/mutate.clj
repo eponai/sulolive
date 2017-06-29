@@ -568,3 +568,14 @@
                      "Something went wrong when creating your account.")}}
   {:action (fn []
              (user/create env params))})
+
+(defmutation user/unlink-account
+  [{:keys [system auth state ::parser/exception ::parser/return] :as env} _ params]
+  {:auth ::auth/public
+   :log  nil
+   :resp {:success "Some message"
+          :error   (if exception
+                     (ex-data exception)
+                     "Something went wrong when creating your account.")}}
+  {:action (fn []
+             {:unlinked-accounts (user/unlink-user env params)})})

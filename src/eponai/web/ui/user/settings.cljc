@@ -27,7 +27,8 @@
     [eponai.common.shared :as shared]
     #?(:cljs
        [eponai.web.auth0 :as auth0])
-    [eponai.client.routes :as routes]))
+    [eponai.client.routes :as routes]
+    [eponai.common.ui.loading-bar :as loading-bar]))
 
 (def form-inputs
   {:user.info/name            "user.info.name"
@@ -334,8 +335,15 @@
     (let [{:query/keys [current-route]} (om/props this)
           {:keys [route route-params query-params]} current-route]
       #?(:cljs
-         (auth0/authorize-social (shared/by-key this :shared/auth0) {:connection  (name provider)
-                                                                     :redirectUri (auth0/redirect-to (routes/url :link-social))}))))
+         (do
+           (auth0/authorize-social (shared/by-key this :shared/auth0) {:connection  (name provider)
+                                                                       :redirectUri (auth0/redirect-to (routes/url :link-social))})
+           (loading-bar/start-loading! (shared/by-key this :shared/loading-bar) (om/get-reconciler this))))))
+
+  (unlink-account [this social-identity]
+    (msg/om-transact! this [(list 'user/unlink-account {:user-id (:auth0.identity/id social-identity)
+                                                        :provider (:auth0.identity/provider social-identity)})
+                            :query/auth0-info]))
 
   (save-shipping-info [this]
     #?(:cljs
@@ -571,7 +579,7 @@
                       (css/add-class :user-profile)
                       (dom/div nil (dom/span nil (:auth0.identity/name facebook-identity))
                              (dom/br nil)
-                             (dom/a nil (dom/small nil "disconnect")))
+                             (dom/a {:onClick #(.unlink-account this facebook-identity)} (dom/small nil "disconnect")))
                       (photo/circle {:src (:auth0.identity/picture facebook-identity)}))))
                 (grid/row
                   (->> (css/align :middle)
@@ -605,7 +613,7 @@
                       (css/add-class :user-profile)
                       (dom/div nil (dom/span nil (:auth0.identity/screen-name twitter-identity))
                                (dom/br nil)
-                               (dom/a nil (dom/small nil "disconnect")))
+                               (dom/a {:onClick #(.unlink-account this twitter-identity)} (dom/small nil "disconnect")))
                       (photo/circle {:src (:auth0.identity/picture twitter-identity)}))))
                 (grid/row
                   (->> (css/align :middle)
@@ -618,7 +626,7 @@
                     (->> (grid/column-size {:small 12 :medium 6})
                          (css/text-align :right))
                     (button/user-setting-cta
-                      (css/add-classes [:disabled :twitter])
+                      (css/add-classes [:twitter] {:onClick #(.authorize-social this :social/twitter)})
                       (dom/i {:classes ["fa fa-twitter fa-fw"]})
                       (dom/span nil "Connect to Twitter"))))))))))))
 

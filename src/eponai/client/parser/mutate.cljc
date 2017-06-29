@@ -338,3 +338,8 @@
   (when target
     {:remote true}))
 
+(defmethod client-mutate 'user/unlink-account
+  [{:keys [state target]} _ _]
+  (when target
+    {:remote true}))
+

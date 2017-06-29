@@ -241,7 +241,7 @@
     (cond (:user/verified sulo-user)
           (do
             (debug "User is verified")
-            (auth0/link-user auth0management (assoc profile :user_id user-id) sulo-user)
+            (auth0/link-with-same-email auth0management (assoc profile :user_id user-id))
             (do-authenticate request token sulo-user))
 
           ;; User exists but has not verified their email
@@ -250,7 +250,7 @@
           (do
             (debug "Transacting verified email")
             (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]])
-            (auth0/link-user auth0management (assoc profile :user_id user-id) sulo-user)
+            (auth0/link-with-same-email auth0management (assoc profile :user_id user-id))
             (do-authenticate request token sulo-user))
 
           ;; User is signin in for the first time, and should go through creating an account.
@@ -275,13 +275,12 @@
 
         primary-user-id (or (:user_id primary-profile) (:sub primary-profile))
         secondary-user-id (or (:user_id secondary-info) (:sub secondary-info))]
-    ;(debug "Primary: " primary-profile)
-    ;(debug "Secondary: " (:profile secondary-info))
+
     (when-not (= primary-user-id secondary-user-id)
       (try
-        (auth0/link-social auth0management
-                           {:user_id primary-user-id :token (:token primary-token)}
-                           {:user_id secondary-user-id :token (:token secondary-info)})
+        (auth0/link-user-accounts auth0management
+                                  {:user_id primary-user-id :token (:token primary-token)}
+                                  {:user_id secondary-user-id :token (:token secondary-info)})
         (r/redirect (routes/path :user-settings))
         (catch Exception e
           (error e)
