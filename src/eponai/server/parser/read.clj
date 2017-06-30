@@ -24,7 +24,8 @@
     [cemerick.url :as url]
     [eponai.common.format :as f]
     [eponai.server.external.taxjar :as taxjar]
-    [eponai.common :as c])
+    [eponai.common :as c]
+    [eponai.common.database.rules :as db.rules])
   (:import (datomic.db Db)))
 
 (defmacro defread
@@ -502,24 +503,39 @@
                              item-query
                              {:find  '[?e ?price ?at]
                               :where '[[?e :store.item/price ?price]
-                                       [?e :store.item/created-at ?created-at]]}))
-        price-dist (store-item-price-distribution (map second items-with-price))]
+                                       [?e :store.item/created-at ?created-at]]}))]
 
-    ;; This is everything within this category, without pagination.
-    {:items  (sort-items sorting (map first items-with-price))
-     :prices price-dist}
     ;; Pagination can be implemented client side as long as we return all items in the correct order.
+    {:items  (sort-items sorting items-with-price)
+     :prices (store-item-price-distribution (map second items-with-price))}
     ))
 
 (defn browse-search
   "Remember that we have ?score here."
-  [db last-read {:keys [locations search category page-range price-range sorting]}]
+  [db {:keys [locations search category price-range sorting]}]
   (let [items-by-search (products/find-with-search locations search)
+        category-filter (when (some some? (vals category))
+                          (db/merge-query
+                            (products/category-names-query category)
+                            {:where [(list 'category-or-child-category
+                                           (products/smallest-category category)
+                                           '?item-category)
+                                     '[?e :store.item/category ?item-category]]
+                             :rules [db.rules/category-or-child-category]}))
         price-filter (price-where-clause price-range)
-        ;; ->> because we want the price filter right after searching
         item-query (cond->> items-by-search
                             (some? price-filter)
-                            (db/merge-query price-filter))]
-    
+                            (db/merge-query {:where ['[?e :store.item/price ?price]
+                                                     price-filter]})
+                            (some? category-filter)
+                            (db/merge-query category-filter))
+        items-with-price (db/find-with
+                           db
+                           (db/merge-query
+                             item-query
+                             {:find  '[?e ?price ?at]
+                              :where '[[?e :store.item/price ?price]
+                                       [?e :store.item/created-at ?created-at]]}))]
+    {:items  (sort-items sorting items-with-price)
+     :prices (store-item-price-distribution (map second items-with-price))}
     ))
-
