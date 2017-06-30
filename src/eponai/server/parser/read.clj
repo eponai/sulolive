@@ -482,15 +482,21 @@
        :max max-price})))
 
 (defn- sort-items [sorting items]
-  (let [price-fn #(nth % 1)
+  (let [eid-fn #(nth % 0)
+        price-fn #(nth % 1)
         created-at-fn #(nth % 2)
-        reverse-order #(compare %2 %1)
+        score-fn #(nth % 3 0)
+        ascending compare
+        decending #(compare %2 %1)
         [key-fn comparator]
         (condp = sorting
-          :lowest-price [price-fn compare]
-          :highest-price [price-fn reverse-order]
-          :newest [created-at-fn reverse-order])]
-    (sort-by key-fn comparator items)))
+          :lowest-price [price-fn ascending]
+          :highest-price [price-fn decending]
+          :newest [created-at-fn decending]
+          :relevance [score-fn decending]
+          [eid-fn decending])]
+    (->> (sort-by key-fn comparator items)
+         (mapv eid-fn))))
 
 (defn browse-category
   "Returns items and their prices based on selected category"
@@ -541,9 +547,18 @@
                            db
                            (db/merge-query
                              item-query
-                             {:find  '[?e ?price ?at]
+                             {:find  '[?e ?price ?at ?score]
                               :where '[[?e :store.item/price ?price]
-                                       [?e :store.item/created-at ?created-at]]}))]
-    {:items  (sort-items sorting items-with-price)
-     :prices (store-item-price-distribution (map second items-with-price))}
-    ))
+                                       [?e :store.item/created-at ?created-at]]}))
+        items (sort-items sorting items-with-price)]
+    {:items             items
+     :prices            (store-item-price-distribution (map second items-with-price))
+     :count-by-category (db/find-with
+                          db
+                          {:find    '[(clojure.core/frequencies ?c) .]
+                           :where   '[[?e :store.item/category ?cat]
+                                      (category-or-parent-category ?cat ?c)]
+                           ;; Using datomic's :with to avoid it from deduping ?e
+                           :with    '[?e]
+                           :symbols {'[?e ...] items}
+                           :rules   [db.rules/category-or-parent-category]})}))
