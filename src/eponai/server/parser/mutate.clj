@@ -578,4 +578,5 @@
                      (ex-data exception)
                      "Something went wrong when creating your account.")}}
   {:action (fn []
+             (debug "user/unlink-account with params: " params)
              {:unlinked-accounts (user/unlink-user env params)})})

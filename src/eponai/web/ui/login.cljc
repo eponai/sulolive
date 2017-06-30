@@ -66,7 +66,7 @@
           (v/input {:type         "text"
                     :id           (::username form-inputs)
                     :placeholder  "Your name"
-                    :defaultValue (:nickname user)}
+                    :defaultValue (or (:screen_name user) (:nickname user) (:name user))}
                    input-validation)])
 
        (dom/p (css/add-class :info)

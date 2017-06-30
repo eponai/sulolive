@@ -15,8 +15,9 @@
         (assoc :order/store store :order/user user-id))))
 
 (defn user-info [{:keys [system auth]}]
-  (let [user (auth0/get-user (:system/auth0management system) (:sub auth))
-        ;_ (debug "Got user: " user)
+  (let [user (auth0/get-user (:system/auth0management system) auth)
+        _ (debug "Got user: " user)
+        _ (debug "Found user for auth: " auth)
         identity* (fn [i]
                     (debug "Getting identity: " i)
                     (let [{:keys [profileData provider connection user_id]} i]
@@ -30,11 +31,12 @@
     {:auth0/identities (map identity* (:identities user))
      :auth0/nickname   (:nickname user)}))
 
-(defn unlink-user [{:keys [system auth]} {:keys [user-id provider]}]
+(defn unlink-user [{:keys [system auth]} params]
+  (debug "Will unlink account " params)
   (auth0/unlink-user-accounts (:system/auth0management system)
-                              (:sub auth)
-                              user-id
-                              provider))
+                              auth
+                              (:user-id params)
+                              (:provider params)))
 
 (defn create [{:keys [state system]} {:keys [user auth0-user]}]
   (if-let [old-user (db/lookup-entity (db/db state) [:user/email (:user/email user)])]
@@ -42,10 +44,15 @@
                     {:message "You already have an account with that email"
                      :error   :error/account-exists
                      :user-id (:db/id old-user)}))
-    (let [new-user (f/user user)]
+    (let [new-user (f/user user)
+          ;provider (first (string/split (:user_id auth0-user) #"\|"))
+          auth0manage (:system/auth0management system)]
       (info "User - authenticated user did not exist, creating new user: " new-user)
       (db/transact-one state new-user)
-      (auth0/create-and-link-new-user (:system/auth0management system) auth0-user user)
+
+      (let [new-auth0-user (auth0/create-email-user auth0manage (:user/email new-user))]
+        (auth0/link-user-accounts-by-id auth0manage (:user_id new-auth0-user) (:user_id auth0-user)))
+
       (let [db-user (db/pull (db/db state) [:user/verified :db/id] [:user/email (:user/email new-user)])]
         (debug "Created user: " db-user)
         {:user db-user}))))

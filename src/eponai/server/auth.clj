@@ -235,33 +235,23 @@
 
         ;; Get our user from Datomic
         sulo-user (existing-user (db/db conn) profile)
-        user-id (or (:user_id profile) (:sub profile))]
+        user-id (:sub profile)]
 
     ;; If we already have a user for this account and they're verified, we can authenticate
-    (cond (:user/verified sulo-user)
-          (do
-            (debug "User is verified")
-            (auth0/link-with-same-email auth0management (assoc profile :user_id user-id))
-            (do-authenticate request token sulo-user))
+    (if (some? sulo-user)
+      (let [should-verify? (and (not (:user/verified sulo-user)) (not-empty (:email profile)))]
+        (when should-verify?
+          (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]]))
+        (auth0/link-with-same-email auth0management (assoc profile :user_id user-id))
+        (do-authenticate request token sulo-user))
 
-          ;; User exists but has not verified their email
-          (and (some? sulo-user)
-               (not-empty (:email profile)))
-          (do
-            (debug "Transacting verified email")
-            (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]])
-            (auth0/link-with-same-email auth0management (assoc profile :user_id user-id))
-            (do-authenticate request token sulo-user))
-
-          ;; User is signin in for the first time, and should go through creating an account.
-          :else
-          ;; If no user exists or is not verified, redirect back with the token to the login page
-          (let [path (routes/path :login nil (cond-> {:access_token access-token
-                                                      :token        token}
-                                                     (some? sulo-user)
-                                                     (assoc :verified false)))]
-            (debug "Redirect to path: " path)
-            (r/redirect path)))))
+      ;; User is signin in for the first time, and should go through creating an account.
+      (let [path (routes/path :login nil (cond-> {:access_token access-token
+                                                  :token        token}
+                                                 (some? sulo-user)
+                                                 (assoc :verified false)))]
+        (debug "Redirect to path: " path)
+        (r/redirect path)))))
 
 (defn link-user [{:keys                          [params] :as request
                   :eponai.server.middleware/keys [system logger conn]}]
@@ -271,20 +261,19 @@
         primary-profile (auth0/token-info auth0 (:token primary-token))
 
         {:keys [code state token]} params
-        secondary-info (auth0/authenticate auth0 code state)
+        {:keys [profile]} (auth0/authenticate auth0 code state)
 
-        primary-user-id (or (:user_id primary-profile) (:sub primary-profile))
-        secondary-user-id (or (:user_id secondary-info) (:sub secondary-info))]
+        primary-user (auth0/get-user auth0management primary-profile)
+        primary-user-id (:user_id primary-user)
+        secondary-user-id (:sub profile)
+        ]
 
-    (when-not (= primary-user-id secondary-user-id)
-      (try
-        (auth0/link-user-accounts auth0management
-                                  {:user_id primary-user-id :token (:token primary-token)}
-                                  {:user_id secondary-user-id :token (:token secondary-info)})
-        (r/redirect (routes/path :user-settings))
-        (catch Exception e
-          (error e)
-          (r/redirect (routes/path :user-settings)))))))
+    (try
+      (auth0/link-user-accounts-by-id auth0management primary-user-id secondary-user-id)
+      (r/redirect (routes/path :user-settings))
+      (catch Exception e
+        (error e)
+        (r/redirect (routes/path :user-settings nil {:error true}))))))
 
 
 (defn agent-whitelisted? [request]

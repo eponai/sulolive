@@ -570,7 +570,7 @@
                   (grid/column
                     nil
                     (dom/label nil "You are connected to Facebook")
-                    (dom/p nil (dom/small nil "You can login with your Facebook account. We will never post to Facebook or message your friends without your permission.")))
+                    (dom/p nil (dom/small nil "You can now sign in to SULO Live using your Facebook account. We will never post to Facebook or message your friends without your permission.")))
                   (grid/column
                     (->> (grid/column-size {:small 12 :medium 6})
                          (css/text-align :right))
@@ -587,7 +587,7 @@
                   (grid/column
                     nil
                     (dom/label nil "Facebook")
-                    (dom/p nil (dom/small nil "Connect to Facebook to login with your account. We will never post to Facebook or message your friends without your permission")))
+                    (dom/p nil (dom/small nil "Connect to Facebook to sign in with your account. We will never post to Facebook or message your friends without your permission")))
                   (grid/column
                     (->> (grid/column-size {:small 12 :medium 6})
                          (css/text-align :right))
@@ -605,7 +605,7 @@
                   (grid/column
                     nil
                     (dom/label nil "You are connected to Twitter")
-                    (dom/p nil (dom/small nil "You can login with your Twitter account. We will never post to Twitter or message your followers without your permission.")))
+                    (dom/p nil (dom/small nil "You can now sign in to SULO Live using your Twitter account. We will never post to Twitter or message your followers without your permission.")))
                   (grid/column
                     (->> (grid/column-size {:small 12 :medium 6})
                          (css/text-align :right))
@@ -621,7 +621,7 @@
                   (grid/column
                     nil
                     (dom/label nil "Twitter")
-                    (dom/p nil (dom/small nil "Connect to Twitter to login with your account. We will never post to Twitter or message your followers without your permission.")))
+                    (dom/p nil (dom/small nil "Connect to Twitter to sign in with your account. We will never post to Twitter or message your followers without your permission.")))
                   (grid/column
                     (->> (grid/column-size {:small 12 :medium 6})
                          (css/text-align :right))

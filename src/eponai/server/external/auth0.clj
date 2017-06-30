@@ -9,7 +9,7 @@
     [eponai.common.database :as db]
     [eponai.server.external.host :as server-address]
     [eponai.common.routes :as routes]
-    [taoensso.timbre :refer [debug error]]
+    [taoensso.timbre :refer [debug error info]]
     [buddy.sign.jws :as jws]
     [clojure.string :as string]
     [cemerick.url :as url]
@@ -25,11 +25,13 @@
 (defprotocol IAuth0Management
   (get-token [this])
   (update-user [this user-id params])
-  (get-user [this user-id])
-  (create-and-link-new-user [this auth0-user db-user])
-  (link-with-same-email [this auth0-user])
-  (link-user-accounts [this primary-token secondary-token])
-  (unlink-user-accounts [this primary-id secondary-id secondary-provider]))
+  (get-user [this profile])
+  (create-email-user [this email])
+  ;(create-and-link-new-user [this auth0-user db-user])
+  (link-with-same-email [this profile])
+  (link-user-accounts-by-id [this primary-id secondary-id])
+  (link-user-accounts-by-token [this primary-token secondary-token])
+  (unlink-user-accounts [this primary-profile secondary-id secondary-provider]))
 
 (defprotocol IAuth0Endpoint
   (-post [this token path params])
@@ -38,6 +40,10 @@
 
 (defn- read-json [json]
   (json/read-json json true))
+
+(defn user-id->provider [user-id]
+  (when (not-empty user-id)
+    (first (string/split user-id #"\|"))))
 
 (defn token-expiring-within?
   "Returns true if the token expires in less than provided date.
@@ -71,7 +77,7 @@
   (-delete [this token path]
     (let [{:keys [access_token token_type] :or {token_type "Bearer"}} token
           url (string/join "/" (into [auth0management-api-host] (remove nil?) path))]
-      (json/read-str (:body (http/delete url {:headers     {"Authorization" (str token_type " " access_token)}})) :key-fn keyword)))
+      (json/read-str (:body (http/delete url {:headers {"Authorization" (str token_type " " access_token)}})) :key-fn keyword)))
 
   IAuth0Management
   (get-token [this]
@@ -79,78 +85,85 @@
                   :client_id     client-id
                   :client_secret client-secret
                   :audience      (str auth0management-api-host "/")}
-          _ (debug "REquest auth0 with params " params)
-          response (http/post "https://sulo.auth0.com/oauth/token"
-                              {:form-params params})]
+          response (http/post "https://sulo.auth0.com/oauth/token" {:form-params params})]
       (json/read-str (:body response) :key-fn keyword)))
-  (get-user [this user-id]
-    ;(let [{:keys [access_token token_type]} (get-token this)
-    ;      user (json/read-str (:body (http/get (str auth0management-api-host "users/" user-id)
-    ;                                           {:headers {"Authorization" (str token_type " " access_token)}})) :key-fn keyword)])
-    (-get this (get-token this) ["users" user-id] nil))
+  (get-user [this profile]
+    (cond (some? (:email profile))
+          (let [q (str "email.raw:\"" (:email profile) "\"")
+                accounts (-get this (get-token this) ["users"] {:search_engine "v2" :q q})]
+            (debug "Find user with string: " q)
+            (debug "Found accounts: " accounts)
+            (let [user (some #(when (= (:email profile) (:email %)) %) accounts)]
+              (debug "Returning user: " user)
+              user))
+          (some? (:user_id profile))
+          (-get this (get-token this) ["users" (:user_id profile)] nil)))
 
-  (link-user-accounts [this primary secondary]
-    ;(let [account (-post this primary ["users" (:user_id primary) "identities"] {:link_with (:token social)})
-    ;      account (json/read-str (:body (http/post (str auth0management-api-host "users/" (:user_id primary) "/identities")
-    ;                                               {:form-params {:link_with (:token social)}
-    ;                                                :headers     {"Authorization" (str "Bearer " (:token primary))}})))
-    ;      ])
-    (-post this {:access_token (:token primary)} ["users" (:user_id primary) "identities"] {:link_with (:token secondary)}))
-  (unlink-user-accounts [this primary-id secondary-id secondary-provider]
-    (let [token (get-token this)]
-      (debug "Unlink accounts: " {:primary primary-id :secondary secondary-id :provider secondary-provider})
-      (-delete this token ["users" primary-id "identities" secondary-provider secondary-id])))
+  (link-user-accounts-by-id [this primary-id secondary-id]
+    (if-not (= primary-id secondary-id)
+      (let [token (get-token this)
+            secondary-provider (user-id->provider secondary-id)]
+        (info "Auth0 - User accounts differ, will link accounts: " {:primary primary-id :secondary secondary-id})
+        (-post this token ["users" primary-id "identities"] {:provider secondary-provider
+                                                             :user_id  secondary-id}))
+      (info "Auth0 - User accounts match, will not link" {:id primary-id})))
+
+  (link-user-accounts-by-token [this primary secondary]
+    (let [{primary-id    :user_id
+           primary-token :token} primary
+          {secondary-id    :user_id
+           secondary-token :token} secondary]
+      (if-not (= primary-id secondary-id)
+        (do
+          (info "Auth0 - User accounts differ, will link accounts: " {:primary primary-id :secondary secondary-id})
+          (-post this {:access_token primary-token} ["users" primary-id "identities"] {:link-with secondary-token}))
+        (info "Auth0 - User accounts match, will not link" {:id primary-id}))))
+
+
+  (unlink-user-accounts [this primary-profile secondary-id secondary-provider]
+    (let [token (get-token this)
+          primary-user (get-user this primary-profile)]
+      (info "Auth0 - Found primary user, will unlink: " primary-user)
+      (when-let [primary-id (:user_id primary-user)]
+        (debug "Unlink accounts: " {:primary primary-id :secondary secondary-id :provider secondary-provider})
+        (-delete this token ["users" primary-id "identities" secondary-provider secondary-id]))))
 
   (link-with-same-email [this profile]
     (when (not-empty (:email profile))
+      (info "Auth0 - User has an email, searching for matching accounts to link to " (:user_id profile))
       (let [token (get-token this)
-            query-string (str "email.raw:\"" (:email profile) "\" -user_id:\"" (:user_id profile) "\"")
-            account (first (-get this token ["users"] {:search_engine "v2"
-                                                       :q             query-string}))
+            query-string (str "email.raw:\"" (:email profile) "\"")
+            accounts (->> (-get this token ["users"] {:search_engine "v2" :q query-string})
+                          (filter #(= (:email %) (:email profile))))]
+        (if (not-empty accounts)
+          (let [main-account (or (some #(when (= "email" (user-id->provider (:user_id %))) %) accounts)
+                                 (create-email-user this (:email profile)))]
+            (debug "Auth0 - Found " (count accounts) " with matching email, will link to main account: " (:user_id main-account))
+            (doseq [secondary accounts]
+              (info "Auth0 - Linking accounts: " {:primary (:user_id main-account) :secondary (:user_id secondary)})
+              (link-user-accounts-by-id this (:user_id main-account) (:user_id secondary))))
+          (info "Auth0 - Found no matching email account, doing nothing.")))))
 
-            ;(first (json/read-str (:body (http/get (str auth0management-api-host "users")
-            ;                                       {:query-params {:search_engine "v2"
-            ;                                                       :q             query-string}
-            ;                                        :headers      {"Authorization" (str token_type " " access_token)}})) :key-fn keyword))
-            ]
-        (debug "Will get auth0 users with query: " query-string)
-        (debug "Got other accounts with email: " account)
-        (when account
-          (let [provider (first (string/split (:user_id profile) #"\|"))
-                link (-post this token ["users" (:user_id account) "identities"] {:provider provider
-                                                                                  :user_id  (:user_id profile)})
-                ;link (json/read-str (:body (http/post (str auth0management-api-host "users/" (:user_id account) "/identities")
-                ;                                      {:form-params {:provider provider
-                ;                                                     :user_id  (:user_id auth0-user)}
-                ;                                       :headers     {"Authorization" (str token_type " " access_token)}})))
+  (create-email-user [this email]
+    (debug "Auth0 - Creating new user email account.")
+    (-post this (get-token this) ["users"] {:connection     "email"
+                                            :email          email
+                                            :email_verified true
+                                            :verify_email   false}))
 
-                ]
-            (debug "Linked Auth0 on authentication users: " link))))))
-
-  (create-and-link-new-user [this auth0-user db-user]
-    (let [provider (first (string/split (:user_id auth0-user) #"\|"))]
-      (when (not= "email" provider)
-        (let [token (get-token this)
-
-              created-user (-post this token ["users"] {:connection     "email"
-                                                        :email          (:user/email db-user)
-                                                        :email_verified true
-                                                        :verify_email   false})
-              ;created-user (json/read-str (:body (http/post (str auth0management-api-host "users")
-              ;                                              {:form-params {:connection     "email"
-              ;                                                             :email          (:user/email db-user)
-              ;                                                             :email_verified true
-              ;                                                             :verify_email   false}
-              ;                                               :headers     {"Authorization" (str token_type " " access_token)}})) :key-fn keyword)
-              _ (debug "Created Auth0 user: " created-user)
-              link (-post this token ["users" (:user_id created-user) "identities"] {:provider provider
-                                                                                     :user_id  (:user_id auth0-user)})
-              ;link (json/read-str (:body (http/post (str auth0management-api-host "users/" (:user_id created-user) "/identities")
-              ;                                      {:form-params {:provider provider
-              ;                                                     :user_id  (:user_id auth0-user)}
-              ;                                       :headers     {"Authorization" (str token_type " " access_token)}})))
-              ]
-          (debug "Linked Auth0 users: " link))))))
+  ;(create-and-link-new-user [this auth0-user db-user]
+  ;  (let [provider (first (string/split (:user_id auth0-user) #"\|"))]
+  ;    (when (not= "email" provider)
+  ;      (let [token (get-token this)
+  ;            created-user (-post this token ["users"] {:connection     "email"
+  ;                                                      :email          (:user/email db-user)
+  ;                                                      :email_verified true
+  ;                                                      :verify_email   false})
+  ;            _ (debug "Created Auth0 user: " created-user)
+  ;            link (-post this token ["users" (:user_id created-user) "identities"] {:provider provider
+  ;                                                                                   :user_id  (:user_id auth0-user)})]
+  ;        (debug "Linked Auth0 users: " link)))))
+  )
 
 (defrecord Auth0 [client-id client-secret server-address]
   IAuth0
@@ -242,7 +255,9 @@
   (update-user [this user-id params]
     (debug "Update user " user-id " with params " params))
   (get-token [_])
-  ;(link-with-same-email [_ _ _])
-  (create-and-link-new-user [_ _ _])
-  (link-user-accounts [this primary-token secondary-token])
+  (create-email-user [_ _])
+  (link-with-same-email [_ _])
+  ;(create-and-link-new-user [_ _ _])
+  (link-user-accounts-by-id [this primary-token secondary-token])
+  (link-user-accounts-by-token [this primary-token secondary-token])
   (unlink-user-accounts [this primary-id secondary-id secondary-provider]))
