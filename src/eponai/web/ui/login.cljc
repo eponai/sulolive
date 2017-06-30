@@ -85,18 +85,21 @@
          (dom/span nil "Create account")))]))
 
 (defn render-enter-code [component]
-  [(dom/p nil (dom/span nil "We sent you a code to sign in. Please check your inbox and provide the code below."))
-   (dom/div
-     (css/add-class :login-content)
-     (dom/label nil "Code")
-     (dom/input {:id           (::code form-inputs)
-                 :type         "number"
-                 :placeholder  "000000"
-                 :maxLength    6
-                 :defaultValue ""})
-     (button/default-hollow
-       (css/add-class :sulo-dark {:onClick #(.verify-email component)})
-       (dom/span nil "Sign me in")))])
+  (let [state (om/get-state component)]
+    [(dom/p nil (dom/span nil "We sent you a code to sign in. Please check your inbox and provide the code below."))
+     (dom/div
+       (css/add-class :login-content)
+       (dom/label nil "Code")
+       (dom/input {:id           (::code form-inputs)
+                   :type         "number"
+                   :placeholder  "000000"
+                   :maxLength    6
+                   :defaultValue ""})
+       (when-let [err (:error/verify-email state)]
+         (dom/p (css/add-class :text-alert) "Ooops, something went wrong."))
+       (button/default-hollow
+         (css/add-class :sulo-dark {:onClick #(.verify-email component)})
+         (dom/span nil "Sign me in")))]))
 
 (defn render-send-email-code [component]
   (let [{:keys [auth0error]} (om/get-state component)
@@ -179,7 +182,9 @@
     #?(:cljs
        (let [{:keys [input-email]} (om/get-state this)]
          (let [code (web-utils/input-value-by-id (::code form-inputs))]
-           (auth0/passwordless-verify (shared/by-key this :shared/auth0) input-email code)))))
+           (auth0/passwordless-verify (shared/by-key this :shared/auth0) input-email code
+                                      (fn [res err]
+                                        (om/update-state! this assoc :error/verify-email err)))))))
 
   (create-account [this]
     #?(:cljs
