@@ -278,11 +278,14 @@
 
 (defn- x-with
   ([db entity-query] (x-with db entity-query nil))
-  ([db {:keys [fulltext find where symbols rules] :as entity-query} find-pattern]
+  ([db {:keys [fulltext find where with symbols rules] :as entity-query} find-pattern]
    {:pre [(database? db)
-          (or (vector? where) (seq? where) (and (nil? where) (contains? symbols '?e)))
+          (or (vector? where)
+              (seq? where)
+              (and (nil? where) (contains? symbols '?e)))
           (or (nil? symbols) (map? symbols))
-          (or find-pattern find)]}
+          (or find-pattern find)
+          (or (nil? with) (every? symbol? with))]}
    (when (and (some? find) (some? find-pattern)
               (not= find find-pattern))
      (warn "x-with called with both find and find-pattern, and they"
@@ -299,6 +302,9 @@
                              (cond->> (map first symbol-seq)
                                       (seq rules)
                                       (cons '%)))
+         query (cond-> query
+                       (seq with)
+                       (assoc :with with))
          _ (trace "query expanded: " query)
          ret (apply q query
                     db
@@ -349,21 +355,25 @@
           (str "No find-pattern for query: " params))
   (x-with db params))
 
+(def into-vec (fnil into []))
+
 (defn merge-query
   "Preforms a merge of two query maps with :where and :symbols."
-  [base {:keys [fulltext find where symbols rules] :as addition}]
+  [base {:keys [fulltext find where symbols rules with] :as addition}]
   {:pre [(map? base) (map? addition)]}
   (cond-> base
           (seq where)
-          (update :where (fnil into []) where)
+          (update :where into-vec where)
           (seq symbols)
           (update :symbols merge symbols)
           (some? find)
           (assoc :find find)
           (some? rules)
-          (update :rules (fnil into []) rules)
+          (update :rules into-vec rules)
           (some? fulltext)
-          (update :fulltext (fnil into []) fulltext)))
+          (update :fulltext into-vec fulltext)
+          (some? with)
+          (update :with into-vec with)))
 
 ;; Common usages:
 

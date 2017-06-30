@@ -26,3 +26,13 @@
     [(category-or-child-category ?category ?recur)
      [?category :category/children ?child]
      (category-or-child-category ?child ?recur)]])
+
+(defrule category-or-parent-category
+  ;; Similar to category-or-children-category, but
+  ;; recurses through parents
+  '[[(category-or-parent-category ?category ?return)
+     [?category :category/name _]
+     [(identity ?category) ?return]]
+    [(category-or-parent-category ?category ?recur)
+     [?parent :category/children ?category]
+     (category-or-parent-category ?parent ?recur)]])
