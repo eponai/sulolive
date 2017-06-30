@@ -304,7 +304,7 @@
                     db
                     (cond->> (map second symbol-seq)
                              (seq rules)
-                             (cons rules)))]
+                             (cons (into [] (mapcat #(%)) (set rules)))))]
      (trace "query returned: " ret)
      ret)))
 
