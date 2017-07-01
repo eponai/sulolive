@@ -8,6 +8,7 @@
     [taoensso.timbre :as timbre :refer [error debug warn]]
     [cemerick.url :as url]
     [eponai.common.shared :as shared]
+    [eponai.common.ui.router :as router]
     [eponai.common :as c]))
 
 (def root-route-key :routing/app-root)
@@ -40,8 +41,12 @@
    (let [reconciler (cond-> x (om/component? x) (om/get-reconciler))
          tx (when-not (nil? tx)
               (cond->> tx (not (vector? tx)) (vector)))
-         reads-fn #(-> (om/transform-reads reconciler [root-route-key])
-                       (conj :query/current-route))
+         reads-fn (fn []
+                    [:query/current-route
+                     {root-route-key {(router/normalize-route route)
+                                      (om/get-query
+                                        (:component
+                                          (router/route->component route)))}}])
          tx (cond-> [(list 'routes/set-route! {:route route
                                                :route-params route-params
                                                :query-params query-params})]
