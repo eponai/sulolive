@@ -1,20 +1,23 @@
-(ns eponai.common.database.rules)
+(ns eponai.common.database.rules
+  #?(:cljs
+     (:require-macros [eponai.common.database.rules :refer [defrule]])))
 
 ;; We define rules as 0-argument functions so we can dedupe them
 ;; and create them when creating our queries.
 ;; Use macro defrule to create less garbage by memoizing the return
 ;; of all rules.
 
-(defmacro defrule [name & body]
-  `(def ~name (memoize (fn [] ~@body))))
+#?(:clj
+   (defmacro defrule [name & body]
+     `(def ~name (memoize (fn [] ~@body)))))
 
 (defrule listed-store
   '[[(listed-store ?store ?locality)
-     [?s :store/locality ?l]
-     [?s :store/status ?status]
+     [?store :store/locality ?locality]
+     [?store :store/status ?status]
      [?status :status/type :status.type/open]
-     [?s :store/profile ?p]
-     [?p :store.profile/photo _]]])
+     [?store :store/profile ?profile]
+     [?profile :store.profile/photo _]]])
 
 (defrule category-or-child-category
   ;; Recursive rule. First defining a base case, i.e. if ?c is a category
