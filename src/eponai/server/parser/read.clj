@@ -16,6 +16,7 @@
     [eponai.server.api.store :as store]
     [eponai.common.api.products :as products]
     [eponai.server.api.user :as user]
+    [eponai.common.browse :as browse]
     [taoensso.timbre :as timbre]
     [clojure.data.json :as json]
     [clojure.java.io :as io]
@@ -25,7 +26,8 @@
     [eponai.common.format :as f]
     [eponai.server.external.taxjar :as taxjar]
     [eponai.common :as c]
-    [eponai.common.database.rules :as db.rules])
+    [eponai.common.database.rules :as db.rules]
+    [medley.core :as medley])
   (:import (datomic.db Db)))
 
 (defmacro defread
@@ -454,103 +456,24 @@
   {:auth ::auth/public}
   {:value (db/pull-all-with db query {:where '[[?e :sulo-locality/title _]]})})
 
-(defn- price-where-clause [{:keys [from-price to-price] :as price-range}]
-  (condp = [(some? from-price) (some? to-price)]
-    [true true] '[(< from-price ?price to-price)]
-    [false true] '[(< ?price to-price)]
-    [true false] '[(< from-price ?price)]
-    nil))
+(def browse-products-uniqueness [:categories :price-range :sorting :search])
 
-(defn store-item-price-distribution [prices]
-  (when-let [[price & prices] (seq prices)]
-    (let [[min-price max-price]
-          (reduce (fn [[mi ma :as v] price]
-                    (-> v
-                        (assoc! 0 (min mi price))
-                        (assoc! 1 (max ma price))))
-                  (transient [price price])
-                  prices)]
-      {:min min-price
-       :max max-price})))
-
-(defn- sort-items [sorting items]
-  (let [eid-fn #(nth % 0)
-        price-fn #(nth % 1)
-        created-at-fn #(nth % 2)
-        score-fn #(nth % 3 0)
-        ascending compare
-        decending #(compare %2 %1)
-        [key-fn comparator]
-        (condp = sorting
-          :lowest-price [price-fn ascending]
-          :highest-price [price-fn decending]
-          :newest [created-at-fn decending]
-          :relevance [score-fn decending]
-          [eid-fn decending])]
-    (->> (sort-by key-fn comparator items)
-         (mapv eid-fn))))
-
-(defn browse-category
-  "Returns items and their prices based on selected category"
-  [db {:keys [locations categories price-range sorting]}]
-  (let [{:keys [top-category sub-category]} categories
-        items-by-cat (cond (some? top-category)
-                           (products/find-with-category-names locations (select-keys categories [:top-category]))
-                           (some? sub-category)
-                           (products/find-with-category-names locations (select-keys categories [:sub-category])))
-        price-filter (price-where-clause price-range)
-        item-query (cond-> items-by-cat
-                           (some? price-filter)
-                           (db/merge-query {:where ['[?e :store.item/price ?price]
-                                                    price-filter]}))
-        items-with-price (db/find-with
-                           db
-                           (db/merge-query
-                             item-query
-                             {:find  '[?e ?price ?at]
-                              :where '[[?e :store.item/price ?price]
-                                       [?e :store.item/created-at ?created-at]]}))]
-
-    ;; Pagination can be implemented client side as long as we return all items in the correct order.
-    {:items  (sort-items sorting items-with-price)
-     :prices (store-item-price-distribution (map second items-with-price))}
-    ))
-
-(defn browse-search
-  "Remember that we have ?score here."
-  [db {:keys [locations search category price-range sorting]}]
-  (let [items-by-search (products/find-with-search locations search)
-        category-filter (when (some some? (vals category))
-                          (db/merge-query
-                            (products/category-names-query category)
-                            {:where [(list 'category-or-child-category
-                                           (products/smallest-category category)
-                                           '?item-category)
-                                     '[?e :store.item/category ?item-category]]
-                             :rules [db.rules/category-or-child-category]}))
-        price-filter (price-where-clause price-range)
-        item-query (cond->> items-by-search
-                            (some? price-filter)
-                            (db/merge-query {:where ['[?e :store.item/price ?price]
-                                                     price-filter]})
-                            (some? category-filter)
-                            (db/merge-query category-filter))
-        items-with-price (db/find-with
-                           db
-                           (db/merge-query
-                             item-query
-                             {:find  '[?e ?price ?at ?score]
-                              :where '[[?e :store.item/price ?price]
-                                       [?e :store.item/created-at ?created-at]]}))
-        items (sort-items sorting items-with-price)]
-    {:items             items
-     :prices            (store-item-price-distribution (map second items-with-price))
-     :count-by-category (db/find-with
-                          db
-                          {:find    '[(clojure.core/frequencies ?c) .]
-                           :where   '[[?e :store.item/category ?cat]
-                                      (category-or-parent-category ?cat ?c)]
-                           ;; Using datomic's :with to avoid it from deduping ?e
-                           :with    '[?e]
-                           :symbols {'[?e ...] items}
-                           :rules   [db.rules/category-or-parent-category]})}))
+(defread query/browse-products-2
+  [{:keys         [db locations query-params route-params query]
+    ::parser/keys [read-basis-t-for-this-key]} _ _]
+  {:auth ::auth/public}
+  (let [browse-params (browse/make-browse-params locations route-params query-params)
+        uniqueness (select-keys browse-params browse-products-uniqueness)]
+    (when (not= read-basis-t-for-this-key uniqueness)
+      (let [browse-result (browse/find-items db browse-params)
+            {:keys [start page-size]} query-params
+            initial-pull (db/pull-many db query
+                                       (sequence
+                                         (comp (drop start)
+                                               (take page-size))
+                                         (:browse-result/items browse-result)))]
+        {:value (parser/value-with-basis-t
+                  {:browse-result browse-result
+                   :browse-params browse-params
+                   :initial-pull  initial-pull}
+                  uniqueness)}))))

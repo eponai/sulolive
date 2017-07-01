@@ -15,7 +15,8 @@
     [eponai.common.api.products :as products]
     [medley.core :as medley]
     [eponai.client.cart :as client.cart]
-    [eponai.client.chat :as client.chat]))
+    [eponai.client.chat :as client.chat]
+    [eponai.common.browse :as browse]))
 
 
 
@@ -533,3 +534,20 @@
   (if target
     {:remote true}
     {:value (db/pull-all-with db query {:where '[[?e :sulo-locality/title _]]})}))
+
+(defmethod client-read :query/browse-products-2
+  [{:keys [target db query route-params query-params]} _ _]
+  (if target
+    {:remote true}
+    (let [browse-params (browse/make-browse-params (client.auth/current-locality db)
+                                                   route-params
+                                                   query-params)
+          browse-result (some->> (browse/find-result db browse-params)
+                                 (db/entity db))]
+      (when (some? browse-result)
+        (debug "browse-result!: " (into {:db/id (:db/id browse-result)} browse-result))
+        {:value (db/pull-many db query
+                              (sequence
+                                (comp (drop (:start query-params))
+                                      (take (:page-size query-params)))
+                                (:browse-result/items browse-result)))}))))
