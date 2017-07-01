@@ -24,7 +24,8 @@
     [eponai.server.log :as log]
     [cemerick.url :as url]
     [eponai.client.routes :as client.routes]
-    [eponai.common.format :as cf]))
+    [eponai.common.format :as cf])
+  (:import (clojure.lang ExceptionInfo)))
 
 (def auth-token-cookie-name "sulo.token")
 (def auth-token-remove-value "kill")
@@ -267,11 +268,15 @@
         primary-user (auth0/get-user auth0management primary-profile)]
 
     (try
-      (auth0/link-user-accounts-by-id auth0management (auth0/user-id primary-user) (auth0/user-id profile))
-      (r/redirect (routes/path :user-settings))
-      (catch Exception e
+      (if (auth0/email-provider? profile)
+        (throw (ex-info "Already connected to another account"
+                        {:message "Something went wrong and we couldnt' connect your social account. Please try again later."}))
+        (do
+          (auth0/link-user-accounts-by-id auth0management (auth0/user-id primary-user) (auth0/user-id profile))
+          (r/redirect (routes/path :user-settings))))
+      (catch ExceptionInfo e
         (error e)
-        (r/redirect (routes/path :user-settings nil {:error true}))))))
+        (r/redirect (routes/path :user-settings nil {:error "connect"}))))))
 
 
 (defn agent-whitelisted? [request]

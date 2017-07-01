@@ -63,8 +63,8 @@
                                           (auth0/user-id auth0-user)))
 
         (let [db-user (db/pull (db/db state) [:user/verified :db/id] [:user/email (:user/email new-user)])]
-          (debug "Created user: " db-user)
-          {:user db-user})))))
+          (debug "Created user: " (into {} db-user))
+          {:user (into {} db-user)})))))
 
 (defn customer [{:keys [auth state system]}]
   (debug "Pull stripe " auth)

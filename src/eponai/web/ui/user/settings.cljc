@@ -313,6 +313,16 @@
              (button/user-setting-cta {:onClick #(do
                                                   (mixpanel/track "Save payment info")
                                                   (.save-payment-info component))} (dom/span nil "Save")))])))))
+
+(defn render-error-message [component]
+  (let [{:keys [error/show-social-error?]} (om/get-state component)
+        {:query/keys [current-route]} (om/props component)
+        error-message (get-in current-route [:query-params :message])]
+    (when show-social-error?
+      (callout/callout
+        (css/add-classes [:sulo-popup-message :alert])
+        (dom/p nil (dom/span nil "Something went wrong and we couldn't connect your social account. Please try again later."))))))
+
 (defui UserSettings
   static om/IQuery
   (query [_]
@@ -410,8 +420,19 @@
         (msg/clear-messages! this 'stripe/update-customer)
         (om/update-state! this dissoc :modal))))
 
-  ;(initLocalState [_]
-  ;  {:modal :modal/shipping-info})
+  (componentDidMount [this]
+    #?(:cljs
+       (let [{:query/keys [current-route]} (om/props this)]
+         (debug "Component did mount")
+         (when (get-in current-route [:query-params :error])
+           (debug "Set social error")
+           (js/setTimeout (fn [] (om/update-state! this assoc :error/show-social-error? false)) 5000)
+           (om/update-state! this assoc :error/show-social-error? true)))))
+
+  (initLocalState [this]
+    (let [{:query/keys [current-route]} (om/props this)]
+      {:error/show-social-error? (boolean (get-in current-route [:query-params :error]))}))
+
   (is-loading? [this]
     (let [info-msg (msg/last-message this 'user.info/update)
           photo-msg (msg/last-message this 'photo/upload)
@@ -431,6 +452,7 @@
         {:navbar navbar :footer footer :id "sulo-user-settings"}
         (when is-loading?
           (common/loading-spinner nil))
+        (render-error-message this)
         (grid/row-column
           nil
           (dom/h1 nil "Settings")

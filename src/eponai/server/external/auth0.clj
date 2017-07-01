@@ -13,16 +13,20 @@
     [buddy.sign.jws :as jws]
     [clojure.string :as string]
     [cemerick.url :as url]
-    [eponai.common :as c]))
+    [eponai.common :as c]
+    [slingshot.slingshot :refer [try+]]))
 
 (defn user-id [profile]
   (or (:user_id profile) (:sub profile)))
 
-(defn provider [user-or-userid]
-  (let [user-id (if (map? user-or-userid)
-                  (user-id user-or-userid)
-                  user-or-userid)]
+(defn provider [profile-or-userid]
+  (let [user-id (if (map? profile-or-userid)
+                  (user-id profile-or-userid)
+                  profile-or-userid)]
     (first (string/split user-id #"\|"))))
+
+(defn email-provider? [profile-or-userid]
+  (= "email" (provider profile-or-userid)))
 
 (defprotocol IAuth0
   (secret [this] "Returns the jwt secret for unsigning tokens")
@@ -66,21 +70,36 @@
 (defrecord Auth0Management [client-id client-secret domain server-address]
   IAuth0Endpoint
   (-get [this token path params]
-    (let [{:keys [access_token token_type] :or {token_type "Bearer"}} token
-          url (string/join "/" (into [auth0management-api-host] (remove nil?) path))]
-      (json/read-str (:body (http/get url
-                                      {:query-params params
-                                       :headers      {"Authorization" (str token_type " " access_token)}})) :key-fn keyword)))
+    (try+
+      (let [{:keys [access_token token_type] :or {token_type "Bearer"}} token
+            url (string/join "/" (into [auth0management-api-host] (remove nil?) path))]
+        (json/read-str (:body (http/get url
+                                        {:query-params params
+                                         :headers      {"Authorization" (str token_type " " access_token)}})) :key-fn keyword))
+      (catch Object r
+        (let [{:keys [body]} r
+              {:keys [error error_description]} (json/read-str body :key-fn keyword)]
+          (throw (ex-info error_description {:error error :description error_description}))))))
 
   (-post [this token path params]
-    (let [{:keys [access_token token_type] :or {token_type "Bearer"}} token
-          url (string/join "/" (into [auth0management-api-host] (remove nil?) path))]
-      (json/read-str (:body (http/post url {:form-params params
-                                            :headers     {"Authorization" (str token_type " " access_token)}})) :key-fn keyword)))
+    (try+
+      (let [{:keys [access_token token_type] :or {token_type "Bearer"}} token
+            url (string/join "/" (into [auth0management-api-host] (remove nil?) path))]
+        (json/read-str (:body (http/post url {:form-params params
+                                              :headers     {"Authorization" (str token_type " " access_token)}})) :key-fn keyword))
+      (catch Object r
+        (let [{:keys [body]} r
+              {:keys [error error_description]} (json/read-str body :key-fn keyword)]
+          (throw (ex-info error_description {:error error :description error_description}))))))
   (-delete [this token path]
-    (let [{:keys [access_token token_type] :or {token_type "Bearer"}} token
-          url (string/join "/" (into [auth0management-api-host] (remove nil?) path))]
-      (json/read-str (:body (http/delete url {:headers {"Authorization" (str token_type " " access_token)}})) :key-fn keyword)))
+    (try+
+      (let [{:keys [access_token token_type] :or {token_type "Bearer"}} token
+            url (string/join "/" (into [auth0management-api-host] (remove nil?) path))]
+        (json/read-str (:body (http/delete url {:headers {"Authorization" (str token_type " " access_token)}})) :key-fn keyword))
+      (catch Object r
+        (let [{:keys [body]} r
+              {:keys [error error_description]} (json/read-str body :key-fn keyword)]
+          (throw (ex-info error_description {:error error :description error_description}))))))
 
   IAuth0Management
   (get-token [this]

@@ -63,3 +63,25 @@
 		}
 	}
 }
+
+.sulo-popup-message {
+	position: fixed;
+	text-align: center;
+	// margin-bottom: 1rem;
+	width: 100%;
+	max-width: $global-width;
+	top: $navbar-height;
+	left: 50%;
+	transform: translateX(-50%);
+	margin: 0 auto;
+	padding: 0.5rem $global-padding;
+	font-size: 80%;
+	font-weight: $global-weight-bold;
+	&.alert {
+		color: $alert-color;
+	}
+	&.success {
+		color: $success-color;
+	}
+	// margin: 0 auto;
+}
