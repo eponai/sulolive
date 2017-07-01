@@ -31,7 +31,7 @@
         ;; Routes
         :index           {:entries [eponai.common.ui.index]}
         :unauthorized    {:entries [eponai.web.ui.unauthorized]}
-        :login           {:entries    [eponai.web.ui.login]
+        :login           {:entries    [eponai.web.ui.login-page]
                           :depends-on [:index]}
         :landing-page    {:entries [eponai.web.ui.landing-page]}
         :sell            {:entries [eponai.web.ui.start-store]}
