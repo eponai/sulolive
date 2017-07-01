@@ -11,7 +11,8 @@
             [cemerick.url :as url]
             [datascript.core :as datascript]
             [clojure.string :as str]
-            [eponai.client.routes :as routes]))
+            [eponai.client.routes :as routes]
+            [eponai.common.browse :as browse]))
 
 (defn db-with [db tx]
   (if (empty? tx)
@@ -96,6 +97,15 @@
   (cond-> db
           (not-empty val)
           (db-with [[:db/add [:ui/singleton :ui.singleton/client-env] :ui.singleton.client-env/env-map val]])))
+
+(defmethod client-merge :query/browse-products-2
+  [db k {:keys [browse-result initial-pull browse-params]}]
+  (let [old-result (when (not-empty browse-result)
+                     (browse/find-result db browse-params))]
+    ;; Retract the old result if there is one.
+    (-> (cond-> db (some? old-result) (db-with [[:db.fn/retractEntity old-result]]))
+        (db-with browse-result)
+        (db-with initial-pull))))
 
 (defn- placeholder-refs
   "Returns transactions that adds {:placeholder :workaround} for every entity that has attr."
