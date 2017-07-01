@@ -31,9 +31,10 @@
                          :auth0.identity/name        (:name profileData)
                          :auth0.identity/picture     (:picture profileData)
                          :auth0.identity/screen-name (:screen_name profileData)})))]
-    {:auth0/identities (map identity* (:identities user))
-     :auth0/nickname   (or (:screen_name user) (:nickname user) (:name user))
-     :auth0/email      (:email user)}))
+    {:auth0/identities     (map identity* (:identities user))
+     :auth0/nickname       (or (:screen_name user) (:nickname user) (:name user))
+     :auth0/email          (:email user)
+     :auth0/email-verified (:email_verified user)}))
 
 (defn unlink-user [{:keys [system auth]} params]
   (debug "Will unlink account " params)

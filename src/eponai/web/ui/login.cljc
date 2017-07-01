@@ -190,18 +190,17 @@
 
   (create-account [this]
     #?(:cljs
-       (let [{:keys [user]} (om/get-state this)
-             {:query/keys [current-route]} (om/props this)
-             email (or (:email user)
+       (let [{:query/keys [current-route auth0-info]} (om/props this)
+             email (or (:auth0/email auth0-info)
                        (web-utils/input-value-by-id (::email form-inputs)))
              username (web-utils/input-value-by-id (::username form-inputs))
              validation (v/validate ::create-account {::email    email
                                                       ::username username} form-inputs)]
          (debug "Validation: " validation)
          (when (nil? validation)
-           (msg/om-transact! this [(list 'user/create {:user       {:user/email    email
-                                                                    :user/profile  {:user.profile/name username}
-                                                                    :user/verified (:email_verified user)}
+           (msg/om-transact! this [(list 'user/create {:user     {:user/email    email
+                                                                  :user/profile  {:user.profile/name username}
+                                                                  :user/verified (:auth0/email-verified auth0-info)}
                                                        :id-token (get-in current-route [:query-params :token])})]))
          (om/update-state! this assoc :input-validation validation :error/create-user nil))))
 
@@ -244,7 +243,7 @@
     (let [{:query/keys [current-route]} (om/props this)
           {:keys [route query-params]} current-route
           {:keys [access_token]} query-params
-          {:keys       [login-state]} (om/get-state this)]
+          {:keys [login-state]} (om/get-state this)]
       (debug "State " (om/get-state this))
       (debug "props: " (om/props this))
 
@@ -279,8 +278,7 @@
 (defui LoginModal
   static om/IQuery
   (query [_]
-    [                                                       ;{:query/auth [:db/id]}
-     {:proxy/login (om/get-query Login)}
+    [{:proxy/login (om/get-query Login)}
      {:query/login-modal [:ui.singleton.login-modal/show?]}])
   Object
   (close-modal [this]
@@ -304,8 +302,7 @@
 (defui LoginPage
   static om/IQuery
   (query [this]
-    [                                                       ;{:query/auth [:db/id]}
-     {:proxy/login (om/get-query Login)}])
+    [{:proxy/login (om/get-query Login)}])
   Object
   (cancel-login [this]
     (routes/set-url! this :landing-page))
