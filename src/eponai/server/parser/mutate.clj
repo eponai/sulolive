@@ -559,7 +559,7 @@
                (email/-send-store-access-request (:system/email system) (assoc params :user-id user-id))))})
 
 (defmutation user/create
-  [{:keys [system auth state ::parser/exception ::parser/return] :as env} _ params]
+  [{:keys [system auth state ::parser/exception ::parser/return query-params] :as env} _ params]
   {:auth ::auth/public
    :log  nil
    :resp {:success return

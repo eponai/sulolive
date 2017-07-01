@@ -355,9 +355,9 @@
 
 (defread query/auth0-info
   [{:keys [auth query db] :as env} _ _]
-  {:auth ::auth/any-user}
+  {:auth ::auth/public}
   {:value (let [user-info (user/user-info env)]
-            (debug "QUERY/AUTH0 : " user-info)
+            (debug "SERVER QUERY/AUTH0 : " user-info)
             user-info)})
 
 (defread query/stream

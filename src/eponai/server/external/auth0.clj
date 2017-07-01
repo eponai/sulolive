@@ -15,6 +15,15 @@
     [cemerick.url :as url]
     [eponai.common :as c]))
 
+(defn user-id [profile]
+  (or (:user_id profile) (:sub profile)))
+
+(defn provider [user-or-userid]
+  (let [user-id (if (map? user-or-userid)
+                  (user-id user-or-userid)
+                  user-or-userid)]
+    (first (string/split user-id #"\|"))))
+
 (defprotocol IAuth0
   (secret [this] "Returns the jwt secret for unsigning tokens")
   (token-info [this token] "Returns the jwt secret for unsigning tokens")
@@ -27,10 +36,8 @@
   (update-user [this user-id params])
   (get-user [this profile])
   (create-email-user [this email])
-  ;(create-and-link-new-user [this auth0-user db-user])
   (link-with-same-email [this profile])
   (link-user-accounts-by-id [this primary-id secondary-id])
-  (link-user-accounts-by-token [this primary-token secondary-token])
   (unlink-user-accounts [this primary-profile secondary-id secondary-provider]))
 
 (defprotocol IAuth0Endpoint
@@ -40,10 +47,6 @@
 
 (defn- read-json [json]
   (json/read-json json true))
-
-(defn user-id->provider [user-id]
-  (when (not-empty user-id)
-    (first (string/split user-id #"\|"))))
 
 (defn token-expiring-within?
   "Returns true if the token expires in less than provided date.
@@ -89,36 +92,28 @@
       (json/read-str (:body response) :key-fn keyword)))
   (get-user [this profile]
     (cond (some? (:email profile))
+          ;; Search user account in Auth0 with matching email
           (let [q (str "email.raw:\"" (:email profile) "\"")
                 accounts (-get this (get-token this) ["users"] {:search_engine "v2" :q q})]
-            (debug "Find user with string: " q)
-            (debug "Found accounts: " accounts)
+
+            ;; Get the account with matching email again, just in case the search
+            ;; query failed (and Auth0 returns all accounts)
             (let [user (some #(when (= (:email profile) (:email %)) %) accounts)]
               (debug "Returning user: " user)
               user))
-          (some? (:user_id profile))
-          (-get this (get-token this) ["users" (:user_id profile)] nil)))
+
+          ;; Get user account by user id if we have one
+          (some? (user-id profile))
+          (-get this (get-token this) ["users" (user-id profile)] nil)))
 
   (link-user-accounts-by-id [this primary-id secondary-id]
     (if-not (= primary-id secondary-id)
       (let [token (get-token this)
-            secondary-provider (user-id->provider secondary-id)]
+            secondary-provider (provider secondary-id)]
         (info "Auth0 - User accounts differ, will link accounts: " {:primary primary-id :secondary secondary-id})
         (-post this token ["users" primary-id "identities"] {:provider secondary-provider
                                                              :user_id  secondary-id}))
       (info "Auth0 - User accounts match, will not link" {:id primary-id})))
-
-  (link-user-accounts-by-token [this primary secondary]
-    (let [{primary-id    :user_id
-           primary-token :token} primary
-          {secondary-id    :user_id
-           secondary-token :token} secondary]
-      (if-not (= primary-id secondary-id)
-        (do
-          (info "Auth0 - User accounts differ, will link accounts: " {:primary primary-id :secondary secondary-id})
-          (-post this {:access_token primary-token} ["users" primary-id "identities"] {:link-with secondary-token}))
-        (info "Auth0 - User accounts match, will not link" {:id primary-id}))))
-
 
   (unlink-user-accounts [this primary-profile secondary-id secondary-provider]
     (let [token (get-token this)
@@ -130,18 +125,20 @@
 
   (link-with-same-email [this profile]
     (when (not-empty (:email profile))
-      (info "Auth0 - User has an email, searching for matching accounts to link to " (:user_id profile))
+      (info "Auth0 - User has an email, searching for matching accounts to link to " (user-id profile))
       (let [token (get-token this)
             query-string (str "email.raw:\"" (:email profile) "\"")
             accounts (->> (-get this token ["users"] {:search_engine "v2" :q query-string})
                           (filter #(= (:email %) (:email profile))))]
         (if (not-empty accounts)
-          (let [main-account (or (some #(when (= "email" (user-id->provider (:user_id %))) %) accounts)
+          ;; Get main account with the email provider if one exists, if not we want to create one to keep as the main account.
+          ;; Link all the accounts with the main account
+          (let [main-account (or (some #(when (= "email" (provider %)) %) accounts)
                                  (create-email-user this (:email profile)))]
-            (debug "Auth0 - Found " (count accounts) " with matching email, will link to main account: " (:user_id main-account))
+            (debug "Auth0 - Found " (count accounts) " with matching email, will link to main account: " (user-id main-account))
             (doseq [secondary accounts]
-              (info "Auth0 - Linking accounts: " {:primary (:user_id main-account) :secondary (:user_id secondary)})
-              (link-user-accounts-by-id this (:user_id main-account) (:user_id secondary))))
+              (info "Auth0 - Linking accounts: " {:primary (user-id main-account) :secondary (user-id secondary)})
+              (link-user-accounts-by-id this (user-id main-account) (user-id secondary))))
           (info "Auth0 - Found no matching email account, doing nothing.")))))
 
   (create-email-user [this email]
@@ -149,21 +146,7 @@
     (-post this (get-token this) ["users"] {:connection     "email"
                                             :email          email
                                             :email_verified true
-                                            :verify_email   false}))
-
-  ;(create-and-link-new-user [this auth0-user db-user]
-  ;  (let [provider (first (string/split (:user_id auth0-user) #"\|"))]
-  ;    (when (not= "email" provider)
-  ;      (let [token (get-token this)
-  ;            created-user (-post this token ["users"] {:connection     "email"
-  ;                                                      :email          (:user/email db-user)
-  ;                                                      :email_verified true
-  ;                                                      :verify_email   false})
-  ;            _ (debug "Created Auth0 user: " created-user)
-  ;            link (-post this token ["users" (:user_id created-user) "identities"] {:provider provider
-  ;                                                                                   :user_id  (:user_id auth0-user)})]
-  ;        (debug "Linked Auth0 users: " link)))))
-  )
+                                            :verify_email   false})))
 
 (defrecord Auth0 [client-id client-secret server-address]
   IAuth0
@@ -259,5 +242,5 @@
   (link-with-same-email [_ _])
   ;(create-and-link-new-user [_ _ _])
   (link-user-accounts-by-id [this primary-token secondary-token])
-  (link-user-accounts-by-token [this primary-token secondary-token])
+  ;(link-user-accounts-by-token [this primary-token secondary-token])
   (unlink-user-accounts [this primary-id secondary-id secondary-provider]))

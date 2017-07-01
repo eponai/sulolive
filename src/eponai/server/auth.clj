@@ -23,7 +23,8 @@
     [taoensso.timbre :as timbre]
     [eponai.server.log :as log]
     [cemerick.url :as url]
-    [eponai.client.routes :as client.routes]))
+    [eponai.client.routes :as client.routes]
+    [eponai.common.format :as cf]))
 
 (def auth-token-cookie-name "sulo.token")
 (def auth-token-remove-value "kill")
@@ -231,7 +232,8 @@
                                         :token   token})
 
         ;; access-token is only present in case of login first step
-        {:keys [profile token access-token]} (or auth-map token-info)
+        {:keys    [profile access-token]
+         id-token :token} (or auth-map token-info)
 
         ;; Get our user from Datomic
         sulo-user (existing-user (db/db conn) profile)
@@ -243,13 +245,12 @@
         (when should-verify?
           (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]]))
         (auth0/link-with-same-email auth0management (assoc profile :user_id user-id))
-        (do-authenticate request token sulo-user))
+        (do-authenticate request id-token sulo-user))
 
       ;; User is signin in for the first time, and should go through creating an account.
-      (let [path (routes/path :login nil (cond-> {:access_token access-token
-                                                  :token        token}
-                                                 (some? sulo-user)
-                                                 (assoc :verified false)))]
+      (let [path (routes/path :login nil (cf/remove-nil-keys
+                                           {:access_token access-token
+                                            :token        id-token}))]
         (debug "Redirect to path: " path)
         (r/redirect path)))))
 
@@ -263,13 +264,10 @@
         {:keys [code state token]} params
         {:keys [profile]} (auth0/authenticate auth0 code state)
 
-        primary-user (auth0/get-user auth0management primary-profile)
-        primary-user-id (:user_id primary-user)
-        secondary-user-id (:sub profile)
-        ]
+        primary-user (auth0/get-user auth0management primary-profile)]
 
     (try
-      (auth0/link-user-accounts-by-id auth0management primary-user-id secondary-user-id)
+      (auth0/link-user-accounts-by-id auth0management (auth0/user-id primary-user) (auth0/user-id profile))
       (r/redirect (routes/path :user-settings))
       (catch Exception e
         (error e)
