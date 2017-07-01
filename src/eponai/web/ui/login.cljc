@@ -297,21 +297,3 @@
           (->Login login))))))
 
 (def ->LoginModal (om/factory LoginModal))
-
-(defui LoginPage
-  static om/IQuery
-  (query [this]
-    [{:proxy/login (om/get-query Login)}])
-  Object
-  (cancel-login [this]
-    (routes/set-url! this :landing-page))
-  (render [this]
-    (let [{:proxy/keys [login]} (om/props this)]
-      (modal/modal
-        {:id             "sulo-login-modal"
-         :size           "tiny"
-         :on-close       #(.cancel-login this)
-         :require-close? true}
-        (->Login login)))))
-
-(router/register-component :login LoginPage)
