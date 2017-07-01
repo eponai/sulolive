@@ -109,24 +109,16 @@
                   (pushy/set-token! (routes/url :landing-page/locality))))
             (error "Error when transacting route: " e)))))))
 
-(defn fetch-route-data!
+(defn fetch-index-route-data!
   "Fetches and merges client data given a route-map with route, route-params and query-params."
-  [reconciler send-fn route-map]
-  (let [parser (client.utils/reconciler-parser reconciler)
-        env (assoc (#'om/to-env reconciler) :reconciler reconciler)
-        db (db/db (:state env))
-        fake-conn (atom db)]
-    ;; Make sure we can create an url from the route-map
-    (client.routes/url (:route route-map)
-                       (:route-params route-map)
-                       (:query-params route-map))
-    ;; puts the route to fetch in our fake-conn
-    (parser (assoc env :conn fake-conn) [(list 'routes/set-route! route-map)])
-    (client.utils/send! reconciler send-fn
-                        {:remote
-                         (parser (assoc env :conn fake-conn)
-                                 (om/get-query (om/app-root reconciler))
-                                 :remote)})))
+  [reconciler send-fn]
+  (if-let [index-var (resolve 'eponai.common.ui.index/Index)]
+    (do (debug "Resolved index-var, sending query.")
+        (client.utils/send! reconciler send-fn
+                            {:remote (client.utils/parse reconciler
+                                                         (om/get-query index-var)
+                                                         :remote)}))
+    (debug "Unable to resolve index-var :(")))
 
 (defn fetch-cover-photos! [reconciler]
   (binding [parser/*parser-allow-local-read* false]
@@ -258,16 +250,22 @@
           (init-user-cart! reconciler)
           (debug "Adding reconciler to root!")
           (add-root! reconciler)
+          ; Pre fetch data which makes the site less jumpy
+
+          ;; Prefetch :index when not on :index and some other routes:
+          (debug "Fetching all cover photos...")
+          (fetch-cover-photos! reconciler)
+          (debug "Pre-fetching the :index route...")
+          ;; TODO: Should make sure we're only fetching-index-route-data when we
+          ;; have locality
+          ;(when-not (contains? #{:index :landing-page}
+          ;                     (:route (routes/current-route reconciler)))
+          ;  (modules/require-route! modules
+          ;                          :index
+          ;                          #(fetch-index-route-data! reconciler send-fn)))
           ;; Pre fetch all routes
           (debug "Pre-fetching modules...")
           (run! #(modules/prefetch-route modules %) [:index :store :browse])
-          ;; Pre fetch data which makes the site less jumpy
-          ;;(debug "Pre-fetching the :index route...")
-          ;(when (not= :index (:route (routes/current-route reconciler)))
-          ;  (fetch-route-data! reconciler send-fn {:route :index
-          ;                                         :route-params {:locality (:sulo-locality/path (client.auth/current-locality reconciler))}}))
-          (debug "Fetching all cover photos...")
-          (fetch-cover-photos! reconciler)
           (debug "Initial app load done!"))
         (catch :default e
           (error "Init app error: " e))))))
