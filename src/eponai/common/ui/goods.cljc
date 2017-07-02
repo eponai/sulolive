@@ -125,9 +125,10 @@
           {:keys [route route-params query-params]} current-route
           {:keys [items browse-result]} browse-products-2
           {:browse-result/keys [count-by-category]} browse-result
-          category-label-fn (fn [category]
+          category-label-fn (fn [category show-count?]
                               (str (products/category-display-name category)
-                                   (when-let [matches (category-count this category count-by-category)]
+                                   (when-let [matches (and show-count?
+                                                           (category-count this category count-by-category))]
                                      (str " " matches))))]
 
       (debug " items: " items)
@@ -162,15 +163,17 @@
                              (comp some? #(category-count this % count-by-category))
                              identity))
                    (map (fn [category]
-                          (let [is-active? (= (:category/name category) (:category/name (first categories)))]
+                          (let [is-active? (= (:category/name category) (:category/name (first categories)))
+                                show-count? (or is-active?
+                                                (some? (get-in current-route [:query-params :search])))]
                             (menu/item
                               (when is-active? (css/add-class :is-active))
                               (dom/a {:href (routes/map->url (routes/merge-route this (:category/route-map category)))}
-                                     (dom/span nil (category-label-fn category)))
+                                     (dom/span nil (category-label-fn category show-count?)))
                               (vertical-category-menu this
                                                       (:category/children category)
                                                       (last categories)
-                                                      category-label-fn)))))))
+                                                      #(category-label-fn % show-count?))))))))
             ;(dom/div
             ;  nil
             ;  (dom/label nil "Ship to")
