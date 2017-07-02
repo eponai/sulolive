@@ -302,7 +302,8 @@
                              (cond->> (map first symbol-seq)
                                       (seq rules)
                                       (cons '%)))
-         query (cond-> query
+         rules (not-empty (into [] (mapcat #(%)) (set rules)))
+         query (cond-> (assoc query :rules rules)
                        (seq with)
                        (assoc :with with))
          _ (trace "query expanded: " query)
@@ -310,7 +311,7 @@
                     db
                     (cond->> (map second symbol-seq)
                              (seq rules)
-                             (cons (into [] (mapcat #(%)) (set rules)))))]
+                             (cons rules)))]
      (trace "query returned: " ret)
      ret)))
 

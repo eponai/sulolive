@@ -99,7 +99,7 @@
          ;; (walk/postwalk #(cond-> % (map? %) (assoc :db/id (db/tempid :db.part/user))))
          )))
 
-(defn mock-stores []
+(defn create-mock-stores []
   [
    ;; ikcha
    {:db/id            (db/tempid :db.part/user)
@@ -352,6 +352,20 @@
                       :store.item/category [:category/path (category-path "jewelry" "women")]
                       :store.item/skus     [(sku)]}]}
    ])
+
+(defn stores-with-item-created-at [stores]
+  (map-indexed
+    (fn [store-idx store]
+      (update store :store/items
+              (fn [items]
+                (map-indexed (fn [item-idx item]
+                               (assoc item :store.item/created-at (+ (* store-idx 100) item-idx)))
+                             items))))
+    stores))
+
+(defn mock-stores []
+  (-> (create-mock-stores)
+      (stores-with-item-created-at)))
 
 (defn countries []
   (let [country-data (json/read-str (slurp (io/resource "private/country-data.json")) :key-fn keyword)

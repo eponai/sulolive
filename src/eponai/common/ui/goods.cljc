@@ -74,7 +74,7 @@
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:proxy/footer (om/get-query foot/Footer)}
-     {:query/browse-items (om/get-query product/Product)}
+     {:query/browse-products-2 (om/get-query product/Product)}
      {:query/navigation [:category/name :category/label :category/path :category/href]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
      {:query/countries [:country/code :country/name]}
@@ -93,15 +93,16 @@
      :filters-open? false})
   (render [this]
     (let [{:proxy/keys [navbar product-filters footer]
-           :query/keys [browse-items navigation locations current-route countries]} (om/props this)
+           :query/keys [browse-products-2 navigation locations current-route countries]} (om/props this)
           {:keys [filters-open?]} (om/get-state this)
           [top-category sub-category :as categories] (category-seq this)
           {:keys [route route-params query-params]} current-route
-          items browse-items
+          items browse-products-2
           default-sort-key (key (first sorting-vals))
           sorting (get sorting-vals (:sort_by query-params default-sort-key) )]
 
       (debug "Sorting: " sorting)
+      (debug " items: " items)
 
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse" :footer footer}

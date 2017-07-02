@@ -556,6 +556,7 @@
         (debug "browse-result!: " (into {:db/id (:db/id browse-result)} browse-result))
         {:value (db/pull-many db query
                               (sequence
-                                (comp (drop (:start query-params))
-                                      (take (:page-size query-params)))
+                                (comp (drop (or (:start query-params) 0))
+                                      (take (or (:page-size query-params)
+                                                browse/default-page-size)))
                                 (:browse-result/items browse-result)))}))))

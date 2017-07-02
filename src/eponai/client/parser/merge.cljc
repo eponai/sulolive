@@ -102,10 +102,14 @@
   [db k {:keys [browse-result initial-pull browse-params]}]
   (let [old-result (when (not-empty browse-result)
                      (browse/find-result db browse-params))]
-    ;; Retract the old result if there is one.
-    (-> (cond-> db (some? old-result) (db-with [[:db.fn/retractEntity old-result]]))
-        (db-with browse-result)
-        (db-with initial-pull))))
+    (cond-> db
+            (some? old-result)
+            ;; Retract the old result if there is one.
+            (db-with [[:db.fn/retractEntity old-result]])
+            (seq browse-result)
+            (db-with [browse-result])
+            (seq initial-pull)
+            (db-with initial-pull))))
 
 (defn- placeholder-refs
   "Returns transactions that adds {:placeholder :workaround} for every entity that has attr."
