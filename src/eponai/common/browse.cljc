@@ -5,10 +5,26 @@
     [eponai.common.api.products :as products]
     [medley.core :as medley]
     [eponai.common.format :as format]
-    [taoensso.timbre :refer [debug]]
-    [taoensso.timbre :as timbre]))
+    [taoensso.timbre :as timbre :refer [debug]]
+    [clojure.string :as string]))
 
 (def default-page-size 25)
+(def category-order-values ["newest" "lowest-price" "highest-price"])
+(def search-order-values (into ["relevance"] category-order-values))
+
+(defn order-label [order]
+  (-> order
+      (string/capitalize)
+      (string/split #"-")
+      (->> (string/join " "))))
+
+(defn order-values [query-params]
+  (if (some? (:search query-params))
+    search-order-values
+    category-order-values))
+
+(defn default-order [query-params]
+  (first (order-values query-params)))
 
 (defn- price-where-clause [{:keys [from-price to-price] :as price-range}]
   (condp = [(some? from-price) (some? to-price)]
@@ -38,10 +54,10 @@
         decending #(compare %2 %1)
         [key-fn comparator]
         (condp = sorting
-          :lowest-price [price-fn ascending]
-          :highest-price [price-fn decending]
-          :newest [created-at-fn decending]
-          :relevance [score-fn decending]
+          "lowest-price" [price-fn ascending]
+          "highest-price" [price-fn decending]
+          "newest" [created-at-fn decending]
+          "relevance" [score-fn decending]
           [eid-fn decending])]
     (->> (sort-by key-fn comparator items)
          (mapv eid-fn))))
@@ -54,7 +70,7 @@
   (let [{:keys [from-price to-price]} price-range
         {:keys [top-category sub-category sub-sub-category]} categories
         result-params (-> browse-params
-                          (dissoc :price-range :categories)
+                          (dissoc :price-range :page-range :categories)
                           (assoc :from-price from-price :to-price to-price)
                           (assoc :top-category top-category
                                  :sub-category sub-category
@@ -155,12 +171,16 @@
                                               :sub-category
                                               :sub-sub-category])
         price-range (select-keys query-params [:from-price :to-price])
+        page-range (select-keys query-params [:page-start :page-size])
         {:keys [order search]} query-params]
     {:locations   locations
      :categories  categories
      :price-range price-range
-     :order       order
-     :search      search}))
+     :search      search
+     :order       (or order (default-order query-params))
+     :page-range  (-> page-range
+                      (update :page-start (fnil identity 0))
+                      (update :page-size (fnil identity default-page-size)))}))
 
 ;; ----------
 ;; Datascript

@@ -183,6 +183,9 @@
 
 ;; TODO: Base this off of protocol functions instead of implementation detail of the graph?
 (defn merge-graphs [a b]
+  (debug "Merging graphs: ")
+  (debug a)
+  (debug b)
   (letfn [(deep-merge [a b]
             (when (or a b)
               (if-not (and a b)

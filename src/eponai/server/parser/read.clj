@@ -472,13 +472,15 @@
   {:auth ::auth/public}
   (let [browse-params (browse/make-browse-params locations route-params query-params)
         uniqueness (select-keys browse-params browse-products-uniqueness)]
-    (when (not= read-basis-t-for-this-key uniqueness)
-      (let [browse-result (browse/find-items db browse-params)
-            {:keys [start page-size]} query-params
+    (if (= read-basis-t-for-this-key uniqueness)
+      {:value (parser/value-with-basis-t {}
+                                         read-basis-t-for-this-key)}
+      (let [{:keys [page-start page-size]} (:page-range browse-params)
+            browse-result (browse/find-items db browse-params)
             initial-pull (db/pull-many db query
                                        (sequence
-                                         (comp (drop (or start 0))
-                                               (take (or page-size browse/default-page-size)))
+                                         (comp (drop page-start)
+                                               (take page-size))
                                          (:browse-result/items browse-result)))]
         {:value (parser/value-with-basis-t
                   {:browse-result browse-result
