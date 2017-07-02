@@ -23,7 +23,12 @@
     [clojure.string :as string]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.web.ui.button :as button]
-    [eponai.web.ui.footer :as foot]))
+    [eponai.web.ui.footer :as foot]
+    [eponai.common.shared :as shared]
+    #?(:cljs
+       [eponai.web.auth0 :as auth0])
+    [eponai.client.routes :as routes]
+    [eponai.common.ui.loading-bar :as loading-bar]))
 
 (def form-inputs
   {:user.info/name            "user.info.name"
@@ -62,6 +67,11 @@
                              (map :via problems))]
       {:explain-data  err
        :invalid-paths invalid-paths})))
+
+(defn social-identity [component platform]
+  (let [{:query/keys [auth0-info]} (om/props component)
+        connection (name platform)]
+    (some #(when (= connection (:auth0.identity/connection %)) %) (:auth0/identities auth0-info))))
 
 (defn edit-profile-modal [component]
   (let [{:query/keys [auth]} (om/props component)
@@ -303,6 +313,16 @@
              (button/user-setting-cta {:onClick #(do
                                                   (mixpanel/track "Save payment info")
                                                   (.save-payment-info component))} (dom/span nil "Save")))])))))
+
+(defn render-error-message [component]
+  (let [{:keys [error/show-social-error?]} (om/get-state component)
+        {:query/keys [current-route]} (om/props component)
+        error-message (get-in current-route [:query-params :message])]
+    (when show-social-error?
+      (callout/callout
+        (css/add-classes [:sulo-popup-message :alert])
+        (dom/p nil (dom/span nil "Something went wrong and we couldn't connect your social account. Please try again later."))))))
+
 (defui UserSettings
   static om/IQuery
   (query [_]
@@ -317,9 +337,24 @@
                               :stripe/default-source
                               :stripe/shipping]}
      {:query/countries [:country/name :country/code]}
+     :query/auth0-info
      :query/current-route
      :query/messages])
   Object
+  (authorize-social [this provider]
+    (let [{:query/keys [current-route]} (om/props this)
+          {:keys [route route-params query-params]} current-route]
+      #?(:cljs
+         (do
+           (auth0/authorize-social (shared/by-key this :shared/auth0) {:connection  (name provider)
+                                                                       :redirectUri (auth0/redirect-to (routes/url :link-social))})
+           (loading-bar/start-loading! (shared/by-key this :shared/loading-bar) (om/get-reconciler this))))))
+
+  (unlink-account [this social-identity]
+    (msg/om-transact! this [(list 'user/unlink-account {:user-id (:auth0.identity/id social-identity)
+                                                        :provider (:auth0.identity/provider social-identity)})
+                            :query/auth0-info]))
+
   (save-shipping-info [this]
     #?(:cljs
        (let [{:shipping.address/keys [street street2 locality postal region country]} form-inputs
@@ -331,7 +366,7 @@
                                               :shipping.address/region   (utils/input-value-or-nil-by-id region)
                                               :shipping.address/postal   (utils/input-value-or-nil-by-id postal)}}
              validation (validate ::shipping shipping-map)]
-         (debug "Validation: " validation)
+         (debug "Validation:  " validation)
          (when (nil? validation)
            (mixpanel/track "Save shipping info")
            (msg/om-transact! this [(list 'stripe/update-customer {:shipping shipping-map})
@@ -385,8 +420,19 @@
         (msg/clear-messages! this 'stripe/update-customer)
         (om/update-state! this dissoc :modal))))
 
-  ;(initLocalState [_]
-  ;  {:modal :modal/shipping-info})
+  (componentDidMount [this]
+    #?(:cljs
+       (let [{:query/keys [current-route]} (om/props this)]
+         (debug "Component did mount")
+         (when (get-in current-route [:query-params :error])
+           (debug "Set social error")
+           (js/setTimeout (fn [] (om/update-state! this assoc :error/show-social-error? false)) 5000)
+           (om/update-state! this assoc :error/show-social-error? true)))))
+
+  (initLocalState [this]
+    (let [{:query/keys [current-route]} (om/props this)]
+      {:error/show-social-error? (boolean (get-in current-route [:query-params :error]))}))
+
   (is-loading? [this]
     (let [info-msg (msg/last-message this 'user.info/update)
           photo-msg (msg/last-message this 'photo/upload)
@@ -396,15 +442,17 @@
           (msg/pending? stripe-msg))))
   (render [this]
     (let [{:proxy/keys [navbar footer]
-           :query/keys [auth current-route stripe-customer]} (om/props this)
+           :query/keys [auth current-route stripe-customer auth0-info]} (om/props this)
           {:keys [modal photo-upload queue-photo]} (om/get-state this)
           {user-profile :user/profile} auth
           {:keys [route-params]} current-route
           is-loading? (.is-loading? this)]
+      (debug "Got auth0 " auth0-info)
       (common/page-container
         {:navbar navbar :footer footer :id "sulo-user-settings"}
         (when is-loading?
           (common/loading-spinner nil))
+        (render-error-message this)
         (grid/row-column
           nil
           (dom/h1 nil "Settings")
@@ -537,37 +585,72 @@
             (css/add-class :section-list)
             (menu/item
               nil
-              (grid/row
-                (->> (css/align :middle)
-                     (css/add-class :collapse))
-                (grid/column
-                  nil
-                  (dom/label nil "Facebook")
-                  (dom/p nil (dom/small nil "Connect to Facebook to login with your account. We will never post to Facebook or message your friends without your permission")))
-                (grid/column
-                  (->> (grid/column-size {:small 12 :medium 6})
-                       (css/text-align :right))
-                  (button/user-setting-cta
-                    (css/add-classes [:disabled :facebook])
-                    (dom/i {:classes ["fa fa-facebook fa-fw"]})
-                    (dom/span nil "Connect to Facebook")))))
+              (if-let [facebook-identity (social-identity this :social/facebook)]
+                (grid/row
+                  (->> (css/align :middle)
+                       (css/add-class :collapse))
+                  (grid/column
+                    nil
+                    (dom/label nil "You are connected to Facebook")
+                    (dom/p nil (dom/small nil "You can now sign in to SULO Live using your Facebook account. We will never post to Facebook or message your friends without your permission.")))
+                  (grid/column
+                    (->> (grid/column-size {:small 12 :medium 6})
+                         (css/text-align :right))
+
+                    (dom/div
+                      (css/add-class :user-profile)
+                      (dom/div nil (dom/span nil (:auth0.identity/name facebook-identity))
+                             (dom/br nil)
+                             (dom/a {:onClick #(.unlink-account this facebook-identity)} (dom/small nil "disconnect")))
+                      (photo/circle {:src (:auth0.identity/picture facebook-identity)}))))
+                (grid/row
+                  (->> (css/align :middle)
+                       (css/add-class :collapse))
+                  (grid/column
+                    nil
+                    (dom/label nil "Facebook")
+                    (dom/p nil (dom/small nil "Connect to Facebook to sign in with your account. We will never post to Facebook or message your friends without your permission")))
+                  (grid/column
+                    (->> (grid/column-size {:small 12 :medium 6})
+                         (css/text-align :right))
+                    (button/user-setting-cta
+                      (css/add-classes [:facebook] {:onClick #(.authorize-social this :social/facebook)})
+                      (dom/i {:classes ["fa fa-facebook fa-fw"]})
+                      (dom/span nil "Connect to Facebook"))))))
 
             (menu/item
               nil
-              (grid/row
-                (->> (css/align :middle)
-                     (css/add-class :collapse))
-                (grid/column
-                  nil
-                  (dom/label nil "Twitter")
-                  (dom/p nil (dom/small nil "Connect to Twitter to login with your account. We will never post to Twitter or message your followers without your permission.")))
-                (grid/column
-                  (->> (grid/column-size {:small 12 :medium 6})
-                       (css/text-align :right))
-                  (button/user-setting-cta
-                    (css/add-classes [:disabled :twitter])
-                    (dom/i {:classes ["fa fa-twitter fa-fw"]})
-                    (dom/span nil "Connect to Twitter")))))))))))
+              (if-let [twitter-identity (social-identity this :social/twitter)]
+                (grid/row
+                  (->> (css/align :middle)
+                       (css/add-class :collapse))
+                  (grid/column
+                    nil
+                    (dom/label nil "You are connected to Twitter")
+                    (dom/p nil (dom/small nil "You can now sign in to SULO Live using your Twitter account. We will never post to Twitter or message your followers without your permission.")))
+                  (grid/column
+                    (->> (grid/column-size {:small 12 :medium 6})
+                         (css/text-align :right))
+                    (dom/div
+                      (css/add-class :user-profile)
+                      (dom/div nil (dom/span nil (:auth0.identity/screen-name twitter-identity))
+                               (dom/br nil)
+                               (dom/a {:onClick #(.unlink-account this twitter-identity)} (dom/small nil "disconnect")))
+                      (photo/circle {:src (:auth0.identity/picture twitter-identity)}))))
+                (grid/row
+                  (->> (css/align :middle)
+                       (css/add-class :collapse))
+                  (grid/column
+                    nil
+                    (dom/label nil "Twitter")
+                    (dom/p nil (dom/small nil "Connect to Twitter to sign in with your account. We will never post to Twitter or message your followers without your permission.")))
+                  (grid/column
+                    (->> (grid/column-size {:small 12 :medium 6})
+                         (css/text-align :right))
+                    (button/user-setting-cta
+                      (css/add-classes [:twitter] {:onClick #(.authorize-social this :social/twitter)})
+                      (dom/i {:classes ["fa fa-twitter fa-fw"]})
+                      (dom/span nil "Connect to Twitter"))))))))))))
 
 ;(def ->UserSettings (om/factory UserSettings))
 

@@ -46,6 +46,7 @@
   (debug "Request->Auth " auth)
   (let [auth-user (when-some [user-email (:email auth)]
                     (db/lookup-entity (db/db conn) [:user/email user-email]))]
+    (debug "Auth user from db:  " auth-user)
     (assoc auth :user-id (:db/id auth-user))))
 
 ;; Inspired by
@@ -211,14 +212,16 @@
 
   (GET "/auth" request (auth/authenticate
                          (assoc request ::m/logger (context-logger request {:route :auth}))))
-  (GET "/login" request (bidi.ring/make-handler common.routes/routes bidi-route-handler)
-                        ;(do
-                        ;  (debug "/login endpoint")
-                        ;  (if (some #(#{:code :token :access_token} (key %)) (:params request))
-                        ;    (auth/authenticate
-                        ;      (assoc request ::m/logger (context-logger request {:route :login})))
-                        ;    (bidi.ring/make-handler common.routes/routes bidi-route-handler)))
-                        )
+  (GET "/link-social" request (auth/link-user
+                                (assoc request ::m/logger (context-logger request {:route :auth}))))
+  ;(GET "/login" request (bidi.ring/make-handler common.routes/routes bidi-route-handler)
+  ;                      ;(do
+  ;                      ;  (debug "/login endpoint")
+  ;                      ;  (if (some #(#{:code :token :access_token} (key %)) (:params request))
+  ;                      ;    (auth/authenticate
+  ;                      ;      (assoc request ::m/logger (context-logger request {:route :login})))
+  ;                      ;    (bidi.ring/make-handler common.routes/routes bidi-route-handler)))
+  ;                      )
 
   (GET "/logout" request
     (let [logger (context-logger request {:route :logout})

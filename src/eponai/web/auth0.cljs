@@ -8,9 +8,9 @@
     [eponai.common :as c]))
 
 (defprotocol IAuth0Client
-  (authorize-social [this connection])
+  (authorize-social [this opts])
   (passwordless-start [this email f])
-  (passwordless-verify [this email code])
+  (passwordless-verify [this email code f])
   (user-info [this access-token f]))
 
 (defn redirect-to [path]
@@ -24,10 +24,13 @@
                                             :clientID     auth0-client-id
                                             :redirectUri  (redirect-to (routes/url :auth))
                                             :responseType "code"
-                                            :scope        "openid profile email"})]
+                                            :scope        "openid email"})]
     (reify IAuth0Client
-      (authorize-social [_ connection]
-        (.authorize web-auth #js {:connection connection}))
+      (authorize-social [_ {:keys [connection redirectUri]}]
+        (let [params (cond-> {:connection connection}
+                             (not-empty redirectUri)
+                             (assoc :redirectUri redirectUri))]
+          (.authorize web-auth (clj->js params))))
 
       (passwordless-start [this email f]
         (let [params {:connection "email"
@@ -38,12 +41,14 @@
                               (fn [err res]
                                 (f (js->clj res :keywordize-keys true)
                                    (js->clj err :keywordize-keys true))))))
-      (passwordless-verify [_ email code]
+      (passwordless-verify [_ email code f]
         (.passwordlessVerify web-auth
                              #js {:connection       "email"
                                   :email            email
                                   :verificationCode code}
                              (fn [err res]
+                               (f (js->clj res :keywordize-keys true)
+                                  (js->clj err :keywordize-keys true))
                                (debug "Verified response: " res)
                                (debug "Verified error: " err))))
 
@@ -67,7 +72,7 @@
         (auto-login "dev@sulo.live"))
       (passwordless-start [_ email _]
         (auto-login email))
-      (passwordless-verify [_ _ _])
+      (passwordless-verify [_ _ _ _])
       (user-info [_ access-token f]
         (let [auth-map (c/read-transit (url/url-decode access-token))]
           (f auth-map nil))))))

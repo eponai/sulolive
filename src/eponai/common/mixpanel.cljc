@@ -38,7 +38,7 @@
                              {:event      event
                               :properties properties})))))
 
-(defn alias [user-id]
+(defn set-alias [user-id]
   #?(:cljs (.alias js/mixpanel (str user-id))))
 
 (def events

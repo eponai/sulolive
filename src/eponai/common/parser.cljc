@@ -509,7 +509,7 @@
               auth-params (get auth-role role nil)]
           ;; Use an unfiltered db to check auth.
           (if-some [user (auth/authed-user-for-params (:raw-db env) role (:auth env) auth-params)]
-            (read-or-mutate (update env :auth #(-> (dissoc % :email) (assoc :user-id user)))
+            (read-or-mutate (update env :auth assoc :user-id user)
                             k p)
             (on-not-authed (assoc env :auth-roles auth-role) k p)))))))
 

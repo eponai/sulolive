@@ -353,6 +353,13 @@
             (when authed-user
               (assoc authed-user :user/can-open-store? can-open-store?)))})
 
+(defread query/auth0-info
+  [{:keys [auth query db] :as env} _ _]
+  {:auth ::auth/public}
+  {:value (let [user-info (user/user-info env)]
+            (debug "SERVER QUERY/AUTH0 : " user-info)
+            user-info)})
+
 (defread query/stream
   [{:keys [db db-history query route-params]} _ _]
   {:auth    ::auth/public

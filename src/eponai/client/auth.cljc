@@ -42,6 +42,7 @@
   (some-> (db/lookup-entity db [:ui/singleton :ui.singleton/auth])
           (get-in [:ui.singleton.auth/user :db/id])))
 
+
 (defn authed-email [db]
   (some->> (current-auth db)
            (db/entity db)

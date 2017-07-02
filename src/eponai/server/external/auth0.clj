@@ -9,11 +9,24 @@
     [eponai.common.database :as db]
     [eponai.server.external.host :as server-address]
     [eponai.common.routes :as routes]
-    [taoensso.timbre :refer [debug error]]
+    [taoensso.timbre :refer [debug error info]]
     [buddy.sign.jws :as jws]
     [clojure.string :as string]
     [cemerick.url :as url]
-    [eponai.common :as c]))
+    [eponai.common :as c]
+    [slingshot.slingshot :refer [try+]]))
+
+(defn user-id [profile]
+  (or (:user_id profile) (:sub profile)))
+
+(defn provider [profile-or-userid]
+  (let [user-id (if (map? profile-or-userid)
+                  (user-id profile-or-userid)
+                  profile-or-userid)]
+    (first (string/split user-id #"\|"))))
+
+(defn email-provider? [profile-or-userid]
+  (= "email" (provider profile-or-userid)))
 
 (defprotocol IAuth0
   (secret [this] "Returns the jwt secret for unsigning tokens")
@@ -25,8 +38,16 @@
 (defprotocol IAuth0Management
   (get-token [this])
   (update-user [this user-id params])
-  (create-and-link-new-user [this auth0-user db-user])
-  (link-user [this auth0-user db-user]))
+  (get-user [this profile])
+  (create-email-user [this email])
+  (link-with-same-email [this profile])
+  (link-user-accounts-by-id [this primary-id secondary-id])
+  (unlink-user-accounts [this primary-profile secondary-id secondary-provider]))
+
+(defprotocol IAuth0Endpoint
+  (-post [this token path params])
+  (-get [this token path params])
+  (-delete [this token path]))
 
 (defn- read-json [json]
   (json/read-json json true))
@@ -44,60 +65,107 @@
                    (time.coerce/from-long (* 1000 exp))))))
 
 (def auth0authentication-api-host "https://sulo.auth0.com/oauth/token")
-(def auth0management-api-host "https://sulo.auth0.com/api/v2/")
+(def auth0management-api-host "https://sulo.auth0.com/api/v2")
 
 (defrecord Auth0Management [client-id client-secret domain server-address]
+  IAuth0Endpoint
+  (-get [this token path params]
+    (try+
+      (let [{:keys [access_token token_type] :or {token_type "Bearer"}} token
+            url (string/join "/" (into [auth0management-api-host] (remove nil?) path))]
+        (json/read-str (:body (http/get url
+                                        {:query-params params
+                                         :headers      {"Authorization" (str token_type " " access_token)}})) :key-fn keyword))
+      (catch Object r
+        (let [{:keys [body]} r
+              {:keys [error error_description]} (json/read-str body :key-fn keyword)]
+          (throw (ex-info error_description {:error error :description error_description}))))))
+
+  (-post [this token path params]
+    (try+
+      (let [{:keys [access_token token_type] :or {token_type "Bearer"}} token
+            url (string/join "/" (into [auth0management-api-host] (remove nil?) path))]
+        (json/read-str (:body (http/post url {:form-params params
+                                              :headers     {"Authorization" (str token_type " " access_token)}})) :key-fn keyword))
+      (catch Object r
+        (let [{:keys [body]} r
+              {:keys [error error_description]} (json/read-str body :key-fn keyword)]
+          (throw (ex-info error_description {:error error :description error_description}))))))
+  (-delete [this token path]
+    (try+
+      (let [{:keys [access_token token_type] :or {token_type "Bearer"}} token
+            url (string/join "/" (into [auth0management-api-host] (remove nil?) path))]
+        (json/read-str (:body (http/delete url {:headers {"Authorization" (str token_type " " access_token)}})) :key-fn keyword))
+      (catch Object r
+        (let [{:keys [body]} r
+              {:keys [error error_description]} (json/read-str body :key-fn keyword)]
+          (throw (ex-info error_description {:error error :description error_description}))))))
+
   IAuth0Management
   (get-token [this]
-
     (let [params {:grant_type    "client_credentials"
                   :client_id     client-id
                   :client_secret client-secret
-                  :audience      auth0management-api-host}
-          _ (debug "REquest auth0 with params " params)
-          response (http/post "https://sulo.auth0.com/oauth/token"
-                              {:form-params params})]
+                  :audience      (str auth0management-api-host "/")}
+          response (http/post "https://sulo.auth0.com/oauth/token" {:form-params params})]
       (json/read-str (:body response) :key-fn keyword)))
+  (get-user [this profile]
+    (cond (some? (:email profile))
+          ;; Search user account in Auth0 with matching email
+          (let [q (str "email.raw:\"" (:email profile) "\"")
+                accounts (-get this (get-token this) ["users"] {:search_engine "v2" :q q})]
 
-  (link-user [this auth0-user db-user]
-    (when (not-empty (:email auth0-user))
-      (let [{:keys [access_token token_type]} (get-token this)
+            ;; Get the account with matching email again, just in case the search
+            ;; query failed (and Auth0 returns all accounts)
+            (let [user (some #(when (= (:email profile) (:email %)) %) accounts)]
+              (debug "Returning user: " user)
+              user))
 
-            query-string (str "email.raw:\"" (:email auth0-user) "\" -user_id:\"" (:user_id auth0-user) "\"")
-            ;user-accounts (qs: {
-            ;                    search_engine: 'v2',
-            ;                    q: 'email.raw:"' + user.email + '" -user_id:"' + user.user_id + '"',
-            ;                                       })
-            account (first (json/read-str (:body (http/get (str auth0management-api-host "users")
-                                                           {:query-params {:search_engine "v2"
-                                                                           :q             query-string}
-                                                            :headers      {"Authorization" (str token_type " " access_token)}})) :key-fn keyword))]
-        (debug "Will get auth0 users with query: " query-string)
-        (debug "Got other accounts with email: " account)
-        (when account
-          (let [provider (first (string/split (:user_id auth0-user) #"\|"))
-                link (json/read-str (:body (http/post (str auth0management-api-host "users/" (:user_id account) "/identities")
-                                                      {:form-params {:provider provider
-                                                                     :user_id  (:user_id auth0-user)}
-                                                       :headers     {"Authorization" (str token_type " " access_token)}})))]
-            (debug "Linked Auth0 on authentication users: " link))))))
+          ;; Get user account by user id if we have one
+          (some? (user-id profile))
+          (-get this (get-token this) ["users" (user-id profile)] nil)))
 
-  (create-and-link-new-user [this auth0-user db-user]
-    (let [provider (first (string/split (:user_id auth0-user) #"\|"))]
-      (when (not= "email" provider)
-        (let [{:keys [access_token token_type]} (get-token this)
-              created-user (json/read-str (:body (http/post (str auth0management-api-host "users")
-                                                            {:form-params {:connection     "email"
-                                                                           :email          (:user/email db-user)
-                                                                           :email_verified true
-                                                                           :verify_email   false}
-                                                             :headers     {"Authorization" (str token_type " " access_token)}})) :key-fn keyword)
-              _ (debug "Created Auth0 user: " created-user)
-              link (json/read-str (:body (http/post (str auth0management-api-host "users/" (:user_id created-user) "/identities")
-                                                    {:form-params {:provider provider
-                                                                   :user_id  (:user_id auth0-user)}
-                                                     :headers     {"Authorization" (str token_type " " access_token)}})))]
-          (debug "Linked Auth0 users: " link))))))
+  (link-user-accounts-by-id [this primary-id secondary-id]
+    (if-not (= primary-id secondary-id)
+      (let [token (get-token this)
+            secondary-provider (provider secondary-id)]
+        (info "Auth0 - User accounts differ, will link accounts: " {:primary primary-id :secondary secondary-id})
+        (-post this token ["users" primary-id "identities"] {:provider secondary-provider
+                                                             :user_id  secondary-id}))
+      (info "Auth0 - User accounts match, will not link" {:id primary-id})))
+
+  (unlink-user-accounts [this primary-profile secondary-id secondary-provider]
+    (let [token (get-token this)
+          primary-user (get-user this primary-profile)]
+      (info "Auth0 - Found primary user, will unlink: " primary-user)
+      (when-let [primary-id (:user_id primary-user)]
+        (debug "Unlink accounts: " {:primary primary-id :secondary secondary-id :provider secondary-provider})
+        (-delete this token ["users" primary-id "identities" secondary-provider secondary-id]))))
+
+  (link-with-same-email [this profile]
+    (when (not-empty (:email profile))
+      (info "Auth0 - User has an email, searching for matching accounts to link to " (user-id profile))
+      (let [token (get-token this)
+            query-string (str "email.raw:\"" (:email profile) "\"")
+            accounts (->> (-get this token ["users"] {:search_engine "v2" :q query-string})
+                          (filter #(= (:email %) (:email profile))))]
+        (if (not-empty accounts)
+          ;; Get main account with the email provider if one exists, if not we want to create one to keep as the main account.
+          ;; Link all the accounts with the main account
+          (let [main-account (or (some #(when (= "email" (provider %)) %) accounts)
+                                 (create-email-user this (:email profile)))]
+            (debug "Auth0 - Found " (count accounts) " with matching email, will link to main account: " (user-id main-account))
+            (doseq [secondary accounts]
+              (info "Auth0 - Linking accounts: " {:primary (user-id main-account) :secondary (user-id secondary)})
+              (link-user-accounts-by-id this (user-id main-account) (user-id secondary))))
+          (info "Auth0 - Found no matching email account, doing nothing.")))))
+
+  (create-email-user [this email]
+    (debug "Auth0 - Creating new user email account.")
+    (-post this (get-token this) ["users"] {:connection     "email"
+                                            :email          email
+                                            :email_verified true
+                                            :verify_email   false})))
 
 (defrecord Auth0 [client-id client-secret server-address]
   IAuth0
@@ -186,8 +254,10 @@
     (token-expiring-within? parsed-token (time/minutes 59)))
 
   IAuth0Management
-  (update-user [this user-id params]
-    (debug "Update user " user-id " with params " params))
-  (get-token [_])
-  (link-user [_ _ _])
-  (create-and-link-new-user [_ _ _]))
+  (get-token [this])
+  (update-user [this user-id params])
+  (get-user [this profile])
+  (create-email-user [this email])
+  (link-with-same-email [this profile])
+  (link-user-accounts-by-id [this primary-id secondary-id])
+  (unlink-user-accounts [this primary-profile secondary-id secondary-provider]))

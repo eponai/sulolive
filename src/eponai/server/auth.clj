@@ -23,7 +23,9 @@
     [taoensso.timbre :as timbre]
     [eponai.server.log :as log]
     [cemerick.url :as url]
-    [eponai.client.routes :as client.routes]))
+    [eponai.client.routes :as client.routes]
+    [eponai.common.format :as cf])
+  (:import (clojure.lang ExceptionInfo)))
 
 (def auth-token-cookie-name "sulo.token")
 (def auth-token-remove-value "kill")
@@ -214,10 +216,6 @@
                                     :ip          (:remote-addr request)})
     (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token} {:path "/"})))
 
-
-
-
-
 (defn authenticate
   [{:keys                          [params] :as request
     :eponai.server.middleware/keys [system logger conn]}]
@@ -232,40 +230,54 @@
         ;; If we have a token in the request, it means this was the first login.
         ;; An account was created and we want to authenticate again
         token-info (when (some? token) {:profile (auth0/token-info auth0 token)
-                                        :token token})
+                                        :token   token})
 
         ;; access-token is only present in case of login first step
-        {:keys [profile token access-token]} (or auth-map token-info)
+        {:keys    [profile access-token]
+         id-token :token} (or auth-map token-info)
 
         ;; Get our user from Datomic
         sulo-user (existing-user (db/db conn) profile)
-        user-id (or (:user_id profile) (:sub profile))]
+        user-id (:sub profile)]
 
     ;; If we already have a user for this account and they're verified, we can authenticate
-    (cond (:user/verified sulo-user)
-          (do
-            (debug "User is verified")
-            (auth0/link-user auth0management (assoc profile :user_id user-id) sulo-user)
-            (do-authenticate request token sulo-user))
+    (if (some? sulo-user)
+      (let [should-verify? (and (not (:user/verified sulo-user)) (not-empty (:email profile)))]
+        (when should-verify?
+          (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]]))
+        (auth0/link-with-same-email auth0management (assoc profile :user_id user-id))
+        (do-authenticate request id-token sulo-user))
 
-          ;; User exists but has not verified their email
-          (and (some? sulo-user)
-               (not-empty (:email profile)))
-          (do
-            (debug "Transacting verified email")
-            (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]])
-            (auth0/link-user auth0management (assoc profile :user_id user-id) sulo-user)
-            (do-authenticate request token sulo-user))
+      ;; User is signin in for the first time, and should go through creating an account.
+      (let [path (routes/path :login nil (cf/remove-nil-keys
+                                           {:access_token access-token
+                                            :token        id-token}))]
+        (debug "Redirect to path: " path)
+        (r/redirect path)))))
 
-          ;; User is signin in for the first time, and should go through creating an account.
-          :else
-          ;; If no user exists or is not verified, redirect back with the token to the login page
-          (let [path (routes/path :login nil (cond-> {:access_token access-token
-                                                      :token        token}
-                                                     (some? sulo-user)
-                                                     (assoc :verified false)))]
-            (debug "Redirect to path: " path)
-            (r/redirect path)))))
+(defn link-user [{:keys                          [params] :as request
+                  :eponai.server.middleware/keys [system logger conn]}]
+  (let [auth0 (:system/auth0 system)
+        auth0management (:system/auth0management system)
+        primary-token (token-map-from-cookie request)
+        primary-profile (auth0/token-info auth0 (:token primary-token))
+
+        {:keys [code state token]} params
+        {:keys [profile]} (auth0/authenticate auth0 code state)
+
+        primary-user (auth0/get-user auth0management primary-profile)]
+
+    (try
+      (if (auth0/email-provider? profile)
+        (throw (ex-info "Already connected to another account"
+                        {:message "Something went wrong and we couldnt' connect your social account. Please try again later."}))
+        (do
+          (auth0/link-user-accounts-by-id auth0management (auth0/user-id primary-user) (auth0/user-id profile))
+          (r/redirect (routes/path :user-settings))))
+      (catch ExceptionInfo e
+        (error e)
+        (r/redirect (routes/path :user-settings nil {:error "connect"}))))))
+
 
 (defn agent-whitelisted? [request]
   (let [whitelist #{"facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"

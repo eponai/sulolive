@@ -40,9 +40,10 @@
 
 (defn render-create-account [component]
   (let [{:keys [user token-error input-validation] :as state} (om/get-state component)
-        {:query/keys [current-route]} (om/props component)
+        {:query/keys [current-route auth0-info]} (om/props component)
         {:keys [query-params]} current-route
-        is-loading? (not (or user token-error))]
+        auth-identity (first (:auth0/identities auth0-info))
+        is-loading? (nil? auth-identity)]
     [(dom/p nil (dom/span nil "Finish creating your SULO Live account"))
      (dom/p nil (dom/a {:href (routes/url :login)} (dom/span nil "I already have an account")))
 
@@ -57,7 +58,7 @@
             (cond-> {:type         "email"
                      :id           (::email form-inputs)
                      :placeholder  "youremail@example.com"
-                     :defaultValue (:email user)}
+                     :defaultValue (:auth0/email auth0-info)}
                     (not-empty (:email query-params))
                     (assoc :disabled true))
             input-validation)
@@ -66,7 +67,7 @@
           (v/input {:type         "text"
                     :id           (::username form-inputs)
                     :placeholder  "Your name"
-                    :defaultValue (:nickname user)}
+                    :defaultValue (:auth0/nickname auth0-info)}
                    input-validation)])
 
        (dom/p (css/add-class :info)
@@ -85,18 +86,21 @@
          (dom/span nil "Create account")))]))
 
 (defn render-enter-code [component]
-  [(dom/p nil (dom/span nil "We sent you a code to sign in. Please check your inbox and provide the code below."))
-   (dom/div
-     (css/add-class :login-content)
-     (dom/label nil "Code")
-     (dom/input {:id           (::code form-inputs)
-                 :type         "number"
-                 :placeholder  "000000"
-                 :maxLength    6
-                 :defaultValue ""})
-     (button/default-hollow
-       (css/add-class :sulo-dark {:onClick #(.verify-email component)})
-       (dom/span nil "Sign me in")))])
+  (let [state (om/get-state component)]
+    [(dom/p nil (dom/span nil "We sent you a code to sign in. Please check your inbox and provide the code below."))
+     (dom/div
+       (css/add-class :login-content)
+       (dom/label nil "Code")
+       (dom/input {:id           (::code form-inputs)
+                   :type         "number"
+                   :placeholder  "000000"
+                   :maxLength    6
+                   :defaultValue ""})
+       (when-let [err (:error/verify-email state)]
+         (dom/p (css/add-class :text-alert) "Ooops, something went wrong."))
+       (button/default-hollow
+         (css/add-class :sulo-dark {:onClick #(.verify-email component)})
+         (dom/span nil "Sign me in")))]))
 
 (defn render-send-email-code [component]
   (let [{:keys [auth0error]} (om/get-state component)
@@ -153,12 +157,13 @@
   static om/IQuery
   (query [this]
     [:query/current-route
-     :query/messages])
+     :query/messages
+     :query/auth0-info])
 
   Object
   (authorize-social [this provider]
     #?(:cljs
-       (auth0/authorize-social (shared/by-key this :shared/auth0) (name provider))))
+       (auth0/authorize-social (shared/by-key this :shared/auth0) {:connection (name provider)})))
   (authorize-email [this]
     #?(:cljs
        (let [email (web-utils/input-value-by-id (::email form-inputs))
@@ -179,40 +184,42 @@
     #?(:cljs
        (let [{:keys [input-email]} (om/get-state this)]
          (let [code (web-utils/input-value-by-id (::code form-inputs))]
-           (auth0/passwordless-verify (shared/by-key this :shared/auth0) input-email code)))))
+           (auth0/passwordless-verify (shared/by-key this :shared/auth0) input-email code
+                                      (fn [res err]
+                                        (om/update-state! this assoc :error/verify-email err)))))))
 
   (create-account [this]
     #?(:cljs
-       (let [{:keys [user]} (om/get-state this)
-             email (or (:email user)
+       (let [{:query/keys [current-route auth0-info]} (om/props this)
+             email (or (:auth0/email auth0-info)
                        (web-utils/input-value-by-id (::email form-inputs)))
              username (web-utils/input-value-by-id (::username form-inputs))
              validation (v/validate ::create-account {::email    email
                                                       ::username username} form-inputs)]
          (debug "Validation: " validation)
          (when (nil? validation)
-           (msg/om-transact! this [(list 'user/create {:user       {:user/email    email
-                                                                    :user/profile  {:user.profile/name username}
-                                                                    :user/verified (:email_verified user)}
-                                                       :auth0-user user})]))
+           (msg/om-transact! this [(list 'user/create {:user     {:user/email    email
+                                                                  :user/profile  {:user.profile/name username}
+                                                                  :user/verified (:auth0/email-verified auth0-info)}
+                                                       :id-token (get-in current-route [:query-params :token])})]))
          (om/update-state! this assoc :input-validation validation :error/create-user nil))))
 
   (componentDidUpdate [this _ _]
     (let [{:query/keys [current-route]} (om/props this)
           create-msg (msg/last-message this 'user/create)]
-      (debug "Got create message: " create-msg)
+      (debug "Got create message : " create-msg)
       (when (msg/final? create-msg)
         (let [message (msg/message create-msg)]
           (debug "Got message: " message)
           (msg/clear-messages! this 'user/create)
           (if (msg/success? create-msg)
             (let [new-user (:user message)]
-              (mixpanel/alias (:db/id new-user))
+              (mixpanel/set-alias (:db/id new-user))
               (if (:user/verified new-user)
                 (do
                   (debug "User created routing to: " (routes/url :auth nil (:query-params current-route)))
                   #?(:cljs
-                     (set! js/window.location (routes/url :auth nil (:query-params current-route)))))
+                     (js/window.location.replace (routes/url :auth nil (:query-params current-route)))))
                 (.authorize-email this)))
             (om/update-state! this assoc :error/create-user message))))))
 
@@ -222,12 +229,13 @@
              {:keys [query-params]} current-route]
          (when (:access_token query-params)
            (debug "Found access token, getting user info....")
-           (auth0/user-info (shared/by-key this :shared/auth0)
-                            (:access_token query-params)
-                            (fn [user err]
-                              (debug "Got user info: " user)
-                              (debug "Got error: " err)
-                              (om/update-state! this assoc :user user)))))))
+           ;(auth0/user-info (shared/by-key this :shared/auth0)
+           ;                 (:access_token query-params)
+           ;                 (fn [user err]
+           ;                   (debug "Got user info: " user)
+           ;                   (debug "Got error: " err)
+           ;                   (om/update-state! this assoc :user user)))
+           ))))
 
   (initLocalState [this]
     {:login-state :login})
@@ -235,8 +243,9 @@
     (let [{:query/keys [current-route]} (om/props this)
           {:keys [route query-params]} current-route
           {:keys [access_token]} query-params
-          {:keys       [login-state]} (om/get-state this)]
+          {:keys [login-state]} (om/get-state this)]
       (debug "State " (om/get-state this))
+      (debug "props: " (om/props this))
 
       (dom/div
         (css/text-align :center {:id "sulo-login"})
@@ -293,8 +302,7 @@
 (defui LoginPage
   static om/IQuery
   (query [this]
-    [:query/auth
-     {:proxy/login (om/get-query Login)}])
+    [{:proxy/login (om/get-query Login)}])
   Object
   (cancel-login [this]
     (routes/set-url! this :landing-page))

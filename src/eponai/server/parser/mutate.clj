@@ -559,7 +559,7 @@
                (email/-send-store-access-request (:system/email system) (assoc params :user-id user-id))))})
 
 (defmutation user/create
-  [{:keys [system auth state ::parser/exception ::parser/return] :as env} _ params]
+  [{:keys [system auth state ::parser/exception ::parser/return query-params] :as env} _ params]
   {:auth ::auth/public
    :log  nil
    :resp {:success return
@@ -568,3 +568,15 @@
                      "Something went wrong when creating your account.")}}
   {:action (fn []
              (user/create env params))})
+
+(defmutation user/unlink-account
+  [{:keys [system auth state ::parser/exception ::parser/return] :as env} _ params]
+  {:auth ::auth/public
+   :log  nil
+   :resp {:success "Some message"
+          :error   (if exception
+                     (ex-data exception)
+                     "Something went wrong when creating your account.")}}
+  {:action (fn []
+             (debug "user/unlink-account with params: " params)
+             {:unlinked-accounts (user/unlink-user env params)})})
