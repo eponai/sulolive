@@ -122,6 +122,9 @@ a.disabled {
 	display: flex;
 	.switch {
 		margin-right: 1rem;
+		font-size: 75%;
+		// font-weight: $global-weight-normal;
+		letter-spacing: 1px;
 	}
 }
 
