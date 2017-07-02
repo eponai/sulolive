@@ -72,7 +72,7 @@
 
        (dom/p (css/add-class :info)
               (dom/small nil "By creating an account you accept our ")
-              (dom/a nil (dom/small nil "Terms of Service"))
+              (dom/a {:href (routes/url :tos)} (dom/small nil "Terms of Service"))
               (dom/small nil " and ")
               (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
                       :className "iubenda-nostyle no-brand iubenda-embed"
@@ -145,7 +145,7 @@
        (dom/span nil "Sign up or sign in with email"))
      (dom/p (css/add-class :info)
             (dom/small nil "By signing in you accept our ")
-            (dom/a nil (dom/small nil "Terms of Service"))
+            (dom/a {:href (routes/url :tos)} (dom/small nil "Terms of Service"))
             (dom/small nil " and ")
             (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
                     :className "iubenda-nostyle no-brand iubenda-embed"
