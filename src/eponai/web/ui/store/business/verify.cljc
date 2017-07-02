@@ -575,7 +575,10 @@
                    (css/add-class :disabled)
                    )
               (dom/span nil "Submit")))
-          (dom/p nil (dom/small nil "By submitting, you agree to our Services Agreement.")))))))
+          (dom/p nil
+                 (dom/small nil "By submitting, you agree to our ")
+                 (dom/a {:href (routes/url :tos)
+                         :target "_blank"} (dom/small nil "Terms of service."))))))))
 
 (def Verify (script-loader/stripe-loader Verify-no-loader))
 

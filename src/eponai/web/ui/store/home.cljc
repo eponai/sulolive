@@ -286,7 +286,9 @@
                        (dom/a {:href (routes/store-url store :store-dashboard/business#verify)} (dom/span nil "verifying your account"))
                        (dom/span nil ", you can only use SULO Live in test mode. You can manage your store, but it'll not be visible to the public."))
                 (dom/p nil
-                       "Once you've verified your account you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our terms of service. If there is a problem, we'll get in touch right away to resolve it as quickly as possible.")))))
+                       (dom/span nil "Once you've verified your account you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our ")
+                       (dom/a {:href (routes/url :tos)} (dom/span nil "terms of service"))
+                       (dom/span nil ". If there is a problem, we'll get in touch right away to resolve it as quickly as possible."))))))
 
         (dom/div
           (css/add-class :section-title)

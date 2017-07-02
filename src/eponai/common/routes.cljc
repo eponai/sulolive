@@ -114,6 +114,7 @@
              "orders"                           {""                       :user/order-list
                                                  ["/" [#"\w+" :order-id]] :user/order}
              ;["user/" [#"\d+" :user-id]]   user-routes
+             "tos"                              :tos
              "auth"                             :auth
              "login"                            :login
              "logout"                           :logout
@@ -132,6 +133,7 @@
                      :user/order
                      :shopping-bag
                      :about
+                     :tos
                      :not-found
                      :login
                      :link-social}
@@ -141,7 +143,7 @@
 
 (defn auth-roles [handler]
   (cond
-    (#{:landing-page :sell :about :not-found :login} handler)
+    (#{:landing-page :sell :about :not-found :login :tos} handler)
     ::auth/public
     (= handler :store-dashboard)
     ::auth/store-owner

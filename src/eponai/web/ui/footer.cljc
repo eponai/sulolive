@@ -81,6 +81,7 @@
                              (menu/item-link {:href      "//www.iubenda.com/privacy-policy/8010910"
                                               :className "iubenda-nostyle no-brand iubenda-embed"
                                               :title     "Privacy Policy"} (dom/span nil "Privacy policy"))
+                             (menu/item-link {:href (routes/url :tos)} (dom/span nil "Terms of service"))
                              ;(menu/item-link nil (dom/span nil "Shipping & Returns"))
                              ))
             (grid/column
