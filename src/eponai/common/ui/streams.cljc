@@ -11,7 +11,8 @@
     [eponai.common.ui.router :as router]
     [eponai.client.routes :as routes]
     [eponai.web.ui.photo :as photo]
-    [eponai.web.ui.footer :as foot]))
+    [eponai.web.ui.footer :as foot]
+    [eponai.common.ui.dom :as dom]))
 
 (defui Streams
   static om/IQuery
@@ -50,17 +51,18 @@
         ;    nil
         ;    ))
         (grid/row
-          nil
+          (css/add-class :section)
           (grid/column
             (->> (css/add-class :navigation)
                  (grid/column-size {:large 3})
                  (css/show-for :large))
             (menu/vertical
-              nil
-              (menu/item-link (css/add-class :is-active) "Live now")
-              (menu/item-link nil "Scheduled streams")
-              (menu/item-link nil "New arrivals")
-              (menu/item-link nil "Popular")))
+              (css/add-class :sl-navigation-parent)
+              (menu/item (css/add-class :is-active) (dom/a nil "Live now"))
+              ;(menu/item-link nil "Scheduled streams")
+              ;(menu/item-link nil "New arrivals")
+              ;(menu/item-link nil "Popular")
+              ))
           (grid/column
             nil
             (my-dom/div
@@ -81,7 +83,7 @@
                 (my-dom/span (css/add-class :shoutout) "No stores are LIVE right now :'(")))
             (my-dom/div
               {:classes ["sulo-items-container"]}
-              (my-dom/h3 (css/add-class :header) "Other cool stores currently offline")
+              (my-dom/h4 nil "Other cool stores currently offline")
               (grid/row
                 (grid/columns-in-row {:small 2 :medium 3})
                 (map (fn [store]

@@ -112,7 +112,7 @@ $section-footer-color: $primary-color;
 		&.new-arrivals {
 			.new-arrival-item {
 				@include breakpoint(small only) {
-					padding: 0 0.5rem;
+					padding: 0.5rem;
 					&:nth-child(even) {
 						padding-right: 0;
 					}

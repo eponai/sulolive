@@ -120,7 +120,7 @@
         ;    ))
 
         (grid/row
-          nil
+          (css/add-class :section)
           (grid/column
             (->> (grid/column-size {:large 3})
                  (css/add-class :navigation)
