@@ -99,13 +99,11 @@
           (dom/p nil (dom/small nil (str stripe-validation))))
         (dom/div
           (css/add-class :action-buttons)
-          (button/user-setting-default
-            {:onClick on-close}
-            (dom/span nil "Cancel"))
-          (button/user-setting-cta
+          (button/cancel
+            {:onClick on-close})
+          (button/save
             {:onClick #(do
-                        (.update-bank-account component on-close))}
-            (dom/span nil "Save")))))))
+                        (.update-bank-account component on-close))}))))))
 
 (defn payout-schedule-modal [component]
   (let [{:keys                 [modal]
@@ -161,14 +159,12 @@
                                 (range 31)))])
         (dom/div
           (css/add-class :action-buttons)
-          (button/user-setting-default
-            {:onClick #(om/update-state! component dissoc :modal)}
-            (dom/span nil "Cancel"))
-          (button/user-setting-cta
+          (button/cancel
+            {:onClick #(om/update-state! component dissoc :modal)})
+          (button/save
             {:onClick #(do
                         (.update-payout-schedule component interval week-anchor month-anchor)
-                        (om/update-state! component dissoc :modal))}
-            (dom/span nil "Save")))))))
+                        (om/update-state! component dissoc :modal))}))))))
 
 (defn default-currency-modal [component]
   (let [{:keys [modal]} (om/get-state component)
@@ -204,14 +200,12 @@
 
         (dom/div
           (css/add-class :action-buttons)
-          (button/user-setting-default
-            {:onClick #(om/update-state! component dissoc :modal)}
-            (dom/span nil "Cancel"))
-          (button/user-setting-cta
+          (button/cancel
+            {:onClick #(om/update-state! component dissoc :modal)})
+          (button/save
             {:onClick #(do
                         (.update-default-currency component)
-                        (om/update-state! component dissoc :modal))}
-            (dom/span nil "Save")))))))
+                        (om/update-state! component dissoc :modal))}))))))
 
 (defui Payouts-no-loader
   static om/IQuery
@@ -343,7 +337,7 @@
                              (dom/span nil (str " (" (c/ordinal-number anchor) ")")))
                            (dom/br nil)
                            (dom/small nil (str delay-days " day rolling basis")))
-                    (button/user-setting-default
+                    (button/store-setting-default
                       {:onClick #(om/update-state! this assoc :modal :payout-schedule)}
                       (dom/span nil "Change schedule"))))))
             ;(menu/item
@@ -402,7 +396,7 @@
                          ;    (->> {:onClick #(om/update-state! this assoc :modal :delete-account)}
                          ;         (css/add-classes [:small :alert :hollow]))
                          ;    (dom/span nil "Delete")))
-                         (button/user-setting-default
+                         (button/edit
                            {:onClick #(om/update-state! this assoc :modal :modal/bank-account :modal-object bank-acc)}
                            (dom/span nil "Edit"))))))
                  external-accounts)))
@@ -443,7 +437,7 @@
                          ;    (->> {:onClick #(om/update-state! this assoc :modal :delete-account)}
                          ;         (css/add-classes [:small :alert :hollow]))
                          ;    (dom/span nil "Delete")))
-                         (button/user-setting-default
+                         (button/edit
                            {:onClick #(om/update-state! this assoc :modal :modal/bank-account :modal-object bank-acc)}
                            (dom/span nil "Edit"))
 

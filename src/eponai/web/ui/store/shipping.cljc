@@ -22,7 +22,8 @@
     [eponai.common.mixpanel :as mixpanel]
     [eponai.common.format :as f]
     [eponai.client.routes :as routes]
-    [eponai.common.database :as db]))
+    [eponai.common.database :as db]
+    [eponai.web.ui.switch-input :as switch-input]))
 
 (def form-inputs
   {:shipping.rate/title       "shipping.rate.title"
@@ -595,6 +596,31 @@
           (css/add-class :content-section)
           (dom/div
             (css/add-class :section-title)
+            (dom/h2 nil "Free pickup"))
+          (callout/callout
+            nil
+            (menu/vertical
+              (css/add-class :section-list)
+              (menu/item
+                nil
+                (grid/row
+                  (->> (css/add-class :collapse)
+                       (css/align :middle))
+                  (grid/column
+                    (grid/column-size {:small 12 :medium 6})
+                    (dom/label nil "Allow free pickup")
+                    (dom/p nil (dom/small nil "Allow your customers to pick up their items themselves.")))
+                  (grid/column
+                    (css/text-align :right)
+                    (switch-input/switch {:title "Allow free pickup"
+                                          :id    "sulo-pickup"
+                                          :classes [:sulo-dark]}
+                                         (dom/span (css/add-class :switch-inactive) "No")
+                                         (dom/span (css/add-class :switch-active) "Yes"))))))))
+        (dom/div
+          (css/add-class :content-section)
+          (dom/div
+            (css/add-class :section-title)
             (dom/h2 nil "Shipping rules")
             (dom/div
               (css/add-class :subtitle)
@@ -604,7 +630,7 @@
                              :target  "_blank"
                              :onClick #(mixpanel/track "Store: See help for shipping rules")} (dom/small nil "Learn more"))
                      )
-              (button/button
+              (button/store-navigation-cta
                 {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-rule)}
                 (dom/span nil "Add shipping rule"))))
           ;(grid/row
@@ -697,7 +723,7 @@
                         (button/default-hollow
                           (button/small {:onClick #(om/update-state! this assoc :modal :modal/delete-rule :modal-object sr)})
                           (dom/span nil "Delete rule"))
-                        (button/default-hollow
+                        (button/store-setting-default
                           (button/small {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-rate :shipping-rule/edit-rule sr)})
                           (dom/span nil "Add shipping rate")))))))))
           (get-in store [:store/shipping :shipping/rules]))

@@ -139,7 +139,7 @@
               (css/text-align :center)
               (dom/h3 nil (get-in store [:store/profile :store.profile/name]))
               (photo/store-photo store {:transformation :transformation/thumbnail})
-              (button/default-hollow
+              (button/store-navigation-default
                 {:href    (routes/store-url store :store-dashboard/profile)
                  :onClick #(mixpanel/track-key ::mixpanel/go-to-store-info {:source "store-dashboard"})}
                 (dom/span nil "Store info")
@@ -153,7 +153,7 @@
               ;(dom/p nil (dom/span (css/add-class "icon icon-opened")))
               (when-not (= :status.type/open
                            (get-in store [:store/status :status/type]))
-                (button/default-hollow
+                (button/store-navigation-default
                   {:href    (routes/store-url store :store-dashboard/profile#options)
                    :onClick #(mixpanel/track-key ::mixpanel/update-status {:source "store-dashboard"})}
                   (dom/span nil "Options")
@@ -168,7 +168,7 @@
               (css/text-align :center)
               (dom/h3 nil "Balance")
               (dom/p (css/add-class :stat) "$0.00")
-              (button/default-hollow
+              (button/store-navigation-default
                 {:href    (routes/store-url store :store-dashboard/finances)
                  :onClick #(mixpanel/track-key ::mixpanel/go-to-finances {:source "store-dashboard"})}
                 (dom/span nil "Finances")
@@ -177,7 +177,7 @@
               (css/text-align :center)
               (dom/h3 nil "Products")
               (dom/p (css/add-class :stat) store-item-count)
-              (button/default-hollow
+              (button/store-navigation-default
                 {:href    (routes/store-url store :store-dashboard/product-list)
                  :onClick #(mixpanel/track-key ::mixpanel/go-to-products {:source "store-dashboard"})}
                 (dom/span nil "Products")
@@ -186,7 +186,7 @@
               (css/text-align :center)
               (dom/h3 nil "Orders")
               (dom/p (css/add-class :stat) (count (:order/_store store)))
-              (button/default-hollow
+              (button/store-navigation-default
                 {:href    (routes/store-url store :store-dashboard/order-list)
                  :onClick #(mixpanel/track-key ::mixpanel/go-to-orders {:source "store-dashboard"})}
                 (dom/span nil "Orders")

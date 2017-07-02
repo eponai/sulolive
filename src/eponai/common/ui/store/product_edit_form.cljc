@@ -351,11 +351,8 @@
                           nil
                           (photo/square {:photo-id       photo-key
                                          :transformation :transformation/thumbnail})
-                          (dom/a
-                            (->>
-                              {:onClick #(.remove-uploaded-photo this i)}
-                              (css/button-hollow)
-                              (css/add-classes [:secondary :expanded]))
+                          (button/store-setting-default
+                            (css/add-class :expanded {:onClick #(.remove-uploaded-photo this i)})
                             (dom/i {:classes ["fa fa-trash-o"]})))))))
                 uploaded-photos)
               (when (some? queue-photo)
@@ -594,7 +591,7 @@
               (label-column nil)
               (grid/column
                 nil
-                (button/user-setting-default
+                (button/store-setting-default
                   {:onClick #(do
                               (mixpanel/track "Store: Add product variation")
                               (om/update-state! this update :sku-count inc))}
@@ -611,11 +608,11 @@
                      (dom/span nil "Delete product"))))
           (grid/column
             (css/add-class :action-buttons)
-            (button/button
-              (button/hollow {:href    (routes/url :store-dashboard/product-list {:store-id store-id})
-                              :onClick #(mixpanel/track "Store: Cancel edit product")})
+            (button/store-navigation-default
+              {:href    (routes/url :store-dashboard/product-list {:store-id store-id})
+               :onClick #(mixpanel/track "Store: Cancel edit product")}
               (dom/span nil "Cancel"))
-            (button/button
+            (button/store-navigation-cta
               {
                :onClick #(when-not is-loading?
                           (if (is-new-product? this)
