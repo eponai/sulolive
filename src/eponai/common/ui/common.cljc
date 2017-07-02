@@ -127,7 +127,6 @@
 
 (defn city-banner [component locations]
   (let [{:sulo-locality/keys [title photo]} locations]
-    (debug "City locations: " locations)
     (dom/div
       (css/add-class :intro-header {:id "sulo-city-banner"})
       (photo/cover

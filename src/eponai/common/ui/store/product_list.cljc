@@ -121,7 +121,7 @@
                 edit-sections)
               (menu/item
                 (css/add-class :edit-sections-item)
-                (button/user-setting-default
+                (button/store-setting-default
                   {:onClick #(om/update-state! component update :products/edit-sections conj {})}
                   (dom/span nil "Add section..."))))
 
@@ -270,7 +270,7 @@
             (grid/column
               (->> (css/text-align :right)
                    (grid/column-size {:small 12 :medium 3 :large 2}))
-              (button/user-setting-default
+              (button/store-setting-default
                 {:onClick #(do
                             (mixpanel/track "Store: Edit product sections")
                             (om/update-state! this assoc :products/edit-sections (into [] (:store/sections store))))}
@@ -301,12 +301,12 @@
                 (css/add-class :button-item)
                 (dom/div
                   (css/text-align :right)
-                  (button/button
+                  (button/store-navigation-cta
                     {:href    (routes/url :store-dashboard/create-product
                                           {:store-id (:store-id route-params)
                                            :action   "create"})
                      :onClick #(mixpanel/track "Store: Add product")}
-                    "Add product"))))
+                    (dom/span nil "Add product")))))
             (dom/input {:value       (or search-input "")
                         :onChange    #(om/update-state! this assoc :search-input (.. % -target -value))
                         :placeholder "Search Products..."
@@ -334,12 +334,12 @@
                           :type        "text"}))
             (menu/item
               nil
-              (button/button
+              (button/store-navigation-cta
                 {:href    (routes/url :store-dashboard/create-product
                                       {:store-id (:store-id route-params)
                                        :action   "create"})
                  :onClick #(mixpanel/track "Store: Add product")}
-                "Add product"))))
+                (dom/span nil "Add product")))))
 
 
 
@@ -399,14 +399,14 @@
                                                           (.update-layout this)
                                                           (om/update-state! this assoc :grid-editable? false))})))
 
-                    (button/edit
+                    (button/store-setting-default
                       (css/add-class :small {:onClick #(om/update-state! this assoc :grid-editable? true :products/selected-section :all)})
                       (dom/span nil "Edit layout")))))
               (grid/column
                 nil
                 (when grid-editable?
                   (callout/callout-small
-                    (cond->> (css/add-class :warning)
+                    (cond->> (css/add-class :sulo-dark)
                              (not grid-editable?)
                              (css/add-class :sl-invisible))
                     (dom/small nil "This is how your products will appear in your store. Try moving them around and find a layout you like and save when you're done.")))))

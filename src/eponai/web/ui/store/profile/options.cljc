@@ -155,12 +155,10 @@
       (dom/p (css/add-class :text-alert) (dom/small nil (:message error-message)))
       (dom/div
         (css/add-class :action-buttons)
-        (button/user-setting-default
-          {:onClick on-close}
-          (dom/span nil "Cancel"))
-        (button/user-setting-cta
-          {:onClick #(.save-username component)}
-          (dom/span nil "Save"))))))
+        (button/cancel
+          {:onClick on-close})
+        (button/save
+          {:onClick #(.save-username component)})))))
 
 (defui StoreStatus
   static om/IQuery
@@ -259,7 +257,7 @@
                          (dom/small nil "sulo.live/store/ ")
                          (dom/span nil (or (:store/username store)
                                            (:db/id store))))
-                  (button/user-setting-default
+                  (button/store-setting-default
                     {:onClick #(om/update-state! this assoc :modal :modal/username)}
                     (dom/span nil "Change username")))))))
 

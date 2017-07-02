@@ -371,11 +371,10 @@
 (defread query/locations
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
-  {:value (do (debug "Fetch locations: " locations)
-              (when (:sulo-locality/path locations)
-                (db/pull db [:db/id
-                             :sulo-locality/path
-                             :sulo-locality/title {:sulo-locality/photo [:photo/id]}] [:sulo-locality/path (:sulo-locality/path locations)])))})
+  {:value (when (:sulo-locality/path locations)
+            (db/pull db [:db/id
+                         :sulo-locality/path
+                         :sulo-locality/title {:sulo-locality/photo [:photo/id]}] [:sulo-locality/path (:sulo-locality/path locations)]))})
 
 
 (defread query/stream-config

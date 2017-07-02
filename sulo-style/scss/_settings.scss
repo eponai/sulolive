@@ -56,7 +56,7 @@ $white: #fefefe;
 $foundation-palette: (
   primary: #444444,//#240061, //#2199e8,
   secondary: $dark-gray,//#D9D7D9, //#3A5288,
-  success: #3adb76,
+  success: darken(#3adb76, 10%),
   warning: #ffae00,
   alert: #ec5840,
   highlight: #FC302D,
@@ -71,6 +71,10 @@ $foundation-palette: (
   sulo: #8CC3C6,
   sulo-dark: #4e9a9e,//darken(#8CC3C6, 20%),
 );
+
+$sulo-color: map-get($foundation-palette, sulo);
+$sulo-dark-color: map-get($foundation-palette, sulo-dark);
+
 $body-background: $white;//#F0EDE3;
 $body-font-color: #2E2A31;
 $body-font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -507,7 +511,7 @@ $slider-radius: $global-radius;
 // ----------
 
 $switch-background: $medium-gray;
-$switch-background-active: $primary-color;
+$switch-background-active: $sulo-dark-color;
 $switch-height: 2rem;
 $switch-height-tiny: 1.5rem;
 $switch-height-small: 1.75rem;
@@ -598,7 +602,7 @@ $topbar-unstack-breakpoint: small;
 
 // 37. Dashboard 
 // --------------
-$dashboard-background: rgba($light-gray, 0.35);
+$dashboard-background: rgba($light-gray, 0.3);
 $dashboard-max-width: 100%;
 $dashboard-content-width: 54rem;
 $dashboard-header-sizes: (

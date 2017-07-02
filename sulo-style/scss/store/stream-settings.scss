@@ -10,8 +10,12 @@
 	}
 
 	.section-title {
+		margin-bottom: 0.5rem;
+		> * {
+			margin-bottom: 0;
+		}
 		h3 {
-			margin-bottom: 0.5rem;
+			// margin-bottom: 0.5rem;
 			.label {
 				font-size: 80%;
 				text-transform: uppercase;
@@ -43,6 +47,21 @@
 				&:hover {
 					text-decoration: underline;
 				}
+			}
+		}
+	}
+	.stream-state-container {
+		display: flex;
+		align-items: center;
+		// margin-bottom: $global-margin;
+		> h3 {
+			margin: 0;
+		}
+		> a {
+			padding: 0 0.5rem;
+			color: $dark-gray;
+			&:hover {
+				color: $body-font-color;
 			}
 		}
 	}

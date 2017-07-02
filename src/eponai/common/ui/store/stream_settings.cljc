@@ -61,49 +61,52 @@
                 (css/add-class :section-title)
                 (dom/h2 nil
                         (dom/span nil "Preview"))
-                (dom/h3 (css/add-class :sl-tooltip)
-                        (dom/span
-                          (cond->> (css/add-classes [:label ])
-                                   (= stream-state :stream.state/offline)
-                                   (css/add-class :primary)
-                                   (= stream-state :stream.state/online)
-                                   (css/add-class :success)
-                                   (= stream-state :stream.state/live)
-                                   (css/add-class :highlight))
-                          (name stream-state))
-                        (when (= stream-state :stream.state/offline)
-                          (dom/span (css/add-class :sl-tooltip-text)
-                                    "See the help checklist below to get started streaming")))
                 (dom/div
-                  nil
-                  (cond
-                    (= stream-state :stream.state/online)
-                    (dom/a
-                      (->> (css/button {:onClick #(do
-                                                   (mixpanel/track "Store: Stream go live")
-                                                   (om/transact! this [(list 'stream/go-live {:store-id (:db/id store)}) :query/stream]))})
-                           (css/add-class :highlight))
-                      (dom/strong nil "Go live!"))
-                    (= stream-state :stream.state/live)
-                    (dom/a
-                      (css/button-hollow {:onClick #(do
-                                                     (mixpanel/track "Store: Stream end live")
-                                                     (om/transact! this [(list 'stream/end-live {:store-id (:db/id store)}) :query/stream]))})
-                      (dom/strong nil "End live")))
-                  (button/default-hollow
+                  (css/add-class :stream-state-container)
+                  (dom/h3 (css/add-class :sl-tooltip)
+                          (dom/span
+                            (cond->> (css/add-classes [:label])
+                                     (= stream-state :stream.state/offline)
+                                     (css/add-class :secondary)
+                                     (= stream-state :stream.state/online)
+                                     (css/add-class :success)
+                                     (= stream-state :stream.state/live)
+                                     (css/add-class :highlight))
+                            (name stream-state))
+                          (cond (= stream-state :stream.state/offline)
+                            (dom/span (css/add-class :sl-tooltip-text)
+                                      "See the help checklist below to get started streaming")
+                                (= stream-state :stream.state/online)
+                                (dom/span (css/add-class :sl-tooltip-text)
+                                          "Your stream is being published to SULO Live and you're ready to go LIVE")))
+                  (dom/a
                     {:onClick #(binding [parser/*parser-allow-local-read* false]
                                 (mixpanel/track "Store: Stream refresh")
-                                (om/transact! this [:query/stream]))}
-                    (dom/i {:classes ["fa fa-refresh fa-fw"]})
-                    (when (or (nil? stream-state) (= stream-state :stream.state/offline))
-                      (dom/strong nil "Refresh")))
-                  ;(dom/a
-                  ;  (css/button-hollow {:onClick #(binding [parser/*parser-allow-local-read* false]
-                  ;                                  (om/transact! this [:query/stream]))})
-                  ;  (dom/i {:classes ["fa fa-refresh fa-fw"]})
-                  ;  (when (or (nil? stream-state) (= stream-state :stream.state/offline))
-                  ;    (dom/strong nil "Refresh")))
-                  ))
+                                (om/transact! this [:query/stream]))
+                     :title "Refresh preview"}
+                    (dom/i {:classes ["fa fa-refresh fa-fw"]})))
+                (cond
+                  (= stream-state :stream.state/online)
+                  (dom/a
+                    (->> (css/button {:onClick #(do
+                                                 (mixpanel/track "Store: Stream go live")
+                                                 (om/transact! this [(list 'stream/go-live {:store-id (:db/id store)}) :query/stream]))})
+                         (css/add-class :highlight))
+                    (dom/strong nil "Go live!"))
+                  (= stream-state :stream.state/live)
+                  (dom/a
+                    (css/button-hollow {:onClick #(do
+                                                   (mixpanel/track "Store: Stream end live")
+                                                   (om/transact! this [(list 'stream/end-live {:store-id (:db/id store)}) :query/stream]))})
+                    (dom/strong nil "End live")))
+
+                ;(dom/a
+                ;  (css/button-hollow {:onClick #(binding [parser/*parser-allow-local-read* false]
+                ;                                  (om/transact! this [:query/stream]))})
+                ;  (dom/i {:classes ["fa fa-refresh fa-fw"]})
+                ;  (when (or (nil? stream-state) (= stream-state :stream.state/offline))
+                ;    (dom/strong nil "Refresh")))
+                )
               (callout/callout-small
                 nil
                 (stream/->Stream
@@ -188,7 +191,7 @@
                                 :placeholder "Create a stream key..."}))
                   (grid/column
                     nil
-                    (button/default-hollow
+                    (button/store-navigation-default
                       {:onClick #(do
                                   (mixpanel/track "Store: Generate stream key")
                                   (msg/om-transact! this `[(stream-token/generate ~{:store-id (:db/id store)})

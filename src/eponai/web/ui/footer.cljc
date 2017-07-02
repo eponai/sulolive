@@ -42,7 +42,6 @@
 
   (render [this]
     (let [{:query/keys [sulo-localities locations auth]} (om/props this)]
-      (debug "Locations: " locations)
       (dom/div
         (css/add-class :footer {:key "footer"})
         (dom/footer

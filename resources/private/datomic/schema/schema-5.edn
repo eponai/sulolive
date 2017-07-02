@@ -36,4 +36,11 @@
   :db/unique             :db.unique/value
   :db/doc                "Store username (used in URLs)."
   :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping.rule/pickup?
+  :db/valueType          :db.type/boolean
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Allow customer to pickup."
+  :db.install/_attribute :db.part/db}
  ]

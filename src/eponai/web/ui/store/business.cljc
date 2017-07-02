@@ -93,12 +93,10 @@
       (dom/p (css/add-class :text-alert) (dom/small nil error-message))
       (dom/div
         (css/add-class :action-buttons)
-        (button/user-setting-default
-          {:onClick on-close}
-          (dom/span nil "Cancel"))
-        (button/user-setting-cta
-          {:onClick #(.save-personal-info component)}
-          (dom/span nil "Save"))))))
+        (button/cancel
+          {:onClick on-close})
+        (button/save
+          {:onClick #(.save-personal-info component)})))))
 
 (defn edit-business-modal [component]
   (let [
@@ -179,12 +177,10 @@
       (dom/p (css/add-class :text-alert) (dom/small nil error-message))
       (dom/div
         (css/add-class :action-buttons)
-        (button/user-setting-default
-          {:onClick on-close}
-          (dom/span nil "Cancel"))
-        (button/user-setting-cta
-          {:onClick #(.save-business-info component)}
-          (dom/span nil "Save"))))))
+        (button/cancel
+          {:onClick on-close})
+        (button/save
+          {:onClick #(.save-business-info component)})))))
 
 (defui AccountSettings
   static om/IQuery
@@ -408,7 +404,7 @@
                           ;       (dom/br nil)
                           ;       (dom/small nil (str city ", " postal ", " state)))
                           (dom/p nil (dom/small nil (dom/i nil "No saved info"))))
-                        (button/user-setting-default
+                        (button/edit
                           {:onClick #(om/update-state! this assoc :modal :modal/edit-info)}
                           (dom/span nil "Edit business")))))
                   (menu/item
@@ -433,7 +429,7 @@
                                    (dom/small nil (dom/strong nil "DOB: ")
                                               (dom/span nil (date/date->string (str year "-" month "-" day))))))
                           (dom/p nil (dom/small nil (dom/i nil "No saved info"))))
-                        (button/user-setting-default
+                        (button/edit
                           {:onClick #(om/update-state! this assoc :modal :modal/edit-personal)}
                           (dom/span nil "Edit details"))))))))
 
@@ -467,16 +463,14 @@
                         (if email?
                           (dom/div
                             (css/add-class :action-buttons)
-                            (button/user-setting-default
+                            (button/cancel
                               {:onClick #(do (om/update-state! this assoc :edit/email? false :input-validation nil)
-                                             #?(:cljs (set! (.-value (utils/element-by-id (:field.general/email form-inputs))) email)))}
-                              (dom/span nil "Cancel"))
-                            (button/user-setting-cta
-                              {:onClick #(.save-email this)}
-                              (dom/span nil "Save")))
-                          (button/user-setting-default
+                                             #?(:cljs (set! (.-value (utils/element-by-id (:field.general/email form-inputs))) email)))})
+                            (button/save
+                              {:onClick #(.save-email this)}))
+                          (button/edit
                             {:onClick #(om/update-state! this assoc :edit/email? true)}
-                            (dom/span nil "Edit"))))))))))
+                            (dom/span nil "Edit email"))))))))))
 
           (= route :store-dashboard/business#verify)
 
