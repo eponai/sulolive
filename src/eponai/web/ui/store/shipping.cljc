@@ -512,9 +512,13 @@
                            (remove #(= (:db/id %) (:db/id rate)) rates))]
       (debug "Edit rule: " rule)
       (debug "Delete rate: " rate)
-      (msg/om-transact! this [(list 'store/update-shipping-rule {:shipping-rule (update rule :shipping.rule/rates remove-rate-fn)
-                                                                 :store-id      (db/store-id->dbid this (:store-id (:route-params current-route)))})
-                              :query/store])))
+      (msg/om-transact! this (cond-> [(list 'store/update-shipping-rule {:shipping-rule (update rule :shipping.rule/rates remove-rate-fn)
+                                                                         :store-id      (db/store-id->dbid this (:store-id (:route-params current-route)))})]
+                                     (= 1 (count (:shipping.rule/rates rule)))
+                                     (conj (list 'store/delete-shipping-rule {:rule     rule
+                                                                              :store-id (:db/id store)}))
+                                     :always
+                                     (conj :query/store)))))
 
   (componentDidUpdate [this _ _]
     (let [rule-message (msg/last-message this 'store/save-shipping-rule)
