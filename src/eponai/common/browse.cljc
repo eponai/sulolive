@@ -113,29 +113,31 @@
       browse-params)))
 
 (defn count-items-by-category [db items]
-  (let [count-by-cat (db/find-with
-                       db
-                       {:find    '[(clojure.core/frequencies ?normalized-cat) .]
-                        :where   '[[?e :store.item/category ?cat]
-                                   (category-or-parent-category ?cat ?normalized-cat)
-                                   ]
-                        ;; Using datomic's :with to avoid it from deduping ?e
-                        :with    '[?e]
-                        :symbols {'[?e ...] items}
-                        :rules   [db.rules/category-or-parent-category]})
-        ;; Unisex items should count in both men and women's categories.
-        unisex-count (db/find-with
-                       db
-                       {:find    '[?gender-cat ?count]
-                        :where   '[[?unisex-cat :category/name ?unisex-name]
-                                   [?gender-cat :category/name ?gender-name]
-                                   [(not= ?unisex-cat ?gender-cat)]
-                                   [?parent :category/children ?unisex-cat]
-                                   [?parent :category/children ?gender-cat]]
-                        :symbols {'[[?unisex-cat ?count] ...]              count-by-cat
-                                  '[[?unisex-name [?gender-name ...]] ...] {"unisex-adult" ["women" "men"]
-                                                                            "unisex-kids"  ["girls" "boys"]}}})]
-    (merge-with + count-by-cat (into {} unisex-count))))
+  (when-let [count-by-cat (not-empty
+                            (db/find-with
+                              db
+                              {:find    '[(clojure.core/frequencies ?normalized-cat) .]
+                               :where   '[[?e :store.item/category ?cat]
+                                          (category-or-parent-category ?cat ?normalized-cat)
+                                          ]
+                               ;; Using datomic's :with to avoid it from deduping ?e
+                               :with    '[?e]
+                               :symbols {'[?e ...] items}
+                               :rules   [db.rules/category-or-parent-category]}))]
+    (let [
+          ;; Unisex items should count in both men and women's categories.
+          unisex-count (db/find-with
+                         db
+                         {:find    '[?gender-cat ?count]
+                          :where   '[[?unisex-cat :category/name ?unisex-name]
+                                     [?gender-cat :category/name ?gender-name]
+                                     [(not= ?unisex-cat ?gender-cat)]
+                                     [?parent :category/children ?unisex-cat]
+                                     [?parent :category/children ?gender-cat]]
+                          :symbols {'[[?unisex-cat ?count] ...]              count-by-cat
+                                    '[[?unisex-name [?gender-name ...]] ...] {"unisex-adult" ["women" "men"]
+                                                                              "unisex-kids"  ["girls" "boys"]}}})]
+      (merge-with + count-by-cat (into {} unisex-count)))))
 
 (defn search
   "Remember that we have ?score here."
@@ -169,7 +171,7 @@
       {:browse-result/items             items
        :browse-result/prices            (store-item-price-distribution
                                           (map second items-with-price))
-       :browse-result/count-by-category (count-items-by-category db items)}
+       :browse-result/count-by-category (or (count-items-by-category db items) {})}
       browse-params)))
 
 (defn find-items

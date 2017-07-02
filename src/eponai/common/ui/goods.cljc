@@ -57,7 +57,7 @@
                (seq)
                (reduce + 0)))))
 
-(defn- vertical-category-menu [children current-category label-fn]
+(defn- vertical-category-menu [component children current-category label-fn]
   (menu/vertical
     (css/add-class :nested)
     (->> children
@@ -68,7 +68,7 @@
                (when (and (some? current-category)
                           (= path (:category/path current-category)))
                  (css/add-class ::css/is-active))
-               (dom/a {:href (:category/href category)}
+               (dom/a {:href (routes/map->url (routes/merge-route component (:category/route-map category)))}
                       (dom/span nil (label-fn category)))))))))
 
 (defn selected-navigation [component]
@@ -101,7 +101,7 @@
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:proxy/footer (om/get-query foot/Footer)}
      {:query/browse-products-2 (om/get-query product/Product)}
-     {:query/navigation [:db/id :category/name :category/label :category/path :category/href]}
+     {:query/navigation [:db/id :category/name :category/label :category/path :category/route-map]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
      {:query/countries [:country/code :country/name]}
      :query/locations
@@ -165,9 +165,10 @@
                           (let [is-active? (= (:category/name category) (:category/name (first categories)))]
                             (menu/item
                               (when is-active? (css/add-class :is-active))
-                              (dom/a {:href (:category/href category)}
+                              (dom/a {:href (routes/map->url (routes/merge-route this (:category/route-map category)))}
                                      (dom/span nil (category-label-fn category)))
-                              (vertical-category-menu (:category/children category)
+                              (vertical-category-menu this
+                                                      (:category/children category)
                                                       (last categories)
                                                       category-label-fn)))))))
             ;(dom/div

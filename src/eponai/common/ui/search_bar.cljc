@@ -20,10 +20,15 @@
   ISearchBar
   (trigger-search! [this]
     (let [{:keys [input-search]} (om/get-state this)]
-      (routes/set-url! this
-                       :browse/all-items
-                       {:locality (:sulo-locality/path (client.auth/current-locality this))}
-                       {:search input-search})))
+      (routes/set-url-map! this
+                           ;; Merges any query-params we've already got.
+                           (routes/merge-route
+                             this
+                             {:route        :browse/all-items
+                              :route-params {:locality (:sulo-locality/path (client.auth/current-locality this))}
+                              :query-params {:search input-search}}
+                             ;; Keep the query-params
+                             [:query-params]))))
   Object
   (render [this]
     (let [{:keys [mixpanel-source placeholder default-value classes locations]} (om/props this)

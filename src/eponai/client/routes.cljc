@@ -64,6 +64,9 @@
   ([route route-params query-params]
    (routes/path route route-params query-params)))
 
+(defn map->url [{:keys [route route-params query-params]}]
+  (url route route-params query-params))
+
 (defn store-url
   ([store route]
     (store-url store route nil))
@@ -101,6 +104,10 @@
        (do-set-url! component bidi-url))
      (warn "Unable to create a url with route: " route " route-params: " route-params))))
 
+(defn set-url-map!
+  [component {:keys [route route-params query-params]}]
+  (set-url! component route route-params query-params))
+
 (def route-param-normalizers
   {:order-id   (fn [_ order-id] (c/parse-long-safe order-id))
    :user-id    (fn [_ user-id] (c/parse-long-safe user-id))
@@ -126,3 +133,17 @@
         (set/rename-keys {:ui.singleton.routes/current-route :route
                           :ui.singleton.routes/route-params  :route-params
                           :ui.singleton.routes/query-params  :query-params}))))
+
+(defn merge-route
+  "Merges the current route with a route map, containing :route, :route-params, :query-params
+
+  Can take a 3rd parameter with a vector of keys to dissoc/disgard from the current route."
+  ([x route-map]
+   (merge-route x route-map [:route :route-params :query-params]))
+  ([x {:keys [route] :as route-map} keys-to-keep-from-current]
+   (let [current (into {}
+                       (filter (comp (set keys-to-keep-from-current) key))
+                       (current-route x))]
+     (cond-> (merge-with merge current (dissoc route-map :route))
+             (some? route)
+             (assoc :route route)))))

@@ -294,20 +294,18 @@
                                                      [?e :store/owners ?owners]]
                                           :symbols {'?user user-id}})})))
 
-(defn- add-all-hrefs [loc category params->route-handler param-order]
+(defn- add-all-hrefs [category params->route-handler param-order]
   (letfn [(with-hrefs [category parent-names]
             (let [names (conj parent-names (:category/name category))
                   params (zipmap param-order names)]
-              (cond-> category
-                      (some? (:sulo-locality/path loc))
-                      (assoc :category/href (client.routes/url (params->route-handler params) (assoc params :locality (:sulo-locality/path loc))))
-                      :always
-                      (update :category/children (fn [children]
-                                                   (into (empty children) (map #(with-hrefs % names)) children))))))]
+              (-> category
+                  (assoc :category/route-map {:route (params->route-handler params) :route-params params})
+                  (update :category/children (fn [children]
+                                               (into (empty children) (map #(with-hrefs % names)) children))))))]
     (with-hrefs category [])))
 
-(defn assoc-gender-hrefs [loc category]
-  (add-all-hrefs loc category
+(defn assoc-gender-hrefs [category]
+  (add-all-hrefs category
                  (fn [{:keys [top-category sub-category sub-sub-category]}]
                    (or (when sub-sub-category :browse/gender+top+sub-sub)
                        (when top-category :browse/gender+top)
@@ -315,8 +313,8 @@
                        :browse/all-items))
                  [:sub-category :top-category :sub-sub-category]))
 
-(defn assoc-category-hrefs [loc category]
-  (add-all-hrefs loc category
+(defn assoc-category-hrefs [category]
+  (add-all-hrefs category
                  (fn [{:keys [top-category sub-category sub-sub-category]}]
                    (or (when sub-sub-category :browse/category+sub+sub-sub)
                        (when sub-category :browse/category+sub)
@@ -331,7 +329,6 @@
             ;; Since our query is flat, it's faster to just select keys from the entity.
             entity-pull (comp (map #(db/entity db %))
                               (map #(select-keys % query-without-children)))
-            loc (client.auth/current-locality db)
 
             genders {:category/name     gender
                      :category/label    (str/capitalize gender)
@@ -348,22 +345,16 @@
                                                                  (into [] entity-pull)
                                                                  (assoc category :category/children)))))))}]
         #_(assert (every? keyword? query-without-children))
-        (if (some? loc)
-          (assoc-gender-hrefs loc genders)
-          genders)))))
+        (assoc-gender-hrefs genders)))))
 
 (defn navigate-category [db query category-name]
   (let [categories (db/pull-one-with db (into [{:category/children '...}]
                                               (parser.util/remove-query-key :category/children)
                                               query)
                                      (db/merge-query (products/category-names-query {:top-category category-name})
-                                                     {:where '[[(identity ?top) ?e]]}))
-        loc (client.auth/current-locality db)]
-
+                                                     {:where '[[(identity ?top) ?e]]}))]
     (when (some? categories)
-      (if (some? loc)
-        (assoc-category-hrefs loc categories)
-        categories))))
+      (assoc-category-hrefs categories))))
 
 (defn nav-categories [db query]
   (letfn [(distinct-by-name [category]
