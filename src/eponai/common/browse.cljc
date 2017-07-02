@@ -111,6 +111,31 @@
        :browse-result/prices (store-item-price-distribution (map second items-with-price))}
       browse-params)))
 
+(defn count-items-by-category [db items]
+  (let [count-by-cat (db/find-with
+                       db
+                       {:find    '[(clojure.core/frequencies ?normalized-cat) .]
+                        :where   '[[?e :store.item/category ?cat]
+                                   (category-or-parent-category ?cat ?normalized-cat)
+                                   ]
+                        ;; Using datomic's :with to avoid it from deduping ?e
+                        :with    '[?e]
+                        :symbols {'[?e ...] items}
+                        :rules   [db.rules/category-or-parent-category]})
+        ;; Unisex items should count in both men and women's categories.
+        unisex-count (db/find-with
+                       db
+                       {:find    '[?gender-cat ?count]
+                        :where   '[[?unisex-cat :category/name ?unisex-name]
+                                   [?gender-cat :category/name ?gender-name]
+                                   [(not= ?unisex-cat ?gender-cat)]
+                                   [?parent :category/children ?unisex-cat]
+                                   [?parent :category/children ?gender-cat]]
+                        :symbols {'[[?unisex-cat ?count] ...]              count-by-cat
+                                  '[[?unisex-name [?gender-name ...]] ...] {"unisex-adult" ["women" "men"]
+                                                                            "unisex-kids"  ["girls" "boys"]}}})]
+    (merge-with + count-by-cat (into {} unisex-count))))
+
 (defn search
   "Remember that we have ?score here."
   [db {:keys [locations search categories price-range order] :as browse-params}]
@@ -138,21 +163,12 @@
                              {:find  '[?e ?price ?created-at ?score]
                               :where '[[?e :store.item/price ?price]
                                        [?e :store.item/created-at ?created-at]]}))
-        items (sort-items order items-with-price)
-        count-by-cat (db/find-with
-                       db
-                       {:find    '[(clojure.core/frequencies ?c) .]
-                        :where   '[[?e :store.item/category ?cat]
-                                   (category-or-parent-category ?cat ?c)]
-                        ;; Using datomic's :with to avoid it from deduping ?e
-                        :with    '[?e]
-                        :symbols {'[?e ...] items}
-                        :rules   [db.rules/category-or-parent-category]})]
+        items (sort-items order items-with-price)]
     (make-result
       {:browse-result/items             items
        :browse-result/prices            (store-item-price-distribution
                                           (map second items-with-price))
-       :browse-result/count-by-category count-by-cat}
+       :browse-result/count-by-category (count-items-by-category db items)}
       browse-params)))
 
 (defn find-items
@@ -161,7 +177,9 @@
   Returns additional metadata based on how the items were found."
   [db browse-params]
   (if (some? (:search browse-params))
-    (search db browse-params)
+    (timbre/with-level
+      :trace
+      (search db browse-params))
     (category db browse-params)))
 
 (defn make-browse-params

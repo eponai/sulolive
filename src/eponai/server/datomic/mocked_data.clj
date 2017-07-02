@@ -210,7 +210,7 @@
                        {:store.item/name     "Modern Geometric Wood Bead Necklace"
                         :store.item/price    134.00M
                         :store.item/photos   [(item-photo "mocked/175704-bae48bd385d64dc0bb6ebad3190cc317")]
-                        :store.item/category [:category/path (category-path "jewelry" "men")]
+                        :store.item/category [:category/path (category-path "jewelry" "unisex-adult")]
                         :store.item/skus     [(sku)]}
                        {:store.item/name     "Modern Wood Teardrop Stud Earrings"
                         :store.item/price    34.00M
