@@ -83,6 +83,33 @@
              result-params))))
 
 
+(defn count-items-by-category [db items]
+  (when-let [count-by-cat (not-empty
+                            (db/find-with
+                              db
+                              {:find    '[(clojure.core/frequencies ?normalized-cat) .]
+                               :where   '[[?item :store.item/category ?cat]
+                                          (category-or-parent-category ?cat ?normalized-cat)
+                                          ]
+                               ;; Using datomic's :with to avoid it from deduping ?item
+                               :with    '[?item]
+                               :symbols {'[?item ...] items}
+                               :rules   [db.rules/category-or-parent-category]}))]
+    (let [
+          ;; Unisex items should count in both men and women's categories.
+          unisex-count (db/find-with
+                         db
+                         {:find    '[?gender-cat ?count]
+                          :where   '[[?unisex-cat :category/name ?unisex-name]
+                                     [?gender-cat :category/name ?gender-name]
+                                     [(not= ?unisex-cat ?gender-cat)]
+                                     [?parent :category/children ?unisex-cat]
+                                     [?parent :category/children ?gender-cat]]
+                          :symbols {'[[?unisex-cat ?count] ...]              count-by-cat
+                                    '[[?unisex-name [?gender-name ...]] ...] {"unisex-adult" ["women" "men"]
+                                                                              "unisex-kids"  ["girls" "boys"]}}})]
+      (merge-with + count-by-cat (into {} unisex-count)))))
+
 (defn category
   "Returns items and their prices based on selected category"
   [db {:keys [locations categories price-range order] :as browse-params}]
@@ -104,40 +131,15 @@
                              item-query
                              {:find  '[?e ?price ?created-at]
                               :where '[[?e :store.item/price ?price]
-                                       [?e :store.item/created-at ?created-at]]}))]
+                                       [?e :store.item/created-at ?created-at]]}))
+        items (sort-items order items-with-price)]
 
     ;; Pagination can be implemented client side as long as we return all items in the correct order.
     (make-result
-      {:browse-result/items  (sort-items order items-with-price)
-       :browse-result/prices (store-item-price-distribution (map second items-with-price))}
+      {:browse-result/items  items
+       :browse-result/prices (store-item-price-distribution (map second items-with-price))
+       :browse-result/count-by-category (or (count-items-by-category db items) {})}
       browse-params)))
-
-(defn count-items-by-category [db items]
-  (when-let [count-by-cat (not-empty
-                            (db/find-with
-                              db
-                              {:find    '[(clojure.core/frequencies ?normalized-cat) .]
-                               :where   '[[?e :store.item/category ?cat]
-                                          (category-or-parent-category ?cat ?normalized-cat)
-                                          ]
-                               ;; Using datomic's :with to avoid it from deduping ?e
-                               :with    '[?e]
-                               :symbols {'[?e ...] items}
-                               :rules   [db.rules/category-or-parent-category]}))]
-    (let [
-          ;; Unisex items should count in both men and women's categories.
-          unisex-count (db/find-with
-                         db
-                         {:find    '[?gender-cat ?count]
-                          :where   '[[?unisex-cat :category/name ?unisex-name]
-                                     [?gender-cat :category/name ?gender-name]
-                                     [(not= ?unisex-cat ?gender-cat)]
-                                     [?parent :category/children ?unisex-cat]
-                                     [?parent :category/children ?gender-cat]]
-                          :symbols {'[[?unisex-cat ?count] ...]              count-by-cat
-                                    '[[?unisex-name [?gender-name ...]] ...] {"unisex-adult" ["women" "men"]
-                                                                              "unisex-kids"  ["girls" "boys"]}}})]
-      (merge-with + count-by-cat (into {} unisex-count)))))
 
 (defn search
   "Remember that we have ?score here."
