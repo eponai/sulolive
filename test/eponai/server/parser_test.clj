@@ -115,6 +115,6 @@
                                      ds-conn
                                      server-response)
                              ((parser/client-parser) {:state ds-conn} query)))]
-        (test/is (seq (:query/navigation (client-parse [{:query/navigation [:category/name :category/label :category/path :category/href]}])))))
+        (test/is (seq (:query/navigation (client-parse [{:query/navigation [:category/name :category/label :category/path :category/route-map]}])))))
       (finally
         (c/stop datomic)))))
