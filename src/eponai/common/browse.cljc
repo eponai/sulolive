@@ -91,7 +91,8 @@
         items-by-cat (cond (some? top-category)
                            (products/find-with-category-names locations (select-keys categories [:top-category]))
                            (some? sub-category)
-                           (products/find-with-category-names locations (select-keys categories [:sub-category])))
+                           (products/find-with-category-names locations (select-keys categories [:sub-category]))
+                           :else {})
         price-filter (price-where-clause price-range)
         item-query (cond-> items-by-cat
                            (some? price-filter)
@@ -177,9 +178,7 @@
   Returns additional metadata based on how the items were found."
   [db browse-params]
   (if (some? (:search browse-params))
-    (timbre/with-level
-      :trace
-      (search db browse-params))
+    (search db browse-params)
     (category db browse-params)))
 
 (defn make-browse-params
