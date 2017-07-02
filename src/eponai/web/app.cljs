@@ -268,7 +268,8 @@
           (run! #(modules/prefetch-route modules %) [:index :store :browse])
           (debug "Initial app load done!"))
         (catch :default e
-          (error "Init app error: " e))))))
+          (error "Init app error: " e)
+          (error "Stack: " (.-stack e)))))))
 
 (defn run-prod []
   (run {:shared/auth0 :env/prod

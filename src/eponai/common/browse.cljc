@@ -198,22 +198,45 @@
    :browse-result/items            {}})
 
 (defn find-result [db browse-params]
-  (letfn [(some-or-missing? [category key]
-            (let [val-sym (symbol nil (str "?" (name key)))]
-              (if (some? category)
-                ['?e key val-sym]
-                [(list 'missing? '$ '?e key)])))]
+  (letfn [(attr-eq? [k v e]
+            (= v (get e k)))]
+    (let [{:keys [locations categories price-range order search]} browse-params
+          {:keys [top-category sub-category sub-sub-category]} categories]
+      (->> (db/datoms db :avet :browse-result/locations (:db/id locations))
+           (sequence
+             (comp
+               (map :e)
+               (map #(db/entity db %))
+               (filter (partial attr-eq? :browse-result/order order))
+               (filter (partial attr-eq? :browse-result/search search))
+               (filter (partial attr-eq? :browse-result/top-category top-category))
+               (filter (partial attr-eq? :browse-result/sub-category sub-category))
+               (filter (partial attr-eq? :browse-result/sub-sub-category-category sub-sub-category))
+               (filter (partial attr-eq? :browse-result/from-price (:from-price price-range)))
+               (filter (partial attr-eq? :browse-result/to-price (:to-price price-range)))
+               (take 1)))
+           (first)
+           (:db/id)))))
+
+
+(comment
+  ;; Can't implement find-result this way unfortunately, because we get stack
+  ;; overflow. Wat.
+  (letfn [(some-or-missing? [k v]
+            (if (some? v)
+              ['?e k v]
+              [(list 'missing? '$ '?e k)]))]
     (let [{:keys [locations categories price-range order search]} browse-params
           {:keys [top-category sub-category sub-sub-category]} categories]
       (db/one-with
         db
         {:where   ['[?e :browse-result/locations ?location]
-                   (some-or-missing? search :browse-result/search)
-                   (some-or-missing? top-category :browse-result/top-category)
-                   (some-or-missing? sub-category :browse-result/sub-category)
-                   (some-or-missing? sub-sub-category :browse-result/sub-sub-category-category)
-                   (some-or-missing? (:from-price price-range) :browse-result/from-price)
-                   (some-or-missing? (:to-price price-range) :browse-result/to-price)
-                   (some-or-missing? order :browse-result/order)
+                   (some-or-missing? :browse-result/order order)
+                   (some-or-missing? :browse-result/search search)
+                   (some-or-missing? :browse-result/top-category top-category)
+                   (some-or-missing? :browse-result/sub-category sub-category)
+                   (some-or-missing? :browse-result/sub-sub-category-category sub-sub-category)
+                   (some-or-missing? :browse-result/from-price (:from-price price-range))
+                   (some-or-missing? :browse-result/to-price (:to-price price-range))
                    ]
          :symbols {'?location (:db/id locations)}}))))

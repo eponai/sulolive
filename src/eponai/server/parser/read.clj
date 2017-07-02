@@ -456,7 +456,7 @@
   {:auth ::auth/public}
   {:value (db/pull-all-with db query {:where '[[?e :sulo-locality/title _]]})})
 
-(def browse-products-uniqueness [:categories :price-range :sorting :search])
+(def browse-products-uniqueness [:categories :price-range :order :search])
 
 (defread query/browse-products-2
   [{:keys         [db locations query-params route-params query]
