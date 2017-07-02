@@ -15,6 +15,16 @@
 
 .sulo-browse {
 	.section {
-		margin-top: $global-margin;
+		padding-top: $global-padding;
+	}
+
+	.section-title {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
+		flex-wrap: wrap;
+	}
+	.sulo-items-container.empty-container {
+		padding-bottom: 8rem;
 	}
 }

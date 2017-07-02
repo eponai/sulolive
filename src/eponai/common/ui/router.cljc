@@ -39,7 +39,7 @@
 (def routes [:index :store :browse :checkout :store-dashboard
              :shopping-bag :login :sell :product :live :help
              :user :unauthorized :user-settings
-             :landing-page :about :not-found :tos])
+             :landing-page :about :not-found :tos :stores])
 
 #?(:cljs
    (defn should-update-when-route-is-loaded
@@ -67,9 +67,9 @@
        (should-update-when-route-is-loaded this props state)))
   (componentDidUpdate [this _ _]
 
-       ;; TODO: Change this to shared/by-key when merged with other branch.
-       ;; (scroll-helper/scroll-on-did-render (shared/by-key this :shared/scroll-helper))
-       )
+    ;; TODO: Change this to shared/by-key when merged with other branch.
+    ;; (scroll-helper/scroll-on-did-render (shared/by-key this :shared/scroll-helper))
+    )
   (render [this]
     (let [{:keys [routing/app-root query/current-route]} (om/props this)
           route (normalize-route (:route current-route))

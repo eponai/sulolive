@@ -15,6 +15,7 @@
     [eponai.web.ui.login]
     [eponai.web.ui.not-found]
     [eponai.web.ui.start-store]
+    [eponai.web.ui.stores]
     [eponai.web.ui.tos]
     [eponai.web.ui.unauthorized]
     [eponai.web.ui.user.settings]

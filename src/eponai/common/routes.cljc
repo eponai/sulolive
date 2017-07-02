@@ -81,6 +81,7 @@
 (def locality-routes
   [["" {
         ;"/"         :index
+        "/stores"   :stores
         "/products" :browse/all-items
         "/browse"   browse-categories
         "/live"     :live}]
@@ -103,7 +104,8 @@
              ["products/" [#"\d+" :product-id] "/" [#".+" :product-name]] :product
              ;"products"                    product-routes
              ;"browse"                      browse-categories
-             "store"                                                      :index/store
+
+             ;"store"                                                      :index/store
              ["store/" :store-id]                                         store-routes
              "help"                                                       help-routes
              "about"                                                      :about

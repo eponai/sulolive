@@ -12,7 +12,8 @@
     [eponai.client.routes :as routes]
     [eponai.web.ui.photo :as photo]
     [eponai.web.ui.footer :as foot]
-    [eponai.common.ui.dom :as dom]))
+    [eponai.common.ui.dom :as dom]
+    [eponai.web.ui.button :as button]))
 
 (defui Streams
   static om/IQuery
@@ -28,14 +29,14 @@
                                       :store/username
                                       :store/locality
                                       {:store/status [:status/type]}]}]}
-     {:query/stores [:db/id
-                     {:stream/_store [:stream/state]}
-                     :store/locality
-                     {:store/profile [:store.profile/name
-                                      {:store.profile/photo [:photo/path
-                                                             :photo/id]}]}
-                     :store/username
-                     {:store/status [:status/type]}]}
+     `({:query/stores [:db/id
+                       {:stream/_store [:stream/state]}
+                       :store/locality
+                       {:store/profile [:store.profile/name
+                                        {:store.profile/photo [:photo/path
+                                                               :photo/id]}]}
+                       :store/username
+                       {:store/status [:status/type]}]} ~{:states [:stream.state/offline :stream.state/online]})
      :query/locations])
   Object
   (render [this]
@@ -62,7 +63,8 @@
               ;(menu/item-link nil "Scheduled streams")
               ;(menu/item-link nil "New arrivals")
               ;(menu/item-link nil "Popular")
-              ))
+              )
+            )
           (grid/column
             nil
             (my-dom/div
@@ -83,7 +85,12 @@
                 (my-dom/span (css/add-class :shoutout) "No stores are LIVE right now :'(")))
             (my-dom/div
               {:classes ["sulo-items-container"]}
-              (my-dom/h4 nil "Other cool stores currently offline")
+              (my-dom/div
+                (css/add-class :section-title)
+                (my-dom/h4 nil "Other cool stores currently offline")
+                (button/default-hollow
+                  (css/add-classes [:sulo-dark] {:href (routes/url :stores {:locality (:sulo-locality/path locations)})})
+                  (dom/span nil "All stores")))
               (grid/row
                 (grid/columns-in-row {:small 2 :medium 3})
                 (map (fn [store]
@@ -101,7 +108,7 @@
                                     (css/add-class :header))
                                (my-dom/a {:href (routes/store-url store :store)}
                                          (my-dom/strong nil store-name)))))))
-                     stores)))))))))
+                     (take 6 stores))))))))))
 
 (def ->Streams (om/factory Streams))
 

@@ -48,19 +48,23 @@
 ;; ################# Browsing reads
 
 (defmethod client-read :query/stores
-  [{:keys [db query target]} _ _]
-  ;(debug "Read query/auth: ")
+  [{:keys [db query target]} _ {:keys [states]}]
+  (debug "Read query/stores: " states)
   (if target
     {:remote true}
     {:value (when-let [loc (client.auth/current-locality db)]
-              (db/pull-all-with db query {:where   '[[?e :store/locality ?l]
-                                                     [?st :status/type :status.type/open]
-                                                     [?e :store/status ?st]
-                                                     [?s :stream/state ?states]
-                                                     [?s :stream/store ?e]]
-                                          :symbols {'[?states ...] [:stream.state/online
-                                                                    :stream.state/offline]
-                                                    '?l            (:db/id loc)}}))}))
+              (if (some? states)
+                (db/pull-all-with db query {:where   '[[?e :store/locality ?l]
+                                                       [?st :status/type :status.type/open]
+                                                       [?e :store/status ?st]
+                                                       [?s :stream/state ?states]
+                                                       [?s :stream/store ?e]]
+                                            :symbols {'?l (:db/id loc)
+                                                      '[?states ...] states}})
+                (db/pull-all-with db query {:where   '[[?e :store/locality ?l]
+                                                       [?st :status/type :status.type/open]
+                                                       [?e :store/status ?st]]
+                                            :symbols {'?l (:db/id loc)}})))}))
 
 (defmethod client-read :query/streams
   [{:keys [db query target]} _ _]
@@ -456,7 +460,7 @@
   (if target
     {:remote true}
     {:value (db/pull-one-with db query
-                             {:where '[[?e :ui/singleton :ui.singleton/stream-config]]})}))
+                              {:where '[[?e :ui/singleton :ui.singleton/stream-config]]})}))
 
 (defmethod client-read :query/current-route
   [{:keys [db]} _ _]
