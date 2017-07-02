@@ -75,8 +75,7 @@
                         (fn [e]
                           (.printStackTrace e)
                           (binding [prone.debug/*debug-data* (atom [])]
-                            (assoc (prone/exceptions-response request e '[eponai])
-                              :status 200)))))))))]
+                            (prone/exceptions-response request e '[eponai])))))))))]
     (if in-prod?
       (wrap-error-prod handler)
       (wrap-prone-aleph handler))))

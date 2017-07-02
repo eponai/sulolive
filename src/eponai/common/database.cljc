@@ -89,13 +89,16 @@
                                (str term "*"))))
           (str/join " AND "))))
 
-(defn- datomic-fulltext [where-clauses {:keys [db attr arg return]}]
+(declare merge-query)
+
+(defn- datomic-fulltext [query {:keys [db attr arg return]}]
   (let [polished-needle '?eponai-db-fulltext-datomic-needle]
     ;; Adds where-clauses first as the search will return all
     ;; the entities it matches anyway.
-    (cons {:where [[`(datomic-needle-fn ~arg) polished-needle]
-                   [(list 'fulltext db attr polished-needle) return]]}
-          where-clauses)))
+    (merge-query
+      {:where [[`(datomic-needle-fn ~arg) polished-needle]
+               [(list 'fulltext db attr polished-needle) return]]}
+      query)))
 
 (defn datascript-find-fn [raw-needle]
   (let [needles (into []
@@ -107,7 +110,7 @@
       (every? #(re-find % haystack) needles))))
 
 
-(defn- datascript-fulltext [where-clauses {:keys [db attr arg return]}]
+(defn- datascript-fulltext [query {:keys [db attr arg return]}]
   (let [[[eid value tx score]] return
         val-sym (or value '?val)
         find-needle-fn (atom nil)
@@ -117,10 +120,11 @@
                   (@find-needle-fn haystack))]
     ;; Adds where-clauses last because we want to filter all we can
     ;; before we start scanning the [e a v]s
-    (conj (vec where-clauses)
-          {:where   [[db eid attr val-sym]
-                     `[(~'?eponai.db.fulltext/includes-fn ~val-sym ~arg)]]
-           :symbols {'?eponai.db.fulltext/includes-fn find-fn}})))
+    (merge-query
+      query
+      {:where   [[db eid attr val-sym]
+                 `[(~'?eponai.db.fulltext/includes-fn ~val-sym ~arg)]]
+       :symbols {'?eponai.db.fulltext/includes-fn find-fn}})))
 
 (defn- datascript-datoms [db index args]
   ;; The :vaet index isn't implemented for datascript (who knew!?)
@@ -147,40 +151,40 @@
              (pull* [db pattern eid] (do-pull datomic/pull db pattern eid))
              (pull-many* [db pattern eids] (do-pull datomic/pull-many db pattern eids))
              (datoms* [db index args] (apply datomic/datoms db index args))
-             (fulltext-search [_ where-clauses fulltext]
-               (datomic-fulltext where-clauses fulltext))
+             (fulltext-search [_ query fulltext]
+               (datomic-fulltext query fulltext))
              DB
              (q* [db query args] (apply datascript/q query db args))
              (entity* [db eid] (datascript/entity db eid))
              (pull* [db pattern eid] (do-pull datascript/pull db pattern eid))
              (pull-many* [db pattern eids] (do-pull datascript/pull-many db pattern eids))
              (datoms* [db index args] (datascript-datoms db index args))
-             (fulltext-search [_ where-clauses fulltext]
-               (datascript-fulltext where-clauses fulltext))
+             (fulltext-search [_ query fulltext]
+               (datascript-fulltext query fulltext))
              FilteredDB
              (q* [db query args] (apply datascript/q query db args))
              (entity* [db eid] (datascript/entity db eid))
              (pull* [db pattern eid] (do-pull datascript/pull db pattern eid))
              (pull-many* [db pattern eids] (do-pull datascript/pull-many db pattern eids))
              (datoms* [db index args] (datascript-datoms db index args))
-             (fulltext-search [_ where-clauses fulltext]
-               (datascript-fulltext where-clauses fulltext))]
+             (fulltext-search [_ query fulltext]
+               (datascript-fulltext query fulltext))]
       :cljs [datascript.db/DB
              (q* [db query args] (apply datascript/q query db args))
              (entity* [db eid] (datascript/entity db eid))
              (pull* [db pattern eid] (do-pull datascript/pull db pattern eid))
              (pull-many* [db pattern eids] (do-pull datascript/pull-many db pattern eids))
              (datoms* [db index args] (datascript-datoms db index args))
-             (fulltext-search [_ where-clauses fulltext]
-                              (datascript-fulltext where-clauses fulltext))
+             (fulltext-search [_ query fulltext]
+                              (datascript-fulltext query fulltext))
              datascript.db/FilteredDB
              (q* [db query args] (apply datascript/q query db args))
              (entity* [db eid] (datascript/entity db eid))
              (pull* [db pattern eid] (do-pull datascript/pull db pattern eid))
              (pull-many* [db pattern eids] (do-pull datascript/pull-many db pattern eids))
              (datoms* [db index args] (datascript-datoms db index args))
-             (fulltext-search [_ where-clauses fulltext]
-                              (datascript-fulltext where-clauses fulltext))]))
+             (fulltext-search [_ query fulltext]
+                              (datascript-fulltext query fulltext))]))
 
 (declare convert-datomic-ids)
 
@@ -256,15 +260,15 @@
 
 (defn- add-fulltext-search [db fulltext where symbols]
   (let [symbols (transduce (map :symbols) into symbols fulltext)
-        where (reduce (fn [where-clauses fulltext-entry]
-                        (fulltext-search db
-                                         where-clauses
-                                         (cond-> fulltext-entry
-                                                 (nil? (:db fulltext-entry))
-                                                 (assoc :db '$))))
-                      where
-                      fulltext)]
-    [(vec where) symbols]))
+        fulltext-query (reduce (fn [query fulltext-entry]
+                                 (fulltext-search db
+                                                  query
+                                                  (cond-> fulltext-entry
+                                                          (nil? (:db fulltext-entry))
+                                                          (assoc :db '$))))
+                               {:where where :symbols symbols}
+                               fulltext)]
+    fulltext-query))
 
 (defn- validate-symbols [symbols]
   (letfn [(invalid-symbols [symbols]
@@ -292,7 +296,7 @@
            " are not equal. :find: " find " find-pattern: " find-pattern
            ". Use (find-with ...) instead of (all-with ...)"
            "or (one-with ...) when supplying your own :find."))
-   (let [[where symbols] (add-fulltext-search db fulltext where symbols)
+   (let [{:keys [where symbols]} (add-fulltext-search db fulltext where symbols)
          find-pattern (or find find-pattern)
          _ (validate-symbols symbols)
          symbol-seq (seq symbols)
