@@ -469,8 +469,8 @@
             {:keys [start page-size]} query-params
             initial-pull (db/pull-many db query
                                        (sequence
-                                         (comp (drop start)
-                                               (take page-size))
+                                         (comp (drop (or start 0))
+                                               (take (or page-size browse/default-page-size)))
                                          (:browse-result/items browse-result)))]
         {:value (parser/value-with-basis-t
                   {:browse-result browse-result

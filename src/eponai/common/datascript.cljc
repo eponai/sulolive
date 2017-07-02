@@ -3,32 +3,34 @@
             [datascript.arrays :as da]
             [datascript.core :as d]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [error debug]]
-            [clojure.data :as diff]))
+            [clojure.data :as diff]
+            [eponai.common.browse :as browse]))
 
 (defn ui-schema
   "Additional schema we may use for our ui components"
   []
-  {:ui/singleton {:db/unique :db.unique/identity}
-   :ui.singleton.auth/user {:db/valueType :db.type/ref}
-   :ui/component {:db/unique :db.unique/identity}
-   :ui.component.cart/items {:db/cardinality :db.cardinality/many
-                             :db/valueType :db.type/ref}
-   :ui.store-chat-queue/store-id {:db/unique :db.unique/identity}
-   :order/id {:db/unique :db.unique/identity}
-   :country-spec/id {:db/unique :db.unique/identity}
-   :country/code {:db/unique :db.unique/identity}
-   :country/continent {:db/valueType :db.type/ref}
-   :continent/code {:db/unique :db.unique/identity}
-   :taxes/id {:db/unique :db.unique/identity}
-   ;:store.item/uuid {:db/unique :db.unique/identity}
-   :db/ident {:db/unique :db.unique/identity}
-   ;; Datascript doesn't have an :vaet index, so to speed up
-   ;; reverse search queryies, i.e. [[?e :some/thing "known"]]
-   ;; we can index some attributes.
-   :category/path {:db/index true}
-   :category/name {:db/index true}
-   :store.item/name {:db/index true}
-   })
+  (into {:ui/singleton                 {:db/unique :db.unique/identity}
+         :ui.singleton.auth/user       {:db/valueType :db.type/ref}
+         :ui/component                 {:db/unique :db.unique/identity}
+         :ui.component.cart/items      {:db/cardinality :db.cardinality/many
+                                        :db/valueType   :db.type/ref}
+         :ui.store-chat-queue/store-id {:db/unique :db.unique/identity}
+         :order/id                     {:db/unique :db.unique/identity}
+         :country-spec/id              {:db/unique :db.unique/identity}
+         :country/code                 {:db/unique :db.unique/identity}
+         :country/continent            {:db/valueType :db.type/ref}
+         :continent/code               {:db/unique :db.unique/identity}
+         :taxes/id                     {:db/unique :db.unique/identity}
+         ;:store.item/uuid {:db/unique :db.unique/identity}
+         :db/ident                     {:db/unique :db.unique/identity}
+         ;; Datascript doesn't have an :vaet index, so to speed up
+         ;; reverse search queryies, i.e. [[?e :some/thing "known"]]
+         ;; we can index some attributes.
+         :category/path                {:db/index true}
+         :category/name                {:db/index true}
+         :store.item/name              {:db/index true}
+         }
+        browse/browse-datascript-schema))
 
 (defn schema-datomic->datascript [datomic-schema]
   (reduce (fn [datascript-s {:keys [db/ident db/valueType] :as datomic-s}]

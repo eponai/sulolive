@@ -4,7 +4,11 @@
     [eponai.common.database.rules :as db.rules]
     [eponai.common.api.products :as products]
     [medley.core :as medley]
-    [eponai.common.format :as format]))
+    [eponai.common.format :as format]
+    [taoensso.timbre :refer [debug]]
+    [taoensso.timbre :as timbre]))
+
+(def default-page-size 25)
 
 (defn- price-where-clause [{:keys [from-price to-price] :as price-range}]
   (condp = [(some? from-price) (some? to-price)]
@@ -55,15 +59,18 @@
                           (assoc :top-category top-category
                                  :sub-category sub-category
                                  :sub-sub-category sub-sub-category)
-                          (->>
-                            (medley/map-keys #(namespace-key :browse-result %))
-                            (format/remove-nil-keys)))]
-    (merge result result-params)))
+                          (update :locations select-keys [:db/id])
+                          (->> (medley/map-keys #(namespace-key :browse-result %))))
+        result (update result :browse-result/items not-empty)]
+    (format/remove-nil-keys
+      (merge result
+             result-params))))
 
 
 (defn category
   "Returns items and their prices based on selected category"
   [db {:keys [locations categories price-range order] :as browse-params}]
+  (debug "Browsing category: " browse-params)
   (let [{:keys [top-category sub-category]} categories
         items-by-cat (cond (some? top-category)
                            (products/find-with-category-names locations (select-keys categories [:top-category]))
@@ -78,7 +85,7 @@
                            db
                            (db/merge-query
                              item-query
-                             {:find  '[?e ?price ?at]
+                             {:find  '[?e ?price ?created-at]
                               :where '[[?e :store.item/price ?price]
                                        [?e :store.item/created-at ?created-at]]}))]
 
@@ -91,6 +98,7 @@
 (defn search
   "Remember that we have ?score here."
   [db {:keys [locations search categories price-range order] :as browse-params}]
+  (debug "Browsing search: " browse-params)
   (let [items-by-search (products/find-with-search locations search)
         category-filter (when (some some? (vals categories))
                           (db/merge-query
@@ -111,7 +119,7 @@
                            db
                            (db/merge-query
                              item-query
-                             {:find  '[?e ?price ?at ?score]
+                             {:find  '[?e ?price ?created-at ?score]
                               :where '[[?e :store.item/price ?price]
                                        [?e :store.item/created-at ?created-at]]}))
         items (sort-items order items-with-price)
@@ -167,7 +175,7 @@
    :browse-result/to-price         {:db/index true}
    :browse-result/order            {:db/index true}
    :browse-result/search           {:db/index true}
-   :browse-result/items            {:db/valueType :db.type/ref}})
+   :browse-result/items            {}})
 
 (defn find-result [db browse-params]
   (letfn [(some-or-missing? [category key]
