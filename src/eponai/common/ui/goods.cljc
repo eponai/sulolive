@@ -20,7 +20,8 @@
     [eponai.common.ui.search-bar :as search-bar]
     [eponai.web.ui.footer :as foot]
     [clojure.string :as string]
-    [eponai.common.browse :as browse]))
+    [eponai.common.browse :as browse]
+    [eponai.common.database :as db]))
 
 ;(def sorting-vals
 ;  {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
@@ -34,7 +35,29 @@
 ;   :highest-price {:key [:store.item/price :store.item/name] :comp #(compare %2 %1) :label "Price (high to low)"}
 ;   :relevance     {}})
 
-(defn- vertical-category-menu [children current-category]
+
+(defn category-count [component category count-by-category]
+  (if-let [id (:db/id category)]
+    (get count-by-category id)
+    (let [db (db/to-db component)]
+      (some->> (:category/children category)
+               (sequence
+                 (comp (map #(db/entity db (:db/id %)))
+                       (mapcat :category/children)
+                       (map #(db/entity db (:db/id %)))
+                       ;; This filter finds the "real" :db/id for this
+                       ;; category within it's child category
+                       ;; (which really is it's parent).
+                       ;; Women -> Clothing -> <Women entity>
+                       (filter (fn [child-child-cat]
+                                 (= (:category/name child-child-cat)
+                                    (:category/name category))))
+                       (map #(get count-by-category (:db/id %)))
+                       (filter some?)))
+               (seq)
+               (reduce + 0)))))
+
+(defn- vertical-category-menu [children current-category label-fn]
   (menu/vertical
     (css/add-class :nested)
     (->> children
@@ -46,7 +69,7 @@
                           (= path (:category/path current-category)))
                  (css/add-class ::css/is-active))
                (dom/a {:href (:category/href category)}
-                      (dom/span nil (products/category-display-name category)))))))))
+                      (dom/span nil (label-fn category)))))))))
 
 (defn selected-navigation [component]
   (let [{:query/keys [current-route navigation]} (om/props component)
@@ -78,7 +101,7 @@
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:proxy/footer (om/get-query foot/Footer)}
      {:query/browse-products-2 (om/get-query product/Product)}
-     {:query/navigation [:category/name :category/label :category/path :category/href]}
+     {:query/navigation [:db/id :category/name :category/label :category/path :category/href]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
      {:query/countries [:country/code :country/name]}
      :query/locations
@@ -100,10 +123,15 @@
           {:keys [filters-open?]} (om/get-state this)
           [top-category sub-category :as categories] (category-seq this)
           {:keys [route route-params query-params]} current-route
-          {:keys [items browse-result]} browse-products-2]
+          {:keys [items browse-result]} browse-products-2
+          {:browse-result/keys [count-by-category]} browse-result
+          category-label-fn (fn [category]
+                              (str (products/category-display-name category)
+                                   (when-let [matches (category-count this category count-by-category)]
+                                     (str " " matches))))]
 
       (debug " items: " items)
-
+      (debug " navigation: " navigation)
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse" :footer footer}
         (common/city-banner this locations)
@@ -130,13 +158,18 @@
             (menu/vertical
               (css/add-class :sl-navigation-parent)
               (->> navigation
+                   (filter (if (seq count-by-category)
+                             (comp some? #(category-count this % count-by-category))
+                             identity))
                    (map (fn [category]
                           (let [is-active? (= (:category/name category) (:category/name (first categories)))]
                             (menu/item
                               (when is-active? (css/add-class :is-active))
                               (dom/a {:href (:category/href category)}
-                                     (dom/span nil (products/category-display-name category)))
-                              (vertical-category-menu (:category/children category) (last categories))))))))
+                                     (dom/span nil (category-label-fn category)))
+                              (vertical-category-menu (:category/children category)
+                                                      (last categories)
+                                                      category-label-fn)))))))
             ;(dom/div
             ;  nil
             ;  (dom/label nil "Ship to")
