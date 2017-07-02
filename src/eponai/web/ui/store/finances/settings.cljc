@@ -337,7 +337,7 @@
                              (dom/span nil (str " (" (c/ordinal-number anchor) ")")))
                            (dom/br nil)
                            (dom/small nil (str delay-days " day rolling basis")))
-                    (button/store-setting-default
+                    (button/edit
                       {:onClick #(om/update-state! this assoc :modal :payout-schedule)}
                       (dom/span nil "Change schedule"))))))
             ;(menu/item
@@ -447,7 +447,7 @@
             nil
             (grid/column
               nil
-              (button/button-small
+              (button/store-navigation-cta
                 {:onClick #(om/update-state! this assoc :modal :modal/bank-account :modal-object nil)}
                 (dom/span nil "Add bank account")))))
         ;(payout-schedule this)

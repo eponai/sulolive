@@ -151,9 +151,7 @@
   (when-let [store-id (:store-id route-params)]
     (if target
       {:remote true}
-      {:value (do
-                (debug "Routeparams for store: " store-id)
-                (db/pull db query store-id))})))
+      {:value (db/pull db query store-id)})))
 
 (defmethod client-read :query/store-items
   [{:keys [db query target route-params]} _ _]
@@ -436,10 +434,8 @@
 (defmethod client-read :query/auth0-info
   [{:keys [target db query]} _ _]
   (if target
-    (do
-      (debug "AUTH0 Got target")
-      {:remote true})
-    {:value (do (debug "QUERY/AUTH0") (db/singleton-value db :ui.singleton.auth/auth0))}))
+    {:remote true}
+    {:value (db/singleton-value db :ui.singleton.auth/auth0)}))
 
 (defmethod client-read :query/locations
   [{:keys [target db query]} _ _]

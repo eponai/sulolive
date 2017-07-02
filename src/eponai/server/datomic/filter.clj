@@ -154,7 +154,7 @@
      :store/items                    public-attr
      :store/profile                  public-attr
      :store/sections                 public-attr
-     :store/username public-attr
+     :store/username                 public-attr
      :store.profile/name             public-attr
      :store.profile/description      public-attr
      :store.profile/return-policy    public-attr
@@ -210,6 +210,7 @@
      :order.item/photo               order-item-owner
      :charge/id                      order-charge-owner
      :shipping/rules                 public-attr
+     :shipping.rule/pickup?          public-attr
      :shipping.rule/destinations     public-attr
      :shipping.rule/title            public-attr
      :shipping.rule/rates            public-attr

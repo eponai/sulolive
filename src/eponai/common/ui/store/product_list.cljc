@@ -128,8 +128,8 @@
             (dom/div
               (->> (css/text-align :right)
                    (css/add-class :action-buttons))
-              (button/store-setting-default {:onClick #(om/update-state! component dissoc :products/edit-sections)} (dom/span nil "Cancel"))
-              (button/store-setting-cta {:onClick #(.save-sections component)} (dom/span nil "Save")))))))))
+              (button/cancel {:onClick #(om/update-state! component dissoc :products/edit-sections)})
+              (button/save {:onClick #(.save-sections component)}))))))))
 
 (def row-heights {:xxlarge 370
                   :xlarge  350
@@ -392,14 +392,12 @@
                   (if grid-editable?
                     (dom/div
                       (css/add-class :action-buttons)
-                      (button/store-setting-cta
-                        (css/add-class :small {:onClick #(.save-product-order this)})
-                        (dom/span nil "Save"))
-                      (button/store-setting-default
+                      (button/save
+                        (css/add-class :small {:onClick #(.save-product-order this)}))
+                      (button/cancel
                         (css/add-class :small {:onClick #(do
                                                           (.update-layout this)
-                                                          (om/update-state! this assoc :grid-editable? false))})
-                        (dom/span nil "Cancel")))
+                                                          (om/update-state! this assoc :grid-editable? false))})))
 
                     (button/store-setting-default
                       (css/add-class :small {:onClick #(om/update-state! this assoc :grid-editable? true :products/selected-section :all)})

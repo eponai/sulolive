@@ -161,7 +161,7 @@
             (-> d
                 (select-keys [:country/code :country/name])
                 cf/add-tempid))]
-    (-> (select-keys sr [:shipping.rule/destinations :shipping.rule/rates :shipping.rule/title])
+    (-> (select-keys sr [:shipping.rule/destinations :shipping.rule/rates :shipping.rule/title :shipping.rule/pickup?])
         (update :shipping.rule/destinations #(map destination* %))
         (update :shipping.rule/rates #(map shipping-rate %))
         cf/add-tempid)))

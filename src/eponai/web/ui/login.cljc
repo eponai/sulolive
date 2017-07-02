@@ -287,7 +287,6 @@
   (render [this]
     (let [{:query/keys [login-modal]
            :proxy/keys [login]} (om/props this)]
-      (debug "Login modal props: " (om/props this))
       (when (:ui.singleton.login-modal/show? login-modal)
         (modal/modal
           {:id       "sulo-login-modal"

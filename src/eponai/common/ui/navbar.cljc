@@ -212,7 +212,6 @@
                                      ;(.addEventListener js/document "touchstart" on-close-sidebar-fn)
                                      (om/update-state! component assoc :inline-sidebar-hidden? (not inline-sidebar-hidden?))
                                      )))]
-    (debug "Locations: " locations)
     (navbar-content
       {:classes ["store-dashboard"]}
       (dom/div

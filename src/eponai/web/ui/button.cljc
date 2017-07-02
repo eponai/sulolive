@@ -49,15 +49,18 @@
 (defn store-setting-default [opts & content]
   (button (css/add-classes [:sulo-dark :small :hollow] opts) content))
 
+(defn store-setting-secondary [opts & content]
+  (button (css/add-classes [:secondary :small :hollow] opts) content))
+
 (defn store-setting-cta [opts & content]
   (button (css/add-classes [:sulo-dark :small] opts) content))
 
 (defn edit [opts & content]
-  (store-setting-default opts (or content
+  (store-setting-secondary opts (or content
                                   [(dom/i {:classes ["fa  fa-pencil fa-fw"]}) (dom/span nil "Edit")])))
 
 (defn cancel [opts & content]
-  (store-setting-default opts (or content (dom/span nil "Cancel"))))
+  (store-setting-secondary opts (or content (dom/span nil "Cancel"))))
 
 (defn save [opts & content]
   (store-setting-cta opts (or content (dom/span nil "Save"))))
