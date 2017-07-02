@@ -16,6 +16,7 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.script-loader :as script-loader]
+    [eponai.web.s3-uploader :as s3]
     [eponai.common.format.date :as date]
     [clojure.string :as string]
     [eponai.common.ui.elements.menu :as menu]
@@ -323,12 +324,17 @@
                (grid/column
                  (->> (css/add-class :document-uploader)
                       (css/text-align :right))
-                 (dom/input
-                   (css/show-for-sr {:type        "file"
-                                     :placeholder "First"
-                                     :accept      "image/png,image/jpeg"
-                                     :onChange    #(.select-document component %)
-                                     :id          (:field.legal-entity/document form-inputs)}))
+
+                 (s3/->FileUploader (om/computed {:id (:field.legal-entity/document form-inputs)}
+                                                 {:on-upload (fn [{:keys [file]}]
+                                                               (debug "Changed to file: " file)
+                                                               (om/update-state! component assoc :document-upload {:name (.-name file)}))}))
+                 ;(dom/input
+                 ;  (css/show-for-sr {:type        "file"
+                 ;                    :placeholder "First"
+                 ;                    :accept      "image/png,image/jpeg"
+                 ;                    :onChange    #(.select-document component %)
+                 ;                    :id          (:field.legal-entity/document form-inputs)}))
                  (dom/p nil
                         (if (not-empty document-upload)
                           (dom/small nil (str (:name document-upload)))
@@ -499,13 +505,13 @@
                                       :query/stripe-account])))
 
          (om/update-state! this assoc :input-validation validation))))
-  (select-document [this e]
-    #?(:cljs
-       (let [^js/Event event e
-             ^js/File file (first (array-seq (.. event -target -files)))]
-         (when file
-           (om/update-state! this assoc :document-upload {:name (.-name file)
-                                                          :file file})))))
+  ;(select-document [this e]
+  ;  #?(:cljs
+  ;     (let [^js/Event event e
+  ;           ^js/File file (first (array-seq (.. event -target -files)))]
+  ;       (when file
+  ;         (om/update-state! this assoc :document-upload {:name (.-name file)
+  ;                                                        :file file})))))
   (initLocalState [this]
     {:entity-type :individual})
 
@@ -577,7 +583,7 @@
               (dom/span nil "Submit")))
           (dom/p nil
                  (dom/small nil "By submitting, you agree to our ")
-                 (dom/a {:href (routes/url :tos)
+                 (dom/a {:href   (routes/url :tos)
                          :target "_blank"} (dom/small nil "Terms of service."))))))))
 
 (def Verify (script-loader/stripe-loader Verify-no-loader))

@@ -27,6 +27,7 @@
                                     taoensso.sente.interfaces
                                     taoensso.sente.packers.transit]}
         :photo-uploader  {:entries [eponai.client.ui.photo-uploader]}
+        :s3-uploader {:entries [eponai.web.s3-uploader]}
 
         ;; Routes
         :index           {:entries [eponai.common.ui.index]}
