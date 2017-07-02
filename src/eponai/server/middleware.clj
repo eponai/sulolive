@@ -66,12 +66,17 @@
                         {:status code :body error}))))))
           (wrap-prone-aleph [handler]
             (fn [request]
-              (-> (handler request)
-                  (deferred/catch Throwable
-                    (fn [e]
-                      (.printStackTrace e)
-                      (binding [prone.debug/*debug-data* (atom [])]
-                        (prone/exceptions-response request e '[eponai])))))))]
+              (if-let [page (get @prone/pages (:uri request))]
+                (#'prone/serve-page page 200)
+                (if-let [asset (prone/asset-url->contents (:uri request))]
+                  {:body asset :status 200 :headers {"Cache-Control" "max-age=315360000"}}
+                  (-> (handler request)
+                      (deferred/catch Throwable
+                        (fn [e]
+                          (.printStackTrace e)
+                          (binding [prone.debug/*debug-data* (atom [])]
+                            (assoc (prone/exceptions-response request e '[eponai])
+                              :status 200)))))))))]
     (if in-prod?
       (wrap-error-prod handler)
       (wrap-prone-aleph handler))))
