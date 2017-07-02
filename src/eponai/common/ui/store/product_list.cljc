@@ -145,7 +145,7 @@
                         :store.item/description
                         :store.item/index
                         {:store.item/section [:db/id]}
-                        {:store.item/photos [{:store.item.photo/photo [:photo/path]}
+                        {:store.item/photos [{:store.item.photo/photo [:photo/id :photo/path]}
                                              :store.item.photo/index]}]}
      {:query/store [{:store/sections [:db/id
                                       :store.section/label]}]}

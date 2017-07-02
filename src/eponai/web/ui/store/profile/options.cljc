@@ -23,9 +23,14 @@
 (defn store-has-never-been-open? [store]
   (nil? (get-in store [:store/status :status/type])))
 
+(defn store-is-active-in-stripe? [store]
+  (= (get-in store [:store/stripe :stripe/status :status/type])
+     :status.type/active))
+
 (defn store-is-open? [store]
-  (= (get-in store [:store/status :status/type])
-     :status.type/open))
+  (and (store-is-active-in-stripe? store)
+       (= (get-in store [:store/status :status/type])
+          :status.type/open)))
 
 (defn store-is-closed? [store]
   (= (get-in store [:store/status :status/type])
@@ -34,12 +39,8 @@
 (defn store-has-shipping? [store]
   (pos? (count (get-in store [:store/shipping :shipping/rules]))))
 
-(defn store-needs-more-info? [store]
+(defn stripe-need-more-info? [store]
   (not-empty (store-missing-information store)))
-
-(defn store-is-active-in-stripe? [store]
-  (= (get-in store [:store/stripe :stripe/status :status/type])
-     :status.type/active))
 
 (defn store-can-open? [store]
   (and (store-is-active-in-stripe? store)
@@ -66,7 +67,7 @@
 
           ;; The store has opened their store, but they have not provided sufficient information to appear in search results.
           ;; Their store is still open to customers and they can make sales though.
-          (store-needs-more-info? store)
+          (stripe-need-more-info? store)
           [(dom/label nil "Your store is OPEN UNLISTED")
            (dom/p nil
                   (dom/small nil "It seems there's some information missing for your store to be visible to the public. Customers that find your store can still make purchases, but its products and streams do not appear in search results. ")
@@ -142,8 +143,8 @@
       (dom/p nil (dom/small nil "Your store username is the same as your store address."))
       ;(dom/p nil )
       (dom/p nil
-             (dom/span (css/add-class :host) "sulo.live/")
-             (dom/strong nil input-username))
+             (dom/span (css/add-class :host) "sulo.live/store/")
+             (dom/strong nil (or input-username (:store/username store ""))))
       (dom/div
         (css/add-class :username-input)
 
@@ -255,7 +256,7 @@
                 (grid/column
                   (css/text-align :right)
                   (dom/p nil
-                         (dom/small nil "sulo.live/ ")
+                         (dom/small nil "sulo.live/store/ ")
                          (dom/span nil (or (:store/username store)
                                            (:db/id store))))
                   (button/user-setting-default

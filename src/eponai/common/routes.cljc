@@ -81,6 +81,7 @@
 (def locality-routes
   [["" {
         ;"/"         :index
+        "/stores"   :stores
         "/products" :browse/all-items
         "/browse"   browse-categories
         "/live"     :live}]
@@ -96,30 +97,31 @@
 
 (def routes
   ["" [["/" {
-             ""                                 :landing-page
-             "l"                                :landing-page/locality
-             ["" [#"(yvr|yul)" :locality]]      locality-routes
-             "sell"                             :sell
-             ["products/" [#"\d+" :product-id]] :product
+             ""                                                           :landing-page
+             "l"                                                          :landing-page/locality
+             ["" [#"(yvr|yul)" :locality]]                                locality-routes
+             "sell"                                                       :sell
+             ["products/" [#"\d+" :product-id] "/" [#".+" :product-name]] :product
              ;"products"                    product-routes
              ;"browse"                      browse-categories
-             "store"                            :index/store
-             ["store/" :store-id]               store-routes
-             "help"                             help-routes
-             "about"                            :about
-             ["checkout/" :store-id]            checkout-routes
-             "shopping-bag"                     :shopping-bag
-             "business"                         :business
-             "settings"                         :user-settings
-             "orders"                           {""                       :user/order-list
-                                                 ["/" [#"\w+" :order-id]] :user/order}
+
+             ;"store"                                                      :index/store
+             ["store/" :store-id]                                         store-routes
+             "help"                                                       help-routes
+             "about"                                                      :about
+             ["checkout/" :store-id]                                      checkout-routes
+             "shopping-bag"                                               :shopping-bag
+             "business"                                                   :business
+             "settings"                                                   :user-settings
+             "orders"                                                     {""                       :user/order-list
+                                                                           ["/" [#"\w+" :order-id]] :user/order}
              ;["user/" [#"\d+" :user-id]]   user-routes
-             "tos"                              :tos
-             "auth"                             :auth
-             "login"                            :login
-             "logout"                           :logout
-             "link-social"                      :link-social
-             "unauthorized"                     :unauthorized}]
+             "tos"                                                        :tos
+             "auth"                                                       :auth
+             "login"                                                      :login
+             "logout"                                                     :logout
+             "link-social"                                                :link-social
+             "unauthorized"                                               :unauthorized}]
        [true :not-found]]])
 
 

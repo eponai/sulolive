@@ -191,9 +191,9 @@ $sidenav-width: 75%;
 				box-shadow: none;
 				
 				> ul > li {
-					padding: 0;
+					padding-top: 0;
 					label {
-						margin-top: $global-margin;
+						padding-top: $global-padding;
 					}
 				}
 				ul ul li {

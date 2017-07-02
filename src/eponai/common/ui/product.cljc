@@ -6,7 +6,7 @@
     #?(:cljs [eponai.web.utils :as web-utils])
     [om.next :as om :refer [defui]]
     [eponai.common.ui.common :as common]
-    [taoensso.timbre :refer [debug]]
+    [taoensso.timbre :refer [debug error]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.om-quill :as quill]
     [eponai.common.format :as f]
@@ -15,7 +15,9 @@
     [eponai.web.social :as social]
     [eponai.common.photos :as photos]
     [eponai.client.routes :as routes]
-    [eponai.common.mixpanel :as mixpanel]))
+    [eponai.common.mixpanel :as mixpanel]
+    [clojure.string :as string]
+    [cemerick.url :as url]))
 
 ;(defn reviews-list [reviews]
 ;  (apply dom/div
@@ -32,9 +34,13 @@
 (def form-elements
   {:selected-sku "selected-sku"})
 
-(defn product-url [product-id]
-  #?(:cljs (str js/window.location.origin (routes/url :product {:product-id product-id}))
-     :clj  nil))
+(defn product-url [product]
+  (if-let [product-id (:db/id product)]
+    (routes/url :product {:product-id   product-id
+                          :product-name (-> (:store.item/name product)
+                                            (subs 0 (min (count (:store.item/name product)) 40))
+                                            (string/replace #" " "-"))})
+    (error "Trying to create URL for product with no :product-id, doing nothing. Make sure product has a :db/id")))
 
 (defui Product
   static om/IQuery
@@ -180,7 +186,7 @@
                       "Out of stock"
                       "Your shopping bag was updated")))
 
-                (let [item-url (product-url (:db/id item))]
+                (let [item-url (product-url item)]
                   (menu/horizontal
                     (->> (css/align :right)
                          (css/add-class :share-menu))

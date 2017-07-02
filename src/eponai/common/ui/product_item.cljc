@@ -10,11 +10,13 @@
     [taoensso.timbre :refer [debug]]
     [eponai.client.routes :as routes]
     [eponai.common.ui.elements.css :as css]
-    [eponai.web.ui.photo :as photo]))
+    [eponai.web.ui.photo :as photo]
+    [clojure.string :as string]
+    [cemerick.url :as url]))
 
 (defn product-element [opts product & children]
   (let [{:keys [on-click open-url?]} opts
-        goods-href (when (or open-url? (nil? on-click)) (routes/url :product {:product-id (:db/id product)}))
+        goods-href (when (or open-url? (nil? on-click)) (product/product-url product))
         on-click (when-not open-url? on-click)
         {:store.item/keys [photos price]
          item-name        :store.item/name
