@@ -19,7 +19,8 @@
     [eponai.web.ui.button :as button]
     [eponai.common.ui.search-bar :as search-bar]
     [eponai.web.ui.footer :as foot]
-    [clojure.string :as string]))
+    [clojure.string :as string]
+    [eponai.common.browse :as browse]))
 
 ;(def sorting-vals
 ;  {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
@@ -27,9 +28,11 @@
 ;   :sort/price-inc {:key [:store.item/price :store.item/name] :reverse? false}
 ;   :sort/price-dec {:key [:store.item/price :store.item/name] :reverse? true}})
 
-(def sorting-vals
-  {"price_asc"  {:key [:store.item/price :store.item/name ] :comp #(compare %1 %2) :label "Price (low to high)"}
-   "price_desc" {:key [:store.item/price :store.item/name] :comp #(compare %2 %1) :label "Price (high to low)"}})
+;(def sorting-vals
+;  {:newest        {}
+;   :lowest-price  {:key [:store.item/price :store.item/name ] :comp #(compare %1 %2) :label "Price (low to high)"}
+;   :highest-price {:key [:store.item/price :store.item/name] :comp #(compare %2 %1) :label "Price (high to low)"}
+;   :relevance     {}})
 
 (defn- vertical-category-menu [children current-category]
   (menu/vertical
@@ -89,7 +92,7 @@
                       (assoc query-params :ship_to country-code))]
       (routes/set-url! this route route-params new-query)))
   (initLocalState [_]
-    {:sorting       (get sorting-vals :sort/price-inc)
+    {:sorting       browse/default-order
      :filters-open? false})
   (render [this]
     (let [{:proxy/keys [navbar product-filters footer]
@@ -97,11 +100,8 @@
           {:keys [filters-open?]} (om/get-state this)
           [top-category sub-category :as categories] (category-seq this)
           {:keys [route route-params query-params]} current-route
-          items browse-products-2
-          default-sort-key (key (first sorting-vals))
-          sorting (get sorting-vals (:sort_by query-params default-sort-key) )]
+          {:keys [items browse-result]} browse-products-2]
 
-      (debug "Sorting: " sorting)
       (debug " items: " items)
 
       (common/page-container
@@ -206,8 +206,8 @@
                 (grid/column
                   nil
                   (dom/small nil
-                             (dom/strong nil "SHOWING ")
-                             (dom/span nil (str (count items) " items"))))
+                             (dom/strong nil "FOUND ")
+                             (dom/span nil (str (count (:browse-result/items browse-result)) " items"))))
 
                 (grid/column
                   (->> (grid/column-size {:large 4})
@@ -215,20 +215,16 @@
                        (css/show-for :large))
                   (dom/label nil (dom/small nil "Sort"))
                   (dom/select
-                    {:defaultValue (:sort_by query-params default-sort-key)
-                     :onChange     #(routes/set-url! this route route-params (assoc query-params :sort_by (.-value (.-target %))))}
-                    (map (fn [[k v]]
-                           (let [{:keys [comp key label]} v]
-                             (dom/option {:value k} (str label))))
-                         sorting-vals))))
+                    {:defaultValue (or (:order query-params) (browse/default-order query-params))
+                     :onChange     #(routes/set-url! this route route-params (assoc query-params :order (.-value (.-target %))))}
+                    (map (fn [k]
+                           (dom/option {:value k}
+                                       (browse/order-label k)))
+                         (browse/order-values query-params)))))
 
-              (let [sorted (sort-by (apply juxt (:key sorting)) (:comp sorting) items)
-                    ordered-products (if (:reverse? sorting)
-                                       (reverse sorted)
-                                       sorted)]
-                (grid/products ordered-products
-                               (fn [p]
-                                 (pi/->ProductItem {:product p})))))))))))
+              (grid/products items
+                             (fn [p]
+                               (pi/->ProductItem {:product p}))))))))))
 
 (def ->Goods (om/factory Goods))
 

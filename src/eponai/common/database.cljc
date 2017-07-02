@@ -303,9 +303,11 @@
                                       (seq rules)
                                       (cons '%)))
          rules (not-empty (into [] (mapcat #(%)) (set rules)))
-         query (cond-> (assoc query :rules rules)
+         query (cond-> query
                        (seq with)
-                       (assoc :with with))
+                       (assoc :with with)
+                       (seq rules)
+                       (assoc :rules rules))
          _ (trace "query expanded: " query)
          ret (apply q query
                     db

@@ -539,16 +539,16 @@
   [{:keys [target db query route-params query-params]} _ _]
   (if target
     {:remote true}
-    (let [browse-params (browse/make-browse-params (client.auth/current-locality db)
-                                                   route-params
-                                                   query-params)
+    (let [locality (client.auth/current-locality db)
+          browse-params (browse/make-browse-params locality route-params query-params)
+          {:keys [page-start page-size]} (:page-range browse-params)
           browse-result (some->> (browse/find-result db browse-params)
                                  (db/entity db))]
       (when (some? browse-result)
         (debug "browse-result!: " (into {:db/id (:db/id browse-result)} browse-result))
-        {:value (db/pull-many db query
-                              (sequence
-                                (comp (drop (or (:start query-params) 0))
-                                      (take (or (:page-size query-params)
-                                                browse/default-page-size)))
-                                (:browse-result/items browse-result)))}))))
+        {:value {:browse-result (into {:db/id (:db/id browse-result)} browse-result)
+                 :items         (db/pull-many db query
+                                              (sequence
+                                                (comp (drop page-start)
+                                                      (take page-size))
+                                                (:browse-result/items browse-result)))}}))))
