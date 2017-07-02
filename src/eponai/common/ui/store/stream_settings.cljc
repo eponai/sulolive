@@ -135,26 +135,26 @@
                 (css/add-class :flex)
                 (chat/->StreamChat (om/computed chat
                                                 {:store store}))))))
-        (grid/row-column
-          nil
-          (dom/div
-            (css/add-class :dashboard-section)
-            (callout/callout-small
-              nil
-              (grid/row
-                (grid/columns-in-row {:small 3})
-                (grid/column
-                  (css/text-align :center)
-                  (dom/h3 nil "Viewers")
-                  (dom/p (css/add-class :stat) 0))
-                (grid/column
-                  (css/text-align :center)
-                  (dom/h3 nil "Messages/min")
-                  (dom/p (css/add-class :stat) 0))
-                (grid/column
-                  (css/text-align :center)
-                  (dom/h3 nil "Payments")
-                  (dom/p (css/add-class :stat) 0))))))
+        ;(grid/row-column
+        ;  nil
+        ;  (dom/div
+        ;    (css/add-class :dashboard-section)
+        ;    (callout/callout-small
+        ;      nil
+        ;      (grid/row
+        ;        (grid/columns-in-row {:small 3})
+        ;        (grid/column
+        ;          (css/text-align :center)
+        ;          (dom/h3 nil "Viewers")
+        ;          (dom/p (css/add-class :stat) 0))
+        ;        (grid/column
+        ;          (css/text-align :center)
+        ;          (dom/h3 nil "Messages/min")
+        ;          (dom/p (css/add-class :stat) 0))
+        ;        (grid/column
+        ;          (css/text-align :center)
+        ;          (dom/h3 nil "Payments")
+        ;          (dom/p (css/add-class :stat) 0))))))
 
         (grid/row
           nil
