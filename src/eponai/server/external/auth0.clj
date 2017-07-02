@@ -254,12 +254,10 @@
     (token-expiring-within? parsed-token (time/minutes 59)))
 
   IAuth0Management
-  (update-user [this user-id params]
-    (debug "Update user " user-id " with params " params))
-  (get-token [_])
-  (create-email-user [_ _])
-  (link-with-same-email [_ _])
-  ;(create-and-link-new-user [_ _ _])
-  (link-user-accounts-by-id [this primary-token secondary-token])
-  ;(link-user-accounts-by-token [this primary-token secondary-token])
-  (unlink-user-accounts [this primary-id secondary-id secondary-provider]))
+  (get-token [this])
+  (update-user [this user-id params])
+  (get-user [this profile])
+  (create-email-user [this email])
+  (link-with-same-email [this profile])
+  (link-user-accounts-by-id [this primary-id secondary-id])
+  (unlink-user-accounts [this primary-profile secondary-id secondary-provider]))

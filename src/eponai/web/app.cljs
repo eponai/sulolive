@@ -285,7 +285,7 @@
 
 (defn run-dev [& [deps]]
   (run (merge {
-               :shared/auth0   :env/prod
+               :shared/auth0   :env/dev
                :shared/login   (auth/login reconciler-atom)
                :shared/modules (modules/dev-modules router/routes)
                }
