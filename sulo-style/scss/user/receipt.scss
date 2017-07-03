@@ -50,6 +50,13 @@
 			background: rgba($white, 0.75);
 		}
 	}
+	.sl-shipping--name {
+		font-weight: $global-weight-bold;
+	}
+	.sl-shipping--address {
+		// font-size: 100%;
+		color: $body-font-color;
+	}
 
 	// .section-title {
 	// 	font-size: 120%;

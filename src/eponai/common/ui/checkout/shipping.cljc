@@ -29,21 +29,21 @@
    :shipping.address/region   "sulo-shipping-region"
    :shipping.address/country  "sulo-shipping-country"})
 
-(s/def :country/code (s/and string? #(re-matches #"\w{2}" %)))
-(s/def :shipping/name (s/and string? #(not-empty %)))
-(s/def :shipping.address/street (s/and string? #(not-empty %)))
-(s/def :shipping.address/street2 (s/or :value string? :empty nil?))
-(s/def :shipping.address/postal (s/and string? #(not-empty %)))
-(s/def :shipping.address/locality (s/and string? #(not-empty %)))
-(s/def :shipping.address/region (s/or :value #(string? (not-empty %)) :empty nil?))
-(s/def :shipping.address/country (s/keys :req [:country/code]))
-
-(s/def :shipping/address (s/keys :req [:shipping.address/street
-                                       :shipping.address/postal
-                                       :shipping.address/locality]
-
-                                 :opt [:shipping.address/street2
-                                       :shipping.address/region]))
+;(s/def :country/code (s/and string? #(re-matches #"\w{2}" %)))
+;(s/def :shipping/name (s/and string? #(not-empty %)))
+;(s/def :shipping.address/street (s/and string? #(not-empty %)))
+;(s/def :shipping.address/street2 (s/or :value string? :empty nil?))
+;(s/def :shipping.address/postal (s/and string? #(not-empty %)))
+;(s/def :shipping.address/locality (s/and string? #(not-empty %)))
+;(s/def :shipping.address/region (s/or :value #(string? (not-empty %)) :empty nil?))
+;(s/def :shipping.address/country (s/keys :req [:country/code]))
+;
+;(s/def :shipping/address (s/keys :req [:shipping.address/street
+;                                       :shipping.address/postal
+;                                       :shipping.address/locality]
+;
+;                                 :opt [:shipping.address/street2
+;                                       :shipping.address/region]))
 (s/def ::shipping (s/keys :req [:shipping/address
                                 :shipping/name]))
 
