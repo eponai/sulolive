@@ -76,7 +76,7 @@
                        (css/add-class :hide))))
           (if (and (not-empty sources)
                    (not add-new-card?))
-            (button/user-setting-default
+            (button/store-setting-default
               {:onClick #(om/update-state! this assoc :add-new-card? true :selected-source :new-card)}
               (dom/span nil "Add new card...")))))
 
@@ -93,9 +93,9 @@
         (css/text-align :center {:id "card-errors"})
         (dom/small nil (or error payment-error)))
       (dom/div (css/text-align :right)
-               (dom/a
-                 (css/button (when-not (script-loader/is-loading-scripts? this)
-                               {:onClick #(.save-payment this)}))
+               (button/store-navigation-cta
+                 (when-not (script-loader/is-loading-scripts? this)
+                   {:onClick #(.save-payment this)})
                  (dom/span nil "Complete purchase"))
                (dom/p nil
                       (dom/small nil "This sale will be processed as ")

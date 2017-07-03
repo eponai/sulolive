@@ -7,6 +7,7 @@
 
 (defprotocol ISendEmail
   (-send-order-receipt [this params])
+  (-send-order-notification [this params])
   (-send-store-access-request [this params]))
 
 (defrecord SendEmail [smtp]
@@ -18,13 +19,27 @@
           {:order/keys [store shipping user]} order
           {store-name :store.profile/name} (:store/profile store)
           sent-email (postal/send-message smtp
-                                          {:from    "SULO Live <hello@sulo.live>"
+                                          {:from    (str store-name " via SULO Live <hello@sulo.live>")
                                            :to      (:user/email user)
                                            :subject (str "Your SULO Live receipt from " store-name " #" (:db/id order))
                                            :body    [{:type    "text/html"
-                                                      :content (templates/receipt params)}]})]
+                                                      :content (templates/order-receipt params)}]})]
       (debug sent-email)))
 
+  (-send-order-notification [this {:keys [charge order] :as params}]
+    (debug "Sending email... " smtp)
+    (let [{:keys [source created amount]} charge
+          {:keys [last4 brand]} source
+          {:order/keys [store shipping]} order
+          {store-name :store.profile/name} (:store/profile store)
+          store-owner (get-in store [:store/owners :store.owner/user])
+          sent-email (postal/send-message smtp
+                                          {:from    "SULO Live <hello@sulo.live>"
+                                           :to      (:user/email store-owner)
+                                           :subject (str "Your SULO Live receipt from " store-name " #" (:db/id order))
+                                           :body    [{:type    "text/html"
+                                                      :content (templates/order-notification params)}]})]
+      (debug sent-email)))
   (-send-store-access-request [_ {:field/keys [brand email website locality]
                                   user-id :user-id :as params}]
     (let [sent-email (postal/send-message smtp

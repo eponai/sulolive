@@ -34,6 +34,9 @@
   (default (css/add-class :hollow opts) content))
 
 
+(defn user-navigation-cta [opts & content]
+  (button (css/add-classes [:sulo-dark] opts) content))
+
 (defn user-setting-default [opts & content]
   (button (css/add-classes [:secondary :small :hollow] opts) content))
 
