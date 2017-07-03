@@ -250,7 +250,15 @@
                   (dom/div nil
                            (dom/small nil
                                       (dom/strong nil "FOUND ")
-                                      (dom/span nil (str (count (:browse-result/items browse-result)) " items")))
+                                      (dom/span nil (str (count (:browse-result/items browse-result)) " items"))
+                                      (when (pos? (count items))
+                                        (dom/span nil (str " - Showing items "
+                                                           (let [{:keys [page-size page-num]} page-range
+                                                                 page-start (* page-num page-size)]
+                                                             (str (inc page-start)
+                                                                  " to "
+                                                                  (+ page-start (count items))
+                                                                  " "))))))
                            (map (fn [page]
                                   (button/button-small
                                     {:onClick #(when (not= page (:page-num page-range))

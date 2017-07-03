@@ -543,10 +543,20 @@
           browse-result (some->> (browse/find-result db browse-params)
                                  (db/entity db))]
       (when (some? browse-result)
-        (debug "browse-result!: " (into {:db/id (:db/id browse-result)} browse-result))
-        {:value {:browse-result (into {:db/id (:db/id browse-result)} browse-result)
-                 :items         (db/pull-many db query (seq (browse/page-items browse-result
-                                                                               (:page-range browse-params))))}}))))
+        (let [items (into [] (browse/page-items browse-result (:page-range browse-params)))
+              pulled (db/pull-many db query items)
+              pulled (if (== (count pulled) (count items))
+                       pulled
+                       (let [pulled-by-id (into {} (map (juxt :db/id identity)) pulled)]
+                         (into [] (map (fn [item-id]
+                                         (or (get pulled-by-id item-id)
+                                             {:store.item/photos []
+                                              :store.item/name   "loading..."
+                                              :store.item/price  nil})))
+                               items)))]
+          (debug "browse-result!: " (into {:db/id (:db/id browse-result)} browse-result))
+          {:value {:browse-result (into {:db/id (:db/id browse-result)} browse-result)
+                   :items         pulled}})))))
 
 (defmethod client-read :query/browse-product-items
   [{:keys [target]} _ _]
