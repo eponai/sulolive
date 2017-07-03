@@ -311,4 +311,3 @@
 
 (def ->Checkout (om/factory Checkout))
 
-(router/register-component :checkout Checkout)

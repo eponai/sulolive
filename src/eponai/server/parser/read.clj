@@ -171,6 +171,8 @@
                                                           [?st :status/type :status.type/open]
                                                           [?s :store/status ?st]
                                                           [?s :store/items ?e]
+                                                          [?s :store/profile ?profile]
+                                                          [?profile :store.profile/photo _]
                                                           [?e :store.item/photos ?p]
                                                           [?p :store.item.photo/photo _]]
                                                :symbols {'?l (:db/id locations)}})
