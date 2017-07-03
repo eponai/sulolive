@@ -34,6 +34,7 @@
     "Create a managed account on Stripe for a a seller.
     Opts is a map with following keys:
     :country - A two character string code for the country of the seller, e.g. 'US'.")
+  (-delete-account [this account-id])
 
   (-get-account [this account-id]
     "Get a managed account for a seller from Stripe.
@@ -73,6 +74,9 @@
 
 (defn create-account [stripe params]
   (-create-account stripe params))
+
+(defn delete-account [stripe account-id]
+  (-delete-account stripe account-id))
 
 (defn update-account [stripe account-id params]
   (let [account (f/input->account-params params)]
@@ -144,6 +148,10 @@
       {:id     (:id account)
        :secret (:secret keys)
        :publ   (:publishable keys)}))
+
+  (-delete-account [this account-id]
+    (let [deleted (-delete this ["accounts" account-id])]
+      deleted))
 
   (-get-account [this account-id]
     (let [account (-get this ["accounts" account-id])]

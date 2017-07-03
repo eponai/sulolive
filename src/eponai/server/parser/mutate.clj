@@ -545,6 +545,15 @@
   {:action (fn []
              (store/update-order env store-id (c/parse-long order-id) params))})
 
+(defmutation store/delete
+  [{:keys [db] :as env} _ {:keys [store-id] :as p}]
+  {:auth {::auth/store-owner {:store-id store-id}}
+   :log  {:store-id store-id}
+   :resp {:success "Your store was deleted."
+          :error   "Could not delete store."}}
+  {:action (fn []
+             (store/delete env store-id))})
+
 (defmutation user/request-store-access
   [{:keys [system auth state]} _ params]
   {:auth ::auth/public
