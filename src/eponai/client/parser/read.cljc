@@ -532,14 +532,16 @@
     {:remote true}
     (let [locality (client.auth/current-locality db)
           browse-params (browse/make-browse-params locality route-params query-params)
-          {:keys [page-start page-size]} (:page-range browse-params)
           browse-result (some->> (browse/find-result db browse-params)
                                  (db/entity db))]
       (when (some? browse-result)
         (debug "browse-result!: " (into {:db/id (:db/id browse-result)} browse-result))
         {:value {:browse-result (into {:db/id (:db/id browse-result)} browse-result)
-                 :items         (db/pull-many db query
-                                              (sequence
-                                                (comp (drop page-start)
-                                                      (take page-size))
-                                                (:browse-result/items browse-result)))}}))))
+                 :items         (db/pull-many db query (seq (browse/page-items browse-result
+                                                                               (:page-range browse-params))))}}))))
+
+(defmethod client-read :query/browse-product-items
+  [{:keys [target]} _ _]
+  ;; Only for fetching product items, nothing else.
+  (when target
+    {:remote true}))

@@ -6,9 +6,10 @@
     [medley.core :as medley]
     [eponai.common.format :as format]
     [taoensso.timbre :as timbre :refer [debug]]
-    [clojure.string :as string]))
+    [clojure.string :as string]
+    [eponai.common :as c]))
 
-(def default-page-size 25)
+(def default-page-size 3)
 (def category-order-values ["newest" "lowest-price" "highest-price"])
 (def search-order-values (into ["relevance"] category-order-values))
 
@@ -183,6 +184,12 @@
     (search db browse-params)
     (category db browse-params)))
 
+(defn query-params->page-range [query-params]
+  (let [page-range (select-keys query-params [:page-num :page-size])]
+    (-> page-range
+        (update :page-num (fnil c/parse-long-safe 0))
+        (update :page-size (fnil c/parse-long-safe default-page-size)))))
+
 (defn make-browse-params
   "Convenience function for creating params from common maps."
   [locations route-params query-params]
@@ -190,16 +197,14 @@
                                               :sub-category
                                               :sub-sub-category])
         price-range (select-keys query-params [:from-price :to-price])
-        page-range (select-keys query-params [:page-start :page-size])
+        page-range (query-params->page-range query-params)
         {:keys [order search]} query-params]
     {:locations   locations
      :categories  categories
      :price-range price-range
      :search      search
      :order       (or order (default-order query-params))
-     :page-range  (-> page-range
-                      (update :page-start (fnil identity 0))
-                      (update :page-size (fnil identity default-page-size)))}))
+     :page-range  page-range}))
 
 ;; ----------
 ;; Datascript
@@ -236,6 +241,22 @@
                (take 1)))
            (first)
            (:db/id)))))
+
+(defn pages [{:browse-result/keys [page-range items]}]
+  (when-let [item-count (count (not-empty items))]
+    (let [{:keys [page-size] :or {page-size default-page-size}} page-range
+          pages (cond-> (long (/ item-count page-size))
+                        (pos? (rem item-count page-size))
+                        inc)]
+      (range pages))))
+
+(defn page-items [{:browse-result/keys [items]} page-range]
+  (let [{:keys [page-num page-size]
+         :or   {page-num  0
+                page-size default-page-size}} page-range]
+    (eduction (comp (drop (* page-num page-size))
+                    (take page-size))
+              items)))
 
 
 (comment

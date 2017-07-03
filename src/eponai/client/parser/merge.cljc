@@ -178,6 +178,7 @@
 
 ;; If we query for :query/skus, we want to re-read :query/cart.
 (defmethod multiply-key :query/skus [_] [:query/cart])
+(defmethod multiply-key :query/browse-product-items [_] [:query/browse-products-2])
 
 (defn unwrap-keys [[k v]]
   (if (parser/is-special-key? k)
