@@ -128,7 +128,8 @@
           category-label-fn (fn [category]
                               (str (products/category-display-name category)
                                    (when-let [matches (category-count this category count-by-category)]
-                                     (str " " matches))))]
+                                     (str " " matches))))
+          page-range (browse/query-params->page-range query-params)]
 
       (debug " items: " items)
       (debug " navigation: " navigation)
@@ -239,9 +240,24 @@
                      )
                 (grid/column
                   nil
-                  (dom/small nil
-                             (dom/strong nil "FOUND ")
-                             (dom/span nil (str (count (:browse-result/items browse-result)) " items"))))
+                  (dom/div nil
+                           (dom/small nil
+                                      (dom/strong nil "FOUND ")
+                                      (dom/span nil (str (count (:browse-result/items browse-result)) " items")))
+                           (map (fn [page]
+                                  (button/button-small
+                                    {:onClick #(when (not= page (:page-num page-range))
+                                                 ;; When not clicking the active page, fetch data for clicked page.
+                                                 (om/transact!
+                                                   (om/get-reconciler this)
+                                                   `[({:query/browse-product-items ~(om/get-query product/Product)}
+                                                       {:product-items ~(into []
+                                                                              (browse/page-items
+                                                                                browse-result
+                                                                                (assoc page-range :page-num page)))})]))
+                                     :href    (routes/map->url (routes/merge-route this {:query-params {:page-num page}}))}
+                                    (dom/span nil (str page))))
+                                (browse/pages browse-result))))
 
                 (grid/column
                   (->> (grid/column-size {:large 4})

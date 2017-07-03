@@ -475,15 +475,17 @@
     (if (= read-basis-t-for-this-key uniqueness)
       {:value (parser/value-with-basis-t {}
                                          read-basis-t-for-this-key)}
-      (let [{:keys [page-start page-size]} (:page-range browse-params)
-            browse-result (browse/find-items db browse-params)
-            initial-pull (db/pull-many db query
-                                       (sequence
-                                         (comp (drop page-start)
-                                               (take page-size))
-                                         (:browse-result/items browse-result)))]
+      (let [browse-result (browse/find-items db browse-params)
+            initial-pull (db/pull-many db query (seq (browse/page-items browse-result (:page-range browse-params))))]
         {:value (parser/value-with-basis-t
                   {:browse-result browse-result
                    :browse-params browse-params
                    :initial-pull  initial-pull}
                   uniqueness)}))))
+
+(defread query/browse-product-items
+  [{:keys [db db-history query route-params]} _ {:keys [product-items]}]
+  {:auth ::auth/public
+   :log  [:product-items]}
+  {:value (when (seq product-items)
+            (db/pull-many db query product-items))})
