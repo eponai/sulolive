@@ -295,5 +295,6 @@
   (if-let [reconciler @reconciler-atom]
     (do
       (client.chat/shutdown! (shared/by-key reconciler :shared/store-chat-listener))
-      (add-root! reconciler))
+      (add-root! reconciler)
+      (.forceUpdate (om/app-root reconciler)))
     (run-dev)))
