@@ -141,7 +141,7 @@
 
 (defn render-checkout-shipping [this props computed state]
   (let [{:keys [input-validation]} state
-        {:keys [collapse? shipping countries store available-rates]} props
+        {:keys [collapse? shipping countries store available-rates selected-rate]} props
         {:keys [on-open on-save-shipping]} computed
         {:shipping/keys [address]} shipping]
     (debug "Render shipping: " shipping)
@@ -197,90 +197,94 @@
                ;:value (:shipping/name shipping)
                }
               input-validation)))
-        (grid/row
-          nil
-          (grid/column
-            nil
-            (dom/input {:id          "auto-complete"
-                        :placeholder "Enter address..."
-                        :type        "text"
-                        :onFocus     #(geo-locate this)})))
-        (dom/hr nil)
+
         (dom/div
-          nil
-
-
+          (when (= (:shipping.rate/title selected-rate) "Free pickup")
+            (css/add-class :hide))
           (grid/row
+               nil
+               (grid/column
+                 nil
+                 (dom/input {:id          "auto-complete"
+                             :placeholder "Enter address..."
+                             :type        "text"
+                             :onFocus     #(geo-locate this)})))
+          (dom/hr nil)
+          (dom/div
             nil
-            (grid/column
-              (grid/column-size {:small 12 :medium 8})
-              (dom/label nil "Address")
-              (validate/input
-                {:id           (:shipping.address/street form-inputs)
-                 :type         "text"
-                 :defaultValue (:shipping.address/street address)
-                 :name         "ship-address"
-                 :autoComplete "shipping address-line1"}
-                input-validation))
-            (grid/column
-              (grid/column-size {:small 12 :medium 4})
-              (dom/label nil "Apt/Suite/Other (optional)")
-              (validate/input
-                {:type         "text"
-                 :id           (:shipping.address/street2 form-inputs)
-                 :defaultValue (:shipping.address/street2 address)
-                 }
-                input-validation)))
-          (grid/row
-            nil
-            (grid/column
-              nil
-              (dom/label nil "Postal code")
-              (validate/input
-                {:id           (:shipping.address/postal form-inputs)
-                 :type         "text"
-                 :name         "ship-zip"
-                 :autoComplete "shipping postal-code"
-                 :defaultValue (:shipping.address/postal address)
-                 }
-                input-validation))
-            (grid/column
-              (grid/column-size {:small 12 :large 4})
-              (dom/label nil "City")
-              (validate/input
-                {:type         "text"
-                 :id           (:shipping.address/locality form-inputs)
-                 :defaultValue (:shipping.address/locality address)
-                 :name         "ship-city"
-                 :autoComplete "shipping locality"}
-                input-validation))
-            (grid/column
-              nil
-              (dom/label nil "State/Province (optional)")
-              (validate/input
-                {:id           (:shipping.address/region form-inputs)
-                 :defaultValue (:shipping.address/region address)
-                 :name         "ship-state"
-                 :type         "text"
-                 :autoComplete "shipping region"}
-                input-validation))))
 
-        (dom/div (css/text-align :right)
-                 (when input-validation
-                   (dom/p
-                     nil
-                     (dom/small (css/add-class :text-alert) "You have errors that need to be fixed before continuing")))
-                 (dom/div
-                   (css/add-class :action-buttons)
-                   (button/cancel
-                     {:onClick #(when on-save-shipping
-                                 (on-save-shipping shipping))}
-                     (dom/span nil "Cancel"))
-                   (button/save
-                     {:onClick #(when (not-empty available-rates)
-                                 (.save-shipping this))}
-                     (dom/span nil "Save")))
-                 ))
+
+            (grid/row
+              nil
+              (grid/column
+                (grid/column-size {:small 12 :medium 8})
+                (dom/label nil "Address")
+                (validate/input
+                  {:id           (:shipping.address/street form-inputs)
+                   :type         "text"
+                   :defaultValue (:shipping.address/street address)
+                   :name         "ship-address"
+                   :autoComplete "shipping address-line1"}
+                  input-validation))
+              (grid/column
+                (grid/column-size {:small 12 :medium 4})
+                (dom/label nil "Apt/Suite/Other (optional)")
+                (validate/input
+                  {:type         "text"
+                   :id           (:shipping.address/street2 form-inputs)
+                   :defaultValue (:shipping.address/street2 address)
+                   }
+                  input-validation)))
+            (grid/row
+              nil
+              (grid/column
+                nil
+                (dom/label nil "Postal code")
+                (validate/input
+                  {:id           (:shipping.address/postal form-inputs)
+                   :type         "text"
+                   :name         "ship-zip"
+                   :autoComplete "shipping postal-code"
+                   :defaultValue (:shipping.address/postal address)
+                   }
+                  input-validation))
+              (grid/column
+                (grid/column-size {:small 12 :large 4})
+                (dom/label nil "City")
+                (validate/input
+                  {:type         "text"
+                   :id           (:shipping.address/locality form-inputs)
+                   :defaultValue (:shipping.address/locality address)
+                   :name         "ship-city"
+                   :autoComplete "shipping locality"}
+                  input-validation))
+              (grid/column
+                nil
+                (dom/label nil "State/Province (optional)")
+                (validate/input
+                  {:id           (:shipping.address/region form-inputs)
+                   :defaultValue (:shipping.address/region address)
+                   :name         "ship-state"
+                   :type         "text"
+                   :autoComplete "shipping region"}
+                  input-validation))))
+
+          (dom/div (css/text-align :right)
+                   (when input-validation
+                     (dom/p
+                       nil
+                       (dom/small (css/add-class :text-alert) "You have errors that need to be fixed before continuing")))
+                   (dom/div
+                     (css/add-class :action-buttons)
+                     (button/cancel
+                       {:onClick #(when on-save-shipping
+                                   (on-save-shipping shipping))}
+                       (dom/span nil "Cancel"))
+                     (button/save
+                       {:onClick #(when (not-empty available-rates)
+                                   (.save-shipping this))}
+                       (dom/span nil "Save")))
+                   )))
 
       (render-delivery this props)
       )))

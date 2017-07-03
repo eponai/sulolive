@@ -428,7 +428,8 @@
          (if allow-pickup?
            (when (some? store-country)
              (msg/om-transact! this [(list 'store/save-shipping-rule {:shipping-rule {:shipping.rule/pickup?      true
-                                                                                      :shipping.rule/destinations [store-country]}
+                                                                                      :shipping.rule/destinations [store-country]
+                                                                                      :shipping.rule/rates [{:shipping.rate/title "Free pickup"}]}
                                                                       :store-id      (:db/id store)})
                                      :query/store]))
            (when-let [delete-rule (pickup-rule store)]
