@@ -63,7 +63,10 @@
 					div {
 						line-height: 1.2;
 						span {
+							display: inline-block;
+							overflow: hidden;
 							font-size: 0.9rem;
+							max-height: 2.2rem;
 						}
 						small {
 							font-weight: $global-weight-bold;

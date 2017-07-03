@@ -72,18 +72,18 @@
 ;      {:explain-data  err
 ;       :invalid-paths invalid-paths})))
 
-(defn google-place->shipping [place]
-  (let [long-val (fn [k & [d]] (get-in place [k :long] d))
-        short-val (fn [k & [d]] (get-in place [k :short] d))
-        {:shipping.address/keys [street postal locality region country]} form-inputs
-        country-code (short-val :country)
-        address {:shipping.address/street   (long-val :address)
-                 :shipping.address/postal   (long-val :postal_code)
-                 :shipping.address/locality (or (long-val :locality) (long-val :postal_town) (long-val :sublocality_level_1))
-                 :shipping.address/region   (short-val :administrative_area_level_1)
-                 :shipping.address/country  {:country/code country-code}}]
-    (debug "Google address: " address)
-    address))
+;(defn google-place->shipping [place]
+;  (let [long-val (fn [k & [d]] (get-in place [k :long] d))
+;        short-val (fn [k & [d]] (get-in place [k :short] d))
+;        {:shipping.address/keys [street postal locality region country]} form-inputs
+;        country-code (short-val :country)
+;        address {:shipping.address/street   (long-val :address)
+;                 :shipping.address/postal   (long-val :postal_code)
+;                 :shipping.address/locality (or (long-val :locality) (long-val :postal_town) (long-val :sublocality_level_1))
+;                 :shipping.address/region   (short-val :administrative_area_level_1)
+;                 :shipping.address/country  {:country/code country-code}}]
+;    (debug "Google address: " address)
+;    address))
 
 (defn prefill-address-form [shipping]
   #?(:cljs

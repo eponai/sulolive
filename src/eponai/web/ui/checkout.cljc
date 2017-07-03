@@ -18,6 +18,7 @@
     [eponai.web.ui.button :as button]
     #?(:cljs [eponai.web.utils :as web-utils])
     #?(:cljs [eponai.web.ui.stripe :as stripe])
+    #?(:cljs [eponai.common.ui.checkout.google-places :as places])
     [eponai.common.ui.elements.input-validate :as validate]
     [eponai.common.shared :as shared]
     [eponai.common.ui.script-loader :as script-loader]
@@ -163,7 +164,7 @@
         country-code (get-in address [:shipping.address/country :country/code])
         shipping-rules (available-rules (om/props component) edit-shipping)]
 
-    ;(debug "Edit address: " edit-shipping)
+    (debug "Edit address: " edit-shipping)
     ;(debug "All shipping rules: " (get-in store [:store/shipping :shipping/rules]))
     ;(debug "Shipping rules: " shipping-rules)
     (if (nil? stripe-customer)
@@ -182,9 +183,7 @@
                :name         "ship-country"
                :autoComplete "shipping country"
                :value        (or country-code "CA")
-               :onChange     #(om/update-state! component update
-                                                :shipping/edit-shipping assoc-in
-                                                [:shipping/address :shipping.address/country :country/code] (.-value (.-target %)))}
+               :onChange     #(.change-country component (.-value (.-target %)))}
               (map (fn [c]
                      (dom/option {:value (:country/code c)} (:country/name c)))
                    (sort-by :country/name countries)))
@@ -205,24 +204,20 @@
                :name         "name"
                :autoComplete "name"
                :value        (or shipping-name "")
-               ;:value (:shipping/name shipping)
                :onChange     #(om/update-state! component update :shipping/edit-shipping assoc :shipping/name (.-value (.-target %)))
                }
               input-validation)))
 
         (dom/div
           nil
-          ;(when (= (:shipping.rate/title selected-rate) "Free pickup")
-          ;  (css/add-class :hide))
           (grid/row
             nil
             (grid/column
               nil
-              (dom/input {:id          "auto-complete"
-                          :placeholder "Enter address..."
-                          :type        "text"
-                          ;:onFocus     #(.geo-locate component)
-                          })))
+              (dom/input {:id           "sulo-auto-complete"
+                          :placeholder  "Enter address..."
+                          :type         "text"
+                          :defaultValue ""})))
           (dom/hr nil)
           (dom/div
             nil
@@ -236,7 +231,7 @@
                 (validate/input
                   {:id           (:shipping.address/street form-inputs)
                    :type         "text"
-                   :value        (:shipping.address/street address)
+                   :value        (:shipping.address/street address "")
                    :onChange     #(om/update-state! component update :shipping/edit-shipping assoc-in
                                                     [:shipping/address :shipping.address/street] (.-value (.-target %)))
                    :name         "ship-address"
@@ -248,7 +243,7 @@
                 (validate/input
                   {:type     "text"
                    :id       (:shipping.address/street2 form-inputs)
-                   :value    (:shipping.address/street2 address)
+                   :value    (:shipping.address/street2 address "")
                    :onChange #(om/update-state! component update :shipping/edit-shipping assoc-in
                                                 [:shipping/address :shipping.address/street2] (.-value (.-target %)))
                    }
@@ -263,7 +258,7 @@
                    :type         "text"
                    :name         "ship-zip"
                    :autoComplete "shipping postal-code"
-                   :value        (:shipping.address/postal address)
+                   :value        (:shipping.address/postal address "")
                    :onChange     #(om/update-state! component update :shipping/edit-shipping assoc-in
                                                     [:shipping/address :shipping.address/postal] (.-value (.-target %)))
                    }
@@ -274,7 +269,7 @@
                 (validate/input
                   {:type         "text"
                    :id           (:shipping.address/locality form-inputs)
-                   :value        (:shipping.address/locality address)
+                   :value        (:shipping.address/locality address "")
                    :name         "ship-city"
                    :autoComplete "shipping locality"
                    :onChange     #(om/update-state! component update :shipping/edit-shipping assoc-in
@@ -285,7 +280,7 @@
                 (dom/label nil "State/Province (optional)")
                 (validate/input
                   {:id           (:shipping.address/region form-inputs)
-                   :value        (:shipping.address/region address)
+                   :value        (:shipping.address/region address "")
                    :name         "ship-state"
                    :type         "text"
                    :autoComplete "shipping region"
@@ -317,13 +312,14 @@
          current-shipping :checkout/shipping} (om/get-state component)
 
         subtotal (compute-subtotal checkout)
-        shipping-rules (available-rules (om/props component) current-shipping)
+        shipping-rules (available-rules (om/props component) (or edit-shipping current-shipping))
         shipping-rates (reduce (fn [all-rates rule]
                                  (let [rates (:shipping.rule/rates rule)
                                        calc-rates (mapv #(assoc % :shipping.rate/total (compute-shipping-fee % checkout)) rates)]
                                    (if (:shipping.rule/pickup? rule)
                                      (into calc-rates all-rates)
                                      (into all-rates calc-rates)))) [] shipping-rules)]
+    (debug "Shipping rules: " shipping-rules)
 
     (callout/callout
       (css/add-classes [:section :section--shipping])
@@ -331,8 +327,13 @@
 
       (dom/div
         (css/add-class :subsection)
-        (if (some? edit-shipping)
-          (render-edit-address component edit-shipping)
+        (dom/div
+          (when (nil? edit-shipping)
+            (css/add-class :hide))
+          (render-edit-address component edit-shipping))
+        (dom/div
+          (when (some? edit-shipping)
+            (css/add-class :hide))
           (common/render-shipping current-shipping nil))
         (when (nil? edit-shipping)
           (button/store-setting-default
@@ -460,8 +461,9 @@
     [{:proxy/navbar (om/get-query nav/Navbar)}
      ;{:proxy/footer (om/get-query foot/Footer)}
 
-     {:query/checkout [:store.item.sku/variation
-                       ;:store.item.sku/inventory
+     {:query/checkout [:db/id
+                       :store.item.sku/variation
+                       :store.item.sku/inventory
                        {:store.item/_skus [:store.item/name
                                            :store.item/price
                                            {:store.item/photos [{:store.item.photo/photo [:photo/id]}
@@ -484,10 +486,20 @@
      :query/messages])
 
   Object
+  (change-country [this country-code]
+    (let [{:keys [autocomplete]} (om/get-state this)
+          {:query/keys [countries]} (om/props this)
+          country (some #(when (= (:country/code %) country-code) %) countries)]
+      #?(:cljs
+         (when autocomplete
+           (.setComponentRestrictions autocomplete (clj->js {:country (or country-code [])}))))
+      (om/update-state! this update
+                        :shipping/edit-shipping assoc-in
+                        [:shipping/address :shipping.address/country] (or country {:country/code country-code}))))
   (save-shipping [this shipping]
     (let [validation (validate/validate ::shipping shipping form-inputs)
           shipping-rules (available-rules (om/props this) shipping)]
-      
+
       (when (shipping-available? shipping-rules)
         (om/update-state! this (fn [st]
                                  (cond-> (assoc st :input-validation validation)
@@ -554,12 +566,16 @@
          (om/update-state! this assoc :loading/message "Placing your order..."))))
 
   (initial-state [this props]
-    (let [{:query/keys [stripe-customer]} props
+    (let [{:query/keys [stripe-customer countries]} props
           current-shipping (:stripe/shipping stripe-customer)
-          shipping-rules (available-rules props current-shipping)]
-      (debug "Setting init state: " current-shipping)
-      {:checkout/shipping      current-shipping
-       :shipping/edit-shipping (when-not (shipping-available? shipping-rules) (or current-shipping {}))}))
+          shipping-rules (available-rules props current-shipping)
+          country-code (get-in current-shipping [:shipping/address :shipping.address/country :country/code])
+          country (when country-code (some #(when (= (:country/code %) country-code) %) countries))
+          updated-shipping (assoc-in current-shipping [:shipping/address :shipping.address/country] (or country
+                                                                                                        {:country/code "CA"}))]
+      {:checkout/shipping      updated-shipping
+       :shipping/edit-shipping (when-not (shipping-available? shipping-rules)
+                                 updated-shipping)}))
 
   (componentDidUpdate [this _ _]
 
@@ -604,11 +620,18 @@
 
   (componentDidMount [this]
     #?(:cljs
-       (when (web-utils/element-by-id (:payment.stripe/card form-inputs))
-         (let [card (stripe/card-element (shared/by-key this :shared/stripe) (str "#" (:payment.stripe/card form-inputs)))]
-           (om/update-state! this merge
-                             (.initial-state this (om/props this))
-                             {:card card})))))
+       (let [init-state (.initial-state this (om/props this))
+             country (get-in init-state [:checkout/shipping :shipping/address :shipping.address/country :country/code])
+             card (stripe/card-element (shared/by-key this :shared/stripe) (str "#" (:payment.stripe/card form-inputs)))
+             autocomplete (places/mount-places-address-autocomplete
+                            {:element-id "sulo-auto-complete"
+                             :on-change  (fn [address]
+                                           (om/update-state! this assoc-in [:shipping/edit-shipping :shipping/address] address))})]
+         (.setComponentRestrictions autocomplete (clj->js {:country (or country [])}))
+         (om/update-state! this merge
+                           init-state
+                           {:card         card
+                            :autocomplete autocomplete}))))
 
   (initLocalState [this]
     (.initial-state this (om/props this)))
@@ -623,7 +646,7 @@
           tax-amount 0
           grandtotal (+ subtotal shipping-fee tax-amount)
           ]
-      ;(debug "Checkout: " checkout)
+      (debug "Checkout: " checkout)
       (common/page-container
         {:id     "sulo-checkout"
          :navbar navbar}

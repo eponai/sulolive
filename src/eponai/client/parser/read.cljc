@@ -269,11 +269,11 @@
   (when-let [store-id (:store-id route-params)]
     (if target
       {:remote true}
-      {:value (db/pull-all-with db query {:where   '[[?u :user/cart ?c]
-                                                     [?c :user.cart/items ?e]
-                                                     [?i :store.item/skus ?e]
-                                                     [?s :store/items ?i]]
-                                          :symbols {'?s store-id}})})))
+      {:value (do (debug "Query " query) (db/pull-all-with db query {:where   '[[?u :user/cart ?c]
+                                                         [?c :user.cart/items ?e]
+                                                         [?i :store.item/skus ?e]
+                                                         [?s :store/items ?i]]
+                                              :symbols {'?s store-id}}))})))
 
 (defmethod client-read :query/taxes
   [{:keys [db query route-params target]} _ {:keys [destination] :as p}]
