@@ -183,16 +183,16 @@
 
 ;; TODO: Base this off of protocol functions instead of implementation detail of the graph?
 (defn merge-graphs [a b]
-  (debug "Merging graphs: ")
-  (debug a)
-  (debug b)
   (letfn [(deep-merge [a b]
             (when (or a b)
               (if-not (and a b)
                 (or a b)
                 (cond
                   (map? b)
-                  (merge-with deep-merge a b)
+                  (if (= :basis-t (:node b))
+                    ;; Stop merging when we're at the :basis-t node
+                    b
+                    (merge-with deep-merge a b))
                   (coll? b)
                   (into a b)
                   :else

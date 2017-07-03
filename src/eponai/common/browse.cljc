@@ -131,14 +131,12 @@
                              item-query
                              {:find  '[?e ?price ?created-at]
                               :where '[[?e :store.item/price ?price]
-                                       [?e :store.item/created-at ?created-at]]}))
-        items (sort-items order items-with-price)]
+                                       [?e :store.item/created-at ?created-at]]}))]
 
     ;; Pagination can be implemented client side as long as we return all items in the correct order.
     (make-result
-      {:browse-result/items  items
-       :browse-result/prices (store-item-price-distribution (map second items-with-price))
-       :browse-result/count-by-category (or (count-items-by-category db items) {})}
+      {:browse-result/items  (sort-items order items-with-price)
+       :browse-result/prices (store-item-price-distribution (map second items-with-price))}
       browse-params)))
 
 (defn search
