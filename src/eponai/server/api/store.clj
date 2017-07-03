@@ -30,6 +30,16 @@
                         stream])
     (db/pull (db/db state) [:db/id] [:store/uuid (:store/uuid new-store)])))
 
+(defn delete [{:keys [state system auth]} store-id]
+  (let [stripe-account (stripe/pull-stripe (db/db state) store-id)
+
+        deleted-stripe (stripe/-delete (:system/stripe system) (:stripe/id stripe-account))
+
+        delete-txs [[:db.fn/retractEntity store-id]
+                    [:db.fn/retractEntity (:db/id stripe-account)]]]
+    (when (:deleted deleted-stripe)
+      (db/transact state delete-txs))))
+
 (defn retracts [old-entities new-entities]
   (let [removed (filter #(not (contains? (into #{} (map :db/id new-entities)) (:db/id %))) old-entities)]
     (reduce (fn [l remove-photo]

@@ -130,6 +130,24 @@
                          (on-close))}
           (dom/span nil "Yes, close store"))))))
 
+(defn delete-store-modal [component]
+  (let [on-close #(om/update-state! component dissoc :modal)]
+    (common/modal
+      {:on-close on-close}
+      (dom/p (css/add-class :header) "Do you want to permantly delete your store?")
+      (dom/p nil (dom/small nil "This is a permanent action. Once confirmed, you will not be able to restore your settings in the future. If you just want to pause for a bit, try closing your store temporarily instead."))
+      (dom/div
+        (css/add-class :action-buttons)
+        (button/user-setting-default
+          {:onClick on-close}
+          (dom/span nil "Cancel"))
+        (button/default-hollow
+          (->>
+            {:onClick #(do (.delete-store component)
+                           (on-close))}
+            (css/add-classes [:small :alert]))
+          (dom/span nil "Yes, delete store"))))))
+
 (defn username-modal [component]
   (let [on-close #(om/update-state! component dissoc :modal)
         {:keys [input-username error-message]} (om/get-state component)
@@ -177,7 +195,8 @@
                              :stripe/payouts-enabled?
                              :stripe/verification]}
      :query/current-route
-     :query/messages])
+     :query/messages
+     :query/locations])
   Object
   (open-store [this]
     (let [{:query/keys [store stripe-account current-route]} (om/props this)]
@@ -194,6 +213,11 @@
                               :query/store])
       (debug "Close store")))
 
+  (delete-store [this]
+    (let [{:query/keys [store]} (om/props this)]
+      (msg/om-transact! this [(list 'store/delete {:status   {:status/type :status.type/closed}
+                                                   :store-id (:db/id store)})])))
+
   (save-username [this]
     (let [{:keys [input-username]} (om/get-state this)
           {:query/keys [store]} (om/props this)]
@@ -202,8 +226,9 @@
                               :query/store])))
 
   (componentDidUpdate [this _ _]
-    (let [{:query/keys [current-route]} (om/props this)
-          username-msg (msg/last-message this 'store/update-username)]
+    (let [{:query/keys [current-route locations]} (om/props this)
+          username-msg (msg/last-message this 'store/update-username)
+          delete-msg (msg/last-message this 'store/delete)]
       (when (msg/final? username-msg)
         (msg/clear-messages! this 'store/update-username)
         (if (msg/success? username-msg)
@@ -211,7 +236,19 @@
             ;(debug "New store success: " (msg/message username-msg))
             (routes/set-url! this (:route current-route) (assoc (:route-params current-route) :store-id (:username (msg/message username-msg))))
             (om/update-state! this dissoc :modal :error-message))
-          (om/update-state! this assoc :error-message (msg/message username-msg))))))
+          (om/update-state! this assoc :error-message (msg/message username-msg))))
+
+      (when (msg/final? delete-msg)
+        (msg/clear-messages! this 'store/delete)
+        (if (msg/success? delete-msg)
+          (if (some? locations)
+            (routes/set-url! this :index {:locality (:sulo-locality/path locations)})
+            (routes/set-url! this :landing-page))))))
+
+  (is-loading? [this]
+    (let [username-msg (msg/last-message this 'store/update-username)
+          delete-msg (msg/last-message this 'store/delete)]
+      (msg/pending? delete-msg)))
 
   (render [this]
     (let [{:query/keys [store stripe-account current-route]} (om/props this)
@@ -227,10 +264,15 @@
 
         {:id "sulo-store-info-status"}
 
+        (when (.is-loading? this)
+          (common/loading-spinner nil))
+
         (cond (= modal :modal/close-store)
               (close-store-modal this)
               (= modal :modal/username)
-              (username-modal this))
+              (username-modal this)
+              (= modal :modal/delete-store)
+              (delete-store-modal this))
 
         (dom/div
           (css/add-class :section-title)
@@ -357,26 +399,27 @@
         ;          ;(dom/label nil "Status")
         ;          )))))
 
-        ;(dom/div
-        ;  (css/add-class :section-title)
-        ;  (dom/h2 nil "Delete store"))
-        ;(callout/callout
-        ;  nil
-        ;  (menu/vertical
-        ;    (css/add-class :section-list)
-        ;    (menu/item
-        ;      nil
-        ;      (grid/row
-        ;        (->> (css/add-class :collapse)
-        ;             (css/align :middle))
-        ;        (grid/column
-        ;          (grid/column-size {:small 12 :medium 8})
-        ;          (render-status this store))
-        ;        (grid/column
-        ;          (css/text-align :right)
-        ;          (button/button
-        ;            (css/add-class :alert)
-        ;            (dom/span nil "Delete store")))))))
+        (dom/div
+          (css/add-class :section-title)
+          (dom/h2 nil "Danger zone"))
+        (callout/callout
+          nil
+          (menu/vertical
+            (css/add-class :section-list)
+            (menu/item
+              nil
+              (grid/row
+                (->> (css/add-class :collapse)
+                     (css/align :middle))
+                (grid/column
+                  (grid/column-size {:small 12 :medium 8})
+                  (dom/label nil (str "Delete " (get-in store [:store/profile :store.profile/name])))
+                  (dom/p nil (dom/small nil "Deleting your store is a permanent action. Once confirmed, you will not be able to restore your settings in the future. If you just want to pause for a bit, try closing your store temporarily instead.")))
+                (grid/column
+                  (css/text-align :right)
+                  (button/default-hollow
+                    (css/add-classes [:alert] {:onClick #(om/update-state! this assoc :modal :modal/delete-store)})
+                    (dom/span nil "Delete store")))))))
         ))))
 
 (def ->StoreStatus (om/factory StoreStatus))
