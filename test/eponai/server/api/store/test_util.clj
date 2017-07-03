@@ -7,10 +7,10 @@
     [eponai.server.external.cloudinary :as cloudinary]))
 
 (defn s3-test [chan]
-  (reify s3/IAWSS3Photo
+  (reify s3/IAWSS3
     (convert-to-real-key [this old-key])
-    (move-photo [this bucket old-key new-key])
-    (upload-photo [this params]
+    (move-object [this bucket old-key new-key])
+    (upload-object [this params]
       (let [{:keys [location]} params]
         (async/put! chan location)
         location))))

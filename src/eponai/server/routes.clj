@@ -24,6 +24,7 @@
     [eponai.server.social :as social]
     [eponai.common.routes :as routes]
     [eponai.common.database :as db]
+    [eponai.server.external.aws-s3 :as aws-s3]
     [eponai.server.log :as log]
     [eponai.common :as c]
     [eponai.common.photos :as photos]
@@ -204,7 +205,7 @@
 
 (defroutes
   site-routes
-  (GET "/aws" request (api/aws-s3-sign request))
+  (GET "/aws" request (aws-s3/sign (get-in request [:eponai.server.middleware/system :system/aws-s3])))
   (POST "/api" request
     (r/response (call-parser request)))
   (POST "/api/chat" request
