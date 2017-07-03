@@ -57,6 +57,13 @@
                (seq)
                (reduce + 0)))))
 
+(defn category-nav-link [component category]
+  (routes/map->url (merge-with merge
+                               (-> (routes/current-route component)
+                                   (dissoc :route)
+                                   (update :query-params dissoc :page-num))
+                               (:category/route-map category))))
+
 (defn- vertical-category-menu [component children current-category label-fn]
   (menu/vertical
     (css/add-class :nested)
@@ -68,7 +75,7 @@
                (when (and (some? current-category)
                           (= path (:category/path current-category)))
                  (css/add-class ::css/is-active))
-               (dom/a {:href (routes/map->url (routes/merge-route component (:category/route-map category)))}
+               (dom/a {:href (category-nav-link component category)}
                       (dom/span nil (label-fn category)))))))))
 
 (defn selected-navigation [component]
@@ -166,7 +173,7 @@
                           (let [is-active? (= (:category/name category) (:category/name (first categories)))]
                             (menu/item
                               (when is-active? (css/add-class :is-active))
-                              (dom/a {:href (routes/map->url (routes/merge-route this (:category/route-map category)))}
+                              (dom/a {:href (category-nav-link this category)}
                                      (dom/span nil (category-label-fn category)))
                               (vertical-category-menu this
                                                       (:category/children category)
