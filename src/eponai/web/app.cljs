@@ -125,6 +125,8 @@
     (om/transact! reconciler '[{:query/stores [{:store/status [:status/type]}
                                                {:store/profile [{:store.profile/cover [:photo/path :photo/id]}]}]}])))
 
+;; We've currently copied the query/cart pattern to here
+;; for handling anonymous carts.
 (def skus-pattern [{:store.item/_skus
                     [:store.item/price
                      {:store.item/photos [:photo/path]}

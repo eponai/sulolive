@@ -371,12 +371,7 @@
 (defui Navbar
   static om/IQuery
   (query [_]
-    ;; We've currently copied the query/cart pattern to app.cljs
-    ;; for handling anonymous carts.
-    [{:query/cart [{:user.cart/items [{:store.item/_skus [:store.item/price
-                                                          {:store.item/photos [:photo/path]}
-                                                          :store.item/name
-                                                          {:store/_items [{:store/profile [:store.profile/name]}]}]}]}
+    [{:query/cart [{:user.cart/items [:db/id]}
                    ;; To link the cart with the user.
                    {:user/_cart [:db/id]}]}
      {:query/auth [:db/id
