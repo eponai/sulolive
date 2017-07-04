@@ -1,5 +1,9 @@
 
 #sulo-shopping-bag {
+	.row {
+		max-width: $dashboard-content-width;
+		margin: 0 auto;
+	}
 	h1 {
 		margin-top: 2rem;
 	}
@@ -15,6 +19,9 @@
 		margin: 0;
 	}
 
+	.callout {
+		border: $global-border-secondary;
+	}
 	.cart-checkout-item {
 		.menu {
 			border-top: $global-border;			

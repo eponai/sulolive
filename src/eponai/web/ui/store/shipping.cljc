@@ -115,33 +115,6 @@
             (dom/span nil "Yes, delete rule and close store")
             (dom/span nil "Yes, delete rule")))))))
 
-;(defn delete-rate-modal [component]
-;  (let [{:keys [modal-object store]} (om/get-state component)
-;        [rule rate] modal-object
-;        on-close #(om/update-state! component dissoc :modal :modal-object)
-;        will-close-store? (and (>= 1 (count (get-in store [:store/shipping :shipping/rules])))
-;                               (>= 1 (count (:shipping.rule/rates rate))))]
-;    (common/modal
-;      {:on-close on-close
-;       :size     "tiny"}
-;      (dom/h4 (css/add-class :header) "Delete rule")
-;      (dom/p nil (dom/small nil "Do you want to delete this shipping rule?"))
-;      (when will-close-store?
-;        (dom/p nil
-;               (dom/small nil "Deleting this rule will close your store. To keep your store open, make sure you have at least one shipping option specified.")))
-;      (dom/div
-;        (css/add-class :action-buttons)
-;        (button/user-setting-default
-;          (css/button-hollow {:onClick on-close})
-;          (dom/span nil "No thanks"))
-;        (button/user-setting-cta
-;          (css/button {:onClick #(do
-;                                  (on-close)
-;                                  (.delete-rate component rule rate))})
-;          (if will-close-store?
-;            (dom/span nil "Yes, delete rule and close store")
-;            (dom/span nil "Yes, delete rule")))))))
-
 (defn shipping-address-modal [component]
   (let [{:query/keys [store countries]} (om/props component)
         shipping (:store/shipping store)                    ;[{:brand "American Express" :last4 1234 :exp-year 2018 :exp-month 4}]
@@ -263,7 +236,7 @@
                    (and (= section :shipping-rule.section/destinations)
                         (not= modal :modal/add-shipping-rate))
                    (css/add-class :is-active))
-          (dom/small nil "Select which countries you want to ship to. You'll add rates in the next step.")
+          (dom/p nil (dom/small nil "Select which countries you want to ship to. You'll add rates in the next step. "))
           (select/->SelectOne (om/computed {:options     (reduce (fn [l [con cs]]
                                                                    (into l (into [{:value     (:continent/code con)
                                                                                    :label     (:continent/name con)
@@ -281,7 +254,7 @@
                                                                  countries-by-continent)
                                             :placeholder "Select destinations..."}
                                            {:on-change #(add-shipping-destination component % used-country-codes)}))
-          (when (not-empty selected-countries)
+          (if (not-empty selected-countries)
             (menu/vertical
               nil
               (map
@@ -292,7 +265,8 @@
                     (dom/a
                       (->> {:onClick #(remove-country component c)}
                            (css/add-classes [:icon :icon-delete])))))
-                (sort-by :country/name selected-countries))))
+                (sort-by :country/name selected-countries)))
+            (dom/p nil (dom/small nil (dom/strong nil "Tip: ") (dom/span nil "Select entire continents to add all their countries not already in a rule."))))
           (dom/div
             (css/add-class :action-buttons)
             (button/cancel
@@ -432,7 +406,7 @@
                                                           :shipping.address/region
                                                           {:shipping.address/country [:country/code]}]}]}]}])
   Object
-  (initLocalState [_]
+  (initLocalState [this]
     {:selected-countries    []
      :shipping-rule/section :shipping-rule.section/destinations})
   (update-free-shipping [this allow-pickup?]
@@ -703,8 +677,8 @@
         ;      {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-rule)}
         ;      (dom/span nil "Add shipping rule"))))
 
-        (map
-          (fn [sr]
+        (map-indexed
+          (fn [i sr]
             (let [{:shipping.rule/keys [destinations rates]} sr
                   sorted-dest (sort-by :country/name destinations)
                   show-locations 5]
@@ -723,7 +697,11 @@
                                (dom/label nil
                                           (str (string/join ", " (map :country/name (take show-locations sorted-dest)))
                                                (when (< 0 (- (count destinations) show-locations))
-                                                 (str " & " (- (count destinations) show-locations) " more"))))))
+                                                 (str " & " (- (count destinations) show-locations) " more")))))
+                        (dom/a
+                          (->> {:onClick #(om/update-state! this assoc :modal :modal/delete-rule :modal-object sr)}
+                               (css/add-class :edit-menu))
+                          (dom/small nil "delete rule")))
                       (table/table
                         nil
                         (table/thead
@@ -760,17 +738,17 @@
                                              )))
                                    (table/td
                                      (css/text-align :right)
-                                     (button/user-setting-default
+                                     (dom/a
                                        {:onClick #(if (< 1 (count rates))
                                                    (.delete-rate this sr r)
                                                    (om/update-state! this assoc :modal :modal/delete-rule :modal-object sr))}
-                                       (dom/span nil "Delete"))))) rates)))
+                                       (dom/small nil "delete"))))) rates)))
                       (dom/div
                         (css/add-classes [:action-buttons :shipping-rule-card-footer])
 
-                        (button/default-hollow
-                          (button/small {:onClick #(om/update-state! this assoc :modal :modal/delete-rule :modal-object sr)})
-                          (dom/span nil "Delete rule"))
+                        ;(button/default-hollow
+                        ;  (button/small {:onClick #(om/update-state! this assoc :modal :modal/delete-rule :modal-object sr)})
+                        ;  (dom/span nil "Delete rule"))
                         (button/store-setting-default
                           (button/small {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-rate :shipping-rule/edit-rule sr)})
                           (dom/span nil "Add shipping rate")))))))))

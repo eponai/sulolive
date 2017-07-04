@@ -1,6 +1,14 @@
 #sulo-shipping-settings {
 	max-width:  $dashboard-content-width;
 	margin: 0 auto;
+	// .dropdown-pane {
+	// 	right: 0;
+	// 	li {
+	// 		padding: 0;
+	// 	}
+	// 	width: 5rem;
+	// 	min-width: 5rem;
+	// }
 	.content-section {
 		.section-title {
 			flex-wrap: wrap;
@@ -52,6 +60,7 @@
 			}
 		}
 		&.section-container--shipping-rules {
+			position: relative;
 			// margin-bottom: 0;
 			// border-bottom: $global-border;
 			> .row {
@@ -59,6 +68,20 @@
 			}
 			.shipping-rule-card {
 				.shipping-rule-card-header {
+					display: flex;
+					justify-content: space-between;
+					margin-top: -0.5rem;
+					.edit-menu {
+						padding: 0.5rem $global-padding;
+						// position: absolute;
+						flex: 0 0 auto;
+						right: 0;
+						top: 0;
+						color: $dark-gray;
+						&:hover {
+							// color: $body-font-color;
+						}
+					}
 					// padding: 0.75rem 1rem;
 					label {
 						// font-family: $header-font-family-sans-serif;
