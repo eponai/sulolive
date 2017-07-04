@@ -104,13 +104,14 @@
                (dom/small nil "deleting this rule will close your store. To keep your store open, make sure you have at least one shipping option specified.")))
       (dom/div
         (css/add-class :action-buttons)
-        (button/save
+        (button/cancel
           {:onClick on-close}
           (dom/span nil "No thanks"))
         (button/cancel
-          {:onClick #(do
-                      (on-close)
-                      (.delete-rule component modal-object))}
+          (->> {:onClick #(do
+                           (on-close)
+                           (.delete-rule component modal-object))}
+               (css/add-class :alert))
           (if will-close-store?
             (dom/span nil "Yes, delete rule and close store")
             (dom/span nil "Yes, delete rule")))))))
@@ -272,7 +273,7 @@
             (button/cancel
               {:onClick on-close}
               (dom/span nil "Cancel"))
-            (button/store-setting-cta
+            (button/save
               (cond->> {:onClick #(om/update-state! component assoc :shipping-rule/section :shipping-rule.section/rates)}
                        (empty? selected-countries)
                        (css/add-class :disabled))
@@ -698,10 +699,11 @@
                                           (str (string/join ", " (map :country/name (take show-locations sorted-dest)))
                                                (when (< 0 (- (count destinations) show-locations))
                                                  (str " & " (- (count destinations) show-locations) " more")))))
-                        (dom/a
-                          (->> {:onClick #(om/update-state! this assoc :modal :modal/delete-rule :modal-object sr)}
-                               (css/add-class :edit-menu))
-                          (dom/small nil "delete rule")))
+                        ;(dom/a
+                        ;  (->> {:onClick #(om/update-state! this assoc :modal :modal/delete-rule :modal-object sr)}
+                        ;       (css/add-class :edit-menu))
+                        ;  (dom/small nil "delete rule"))
+                        )
                       (table/table
                         nil
                         (table/thead
@@ -751,7 +753,11 @@
                         ;  (dom/span nil "Delete rule"))
                         (button/store-setting-default
                           (button/small {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-rate :shipping-rule/edit-rule sr)})
-                          (dom/span nil "Add shipping rate")))))))))
+                          (dom/span nil "Add shipping rate"))
+                        (button/delete
+                          (->> {:onClick #(om/update-state! this assoc :modal :modal/delete-rule :modal-object sr)}
+                               (css/add-class :alert))
+                          (dom/span nil "Delete rule")))))))))
           (remove #(:shipping.rule/pickup? %) (get-in store [:store/shipping :shipping/rules])))
         ;(grid/row
         ;  nil

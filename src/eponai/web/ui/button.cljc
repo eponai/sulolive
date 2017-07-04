@@ -49,6 +49,9 @@
 (defn store-navigation-cta [opts & content]
   (button (css/add-classes [:sulo-dark] opts) content))
 
+(defn store-navigation-secondary  [opts & content]
+  (button (css/add-classes [:secondary :hollow] opts) content))
+
 (defn store-setting-default [opts & content]
   (button (css/add-classes [:sulo-dark :small :hollow] opts) content))
 
@@ -67,4 +70,9 @@
 
 (defn save [opts & content]
   (store-setting-cta opts (or content (dom/span nil "Save"))))
+
+(defn delete [opts & content]
+  (user-setting-default (css/add-class :delete-button opts)
+                        (or  content
+                             (dom/span nil "delete"))))
 

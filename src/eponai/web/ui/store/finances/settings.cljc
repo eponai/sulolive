@@ -396,7 +396,7 @@
                          ;    (->> {:onClick #(om/update-state! this assoc :modal :delete-account)}
                          ;         (css/add-classes [:small :alert :hollow]))
                          ;    (dom/span nil "Delete")))
-                         (button/edit
+                         (button/delete
                            {:onClick #(om/update-state! this assoc :modal :modal/bank-account :modal-object bank-acc)}
                            (dom/span nil "Edit"))))))
                  external-accounts)))
@@ -437,7 +437,7 @@
                          ;    (->> {:onClick #(om/update-state! this assoc :modal :delete-account)}
                          ;         (css/add-classes [:small :alert :hollow]))
                          ;    (dom/span nil "Delete")))
-                         (button/edit
+                         (button/delete
                            {:onClick #(om/update-state! this assoc :modal :modal/bank-account :modal-object bank-acc)}
                            (dom/span nil "Edit"))
 

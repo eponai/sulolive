@@ -8,6 +8,18 @@
 		}
 	}
 
+	// a small {
+	// 	padding: $global-padding 0;
+	// 	color: $dark-gray;
+	// }
+	.input-sku-group {
+		.button {
+			border: none;
+			font-weight: $global-weight-normal;
+			padding: 0.85rem 0;
+		}
+	}
+
 	input[type="number"], select, .Select {
 		max-width: 20rem;
 	}
@@ -227,6 +239,9 @@
 			border-bottom: $global-border-secondary;
 			&:first-child {
 				border-top: $global-border-secondary;
+			}
+			a small {
+				color: $dark-gray;
 			}
 			padding: 1rem 0;
 			display: flex;

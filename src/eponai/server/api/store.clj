@@ -94,6 +94,7 @@
 
         ;_ (debug "GETTING OLD ITEM: " old-item)
         store (:store/_items old-item)
+        _ (debug "Store: " store)
         ;; Update product with new info, name/description, etc. Collections are updated below.
         new-section (cf/add-tempid section)
         new-product (cond-> (f/product (assoc params :db/id product-id))

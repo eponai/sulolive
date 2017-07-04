@@ -502,7 +502,7 @@
           :error   "Sorry, could not update your product. Try again later."}}
   {:action (fn []
              (debug "store/update-product with params: " p)
-             (store/update-product env store-id product))})
+             (store/update-product env product-id product))})
 
 (defmutation store/delete-product
   [env _ {:keys [product store-id]}]

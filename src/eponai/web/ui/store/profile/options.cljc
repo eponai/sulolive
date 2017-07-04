@@ -175,7 +175,7 @@
   (let [on-close #(om/update-state! component dissoc :modal)]
     (common/modal
       {:on-close on-close}
-      (dom/h4 (css/add-class :header) "Do you want to permantly delete your store?")
+      (dom/h4 (css/add-class :header) "Do you want to delete your store?")
       (dom/p nil (dom/small nil (dom/strong nil "IMPORTANT: "))
              (dom/small nil "This is a permanent action. Once confirmed, you will not be able to restore your settings or products in the future."))
       (dom/p nil
@@ -381,7 +381,7 @@
                 (grid/column
                   (css/text-align :right)
                   (button/default-hollow
-                    (css/add-classes [:alert] {:onClick #(om/update-state! this assoc :modal :modal/delete-store)})
+                    (css/add-classes [:alert :small] {:onClick #(om/update-state! this assoc :modal :modal/delete-store)})
                     (dom/span nil "Delete store")))))))))))
 
 (def ->StoreStatus (om/factory StoreStatus))
