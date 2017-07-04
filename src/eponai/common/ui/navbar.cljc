@@ -20,7 +20,8 @@
     [eponai.web.ui.login :as login]
     [eponai.web.ui.button :as button]
     [eponai.common.mixpanel :as mixpanel]
-    [eponai.client.utils :as client.utils]))
+    [eponai.client.utils :as client.utils]
+    [eponai.client.auth :as client.auth]))
 
 (def dropdown-elements
   {:dropdown/user       "sl-user-dropdown"
@@ -100,8 +101,11 @@
 (defn collection-links [component source]
   (let [{:query/keys [auth locations navigation]} (om/props component)]
     (map
-      (fn [{:category/keys [href name path] :as a}]
-        (let [opts {:href    (navbar-route component href)
+      (fn [{:category/keys [route-map name path] :as a}]
+        (let [loc (client.auth/current-locality component)
+              opts {:href    (navbar-route component (routes/map->url (assoc-in route-map
+                                                                                [:route-params :locality]
+                                                                                (:sulo-locality/path loc))))
                     :classes (when (nil? auth) [:unauthed])
                     :onClick #(do (mixpanel/track-key ::mixpanel/shop-by-category {:source   source
                                                                                    :category path})
@@ -387,7 +391,7 @@
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.
                           {:store/owners [{:store.owner/user [:db/id]}]}]}
-     {:query/navigation [:category/name :category/label :category/path :category/href]}
+     {:query/navigation [:category/name :category/label :category/path :category/route-map]}
      {:proxy/loading-bar (om/get-query LoadingBar)}
      {:proxy/login-modal (om/get-query login/LoginModal)}
      :query/current-route])

@@ -16,6 +16,7 @@
     [eponai.server.api.store :as store]
     [eponai.common.api.products :as products]
     [eponai.server.api.user :as user]
+    [eponai.common.browse :as browse]
     [taoensso.timbre :as timbre]
     [clojure.data.json :as json]
     [clojure.java.io :as io]
@@ -24,7 +25,9 @@
     [cemerick.url :as url]
     [eponai.common.format :as f]
     [eponai.server.external.taxjar :as taxjar]
-    [eponai.common :as c])
+    [eponai.common :as c]
+    [eponai.common.database.rules :as db.rules]
+    [medley.core :as medley])
   (:import (datomic.db Db)))
 
 (defmacro defread
@@ -460,3 +463,37 @@
   [{:keys [target db query]} _ _]
   {:auth ::auth/public}
   {:value (db/pull-all-with db query {:where '[[?e :sulo-locality/title _]]})})
+
+(defn browse-products-uniqueness [query-params]
+  (let [v [:price-range :order]]
+    (if (some? (:search query-params))
+      (conj v :search)
+      (conj v :categories))))
+
+(defread query/browse-products-2
+  [{:keys         [db locations query-params route-params query]
+    ::parser/keys [read-basis-t-for-this-key]} _ _]
+  {:auth ::auth/public
+   :log  (f/remove-nil-keys (browse/make-browse-params locations route-params query-params))}
+  (let [browse-params (browse/make-browse-params locations route-params query-params)
+        uniqueness (select-keys browse-params (browse-products-uniqueness query-params))]
+    (if (= read-basis-t-for-this-key uniqueness)
+      {:value (parser/value-with-basis-t {}
+                                         read-basis-t-for-this-key)}
+      (let [browse-result (browse/find-items db browse-params)
+            initial-pull (db/pull-many db query (seq (browse/page-items db
+                                                                        browse-result
+                                                                        (:categories browse-params)
+                                                                        (:page-range browse-params))))]
+        {:value (parser/value-with-basis-t
+                  {:browse-result browse-result
+                   :browse-params browse-params
+                   :initial-pull  initial-pull}
+                  uniqueness)}))))
+
+(defread query/browse-product-items
+  [{:keys [db db-history query route-params]} _ {:keys [product-items]}]
+  {:auth ::auth/public
+   :log  [:product-items]}
+  {:value (when (seq product-items)
+            (db/pull-many db query product-items))})

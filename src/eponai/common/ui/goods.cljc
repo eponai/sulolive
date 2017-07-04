@@ -19,7 +19,10 @@
     [eponai.web.ui.button :as button]
     [eponai.common.ui.search-bar :as search-bar]
     [eponai.web.ui.footer :as foot]
-    [clojure.string :as string]))
+    [clojure.string :as string]
+    [eponai.common.browse :as browse]
+    [eponai.common.database :as db]
+    [eponai.web.ui.pagination :as pagination]))
 
 ;(def sorting-vals
 ;  {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
@@ -27,14 +30,68 @@
 ;   :sort/price-inc {:key [:store.item/price :store.item/name] :reverse? false}
 ;   :sort/price-dec {:key [:store.item/price :store.item/name] :reverse? true}})
 
-(def sorting-vals
-  {"price_asc"  {:key [:store.item/price :store.item/name ] :comp #(compare %1 %2) :label "Price (low to high)"}
-   "price_desc" {:key [:store.item/price :store.item/name] :comp #(compare %2 %1) :label "Price (high to low)"}})
+;(def sorting-vals
+;  {:newest        {}
+;   :lowest-price  {:key [:store.item/price :store.item/name ] :comp #(compare %1 %2) :label "Price (low to high)"}
+;   :highest-price {:key [:store.item/price :store.item/name] :comp #(compare %2 %1) :label "Price (high to low)"}
+;   :relevance     {}})
 
-(defn- vertical-category-menu [children current-category]
+(defn fetch-item-data! [component browse-result page-range route-params]
+  (om/transact!
+    (om/get-reconciler component)
+    `[({:query/browse-product-items ~(om/get-query product/Product)}
+        {:product-items
+         ~(into []
+                (browse/page-items
+                  (db/to-db component)
+                  browse-result
+                  (select-keys route-params [:top-category
+                                             :sub-category
+                                             :sub-sub-category])
+                  page-range))})]))
+
+(defn category-count [component category count-by-category]
+  (if-let [id (:db/id category)]
+    (get count-by-category id)
+    (let [db (db/to-db component)]
+      (some->> (:category/children category)
+               (sequence
+                 (comp (map #(db/entity db (:db/id %)))
+                       (mapcat :category/children)
+                       (map #(db/entity db (:db/id %)))
+                       ;; This filter finds the "real" :db/id for this
+                       ;; category within it's child category
+                       ;; (which really is it's parent).
+                       ;; Women -> Clothing -> <Women entity>
+                       (filter (fn [child-child-cat]
+                                 (= (:category/name child-child-cat)
+                                    (:category/name category))))
+                       (map #(get count-by-category (:db/id %)))
+                       (filter some?)))
+               (seq)
+               (reduce + 0)))))
+
+(defn category-nav-link [component category]
+  (let [{:keys [query-params route-params] :as next-route}
+        (merge-with merge (-> (routes/current-route component)
+                              (dissoc :route)
+                              (update :query-params dissoc :page-num))
+                    (:category/route-map category))
+
+        browse-result (get-in (om/props component) [:query/browse-products-2 :browse-result])
+        page-range (browse/query-params->page-range query-params)
+        searching? (some? (:search query-params))]
+    {:href    (routes/map->url next-route)
+     :onClick #(when searching?
+                 (fetch-item-data! component browse-result page-range route-params))}))
+
+(defn- vertical-category-menu [component children current-category label-fn count-by-category]
   (menu/vertical
     (css/add-class :nested)
     (->> children
+         (filter (if (seq count-by-category)
+                   (comp some? #(category-count component % count-by-category))
+                   identity))
          (sort-by :category/name)
          (map-indexed
            (fn [i {:category/keys [path] :as category}]
@@ -42,8 +99,8 @@
                (when (and (some? current-category)
                           (= path (:category/path current-category)))
                  (css/add-class ::css/is-active))
-               (dom/a {:href (:category/href category)}
-                      (dom/span nil (products/category-display-name category)))))))))
+               (dom/a (category-nav-link component category)
+                      (dom/span nil (label-fn category)))))))))
 
 (defn selected-navigation [component]
   (let [{:query/keys [current-route navigation]} (om/props component)
@@ -74,8 +131,8 @@
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:proxy/footer (om/get-query foot/Footer)}
-     {:query/browse-items (om/get-query product/Product)}
-     {:query/navigation [:category/name :category/label :category/path :category/href]}
+     {:query/browse-products-2 (om/get-query product/Product)}
+     {:query/navigation [:db/id :category/name :category/label :category/path :category/route-map]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
      {:query/countries [:country/code :country/name]}
      :query/locations
@@ -89,20 +146,28 @@
                       (assoc query-params :ship_to country-code))]
       (routes/set-url! this route route-params new-query)))
   (initLocalState [_]
-    {:sorting       (get sorting-vals :sort/price-inc)
-     :filters-open? false})
+    {:filters-open? false})
   (render [this]
     (let [{:proxy/keys [navbar product-filters footer]
-           :query/keys [browse-items navigation locations current-route countries]} (om/props this)
+           :query/keys [browse-products-2 navigation locations current-route countries]} (om/props this)
           {:keys [filters-open?]} (om/get-state this)
           [top-category sub-category :as categories] (category-seq this)
           {:keys [route route-params query-params]} current-route
-          items browse-items
-          default-sort-key (key (first sorting-vals))
-          sorting (get sorting-vals (:sort_by query-params default-sort-key) )]
+          {:keys [items browse-result]} browse-products-2
+          {:browse-result/keys [count-by-category]} browse-result
+          category-label-fn (fn [category]
+                              (str (products/category-display-name category)
+                                   ;; TODO: Make count corrent and show it here.
+                                   ;(when-let [matches (category-count this category count-by-category)]
+                                   ;  (str " " matches))
+                                   ))
+          page-range (browse/query-params->page-range query-params)
+          pages (browse/pages browse-result)
+          searching? (contains? query-params :search)]
 
-      (debug "Sorting: " sorting)
-
+      (debug " items: " items)
+      (debug " navigation: " navigation)
+      (debug "count-by-category: " count-by-category)
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse" :footer footer}
         (common/city-banner this locations)
@@ -129,13 +194,20 @@
             (menu/vertical
               (css/add-class :sl-navigation-parent)
               (->> navigation
+                   (filter (if searching?
+                             (comp some? #(category-count this % count-by-category))
+                             identity))
                    (map (fn [category]
-                          (let [is-active? (= (:category/name category) (:category/name (first categories)))]
+                          (let [is-active? (or (= (:category/name category) (:category/name (first categories))))]
                             (menu/item
                               (when is-active? (css/add-class :is-active))
-                              (dom/a {:href (:category/href category)}
-                                     (dom/span nil (products/category-display-name category)))
-                              (vertical-category-menu (:category/children category) (last categories))))))))
+                              (dom/a (category-nav-link this category)
+                                     (dom/span nil (category-label-fn category)))
+                              (vertical-category-menu this
+                                                      (:category/children category)
+                                                      (last categories)
+                                                      category-label-fn
+                                                      (when searching? count-by-category))))))))
             ;(dom/div
             ;  nil
             ;  (dom/label nil "Ship to")
@@ -179,15 +251,16 @@
             (grid/column-size {:small 12 :large 9})
 
             (dom/div
-              (css/add-class :section-title)
-              (dom/h2 nil (str/upper-case
-                            (cond (some? top-category)
-                                  (string/join " - " (remove nil? [(products/category-display-name top-category) (products/category-display-name sub-category)]))
-                                  (not-empty (:search query-params))
-                                  (str "Result for \"" (:search query-params) "\"")
-                                  :else
-                                  "All products"))))
-            
+              (css/add-class :section-title {:id "browse.products.title"})
+              (dom/h2 nil
+                      (str/upper-case
+                        (cond (some? top-category)
+                              (string/join " - " (remove nil? [(products/category-display-name top-category) (products/category-display-name sub-category)]))
+                              (not-empty (:search query-params))
+                              (str "Result for \"" (:search query-params) "\"")
+                              :else
+                              "All products"))))
+
             (dom/div
               (css/hide-for :large)
               (button/button
@@ -204,9 +277,18 @@
                      )
                 (grid/column
                   nil
-                  (dom/small nil
-                             (dom/strong nil "SHOWING ")
-                             (dom/span nil (str (count items) " items"))))
+                  (dom/div nil
+                           (dom/small nil
+                                      (dom/strong nil "FOUND ")
+                                      (dom/span nil (str (count (:browse-result/items-in-category browse-result)) " items"))
+                                      (when (pos? (count items))
+                                        (dom/span nil (str " - Showing items "
+                                                           (let [{:keys [page-size page-num]} page-range
+                                                                 page-start (* page-num page-size)]
+                                                             (str (inc page-start)
+                                                                  " to "
+                                                                  (+ page-start (count items))
+                                                                  " "))))))))
 
                 (grid/column
                   (->> (grid/column-size {:large 4})
@@ -214,20 +296,41 @@
                        (css/show-for :large))
                   (dom/label nil (dom/small nil "Sort"))
                   (dom/select
-                    {:defaultValue (:sort_by query-params default-sort-key)
-                     :onChange     #(routes/set-url! this route route-params (assoc query-params :sort_by (.-value (.-target %))))}
-                    (map (fn [[k v]]
-                           (let [{:keys [comp key label]} v]
-                             (dom/option {:value k} (str label))))
-                         sorting-vals))))
+                    {:value    (or (:order query-params) (browse/default-order query-params))
+                     :onChange #(routes/set-url! this route route-params (-> query-params
+                                                                             (assoc :order (.-value (.-target %)))
+                                                                             (dissoc :page-num)))}
+                    (map (fn [k]
+                           (dom/option {:value k}
+                                       (browse/order-label k)))
+                         (browse/order-values query-params)))))
 
-              (let [sorted (sort-by (apply juxt (:key sorting)) (:comp sorting) items)
-                    ordered-products (if (:reverse? sorting)
-                                       (reverse sorted)
-                                       sorted)]
-                (grid/products ordered-products
-                               (fn [p]
-                                 (pi/->ProductItem {:product p})))))))))))
+              (grid/products items
+                             (fn [p]
+                               (pi/->ProductItem {:product p})))
+              (when (< 1 (count pages))
+                (pagination/->Pagination
+                  {:current-page (:page-num page-range)
+                   :pages        (browse/pages browse-result)
+                   :page->anchor-opts
+                                 (fn [page]
+                                   {:href
+                                    (routes/map->url (routes/merge-route this {:query-params {:page-num page}}))
+                                    ;; When not clicking the active page, fetch data for clicked page.
+                                    :onClick
+                                    #(do
+                                       (fetch-item-data! this
+                                                        browse-result
+                                                        (assoc page-range :page-num page)
+                                                        route-params)
+
+                                       ;; Scroll to the top somewhere.
+                                       ;; Choosing sulo-search-bar because it looked good.
+                                       #?(:cljs
+                                          (let [el (.getElementById js/document "sulo-search-bar")]
+                                            (if (.-scrollIntoView el)
+                                              (.scrollIntoView el)
+                                              (.scrollTo js/window 0 0)))))})})))))))))
 
 (def ->Goods (om/factory Goods))
 

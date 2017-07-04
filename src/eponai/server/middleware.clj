@@ -66,12 +66,16 @@
                         {:status code :body error}))))))
           (wrap-prone-aleph [handler]
             (fn [request]
-              (-> (handler request)
-                  (deferred/catch Throwable
-                    (fn [e]
-                      (.printStackTrace e)
-                      (binding [prone.debug/*debug-data* (atom [])]
-                        (prone/exceptions-response request e '[eponai])))))))]
+              (if-let [page (get @prone/pages (:uri request))]
+                (#'prone/serve-page page 200)
+                (if-let [asset (prone/asset-url->contents (:uri request))]
+                  {:body asset :status 200 :headers {"Cache-Control" "max-age=315360000"}}
+                  (-> (handler request)
+                      (deferred/catch Throwable
+                        (fn [e]
+                          (.printStackTrace e)
+                          (binding [prone.debug/*debug-data* (atom [])]
+                            (prone/exceptions-response request e '[eponai])))))))))]
     (if in-prod?
       (wrap-error-prod handler)
       (wrap-prone-aleph handler))))
@@ -100,11 +104,11 @@
               (deferred/let-flow
                 [response (handler request)]
                 (ring-transit/transit-response
-                     response request
-                     (#'ring-transit/transit-response-options
-                       {:opts     {:handlers (merge {EntityMap datomic-transit}
-                                                    datascript.transit/write-handlers)}
-                        :encoding :json})))))]
+                  response request
+                  (#'ring-transit/transit-response-options
+                    {:opts     {:handlers (merge {EntityMap datomic-transit}
+                                                 datascript.transit/write-handlers)}
+                     :encoding :json})))))]
     (-> handler
         (ring-transit/wrap-transit-body)
         (deferred-transit-response))))
@@ -210,8 +214,19 @@
   (common.datascript/init-db (query/schema (db/db conn)) (client.utils/initial-ui-state)))
 
 (defn wrap-js-files [handler cljs-build-id]
-  (fn [request]
-    (let [path (ring.request/path-info request)]
-      (if-not (str/starts-with? path "/js")
-        (handler request)
-        (ring.response/resource-response (str "/" cljs-build-id path) {:root "public"})))))
+  (let [wrapper (fn [request]
+                  (let [path (ring.request/path-info request)]
+                    (if-not (str/starts-with? path "/js")
+                      (handler request)
+                      (ring.response/resource-response (str "/" cljs-build-id path) {:root "public"}))))]
+    ;; In development, we get requests for .js.map files to /dev.
+    ;; We catch these files here.
+    (if (or (nil? cljs-build-id)
+            (= "dev" cljs-build-id))
+      (fn [request]
+        (let [path (ring.request/path-info request)]
+          (if (and (str/starts-with? path "/dev")
+                   (str/ends-with? path ".js.map"))
+            (ring.response/resource-response path {:root "public"})
+            (wrapper request))))
+      wrapper)))

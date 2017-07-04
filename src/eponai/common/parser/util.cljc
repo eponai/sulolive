@@ -189,7 +189,10 @@
                 (or a b)
                 (cond
                   (map? b)
-                  (merge-with deep-merge a b)
+                  (if (= :basis-t (:node b))
+                    ;; Stop merging when we're at the :basis-t node
+                    b
+                    (merge-with deep-merge a b))
                   (coll? b)
                   (into a b)
                   :else

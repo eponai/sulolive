@@ -77,9 +77,9 @@
                        ;; https://github.com/cognitect/transit-cljs/pull/10
                        {:handlers (merge
                                     {"u" (transit/read-handler #?(:clj  #(UUID/fromString %)
-                                                                 :cljs uuid))
-                                    "n" (transit/read-handler reader/read-string)
-                                    "f" (transit/read-handler reader/read-string)}
+                                                                  :cljs uuid))
+                                     "n" (transit/read-handler reader/read-string)
+                                     "f" (transit/read-handler reader/read-string)}
                                     datascript.transit/read-handlers)}}}
         ;; http-clj/cljs has different apis to their http.client/post method.
         #?@(:clj  [params (-> transit-opts
@@ -94,9 +94,13 @@
                               )])]
     ;; http-cljs returns a channel with the response on it.
     ;; http-clj doesnt.
-    (debug "Send request: " params)
-    #?(:cljs (send-fn url params)
-       :clj  (go (to-cljs-http-response send-fn url params)))))
+    (try (debug "Send request: " params)
+         #?(:cljs (send-fn url params)
+            :clj  (go (to-cljs-http-response send-fn url params)))
+         (catch #?@(:clj [Throwable e] :cljs [:default e])
+                (error "Error sending request: " e)
+           #?(:cljs (error "Error stack: " (.-stack e)))
+           (throw e)))))
 
 (comment
   ;;TODO: Put in production, later.

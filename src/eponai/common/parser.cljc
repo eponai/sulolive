@@ -1030,7 +1030,7 @@
                                       {:value v})))})
             ret (if (some? target)
                   (cond-> mutate-ret
-                          (seq deduped-query)
+                          (seq deduped-parse)
                           ;; We wrap all reads with state that the reads depend on.
                           ;; This is only used for client-parsers (they are the ones getting :target).
                           ((fnil conj []) (list {:read/with-state deduped-parse}

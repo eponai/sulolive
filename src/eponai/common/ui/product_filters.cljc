@@ -1,5 +1,6 @@
 (ns eponai.common.ui.product-filters
   (:require
+    [eponai.client.routes :as client.routes]
     [eponai.common.ui.dom :as dom]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.css :as css]
@@ -11,9 +12,9 @@
     (when (seq children)
       (menu/vertical
         {:classes [:nested :submenu]}
-        (map (fn [{:category/keys [href label]}]
+        (map (fn [{:category/keys [route-map label]}]
                (menu/item {:classes [:is-submenu-item]}
-                          (dom/a {:href    href
+                          (dom/a {:href    (client.routes/map->url (client.routes/merge-route component route-map))
                                   :onClick #(.clicked-category component)}
                                  (dom/span nil label))))
              children)))))
@@ -21,7 +22,7 @@
 (defui ProductFilters
   static om/IQuery
   (query [_]
-    [{:query/navigation [:category/name :category/label :category/path :category/href]}
+    [{:query/navigation [:category/name :category/label :category/path :category/route-map]}
      :query/current-route])
   Object
   (toggle-filter [this category]
@@ -45,14 +46,15 @@
           (css/add-class :navigation)
           (menu/vertical
             (->> {:data-accordion-menu true})
-            (map (fn [{:category/keys [name label href] :as top-nav-cat}]
+            (map (fn [{:category/keys [name label route-map] :as top-nav-cat}]
                    (let [is-active? (= active name)]
                      (menu/item
                        (cond->> {:aria-expanded (some? active)}
                                 is-active?
                                 (css/add-class ::css/is-active))
                        (dom/div nil
-                                (dom/a {:href    (when is-active? href)
+                                (dom/a {:href    (when is-active? (client.routes/map->url
+                                                                    (client.routes/merge-route this route-map)))
                                         :onClick (if is-active?
                                                    #(.clicked-category this)
                                                    #(.toggle-filter this name))}

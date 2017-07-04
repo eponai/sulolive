@@ -11,7 +11,8 @@
             [cemerick.url :as url]
             [datascript.core :as datascript]
             [clojure.string :as str]
-            [eponai.client.routes :as routes]))
+            [eponai.client.routes :as routes]
+            [eponai.common.browse :as browse]))
 
 (defn db-with [db tx]
   (if (empty? tx)
@@ -97,6 +98,19 @@
           (not-empty val)
           (db-with [[:db/add [:ui/singleton :ui.singleton/client-env] :ui.singleton.client-env/env-map val]])))
 
+(defmethod client-merge :query/browse-products-2
+  [db k {:keys [browse-result initial-pull browse-params]}]
+  (let [old-result (when (not-empty browse-result)
+                     (browse/find-result db browse-params))]
+    (cond-> db
+            (some? old-result)
+            ;; Retract the old result if there is one.
+            (db-with [[:db.fn/retractEntity old-result]])
+            (seq browse-result)
+            (db-with [browse-result])
+            (seq initial-pull)
+            (db-with initial-pull))))
+
 (defn- placeholder-refs
   "Returns transactions that adds {:placeholder :workaround} for every entity that has attr."
   [db attr]
@@ -170,6 +184,7 @@
 
 ;; If we query for :query/skus, we want to re-read :query/cart.
 (defmethod multiply-key :query/skus [_] [:query/cart])
+(defmethod multiply-key :query/browse-product-items [_] [:query/browse-products-2])
 
 (defn unwrap-keys [[k v]]
   (if (parser/is-special-key? k)

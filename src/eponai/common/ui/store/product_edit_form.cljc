@@ -152,7 +152,7 @@
   (query [_]
     [:query/current-route
      :query/messages
-     {:query/navigation [:category/name :category/label :category/path :category/href]}
+     {:query/navigation [:category/name :category/label :category/path :category/route-map]}
      {:query/categories [:db/id :category/name :category/label
                          :category/_children
                          {:category/children [:db/id :category/name :category/label

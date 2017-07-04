@@ -2,6 +2,7 @@
   (:require [clojure.string :as str]
             [eponai.common.routes :as routes]
             [eponai.common.database :as db]
+            [eponai.common.database.rules :as db.rules]
             [medley.core :as medley]
             [taoensso.timbre :refer [debug warn]]))
 
@@ -17,48 +18,22 @@
     (str/capitalize (:category/name c))
     label))
 
-(def eq-or-child-category-rule
-  '[[(eq-or-child-category? ?c ?x)
-     [(identity ?c) ?x]]
-    [(eq-or-child-category? ?c ?recur)
-     [?c :category/children ?child]
-     (eq-or-child-category? ?child ?recur)]])
-
-(defn find-by-category [category-path]
-  {:where   '[[?category :category/path ?path]
-              (eq-or-child-category? ?category ?c)
-              [?status :status/type :status.type/open]
-              [?s :store/status ?status]
-              [?s :store/profile ?p]
-              [?p :store.profile/photo _]
-              [?s :store/items ?e]
-              [?e :store.item/category ?c]]
-   :symbols {'?path category-path}
-   :rules   eq-or-child-category-rule})
-
 (defn find-all [locality]
-  {:where '[[?s :store/locality ?l]
-            [?status :status/type :status.type/open]
-            [?s :store/status ?status]
-            [?s :store/profile ?p]
-            [?p :store.profile/photo _]
-            [?s :store/items ?e]
-            ;[?e :store.item/uuid _]
-            ]
-   :symbols {'?l (:db/id locality)}})
+  {:where   '[(listed-store ?s ?l)
+              [?s :store/items ?e]
+              ;[?e :store.item/uuid _]
+              ]
+   :symbols {'?l (:db/id locality)}
+   :rules   [db.rules/listed-store]})
 
-(defn find-with-search [locality search]
-  {:where    ['[?s :store/locality ?l]
-              '[?status :status/type :status.type/open]
-              '[?s :store/status ?status]
-              '[?s :store/profile ?p]
-              '[?p :store.profile/photo _]
-              '[?s :store/items ?e]
-              {:fulltext-id 1}]
+(defn find-with-search
+  [locality search]
+  {:where    '[[?s :store/items ?e]
+               (listed-store ?s ?l)]
    :symbols  {'?search search
               '?l      (:db/id locality)}
-   :fulltext [{:id     1
-               :attr   :store.item/name
+   :rules    [db.rules/listed-store]
+   :fulltext [{:attr   :store.item/name
                :arg    '?search
                :return '[[?e ?item-name _ ?score]]}]})
 
@@ -93,55 +68,12 @@
 
 (defn find-with-category-names [locality category-names]
   (db/merge-query (category-names-query category-names)
-                  {:where [(list 'eq-or-child-category?
-                                 (smallest-category category-names)
-                                 '?item-category)
-                           '[?s :store/locality ?l]
-                           '[?status :status/type :status.type/open]
-                           '[?s :store/status ?status]
-                           '[?s :store/profile ?p]
-                           '[?p :store.profile/photo _]
-                           '[?s :store/items ?e]
-                           '[?e :store.item/category ?item-category]]
+                  {:where   (-> '[(listed-store ?s ?l)
+                                  [?s :store/items ?e]
+                                  [?e :store.item/category ?item-category]]
+                                (conj (list 'category-or-child-category
+                                            (smallest-category category-names)
+                                            '?item-category)))
                    :symbols {'?l (:db/id locality)}
-                   :rules eq-or-child-category-rule}))
-
-;; Navigation bs
-
-(defn browse-navigation-tree [db query gender-route? category-names]
-  ;; There's something symetrical going on here, but I haven't quite figured it out. Sorry.
-  (let [{:keys [top-category sub-category]} category-names
-        cat-query (category-names-query (dissoc category-names :sub-sub-category))
-        find-top (db/merge-query cat-query {:where '[[(identity ?top) ?e]]})
-        find-sub (db/merge-query cat-query {:where '[[(identity ?sub) ?e]]})
-        find-sub-sub (db/merge-query cat-query {:where '[[?sub :category/children ?e]]})
-        ;; deduping by name because it doesn't matter if we get multiple unisex shoes and women's shoes.
-        ;; In query/browse-items we're getting correct items anyway. (?)
-        pull-distinct-by-name (fn [entity-query]
-                                (->> (db/pull-all-with db query entity-query)
-                                     (into [] (medley/distinct-by :category/name))))
-        add-routes (fn [route params category-level children]
-                     (into [] (map #(assoc % :category/href (routes/path route (assoc params category-level (:category/name %)))))
-                           children))]
-    (if gender-route?
-      {:category/href     (routes/path :browse/gender {:sub-category sub-category})
-       :category/name     sub-category
-       :category/label    (str/capitalize sub-category)
-       :category/children (->> (if (nil? top-category)
-                                 (pull-distinct-by-name find-top)
-                                 [(-> (db/pull-one-with db query find-top)
-                                      (assoc :category/children (->> (pull-distinct-by-name find-sub-sub)
-                                                                     (add-routes :browse/gender+top+sub-sub {:sub-category sub-category
-                                                                                                             :top-category top-category}
-                                                                                 :sub-sub-category))))])
-                               (add-routes :browse/gender+top {:sub-category sub-category} :top-category))}
-      (-> (db/pull-one-with db query find-top)
-          (assoc :category/href (routes/path :browse/category {:top-category top-category}))
-          (assoc :category/children (->> (if (nil? sub-category)
-                                           (pull-distinct-by-name find-sub)
-                                           [(-> (db/pull-one-with db query find-sub)
-                                                (assoc :category/children (->> (pull-distinct-by-name find-sub-sub)
-                                                                               (add-routes :browse/category+sub+sub-sub {:sub-category sub-category
-                                                                                                                         :top-category top-category}
-                                                                                           :sub-sub-category))))])
-                                         (add-routes :browse/category+sub {:top-category top-category} :sub-category)))))))
+                   :rules   [db.rules/category-or-child-category
+                             db.rules/listed-store]}))

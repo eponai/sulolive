@@ -99,7 +99,7 @@
          ;; (walk/postwalk #(cond-> % (map? %) (assoc :db/id (db/tempid :db.part/user))))
          )))
 
-(defn mock-stores []
+(defn create-mock-stores []
   [
    ;; ikcha
    {:db/id            (db/tempid :db.part/user)
@@ -210,7 +210,7 @@
                        {:store.item/name     "Modern Geometric Wood Bead Necklace"
                         :store.item/price    134.00M
                         :store.item/photos   [(item-photo "mocked/175704-bae48bd385d64dc0bb6ebad3190cc317")]
-                        :store.item/category [:category/path (category-path "jewelry" "men")]
+                        :store.item/category [:category/path (category-path "jewelry" "unisex-adult")]
                         :store.item/skus     [(sku)]}
                        {:store.item/name     "Modern Wood Teardrop Stud Earrings"
                         :store.item/price    34.00M
@@ -352,6 +352,20 @@
                       :store.item/category [:category/path (category-path "jewelry" "women")]
                       :store.item/skus     [(sku)]}]}
    ])
+
+(defn stores-with-item-created-at [stores]
+  (map-indexed
+    (fn [store-idx store]
+      (update store :store/items
+              (fn [items]
+                (map-indexed (fn [item-idx item]
+                               (assoc item :store.item/created-at (+ (* store-idx 100) item-idx)))
+                             items))))
+    stores))
+
+(defn mock-stores []
+  (-> (create-mock-stores)
+      (stores-with-item-created-at)))
 
 (defn countries []
   (let [country-data (json/read-str (slurp (io/resource "private/country-data.json")) :key-fn keyword)

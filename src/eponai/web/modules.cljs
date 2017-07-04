@@ -89,7 +89,8 @@
         (catch :default e
           (error "Exception calling execOnLoad: " e " route: " route)))))
   (prefetch-route [this route]
-    (when-not (loaded-route? this route)
+    (when-not (or (loaded-route? this route)
+                  (.isModuleLoading manager (route->module route)))
       (try
         (.prefetchModule manager (route->module route))
         (catch :default e

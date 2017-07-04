@@ -11,7 +11,8 @@
             [eponai.client.routes :as routes]
             [clojure.string :as str]
             [eponai.common.ui.elements.grid :as grid]
-            [eponai.client.auth :as client.auth]))
+            [eponai.client.auth :as client.auth]
+            [eponai.common.browse :as browse]))
 
 (defprotocol ISearchBar
   (trigger-search! [this]))
@@ -19,11 +20,27 @@
 (defui SearchBar
   ISearchBar
   (trigger-search! [this]
-    (let [{:keys [input-search]} (om/get-state this)]
-      (routes/set-url! this
-                       :browse/all-items
-                       {:locality (:sulo-locality/path (client.auth/current-locality this))}
-                       {:search input-search})))
+    (let [route-map (routes/current-route this)]
+      (if-let [input-search (not-empty (str/trim (:input-search (om/get-state this))))]
+        (let [route-map (-> route-map
+                            (assoc :route :browse/all-items)
+                            (update :route-params select-keys [:locality])
+                            (assoc-in [:query-params :search] input-search)
+                            ;; Add locality if it's not already in there
+                            (cond-> (nil? (get-in route-map [:route-params :locality]))
+                                    (assoc-in [:route-params :locality]
+                                              (:sulo-locality/path (client.auth/current-locality this)))))
+              ;; Set the order to the default order for search, if there wasn't a search
+              ;; there already
+              route-map (cond-> route-map
+                                (nil? (get-in route-map [:query-params :search]))
+                                (assoc-in [:query-params :order]
+                                          (browse/default-order (:query-params route-map))))]
+          (routes/set-url-map! this route-map)
+          (om/update-state! this assoc :input-search input-search))
+        (do (routes/set-url-map! this {:route        :browse/all-items
+                                       :route-params {:locality (get-in route-map [:route-params :locality])}})
+            (om/update-state! this assoc :input-search "")))))
   Object
   (render [this]
     (let [{:keys [mixpanel-source placeholder default-value classes locations]} (om/props this)
@@ -34,7 +51,7 @@
           search-matches (when (and (string? input-search) (seq (str/trim input-search)))
                            (some-> search-db
                                    (common.search/match-string input-search)))]
-      (dom/div (css/add-class :sulo-search-bar)
+      (dom/div (css/add-class :sulo-search-bar {:id "sulo-search-bar"})
                (dom/input {:classes     classes
                            :placeholder placeholder
                            :type        "text"

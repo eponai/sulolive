@@ -39,8 +39,7 @@
    "/profile"  :user/profile})
 
 (def product-routes
-  {""                         :browse/all-items
-   ["/" [#"\d+" :product-id]] :product})
+  {["/" [#"\d+" :product-id]] :product})
 
 (def help-routes
   {""                :help
@@ -61,10 +60,7 @@
    ["/" param] sub-handler})
 
 (def browse-categories
-  [
-   ;; Can't do 'all-items' right now, as it doesn't make sense when navigating?
-   ;; We've got our categories at the top right now.
-   ;;["" :browse/all-items]
+  [["" :browse/all-items]
    [["/category/" :top-category]
     (branch-handler :browse/category
                     :sub-category
@@ -82,7 +78,6 @@
   [["" {
         ;"/"         :index
         "/stores"   :stores
-        "/products" :browse/all-items
         "/browse"   browse-categories
         "/live"     :live}]
    [true :index]])
@@ -124,6 +119,10 @@
              "unauthorized"                                               :unauthorized}]
        [true :not-found]]])
 
+;; Compojure + bidi merges our query-params and route-params.
+;; These keys will be removed from our query-params so we use
+;; query-params with merge when updating routes.
+(def only-route-param-keys #{:top-category :sub-category :sub-sub-category :locality})
 
 (defn location-independent-route? [route]
   (when (some? route)

@@ -32,7 +32,7 @@
         ;; Routes
         :index           {:entries [eponai.common.ui.index]}
         :unauthorized    {:entries [eponai.web.ui.unauthorized]}
-        :login           {:entries    [eponai.web.ui.login]
+        :login           {:entries    [eponai.web.ui.login-page]
                           :depends-on [:index]}
         :landing-page    {:entries [eponai.web.ui.landing-page]}
         :sell            {:entries [eponai.web.ui.start-store]}
@@ -307,7 +307,7 @@
                                        [figwheel-sidecar "0.5.10"]
                                        [com.cemerick/piggieback "0.2.1"]
                                        ]
-                        :repl-options {:timeout 60000
+                        :repl-options {:timeout 120000
                                        :init-ns eponai.repl
                                        :init    (eponai.repl/init)}
                         :test-paths   ["test" "env/server/dev"]}
