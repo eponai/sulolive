@@ -99,11 +99,11 @@
                          db
                          {:find    '[?gender-cat ?count]
                           :where   '[[?unisex-cat :category/name ?unisex-name]
-                                     [?gender-cat :category/name ?gender-name]
-                                     [(not= ?unisex-cat ?gender-cat)]
                                      [?parent :category/children ?unisex-cat]
-                                     [?parent :category/children ?gender-cat]]
-                          :symbols {'[[?unisex-cat ?count] ...]              count-by-cat
+                                     [?parent :category/children ?gender-cat]
+                                     [(not= ?unisex-cat ?gender-cat)]
+                                     [?gender-cat :category/name ?gender-name]]
+                          :symbols {'[[?unisex-cat ?count] ...]                     count-by-cat
                                     '[[?unisex-name [?gender-name ...]] ...] {"unisex-adult" ["women" "men"]
                                                                               "unisex-kids"  ["girls" "boys"]}}})
           c (merge-with + count-by-cat (into {} unisex-count))]
