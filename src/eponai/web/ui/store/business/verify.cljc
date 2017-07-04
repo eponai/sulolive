@@ -506,6 +506,7 @@
           {:keys [stripe-account]} (om/get-computed this)
           fields-needed (minimum-fields stripe-country-spec entity-type)
           message (msg/last-message this 'stripe/update-account)]
+      (debug "Props " (om/props this))
 
       (debug "Stripe account: " stripe-account)
       (debug "Country specs: " stripe-country-spec)
