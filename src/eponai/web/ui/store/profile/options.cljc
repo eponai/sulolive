@@ -61,7 +61,7 @@
              ;; store should be UNLISTED but still enabled for purchases.
              [(dom/label nil "Your store is OPEN UNLISTED")
               (dom/p nil
-                     (dom/small nil "It seems there's some information missing for your store to be visible to the public. Customers that find your store can still make purchases, but its products and streams do not appear in search results. ")
+                     (dom/small nil "There's some information missing for your store to be visible to the public. Customers that find your store can still make purchases, but its products and streams do not appear in search results. ")
                      (dom/br nil)
                      (dom/strong nil (dom/small nil "Follow the steps below to make your store appear in search:")))
               ;; If the store is unlisted, show the owner what information is missing to appear in search.

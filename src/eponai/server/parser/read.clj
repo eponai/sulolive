@@ -233,7 +233,7 @@
             (some? (db/one-with
                      db
                      {:where   '[[$ ?e :stream/store ?store-id]
-                                 [$db-history ?stream :stream/state :stream.state/live]]
+                                 [$db-history ?e :stream/state :stream.state/live]]
                       :symbols {'$db-history (datomic/history db)
                                 '?store-id   store-id}})))})
 

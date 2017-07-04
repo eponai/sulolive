@@ -21,7 +21,8 @@
     [eponai.common.auth :as auth]
     [eponai.server.external.cloudinary :as cloudinary]
     [eponai.server.external.email :as email]
-    [eponai.server.api.user :as user]))
+    [eponai.server.api.user :as user]
+    [eponai.common.format.date :as date]))
 
 (defmacro defmutation
   "Creates a message and mutate defmethod at the same time.
@@ -413,7 +414,7 @@
 ;######## STRIPE ########
 
 (defmutation stripe/update-account
-  [{:keys [state ::parser/return ::parser/exception system] :as env} _ {:keys [store-id account-params]}]
+  [{:keys [state ::parser/return ::parser/exception system client-ip] :as env} _ {:keys [store-id account-params accept-terms?]}]
   {:auth {::auth/store-owner {:store-id store-id}}
    :log  [:store-id]
    :resp {:success "Your account was updated"
@@ -422,7 +423,12 @@
                      "Something went wrong!")}}
   {:action (fn []
              (let [{:stripe/keys [id]} (stripe/pull-stripe (db/db state) store-id)
-                   new-account (stripe/update-account (:system/stripe system) id account-params)]
+                   params (cond-> account-params
+                                  accept-terms?
+                                  (assoc :field/tos-acceptance {:field.tos-acceptance/ip   client-ip
+                                                                   :field.tos-acceptance/date (date/current-secs)}))
+                   _ (debug "Updating account with params: " params)
+                   new-account (stripe/update-account (:system/stripe system) id params)]
                (store/stripe-account-updated env new-account)
                new-account))})
 

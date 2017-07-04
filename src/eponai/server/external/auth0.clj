@@ -233,7 +233,8 @@
                      :nickname       "dev"
                      :iss            "localhost"
                      :iat            now
-                     :exp            tomorrow}
+                     :exp            tomorrow
+                     :user_metadata  {:can_open_store true}}
           jwt-secret (secret this)]
       (debug "Authing self-signed jwt token on localhost with auth-data: " auth-data)
       {:token        (jwt/sign auth-data jwt-secret)
@@ -256,7 +257,10 @@
   IAuth0Management
   (get-token [this])
   (update-user [this user-id params])
-  (get-user [this profile])
+  (get-user [this profile]
+    (debug "GET FAKE USER: " profile)
+    (assoc profile :identities [{:profileData {:email (:email profile)}
+                                 :connection "email"}]))
   (create-email-user [this email])
   (link-with-same-email [this profile])
   (link-user-accounts-by-id [this primary-id secondary-id])

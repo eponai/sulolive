@@ -104,7 +104,8 @@
                                           (dissoc (:params request) :*))
                :auth                (request->auth request)
                :locations           (auth/requested-location request)
-               :social-sharing      sharing-objects}
+               :social-sharing      sharing-objects
+               :client-ip           (client-ip request)}
         logger (context-logger request
                                (select-keys props [:route :route-params :query-params])
                                (get-in props [:auth :user-id]))]
@@ -132,7 +133,8 @@
        :params                      (:params request)
        :system                      system
        :locations                   (auth/requested-location request)
-       :logger                      (context-logger request route-map user-id)}
+       :logger                      (context-logger request route-map user-id)
+       :client-ip                   (client-ip request)}
       (:query body))))
 
 (defn trace-parser-response-handlers
