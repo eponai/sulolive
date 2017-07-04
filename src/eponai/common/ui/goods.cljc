@@ -21,7 +21,8 @@
     [eponai.web.ui.footer :as foot]
     [clojure.string :as string]
     [eponai.common.browse :as browse]
-    [eponai.common.database :as db]))
+    [eponai.common.database :as db]
+    [eponai.web.ui.pagination :as pagination]))
 
 ;(def sorting-vals
 ;  {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
@@ -258,21 +259,7 @@
                                                              (str (inc page-start)
                                                                   " to "
                                                                   (+ page-start (count items))
-                                                                  " "))))))
-                           (map (fn [page]
-                                  (button/button-small
-                                    {:onClick #(when (not= page (:page-num page-range))
-                                                 ;; When not clicking the active page, fetch data for clicked page.
-                                                 (om/transact!
-                                                   (om/get-reconciler this)
-                                                   `[({:query/browse-product-items ~(om/get-query product/Product)}
-                                                       {:product-items ~(into []
-                                                                              (browse/page-items
-                                                                                browse-result
-                                                                                (assoc page-range :page-num page)))})]))
-                                     :href    (routes/map->url (routes/merge-route this {:query-params {:page-num page}}))}
-                                    (dom/span nil (str page))))
-                                (browse/pages browse-result))))
+                                                                  " "))))))))
 
                 (grid/column
                   (->> (grid/column-size {:large 4})
@@ -289,7 +276,24 @@
 
               (grid/products items
                              (fn [p]
-                               (pi/->ProductItem {:product p}))))))))))
+                               (pi/->ProductItem {:product p})))
+              (pagination/->Pagination
+                {:current-page (:page-num page-range)
+                 :pages        (browse/pages browse-result)
+                 :page->anchor-opts
+                               (fn [page]
+                                 {:href
+                                  (routes/map->url (routes/merge-route this {:query-params {:page-num page}}))
+                                  ;; When not clicking the active page, fetch data for clicked page.
+                                  :onClick
+                                  #(om/transact!
+                                     (om/get-reconciler this)
+                                     `[({:query/browse-product-items ~(om/get-query product/Product)}
+                                         {:product-items
+                                          ~(into []
+                                                 (browse/page-items
+                                                   browse-result
+                                                   (assoc page-range :page-num page)))})])})}))))))))
 
 (def ->Goods (om/factory Goods))
 
