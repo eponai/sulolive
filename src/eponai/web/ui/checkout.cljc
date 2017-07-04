@@ -21,6 +21,7 @@
     #?(:cljs [eponai.common.ui.checkout.google-places :as places])
     [eponai.common.ui.elements.input-validate :as validate]
     [eponai.common.shared :as shared]
+    [eponai.web.ui.checkout.shipping :as ship]
     [eponai.common.ui.script-loader :as script-loader]
     [eponai.client.parser.message :as msg]
     [eponai.client.routes :as routes]))
@@ -35,26 +36,6 @@
    :shipping.address/country  "sulo-shipping-country"
 
    :payment.stripe/card       "sulo-card-element"})
-
-(s/def :country/code (s/and string? #(re-matches #"\w{2}" %)))
-(s/def :shipping/name (s/and string? #(not-empty %)))
-(s/def :shipping.address/street (s/and string? #(not-empty %)))
-(s/def :shipping.address/street2 (s/or :value string? :empty nil?))
-(s/def :shipping.address/postal (s/and string? #(not-empty %)))
-(s/def :shipping.address/locality (s/and string? #(not-empty %)))
-(s/def :shipping.address/region (s/or :value #(string? %) :empty nil?))
-(s/def :shipping.address/country (s/keys :req [:country/code]))
-
-(s/def :shipping/address (s/keys :req [:shipping.address/street
-                                       :shipping.address/postal
-                                       :shipping.address/locality]
-
-                                 :opt [:shipping.address/street2
-                                       :shipping.address/region]
-                                 ))
-
-(s/def ::shipping (s/keys :req [:shipping/address
-                                :shipping/name]))
 
 (defn compute-subtotal [skus]
   (reduce + (map #(get-in % [:store.item/_skus :store.item/price]) skus)))
@@ -71,20 +52,28 @@
           (apply + (or first-rate 0) (repeat (dec item-count) (or additional 0)))
           :else
           (or first-rate 0))))
+(defn compute-taxes [taxes subtotal shipping-fee]
+  (let [{tax-rate    :taxes/rate
+         :taxes/keys [freight-taxable?]} taxes
+        tax-rate (or tax-rate 0)]
+
+    (if freight-taxable?
+      (* tax-rate (+ subtotal shipping-fee))
+      (* tax-rate subtotal))))
 
 (defn checkout-store [skus]
   (-> skus first :store.item/_skus :store/_items))
 
 
 (defn render-store-items [component]
-  (let [{:query/keys [checkout]} (om/props component)
+  (let [{:query/keys [checkout taxes]} (om/props component)
         store (checkout-store checkout)
         store-profile (:store/profile store)
 
-        {:checkout/keys []} (om/get-state component)
+        {:shipping/keys [selected-rate]} (om/get-state component)
         subtotal (compute-subtotal checkout)
-        shipping 0
-        tax-amount 0
+        shipping (compute-shipping-fee selected-rate checkout)
+        tax-amount (compute-taxes taxes subtotal shipping)
         grandtotal (+ subtotal shipping tax-amount)]
 
     (callout/callout
@@ -378,7 +367,7 @@
 
 
 (defn render-payment-details [component]
-  (let [{:query/keys [stripe-customer checkout]} (om/props component)
+  (let [{:query/keys [stripe-customer checkout taxes]} (om/props component)
         {:stripe/keys [sources]} stripe-customer
         {:shipping/keys [edit-shipping selected-rate] :as state
          :keys          [error-message]} (om/get-state component)
@@ -387,7 +376,7 @@
 
         subtotal (compute-subtotal checkout)
         shipping (compute-shipping-fee selected-rate checkout)
-        tax-amount 0
+        tax-amount (compute-taxes taxes subtotal shipping)
 
         grandtotal (+ subtotal shipping tax-amount)
         ]
@@ -483,6 +472,9 @@
                    :user/email
                    :user/stripe]}
      {:query/countries [:country/code :country/name]}
+     {:query/taxes [:taxes/id
+                    :taxes/rate
+                    :taxes/freight-taxable?]}
      :query/messages])
 
   Object
@@ -497,10 +489,20 @@
                         :shipping/edit-shipping assoc-in
                         [:shipping/address :shipping.address/country] (or country {:country/code country-code}))))
   (save-shipping [this shipping]
-    (let [validation (validate/validate ::shipping shipping form-inputs)
-          shipping-rules (available-rules (om/props this) shipping)]
+    (let [{:query/keys [checkout]} (om/props this)
 
+          validation (validate/validate ::ship/shipping shipping form-inputs)
+          shipping-rules (available-rules (om/props this) shipping)
+          subtotal (compute-subtotal checkout)]
+
+      (debug "validation: " validation)
       (when (shipping-available? shipping-rules)
+        (when (nil? validation)
+          (om/transact! (om/get-reconciler this) [(list {:query/taxes
+                                                         [:taxes/id :taxes/rate :taxes/freight-taxable?]}
+                                                        {:destination shipping
+                                                         :subtotal    subtotal
+                                                         :shipping    10})]))
         (om/update-state! this (fn [st]
                                  (cond-> (assoc st :input-validation validation)
                                          (nil? validation)
@@ -549,7 +551,7 @@
               :shipping/keys [selected-rate]} (om/get-state this)
              subtotal (compute-subtotal checkout)
              shipping-fee (compute-shipping-fee selected-rate checkout)
-             tax-amount 0
+             tax-amount (compute-taxes this subtotal shipping-fee)
              grandtotal (+ subtotal shipping-fee tax-amount)
              {:keys [source]} payment]
          (let [items checkout]
@@ -565,6 +567,12 @@
                                                               :store-id (:db/id store)})]))
          (om/update-state! this assoc :loading/message "Placing your order..."))))
 
+  (default-shipping [this]
+    {:shipping/name ""
+     :shipping/address {:shipping.address/street ""
+                        :shipping.address/postal ""
+                        :shipping.address/locality ""
+                        :shipping.address/country {:country/code "CA"}}})
   (initial-state [this props]
     (let [{:query/keys [stripe-customer countries]} props
           current-shipping (:stripe/shipping stripe-customer)
@@ -573,9 +581,9 @@
           country (when country-code (some #(when (= (:country/code %) country-code) %) countries))
           updated-shipping (assoc-in current-shipping [:shipping/address :shipping.address/country] (or country
                                                                                                         {:country/code "CA"}))]
-      {:checkout/shipping      updated-shipping
+      {:checkout/shipping      (merge-with merge (.default-shipping this) updated-shipping)
        :shipping/edit-shipping (when-not (shipping-available? shipping-rules)
-                                 updated-shipping)}))
+                                 (merge-with merge (.default-shipping this) updated-shipping))}))
 
   (componentDidUpdate [this _ _]
 
@@ -638,15 +646,15 @@
 
   (render [this]
     (let [{:proxy/keys [navbar]
-           :query/keys [checkout]} (om/props this)
+           :query/keys [checkout taxes]} (om/props this)
           {:shipping/keys [selected-rate edit-shipping]
            :keys          [error-message]} (om/get-state this)
           subtotal (compute-subtotal checkout)
           shipping-fee (compute-shipping-fee selected-rate checkout)
-          tax-amount 0
+          tax-amount (compute-taxes taxes subtotal shipping-fee)
           grandtotal (+ subtotal shipping-fee tax-amount)
           ]
-      (debug "Checkout: " checkout)
+
       (common/page-container
         {:id     "sulo-checkout"
          :navbar navbar}

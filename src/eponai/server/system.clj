@@ -201,8 +201,7 @@
                ;:system/email
                ;:system/mailchimp
                ;:system/taxjar
-               :system/aws-s3
-
+               ;:system/aws-s3
                ;:system/elastic-cloud
                ))
 
