@@ -39,7 +39,7 @@
           search-matches (when (and (string? input-search) (seq (str/trim input-search)))
                            (some-> search-db
                                    (common.search/match-string input-search)))]
-      (dom/div (css/add-class :sulo-search-bar)
+      (dom/div (css/add-class :sulo-search-bar {:id "sulo-search-bar"})
                (dom/input {:classes     classes
                            :placeholder placeholder
                            :type        "text"

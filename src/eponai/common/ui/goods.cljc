@@ -223,15 +223,16 @@
             (grid/column-size {:small 12 :large 9})
 
             (dom/div
-              (css/add-class :section-title)
-              (dom/h2 nil (str/upper-case
-                            (cond (some? top-category)
-                                  (string/join " - " (remove nil? [(products/category-display-name top-category) (products/category-display-name sub-category)]))
-                                  (not-empty (:search query-params))
-                                  (str "Result for \"" (:search query-params) "\"")
-                                  :else
-                                  "All products"))))
-            
+              (css/add-class :section-title {:id "browse.products.title"})
+              (dom/h2 nil
+                      (str/upper-case
+                        (cond (some? top-category)
+                              (string/join " - " (remove nil? [(products/category-display-name top-category) (products/category-display-name sub-category)]))
+                              (not-empty (:search query-params))
+                              (str "Result for \"" (:search query-params) "\"")
+                              :else
+                              "All products"))))
+
             (dom/div
               (css/hide-for :large)
               (button/button
@@ -288,14 +289,22 @@
                                   (routes/map->url (routes/merge-route this {:query-params {:page-num page}}))
                                   ;; When not clicking the active page, fetch data for clicked page.
                                   :onClick
-                                  #(om/transact!
-                                     (om/get-reconciler this)
-                                     `[({:query/browse-product-items ~(om/get-query product/Product)}
-                                         {:product-items
-                                          ~(into []
-                                                 (browse/page-items
-                                                   browse-result
-                                                   (assoc page-range :page-num page)))})])})}))))))))
+                                  #(do
+                                     (om/transact!
+                                       (om/get-reconciler this)
+                                       `[({:query/browse-product-items ~(om/get-query product/Product)}
+                                           {:product-items
+                                            ~(into []
+                                                   (browse/page-items
+                                                     browse-result
+                                                     (assoc page-range :page-num page)))})])
+                                     ;; Scroll to the top somewhere.
+                                     ;; Choosing sulo-search-bar because it looked good.
+                                     #?(:cljs
+                                        (let [el (.getElementById js/document "sulo-search-bar")]
+                                          (if (.-scrollIntoView el)
+                                            (.scrollIntoView el)
+                                            (.scrollTo js/window 0 0)))))})}))))))))
 
 (def ->Goods (om/factory Goods))
 
