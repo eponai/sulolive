@@ -225,6 +225,18 @@
               {:db/id            store-id
                :store/not-found? true}))})
 
+(defread query/store-has-streamed
+  [{:keys [db db-history query auth route-params]} _ _]
+  {:auth    ::auth/public
+   :uniq-by {:route-params [:store-id]}}
+  {:value (let [store-id (:store-id route-params)]
+            (some? (db/one-with
+                     db
+                     {:where   '[[$ ?e :stream/store ?store-id]
+                                 [$db-history ?stream :stream/state :stream.state/live]]
+                      :symbols {'$db-history (datomic/history db)
+                                '?store-id   store-id}})))})
+
 (defread query/store-items
   [{:keys [db db-history query route-params]} _ _]
   {:auth    ::auth/public
@@ -271,7 +283,7 @@
             items)})
 
 (defread query/order
-  [{:keys [query db auth]
+  [{:keys                       [query db auth]
     {:keys [store-id order-id]} :route-params} _ _]
   {:auth    ::auth/any-user
    :uniq-by {:custom [[:val (if (some? store-id)
@@ -306,17 +318,17 @@
             (assoc (stripe/get-charge (:system/stripe system) (:charge/id charge)) :db/id (:db/id charge)))})
 
 (defread query/stripe-account
-  [{:keys [db route-params]
+  [{:keys              [db route-params]
     {:keys [store-id]} :route-params
-    :as env} _ _]
+    :as                env} _ _]
   {:auth    {::auth/store-owner {:store-id store-id}}
    :uniq-by {:route-params [:store-id]}}
   {:value (store/account env store-id)})
 
 (defread query/stripe-balance
-  [{:keys [db]
+  [{:keys              [db]
     {:keys [store-id]} :route-params
-    :as env} _ _]
+    :as                env} _ _]
   {:auth    {::auth/store-owner {:store-id store-id}}
    :uniq-by {:route-params [:store-id]}}
   {:value (store/balance env store-id)})

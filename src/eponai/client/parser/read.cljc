@@ -67,6 +67,12 @@
                                                        [?e :store/status ?st]]
                                             :symbols {'?l (:db/id loc)}})))}))
 
+(defmethod client-read :query/store-has-streamed
+  [{:keys [db query target]} _ {:keys [states]}]
+  (if target
+    {:remote true}
+    {:value (db/pull db query [:ui/singleton :ui.singleton/state])}))
+
 (defmethod client-read :query/streams
   [{:keys [db query target]} _ _]
   ;(debug "Read query/auth: ")

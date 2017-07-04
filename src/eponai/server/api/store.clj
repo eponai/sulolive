@@ -135,7 +135,20 @@
 
 (defn delete-shipping-rule [{:keys [state]} store-id shipping-rule]
   (when-let [eid (:db/id shipping-rule)]
-    (db/transact state [[:db.fn/retractEntity eid]])))
+    (let [store (db/pull (db/db state) [{:store/shipping [:shipping/rules]}
+                                        {:store/status [:db/id :status/type]}] store-id)
+          is-last-rule? (>= 1 (count (get-in store [:store/shipping :shipping/rules])))
+          store-status (:store/status store)
+          txs (if-not is-last-rule?
+                [[:db.fn/retractEntity eid]]
+                (cond-> [[:db.fn/retractEntity eid]]
+                        (some? (:db/id store-status))
+                        (conj [:db/add (:db/id store-status) :status/type :status.type/closed])
+                        (nil? (:db/id store-status))
+                        (conj [{:db/id        store-id
+                                :store/status {:status/type :status.type/closed}}])))]
+
+      (db/transact state txs))))
 
 (defn update-shipping-rule [{:keys [state]} rule-id {:shipping.rule/keys [rates] :as params}]
   (let [old-rule (db/pull (db/db state) [:db/id :shipping.rule/rates] rule-id)
@@ -324,17 +337,17 @@
         old-status (:stripe/status stripe)
 
         stripe-status-txs (if (some? old-status)
-                           (when-not (= (:status/type old-status) new-status)
-                             [[:db/add (:db/id old-status) :status/type new-status]])
-                           [{:stripe/id     id
-                             :stripe/status {:status/type new-status}}])
+                            (when-not (= (:status/type old-status) new-status)
+                              [[:db/add (:db/id old-status) :status/type new-status]])
+                            [{:stripe/id     id
+                              :stripe/status {:status/type new-status}}])
 
         store-old-status (:store/status store)
         store-status-txs (when (= new-status :status.type/inactive)
                            (if (some? store-old-status)
                              (when-not (= (:status/type store-old-status) :status.type/closed)
                                [[:db/add (:db/id store-old-status) :status/type :status.type/closed]])
-                             [{:db/id     (:db/id store)
+                             [{:db/id        (:db/id store)
                                :store/status {:status/type :status.type/closed}}]))
         all-txs (into stripe-status-txs store-status-txs)]
     (log/info! logger ::account-updated {:old-stripe-status old-status

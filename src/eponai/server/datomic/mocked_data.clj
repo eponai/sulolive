@@ -413,7 +413,7 @@
   (let [categories (mock-categories3)
         stores (mock-stores)
         chats (mock-chats stores)
-        live-streams (mock-streams (take 4 stores) :stream.state/online)
+        live-streams (mock-streams (take 4 stores) :stream.state/live)
         streams (mock-streams (drop 4 stores) :stream.state/offline)
         countries (countries)
         ;storeless-user (user-no-store)
