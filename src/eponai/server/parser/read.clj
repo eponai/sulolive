@@ -474,8 +474,8 @@
       (let [browse-result (browse/find-items db browse-params)
             initial-pull (db/pull-many db query (seq (browse/page-items db
                                                                         browse-result
-                                                                        (:page-range browse-params)
-                                                                        (:categories browse-params))))]
+                                                                        (:categories browse-params)
+                                                                        (:page-range browse-params))))]
         {:value (parser/value-with-basis-t
                   {:browse-result browse-result
                    :browse-params browse-params

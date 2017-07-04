@@ -306,7 +306,7 @@
                                        [figwheel-sidecar "0.5.10"]
                                        [com.cemerick/piggieback "0.2.1"]
                                        ]
-                        :repl-options {:timeout 60000
+                        :repl-options {:timeout 120000
                                        :init-ns eponai.repl
                                        :init    (eponai.repl/init)}
                         :test-paths   ["test" "env/server/dev"]}
