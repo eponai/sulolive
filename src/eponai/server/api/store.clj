@@ -7,7 +7,8 @@
     [taoensso.timbre :refer [debug info]]
     [eponai.common.format :as cf]
     [eponai.server.external.cloudinary :as cloudinary]
-    [eponai.common.format.date :as date]))
+    [eponai.common.format.date :as date]
+    [eponai.server.log :as log]))
 
 
 (defn create [{:keys [state auth system]} {:keys [country name locality]}]
@@ -309,16 +310,19 @@
         (zipmap address-keys [line1 postal city state {:country/code country}])))))
 
 
-(defn stripe-account-updated [{:keys [state]} updated-stripe-account]
+(defn stripe-account-updated [{:keys [state system logger]} updated-stripe-account]
   (let [{:stripe/keys                                  [id details-submitted? tos-acceptance payouts-enabled? charges-enabled?]
          {:stripe.verification/keys [disabled-reason]} :stripe/verification} updated-stripe-account
         stripe (db/pull (db/db state) [:stripe/status] [:stripe/id id])
         new-status (if (or (some? disabled-reason)
                            (some false? [details-submitted? tos-acceptance payouts-enabled? charges-enabled?]))
                      :status.type/inactive
-                     :status.type/active)]
+                     :status.type/active)
+        old-status (:stripe/status stripe)]
+    (log/info! logger ::account-updated {:old-status old-status
+                                         :new-status new-status})
 
-    (if-let [old-status (:stripe/status stripe)]
+    (if (some? old-status)
       (when-not (= (:status/type old-status) new-status)
         (db/transact-one state [:db/add (:db/id old-status) :status/type new-status]))
 

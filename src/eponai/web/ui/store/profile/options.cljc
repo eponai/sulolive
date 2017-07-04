@@ -28,9 +28,8 @@
      :status.type/active))
 
 (defn store-is-open? [store]
-  (and (store-is-active-in-stripe? store)
-       (= (get-in store [:store/status :status/type])
-          :status.type/open)))
+  (= (get-in store [:store/status :status/type])
+     :status.type/open))
 
 (defn store-is-closed? [store]
   (= (get-in store [:store/status :status/type])
@@ -99,7 +98,7 @@
 
 
 (defn status-button [component store]
-  (button/button
+  (button/store-navigation-cta
     (cond->> {:onClick (if (store-is-open? store)
                          #(om/update-state! component assoc :modal :modal/close-store)
                          #(.open-store component))}
@@ -135,7 +134,7 @@
     (common/modal
       {:on-close on-close}
       (dom/p (css/add-class :header) "Do you want to permantly delete your store?")
-      (dom/p nil (dom/small nil "This is a permanent action. Once confirmed, you will not be able to restore your settings in the future. If you just want to pause for a bit, try closing your store temporarily instead."))
+      (dom/p nil (dom/small nil "This is a permanent action. Once confirmed, you will not be able to restore your settings in the future. Want to hit pause? Close your store temporarily instead."))
       (dom/div
         (css/add-class :action-buttons)
         (button/user-setting-default
@@ -362,43 +361,6 @@
                   )
                 ))))
 
-        ;(dom/div
-        ;  (css/add-class :section-title)
-        ;  (if (store-is-open? store)
-        ;    (dom/h2 nil "Close store")
-        ;    (dom/h2 nil "Open store")))
-        ;(callout/callout
-        ;  nil
-        ;  (menu/vertical
-        ;    (css/add-class :section-list)
-        ;    ))
-
-        ;(dom/div
-        ;  (css/add-class :section-title)
-        ;  (dom/h2 nil "Vacation mode"))
-        ;(callout/callout
-        ;  nil
-        ;  (menu/vertical
-        ;    (css/add-class :section-list)
-        ;    (menu/item
-        ;      nil
-        ;      (grid/row
-        ;        (->> (css/add-class :collapse)
-        ;             (css/align :middle))
-        ;        (grid/column
-        ;          (grid/column-size {:small 12 :medium 6})
-        ;          (dom/label nil "Vacation mode")
-        ;          (dom/p nil (dom/small nil "Your store appears as usual to your customers.")))
-        ;        (grid/column
-        ;          (css/text-align :right)
-        ;
-        ;          (switch/switch
-        ;            {:id "store.status"}
-        ;            (dom/span (css/add-class :switch-inactive) "Off")
-        ;            (dom/span (css/add-class :switch-active) "On"))
-        ;          ;(dom/label nil "Status")
-        ;          )))))
-
         (dom/div
           (css/add-class :section-title)
           (dom/h2 nil "Danger zone"))
@@ -414,7 +376,7 @@
                 (grid/column
                   (grid/column-size {:small 12 :medium 8})
                   (dom/label nil (str "Delete " (get-in store [:store/profile :store.profile/name])))
-                  (dom/p nil (dom/small nil "Deleting your store is a permanent action. Once confirmed, you will not be able to restore your settings in the future. If you just want to pause for a bit, try closing your store temporarily instead.")))
+                  (dom/p nil (dom/small nil "Deleting your store is a permanent action. Once confirmed, you will not be able to restore your settings in the future. Want to hit pause? Close your store temporarily instead.")))
                 (grid/column
                   (css/text-align :right)
                   (button/default-hollow

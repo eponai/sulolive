@@ -51,23 +51,7 @@
 (s/def :shipping.rule/rates (s/coll-of :shipping.rule/rate))
 (s/def :shipping/rule (s/keys :req [:shipping.rule/rates]))
 
-;(s/def :shipping/name (s/and string? #(not-empty %)))
-;(s/def :shipping.address/street (s/and string? #(not-empty %)))
-;(s/def :shipping.address/street2 (s/or :value string? :empty nil?))
-;(s/def :shipping.address/postal (s/and string? #(not-empty %)))
-;(s/def :shipping.address/locality (s/and string? #(not-empty %)))
-;(s/def :shipping.address/region (s/or :value #(string? (not-empty %)) :empty nil?))
-;(s/def :country/code (s/and string? #(re-matches #"\w{2}" %)))
-;(s/def :shipping.address/country (s/keys :opt [:country/code]))
-;
-;(s/def :shipping/address (s/keys :req [:shipping.address/country
-;                                       :shipping.address/locality
-;                                       :shipping.address/postal
-;                                       :shipping.address/street]
-;                                 :opt [:shipping.address/region
-;                                       :shipping.address/street2]))
-(s/def ::shipping (s/keys :opt [:shipping/rule
-                                :shipping/address]))
+(s/def ::shipping (s/keys :opt [:shipping/rule]))
 
 (defn validate
   [spec m]
@@ -588,73 +572,65 @@
         (dom/div
           (css/add-class :section-title)
           (dom/h1 nil "Shipping"))
-        (dom/div
-          (css/add-class :section-title)
-          (dom/h2 nil "Shipping settings"))
-        (callout/callout
-          (css/add-classes [:section-container :section-container--shipping-address])
-          (menu/vertical
-            (css/add-class :section-list)
-
-            (let [{:shipping/keys [address]
-                   shipping-name  :shipping/name} shipping
-                  {:shipping.address/keys [street street2 locality postal region country]} address]
-              (menu/item
-                nil
-                (grid/row
-                  (->> (css/add-class :collapse)
-                       (css/align :middle))
-                  (grid/column
-                    (grid/column-size {:small 12 :medium 6})
-                    (dom/label nil "Shipping address")
-                    (dom/p nil (dom/small nil "This is the address from which your products will ship.")))
-                  (grid/column
-                    (css/text-align :right)
-
-                    (if (some? address)
-                      (common/render-shipping shipping nil)
-                      ;(dom/p nil
-                      ;       (dom/span nil shipping-name)
-                      ;       (dom/br nil)
-                      ;       (dom/small nil street)
-                      ;       (dom/br nil)
-                      ;       (dom/small nil (string/join ", " [locality postal region country])))
-                      (dom/p nil (dom/small nil (dom/i nil "No saved address"))))
-                    (button/store-setting-secondary
-                      {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-address)}
-                      (dom/span nil "Edit shipping address"))))))
-            (menu/item
-              nil
-              (grid/row
-                (->> (css/add-class :collapse)
-                     (css/align :middle))
-                (grid/column
-                  (grid/column-size {:small 12 :medium 6})
-                  (dom/label nil "Allow free pickup")
-                  (dom/p nil (dom/small nil "Allow your customers to pick up their items from your specified shipping address.")))
-                (grid/column
-                  (css/text-align :right)
-                  (switch-input/switch
-                    (cond-> {:title    "Allow free pickup"
-                             :id       "sulo-pickup"
-                             :classes  [:sulo-dark]
-                             :onChange #(.update-free-shipping this (.-checked (.-target %)))}
-                            (nil? shipping)
-                            (assoc :disabled true))
-                    (dom/span (css/add-class :switch-inactive) "No")
-                    (dom/span (css/add-class :switch-active) "Yes"))
-                  (when (nil? shipping)
-                    (dom/small nil "Specify a shipping address to enable free pickup")))))))
         ;(dom/div
-        ;  (css/add-class :content-section)
-        ;  (dom/div
-        ;    (css/add-class :section-title)
-        ;    (dom/h2 nil "Free pickup"))
-        ;  (callout/callout
-        ;    nil
-        ;    (menu/vertical
-        ;      (css/add-class :section-list)
-        ;      )))
+        ;  (css/add-class :section-title)
+        ;  (dom/h2 nil "Shipping settings"))
+        ;(callout/callout
+        ;  (css/add-classes [:section-container :section-container--shipping-address])
+        ;  (menu/vertical
+        ;    (css/add-class :section-list)
+        ;
+        ;    (let [{:shipping/keys [address]
+        ;           shipping-name  :shipping/name} shipping
+        ;          {:shipping.address/keys [street street2 locality postal region country]} address]
+        ;      (menu/item
+        ;        nil
+        ;        (grid/row
+        ;          (->> (css/add-class :collapse)
+        ;               (css/align :middle))
+        ;          (grid/column
+        ;            (grid/column-size {:small 12 :medium 6})
+        ;            (dom/label nil "Shipping address")
+        ;            (dom/p nil (dom/small nil "This is the address from which your products will ship.")))
+        ;          (grid/column
+        ;            (css/text-align :right)
+        ;
+        ;            (if (some? address)
+        ;              (common/render-shipping shipping nil)
+        ;              ;(dom/p nil
+        ;              ;       (dom/span nil shipping-name)
+        ;              ;       (dom/br nil)
+        ;              ;       (dom/small nil street)
+        ;              ;       (dom/br nil)
+        ;              ;       (dom/small nil (string/join ", " [locality postal region country])))
+        ;              (dom/p nil (dom/small nil (dom/i nil "No saved address"))))
+        ;            (button/store-setting-secondary
+        ;              {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-address)}
+        ;              (dom/span nil "Edit shipping address"))))))
+        ;    (menu/item
+        ;      nil
+        ;      (grid/row
+        ;        (->> (css/add-class :collapse)
+        ;             (css/align :middle))
+        ;        (grid/column
+        ;          (grid/column-size {:small 12 :medium 6})
+        ;          (dom/label nil "Allow free pickup")
+        ;          (dom/p nil (dom/small nil "Allow your customers to pick up their items from your specified shipping address.")))
+        ;        (grid/column
+        ;          (css/text-align :right)
+        ;          (switch-input/switch
+        ;            (cond-> {:title    "Allow free pickup"
+        ;                     :id       "sulo-pickup"
+        ;                     :classes  [:sulo-dark]
+        ;                     :onChange #(.update-free-shipping this (.-checked (.-target %)))}
+        ;                    (nil? shipping)
+        ;                    (assoc :disabled true))
+        ;            (dom/span (css/add-class :switch-inactive) "No")
+        ;            (dom/span (css/add-class :switch-active) "Yes"))
+        ;          (when (nil? shipping)
+        ;            (dom/small nil "Specify a shipping address to enable free pickup")))))))
+
+
         (dom/div
           (css/add-class :content-section)
           (dom/div

@@ -557,7 +557,11 @@
           (dom/p nil
                  (dom/small nil "By submitting, you agree to our ")
                  (dom/a {:href   (routes/url :tos)
-                         :target "_blank"} (dom/small nil "Terms of service."))))))))
+                         :target "_blank"}
+                        (dom/small nil "Terms of service"))
+                 (dom/small nil " and the ")
+                 (dom/a {:href "https://stripe.com/ca/connect-account/legal"} (dom/small nil "Stripe Connected Account Agreement"))
+                 (dom/small nil ".")))))))
 
 (def Verify (script-loader/stripe-loader Verify-no-loader))
 

@@ -6,7 +6,8 @@
     [eponai.common.database :as db]
     [eponai.common.format :as f]
     [eponai.server.api.store :as store]
-    [eponai.server.external.stripe.format :as stripe-format]))
+    [eponai.server.external.stripe.format :as stripe-format]
+    [eponai.server.log :as log]))
 
 ;; ############### SULO ACCOUNT ####################
 
@@ -62,8 +63,9 @@
   (debug "No handler implemented for connected webhook event " (:type event) ", doing nothing."))
 
 (defmethod handle-connected-webhook "account.updated"
-  [env event]
-  (let [account (get-in event [:data :object])]
-    (store/stripe-account-updated env (stripe-format/stripe->account account))
+  [{:keys [logger] :as env} event]
+  (let [account (get-in event [:data :object])
+        logger (log/with logger #(assoc % :account account))]
+    (store/stripe-account-updated (assoc env :logger logger) (stripe-format/stripe->account account))
     ;(utils/account-updated env (stripe-format/stripe->account account))
     ))
