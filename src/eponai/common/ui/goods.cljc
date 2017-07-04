@@ -254,10 +254,11 @@
               (css/add-class :section-title {:id "browse.products.title"})
               (dom/h2 nil
                       (str/upper-case
-                        (cond (some? top-category)
-                              (string/join " - " (remove nil? [(products/category-display-name top-category) (products/category-display-name sub-category)]))
-                              (not-empty (:search query-params))
+                        (cond (not-empty (:search query-params))
                               (str "Result for \"" (:search query-params) "\"")
+                              (some? top-category)
+                              (string/join " - " (filter some? [(products/category-display-name top-category)
+                                                                (products/category-display-name sub-category)]))
                               :else
                               "All products"))))
 
