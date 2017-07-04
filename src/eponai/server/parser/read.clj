@@ -456,19 +456,26 @@
   {:auth ::auth/public}
   {:value (db/pull-all-with db query {:where '[[?e :sulo-locality/title _]]})})
 
-(def browse-products-uniqueness [:categories :price-range :order :search])
+(defn browse-products-uniqueness [query-params]
+  (let [v [:price-range :order]]
+    (if (some? (:search query-params))
+      (conj v :search)
+      (conj v :categories))))
 
 (defread query/browse-products-2
   [{:keys         [db locations query-params route-params query]
     ::parser/keys [read-basis-t-for-this-key]} _ _]
   {:auth ::auth/public}
   (let [browse-params (browse/make-browse-params locations route-params query-params)
-        uniqueness (select-keys browse-params browse-products-uniqueness)]
+        uniqueness (select-keys browse-params (browse-products-uniqueness query-params))]
     (if (= read-basis-t-for-this-key uniqueness)
       {:value (parser/value-with-basis-t {}
                                          read-basis-t-for-this-key)}
       (let [browse-result (browse/find-items db browse-params)
-            initial-pull (db/pull-many db query (seq (browse/page-items browse-result (:page-range browse-params))))]
+            initial-pull (db/pull-many db query (seq (browse/page-items db
+                                                                        browse-result
+                                                                        (:page-range browse-params)
+                                                                        (:categories browse-params))))]
         {:value (parser/value-with-basis-t
                   {:browse-result browse-result
                    :browse-params browse-params
