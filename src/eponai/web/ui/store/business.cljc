@@ -480,4 +480,5 @@
            (callout/callout
              nil
              (verify/->Verify (om/computed verify-props
-                                           {:stripe-account stripe-account})))])))))
+                                           {:stripe-account stripe-account
+                                            :store store})))])))))

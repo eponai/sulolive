@@ -15,7 +15,9 @@
     #?(:cljs
        [cljs.reader :as reader]))
   #?(:cljs
-     (:import [goog.events EventType])))
+     (:import
+       [goog.events EventType]
+       [goog.crypt Sha256])))
 
 (defn queue-file [component event]
   #?(:cljs
@@ -32,27 +34,35 @@
        ;  (.readAsDataURL reader file))
        )))
 
+(defn hashed [eid]
+  #?(:cljs (let [digest (fn [hasher bytes]
+                          (.update hasher bytes)
+                          (.digest hasher))
+                 str->bytes (fn [s]
+                              (goog.crypt/stringToUtf8ByteArray s))]
+             (goog.crypt/byteArrayToHex (digest (goog.crypt.Sha256.) (str->bytes (str eid)))))))
 
 (defui FileUploader
   Object
+  (s3-key [this filename]
+    (let [{:keys [owner]} (om/get-computed this)]
+      (let [sha-dbid (hashed (:db/id owner))
+            chars 2
+            level1 (clojure.string/join (take chars sha-dbid))
+            level2 (clojure.string/join (take chars (drop chars sha-dbid)))
+            ]
+        (debug "Owner: " owner)
+        (if (:db/id owner)
+          (str "id-docs/temp/" level1 "/" level2 "/" (:db/id owner) "/" filename)
+          (error "Trying to create S3 key without a :db/id for the document owner. Make sure you pass in an entity that owns this document (i.e. a store or user)")))))
   (initLocalState [this]
     #?(:cljs
        (let [uploaded (chan 20)]
          {:dropped-queue (chan 20)
-          :upload-queue  (s3/s3-pipe uploaded {:server-url "/aws" :key-fn (fn [file]
-                                                                            (debug "Key for file: " file)
-                                                                            (str "temp/" file))})
+          :upload-queue  (s3/s3-pipe uploaded {:server-url "/aws" :key-fn #(.s3-key this %)})
           :uploaded      uploaded
           :uploads       []})))
 
-  ;(did-mount [_]
-  ;  ;(listen-file-drop js/document (om/get-state owner :dropped-queue))
-  ;  (go (while true
-  ;        (let [{:keys [dropped-queue upload-queue uploaded uploads]} (om/get-state owner)]
-  ;          (let [[v ch] (alts! [dropped-queue uploaded])]
-  ;            (cond
-  ;              (= ch dropped-queue) (put! upload-queue v)
-  ;              (= ch uploaded) (om/set-state! owner :uploads (conj uploads v))))))))
   (componentDidMount [this]
     #?(:cljs
        (go (while true
