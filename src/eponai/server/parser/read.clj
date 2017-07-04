@@ -465,7 +465,8 @@
 (defread query/browse-products-2
   [{:keys         [db locations query-params route-params query]
     ::parser/keys [read-basis-t-for-this-key]} _ _]
-  {:auth ::auth/public}
+  {:auth ::auth/public
+   :log  (f/remove-nil-keys (browse/make-browse-params locations route-params query-params))}
   (let [browse-params (browse/make-browse-params locations route-params query-params)
         uniqueness (select-keys browse-params (browse-products-uniqueness query-params))]
     (if (= read-basis-t-for-this-key uniqueness)
