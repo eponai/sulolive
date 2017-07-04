@@ -268,7 +268,9 @@
                   (dom/label nil (dom/small nil "Sort"))
                   (dom/select
                     {:defaultValue (or (:order query-params) (browse/default-order query-params))
-                     :onChange     #(routes/set-url! this route route-params (assoc query-params :order (.-value (.-target %))))}
+                     :onChange     #(routes/set-url! this route route-params (-> query-params
+                                                                                 (assoc :order (.-value (.-target %)))
+                                                                                 (dissoc :page-num)))}
                     (map (fn [k]
                            (dom/option {:value k}
                                        (browse/order-label k)))
