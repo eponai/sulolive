@@ -96,8 +96,15 @@
 
           (dom/section
             nil
-            (dom/h2 nil "SULO Live fees")
-            (dom/p nil (dom/span nil "When you make a sale through SULO Live, the following fees will be deducted from the transaction amount as the funds become available for deposit:")
+            (dom/h2 nil "Sellers")
+
+            (dom/p nil
+                   (dom/span nil "Payment processing services for Sellers on SULO Live are provided by Stripe and are subject to the ")
+                   (dom/a {:href "https://stripe.com/ca/connect-account/legal"
+                           :target "_blank"} (dom/span nil "Stripe Connected Account Agreement"))
+                   (dom/span nil ", which includes the Stripe Terms of Service (collectively, the “Stripe Services Agreement”). By agreeing to these terms or continuing to operate as a Seller on SULO Live, you agree to be bound by the Stripe Services Agreement, as the same may be modified by Stripe from time to time. As a condition of SULO Live enabling payment processing services through Stripe, you agree to provide SULO Live accurate and complete information about you and your business, and you authorize SULO Live to share it and transaction information related to your use of the payment processing services provided by Stripe."))
+
+            (dom/p nil (dom/span nil "When you as a Seller make a sale through SULO Live, you agree to the following fees being deducted from the transaction amount as the funds become available for deposit:")
                    (dom/ol nil
                            (dom/li nil
                                    (dom/span nil "a ")
