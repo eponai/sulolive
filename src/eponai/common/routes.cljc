@@ -119,6 +119,10 @@
              "unauthorized"                                               :unauthorized}]
        [true :not-found]]])
 
+;; Compojure + bidi merges our query-params and route-params.
+;; These keys will be removed from our query-params so we use
+;; query-params with merge when updating routes.
+(def only-route-param-keys #{:top-category :sub-category :sub-sub-category :locality})
 
 (defn location-independent-route? [route]
   (when (some? route)

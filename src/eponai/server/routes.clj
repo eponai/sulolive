@@ -95,12 +95,12 @@
                :system              system
                :release?            (release? request)
                :cljs-build-id       (::m/cljs-build-id request)
-               :route-params        route-params
                :route               route
+               :route-params        (dissoc route-params :*)
                ;; Remove query-params that exactly equal route-params, because of how
                ;; compojure... does.. stuff?
                :query-params        (into {}
-                                          (remove (fn [[k v]] (= v (get route-params k))))
+                                          (remove #(contains? routes/only-route-param-keys (key %)))
                                           (dissoc (:params request) :*))
                :auth                (request->auth request)
                :locations           (auth/requested-location request)
