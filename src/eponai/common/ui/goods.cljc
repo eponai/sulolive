@@ -123,8 +123,7 @@
                       (assoc query-params :ship_to country-code))]
       (routes/set-url! this route route-params new-query)))
   (initLocalState [_]
-    {:sorting       browse/default-order
-     :filters-open? false})
+    {:filters-open? false})
   (render [this]
     (let [{:proxy/keys [navbar product-filters footer]
            :query/keys [browse-products-2 navigation locations current-route countries]} (om/props this)
@@ -137,7 +136,8 @@
                               (str (products/category-display-name category)
                                    (when-let [matches (category-count this category count-by-category)]
                                      (str " " matches))))
-          page-range (browse/query-params->page-range query-params)]
+          page-range (browse/query-params->page-range query-params)
+          pages (browse/pages browse-result)]
 
       (debug " items: " items)
       (debug " navigation: " navigation)
@@ -268,10 +268,10 @@
                        (css/show-for :large))
                   (dom/label nil (dom/small nil "Sort"))
                   (dom/select
-                    {:defaultValue (or (:order query-params) (browse/default-order query-params))
-                     :onChange     #(routes/set-url! this route route-params (-> query-params
-                                                                                 (assoc :order (.-value (.-target %)))
-                                                                                 (dissoc :page-num)))}
+                    {:value    (or (:order query-params) (browse/default-order query-params))
+                     :onChange #(routes/set-url! this route route-params (-> query-params
+                                                                             (assoc :order (.-value (.-target %)))
+                                                                             (dissoc :page-num)))}
                     (map (fn [k]
                            (dom/option {:value k}
                                        (browse/order-label k)))
@@ -280,31 +280,32 @@
               (grid/products items
                              (fn [p]
                                (pi/->ProductItem {:product p})))
-              (pagination/->Pagination
-                {:current-page (:page-num page-range)
-                 :pages        (browse/pages browse-result)
-                 :page->anchor-opts
-                               (fn [page]
-                                 {:href
-                                  (routes/map->url (routes/merge-route this {:query-params {:page-num page}}))
-                                  ;; When not clicking the active page, fetch data for clicked page.
-                                  :onClick
-                                  #(do
-                                     (om/transact!
-                                       (om/get-reconciler this)
-                                       `[({:query/browse-product-items ~(om/get-query product/Product)}
-                                           {:product-items
-                                            ~(into []
-                                                   (browse/page-items
-                                                     browse-result
-                                                     (assoc page-range :page-num page)))})])
-                                     ;; Scroll to the top somewhere.
-                                     ;; Choosing sulo-search-bar because it looked good.
-                                     #?(:cljs
-                                        (let [el (.getElementById js/document "sulo-search-bar")]
-                                          (if (.-scrollIntoView el)
-                                            (.scrollIntoView el)
-                                            (.scrollTo js/window 0 0)))))})}))))))))
+              (when (< 1 (count pages))
+                (pagination/->Pagination
+                  {:current-page (:page-num page-range)
+                   :pages        (browse/pages browse-result)
+                   :page->anchor-opts
+                                 (fn [page]
+                                   {:href
+                                    (routes/map->url (routes/merge-route this {:query-params {:page-num page}}))
+                                    ;; When not clicking the active page, fetch data for clicked page.
+                                    :onClick
+                                    #(do
+                                       (om/transact!
+                                         (om/get-reconciler this)
+                                         `[({:query/browse-product-items ~(om/get-query product/Product)}
+                                             {:product-items
+                                              ~(into []
+                                                     (browse/page-items
+                                                       browse-result
+                                                       (assoc page-range :page-num page)))})])
+                                       ;; Scroll to the top somewhere.
+                                       ;; Choosing sulo-search-bar because it looked good.
+                                       #?(:cljs
+                                          (let [el (.getElementById js/document "sulo-search-bar")]
+                                            (if (.-scrollIntoView el)
+                                              (.scrollIntoView el)
+                                              (.scrollTo js/window 0 0)))))})})))))))))
 
 (def ->Goods (om/factory Goods))
 
