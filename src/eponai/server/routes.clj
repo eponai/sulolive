@@ -95,9 +95,11 @@
                :cljs-build-id       (::m/cljs-build-id request)
                :route-params        route-params
                :route               route
-               ;; :locality is a route-param and should not be in the query-param.
-               ;; It's there because of compojure?
-               :query-params        (dissoc (:params request) :* :locality)
+               ;; Remove query-params that exactly equal route-params, because of how
+               ;; compojure... does.. stuff?
+               :query-params        (into {}
+                                          (remove (fn [[k v]] (= v (get route-params k))))
+                                          (dissoc (:params request) :*))
                :auth                (request->auth request)
                :locations           (auth/requested-location request)
                :social-sharing      sharing-objects}
