@@ -543,10 +543,10 @@
           browse-result (some->> (browse/find-result db browse-params)
                                  (db/entity db))]
       (when (some? browse-result)
-        (let [items (into [] (browse/page-items db
-                                                browse-result
-                                                (:page-range browse-params)
-                                                (:categories browse-params)))
+        (let [items-in-cat (into [] (browse/items-in-category db
+                                                              browse-result
+                                                              (:categories browse-params)))
+              items (into [] (browse/page-items-xf (:page-range browse-params)) items-in-cat)
               pulled (db/pull-many db query items)
               pulled (if (== (count pulled) (count items))
                        pulled
@@ -558,7 +558,8 @@
                                               :store.item/price  nil})))
                                items)))]
           (debug "browse-result!: " (into {:db/id (:db/id browse-result)} browse-result))
-          {:value {:browse-result (into {:db/id (:db/id browse-result)} browse-result)
+          {:value {:browse-result (into {:browse-result/items-in-category items-in-cat
+                                         :db/id (:db/id browse-result)} browse-result)
                    :items         pulled}})))))
 
 (defmethod client-read :query/browse-product-items

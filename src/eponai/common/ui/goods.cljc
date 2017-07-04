@@ -45,10 +45,10 @@
                 (browse/page-items
                   (db/to-db component)
                   browse-result
-                  page-range
                   (select-keys route-params [:top-category
                                              :sub-category
-                                             :sub-sub-category])))})]))
+                                             :sub-sub-category])
+                  page-range))})]))
 
 (defn category-count [component category count-by-category]
   (if-let [id (:db/id category)]
@@ -157,14 +157,17 @@
           {:browse-result/keys [count-by-category]} browse-result
           category-label-fn (fn [category]
                               (str (products/category-display-name category)
-                                   (when-let [matches (category-count this category count-by-category)]
-                                     (str " " matches))))
+                                   ;; TODO: Make count corrent and show it here.
+                                   ;(when-let [matches (category-count this category count-by-category)]
+                                   ;  (str " " matches))
+                                   ))
           page-range (browse/query-params->page-range query-params)
           pages (browse/pages browse-result)
           searching? (contains? query-params :search)]
 
       (debug " items: " items)
       (debug " navigation: " navigation)
+      (debug "count-by-category: " count-by-category)
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse" :footer footer}
         (common/city-banner this locations)
@@ -277,7 +280,7 @@
                   (dom/div nil
                            (dom/small nil
                                       (dom/strong nil "FOUND ")
-                                      (dom/span nil (str (count (:browse-result/items browse-result)) " items"))
+                                      (dom/span nil (str (count (:browse-result/items-in-category browse-result)) " items"))
                                       (when (pos? (count items))
                                         (dom/span nil (str " - Showing items "
                                                            (let [{:keys [page-size page-num]} page-range

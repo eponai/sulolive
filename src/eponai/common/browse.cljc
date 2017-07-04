@@ -88,12 +88,10 @@
                             (db/find-with
                               db
                               {:find    '[(clojure.core/frequencies ?normalized-cat) .]
-                               :where   '[[?item :store.item/category ?cat]
-                                          (category-or-parent-category ?cat ?normalized-cat)
-                                          ]
+                               :where   '[(category-or-parent-category ?cat ?normalized-cat)]
                                ;; Using datomic's :with to avoid it from deduping ?item
                                :with    '[?item]
-                               :symbols {'[?item ...] items}
+                               :symbols {'[[?item ?cat] ...] items}
                                :rules   [db.rules/category-or-parent-category]}))]
     (let [
           ;; Unisex items should count in both men and women's categories.
@@ -107,8 +105,9 @@
                                      [?parent :category/children ?gender-cat]]
                           :symbols {'[[?unisex-cat ?count] ...]              count-by-cat
                                     '[[?unisex-name [?gender-name ...]] ...] {"unisex-adult" ["women" "men"]
-                                                                              "unisex-kids"  ["girls" "boys"]}}})]
-      (merge-with + count-by-cat (into {} unisex-count)))))
+                                                                              "unisex-kids"  ["girls" "boys"]}}})
+          c (merge-with + count-by-cat (into {} unisex-count))]
+      c)))
 
 (defn category
   "Returns items and their prices based on selected category"
@@ -156,13 +155,14 @@
                               :where '[[?e :store.item/price ?price]
                                        [?e :store.item/category ?category]
                                        [?e :store.item/created-at ?created-at]]}))
-        sorted-items (sort-items order items-with-price)]
+        sorted-items (sort-items order items-with-price)
+        items (mapv (juxt #(nth % 0) #(nth % 4)) sorted-items)]
     (make-result
       {:browse-result/type              ::search
-       :browse-result/items
-                                        (mapv (juxt #(nth % 0) #(nth % 4)) sorted-items)
+       :browse-result/items             items
+
        :browse-result/prices            (store-item-price-distribution (eduction (map #(nth % 1)) sorted-items))
-       :browse-result/count-by-category (or (count-items-by-category db (eduction (map #(nth % 0)) sorted-items)) {})}
+       :browse-result/count-by-category (or (count-items-by-category db items) {})}
       browse-params)))
 
 (defn find-items
@@ -242,34 +242,39 @@
                         inc)]
       (range pages))))
 
-(defn page-items
-  "Return [item-id ...] for a page, given browse results, current page-range and categories."
-  [db {:browse-result/keys [type items]} page-range categories]
+(defn items-in-category [db {:browse-result/keys [type items]} categories]
+  (let [categories (select-keys categories [:top-category :sub-category :sub-sub-category])]
+    (condp = type
+      ::category items
+      ::search (if (empty? categories)
+                 (map #(nth % 0) items)
+                 (let [allowed-categories (into #{}
+                                                (db/all-with
+                                                  db
+                                                  (db/merge-query
+                                                    (products/category-names-query categories)
+                                                    {:where [(list 'category-or-child-category
+                                                                   (products/smallest-category categories)
+                                                                   '?e)]
+                                                     :rules [db.rules/category-or-child-category]})))]
+                   (eduction
+                     (comp (filter (fn [[_ category-id]]
+                                     (contains? allowed-categories category-id)))
+                           (map #(nth % 0)))
+                     items))))))
+
+(defn page-items-xf [page-range]
   (let [{:keys [page-num page-size]
          :or   {page-num  0
-                page-size default-page-size}} page-range
-        categories (select-keys categories [:top-category :sub-category :sub-sub-category])
-        items (condp = type
-                ::category items
-                ::search (if (empty? categories)
-                           (map #(nth % 0) items)
-                           (let [allowed-categories (into #{}
-                                                          (db/all-with
-                                                            db
-                                                            (db/merge-query
-                                                              (products/category-names-query categories)
-                                                              {:where [(list 'category-or-child-category
-                                                                             (products/smallest-category categories)
-                                                                             '?e)]
-                                                               :rules [db.rules/category-or-child-category]})))]
-                             (eduction
-                               (comp (filter (fn [[_ category-id]]
-                                               (contains? allowed-categories category-id)))
-                                     (map #(nth % 0)))
-                               items))))]
-    (eduction (comp (drop (* page-num page-size))
-                    (take page-size))
-              items)))
+                page-size default-page-size}} page-range]
+    (comp (drop (* page-num page-size))
+          (take page-size))))
+
+(defn page-items
+  "Return [item-id ...] for a page, given browse results, current page-range and categories."
+  [db browse-results categories page-range]
+  (eduction (page-items-xf page-range)
+            (items-in-category db browse-results categories)))
 
 
 (comment
