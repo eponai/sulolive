@@ -65,10 +65,13 @@
                                    (update :query-params dissoc :page-num))
                                (:category/route-map category))))
 
-(defn- vertical-category-menu [component children current-category label-fn]
+(defn- vertical-category-menu [component children current-category label-fn count-by-category]
   (menu/vertical
     (css/add-class :nested)
     (->> children
+         (filter (if (seq count-by-category)
+                   (comp some? #(category-count component % count-by-category))
+                   identity))
          (sort-by :category/name)
          (map-indexed
            (fn [i {:category/keys [path] :as category}]
@@ -171,7 +174,7 @@
                              (comp some? #(category-count this % count-by-category))
                              identity))
                    (map (fn [category]
-                          (let [is-active? (= (:category/name category) (:category/name (first categories)))]
+                          (let [is-active? (or (= (:category/name category) (:category/name (first categories))))]
                             (menu/item
                               (when is-active? (css/add-class :is-active))
                               (dom/a {:href (category-nav-link this category)}
@@ -179,7 +182,8 @@
                               (vertical-category-menu this
                                                       (:category/children category)
                                                       (last categories)
-                                                      category-label-fn)))))))
+                                                      category-label-fn
+                                                      count-by-category)))))))
             ;(dom/div
             ;  nil
             ;  (dom/label nil "Ship to")
