@@ -165,9 +165,6 @@
           pages (browse/pages browse-result)
           searching? (contains? query-params :search)]
 
-      (debug " items: " items)
-      (debug " navigation: " navigation)
-      (debug "count-by-category: " count-by-category)
       (common/page-container
         {:navbar navbar :id "sulo-items" :class-name "sulo-browse" :footer footer}
         (common/city-banner this locations)
