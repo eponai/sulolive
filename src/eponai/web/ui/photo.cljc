@@ -132,7 +132,7 @@
           content)))
 
 (defn cover [{:keys [photo-id src transformation] :as props} & content]
-  (let [photo-key (when-not src (or photo-id "static/storefront"))]
+  (let [photo-key (when-not src (or photo-id "static/storefront-cover"))]
     (photo (-> (css/add-class :cover props)
                (assoc :style :style/cover)
                (assoc :photo-id photo-key)
@@ -161,7 +161,7 @@
 
 (defn store-photo [store props & content]
   (let [photo (get-in store [:store/profile :store.profile/photo])
-        photo-id (:photo/id photo "static/storefront")]
+        photo-id (:photo/id photo "static/storefront-2")]
     (circle (->> (assoc props :photo-id photo-id)
                  (css/add-class :store-photo))
             content)))
@@ -186,7 +186,7 @@
 
 (defn stream-photo [store]
   (let [photo (get-in store [:store/profile :store.profile/photo])
-        photo-id (:photo/id photo "static/storefront")]
+        photo-id (:photo/id photo "static/storefront-2")]
     (square
       {:photo-id photo-id}
       (overlay
