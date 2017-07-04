@@ -1,7 +1,6 @@
 (ns eponai.common.ui-namespaces
   (:require
     [eponai.common.ui.help]
-    [eponai.common.ui.checkout]
     [eponai.common.ui.shopping-bag]
     [eponai.common.ui.store]
     [eponai.common.ui.store.dashboard]
@@ -11,6 +10,7 @@
     [eponai.common.ui.streams]
     [eponai.common.ui.user]
     [eponai.web.ui.about-sulo]
+    [eponai.web.ui.checkout]
     [eponai.web.ui.landing-page]
     [eponai.web.ui.login]
     [eponai.web.ui.not-found]

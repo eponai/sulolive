@@ -150,7 +150,7 @@
         photo-id (:photo/id item-photo "static/storefront")]
     (photo {:photo-id       photo-id
             :transformation transformation
-            :classes        classes}
+            :classes        (conj classes :product-photo)}
            content)))
 
 (defn product-preview [product & [opts & content]]

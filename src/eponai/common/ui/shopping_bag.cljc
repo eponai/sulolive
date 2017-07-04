@@ -17,7 +17,8 @@
     [eponai.web.ui.button :as button]
     [eponai.common.mixpanel :as mixpanel]
     [eponai.web.ui.footer :as foot]
-    [eponai.common.ui.product-item :as pi]))
+    [eponai.common.ui.product-item :as pi]
+    [eponai.common.ui.product :as product]))
 
 (defn items-by-store [items]
   (group-by #(get-in % [:store.item/_skus :store/_items]) items))
@@ -43,9 +44,10 @@
                  (css/add-class :store-name) store-name))))))
 
 (defn sku-menu-item [component sku]
-  (let [{:store.item/keys [price photos]
+  (let [item (get sku :store.item/_skus)
+        {:store.item/keys [price photos]
          product-id       :db/id
-         item-name        :store.item/name :as product} (get sku :store.item/_skus)
+         item-name        :store.item/name :as product} item
         {:store.item.photo/keys [photo]} (first (sort-by :store.item.photo/index photos))]
     (menu/item
       (css/add-class :sl-productlist-item--row)
@@ -62,7 +64,7 @@
 
           (dom/div nil
                    (dom/a
-                     (->> {:href (routes/url :product {:product-id product-id})}
+                     (->> {:href (product/product-url item)}
                           (css/add-class :name))
                      (dom/span nil item-name)))
           (dom/div nil

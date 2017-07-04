@@ -184,16 +184,7 @@
                 nil
                 (dom/label nil "Ship to")
                 (let [{:shipping/keys [name address]} (:order/shipping order)]
-                  (dom/p nil
-                         (dom/strong nil name)
-                         (dom/br nil)
-                         (dom/span nil (:shipping.address/street address))
-                         (dom/br nil)
-                         (dom/span nil (string/join ", " (remove nil? [(:shipping.address/city address)
-                                                                       (:shipping.address/postal address)
-                                                                       (:shipping.address/region address)])))
-                         (dom/br nil)
-                         (dom/span nil (:country/name (:shipping.address/country address))))))
+                  (common/render-shipping (:order/shipping order) nil)))
               (grid/column
                 nil
                 (dom/label nil "Delivery")
@@ -233,36 +224,20 @@
                    skus)
 
               (menu/item nil
-                         (grid/row
-                           nil
-                           (grid/column (grid/column-size {:small 4 :medium 6}))
-                           (grid/column
-                             (grid/column-size {:small 4 :medium 3})
-                             (dom/p nil "Subtotal"))
-                           (grid/column
-                             (->> (grid/column-size {:small 4 :medium 3})
-                                  (css/text-align :right))
-                             (dom/p nil (ui-utils/two-decimal-price (apply + (map :order.item/amount skus))))))
-                         (grid/row
-                           nil
-                           (grid/column (grid/column-size {:small 4 :medium 6}))
-                           (grid/column
-                             (grid/column-size {:small 4 :medium 3})
-                             (dom/p nil "Shipping"))
-                           (grid/column
-                             (->> (grid/column-size {:small 4 :medium 3})
-                                  (css/text-align :right))
-                             (dom/p nil (ui-utils/two-decimal-price (:order.item/amount delivery)))))
-                         (grid/row
-                           nil
-                           (grid/column (grid/column-size {:small 4 :medium 6}))
-                           (grid/column
-                             (grid/column-size {:small 4 :medium 3})
-                             (dom/p nil "Tax"))
-                           (grid/column
-                             (->> (grid/column-size {:small 4 :medium 3})
-                                  (css/text-align :right))
-                             (dom/p nil (ui-utils/two-decimal-price (:order.item/amount tax-item)))))))
+                         (map (fn [{:keys [title value]}]
+                                (grid/row
+                                  nil
+                                  (grid/column (grid/column-size {:small 4 :medium 6}))
+                                  (grid/column
+                                    (grid/column-size {:small 4 :medium 3})
+                                    (dom/p nil (dom/small nil title)))
+                                  (grid/column
+                                    (->> (grid/column-size {:small 4 :medium 3})
+                                         (css/text-align :right))
+                                    (dom/p nil (dom/small nil (ui-utils/two-decimal-price value))))))
+                              [{:title "Subtotal" :value (apply + (map :order.item/amount skus))}
+                               {:title "Shipping" :value (:order.item/amount delivery)}
+                               {:title "Tax" :value (:order.item/amount tax-item)}])))
             (grid/row
               (css/add-class :total-price)
               (grid/column (grid/column-size {:small 4 :medium 6}))

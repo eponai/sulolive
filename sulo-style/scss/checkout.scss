@@ -1,106 +1,165 @@
 #sulo-checkout {
-	$primary-color: map-get($foundation-palette, action);
-	$border-color: rgba($light-gray, 0.75);
-	$border: 1px solid $border-color;
-	.page-container {
-		$color: map-get($foundation-palette, primary);
-		background: rgba($color, 0.03);
-		.page-content .callout {
-			border: $global-border-secondary;
-			// box-shadow: 0 1px 3px 0 rgba($black, 0.1);
-		}
-		.page-content {
-			padding-top: 2rem;
-		}
+	background: rgba($primary-color, 0.03);
+	.row {
+		max-width: $user-dashboard-max-width;
 	}
-	.row.expanded {
-		// max-width: $global-width;
-	}
+	counter-reset: section;
 
-	.checkout-review {
-		// width: 30rem;
-		@include breakpoint(medium) {
-			position: fixed;
-		// width: 25rem;
-			z-index: 1;
+	// One section in the checkout 
+	// We have three (item list, shipping, payment)
+	.section {
+		
+		h4:before {
+			counter-increment: section;
+			content: counter(section) ". ";
 		}
-	}
-
-	.subsection {
-		margin-bottom: 3rem;
-		&:last-child {
-			margin-bottom: 0;
-		}
-	}
-	.subsection-title {
-		margin-bottom: 0.5rem;
-		// margin-top: 4rem;
-		letter-spacing: 1px;
-	}
-
-	.callout {
-		&.small.warning {
-			box-shadow: none;
-			border: none;
-		}
-		.sl-CheckoutItemlist {
-			padding: 1rem 0;
-			border-top: $border;
-			border-bottom: $border;
-			margin-bottom: 0.5rem;
-			p {
-				margin: 0;
+		.store-header {
+			.photo-container {
+				max-width: 6rem;
 			}
-			display: table;
-			width: 100%;
-			.sl-CheckoutItemlist-row {
-				display: table-row;
-				input {
-					max-width: 4rem;
-					// float: right;
-				}
-				.sl-CheckoutItemlist-cell {
-					display: table-cell;
-					vertical-align: top;
+			h3 {
+				text-transform: none;
+			}
+		}
+
+		.subsection {
+			margin-bottom: $global-margin;
+			&:last-child {
+				margin-bottom: 0;
+			}
+			.subsection-title {
+				margin-bottom: 0.5rem;
+				// margin-top: 4rem;
+				// font-weight: $global-weight-bold;
+				letter-spacing: 1px;
+			}
+		}
+		.section-list {
+			margin-bottom: 0.5rem;
+			border-radius: $global-radius;
+			border: $global-border-secondary;
+		}
+
+		&.section--item-list {
+			.section-title {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+			}
+			.section-list {
+				li {
 					padding: 0.5rem;
-					font-size: 90%;
-					&.sl-CheckoutItemlist-cell--photo {
-						width: 3rem;
-						padding: 0.5rem 0;
+					&:last-child {
+						padding-bottom: 0;
+					}
+				}
+				// border-bottom: none;
+			}
+			.product-info {
+				// First column with photo and item info
+				&:first-child a {
+					display: flex;
+					align-items: center;
+					div {
+						line-height: 1.2;
+						span {
+							display: inline-block;
+							overflow: hidden;
+							font-size: 0.9rem;
+							max-height: 2.2rem;
+						}
+						small {
+							font-weight: $global-weight-bold;
+						}
+					}
+				}
+				&:last-child {
+					display: flex;
+					justify-content: flex-end;
+					align-items: center;
+				}
+			}
+			.photo-container {
+				max-width: 3rem;
+				min-width: 3rem;
+				margin-right: 0.5rem;
+				width: 4rem;
+			}
+		}
+
+		&.section--shipping {
+			.sl-shipping--name {
+				font-weight: $global-weight-bold;
+			}
+			.sl-shipping--address {
+				font-size: 100%;
+			}
+
+			.action-buttons {
+				display: flex;
+				justify-content: center;
+				.button:first-child{
+					margin-right: 0.5rem;
+				}
+			}
+			// 	.section-list--shipping {
+			.section-list-item {
+				padding: 0;
+				p {
+					margin-bottom: 0;
+					line-height: 1.2;
+				}
+				&:hover {
+					background: rgba($light-gray, 0.2);
+					a {
+						color: $body-font-color;
+					}
+				}
+				a {
+					padding: 1rem;
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+				}
+				.row {
+					width: 100%;
+				}
+				.shipping-info {
+					display: flex;
+					align-items: center;
+					input {
+						margin-right: 0.5rem;
+						width: 2rem;
+						flex: 0 0 auto;
+					}
+				}
+				.shipping-cost {
+					text-align: right;
+					margin-left:  0.5rem;
+					
+					small {
+						font-size: 70%;
 					}
 				}
 			}
+		
 		}
-		.receipt {
-			.row {
-				padding-bottom: 0.5rem;
-			}
-			a {
-				color: $primary-color;
-				font-weight: $global-weight-bold;
-			}
-			font-size: 0.9rem;
-			color: $dark-gray;
-			.total {
-				padding-top: 0.5rem;
-				border-top: $border;
-				font-size: 1rem;
-				color: $black;
+		&.section--payment {
+			.section-list--cards {
+				.section-list-item--card, .section-list-item--new-card {
+					padding: 0.25rem 0;
+				}
+				.section-list-item--new-card {
+					.button {
+						margin: $global-margin;
+					}
+					// padding: $global-padding;
+				}
 			}
 		}
 	}
 
-	.checkout-payment {
-		.button {
-			margin: 0.5rem 0 0.5rem 1rem;
-		}
-	}
-	.section-list {
-		margin-bottom: 0.5rem;
-		border-radius: $global-radius;
-		border: $global-border;
-	}
-
+	// Hide footer in checkout to disable navigations for the user
 	.footer {
 		background: transparent;
 		.row {
@@ -110,54 +169,133 @@
 			color: $dark-gray;
 		}
 	}
-
-	.section-list--cards {
-		.section-list-item--card, .section-list-item--new-card {
-			padding: 0.25rem 0;
-		}
-	}
-	.section-list--shipping {
-		.section-list-item {
-			padding: 0;
-			p {
-				margin-bottom: 0;
-				line-height: 1.2;
-			}
-			&:hover {
-				background: rgba($light-gray, 0.2);
-				a {
-					color: $body-font-color;
-				}
-			}
-			a {
-				padding: 1rem;
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-			}
-			.row {
-				width: 100%;
-			}
-			.shipping-info {
-				display: flex;
-				align-items: center;
-				input {
-					margin-right: 0.5rem;
-					width: 2rem;
-					flex: 0 0 auto;
-				}
-			}
-			.shipping-cost {
-				text-align: right;
-				margin-left:  0.5rem;
-				
-				small {
-					font-size: 70%;
-				}
-			}
-		}
-	}
 }
+
+// #sulo-checkout {
+// 	$primary-color: map-get($foundation-palette, action);
+// 	$border-color: rgba($light-gray, 0.75);
+// 	$border: 1px solid $border-color;
+// 	.page-container {
+// 		$color: map-get($foundation-palette, primary);
+// 		background: rgba($color, 0.03);
+// 		.page-content .callout {
+// 			border: $global-border-secondary;
+// 			// box-shadow: 0 1px 3px 0 rgba($black, 0.1);
+// 		}
+// 		.page-content {
+// 			padding-top: 2rem;
+// 		}
+// 	}
+// 	.row.expanded {
+// 		// max-width: $global-width;
+// 	}
+
+// 	.checkout-review {
+// 		// width: 30rem;
+// 		@include breakpoint(medium) {
+// 			position: fixed;
+// 		// width: 25rem;
+// 			z-index: 1;
+// 		}
+// 	}
+
+// 	.subsection {
+// 		margin-bottom: 3rem;
+// 		&:last-child {
+// 			margin-bottom: 0;
+// 		}
+// 	}
+// 	.subsection-title {
+// 		margin-bottom: 0.5rem;
+// 		// margin-top: 4rem;
+// 		letter-spacing: 1px;
+// 	}
+
+// 	.callout {
+// 		&.small.warning {
+// 			box-shadow: none;
+// 			border: none;
+// 		}
+// 		.sl-CheckoutItemlist {
+// 			padding: 1rem 0;
+// 			border-top: $border;
+// 			border-bottom: $border;
+// 			margin-bottom: 0.5rem;
+// 			p {
+// 				margin: 0;
+// 			}
+// 			display: table;
+// 			width: 100%;
+// 			.sl-CheckoutItemlist-row {
+// 				display: table-row;
+// 				input {
+// 					max-width: 4rem;
+// 					// float: right;
+// 				}
+// 				.sl-CheckoutItemlist-cell {
+// 					display: table-cell;
+// 					vertical-align: top;
+// 					padding: 0.5rem;
+// 					font-size: 90%;
+// 					&.sl-CheckoutItemlist-cell--photo {
+// 						width: 3rem;
+// 						padding: 0.5rem 0;
+// 					}
+// 				}
+// 			}
+// 		}
+// 		.receipt {
+// 			.row {
+// 				padding-bottom: 0.5rem;
+// 			}
+// 			a {
+// 				color: $primary-color;
+// 				font-weight: $global-weight-bold;
+// 			}
+// 			font-size: 0.9rem;
+// 			color: $dark-gray;
+// 			.total {
+// 				padding-top: 0.5rem;
+// 				border-top: $border;
+// 				font-size: 1rem;
+// 				color: $black;
+// 			}
+// 		}
+// 	}
+// 	.action-buttons {
+// 		.button {
+// 			margin-left: 0.5rem;
+// 		}
+// 	}
+
+// 	.checkout-payment {
+// 		.button {
+// 			margin: 0.5rem 0 0.5rem 1rem;
+// 		}
+// 	}
+// 	.section-list {
+// 		margin-bottom: 0.5rem;
+// 		border-radius: $global-radius;
+// 		border: $global-border;
+// 	}
+
+// 	.footer {
+// 		background: transparent;
+// 		.row {
+// 			display: none;
+// 		}
+// 		.copyright {
+// 			color: $dark-gray;
+// 		}
+// 	}
+
+// 	.section-list--cards {
+// 		.section-list-item--card, .section-list-item--new-card {
+// 			padding: 0.25rem 0;
+// 		}
+// 	}
+
+// }
 
 /**
  * The CSS shown here will not be introduced in the Quickstart guide, but shows

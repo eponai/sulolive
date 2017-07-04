@@ -4,6 +4,7 @@
     #?(:cljs [goog.net.jsloader :as jsl])
     #?(:clj [eponai.common.macros :refer [ui-with-locals]])
     [om.next :as om :refer [ui]]
+    [om.dom :as dom]
     [taoensso.timbre :refer [debug]]))
 
 ;; Inspired by https://www.martinklepsch.org/posts/just-in-time-script-loading-with-react-and-clojuresript.html
@@ -24,7 +25,7 @@
 (extend-type #?(:clj Object :cljs default)
   IRenderLoadingScripts
   (render-while-loading-scripts [this props]
-    ((om/factory this) props)))
+    (dom/div nil)))
 
 (defn- render-while-loading [component child-props]
   #?(:cljs (render-while-loading-scripts component child-props)
@@ -92,10 +93,13 @@
      :clj  component))
 
 
-(defn stripe-loader [component]
-  ;; {:pre [(satisfies? IRenderLoadingScripts component)]}
-  (letfn [(loaded-stripe? []
-            #?(:cljs (exists? js/Stripe)))]
-    (js-loader {:component component
-                :scripts   [[loaded-stripe? "https://js.stripe.com/v2/"]
-                            [loaded-stripe? "https://js.stripe.com/v3/"]]})))
+(defn stripe-loader
+  ([component] (stripe-loader component nil))
+  ([component scripts]
+    ;; {:pre [(satisfies? IRenderLoadingScripts component)]}
+    (letfn [(loaded-stripe? []
+              #?(:cljs (exists? js/Stripe)))]
+      (js-loader {:component component
+                  :scripts   (into [[loaded-stripe? "https://js.stripe.com/v2/"]
+                                    [loaded-stripe? "https://js.stripe.com/v3/"]]
+                                   scripts)}))))

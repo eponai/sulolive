@@ -7,7 +7,7 @@ $subnav-height: rem-calc(44);//$navbar-height;
 $subnav-background-color: $navbar-background-color;//map-get($foundation-palette, nude);
 $subnav-font-color: map-get($foundation-palette, primary);//rgba($black, 0.5);
 
-$footer-background-color: map-get($foundation-palette, gray);
+$footer-background-color: $primary-color;//map-get($foundation-palette, gray);
 $footer-header-color: map-get($foundation-palette, banner);
 $footer-font-color: $white;
 $footer-height-small: 6rem;
@@ -122,6 +122,9 @@ a.disabled {
 	display: flex;
 	.switch {
 		margin-right: 1rem;
+		font-size: 75%;
+		// font-weight: $global-weight-normal;
+		letter-spacing: 1px;
 	}
 }
 

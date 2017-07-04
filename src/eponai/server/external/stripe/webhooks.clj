@@ -35,11 +35,13 @@
                                                                        :shipping.address/street
                                                                        :shipping.address/street2]}]}
                                  {:order/store [:db/id
-                                                {:store/profile [:store.profile/name]}]}
+                                                {:store/profile [:store.profile/name]}
+                                                {:store/owners [{:store.owner/user [:user/email]}]}]}
                                  {:order/user [:user/email]}]
                                 {:where   '[[?e :order/uuid ?uuid]]
                                  :symbols {'?uuid order-uuid}})]
-    (email/-send-order-receipt (:system/email system) {:order order :charge charge})))
+    (email/-send-order-receipt (:system/email system) {:order order :charge charge})
+    (email/-send-order-notification (:system/email system) {:order order :charge charge})))
 
 (defmethod handle-account-webhook "charge.captured"
   [{:keys [state system] :as env} event]

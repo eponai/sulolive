@@ -3,7 +3,7 @@
     [eponai.web.utils :as web-utils]
     [taoensso.timbre :refer [debug]]))
 
-(defn place->address [^js/google.maps.places.PlaceResult place]
+(defn- place->map [^js/google.maps.places.PlaceResult place]
   (when place
     (let [address-comps (.-address_components place)
           address-name (.-name place)
@@ -16,6 +16,20 @@
                       address-comps)]
       (debug "Ret : " ret)
       ret)))
+
+(defn place->address [^js/google.maps.places.PlaceResult place]
+  (let [place (place->map place)
+        long-val (fn [k & [d]] (get-in place [k :long] d))
+        short-val (fn [k & [d]] (get-in place [k :short] d))
+        country-code (short-val :country)
+        country-name (long-val :country)
+        address {:shipping.address/street   (long-val :address)
+                 :shipping.address/postal   (long-val :postal_code)
+                 :shipping.address/locality (or (long-val :locality) (long-val :postal_town) (long-val :sublocality_level_1))
+                 :shipping.address/region   (short-val :administrative_area_level_1)
+                 :shipping.address/country  {:country/code country-code
+                                             :country/name country-name}}]
+    address))
 
 (defn mount-places-address-autocomplete [{:keys [on-change element-id]}]
   (let [bounds-circle (js/google.maps.Circle. #js {:center #js {:lat 49.2827

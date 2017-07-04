@@ -51,21 +51,21 @@
 (s/def :shipping.rule/rates (s/coll-of :shipping.rule/rate))
 (s/def :shipping/rule (s/keys :req [:shipping.rule/rates]))
 
-(s/def :shipping/name (s/and string? #(not-empty %)))
-(s/def :shipping.address/street (s/and string? #(not-empty %)))
-(s/def :shipping.address/street2 (s/or :value string? :empty nil?))
-(s/def :shipping.address/postal (s/and string? #(not-empty %)))
-(s/def :shipping.address/locality (s/and string? #(not-empty %)))
-(s/def :shipping.address/region (s/or :value #(string? (not-empty %)) :empty nil?))
-(s/def :country/code (s/and string? #(re-matches #"\w{2}" %)))
-(s/def :shipping.address/country (s/keys :opt [:country/code]))
-
-(s/def :shipping/address (s/keys :req [:shipping.address/country
-                                       :shipping.address/locality
-                                       :shipping.address/postal
-                                       :shipping.address/street]
-                                 :opt [:shipping.address/region
-                                       :shipping.address/street2]))
+;(s/def :shipping/name (s/and string? #(not-empty %)))
+;(s/def :shipping.address/street (s/and string? #(not-empty %)))
+;(s/def :shipping.address/street2 (s/or :value string? :empty nil?))
+;(s/def :shipping.address/postal (s/and string? #(not-empty %)))
+;(s/def :shipping.address/locality (s/and string? #(not-empty %)))
+;(s/def :shipping.address/region (s/or :value #(string? (not-empty %)) :empty nil?))
+;(s/def :country/code (s/and string? #(re-matches #"\w{2}" %)))
+;(s/def :shipping.address/country (s/keys :opt [:country/code]))
+;
+;(s/def :shipping/address (s/keys :req [:shipping.address/country
+;                                       :shipping.address/locality
+;                                       :shipping.address/postal
+;                                       :shipping.address/street]
+;                                 :opt [:shipping.address/region
+;                                       :shipping.address/street2]))
 (s/def ::shipping (s/keys :opt [:shipping/rule
                                 :shipping/address]))
 
@@ -428,7 +428,8 @@
          (if allow-pickup?
            (when (some? store-country)
              (msg/om-transact! this [(list 'store/save-shipping-rule {:shipping-rule {:shipping.rule/pickup?      true
-                                                                                      :shipping.rule/destinations [store-country]}
+                                                                                      :shipping.rule/destinations [store-country]
+                                                                                      :shipping.rule/rates [{:shipping.rate/title "Free pickup"}]}
                                                                       :store-id      (:db/id store)})
                                      :query/store]))
            (when-let [delete-rule (pickup-rule store)]

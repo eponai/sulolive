@@ -21,10 +21,10 @@
       (let [taxjar-params (cf/remove-nil-keys
                             {:to_country   destination-country ;"ES"
                              :to_state     (:shipping.address/region destination-address)
-                             :to_zip       (:shipping.address/postal destination-address)
+                             ;:to_zip       (:shipping.address/postal destination-address)
                              :from_country source-country
                              :from_state   (:shipping.address/region source-address)
-                             :from_zip     (:shipping.address/postal source-address)
+                             ;:from_zip     (:shipping.address/postal source-address)
                              :amount       (or amount 0)
                              :shipping     (or shipping 10)
                              ;:nexus_addresses [{:id      store-id
