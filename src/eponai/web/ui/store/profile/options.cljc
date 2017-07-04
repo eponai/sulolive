@@ -396,7 +396,6 @@
                   (css/text-align :right)
                   (button/default-hollow
                     (css/add-classes [:alert] {:onClick #(om/update-state! this assoc :modal :modal/delete-store)})
-                    (dom/span nil "Delete store")))))))
-        ))))
+                    (dom/span nil "Delete store")))))))))))
 
 (def ->StoreStatus (om/factory StoreStatus))

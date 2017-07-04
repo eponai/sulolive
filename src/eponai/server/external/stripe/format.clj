@@ -102,7 +102,7 @@
        :stripe/details-submitted? (:details_submitted account)
        :stripe/external-accounts  (map ext-account* (:data (:external_accounts account)))
        :stripe/legal-entity       (stripe->legal-entity (:legal_entity account))
-       :stripe/payouts-enabled?   (:transfers_enabled account)
+       :stripe/payouts-enabled?   (:payouts_enabled account)
        :stripe/payout-schedule    (payout-schedule* (:payout_schedule account))
        :stripe/verification       (stripe->verification (:verification account))
        :stripe/tos-acceptance     (tos-acceptance* (:tos_acceptance account))})))

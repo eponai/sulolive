@@ -56,16 +56,18 @@
 
 ;; ############## CONNECTED ACCOUNT ################
 
-(defmulti handle-connected-webhook (fn [_ event] (debug "Webhook event: " (:type event)) (:type event)))
+(defmulti handle-connected-webhook (fn [{:keys [logger]} event]
+                                     (debug "Webhook event: " (:type event))
+                                     (log/info! logger ::stripe-connected-webhook {:event event})
+                                     (:type event)))
 
 (defmethod handle-connected-webhook :default
   [_ event]
   (debug "No handler implemented for connected webhook event " (:type event) ", doing nothing."))
 
 (defmethod handle-connected-webhook "account.updated"
-  [{:keys [logger] :as env} event]
-  (let [account (get-in event [:data :object])
-        logger (log/with logger #(assoc % :account account))]
-    (store/stripe-account-updated (assoc env :logger logger) (stripe-format/stripe->account account))
+  [env event]
+  (let [account (get-in event [:data :object])]
+    (store/stripe-account-updated env (stripe-format/stripe->account account))
     ;(utils/account-updated env (stripe-format/stripe->account account))
     ))
