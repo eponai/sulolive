@@ -298,17 +298,21 @@
           (let [address (:field.legal-entity/address (.get-legal-entity this))
                 {:query/keys [store]} (om/props this)]
             (if (some? address)
-              (let [{:field.legal-entity.address/keys [line1 postal city state]} address]
-                (msg/om-transact! this [(list 'store/update-shipping {:shipping {:shipping/address {:shipping.address/street   line1
-                                                                                                    :shipping.address/postal   postal
-                                                                                                    :shipping.address/locality city
-                                                                                                    :shipping.address/region   state}}
-                                                                      :store-id (:db/id store)})]))
-              (om/update-state! this dissoc :modal)))
+              (let [{:field.legal-entity.address/keys [line1 postal city state country]} address
+                    country-code (when (string? country) (string/upper-case country))]
+                (msg/om-transact! this [(list 'store/update-shipping
+                                              {:shipping {:shipping/address (cond-> {:shipping.address/street   line1
+                                                                                     :shipping.address/postal   postal
+                                                                                     :shipping.address/locality city
+                                                                                     :shipping.address/region   state}
+                                                                                    (not-empty country-code)
+                                                                                    (assoc :shipping.address/country {:country/code country-code}))}
+                                               :store-id (:db/id store)})]))
+              (om/update-state! this dissoc :modal :error-message)))
           (om/update-state! this assoc :error-message (msg/message last-message))))
       (when (msg/final? shipping-msg)
         (msg/clear-messages! this 'store/update-shipping)
-        (om/update-state! this dissoc :modal))))
+        (om/update-state! this dissoc :modal :error-message))))
 
   (initLocalState [_]
     {:active-tab :payouts})
@@ -481,4 +485,4 @@
              nil
              (verify/->Verify (om/computed verify-props
                                            {:stripe-account stripe-account
-                                            :store store})))])))))
+                                            :store          store})))])))))

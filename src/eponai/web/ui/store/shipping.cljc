@@ -88,26 +88,59 @@
                                                                             cs)))))
 
 (defn delete-rule-modal [component]
-  (let [{:keys [modal-object]} (om/get-state component)
-        on-close #(om/update-state! component dissoc :modal :modal-object)]
+  (let [{:query/keys [store]} (om/props component)
+        {:keys [modal-object]} (om/get-state component)
+        on-close #(om/update-state! component dissoc :modal :modal-object)
+        will-close-store? (not (< 1 (count (get-in store [:store/shipping :shipping/rules]))))]
+    (debug "Shipping rules: " (count (get-in store [:store/shipping :shipping/rules])))
     (common/modal
       {:on-close on-close
        :size     "tiny"}
-      (dom/p (css/add-class :header) "Delete rule")
-      (dom/p nil
-             ;(dom/span nil (get modal-message modal))
-             ;(dom/br nil)
-             (dom/small nil "Do you want to delete this shipping rule?"))
+      (dom/h4 (css/add-class :header) "Delete shipping rule")
+      (dom/p nil (dom/small nil "Do you want to delete this shipping rule?"))
+      (when will-close-store?
+        (dom/p nil
+               (dom/small nil (dom/strong nil "Note: "))
+               (dom/small nil "deleting this rule will close your store. To keep your store open, make sure you have at least one shipping option specified.")))
       (dom/div
         (css/add-class :action-buttons)
-        (button/user-setting-default
-          (css/button-hollow {:onClick on-close})
+        (button/save
+          {:onClick on-close}
           (dom/span nil "No thanks"))
-        (button/user-setting-cta
-          (css/button {:onClick #(do
-                                  (on-close)
-                                  (.delete-rule component modal-object))})
-          (dom/span nil "Yes, delete rule"))))))
+        (button/cancel
+          {:onClick #(do
+                      (on-close)
+                      (.delete-rule component modal-object))}
+          (if will-close-store?
+            (dom/span nil "Yes, delete rule and close store")
+            (dom/span nil "Yes, delete rule")))))))
+
+;(defn delete-rate-modal [component]
+;  (let [{:keys [modal-object store]} (om/get-state component)
+;        [rule rate] modal-object
+;        on-close #(om/update-state! component dissoc :modal :modal-object)
+;        will-close-store? (and (>= 1 (count (get-in store [:store/shipping :shipping/rules])))
+;                               (>= 1 (count (:shipping.rule/rates rate))))]
+;    (common/modal
+;      {:on-close on-close
+;       :size     "tiny"}
+;      (dom/h4 (css/add-class :header) "Delete rule")
+;      (dom/p nil (dom/small nil "Do you want to delete this shipping rule?"))
+;      (when will-close-store?
+;        (dom/p nil
+;               (dom/small nil "Deleting this rule will close your store. To keep your store open, make sure you have at least one shipping option specified.")))
+;      (dom/div
+;        (css/add-class :action-buttons)
+;        (button/user-setting-default
+;          (css/button-hollow {:onClick on-close})
+;          (dom/span nil "No thanks"))
+;        (button/user-setting-cta
+;          (css/button {:onClick #(do
+;                                  (on-close)
+;                                  (.delete-rate component rule rate))})
+;          (if will-close-store?
+;            (dom/span nil "Yes, delete rule and close store")
+;            (dom/span nil "Yes, delete rule")))))))
 
 (defn shipping-address-modal [component]
   (let [{:query/keys [store countries]} (om/props component)
@@ -728,7 +761,9 @@
                                    (table/td
                                      (css/text-align :right)
                                      (button/user-setting-default
-                                       {:onClick #(.delete-rate this sr r)}
+                                       {:onClick #(if (< 1 (count rates))
+                                                   (.delete-rate this sr r)
+                                                   (om/update-state! this assoc :modal :modal/delete-rule :modal-object sr))}
                                        (dom/span nil "Delete"))))) rates)))
                       (dom/div
                         (css/add-classes [:action-buttons :shipping-rule-card-footer])
