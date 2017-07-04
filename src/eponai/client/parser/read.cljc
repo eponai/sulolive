@@ -534,33 +534,48 @@
     {:remote true}
     {:value (db/pull-all-with db query {:where '[[?e :sulo-locality/title _]]})}))
 
+(defn extract-items-query [query]
+  (if-some [q (first (sequence (comp (filter map?)
+                                     (map :browse-result/items)
+                                     (filter some?)
+                                     (take 1))
+                               query))]
+    q
+    query))
+
 (defmethod client-read :query/browse-products-2
-  [{:keys [target db query route-params query-params]} _ _]
-  (if target
-    {:remote true}
-    (let [locality (client.auth/current-locality db)
-          browse-params (browse/make-browse-params locality route-params query-params)
-          browse-result (some->> (browse/find-result db browse-params)
-                                 (db/entity db))]
-      (when (some? browse-result)
-        (let [items-in-cat (into [] (browse/items-in-category db
-                                                              browse-result
-                                                              (:categories browse-params)))
-              items (into [] (browse/page-items-xf (:page-range browse-params)) items-in-cat)
-              pulled (db/pull-many db query items)
-              pulled (if (== (count pulled) (count items))
-                       pulled
-                       (let [pulled-by-id (into {} (map (juxt :db/id identity)) pulled)]
-                         (into [] (map (fn [item-id]
-                                         (or (get pulled-by-id item-id)
-                                             {:store.item/photos []
-                                              :store.item/name   "loading..."
-                                              :store.item/price  nil})))
-                               items)))]
-          (debug "browse-result!: " (into {:db/id (:db/id browse-result)} browse-result))
-          {:value {:browse-result (into {:browse-result/items-in-category items-in-cat
-                                         :db/id (:db/id browse-result)} browse-result)
-                   :items         pulled}})))))
+  [{:keys [target db query route-params query-params ast]} _ _]
+  ;; Extracts the :browse-result/items query from the query if it's there.
+  ;; We're only sending the :browse-result/items to the server, so this read
+  ;; when executed on the server, will see that query.
+  (let [query (extract-items-query query)]
+    (if target
+      {:remote (assoc ast :query query)}
+      (let [locality (client.auth/current-locality db)
+            browse-params (browse/make-browse-params locality route-params query-params)
+            browse-result (some->> (browse/find-result db browse-params)
+                                   (db/entity db))]
+        (when (some? browse-result)
+          (let [items-in-cat (into [] (browse/items-in-category db
+                                                                browse-result
+                                                                (:categories browse-params)))
+                items (into [] (browse/page-items-xf (:page-range browse-params)) items-in-cat)
+                _ (debug "Pulling with items: " items " with query: " query)
+                pulled (db/pull-many db query items)
+                pulled (if (== (count pulled) (count items))
+                         pulled
+                         (let [pulled-by-id (into {} (map (juxt :db/id identity)) pulled)]
+                           (into [] (map (fn [item-id]
+                                           (or (get pulled-by-id item-id)
+                                               {:store.item/photos []
+                                                :store.item/name   "loading..."
+                                                :store.item/price  nil})))
+                                 items)))]
+            (debug "browse-result!: " (into {:db/id (:db/id browse-result)} browse-result))
+            {:value {:browse-result/meta  (into {:browse-result/items-in-category items-in-cat
+                                                 :db/id                           (:db/id browse-result)}
+                                                browse-result)
+                     :browse-result/items pulled}}))))))
 
 (defmethod client-read :query/browse-product-items
   [{:keys [target]} _ _]

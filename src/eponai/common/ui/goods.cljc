@@ -131,7 +131,8 @@
   (query [_]
     [{:proxy/navbar (om/get-query nav/Navbar)}
      {:proxy/footer (om/get-query foot/Footer)}
-     {:query/browse-products-2 (om/get-query product/Product)}
+     {:query/browse-products-2 [{:browse-result/items (om/get-query product/Product)}
+                                :browse-result/meta]}
      {:query/navigation [:db/id :category/name :category/label :category/path :category/route-map]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
      {:query/countries [:country/code :country/name]}
@@ -153,7 +154,8 @@
           {:keys [filters-open?]} (om/get-state this)
           [top-category sub-category :as categories] (category-seq this)
           {:keys [route route-params query-params]} current-route
-          {:keys [items browse-result]} browse-products-2
+          items (:browse-result/items browse-products-2)
+          browse-result (:browse-result/meta browse-products-2)
           {:browse-result/keys [count-by-category]} browse-result
           category-label-fn (fn [category]
                               (str (products/category-display-name category)
