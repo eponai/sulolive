@@ -48,25 +48,23 @@
 (defn render-status [component store]
   (let [{:query/keys [current-route]} (om/props component)
         {:keys [route-params]} current-route
-        missing-info (store-missing-information store)]
+        missing-info (store-missing-information store)
+
+        closed-info [(dom/label nil "Your store is CLOSED")
+                     (dom/p nil (dom/small nil "Your store is only visible to you. People who try to view your store or one of your products see a page not found error."))]]
     (dom/div
       nil
-      (if (store-can-open? store)
+      (if (store-is-open? store)
+        ;; Store status is set to OPEN. We need to check that store is still valid in Stripe
+        ;; as they can update the account status when they need more info
         (cond
-          ;; The store owner has set status to closed (e.g. to not appear in search and disable sales for the time being)
-          (store-is-closed? store)
-          [(dom/label nil "Your store is CLOSED")
-           (dom/p nil (dom/small nil "Your store is only visible to you. People who try to view your store or one of your products see a page not found error."))]
+          ;; Stripe has disabled the account. Purchases should be disabled, so show store as CLOSED.
+          (not (store-is-active-in-stripe? store))
+          closed-info
 
-          ;; The store has never set any status, i.e. has never been open before.
-          ;; Since their account is active in Stripe, they can open it for the first time.
-          (store-has-never-been-open? store)
-          [(dom/label nil "Your store is ready to open")
-           (dom/p nil (dom/small nil "Open your store to make your products appear in search results and let customers make purchases."))]
-
-          ;; The store has opened their store, but they have not provided sufficient information to appear in search results.
-          ;; Their store is still open to customers and they can make sales though.
-          (stripe-need-more-info? store)
+          ;; We have not provided some information like photos and products yet,
+          ;; store should be UNLISTED but still enabled for purchases.
+          (not-empty missing-info)
           [(dom/label nil "Your store is OPEN UNLISTED")
            (dom/p nil
                   (dom/small nil "It seems there's some information missing for your store to be visible to the public. Customers that find your store can still make purchases, but its products and streams do not appear in search results. ")
@@ -86,31 +84,42 @@
                   :classes [:small]}
                  (dom/span nil "Add your first product"))))]
 
-          ;; The store owner has set store status to OPEN, it'll appear in search and customers can purchase their products.
-          (store-is-open? store)
+          ;; If nothing else, we're just a normal OPEN store
+          :else
           [(dom/label nil "Your store is OPEN")
            (dom/p nil (dom/small nil "Customers can make purchases at your store and find your products and streams in search results."))])
 
-        ;; The store account cannot be opened because it's either not active in Stripe (e.g. disabled, or not activated in the first place),
-        ;; or no shipping has been specified (which is needed to make sales). In this case let the store owner know what needs to be done.
-        [(dom/label nil "Your store is CLOSED")
-         (dom/p nil (dom/small nil "Your store is only visible to you. People who try to view your store or one of your products see a page not found error. "))]))))
+        ;; Store status is set to CLOSED. We only want to let the store owner open the
+        ;; account when stripe account is active.
+        (cond
+          ;; CHeck that we've verified the Stripe account enough
+          (store-is-active-in-stripe? store)
+          (if (store-has-never-been-open? store)
+            ;; If store has never been open, show a special message to the store owner.
+            [(dom/label nil "Your store is ready to open")
+             (dom/p nil (dom/small nil "Open your store to make your products appear in search results and let customers make purchases."))]
+            closed-info)
+
+          ;; If nothing else, show that store is CLOSED
+          :else
+          closed-info)))))
 
 
 (defn status-button [component store]
-  (button/store-navigation-cta
-    (cond->> {:onClick (if (store-is-open? store)
-                         #(om/update-state! component assoc :modal :modal/close-store)
-                         #(.open-store component))}
+  (let [store-is-open-and-active? (and (store-is-open? store) (store-is-active-in-stripe? store))]
+    (button/store-navigation-cta
+      (cond->> {:onClick (if store-is-open-and-active?
+                           #(om/update-state! component assoc :modal :modal/close-store)
+                           #(.open-store component))}
 
-             (not (store-can-open? store))
-             (css/add-class :disabled)
+               (not (store-can-open? store))
+               (css/add-class :disabled)
 
-             (store-is-open? store)
-             (css/add-class :hollow))
-    (if (store-is-open? store)
-      (dom/span nil "Close store")
-      (dom/span nil "Open store"))))
+               store-is-open-and-active?
+               (css/add-class :hollow))
+      (if store-is-open-and-active?
+        (dom/span nil "Close store")
+        (dom/span nil "Open store")))))
 
 (defn close-store-modal [component]
   (let [on-close #(om/update-state! component dissoc :modal)]
@@ -330,31 +339,37 @@
                      (css/align :middle))
                 (grid/column
                   (grid/column-size {:small 12 :medium 8})
-                  (cond (store-is-open? store)
-                        [(dom/label nil "Close store")
-                         (dom/p nil (dom/small nil "Your store will only be visible to you. Customers who try to view your store or one of your products will see a page not found error. You can reopen your store any time."))]
 
-                        (not (store-can-open? store))
-                        [(dom/label nil "Provide information to open store")
-                         (dom/p nil (dom/small nil "Your store will be visible to the public and customers will be able to make purchases. The following information is needed before you can open your store:"))
-                         (dom/div
-                           (css/add-class :store-status-reasons)
+                  (cond
+                    ;; If store is disabled/not verified in Stripe or has no shipping,
+                    ;; they should not be able to open their store
+                    (not (store-can-open? store))
+                    [(dom/label nil "Provide information to open store")
+                     (dom/p nil (dom/small nil "Your store will be visible to the public and customers will be able to make purchases. The following information is needed before you can open your store:"))
+                     (dom/div
+                       (css/add-class :store-status-reasons)
 
-                           ;; Store account is either disabled or has never been verified in Stripe. E.g. accepted terms and provided business info.
-                           (when-not (store-is-active-in-stripe? store)
-                             (button/user-setting-default
-                               {:href    (routes/url :store-dashboard/business#verify route-params)
-                                :classes [:small]} (dom/span nil "Verify account")))
+                       ;; Store account is either disabled or has never been verified in Stripe. E.g. accepted terms and provided business info.
+                       (when-not (store-is-active-in-stripe? store)
+                         (button/user-setting-default
+                           {:href    (routes/url :store-dashboard/business#verify route-params)
+                            :classes [:small]} (dom/span nil "Verify account")))
 
-                           ;; The store has not provided any shipping rules, they are needed for anyone to be able to shop.
-                           (when-not (store-has-shipping? store)
-                             (button/user-setting-default
-                               {:href    (routes/url :store-dashboard/shipping route-params)
-                                :classes [:small]} (dom/span nil "Specify shipping"))))]
+                       ;; The store has not provided any shipping rules, they are needed for anyone to be able to shop.
+                       (when-not (store-has-shipping? store)
+                         (button/user-setting-default
+                           {:href    (routes/url :store-dashboard/shipping route-params)
+                            :classes [:small]} (dom/span nil "Specify shipping"))))]
 
-                        :else
-                        [(dom/label nil "Open store")
-                         (dom/p nil (dom/small nil "Your store will be open to the public and customers will be able to make purchases."))]))
+                    ;; Store is open so owner should be able to close their store.
+                    (store-is-open? store)
+                    [(dom/label nil "Close store")
+                     (dom/p nil (dom/small nil "Your store will only be visible to you. Customers who try to view your store or one of your products will see a page not found error. You can reopen your store any time."))]
+
+                    ;; If nothing else, store is already closed.
+                    :else
+                    [(dom/label nil "Open store")
+                     (dom/p nil (dom/small nil "Your store will be open to the public and customers will be able to make purchases."))]))
                 (grid/column
                   (css/text-align :right)
                   (status-button this store)
