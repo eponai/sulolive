@@ -543,7 +543,10 @@
           browse-result (some->> (browse/find-result db browse-params)
                                  (db/entity db))]
       (when (some? browse-result)
-        (let [items (into [] (browse/page-items browse-result (:page-range browse-params)))
+        (let [items (into [] (browse/page-items db
+                                                browse-result
+                                                (:page-range browse-params)
+                                                (:categories browse-params)))
               pulled (db/pull-many db query items)
               pulled (if (== (count pulled) (count items))
                        pulled

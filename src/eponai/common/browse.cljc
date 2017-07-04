@@ -35,7 +35,7 @@
     nil))
 
 (defn store-item-price-distribution [prices]
-  (when-let [[price & prices] (seq prices)]
+  (when-let [[price & prices] (not-empty prices)]
     (let [[min-price max-price]
           (reduce (fn [[mi ma :as v] price]
                     (-> v
@@ -60,8 +60,7 @@
           "newest" [created-at-fn decending]
           "relevance" [score-fn decending]
           [eid-fn decending])]
-    (->> (sort-by key-fn comparator items)
-         (mapv eid-fn))))
+    (sort-by key-fn comparator items)))
 
 (defn- namespace-key [namespace k]
   (keyword (cond-> namespace (keyword? namespace) (name))
@@ -134,43 +133,36 @@
 
     ;; Pagination can be implemented client side as long as we return all items in the correct order.
     (make-result
-      {:browse-result/items  (sort-items order items-with-price)
+      {:browse-result/type   ::category
+       :browse-result/items  (mapv #(nth % 0) (sort-items order items-with-price))
        :browse-result/prices (store-item-price-distribution (map second items-with-price))}
       browse-params)))
 
 (defn search
   "Remember that we have ?score here."
-  [db {:keys [locations search categories price-range order] :as browse-params}]
+  [db {:keys [locations search price-range order] :as browse-params}]
   (debug "Browsing search: " browse-params)
   (let [items-by-search (products/find-with-search locations search)
-        category-filter (when (some some? (vals categories))
-                          (db/merge-query
-                            (products/category-names-query categories)
-                            {:where [(list 'category-or-child-category
-                                           (products/smallest-category categories)
-                                           '?item-category)
-                                     '[?e :store.item/category ?item-category]]
-                             :rules [db.rules/category-or-child-category]}))
         price-filter (price-where-clause price-range)
         item-query (cond->> items-by-search
                             (some? price-filter)
                             (db/merge-query {:where ['[?e :store.item/price ?price]
-                                                     price-filter]})
-                            (some? category-filter)
-                            (db/merge-query category-filter))
+                                                     price-filter]}))
         items-with-price (db/find-with
                            db
                            (db/merge-query
                              item-query
-                             {:find  '[?e ?price ?created-at ?score]
+                             {:find  '[?e ?price ?created-at ?score ?category]
                               :where '[[?e :store.item/price ?price]
+                                       [?e :store.item/category ?category]
                                        [?e :store.item/created-at ?created-at]]}))
-        items (sort-items order items-with-price)]
+        sorted-items (sort-items order items-with-price)]
     (make-result
-      {:browse-result/items             items
-       :browse-result/prices            (store-item-price-distribution
-                                          (map second items-with-price))
-       :browse-result/count-by-category (or (count-items-by-category db items) {})}
+      {:browse-result/type              ::search
+       :browse-result/items
+                                        (mapv (juxt #(nth % 0) #(nth % 4)) sorted-items)
+       :browse-result/prices            (store-item-price-distribution (eduction (map #(nth % 1)) sorted-items))
+       :browse-result/count-by-category (or (count-items-by-category db (eduction (map #(nth % 0)) sorted-items)) {})}
       browse-params)))
 
 (defn find-items
@@ -226,17 +218,19 @@
           {:keys [top-category sub-category sub-sub-category]} categories]
       (->> (db/datoms db :avet :browse-result/locations (:db/id locations))
            (sequence
-             (comp
-               (map :e)
-               (map #(db/entity db %))
-               (filter (partial attr-eq? :browse-result/order order))
-               (filter (partial attr-eq? :browse-result/search search))
-               (filter (partial attr-eq? :browse-result/top-category top-category))
-               (filter (partial attr-eq? :browse-result/sub-category sub-category))
-               (filter (partial attr-eq? :browse-result/sub-sub-category-category sub-sub-category))
-               (filter (partial attr-eq? :browse-result/from-price (:from-price price-range)))
-               (filter (partial attr-eq? :browse-result/to-price (:to-price price-range)))
-               (take 1)))
+             (-> (comp
+                   (map :e)
+                   (map #(db/entity db %))
+                   (filter (partial attr-eq? :browse-result/order order)))
+                 (cond-> (some? search)
+                         (comp (filter (partial attr-eq? :browse-result/search search))))
+                 (cond-> (nil? search)
+                         (comp (filter (partial attr-eq? :browse-result/top-category top-category))
+                               (filter (partial attr-eq? :browse-result/sub-category sub-category))
+                               (filter (partial attr-eq? :browse-result/sub-sub-category-category sub-sub-category))))
+                 (comp (filter (partial attr-eq? :browse-result/from-price (:from-price price-range)))
+                       (filter (partial attr-eq? :browse-result/to-price (:to-price price-range)))
+                       (take 1))))
            (first)
            (:db/id)))))
 
@@ -248,10 +242,31 @@
                         inc)]
       (range pages))))
 
-(defn page-items [{:browse-result/keys [items]} page-range]
+(defn page-items
+  "Return [item-id ...] for a page, given browse results, current page-range and categories."
+  [db {:browse-result/keys [type items]} page-range categories]
   (let [{:keys [page-num page-size]
          :or   {page-num  0
-                page-size default-page-size}} page-range]
+                page-size default-page-size}} page-range
+        categories (select-keys categories [:top-category :sub-category :sub-sub-category])
+        items (condp = type
+                ::category items
+                ::search (if (empty? categories)
+                           (map #(nth % 0) items)
+                           (let [allowed-categories (into #{}
+                                                          (db/all-with
+                                                            db
+                                                            (db/merge-query
+                                                              (products/category-names-query categories)
+                                                              {:where [(list 'category-or-child-category
+                                                                             (products/smallest-category categories)
+                                                                             '?e)]
+                                                               :rules [db.rules/category-or-child-category]})))]
+                             (eduction
+                               (comp (filter (fn [[_ category-id]]
+                                               (contains? allowed-categories category-id)))
+                                     (map #(nth % 0)))
+                               items))))]
     (eduction (comp (drop (* page-num page-size))
                     (take page-size))
               items)))

@@ -36,6 +36,19 @@
 ;   :highest-price {:key [:store.item/price :store.item/name] :comp #(compare %2 %1) :label "Price (high to low)"}
 ;   :relevance     {}})
 
+(defn fetch-item-data! [component browse-result page-range route-params]
+  (om/transact!
+    (om/get-reconciler component)
+    `[({:query/browse-product-items ~(om/get-query product/Product)}
+        {:product-items
+         ~(into []
+                (browse/page-items
+                  (db/to-db component)
+                  browse-result
+                  page-range
+                  (select-keys route-params [:top-category
+                                             :sub-category
+                                             :sub-sub-category])))})]))
 
 (defn category-count [component category count-by-category]
   (if-let [id (:db/id category)]
@@ -59,11 +72,18 @@
                (reduce + 0)))))
 
 (defn category-nav-link [component category]
-  (routes/map->url (merge-with merge
-                               (-> (routes/current-route component)
-                                   (dissoc :route)
-                                   (update :query-params dissoc :page-num))
-                               (:category/route-map category))))
+  (let [{:keys [query-params route-params] :as next-route}
+        (merge-with merge (-> (routes/current-route component)
+                              (dissoc :route)
+                              (update :query-params dissoc :page-num))
+                    (:category/route-map category))
+
+        browse-result (get-in (om/props component) [:query/browse-products-2 :browse-result])
+        page-range (browse/query-params->page-range query-params)
+        searching? (some? (:search query-params))]
+    {:href    (routes/map->url next-route)
+     :onClick #(when searching?
+                 (fetch-item-data! component browse-result page-range route-params))}))
 
 (defn- vertical-category-menu [component children current-category label-fn count-by-category]
   (menu/vertical
@@ -79,7 +99,7 @@
                (when (and (some? current-category)
                           (= path (:category/path current-category)))
                  (css/add-class ::css/is-active))
-               (dom/a {:href (category-nav-link component category)}
+               (dom/a (category-nav-link component category)
                       (dom/span nil (label-fn category)))))))))
 
 (defn selected-navigation [component]
@@ -140,7 +160,8 @@
                                    (when-let [matches (category-count this category count-by-category)]
                                      (str " " matches))))
           page-range (browse/query-params->page-range query-params)
-          pages (browse/pages browse-result)]
+          pages (browse/pages browse-result)
+          searching? (contains? query-params :search)]
 
       (debug " items: " items)
       (debug " navigation: " navigation)
@@ -170,20 +191,20 @@
             (menu/vertical
               (css/add-class :sl-navigation-parent)
               (->> navigation
-                   (filter (if (seq count-by-category)
+                   (filter (if searching?
                              (comp some? #(category-count this % count-by-category))
                              identity))
                    (map (fn [category]
                           (let [is-active? (or (= (:category/name category) (:category/name (first categories))))]
                             (menu/item
                               (when is-active? (css/add-class :is-active))
-                              (dom/a {:href (category-nav-link this category)}
+                              (dom/a (category-nav-link this category)
                                      (dom/span nil (category-label-fn category)))
                               (vertical-category-menu this
                                                       (:category/children category)
                                                       (last categories)
                                                       category-label-fn
-                                                      count-by-category)))))))
+                                                      (when searching? count-by-category))))))))
             ;(dom/div
             ;  nil
             ;  (dom/label nil "Ship to")
@@ -295,14 +316,11 @@
                                     ;; When not clicking the active page, fetch data for clicked page.
                                     :onClick
                                     #(do
-                                       (om/transact!
-                                         (om/get-reconciler this)
-                                         `[({:query/browse-product-items ~(om/get-query product/Product)}
-                                             {:product-items
-                                              ~(into []
-                                                     (browse/page-items
-                                                       browse-result
-                                                       (assoc page-range :page-num page)))})])
+                                       (fetch-item-data! this
+                                                        browse-result
+                                                        (assoc page-range :page-num page)
+                                                        route-params)
+
                                        ;; Scroll to the top somewhere.
                                        ;; Choosing sulo-search-bar because it looked good.
                                        #?(:cljs
