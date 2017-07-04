@@ -22,7 +22,8 @@
     [eponai.common.ui.elements.menu :as menu]
     #?(:cljs
        [cljs-http.client :as http])
-    [eponai.common.shared :as shared]))
+    [eponai.common.shared :as shared]
+    [eponai.web.ui.button :as button]))
 
 (def stripe-fields
   {:field.legal-entity.address/line1      "legal_entity.address.line1"
@@ -82,7 +83,7 @@
 
 (defn account-details [component]
   (let [{:keys [entity-type input-validation]} (om/get-state component)
-        {:keys [stripe-account]} (om/get-computed component)
+        {:keys [stripe-account store]} (om/get-computed component)
         all-required-fields (set (required-fields component))
         account-fields (into #{}
                              (filter #(some? (get all-required-fields (get form-inputs %)))
@@ -227,6 +228,7 @@
 (defn personal-details [component]
   (let [{:keys [input-validation entity-type document-upload]} (om/get-state component)
         all-required-fields (set (required-fields component))
+        {:keys [store]} (om/get-computed component)
         personal-fields (into #{}
                               (filter #(some? (get all-required-fields (get form-inputs %)))
                                       [:field.legal-entity/first-name
@@ -328,7 +330,8 @@
                  (s3/->FileUploader (om/computed {:id (:field.legal-entity/document form-inputs)}
                                                  {:on-upload (fn [{:keys [file]}]
                                                                (debug "Changed to file: " file)
-                                                               (om/update-state! component assoc :document-upload {:name (.-name file)}))}))
+                                                               (om/update-state! component assoc :document-upload {:name (.-name file)}))
+                                                  :owner store}))
                  ;(dom/input
                  ;  (css/show-for-sr {:type        "file"
                  ;                    :placeholder "First"
@@ -343,7 +346,9 @@
                    nil
                    (dom/label
                      {:htmlFor (:field.legal-entity/document form-inputs)}
-                     "Upload file")))))))])))
+                     (if (not-empty document-upload)
+                       "Change file"
+                       "Upload file"))))))))])))
 
 (defn external-account [component]
   (let [{:query/keys [stripe-country-spec]} (om/props component)
@@ -480,38 +485,12 @@
                                                                                                     (assoc :field/tos-acceptance tos-acceptance))
                                                                                 :store-id       (:db/id store)})
                                                                             :query/stripe-account])))})
-             ;(do
-             ;  (.setPublishableKey js/Stripe stripe-key)
-             ;  (.createToken js/Stripe.bankAccount
-             ;                #js {:country        (:stripe/country stripe-account)
-             ;                     :currency       currency
-             ;                     :routing_number (str transit institution)
-             ;                     :account_number account}
-             ;                (fn [status ^js/Stripe.bankAccountResponse response]
-             ;                  (when (= status 200)
-             ;                    (let [token (.-id response)
-             ;                          ip (.-client_ip response)
-             ;                          tos-acceptance {:field.tos-acceptance/ip   ip
-             ;                                          :field.tos-acceptance/date (date/current-secs)}]
-             ;                      (msg/om-transact! this `[(stripe/update-account
-             ;                                                 ~{:account-params (-> input-map
-             ;                                                                       (assoc :field/external-account token)
-             ;                                                                       (assoc :field/tos-acceptance tos-acceptance))
-             ;                                                   :store-id       (:db/id store)})
-             ;                                               :query/stripe-account]))))))
              (msg/om-transact! this `[(stripe/update-account
                                         ~{:account-params input-map
                                           :store-id       (:db/id store)})
                                       :query/stripe-account])))
 
          (om/update-state! this assoc :input-validation validation))))
-  ;(select-document [this e]
-  ;  #?(:cljs
-  ;     (let [^js/Event event e
-  ;           ^js/File file (first (array-seq (.. event -target -files)))]
-  ;       (when file
-  ;         (om/update-state! this assoc :document-upload {:name (.-name file)
-  ;                                                        :file file})))))
   (initLocalState [this]
     {:entity-type :individual})
 
@@ -560,9 +539,6 @@
                          (dom/br nil) (dom/br nil)
                          (dom/small nil "We don't use this information for any other purpose than to pass along to Stripe and let you manage your account. Your provided account details are reviewed by Stripe to ensure they comply with their terms of service. If there's a problem, we'll get in touch right away to resolve it as quickly as possible.")))))))
 
-        (callout/callout-small
-          (css/add-class :warning)
-          (dom/p nil (dom/small nil (dom/strong nil "Note: ")) (dom/small nil "This information cannot be saved while we work on the Stripe integration.")))
         (dom/div
           nil
           (account-details this)
@@ -575,11 +551,8 @@
           (css/text-align :right)
           (dom/div
             (css/add-class :action-buttons)
-            (dom/a
-              (->> {:onClick #(.activate-account this)}
-                   (css/button)
-                   (css/add-class :disabled)
-                   )
+            (button/store-navigation-cta
+              {:onClick #(.activate-account this)}
               (dom/span nil "Submit")))
           (dom/p nil
                  (dom/small nil "By submitting, you agree to our ")
