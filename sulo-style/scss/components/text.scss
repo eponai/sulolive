@@ -31,6 +31,7 @@ p > a {
 	// display: flex;
 	// flex-direction: column;
 	// align-items: center;
+	
 	display: inline-block;
 	.sl-tooltip-text {
 		margin-top: 0.2rem;
@@ -38,7 +39,7 @@ p > a {
 		// top: 100%;
 		// top: 0;
 		font-size: 0.8rem;
-		// width: 10rem;
+		width: 10rem;
 		// transform: translateX(50%);
 	}
 }

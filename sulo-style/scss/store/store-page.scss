@@ -1,3 +1,21 @@
+#store-closed-banner {
+	padding: $global-padding;
+	margin: 0;
+	h3 {
+		margin: 0;
+		margin-right: 0.5rem;
+	}
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	a {
+		text-decoration: underline;
+	}
+	.sl-tooltip-text {
+		max-width: 100%;
+		width: 10rem;
+	}
+}
 #sulo-store {
 	#sulo-navbar, .sl-global-spinner {
 		position: absolute;
@@ -9,28 +27,7 @@
 		// margin: $global-margin auto;
 		padding: 4rem;
 	}
-	.store-closed {
-		padding: $global-padding;
-		margin: 0;
-		h3 {
-			margin: 0;
-			margin-right: 0.5rem;
-		}
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		a {
-			text-decoration: underline;
-		}
-		// p {
-		// 	margin: 0;
-		// 	margin-right: 0.5rem;
-		// }
-		.sl-tooltip-text {
-			max-width: 100%;
-			width: 10rem;
-		}
-	}
+	
 	.callout {
 		border: none;
 	}

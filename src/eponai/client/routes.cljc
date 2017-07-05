@@ -47,7 +47,7 @@
                                       (om/get-query
                                         (:component
                                           (router/route->component route)))}}])
-         tx (cond-> [(list 'routes/set-route! {:route route
+         tx (cond-> [(list 'routes/set-route! {:route        route
                                                :route-params route-params
                                                :query-params query-params})]
                     :always (into tx)
@@ -69,12 +69,12 @@
 
 (defn store-url
   ([store route]
-    (store-url store route nil))
+   (store-url store route nil))
   ([store route route-params]
-    (store-url store route route-params nil))
+   (store-url store route route-params nil))
   ([store route route-params query-params]
    (when-let [store-id (or (:store/username store)
-                      (:db/id store))]
+                           (:db/id store))]
      (url route (assoc route-params :store-id store-id) query-params))))
 
 (defn- do-set-url!
