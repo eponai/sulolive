@@ -6,7 +6,7 @@
     [eponai.common.format :as format]
     [eponai.server.external.mailchimp :as mailchimp]
     [eponai.common.parser :as parser]
-    [taoensso.timbre :as timbre :refer [debug info]]
+    [taoensso.timbre :as timbre :refer [debug info warn]]
     [clojure.data.json :as json]
     [eponai.server.api :as api]
     [eponai.server.external.stripe :as stripe]
@@ -22,7 +22,8 @@
     [eponai.server.external.cloudinary :as cloudinary]
     [eponai.server.external.email :as email]
     [eponai.server.api.user :as user]
-    [eponai.common.format.date :as date]))
+    [eponai.common.format.date :as date])
+  (:import (java.io File)))
 
 (defmacro defmutation
   "Creates a message and mutate defmethod at the same time.
@@ -412,6 +413,27 @@
                    {:username username}))))})
 
 ;######## STRIPE ########
+
+(defmutation stripe/upload-identity-document
+  [{:keys [state system] ::parser/keys [return exception] :as env} _ {:keys [etag bucket key store-id file-type file-size]}]
+  {:auth {::auth/store-owner {:store-id store-id}}
+   :log  [:store-id :location :bucket :key :etag :file-name :file-type :file-size]
+   :resp {:success "Your identity document was uploaded"
+          :error   {:error (or (some-> exception (.getMessage))
+                               "Something went wrong")}}}
+  {:action (fn []
+             (let [temp-file (File/createTempFile "stripe-s3" (str store-id))]
+               (debug "Downloading file from s3 to temp.")
+               ;; TODO: Use etag?
+               (s3/download-object (:system/aws-s3 system) {:bucket bucket :key key} temp-file)
+               (if (= file-size (.length temp-file))
+                 (debug "Download OK! File sizes are equal: " file-size)
+                 (warn "File size downloaded does not match file size on upload. Downloaded: " (.length temp-file)
+                       " Uploaded: " file-size))
+               (stripe/upload-identity-document (:system/stripe system)
+                                                (:stripe/id (stripe/pull-stripe (db/db state) store-id))
+                                                {:file      temp-file
+                                                 :file-type file-type})))})
 
 (defmutation stripe/update-account
   [{:keys [state ::parser/return ::parser/exception system client-ip] :as env} _ {:keys [store-id account-params accept-terms?]}]

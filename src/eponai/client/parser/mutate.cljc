@@ -214,6 +214,12 @@
   (if target
     {:remote true}))
 
+(defmethod client-mutate 'stripe/upload-identity-document
+  [{:keys [target]} _ p]
+  (debug "stripe/upload-identity-document with params: " p)
+  (if target
+    {:remote true}))
+
 ;; ########### STORE ##############
 
 (defmethod client-mutate 'store/create-product

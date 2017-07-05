@@ -147,9 +147,10 @@
                         :stripe.balance/pending   (map balance* (:pending b))}})))
 
 (defn input->legal-entity [legal-entity]
-  (let [{:field.legal-entity/keys [type address business-name business-tax-id first-name last-name dob personal-id-number]} legal-entity
+  (let [{:field.legal-entity/keys [type address business-name business-tax-id first-name last-name dob personal-id-number verification]} legal-entity
         {:field.legal-entity.address/keys [line1 postal city state]} address
-        {:field.legal-entity.dob/keys [day month year]} dob]
+        {:field.legal-entity.dob/keys [day month year]} dob
+        {:field.legal-entity.verification/keys [document]} verification]
     (f/remove-nil-keys
       {:first_name         first-name
        :last_name          last-name
@@ -164,7 +165,9 @@
                               :postal_code postal
                               :state       state})
        :type               (when (some? type) (name type))
-       :personal_id_number personal-id-number})))
+       :personal_id_number personal-id-number
+       :verification       (f/remove-nil-keys
+                             {:document document})})))
 
 (defn input->payout-schedule [ps]
   (let [{:field.payout-schedule/keys [interval month-anchor week-anchor]} ps]
