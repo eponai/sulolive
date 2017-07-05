@@ -8,6 +8,7 @@
     [eponai.common :as c]))
 
 (defprotocol IAuth0Client
+  (login-with-credentials [this email password f])
   (authorize-social [this opts])
   (passwordless-start [this email f])
   (passwordless-verify [this email code f])
@@ -26,6 +27,14 @@
                                             :responseType "code"
                                             :scope        "openid email"})]
     (reify IAuth0Client
+      (login-with-credentials [_ email password f]
+        (.loginWithCredentials (.-redirect web-auth)
+                               #js {:connection "Username-Password-Authentication"
+                                    :username   email
+                                    :password   password}
+                               (fn [err res]
+                                 (f (js->clj res :keywordize-keys true)
+                                    (js->clj err :keywordize-keys true)))))
       (authorize-social [_ {:keys [connection redirectUri]}]
         (let [params (cond-> {:connection connection}
                              (not-empty redirectUri)
@@ -48,9 +57,7 @@
                                   :verificationCode code}
                              (fn [err res]
                                (f (js->clj res :keywordize-keys true)
-                                  (js->clj err :keywordize-keys true))
-                               (debug "Verified response: " res)
-                               (debug "Verified error: " err))))
+                                  (js->clj err :keywordize-keys true)))))
 
       (user-info [this access-token f]
         (.userInfo (.-client web-auth)
@@ -68,6 +75,8 @@
                        (debug "Replacing the current url with auth-url: " auth-url)
                        (js/window.location.replace auth-url)))]
     (reify IAuth0Client
+      (login-with-credentials [_ email _ _]
+        (auto-login (or (not-empty email) "dev@sulo.live")))
       (authorize-social [_ _]
         (auto-login "dev@sulo.live"))
       (passwordless-start [_ email _]

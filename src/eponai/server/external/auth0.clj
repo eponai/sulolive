@@ -85,12 +85,14 @@
     (try+
       (let [{:keys [access_token token_type] :or {token_type "Bearer"}} token
             url (string/join "/" (into [auth0management-api-host] (remove nil?) path))]
+        (debug "Post to URL: " url)
         (json/read-str (:body (http/post url {:form-params params
                                               :headers     {"Authorization" (str token_type " " access_token)}})) :key-fn keyword))
       (catch Object r
         (let [{:keys [body]} r
+              _ (debug "Got error body" body)
               {:keys [error error_description]} (json/read-str body :key-fn keyword)]
-          (throw (ex-info error_description {:error error :description error_description}))))))
+          (throw (ex-info error_description {:error error :description error_description :body body}))))))
   (-delete [this token path]
     (try+
       (let [{:keys [access_token token_type] :or {token_type "Bearer"}} token
@@ -154,7 +156,7 @@
           ;; Link all the accounts with the main account
           (let [main-account (or (some #(when (= "email" (provider %)) %) accounts)
                                  (create-email-user this (:email profile)))]
-            (debug "Auth0 - Found " (count accounts) " with matching email, will link to main account: " (user-id main-account))
+            (debug "Auth0 - Found " (count accounts) " with matching email: " (mapv #(user-id %) accounts) ", will link to main account: " (user-id main-account))
             (doseq [secondary accounts]
               (info "Auth0 - Linking accounts: " {:primary (user-id main-account) :secondary (user-id secondary)})
               (link-user-accounts-by-id this (user-id main-account) (user-id secondary))))

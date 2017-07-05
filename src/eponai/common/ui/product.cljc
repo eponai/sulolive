@@ -163,7 +163,10 @@
                                  (css/add-class ::css/is-in))
                         (photo/product-photo
                           item
-                          (->> {:id (str "sulo-product-photo-" i) :index i :onMouseMove #(on-zoom img-dimensions % i) :onMouseOut #(zoom-out % i)}
+                          (->> {:id (str "sulo-product-photo-" i) :index i
+                                ;:onMouseMove #(on-zoom img-dimensions % i)
+                                ;:onMouseOut #(zoom-out % i)
+                                }
                                (css/add-class :orbit-image)
                                (css/add-class :contain)))))
                     photos))

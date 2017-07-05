@@ -19,12 +19,15 @@
     [eponai.common.ui.elements.input-validate :as v]
     [eponai.client.parser.message :as msg]
     [eponai.common.shared :as shared]
-    [eponai.common.mixpanel :as mixpanel]))
+    [eponai.common.mixpanel :as mixpanel]
+    [clojure.string :as string]))
 
 (def form-inputs
   {::email    "sulo.login.email"
    ::username "sulo.login.name"
-   ::code     "sulo.login.code"})
+   ::code     "sulo.login.code"
+
+   ::password "sulo.login.password"})
 
 (s/def ::email #(client-utils/valid-email? %))
 (s/def ::username (s/and #(string? (not-empty %))
@@ -38,41 +41,83 @@
   #?(:cljs
      (str js/window.location.origin path)))
 
+(defn render-user-password [component]
+  (let [{:keys [login-error input-validation]} (om/get-state component)]
+    [(dom/p nil (dom/span nil "Sign in to SULO Live to connect with brands and other shoppers in your favourite city."))
+     (dom/form
+       (css/add-class :login-content)
+       (dom/label nil "Email")
+       (v/input {:type        "email"
+                 :id          (::username form-inputs)
+                 :placeholder "youremail@example.com"}
+                input-validation)
+       (dom/label nil "Password")
+       (dom/input {:type "password"
+                   :id   (::password form-inputs)})
+
+       (when login-error
+         (dom/p (css/add-class :text-alert) (dom/small nil "Wrong email or password")))
+       (button/submit-button
+         (css/add-classes [:sulo-dark :expanded] {:onClick #(.login component)})
+         ;(dom/i {:classes ["fa fa-envelope-o fa-fw"]})
+         ;; TODO @diana Enable this when allowing sign ups
+         ;(dom/span nil "Sign up or sign in with email")
+         (dom/span nil "Sign in")
+         )
+       (dom/p (css/add-class :info)
+              (dom/small nil "By signing in you accept our ")
+              (dom/a {:href   (routes/url :tos)
+                      :target "_blank"} (dom/small nil "Terms of Service"))
+              (dom/small nil " and ")
+              (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
+                      :className "iubenda-nostyle no-brand iubenda-embed"
+                      :title     "Privacy Policy"
+                      :target    "_blank"} (dom/small nil "Privacy Policy"))
+              (dom/small nil ". To use SULO Live you must have cookies enabled.")
+              ;(dom/small nil " We’ll never post to Twitter or Facebook without your permission.")
+              ))]))
+
 (defn render-create-account [component]
-  (let [{:keys [user token-error input-validation] :as state} (om/get-state component)
+  (let [{:keys             [user token-error input-validation] :as state
+         :create-user/keys [input-email input-name]} (om/get-state component)
         {:query/keys [current-route auth0-info]} (om/props component)
         {:keys [query-params]} current-route
         auth-identity (first (:auth0/identities auth0-info))
-        is-loading? (nil? auth-identity)]
+        create-message (msg/last-message component 'user/create)
+        is-loading? (or (nil? auth-identity) (msg/pending? create-message))
+        ]
     [(dom/p nil (dom/span nil "Finish creating your SULO Live account"))
      (dom/p nil (dom/a {:href (routes/url :login)} (dom/span nil "I already have an account")))
 
-     (dom/div
+     (dom/form
        (css/add-class :login-content)
-       (if is-loading?
+       (if (nil? auth-identity)
          ;; Show loading spinner before we got the user info
          (dom/p nil (dom/i {:classes ["fa fa-spinner fa-pulse"]}))
          [(dom/label nil "Email")
 
           (v/input
-            (cond-> {:type         "email"
-                     :id           (::email form-inputs)
-                     :placeholder  "youremail@example.com"
-                     :defaultValue (:auth0/email auth0-info)}
-                    (not-empty (:email query-params))
+            (cond-> {:type        "email"
+                     :id          (::email form-inputs)
+                     :placeholder "youremail@example.com"
+                     :value       (or input-email (:auth0/email auth0-info))
+                     :onChange    #(when-not (not-empty (:auth0/email auth0-info))
+                                    (om/update-state! component assoc :create-user/input-email (.-value (.-target %))))}
+                    (not-empty (:auth0/email auth0-info))
                     (assoc :disabled true))
             input-validation)
 
           (dom/label nil "Name")
-          (v/input {:type         "text"
-                    :id           (::username form-inputs)
-                    :placeholder  "Your name"
-                    :defaultValue (:auth0/nickname auth0-info)}
+          (v/input {:type        "text"
+                    :id          (::username form-inputs)
+                    :placeholder "Your name"
+                    :value       (or input-name (:auth0/nickname auth0-info))
+                    :onChange    #(om/update-state! component assoc :create-user/input-name (.-value (.-target %)))}
                    input-validation)])
 
        (dom/p (css/add-class :info)
               (dom/small nil "By creating an account you accept our ")
-              (dom/a {:href (routes/url :tos)
+              (dom/a {:href   (routes/url :tos)
                       :target "_blank"} (dom/small nil "Terms of Service"))
               (dom/small nil " and ")
               (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
@@ -81,7 +126,7 @@
                       :target    "_blank"} (dom/small nil "Privacy Policy")))
        (when-let [err (:error/create-user state)]
          (dom/p (css/add-class :text-alert) (dom/small nil (str (:message err)))))
-       (button/default-hollow
+       (button/submit-button
          (css/add-classes [:expanded :sulo-dark] {:onClick (when-not is-loading?
                                                              #(.create-account component))})
          (dom/span nil "Create account")))]))
@@ -146,12 +191,12 @@
        (css/add-classes [:sulo-dark :expanded] {:onClick #(om/update-state! component assoc :login-state :login-email)})
        ;(dom/i {:classes ["fa fa-envelope-o fa-fw"]})
        ;; TODO @diana Enable this when allowing sign ups
-        ;(dom/span nil "Sign up or sign in with email")
+       ;(dom/span nil "Sign up or sign in with email")
        (dom/span nil "Sign in with email")
        )
      (dom/p (css/add-class :info)
             (dom/small nil "By signing in you accept our ")
-            (dom/a {:href (routes/url :tos)
+            (dom/a {:href   (routes/url :tos)
                     :target "_blank"} (dom/small nil "Terms of Service"))
             (dom/small nil " and ")
             (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
@@ -170,6 +215,15 @@
      :query/auth0-info])
 
   Object
+  (login [this]
+    #?(:cljs
+       (let [username (web-utils/input-value-by-id (::username form-inputs))
+             pass (web-utils/input-value-by-id (::password form-inputs))
+             validation (v/validate ::email username form-inputs)]
+         (when (nil? validation)
+           (auth0/login-with-credentials (shared/by-key this :shared/auth0) username pass (fn [res err]
+                                                                                            (om/update-state! this assoc :login-error err))))
+         (om/update-state! this assoc :input-validation validation))))
   (authorize-social [this provider]
     #?(:cljs
        (auth0/authorize-social (shared/by-key this :shared/auth0) {:connection (name provider)})))
@@ -200,9 +254,10 @@
   (create-account [this]
     #?(:cljs
        (let [{:query/keys [current-route auth0-info]} (om/props this)
+             {:create-user/keys [input-email input-name]} (om/get-state this)
              email (or (:auth0/email auth0-info)
-                       (web-utils/input-value-by-id (::email form-inputs)))
-             username (web-utils/input-value-by-id (::username form-inputs))
+                       input-email)
+             username input-name
              validation (v/validate ::create-account {::email    email
                                                       ::username username} form-inputs)]
          (debug "Validation: " validation)
@@ -222,14 +277,20 @@
           (debug "Got message: " message)
           (msg/clear-messages! this 'user/create)
           (if (msg/success? create-msg)
-            (let [new-user (:user message)]
+            (let [new-user (:user message)
+                  user-id (:user-id message)
+                  provider (when (not-empty user-id)
+                             (first (string/split user-id #"\|")))]
+              (debug "User: " user-id)
               (mixpanel/set-alias (:db/id new-user))
-              (if (:user/verified new-user)
+              (if (or (:user/verified new-user) (= provider "auth0"))
                 (do
                   (debug "User created routing to: " (routes/url :auth nil (:query-params current-route)))
                   #?(:cljs
                      (js/window.location.replace (routes/url :auth nil (:query-params current-route)))))
-                (.authorize-email this)))
+                (.authorize-email this)
+                )
+              )
             (om/update-state! this assoc :error/create-user message))))))
 
   (componentDidMount [this]
@@ -283,7 +344,9 @@
           (render-send-email-code this)
 
           :else
-          (render-select-login-type this))))))
+          (render-user-password this)
+          ;(render-select-login-type this)
+          )))))
 
 (def ->Login (om/factory Login))
 

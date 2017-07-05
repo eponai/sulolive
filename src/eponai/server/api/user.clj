@@ -31,7 +31,8 @@
                          :auth0.identity/name        (:name profileData)
                          :auth0.identity/picture     (:picture profileData)
                          :auth0.identity/screen-name (:screen_name profileData)})))]
-    {:auth0/identities     (map identity* (:identities user))
+    {:auth0/id             (auth0/user-id user)
+     :auth0/identities     (map identity* (:identities user))
      :auth0/nickname       (or (:screen_name user) (:nickname user) (:name user))
      :auth0/email          (:email user)
      :auth0/email-verified (:email_verified user)}))
@@ -65,7 +66,7 @@
 
         (let [db-user (db/pull (db/db state) [:user/verified :db/id] [:user/email (:user/email new-user)])]
           (debug "Created user: " (into {} db-user))
-          {:user (into {} db-user)})))))
+          {:user (into {} db-user) :user-id (auth0/user-id auth0-user) })))))
 
 (defn customer [{:keys [auth state system]}]
   (debug "Pull stripe " auth)
