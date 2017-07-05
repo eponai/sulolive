@@ -44,7 +44,7 @@
   (when-let [err (s/explain-data spec m)]
     (let [problems (::s/problems err)
           invalid-paths (map (fn [p]
-                               (str prefix-key (some #(get form-inputs %) p)))
+                               (str prefix-key (get form-inputs (last p))))
                              (into (map :path problems) (map :via problems)))]
       {:explain-data  err
        :invalid-paths (set invalid-paths)})))

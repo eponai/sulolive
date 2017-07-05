@@ -48,7 +48,7 @@
 (defn add-account-verifications [account]
   (let [{:keys [external_accounts legal_entity]} account
         {:keys [first_name last_name dob address type]} legal_entity
-        fields-needed (cond-> []
+        fields-needed (cond-> ["tos"]
                               (empty? external_accounts)
                               (conj "external_account")
                               (nil? first_name)

@@ -72,7 +72,8 @@
 
        (dom/p (css/add-class :info)
               (dom/small nil "By creating an account you accept our ")
-              (dom/a {:href (routes/url :tos)} (dom/small nil "Terms of Service"))
+              (dom/a {:href (routes/url :tos)
+                      :target "_blank"} (dom/small nil "Terms of Service"))
               (dom/small nil " and ")
               (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
                       :className "iubenda-nostyle no-brand iubenda-embed"
@@ -120,38 +121,46 @@
                   (css/add-class :is-invalid-input)))
        (when error-message
          (dom/p (css/add-class :text-alert) (dom/small nil error-message)))
-       (dom/p (css/add-class :go-back) (dom/a {:onClick #(om/update-state! component assoc :login-state :login)}
-                                              (dom/span nil "Or sign in with Facebook or Twitter")))
+       ;; TODO @diana enable when we allow signups
+       ;(dom/p (css/add-class :go-back) (dom/a {:onClick #(om/update-state! component assoc :login-state :login)}
+       ;                                       (dom/span nil "Or sign in with Facebook or Twitter")))
        (button/default-hollow
          (css/add-classes [:expanded :sulo-dark] {:onClick #(.authorize-email component)})
          (dom/i {:classes ["fa fa-envelope-o fa-fw"]})
          (dom/span nil "Email me a code to sign in")))]))
 
 (defn render-select-login-type [component]
-  [(dom/p nil (dom/span nil "Sign in to SULO Live to connect with brands other shoppers in your favourite city."))
+  [(dom/p nil (dom/span nil "Sign in to SULO Live to connect with brands and other shoppers in your favourite city."))
    (dom/div
      (css/add-class :login-content)
-     (button/button
-       (css/add-classes [:expanded :facebook] {:onClick #(.authorize-social component :social/facebook)})
-       (dom/i {:classes ["fa fa-facebook fa-fw"]})
-       (dom/span nil "Continue with Facebook"))
-     (button/button
-       (css/add-classes [:expanded :twitter] {:onClick #(.authorize-social component :social/twitter)})
-       (dom/i {:classes ["fa fa-twitter fa-fw"]})
-       (dom/span nil "Continue with Twitter"))
+     ;; TODO @diana Enable this when allowing sign ups
+     ;(button/button
+     ;  (css/add-classes [:expanded :facebook] {:onClick #(.authorize-social component :social/facebook)})
+     ;  (dom/i {:classes ["fa fa-facebook fa-fw"]})
+     ;  (dom/span nil "Continue with Facebook"))
+     ;(button/button
+     ;  (css/add-classes [:expanded :twitter] {:onClick #(.authorize-social component :social/twitter)})
+     ;  (dom/i {:classes ["fa fa-twitter fa-fw"]})
+     ;  (dom/span nil "Continue with Twitter"))
      (button/default-hollow
        (css/add-classes [:sulo-dark :expanded] {:onClick #(om/update-state! component assoc :login-state :login-email)})
        ;(dom/i {:classes ["fa fa-envelope-o fa-fw"]})
-       (dom/span nil "Sign up or sign in with email"))
+       ;; TODO @diana Enable this when allowing sign ups
+        ;(dom/span nil "Sign up or sign in with email")
+       (dom/span nil "Sign in with email")
+       )
      (dom/p (css/add-class :info)
             (dom/small nil "By signing in you accept our ")
-            (dom/a {:href (routes/url :tos)} (dom/small nil "Terms of Service"))
+            (dom/a {:href (routes/url :tos)
+                    :target "_blank"} (dom/small nil "Terms of Service"))
             (dom/small nil " and ")
             (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
                     :className "iubenda-nostyle no-brand iubenda-embed"
                     :title     "Privacy Policy"
                     :target    "_blank"} (dom/small nil "Privacy Policy"))
-            (dom/small nil ". To use SULO Live you must have cookies enabled. We’ll never post to Twitter or Facebook without your permission.")))])
+            (dom/small nil ". To use SULO Live you must have cookies enabled.")
+            ;(dom/small nil " We’ll never post to Twitter or Facebook without your permission.")
+            ))])
 
 (defui Login
   static om/IQuery
@@ -257,7 +266,10 @@
             (if (some? access_token)
               (dom/h4 nil "Almost there")
               (dom/h1 nil "SULO Live")))
-          (dom/h4 nil "Sign up or sign in"))
+          ;; TODO @diana Enable this when allowing sign ups
+          ;(dom/h4 nil "Sign up or sign in")
+          (dom/h4 nil "Sign in")
+          )
 
         (cond
           (and (= route :login) (= login-state :login) access_token)

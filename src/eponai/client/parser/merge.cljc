@@ -78,6 +78,12 @@
     (db-with db [[:db/add [:ui/singleton :ui.singleton/auth] :ui.singleton.auth/locations val]])
     db))
 
+(defmethod client-merge :query/store-has-streamed
+  [db k val]
+  (if (some? val)
+    (db-with db [[:db/add [:ui/singleton :ui.singleton/state] :ui.singleton.state/store-has-streamed? val]])
+    db))
+
 (defmethod client-merge :query/product-search
   [db k val]
   (letfn [(set-search-db [search-db]

@@ -17,3 +17,8 @@
 		color: $dark-gray;
 	}
 }
+
+.button.delete-button {
+	border: none !important;
+	font-weight: $global-weight-normal;
+}

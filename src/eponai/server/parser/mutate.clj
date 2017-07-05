@@ -21,7 +21,8 @@
     [eponai.common.auth :as auth]
     [eponai.server.external.cloudinary :as cloudinary]
     [eponai.server.external.email :as email]
-    [eponai.server.api.user :as user]))
+    [eponai.server.api.user :as user]
+    [eponai.common.format.date :as date]))
 
 (defmacro defmutation
   "Creates a message and mutate defmethod at the same time.
@@ -413,7 +414,7 @@
 ;######## STRIPE ########
 
 (defmutation stripe/update-account
-  [{:keys [state ::parser/return ::parser/exception system] :as env} _ {:keys [store-id account-params]}]
+  [{:keys [state ::parser/return ::parser/exception system client-ip] :as env} _ {:keys [store-id account-params accept-terms?]}]
   {:auth {::auth/store-owner {:store-id store-id}}
    :log  [:store-id]
    :resp {:success "Your account was updated"
@@ -422,7 +423,12 @@
                      "Something went wrong!")}}
   {:action (fn []
              (let [{:stripe/keys [id]} (stripe/pull-stripe (db/db state) store-id)
-                   new-account (stripe/update-account (:system/stripe system) id account-params)]
+                   params (cond-> account-params
+                                  accept-terms?
+                                  (assoc :field/tos-acceptance {:field.tos-acceptance/ip   client-ip
+                                                                   :field.tos-acceptance/date (date/current-secs)}))
+                   _ (debug "Updating account with params: " params)
+                   new-account (stripe/update-account (:system/stripe system) id params)]
                (store/stripe-account-updated env new-account)
                new-account))})
 
@@ -433,7 +439,7 @@
    :log  nil
    :resp {:success return
           :error   (if (some? exception)
-                     (or (:message (ex-data exception)) "Something went wrong")
+                     (or (.getMessage exception) "Something went wrong")
                      "Something went wrong!")}}
   {:action (fn []
              (debug "Stripe update customer: " params)
@@ -453,7 +459,7 @@
                                                                      :postal_code (:shipping.address/postal address)
                                                                      :city        (:shipping.address/locality address)
                                                                      :state       (:shipping.address/region address)
-                                                                     :country     (:shipping.address/country address)}})
+                                                                     :country     (:country/code (:shipping.address/country address))}})
 
                                          (some? default-source)
                                          (assoc :default_source default-source))]
@@ -502,7 +508,7 @@
           :error   "Sorry, could not update your product. Try again later."}}
   {:action (fn []
              (debug "store/update-product with params: " p)
-             (store/update-product env store-id product))})
+             (store/update-product env product-id product))})
 
 (defmutation store/delete-product
   [env _ {:keys [product store-id]}]

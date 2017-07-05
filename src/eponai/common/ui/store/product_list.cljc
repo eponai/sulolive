@@ -92,7 +92,7 @@
         (let [items-by-section (group-by #(get-in % [:store.item/section :db/id]) (:store/items store))]
           (dom/div
             nil
-            (dom/p (css/add-class :header) "Edit sections")
+            (dom/h4 nil "Edit sections")
             (menu/vertical
               (css/add-class :edit-sections-menu)
               (map-indexed
@@ -113,11 +113,11 @@
                                (if (= 1 no-items)
                                  (dom/small nil (str no-items " item"))
                                  (dom/small nil (str no-items " items")))
-                               (button/user-setting-default
+                               (dom/a
                                  {:onClick #(om/update-state! component update :products/edit-sections
                                                               (fn [sections]
                                                                 (into [] (remove nil? (assoc sections i nil)))))}
-                                 (dom/span nil "Remove")))))
+                                 (dom/small nil "remove")))))
                 edit-sections)
               (menu/item
                 (css/add-class :edit-sections-item)

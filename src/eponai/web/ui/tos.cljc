@@ -53,18 +53,18 @@
             (dom/h2 nil "Permitted use of website")
             (dom/p nil "We grant you a non-transferable, non-exclusive, revocable, limited licence to use and access the Website")
             (dom/p nil (dom/span nil "You are responsible for paying all fees that you owe to SULO Live. You are also solely responsible for collecting and/or paying any applicable taxes for any purchases or sales you make through our Services."))
-            (dom/p nil (dom/span nil "You are not permitted to use the Website:")
-                   (dom/ul nil
-                           (dom/li nil (dom/span nil "in any unlawful, fraudulent, or commercial manner, or any other manner prohibited by the Terms;"))
-                           (dom/li nil (dom/span nil "to upload, transmit, or distribute to or through the Website any computer viruses, worms, or any software intended to damage or alter a computer system or data;"))
-                           (dom/li nil (dom/span nil "to send through the Website unsolicited or unauthorized advertising, promotional materials, junk mail, spam, chain letters, pyramid schemes, or any other form of duplicative or unsolicited messages, whether commercial or otherwise;"))
-                           (dom/li nil (dom/span nil "to use the Website to harvest, collect, gather or assemble information or data regarding other Users, including e-mail addresses, without their consent;"))
-                           (dom/li nil (dom/span nil "to interfere with, disrupt, or create an undue burden on servers or networks connected to the Website, or violate the regulations, policies or procedures of such networks;"))
-                           (dom/li nil (dom/span nil "to attempt to gain unauthorized access to the Website (or to other computer systems or networks connected to or used together with the Website), whether through password mining or any other means;"))
-                           (dom/li nil (dom/span nil "to harass or interfere with any other Website User’s use and enjoyment of the Website;"))
-                           (dom/li nil (dom/span nil "to use software or automated agents or scripts to produce multiple accounts on the Website, or to generate automated searches, requests, or queries to (or to strip, scrape, or mine data from) the Website;"))
-                           (dom/li nil (dom/span nil "to tamper with, modify, copy without express permission, amend, make derivative or reverse engineer any part of the Website; or"))
-                           (dom/li nil (dom/span nil "to licence, sell, rent or lease any part of the Website.")))))
+            (dom/p nil (dom/span nil "You are not permitted to use the Website:"))
+            (dom/ol {:type "a"}
+                    (dom/li nil (dom/p nil (dom/span nil "in any unlawful, fraudulent, or commercial manner, or any other manner prohibited by the Terms;")))
+                    (dom/li nil (dom/p nil (dom/span nil "to upload, transmit, or distribute to or through the Website any computer viruses, worms, or any software intended to damage or alter a computer system or data;")))
+                    (dom/li nil (dom/p nil (dom/span nil "to send through the Website unsolicited or unauthorized advertising, promotional materials, junk mail, spam, chain letters, pyramid schemes, or any other form of duplicative or unsolicited messages, whether commercial or otherwise;")))
+                    (dom/li nil (dom/p nil (dom/span nil "to use the Website to harvest, collect, gather or assemble information or data regarding other Users, including e-mail addresses, without their consent;")))
+                    (dom/li nil (dom/p nil (dom/span nil "to interfere with, disrupt, or create an undue burden on servers or networks connected to the Website, or violate the regulations, policies or procedures of such networks;")))
+                    (dom/li nil (dom/p nil (dom/span nil "to attempt to gain unauthorized access to the Website (or to other computer systems or networks connected to or used together with the Website), whether through password mining or any other means;")))
+                    (dom/li nil (dom/p nil (dom/span nil "to harass or interfere with any other Website User’s use and enjoyment of the Website;")))
+                    (dom/li nil (dom/p nil (dom/span nil "to use software or automated agents or scripts to produce multiple accounts on the Website, or to generate automated searches, requests, or queries to (or to strip, scrape, or mine data from) the Website;")))
+                    (dom/li nil (dom/p nil (dom/span nil "to tamper with, modify, copy without express permission, amend, make derivative or reverse engineer any part of the Website; or")))
+                    (dom/li nil (dom/p nil (dom/span nil "to licence, sell, rent or lease any part of the Website.")))))
 
           (dom/section
             nil
@@ -82,13 +82,13 @@
             nil
             (dom/h2 nil "User content")
             (dom/p nil (dom/span nil "You shall retain ownership of any views, opinions, reviews, ratings, comments, content or material you submit, display, distribute, upload, post, share, publish or otherwise make publicly available on or through the Website or otherwise through the Services (the “User Content”). You grant (and you represent and warrant that you have the right to grant) to SULO Live an irrevocable, nonexclusive, royalty-free and fully paid, worldwide license to reproduce, distribute, publicly display and perform, prepare derivative works of, incorporate into other works including for marketing purposes, and otherwise use and exploit your User Content, and to grant sublicenses of the foregoing rights. You irrevocably waive (and agree to cause to be waived) any claims and assertions of moral rights or attribution with respect to the User Content."))
-            (dom/p nil (dom/span nil "You are not to collect, upload, transmit, display, or distribute any User Content that:")
-                   (dom/ol
-                     nil
-                     (dom/li nil (dom/span nil "violates any third-party right, including any copyright, trademark, patent, trade secret, moral right, privacy right, right of publicity, or any other intellectual property or proprietary right;"))
-                     (dom/li nil (dom/span nil "is unlawful, harassing, abusive, tortious, threatening, harmful, invasive of another’s privacy, vulgar, defamatory, false, intentionally misleading, trade libelous, pornographic, obscene, patently offensive, promotes racism, bigotry, hatred, or physical harm of any kind against any group or individual or is otherwise objectionable;"))
-                     (dom/li nil (dom/span nil "is harmful to minors in any way; or"))
-                     (dom/li nil (dom/span nil "is in violation of any law, regulation, or obligations or restrictions imposed by any third party."))))
+            (dom/p nil (dom/span nil "You are not to collect, upload, transmit, display, or distribute any User Content that:"))
+            (dom/ol
+              {:type "a"}
+              (dom/li nil (dom/p nil (dom/span nil "violates any third-party right, including any copyright, trademark, patent, trade secret, moral right, privacy right, right of publicity, or any other intellectual property or proprietary right;")))
+              (dom/li nil (dom/p nil (dom/span nil "is unlawful, harassing, abusive, tortious, threatening, harmful, invasive of another’s privacy, vulgar, defamatory, false, intentionally misleading, trade libelous, pornographic, obscene, patently offensive, promotes racism, bigotry, hatred, or physical harm of any kind against any group or individual or is otherwise objectionable;")))
+              (dom/li nil (dom/p nil (dom/span nil "is harmful to minors in any way; or")))
+              (dom/li nil (dom/p nil (dom/span nil "is in violation of any law, regulation, or obligations or restrictions imposed by any third party."))))
 
             (dom/p nil (dom/span nil "You are responsible for your User Content. We do not sponsor or endorse your User Content. We reserve the right (but have no obligation) to review any User Content, and to investigate and/or take appropriate action against you in our sole discretion if you violate the Terms or otherwise create liability for us or any third party. Such action may include removing or modifying your User Content, terminating your Account, and/or reporting you to law enforcement authorities."))
             (dom/p nil (dom/span nil "We make no guarantees regarding the accuracy, currency, suitability, or quality of any content from other Users. Your interactions with other Users are solely between you and such other Users. You agree that SULO Live will not be responsible for any loss or damage incurred as the result of any such interactions. If there is a dispute between you and any other user, we are under no obligation to become involved."))
@@ -96,14 +96,23 @@
 
           (dom/section
             nil
-            (dom/h2 nil "SULO Live fees")
-            (dom/p nil (dom/span nil "When you make a sale through SULO Live, the following fees will be deducted from the transaction amount as the funds become available for deposit:")
-                   (dom/ol nil
-                           (dom/li nil
+            (dom/h2 nil "Sellers")
+
+            (dom/p nil
+                   (dom/span nil "Payment processing services for Sellers on SULO Live are provided by Stripe and are subject to the ")
+                   (dom/a {:href "https://stripe.com/ca/connect-account/legal"
+                           :target "_blank"} (dom/span nil "Stripe Connected Account Agreement"))
+                   (dom/span nil ", which includes the Stripe Terms of Service (collectively, the “Stripe Services Agreement”). By agreeing to these terms or continuing to operate as a Seller on SULO Live, you agree to be bound by the Stripe Services Agreement, as the same may be modified by Stripe from time to time. As a condition of SULO Live enabling payment processing services through Stripe, you agree to provide SULO Live accurate and complete information about you and your business, and you authorize SULO Live to share it and transaction information related to your use of the payment processing services provided by Stripe."))
+
+            (dom/p nil (dom/span nil "When you as a Seller make a sale through SULO Live, you agree to the following fees being deducted from the transaction amount as the funds become available for deposit:"))
+            (dom/ol {:type "a"}
+                    (dom/li nil
+                            (dom/p nil
                                    (dom/span nil "a ")
                                    (dom/em nil "commission fee")
-                                   (dom/span nil " of 20% of the price you display for each product. The commission fee will not apply to the shipping cost, sales tax, Goods and Services Tax, or Harmonized Sales Tax, unless you have included those charges in your product price."))
-                           (dom/li nil
+                                   (dom/span nil " of 20% of the price you display for each product. The commission fee will not apply to the shipping cost, sales tax, Goods and Services Tax, or Harmonized Sales Tax, unless you have included those charges in your product price.")))
+                    (dom/li nil
+                            (dom/p nil
                                    (dom/span nil " a ")
                                    (dom/em nil "transaction fee")
                                    (dom/span nil " of 3% of the total amount of the sale, including tax and shipping.")))))
@@ -135,32 +144,32 @@
           (dom/section
             nil
             (dom/h2 nil "Disclaimers")
-            (dom/p nil (dom/span nil "You agree that:")
-                   (dom/ol nil
-                           (dom/li nil (dom/span nil "If you use the Services, you do so at your own and sole risk. The Services are provided on an \"as is\" and \"as available\" basis. We expressly disclaim all warranties of any kind, whether express or implied, including, without limitation, implied warranties of merchantability, and fitness for a particular purpose, title and non-infringement."))
-                           (dom/li nil (dom/span nil "If you access or transmit any content through the use of the Services, you do so at your own discretion and your sole risk. You are solely responsible for any loss or damage to you in connection with such actions. We are not responsible for any incorrect or inaccurate content in connection with the Services, whether caused by Users or by any of the programming associated with or utilized in the Services. We are not responsible for the conduct, whether online or offline, of any User of the Website. We assume no responsibility for any error, omission, interruption, deletion, defect, delay in operation or transmission, communications line failure, theft or destruction or unauthorized access to, or alteration of, user communications."))))
+            (dom/p nil (dom/span nil "You agree that:"))
+            (dom/ol {:type "a"}
+                    (dom/li nil (dom/p nil (dom/span nil "If you use the Services, you do so at your own and sole risk. The Services are provided on an \"as is\" and \"as available\" basis. We expressly disclaim all warranties of any kind, whether express or implied, including, without limitation, implied warranties of merchantability, and fitness for a particular purpose, title and non-infringement.")))
+                    (dom/li nil (dom/p nil (dom/span nil "If you access or transmit any content through the use of the Services, you do so at your own discretion and your sole risk. You are solely responsible for any loss or damage to you in connection with such actions. We are not responsible for any incorrect or inaccurate content in connection with the Services, whether caused by Users or by any of the programming associated with or utilized in the Services. We are not responsible for the conduct, whether online or offline, of any User of the Website. We assume no responsibility for any error, omission, interruption, deletion, defect, delay in operation or transmission, communications line failure, theft or destruction or unauthorized access to, or alteration of, user communications."))))
 
-            (dom/p nil (dom/span nil "We do not warrant that:")
-                   (dom/ol nil
-                           (dom/li nil (dom/span nil "the Services will meet your requirements;"))
-                           (dom/li nil (dom/span nil "access to the Services will be uninterrupted, timely, secure, or error-free;"))
-                           (dom/li nil (dom/span nil "the quality or reliability of the Services will meet your expectations;"))
-                           (dom/li nil (dom/span nil "any information you provide or we collect will not be disclosed to third parties;"))
-                           (dom/li nil (dom/span nil "any account on the Website is accurate, up to date or authentic; or"))
-                           (dom/li nil (dom/span nil "third parties will not use your confidential information in an unauthorized manner."))))
+            (dom/p nil (dom/span nil "We do not warrant that:"))
+            (dom/ol {:type "a"}
+                    (dom/li nil (dom/p nil (dom/span nil "the Services will meet your requirements;")))
+                    (dom/li nil (dom/p nil (dom/span nil "access to the Services will be uninterrupted, timely, secure, or error-free;")))
+                    (dom/li nil (dom/p nil (dom/span nil "the quality or reliability of the Services will meet your expectations;")))
+                    (dom/li nil (dom/p nil (dom/span nil "any information you provide or we collect will not be disclosed to third parties;")))
+                    (dom/li nil (dom/p nil (dom/span nil "any account on the Website is accurate, up to date or authentic; or")))
+                    (dom/li nil (dom/p nil (dom/span nil "third parties will not use your confidential information in an unauthorized manner."))))
             (dom/p nil (dom/span nil "Under no circumstances will we be responsible for any loss or damage, including personal injury or death, resulting from anyone's use of the Services or any conduct or interactions between Users of our site, whether online or offline.")))
 
           (dom/section
             nil
             (dom/h2 nil "Limitation of liability and release")
-            (dom/p nil (dom/span nil "You agree that neither we nor our affiliates, officers, directors, employees, agents and licensors will be liable for any damages whatsoever, including direct, indirect, incidental, punative, special, consequential or exemplary damages, in connection with, or otherwise resulting from, any use of the Services, even if we have been advised of the possibility of such damages. We shall not be liable for any damages, liability, or losses arising from, relating to, or connected with:")
+            (dom/p nil (dom/span nil "You agree that neither we nor our affiliates, officers, directors, employees, agents and licensors will be liable for any damages whatsoever, including direct, indirect, incidental, punative, special, consequential or exemplary damages, in connection with, or otherwise resulting from, any use of the Services, even if we have been advised of the possibility of such damages. We shall not be liable for any damages, liability, or losses arising from, relating to, or connected with:"))
 
-                   (dom/ol nil
-                           (dom/li nil (dom/span nil "the use or inability to use the Services;"))
-                           (dom/li nil (dom/span nil "disclosure of, unauthorized access to or alteration of your Account;"))
-                           (dom/li nil (dom/span nil "actions or inactions of other Users or any other third parties for any reason; or"))
-                           (dom/li nil (dom/span nil "any other matter arising from, relating to or connected with the Services or these Terms."))
-                           ))
+            (dom/ol {:type "a"}
+                    (dom/li nil (dom/p nil (dom/span nil "the use or inability to use the Services;")))
+                    (dom/li nil (dom/p nil (dom/span nil "disclosure of, unauthorized access to or alteration of your Account;")))
+                    (dom/li nil (dom/p nil (dom/span nil "actions or inactions of other Users or any other third parties for any reason; or")))
+                    (dom/li nil (dom/p nil (dom/span nil "any other matter arising from, relating to or connected with the Services or these Terms.")))
+                    )
             (dom/p nil (dom/span nil "We will not be liable for any failure or delay in performing under these Terms where such failure or delay is due to causes beyond our reasonable control, including natural catastrophes, governmental acts or omissions, laws or regulations, terrorism, labor strikes or difficulties, communication system breakdowns, hardware or software failures, transportation stoppages or slowdowns or the inability to procure supplies or materials."))
             (dom/p nil (dom/span nil "SULO Live expressly disclaims any liability that may arise between Users related to or arising from use of the Services. You hereby release and forever discharge SULO Live and its affiliates, officers, directors, employees, agents and licensors from any and all claims, demands, damages (actual or consequential) of every kind and nature, whether known or unknown, contingent or liquidated, arising from or related to any dispute or interactions with any other User, whether online or in person, whether related to the use of the Services or otherwise."))
             (dom/p nil (dom/span nil "You acknowledge and agree that the disclaimers of warranties above and these limitations of liability are an agreed upon allocation of risk between you and us. You acknowledge and agree that if you did not agree to these limitations of liability you would not be permitted to access the Services. You acknowledge and agree that such provisions are reasonable and fair.")))

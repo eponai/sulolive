@@ -51,23 +51,7 @@
 (s/def :shipping.rule/rates (s/coll-of :shipping.rule/rate))
 (s/def :shipping/rule (s/keys :req [:shipping.rule/rates]))
 
-;(s/def :shipping/name (s/and string? #(not-empty %)))
-;(s/def :shipping.address/street (s/and string? #(not-empty %)))
-;(s/def :shipping.address/street2 (s/or :value string? :empty nil?))
-;(s/def :shipping.address/postal (s/and string? #(not-empty %)))
-;(s/def :shipping.address/locality (s/and string? #(not-empty %)))
-;(s/def :shipping.address/region (s/or :value #(string? (not-empty %)) :empty nil?))
-;(s/def :country/code (s/and string? #(re-matches #"\w{2}" %)))
-;(s/def :shipping.address/country (s/keys :opt [:country/code]))
-;
-;(s/def :shipping/address (s/keys :req [:shipping.address/country
-;                                       :shipping.address/locality
-;                                       :shipping.address/postal
-;                                       :shipping.address/street]
-;                                 :opt [:shipping.address/region
-;                                       :shipping.address/street2]))
-(s/def ::shipping (s/keys :opt [:shipping/rule
-                                :shipping/address]))
+(s/def ::shipping (s/keys :opt [:shipping/rule]))
 
 (defn validate
   [spec m]
@@ -104,26 +88,33 @@
                                                                             cs)))))
 
 (defn delete-rule-modal [component]
-  (let [{:keys [modal-object]} (om/get-state component)
-        on-close #(om/update-state! component dissoc :modal :modal-object)]
+  (let [{:query/keys [store]} (om/props component)
+        {:keys [modal-object]} (om/get-state component)
+        on-close #(om/update-state! component dissoc :modal :modal-object)
+        will-close-store? (not (< 1 (count (get-in store [:store/shipping :shipping/rules]))))]
+    (debug "Shipping rules: " (count (get-in store [:store/shipping :shipping/rules])))
     (common/modal
       {:on-close on-close
        :size     "tiny"}
-      (dom/p (css/add-class :header) "Delete rule")
-      (dom/p nil
-             ;(dom/span nil (get modal-message modal))
-             ;(dom/br nil)
-             (dom/small nil "Do you want to delete this shipping rule?"))
+      (dom/h4 (css/add-class :header) "Delete shipping rule")
+      (dom/p nil (dom/small nil "Do you want to delete this shipping rule?"))
+      (when will-close-store?
+        (dom/p nil
+               (dom/small nil (dom/strong nil "Note: "))
+               (dom/small nil "deleting this rule will close your store. To keep your store open, make sure you have at least one shipping option specified.")))
       (dom/div
         (css/add-class :action-buttons)
-        (button/user-setting-default
-          (css/button-hollow {:onClick on-close})
+        (button/cancel
+          {:onClick on-close}
           (dom/span nil "No thanks"))
-        (button/user-setting-cta
-          (css/button {:onClick #(do
-                                  (on-close)
-                                  (.delete-rule component modal-object))})
-          (dom/span nil "Yes, delete rule"))))))
+        (button/cancel
+          (->> {:onClick #(do
+                           (on-close)
+                           (.delete-rule component modal-object))}
+               (css/add-class :alert))
+          (if will-close-store?
+            (dom/span nil "Yes, delete rule and close store")
+            (dom/span nil "Yes, delete rule")))))))
 
 (defn shipping-address-modal [component]
   (let [{:query/keys [store countries]} (om/props component)
@@ -246,7 +237,7 @@
                    (and (= section :shipping-rule.section/destinations)
                         (not= modal :modal/add-shipping-rate))
                    (css/add-class :is-active))
-          (dom/small nil "Select which countries you want to ship to. You'll add rates in the next step.")
+          (dom/p nil (dom/small nil "Select which countries you want to ship to. You'll add rates in the next step. "))
           (select/->SelectOne (om/computed {:options     (reduce (fn [l [con cs]]
                                                                    (into l (into [{:value     (:continent/code con)
                                                                                    :label     (:continent/name con)
@@ -264,7 +255,7 @@
                                                                  countries-by-continent)
                                             :placeholder "Select destinations..."}
                                            {:on-change #(add-shipping-destination component % used-country-codes)}))
-          (when (not-empty selected-countries)
+          (if (not-empty selected-countries)
             (menu/vertical
               nil
               (map
@@ -275,13 +266,14 @@
                     (dom/a
                       (->> {:onClick #(remove-country component c)}
                            (css/add-classes [:icon :icon-delete])))))
-                (sort-by :country/name selected-countries))))
+                (sort-by :country/name selected-countries)))
+            (dom/p nil (dom/small nil (dom/strong nil "Tip: ") (dom/span nil "Select entire continents to add all their countries not already in a rule."))))
           (dom/div
             (css/add-class :action-buttons)
             (button/cancel
               {:onClick on-close}
               (dom/span nil "Cancel"))
-            (button/store-setting-cta
+            (button/save
               (cond->> {:onClick #(om/update-state! component assoc :shipping-rule/section :shipping-rule.section/rates)}
                        (empty? selected-countries)
                        (css/add-class :disabled))
@@ -415,7 +407,7 @@
                                                           :shipping.address/region
                                                           {:shipping.address/country [:country/code]}]}]}]}])
   Object
-  (initLocalState [_]
+  (initLocalState [this]
     {:selected-countries    []
      :shipping-rule/section :shipping-rule.section/destinations})
   (update-free-shipping [this allow-pickup?]
@@ -588,73 +580,65 @@
         (dom/div
           (css/add-class :section-title)
           (dom/h1 nil "Shipping"))
-        (dom/div
-          (css/add-class :section-title)
-          (dom/h2 nil "Shipping settings"))
-        (callout/callout
-          (css/add-classes [:section-container :section-container--shipping-address])
-          (menu/vertical
-            (css/add-class :section-list)
-
-            (let [{:shipping/keys [address]
-                   shipping-name  :shipping/name} shipping
-                  {:shipping.address/keys [street street2 locality postal region country]} address]
-              (menu/item
-                nil
-                (grid/row
-                  (->> (css/add-class :collapse)
-                       (css/align :middle))
-                  (grid/column
-                    (grid/column-size {:small 12 :medium 6})
-                    (dom/label nil "Shipping address")
-                    (dom/p nil (dom/small nil "This is the address from which your products will ship.")))
-                  (grid/column
-                    (css/text-align :right)
-
-                    (if (some? address)
-                      (common/render-shipping shipping nil)
-                      ;(dom/p nil
-                      ;       (dom/span nil shipping-name)
-                      ;       (dom/br nil)
-                      ;       (dom/small nil street)
-                      ;       (dom/br nil)
-                      ;       (dom/small nil (string/join ", " [locality postal region country])))
-                      (dom/p nil (dom/small nil (dom/i nil "No saved address"))))
-                    (button/store-setting-secondary
-                      {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-address)}
-                      (dom/span nil "Edit shipping address"))))))
-            (menu/item
-              nil
-              (grid/row
-                (->> (css/add-class :collapse)
-                     (css/align :middle))
-                (grid/column
-                  (grid/column-size {:small 12 :medium 6})
-                  (dom/label nil "Allow free pickup")
-                  (dom/p nil (dom/small nil "Allow your customers to pick up their items from your specified shipping address.")))
-                (grid/column
-                  (css/text-align :right)
-                  (switch-input/switch
-                    (cond-> {:title    "Allow free pickup"
-                             :id       "sulo-pickup"
-                             :classes  [:sulo-dark]
-                             :onChange #(.update-free-shipping this (.-checked (.-target %)))}
-                            (nil? shipping)
-                            (assoc :disabled true))
-                    (dom/span (css/add-class :switch-inactive) "No")
-                    (dom/span (css/add-class :switch-active) "Yes"))
-                  (when (nil? shipping)
-                    (dom/small nil "Specify a shipping address to enable free pickup")))))))
         ;(dom/div
-        ;  (css/add-class :content-section)
-        ;  (dom/div
-        ;    (css/add-class :section-title)
-        ;    (dom/h2 nil "Free pickup"))
-        ;  (callout/callout
-        ;    nil
-        ;    (menu/vertical
-        ;      (css/add-class :section-list)
-        ;      )))
+        ;  (css/add-class :section-title)
+        ;  (dom/h2 nil "Shipping settings"))
+        ;(callout/callout
+        ;  (css/add-classes [:section-container :section-container--shipping-address])
+        ;  (menu/vertical
+        ;    (css/add-class :section-list)
+        ;
+        ;    (let [{:shipping/keys [address]
+        ;           shipping-name  :shipping/name} shipping
+        ;          {:shipping.address/keys [street street2 locality postal region country]} address]
+        ;      (menu/item
+        ;        nil
+        ;        (grid/row
+        ;          (->> (css/add-class :collapse)
+        ;               (css/align :middle))
+        ;          (grid/column
+        ;            (grid/column-size {:small 12 :medium 6})
+        ;            (dom/label nil "Shipping address")
+        ;            (dom/p nil (dom/small nil "This is the address from which your products will ship.")))
+        ;          (grid/column
+        ;            (css/text-align :right)
+        ;
+        ;            (if (some? address)
+        ;              (common/render-shipping shipping nil)
+        ;              ;(dom/p nil
+        ;              ;       (dom/span nil shipping-name)
+        ;              ;       (dom/br nil)
+        ;              ;       (dom/small nil street)
+        ;              ;       (dom/br nil)
+        ;              ;       (dom/small nil (string/join ", " [locality postal region country])))
+        ;              (dom/p nil (dom/small nil (dom/i nil "No saved address"))))
+        ;            (button/store-setting-secondary
+        ;              {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-address)}
+        ;              (dom/span nil "Edit shipping address"))))))
+        ;    (menu/item
+        ;      nil
+        ;      (grid/row
+        ;        (->> (css/add-class :collapse)
+        ;             (css/align :middle))
+        ;        (grid/column
+        ;          (grid/column-size {:small 12 :medium 6})
+        ;          (dom/label nil "Allow free pickup")
+        ;          (dom/p nil (dom/small nil "Allow your customers to pick up their items from your specified shipping address.")))
+        ;        (grid/column
+        ;          (css/text-align :right)
+        ;          (switch-input/switch
+        ;            (cond-> {:title    "Allow free pickup"
+        ;                     :id       "sulo-pickup"
+        ;                     :classes  [:sulo-dark]
+        ;                     :onChange #(.update-free-shipping this (.-checked (.-target %)))}
+        ;                    (nil? shipping)
+        ;                    (assoc :disabled true))
+        ;            (dom/span (css/add-class :switch-inactive) "No")
+        ;            (dom/span (css/add-class :switch-active) "Yes"))
+        ;          (when (nil? shipping)
+        ;            (dom/small nil "Specify a shipping address to enable free pickup")))))))
+
+
         (dom/div
           (css/add-class :content-section)
           (dom/div
@@ -694,8 +678,8 @@
         ;      {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-rule)}
         ;      (dom/span nil "Add shipping rule"))))
 
-        (map
-          (fn [sr]
+        (map-indexed
+          (fn [i sr]
             (let [{:shipping.rule/keys [destinations rates]} sr
                   sorted-dest (sort-by :country/name destinations)
                   show-locations 5]
@@ -714,7 +698,12 @@
                                (dom/label nil
                                           (str (string/join ", " (map :country/name (take show-locations sorted-dest)))
                                                (when (< 0 (- (count destinations) show-locations))
-                                                 (str " & " (- (count destinations) show-locations) " more"))))))
+                                                 (str " & " (- (count destinations) show-locations) " more")))))
+                        ;(dom/a
+                        ;  (->> {:onClick #(om/update-state! this assoc :modal :modal/delete-rule :modal-object sr)}
+                        ;       (css/add-class :edit-menu))
+                        ;  (dom/small nil "delete rule"))
+                        )
                       (table/table
                         nil
                         (table/thead
@@ -751,18 +740,24 @@
                                              )))
                                    (table/td
                                      (css/text-align :right)
-                                     (button/user-setting-default
-                                       {:onClick #(.delete-rate this sr r)}
-                                       (dom/span nil "Delete"))))) rates)))
+                                     (dom/a
+                                       {:onClick #(if (< 1 (count rates))
+                                                   (.delete-rate this sr r)
+                                                   (om/update-state! this assoc :modal :modal/delete-rule :modal-object sr))}
+                                       (dom/small nil "delete"))))) rates)))
                       (dom/div
                         (css/add-classes [:action-buttons :shipping-rule-card-footer])
 
-                        (button/default-hollow
-                          (button/small {:onClick #(om/update-state! this assoc :modal :modal/delete-rule :modal-object sr)})
-                          (dom/span nil "Delete rule"))
+                        ;(button/default-hollow
+                        ;  (button/small {:onClick #(om/update-state! this assoc :modal :modal/delete-rule :modal-object sr)})
+                        ;  (dom/span nil "Delete rule"))
                         (button/store-setting-default
                           (button/small {:onClick #(om/update-state! this assoc :modal :modal/add-shipping-rate :shipping-rule/edit-rule sr)})
-                          (dom/span nil "Add shipping rate")))))))))
+                          (dom/span nil "Add shipping rate"))
+                        (button/delete
+                          (->> {:onClick #(om/update-state! this assoc :modal :modal/delete-rule :modal-object sr)}
+                               (css/add-class :alert))
+                          (dom/span nil "Delete rule")))))))))
           (remove #(:shipping.rule/pickup? %) (get-in store [:store/shipping :shipping/rules])))
         ;(grid/row
         ;  nil

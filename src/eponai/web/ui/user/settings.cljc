@@ -150,7 +150,7 @@
   (let [{:query/keys [stripe-customer countries]} (om/props component)
         shipping (:stripe/shipping stripe-customer)         ;[{:brand "American Express" :last4 1234 :exp-year 2018 :exp-month 4}]
         address (:shipping/address shipping)
-        {:shipping/keys [input-validation]} (om/get-state component)
+        {:shipping/keys [input-validation error-message]} (om/get-state component)
         on-close #(do (mixpanel/track "Close shipping info")
                       (om/update-state! component dissoc :modal))]
     (common/modal
@@ -241,6 +241,7 @@
         ;(callout/callout-small
         ;  (css/add-class :warning))
         ;(dom/p nil (dom/small nil "Shipping address cannot be saved yet. We're working on this."))
+        (dom/p (css/add-class :text-alert) (dom/small nil (str error-message)))
         (dom/div
           (css/add-class :action-buttons)
           (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))
@@ -362,7 +363,7 @@
                            :shipping/address {:shipping.address/street   (utils/input-value-or-nil-by-id street)
                                               :shipping.address/street2  (utils/input-value-or-nil-by-id street2)
                                               :shipping.address/locality (utils/input-value-or-nil-by-id locality)
-                                              :shipping.address/country  (utils/input-value-or-nil-by-id country)
+                                              :shipping.address/country  {:country/code (utils/input-value-or-nil-by-id country)}
                                               :shipping.address/region   (utils/input-value-or-nil-by-id region)
                                               :shipping.address/postal   (utils/input-value-or-nil-by-id postal)}}
              validation (validate ::shipping shipping-map)]
@@ -415,10 +416,11 @@
                 (msg/clear-messages! this 'photo/upload)
                 (om/update-state! this dissoc :modal))))
 
-      (when (and (msg/final? shipping-msg)
-                 (msg/success? shipping-msg))
+      (when (msg/final? shipping-msg)
         (msg/clear-messages! this 'stripe/update-customer)
-        (om/update-state! this dissoc :modal))))
+        (if (msg/success? shipping-msg)
+          (om/update-state! this dissoc :modal :error-message)
+          (om/update-state! this assoc :error-message (msg/message shipping-msg))))))
 
   (componentDidMount [this]
     #?(:cljs

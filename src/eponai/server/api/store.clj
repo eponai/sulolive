@@ -7,7 +7,8 @@
     [taoensso.timbre :refer [debug info]]
     [eponai.common.format :as cf]
     [eponai.server.external.cloudinary :as cloudinary]
-    [eponai.common.format.date :as date]))
+    [eponai.common.format.date :as date]
+    [eponai.server.log :as log]))
 
 
 (defn create [{:keys [state auth system]} {:keys [country name locality]}]
@@ -93,6 +94,7 @@
 
         ;_ (debug "GETTING OLD ITEM: " old-item)
         store (:store/_items old-item)
+        _ (debug "Store: " store)
         ;; Update product with new info, name/description, etc. Collections are updated below.
         new-section (cf/add-tempid section)
         new-product (cond-> (f/product (assoc params :db/id product-id))
@@ -134,7 +136,20 @@
 
 (defn delete-shipping-rule [{:keys [state]} store-id shipping-rule]
   (when-let [eid (:db/id shipping-rule)]
-    (db/transact state [[:db.fn/retractEntity eid]])))
+    (let [store (db/pull (db/db state) [{:store/shipping [:shipping/rules]}
+                                        {:store/status [:db/id :status/type]}] store-id)
+          is-last-rule? (>= 1 (count (get-in store [:store/shipping :shipping/rules])))
+          store-status (:store/status store)
+          txs (if-not is-last-rule?
+                [[:db.fn/retractEntity eid]]
+                (cond-> [[:db.fn/retractEntity eid]]
+                        (some? (:db/id store-status))
+                        (conj [:db/add (:db/id store-status) :status/type :status.type/closed])
+                        (nil? (:db/id store-status))
+                        (conj [{:db/id        store-id
+                                :store/status {:status/type :status.type/closed}}])))]
+
+      (db/transact state txs))))
 
 (defn update-shipping-rule [{:keys [state]} rule-id {:shipping.rule/keys [rates] :as params}]
   (let [old-rule (db/pull (db/db state) [:db/id :shipping.rule/rates] rule-id)
@@ -309,18 +324,35 @@
         (zipmap address-keys [line1 postal city state {:country/code country}])))))
 
 
-(defn stripe-account-updated [{:keys [state]} updated-stripe-account]
+(defn stripe-account-updated [{:keys [state logger]} updated-stripe-account]
   (let [{:stripe/keys                                  [id details-submitted? tos-acceptance payouts-enabled? charges-enabled?]
          {:stripe.verification/keys [disabled-reason]} :stripe/verification} updated-stripe-account
-        stripe (db/pull (db/db state) [:stripe/status] [:stripe/id id])
+        stripe (db/pull (db/db state) [:stripe/status
+                                       {:store/_stripe [:db/id
+                                                        :store/status]}] [:stripe/id id])
+        store (first (:store/_stripe stripe))
         new-status (if (or (some? disabled-reason)
                            (some false? [details-submitted? tos-acceptance payouts-enabled? charges-enabled?]))
                      :status.type/inactive
-                     :status.type/active)]
+                     :status.type/active)
+        old-status (:stripe/status stripe)
 
-    (if-let [old-status (:stripe/status stripe)]
-      (when-not (= (:status/type old-status) new-status)
-        (db/transact-one state [:db/add (:db/id old-status) :status/type new-status]))
+        stripe-status-txs (if (some? old-status)
+                            (when-not (= (:status/type old-status) new-status)
+                              [[:db/add (:db/id old-status) :status/type new-status]])
+                            [{:stripe/id     id
+                              :stripe/status {:status/type new-status}}])
 
-      (db/transact-one state {:stripe/id     id
-                              :stripe/status {:status/type new-status}}))))
+        store-old-status (:store/status store)
+        store-status-txs (when (= new-status :status.type/inactive)
+                           (if (some? store-old-status)
+                             (when-not (= (:status/type store-old-status) :status.type/closed)
+                               [[:db/add (:db/id store-old-status) :status/type :status.type/closed]])
+                             [{:db/id        (:db/id store)
+                               :store/status {:status/type :status.type/closed}}]))
+        all-txs (into stripe-status-txs store-status-txs)]
+    (log/info! logger ::account-updated {:old-stripe-status old-status
+                                         :new-stripe-status new-status})
+
+    (when (not-empty all-txs)
+      (db/transact state all-txs))))

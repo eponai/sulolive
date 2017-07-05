@@ -32,7 +32,6 @@
       nil
       (dom/div
         (css/callout)
-        (dom/p nil (dom/strong nil (str "About " name)))
         (quill/->QuillRenderer {:html (f/bytes->str description)})))))
 
 (defn policies-section [component]
@@ -43,12 +42,12 @@
       nil
       (dom/div
         (css/callout)
-        (dom/p nil (dom/strong nil "Shipping"))
-        (quill/->QuillRenderer {:html (f/bytes->str shipping-policy)}))
+        (dom/p nil (dom/strong nil "Returns"))
+        (quill/->QuillRenderer {:html (f/bytes->str return-policy)}))
       (dom/div
         (css/callout)
-        (dom/p nil (dom/strong nil "Returns"))
-        (quill/->QuillRenderer {:html (f/bytes->str return-policy)})))))
+        (dom/p nil (dom/strong nil "Shipping"))
+        (quill/->QuillRenderer {:html (f/bytes->str shipping-policy)})))))
 
 (defn store-not-found [component]
   (let [{:query/keys [store featured-stores]} (om/props component)]

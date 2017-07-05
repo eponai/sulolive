@@ -77,6 +77,8 @@
         fields-needed-for-country (minimum-fields stripe-country-spec entity-type)
         fields-needed-for-account (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed])]
 
+    (debug "Account fields: " fields-needed-for-account)
+    (debug "Account country fields: " fields-needed-for-country)
     (if (:stripe/details-submitted? stripe-account)
       (filter #(some? (get (set fields-needed-for-account) %)) (vals stripe-fields))
       (filter #(some? (get (set fields-needed-for-country) %)) (vals stripe-fields)))))
@@ -93,7 +95,10 @@
                                       :field.legal-entity.address/line1
                                       :field.legal-entity.address/city
                                       :field.legal-entity.address/postal
-                                      :field.legal-entity.address/state]))]
+                                      :field.legal-entity.address/state]))
+        legal-entity (:stripe/legal-entity stripe-account)
+        address (:stripe.legal-entity/address legal-entity)]
+    (debug "Account all fields: " all-required-fields)
     (debug "Account fields: " account-fields)
     (when (not-empty account-fields)
       [
@@ -147,9 +152,10 @@
                (grid/column
                  nil
                  (v/input
-                   {:type        "text"
-                    :placeholder "Company, LTD"
-                    :id          (:field.legal-entity/business-name form-inputs)}
+                   {:type         "text"
+                    :placeholder  "Company, LTD"
+                    :defaultValue (:stripe.legal-entity/business-name legal-entity)
+                    :id           (:field.legal-entity/business-name form-inputs)}
                    input-validation)))))
 
          (when (get account-fields :field.legal-entity/business-tax-id)
@@ -187,16 +193,18 @@
                      (grid/column
                        (grid/column-size {:small 12 :medium 8})
                        (v/input
-                         {:type        "text"
-                          :placeholder "Street"
-                          :id          (:field.legal-entity.address/line1 form-inputs)}
+                         {:type         "text"
+                          :placeholder  "Street"
+                          :defaultValue (:stripe.legal-entity.address/line1 address)
+                          :id           (:field.legal-entity.address/line1 form-inputs)}
                          input-validation))
                      (grid/column
                        nil
                        (v/input
-                         {:type        "text"
-                          :placeholder "Apt/Suite/Other"
-                          :id          (:field.legal-entity.address/line2 form-inputs)}
+                         {:type         "text"
+                          :placeholder  "Apt/Suite/Other"
+                          :defaultValue (:stripe.legal-entity.address/line2 address)
+                          :id           (:field.legal-entity.address/line2 form-inputs)}
                          input-validation))))
                  (grid/row
                    nil
@@ -204,31 +212,34 @@
                      (grid/column
                        nil
                        (v/input
-                         {:type        "text"
-                          :placeholder "Postal code"
-                          :id          (:field.legal-entity.address/postal form-inputs)}
+                         {:type         "text"
+                          :placeholder  "Postal code"
+                          :defaultValue (:stripe.legal-entity.address/postal address)
+                          :id           (:field.legal-entity.address/postal form-inputs)}
                          input-validation)))
                    (when (get account-fields :field.legal-entity.address/city)
                      (grid/column
                        nil
                        (v/input
-                         {:type        "text"
-                          :placeholder "City"
-                          :id          (:field.legal-entity.address/city form-inputs)}
+                         {:type         "text"
+                          :placeholder  "City"
+                          :defaultValue (:stripe.legal-entity.address/city address)
+                          :id           (:field.legal-entity.address/city form-inputs)}
                          input-validation)))
                    (when (get account-fields :field.legal-entity.address/state)
                      (grid/column
                        nil
                        (v/input
-                         {:type        "text"
-                          :placeholder "State"
-                          :id          (:field.legal-entity.address/state form-inputs)}
+                         {:type         "text"
+                          :placeholder  "State"
+                          :defaultValue (:stripe.legal-entity.address/state address)
+                          :id           (:field.legal-entity.address/state form-inputs)}
                          input-validation)))))))))])))
 
 (defn personal-details [component]
   (let [{:keys [input-validation entity-type document-upload]} (om/get-state component)
         all-required-fields (set (required-fields component))
-        {:keys [store]} (om/get-computed component)
+        {:keys [store stripe-account]} (om/get-computed component)
         personal-fields (into #{}
                               (filter #(some? (get all-required-fields (get form-inputs %)))
                                       [:field.legal-entity/first-name
@@ -237,7 +248,8 @@
                                        :field.legal-entity.dob/month
                                        :field.legal-entity.dob/year
                                        :field.legal-entity/personal-id-number
-                                       :field.legal-entity/document]))]
+                                       :field.legal-entity/document]))
+        legal-entity (:stripe/legal-entity stripe-account)]
 
 
     (when (not-empty personal-fields)
@@ -257,16 +269,18 @@
                (grid/column
                  nil
                  (v/input
-                   {:type        "text"
-                    :placeholder "First"
-                    :id          (:field.legal-entity/first-name form-inputs)}
+                   {:type         "text"
+                    :placeholder  "First"
+                    :defaultValue (:stripe.legal-entity/first-name legal-entity)
+                    :id           (:field.legal-entity/first-name form-inputs)}
                    input-validation))
                (grid/column
                  nil
                  (v/input
-                   {:type        "text"
-                    :placeholder "Last"
-                    :id          (:field.legal-entity/last-name form-inputs)}
+                   {:type         "text"
+                    :placeholder  "Last"
+                    :defaultValue (:stripe.legal-entity/last-name legal-entity)
+                    :id           (:field.legal-entity/last-name form-inputs)}
                    input-validation)))))
 
          (when (get personal-fields :field.legal-entity.dob/day)
@@ -280,23 +294,26 @@
                (grid/column
                  nil
                  (v/input
-                   {:type        "text"
-                    :placeholder "Month"
-                    :id          (:field.legal-entity.dob/month form-inputs)}
+                   {:type         "text"
+                    :placeholder  "Month"
+                    :id           (:field.legal-entity.dob/month form-inputs)
+                    :defaultValue (get-in legal-entity [:stripe.legal-entity/dob :stripe.legal-entity.dob/month])}
                    input-validation))
                (grid/column
                  nil
                  (v/input
-                   {:type        "text"
-                    :placeholder "Day"
-                    :id          (:field.legal-entity.dob/day form-inputs)}
+                   {:type         "text"
+                    :placeholder  "Day"
+                    :defaultValue (get-in legal-entity [:stripe.legal-entity/dob :stripe.legal-entity.dob/day])
+                    :id           (:field.legal-entity.dob/day form-inputs)}
                    input-validation))
                (grid/column
                  nil
                  (v/input
-                   {:type        "text"
-                    :placeholder "Year"
-                    :id          (:field.legal-entity.dob/year form-inputs)}
+                   {:type         "text"
+                    :placeholder  "Year"
+                    :defaultValue (get-in legal-entity [:stripe.legal-entity/dob :stripe.legal-entity.dob/year])
+                    :id           (:field.legal-entity.dob/year form-inputs)}
                    input-validation)))))
          (when (get personal-fields :field.legal-entity/personal-id-number)
            (menu/item
@@ -331,7 +348,7 @@
                                                  {:on-upload (fn [{:keys [file]}]
                                                                (debug "Changed to file: " file)
                                                                (om/update-state! component assoc :document-upload {:name (.-name file)}))
-                                                  :owner store}))
+                                                  :owner     store}))
                  ;(dom/input
                  ;  (css/show-for-sr {:type        "file"
                  ;                    :placeholder "First"
@@ -350,12 +367,21 @@
                        "Change file"
                        "Upload file"))))))))])))
 
+(defn external-account-required? [component]
+  (let [{:keys [stripe-account]} (om/get-computed component)
+        ;all-required-fields (required-fields component)
+        account-fields (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed])]
+    (some? (get (set account-fields) (:field/external-account form-inputs)))))
+
 (defn external-account [component]
   (let [{:query/keys [stripe-country-spec]} (om/props component)
+        {:keys [stripe-account]} (om/get-computed component)
         {:keys [input-validation]} (om/get-state component)
-        all-required-fields (set (required-fields component))
-        external-account-required? (get all-required-fields (get form-inputs :field/external-account))]
-    (when external-account-required?
+        ;all-required-fields (set (required-fields component))
+        ;external-account-required? (get all-required-fields (get form-inputs :field/external-account))
+
+        ]
+    (when (external-account-required? component)
       [(dom/p (css/add-class :section-title) "Bank details")
        (menu/vertical
          (css/add-class :section-list)
@@ -417,6 +443,8 @@
                   :id          (:field.external-account/account-number form-inputs)}
                  input-validation)))))])))
 
+
+
 (defui Verify-no-loader
   static om/IQuery
   (query [this]
@@ -462,10 +490,11 @@
                                                      :field.legal-entity/first-name         first-name
                                                      :field.legal-entity/last-name          last-name
                                                      :field.legal-entity/personal-id-number personal-id-number})
-                          :field/external-account (f/remove-nil-keys
-                                                    {:field.external-account/institution-number institution
-                                                     :field.external-account/transit-number     transit
-                                                     :field.external-account/account-number     account})})
+                          :field/external-account (cond-> {:field.external-account/institution-number institution
+                                                           :field.external-account/transit-number     transit
+                                                           :field.external-account/account-number     account}
+                                                          (not (external-account-required? this))
+                                                          f/remove-nil-keys)})
              validation (v/validate :account/activate input-map form-inputs)]
          (debug "Validation: " validation)
 
@@ -477,35 +506,47 @@
                                    :routing_number (str transit institution)
                                    :account_number account}
                                   {:on-success (fn [token ip]
-                                                 (let [tos-acceptance {:field.tos-acceptance/ip   ip
-                                                                       :field.tos-acceptance/date (date/current-secs)}]
-                                                   (msg/om-transact! this `[(stripe/update-account
-                                                                              ~{:account-params (-> input-map
+                                                 ;(let [tos-acceptance {:field.tos-acceptance/ip   ip
+                                                 ;                      :field.tos-acceptance/date (date/current-secs)}])
+                                                 (msg/om-transact! this [(list 'stripe/update-account
+                                                                               {:account-params (-> input-map
                                                                                                     (assoc :field/external-account token)
-                                                                                                    (assoc :field/tos-acceptance tos-acceptance))
+                                                                                                    ;(assoc :field/tos-acceptance tos-acceptance)
+                                                                                                    )
+                                                                                :accept-terms?  true
                                                                                 :store-id       (:db/id store)})
-                                                                            :query/stripe-account])))})
-             (msg/om-transact! this `[(stripe/update-account
-                                        ~{:account-params input-map
-                                          :store-id       (:db/id store)})
-                                      :query/stripe-account])))
+                                                                         :query/stripe-account]))})
+             (msg/om-transact! this [(list 'stripe/update-account
+                                           {:account-params input-map
+                                            :accept-terms? true
+                                            :store-id       (:db/id store)})
+                                     :query/stripe-account])))
 
          (om/update-state! this assoc :input-validation validation))))
   (initLocalState [this]
     {:entity-type :individual})
 
+  (componentDidMount [this]
+    (let [{:keys [stripe-account]} (om/get-computed this)
+          entity-type (get-in stripe-account [:stripe/legal-entity :stripe.legal-entity/type])]
+      (when (#{:individual :company} entity-type)
+        (om/update-state! this assoc :entity-type entity-type))))
+
   (componentDidUpdate [this prev-state prev-props]
     (let [message (msg/last-message this 'stripe/update-account)
           {:keys [store]} (om/get-computed this)]
       (when (msg/final? message)
-        (when (msg/success? message)
-          (routes/set-url! this :store-dashboard {:store-id (:db/id store)})))))
+        (msg/clear-messages! this 'stripe/update-account)
+        (if (msg/success? message)
+          (routes/set-url! this :store-dashboard {:store-id (:db/id store)})
+          (om/update-state! this assoc :error-message (msg/message message))))))
   (render [this]
     (let [{:query/keys [stripe-country-spec]} (om/props this)
-          {:keys [entity-type input-validation]} (om/get-state this)
+          {:keys [entity-type input-validation error-message]} (om/get-state this)
           {:keys [stripe-account]} (om/get-computed this)
           fields-needed (minimum-fields stripe-country-spec entity-type)
           message (msg/last-message this 'stripe/update-account)]
+      (debug "Props " (om/props this))
 
       (debug "Stripe account: " stripe-account)
       (debug "Country specs: " stripe-country-spec)
@@ -549,6 +590,9 @@
         (dom/hr nil)
         (dom/div
           (css/text-align :right)
+          (when (not-empty error-message)
+            (dom/p (css/add-class :text-alert)
+                   (dom/small nil error-message)))
           (dom/div
             (css/add-class :action-buttons)
             (button/store-navigation-cta
@@ -557,7 +601,11 @@
           (dom/p nil
                  (dom/small nil "By submitting, you agree to our ")
                  (dom/a {:href   (routes/url :tos)
-                         :target "_blank"} (dom/small nil "Terms of service."))))))))
+                         :target "_blank"}
+                        (dom/small nil "Terms of service"))
+                 (dom/small nil " and the ")
+                 (dom/a {:href "https://stripe.com/ca/connect-account/legal"} (dom/small nil "Stripe Connected Account Agreement"))
+                 (dom/small nil ".")))))))
 
 (def Verify (script-loader/stripe-loader Verify-no-loader))
 

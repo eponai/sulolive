@@ -5,8 +5,12 @@
 			max-width: $user-dashboard-max-width;
 		}
 	}
+
 }
 #sulo-login-modal {
+	h1 {
+		text-transform: none;
+	}
 	text-align: center;
 	@include breakpoint(medium) {
 		min-width: 25rem;

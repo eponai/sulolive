@@ -73,7 +73,7 @@
              done?
              (css/add-class :done))
     (dom/a
-      {:href (when-not done? href)}
+      {:href href}
       (dom/p nil
              (dom/i {:classes ["fa fa-check fa-fw"]})
              content))))
@@ -94,6 +94,7 @@
                                      :store.profile/description
                                      {:store.profile/photo [:photo/path :photo/id]}]}
                     {:store/owners [{:store.owner/user [:user/email]}]}
+                    {:store/status [:status/type]}
                     :store/stripe
                     {:store/status [:status/type]}
                     {:store/shipping [:shipping/rules]}
@@ -101,14 +102,16 @@
                     {:stream/_store [:stream/state]}]}
      :query/store-item-count
      {:query/stripe-account [:stripe/details-submitted?]}
+     {:query/store-has-streamed [:ui.singleton.state/store-has-streamed?]}
      :query/current-route])
   Object
   (render [this]
-    (let [{:query/keys [store store-item-count current-route stripe-account]} (om/props this)
+    (let [{:query/keys [store store-item-count current-route stripe-account store-has-streamed]} (om/props this)
           {:keys [store-id]} (:route-params current-route)
           {:keys [route route-params]} current-route
           store-item-count (or store-item-count 0)]
       (debug "Store: " store)
+      (debug "Store has streamed: " store-has-streamed)
       (dom/div
         {:id "sulo-main-dashboard"}
 
@@ -208,38 +211,50 @@
         ;      (dom/h3 nil "Payments")
         ;      (dom/p (css/add-class :stat) 0))))
 
-        (dom/div
-          (css/add-class :section-title)
-          (dom/h2 nil "Getting started"))
-        (callout/callout
-          nil
-          (menu/vertical
-            (css/add-class :section-list)
+        (let [described-store? (some? (:store.profile/description (:store/profile store)))
+              defined-shipping? (not-empty (get-in store [:store/shipping :shipping/rules]))
+              has-products? (boolean (pos? store-item-count))
+              did-stream? (get-in store-has-streamed [:ui.singleton.state/store-has-streamed?])
+              did-verify? (:stripe/details-submitted? stripe-account)
+              did-open? (= :status.type/open (get-in store [:store/status :status/type]))]
+          (when (some false? [described-store? defined-shipping? has-products? did-stream? did-verify? did-stream?])
+            [
+             (dom/div
+               (css/add-class :section-title)
+               (dom/h2 nil "Getting started"))
+             (callout/callout
+               nil
+               (menu/vertical
+                 (css/add-class :section-list)
 
-            (check-list-item
-              (some? (:store.profile/description (:store/profile store)))
-              (routes/store-url store :store-dashboard/profile)
-              (dom/span nil "Describe your store."))
+                 (check-list-item
+                   described-store?
+                   (routes/store-url store :store-dashboard/profile)
+                   (dom/span nil "Describe your store."))
 
-            (check-list-item
-              (not-empty (get-in store [:store/shipping :shipping/rules]))
-              (routes/store-url store :store-dashboard/shipping)
-              (dom/span nil "Specify shipping options."))
+                 (check-list-item
+                   defined-shipping?
+                   (routes/store-url store :store-dashboard/shipping)
+                   (dom/span nil "Specify shipping options."))
 
-            (check-list-item
-              (boolean (pos? store-item-count))
-              (routes/store-url store :store-dashboard/create-product)
-              (dom/span nil "Add your first product."))
+                 (check-list-item
+                   has-products?
+                   (routes/store-url store :store-dashboard/create-product)
+                   (dom/span nil "Add your first product."))
 
-            (check-list-item
-              false
-              (routes/store-url store :store-dashboard/stream)
-              (dom/span nil "Setup your first stream."))
+                 (check-list-item
+                   did-stream?
+                   (routes/store-url store :store-dashboard/stream)
+                   (dom/span nil "Setup your first stream."))
 
-            (check-list-item
-              (:stripe/details-submitted? stripe-account)
-              (routes/store-url store :store-dashboard/business#verify)
-              (dom/span nil "Verify your account, so we know you're real."))))
+                 (check-list-item
+                   did-verify?
+                   (routes/store-url store :store-dashboard/business#verify)
+                   (dom/span nil "Verify your account, so we know you're real."))
+                 (check-list-item
+                   did-open?
+                   (routes/store-url store :store-dashboard/profile#options)
+                   (dom/span nil "Open your store and let customers find you"))))]))
 
 
 

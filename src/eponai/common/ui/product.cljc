@@ -19,17 +19,35 @@
     [clojure.string :as string]
     [cemerick.url :as url]))
 
-;(defn reviews-list [reviews]
-;  (apply dom/div
-;         #js {:className "user-reviews-container"}
-;         (map (fn [r]
-;                (dom/div #js {:className "user-review-item"}
-;                  (c/rating-element (:review/rating r))
-;                  (dom/p #js {:className "user-review-text"}
-;                         "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-;
-;                         )))
-;              reviews)))
+(defn get-pos [element]
+  #?(:cljs
+     (loop [el element
+            lx 0 ly 0]
+       (if (some? el)
+         (recur (.-offsetParent el) (+ lx (.-offsetLeft el)) (+ ly (.-offsetTop el)))
+         {:x lx :y ly}))))
+(defn on-zoom [img-dimensions event index]
+  #?(:cljs
+     (let [^js/Event e event
+           img (web-utils/element-by-id (str "sulo-product-photo-" index "-container"))
+           background (web-utils/element-by-id (str "sulo-product-photo-" index "-background"))
+           img-width (.-offsetWidth img)
+           img-height (.-offsetHeight img)
+           {:keys [x y]} (get-pos img)
+           rel-x (/ (- (.-clientX e) x) img-width)
+           rel-y (/ (- (.-clientY e) y) img-height)
+
+           ;; The background position is in coordinates with origin in the top left corner.
+           background-x (- (* rel-x img-width) (* rel-x (:width img-dimensions)))
+           background-y (- (* rel-y img-height) (* rel-y (:height img-dimensions)))]
+       (set! (.-backgroundSize (.-style background)) (str (:width img-dimensions) "px " (:height img-dimensions) "px"))
+       (set! (.-backgroundPosition (.-style background)) (str background-x "px " background-y "px")))))
+
+(defn zoom-out [event index]
+  #?(:cljs
+     (let [background (web-utils/element-by-id (str "sulo-product-photo-" index "-background"))]
+       (set! (.-backgroundSize (.-style background)) "contain")
+       (set! (.-backgroundPosition (.-style background)) "center center"))))
 
 (def form-elements
   {:selected-sku "selected-sku"})
@@ -69,6 +87,26 @@
     {:selected-tab       :rating
      :active-photo-index 0})
 
+  (select-photo [this index]
+    #?(:cljs
+       ;    var background = new Image();
+       ;    background.src = "your-image.jpg";
+       ;
+       ;var bgHeight = background.height;
+       ;var bgWidth = background.width;
+       (let [{:store.item/keys [photos]} (om/props this)
+             {item-photo :store.item.photo/photo} (get (into [] (sort-by :store.item.photo/index photos)) (or index 0))
+             img (new js/Image.)
+             img-url (photos/transform (:photo/id item-photo) :transformation/preview)]
+         (debug "IMG URL: " img-url)
+         (set! (.-onload img) #(do
+                                (debug "img dod load: " {:width  (.-width img)
+                                                         :height (.-height img)})
+                                (om/update-state! this assoc :img-dimensions {:width  (.-width img)
+                                                                              :height (.-height img)})))
+         (set! (.-src img) img-url)
+
+         (om/update-state! this assoc :active-photo-index index))))
   (add-to-bag [this]
     #?(:cljs (let [{:keys [store.item/skus] :as product} (om/props this)
                    variations (filter #(some? (:store.item.sku/variation %)) skus)
@@ -81,12 +119,14 @@
                  (om/transact! this `[(shopping-bag/add-items ~{:skus [selected-sku]})
                                       :query/cart])
                  (om/update-state! this assoc :added-to-bag? true)))))
+  (componentDidMount [this]
+    (.select-photo this 0))
   (componentDidUpdate [this prev-props prev-state]
     #?(:cljs (let [{:keys [added-to-bag?]} (om/get-state this)]
                (if added-to-bag?
                  (js/setTimeout #(om/update-state! this assoc :added-to-bag? false) 2000)))))
   (render [this]
-    (let [{:keys [selected-tab added-to-bag? active-photo-index]} (om/get-state this)
+    (let [{:keys [selected-tab added-to-bag? active-photo-index img-dimensions]} (om/get-state this)
           {:store.item/keys [price photos details skus]
            item-name        :store.item/name :as item} (om/props this)
           store (:store/_items item)
@@ -123,7 +163,7 @@
                                  (css/add-class ::css/is-in))
                         (photo/product-photo
                           item
-                          (->> {:index i}
+                          (->> {:id (str "sulo-product-photo-" i) :index i :onMouseMove #(on-zoom img-dimensions % i) :onMouseOut #(zoom-out % i)}
                                (css/add-class :orbit-image)
                                (css/add-class :contain)))))
                     photos))
@@ -132,7 +172,7 @@
                   (map-indexed
                     (fn [i p]
                       (dom/button
-                        {:onClick #(om/update-state! this assoc :active-photo-index i)}
+                        {:onClick #(.select-photo this i)}
                         (photo/product-thumbnail item {:index          i
                                                        :transformation :transformation/thumbnail})))
                     photos))))

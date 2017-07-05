@@ -136,7 +136,7 @@
                                                 :headers    {"Stripe-Version" stripe-api-version}})) :key-fn keyword)))
   IStripeConnect
   (-get-country-spec [this code]
-    (let [country-spec (get api-key ["country_specs" code])]
+    (let [country-spec (-get this ["country_specs" code])]
       (debug "STRIPE - fetched country spec: " country-spec)
       (f/stripe->country-spec country-spec)))
 

@@ -6,7 +6,8 @@
     [eponai.common.database :as db]
     [eponai.common.format :as f]
     [eponai.server.api.store :as store]
-    [eponai.server.external.stripe.format :as stripe-format]))
+    [eponai.server.external.stripe.format :as stripe-format]
+    [eponai.server.log :as log]))
 
 ;; ############### SULO ACCOUNT ####################
 
@@ -55,7 +56,10 @@
 
 ;; ############## CONNECTED ACCOUNT ################
 
-(defmulti handle-connected-webhook (fn [_ event] (debug "Webhook event: " (:type event)) (:type event)))
+(defmulti handle-connected-webhook (fn [{:keys [logger]} event]
+                                     (debug "Webhook event: " (:type event))
+                                     (log/info! logger ::stripe-connected-webhook {:event event})
+                                     (:type event)))
 
 (defmethod handle-connected-webhook :default
   [_ event]

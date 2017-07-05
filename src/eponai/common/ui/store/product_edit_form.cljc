@@ -207,7 +207,7 @@
                                                                              (assoc :store.item/skus skus)
                                                                              (some? selected-section)
                                                                              (assoc :store.item/section selected-section))
-                                                         :product-id product-id
+                                                         :product-id (c/parse-long product-id)
                                                          :store-id   (db/store-id->dbid this store-id)})
                                  :query/item
                                  :query/store]))
@@ -351,9 +351,9 @@
                           nil
                           (photo/square {:photo-id       photo-key
                                          :transformation :transformation/thumbnail})
-                          (button/store-setting-default
-                            (css/add-class :expanded {:onClick #(.remove-uploaded-photo this i)})
-                            (dom/i {:classes ["fa fa-trash-o"]})))))))
+                          (button/delete
+                            {:onClick #(.remove-uploaded-photo this i)}
+                            (dom/span nil "remove")))))))
                 uploaded-photos)
               (when (some? queue-photo)
                 (grid/column
@@ -567,7 +567,7 @@
                                           (dom/option {:value "limited"} "Limited")))
                             (grid/column
                               (css/add-class :shrink)
-                              (button/user-setting-default
+                              (button/delete
                                 {:onClick #(om/update-state! this update :sku-count dec)}
                                 (dom/span nil "remove"))))))))
                   (range sku-count)))
@@ -608,7 +608,7 @@
                      (dom/span nil "Delete product"))))
           (grid/column
             (css/add-class :action-buttons)
-            (button/store-navigation-default
+            (button/store-navigation-secondary
               {:href    (routes/url :store-dashboard/product-list {:store-id store-id})
                :onClick #(mixpanel/track "Store: Cancel edit product")}
               (dom/span nil "Cancel"))
