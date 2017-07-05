@@ -66,7 +66,8 @@
 
 (defn create-product [{:keys [state system]} store-id {:store.item/keys [photos skus section] :as params}]
   (let [new-section (cf/add-tempid section)
-        product (cond-> (f/product params)
+        product (cond-> (-> (f/product params)
+                            (assoc :store.item/created-at (date/current-millis)))
                         (some? new-section)
                         (assoc :store.item/section new-section))
 
