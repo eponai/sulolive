@@ -102,10 +102,10 @@
   (let [{:query/keys [auth locations navigation]} (om/props component)]
     (map
       (fn [{:category/keys [route-map name path] :as a}]
-        (let [loc (client.auth/current-locality component)
-              opts {:href    (navbar-route component (routes/map->url (assoc-in route-map
-                                                                                [:route-params :locality]
-                                                                                (:sulo-locality/path loc))))
+        (let [opts {:href    (navbar-route
+                               component
+                               (when-let [loc (:sulo-locality/path (client.auth/current-locality component))]
+                                 (routes/map->url (assoc-in route-map [:route-params :locality] loc))))
                     :classes (when (nil? auth) [:unauthed])
                     :onClick #(do (mixpanel/track-key ::mixpanel/shop-by-category {:source   source
                                                                                    :category path})
