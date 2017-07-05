@@ -27,6 +27,22 @@ p > a {
 	// }
 }
 
+.sl-tooltip {
+	// display: flex;
+	// flex-direction: column;
+	// align-items: center;
+	display: inline-block;
+	.sl-tooltip-text {
+		margin-top: 0.2rem;
+		left: 50%;
+		// top: 100%;
+		// top: 0;
+		font-size: 0.8rem;
+		// width: 10rem;
+		// transform: translateX(50%);
+	}
+}
+
 h1, h2, h3, h4, h5, h6 {
 	text-transform: uppercase;
 	letter-spacing: 1px;
@@ -38,7 +54,7 @@ h1, h2, h3, h4, h5, h6 {
 	// @include foundation-typography-base;
 		h1, h2, h3, h4, h5, h6 {
 		text-transform: none;
-		letter-spacing: 0;
+		letter-spacing: 0.5px;
 		font-weight: $global-weight-normal;
 	// font-size: 100%;
 	}

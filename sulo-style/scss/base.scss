@@ -147,8 +147,8 @@ a.disabled {
 			width: 1.5rem;
 		}
 		.sl-tooltip-text {
-			right: -50%;
-			transform: translateX(-0.75rem);
+			// right: -50%;
+			// transform: translateX(-0.75rem);
 			margin-top: -0.5rem;
 		}
 	}
@@ -156,12 +156,12 @@ a.disabled {
 		.share-button {
 			padding-right:1.5rem;
 			.sl-tooltip-text {
-				transform: translateX(-1.5rem);
+				// transform: translateX(-1.5rem);
 			}
 			@include breakpoint(large) {
 				padding-right: 0;
 				.sl-tooltip-text {
-					transform: translateX(-0.75rem);
+					// transform: translateX(-0.75rem);
 				}
 			} 
 		}

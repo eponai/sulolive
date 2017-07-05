@@ -14,17 +14,21 @@
 		margin: 0;
 		h3 {
 			margin: 0;
+			margin-right: 0.5rem;
 		}
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		p {
-			margin: 0;
-			margin-right: 0.5rem;
+		a {
+			text-decoration: underline;
 		}
+		// p {
+		// 	margin: 0;
+		// 	margin-right: 0.5rem;
+		// }
 		.sl-tooltip-text {
 			max-width: 100%;
-			min-width: 10rem;
+			width: 10rem;
 		}
 	}
 	.callout {

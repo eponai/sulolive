@@ -166,6 +166,7 @@
                               :state       state})
        :type               (when (some? type) (name type))
        :personal_id_number personal-id-number
+       :business_tax_id    business-tax-id
        :verification       (f/remove-nil-keys
                              {:document document})})))
 

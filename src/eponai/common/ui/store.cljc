@@ -173,12 +173,13 @@
                (->> (css/text-align :center)
                     (css/add-classes [:alert :store-closed]))
                (dom/div (css/add-class :sl-tooltip)
-                      (dom/p
+                      (dom/h3
                         (css/add-class :closed)
                         (dom/strong nil "Closed - "))
                       (dom/span (css/add-class :sl-tooltip-text)
                                 "Only you can see your store. Customers who try to view your store will see a not found page."))
-               (dom/a {:href (routes/url :store-dashboard/profile#options route-params)} "Go to options")))
+               (dom/a {:href (routes/url :store-dashboard/profile#options route-params)}
+                      (dom/span nil "Go to options"))))
            (grid/row
              (->> (grid/columns-in-row {:small 1})
                   (css/add-class :collapse)

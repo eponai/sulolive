@@ -13,7 +13,8 @@
     [eponai.client.parser.message :as msg]
     [eponai.common.ui.common :as common]
     [clojure.string :as string]
-    [cemerick.url :as url]))
+    [cemerick.url :as url]
+    [eponai.common.mixpanel :as mixpanel]))
 
 (defn store-missing-information [store]
   (let [{:store/keys [items profile]} store]
@@ -245,6 +246,8 @@
   Object
   (open-store [this]
     (let [{:query/keys [store stripe-account current-route]} (om/props this)]
+      (mixpanel/track "Store: Open store" {:can-open? (store-can-open? store)
+                                           :store-id (:db/id store)})
       (when (store-can-open? store)
         (msg/om-transact! this [(list 'store/update-status {:status   {:status/type :status.type/open}
                                                             :store-id (:db/id store)})
@@ -253,6 +256,7 @@
   (close-store [this]
     (let [{:query/keys [store stripe-account current-route]} (om/props this)]
       (om/update-state! this dissoc :modal)
+      (mixpanel/track "Store: Close store" {:store-id (:db/id store)})
       (msg/om-transact! this [(list 'store/update-status {:status   {:status/type :status.type/closed}
                                                           :store-id (:db/id store)})
                               :query/store])
@@ -266,6 +270,8 @@
   (save-username [this]
     (let [{:keys [input-username]} (om/get-state this)
           {:query/keys [store]} (om/props this)]
+      (mixpanel/track "Store: Update username" {:store-id (:db/id store)
+                                                :username input-username})
       (msg/om-transact! this [(list 'store/update-username {:store-id (:db/id store)
                                                             :username input-username})
                               :query/store])))
