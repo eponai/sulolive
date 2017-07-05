@@ -12,12 +12,13 @@
 (def default-page-size 25)
 (def category-order-values ["newest" "lowest-price" "highest-price"])
 (def search-order-values (into ["relevance"] category-order-values))
+(def order-labels {"newest" "Recently added"
+                   "lowest-price" "Price (low to high)"
+                   "highest-price" "Price (high to low)"
+                   "relevance" "Most relevant"})
 
 (defn order-label [order]
-  (-> order
-      (string/capitalize)
-      (string/split #"-")
-      (->> (string/join " "))))
+  (get order-labels order))
 
 (defn order-values [query-params]
   (if (some? (:search query-params))
