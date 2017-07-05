@@ -13,7 +13,8 @@
     [eponai.common.ui.utils :refer [two-decimal-price]]
     [eponai.web.ui.photo :as photo]
     [taoensso.timbre :refer [debug]]
-    [clojure.string :as string]))
+    [clojure.string :as string]
+    [eponai.web.ui.store.profile.options :as options]))
 
 (defn verification-status-element [component]
   (let [{:query/keys [stripe-account current-route]} (om/props component)
@@ -94,8 +95,7 @@
                                      :store.profile/description
                                      {:store.profile/photo [:photo/path :photo/id]}]}
                     {:store/owners [{:store.owner/user [:user/email]}]}
-                    {:store/status [:status/type]}
-                    :store/stripe
+                    {:store/stripe [{:stripe/status [:status/type]}]}
                     {:store/status [:status/type]}
                     {:store/shipping [:shipping/rules]}
                     {:order/_store [:order/items]}
@@ -153,9 +153,12 @@
               (dom/h3 nil "Status")
               (dom/p nil (dom/span (css/add-classes [:stat])
                                    (store-status store)))
+              (when (options/store-is-closed? store)
+                (if (options/store-can-open? store)
+                  (dom/p (css/add-class :text-sulo-dark) (dom/small nil (dom/strong nil "Your store can be opened!")))
+                  (dom/p (css/add-class :text-warning) (dom/small nil (dom/strong nil "Action needed before store can open")))))
               ;(dom/p nil (dom/span (css/add-class "icon icon-opened")))
-              (when-not (= :status.type/open
-                           (get-in store [:store/status :status/type]))
+              (when-not (options/store-is-open? store)
                 (button/store-navigation-default
                   {:href    (routes/store-url store :store-dashboard/profile#options)
                    :onClick #(mixpanel/track-key ::mixpanel/update-status {:source "store-dashboard"})}

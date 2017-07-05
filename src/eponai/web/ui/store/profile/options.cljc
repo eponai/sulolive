@@ -130,13 +130,13 @@
 
                 ;; Store account is either disabled or has never been verified in Stripe. E.g. accepted terms and provided business info.
                 (when-not (store-is-active-in-stripe? store)
-                  (button/user-setting-default
+                  (button/store-setting-warning
                     {:href    (routes/url :store-dashboard/business#verify route-params)
                      :classes [:small]} (dom/span nil "Verify account")))
 
                 ;; The store has not provided any shipping rules, they are needed for anyone to be able to shop.
                 (when-not (store-has-shipping? store)
-                  (button/user-setting-default
+                  (button/store-setting-warning
                     {:href    (routes/url :store-dashboard/shipping route-params)
                      :classes [:small]} (dom/span nil "Specify shipping"))))]
 
