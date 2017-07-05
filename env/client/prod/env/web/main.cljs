@@ -1,6 +1,8 @@
 (ns env.web.main
   (:require-macros [eponai.common.macros :refer [when-not-timbre-level]])
-  (:require [eponai.web.app :as app]))
+  (:require [eponai.web.app :as app]
+    ;;[eponai.client.devtools :as devtools]
+            ))
 
 (defn ^:export runsulo []
       (app/run-prod))

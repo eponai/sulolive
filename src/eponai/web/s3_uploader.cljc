@@ -8,8 +8,6 @@
     #?(:cljs
        [cljs.core.async :refer [chan alts! put!]])
     [om.next :as om :refer [defui]]
-    #?(:cljs
-       [eponai.web.modules :as modules])
     [eponai.common.ui.dom :as dom]
     [taoensso.timbre :refer [error debug]]
     #?(:cljs
@@ -95,6 +93,3 @@
                     :className "show-for-sr"})))))
 
 (def ->FileUploader (om/factory FileUploader))
-
-#?(:cljs
-   (modules/set-loaded! :s3-uploader))

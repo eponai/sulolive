@@ -5,7 +5,6 @@
     [cljs.core.async :refer [chan alts! put!]]
     [om.next :as om :refer [defui]]
     [cljs.core.async :as async]
-    [eponai.web.modules :as modules]
     [eponai.common.photos :as photos]
     [eponai.common.ui.dom :as my-dom]
     [taoensso.timbre :refer [error debug]])
@@ -73,5 +72,3 @@
                        :className "show-for-sr"})))))
 
 (def ->PhotoUploader (om/factory PhotoUploader))
-
-(modules/set-loaded! :photo-uploader)

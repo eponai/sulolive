@@ -26,14 +26,11 @@
                                     taoensso.sente
                                     taoensso.sente.interfaces
                                     taoensso.sente.packers.transit]}
-        :photo-uploader  {:entries [eponai.client.ui.photo-uploader]}
-        :s3-uploader {:entries [eponai.web.s3-uploader]}
 
         ;; Routes
         :index           {:entries [eponai.common.ui.index]}
         :unauthorized    {:entries [eponai.web.ui.unauthorized]}
-        :login           {:entries    [eponai.web.ui.login-page]
-                          :depends-on [:index]}
+        :login           {:entries    [eponai.web.ui.login-page]}
         :landing-page    {:entries [eponai.web.ui.landing-page]}
         :sell            {:entries [eponai.web.ui.start-store]}
         :store           {:entries    [eponai.common.ui.store]
@@ -56,13 +53,10 @@
                                     eponai.web.ui.help.shipping-rules]}
         :user            {:entries    [eponai.common.ui.user
                                        eponai.common.ui.user.order-list
-                                       eponai.common.ui.user.order-receipt]
-                          :depends-on [:photo-uploader]}
+                                       eponai.common.ui.user.order-receipt]}
         :about           {:entries [eponai.web.ui.about-sulo]}
-        :user-settings   {:entries    [eponai.web.ui.user.settings]
-                          :depends-on [:photo-uploader]}
-        :store-dashboard {:depends-on [:stream+chat
-                                       :photo-uploader]
+        :user-settings   {:entries    [eponai.web.ui.user.settings]}
+        :store-dashboard {:depends-on [:stream+chat]
                           :entries    [eponai.common.ui.store.dashboard
                                        eponai.common.ui.store.order-edit-form
                                        eponai.common.ui.store.order-list
