@@ -8,7 +8,7 @@
     [eponai.common :as c]))
 
 (defprotocol IAuth0Client
-  (login-with-credentials [this username password f])
+  (login-with-credentials [this email password f])
   (authorize-social [this opts])
   (passwordless-start [this email f])
   (passwordless-verify [this email code f])
@@ -27,10 +27,10 @@
                                             :responseType "code"
                                             :scope        "openid email"})]
     (reify IAuth0Client
-      (login-with-credentials [_ username password f]
+      (login-with-credentials [_ email password f]
         (.loginWithCredentials (.-redirect web-auth)
                                #js {:connection "Username-Password-Authentication"
-                                    :username   username
+                                    :username   email
                                     :password   password}
                                (fn [err res]
                                  (f (js->clj res :keywordize-keys true)
@@ -75,8 +75,8 @@
                        (debug "Replacing the current url with auth-url: " auth-url)
                        (js/window.location.replace auth-url)))]
     (reify IAuth0Client
-      (login-with-credentials [_ _ _ _]
-        (auto-login "dev@sulo.live"))
+      (login-with-credentials [_ email _ _]
+        (auto-login (or (not-empty email) "dev@sulo.live")))
       (authorize-social [_ _]
         (auto-login "dev@sulo.live"))
       (passwordless-start [_ email _]

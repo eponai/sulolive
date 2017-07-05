@@ -77,35 +77,41 @@
               ))]))
 
 (defn render-create-account [component]
-  (let [{:keys [user token-error input-validation] :as state} (om/get-state component)
+  (let [{:keys             [user token-error input-validation] :as state
+         :create-user/keys [input-email input-name]} (om/get-state component)
         {:query/keys [current-route auth0-info]} (om/props component)
         {:keys [query-params]} current-route
         auth-identity (first (:auth0/identities auth0-info))
-        is-loading? (nil? auth-identity)]
+        create-message (msg/last-message component 'user/create)
+        is-loading? (or (nil? auth-identity) (msg/pending? create-message))
+        ]
     [(dom/p nil (dom/span nil "Finish creating your SULO Live account"))
      (dom/p nil (dom/a {:href (routes/url :login)} (dom/span nil "I already have an account")))
 
      (dom/div
        (css/add-class :login-content)
-       (if is-loading?
+       (if (nil? auth-identity)
          ;; Show loading spinner before we got the user info
          (dom/p nil (dom/i {:classes ["fa fa-spinner fa-pulse"]}))
          [(dom/label nil "Email")
 
           (v/input
-            (cond-> {:type         "email"
-                     :id           (::email form-inputs)
-                     :placeholder  "youremail@example.com"
-                     :defaultValue (:auth0/email auth0-info)}
-                    (not-empty (:email query-params))
+            (cond-> {:type        "email"
+                     :id          (::email form-inputs)
+                     :placeholder "youremail@example.com"
+                     :value       (or input-email (:auth0/email auth0-info))
+                     :onChange    #(when-not (not-empty (:auth0/email auth0-info))
+                                    (om/update-state! component assoc :create-user/input-email (.-value (.-target %))))}
+                    (not-empty (:auth0/email auth0-info))
                     (assoc :disabled true))
             input-validation)
 
           (dom/label nil "Name")
-          (v/input {:type         "text"
-                    :id           (::username form-inputs)
-                    :placeholder  "Your name"
-                    :defaultValue (:auth0/nickname auth0-info)}
+          (v/input {:type        "text"
+                    :id          (::username form-inputs)
+                    :placeholder "Your name"
+                    :value       (or input-name (:auth0/nickname auth0-info))
+                    :onChange    #(om/update-state! component assoc :create-user/input-name (.-value (.-target %)))}
                    input-validation)])
 
        (dom/p (css/add-class :info)
@@ -244,9 +250,10 @@
   (create-account [this]
     #?(:cljs
        (let [{:query/keys [current-route auth0-info]} (om/props this)
+             {:create-user/keys [input-email input-name]} (om/get-state this)
              email (or (:auth0/email auth0-info)
-                       (web-utils/input-value-by-id (::email form-inputs)))
-             username (web-utils/input-value-by-id (::username form-inputs))
+                       input-email)
+             username input-name
              validation (v/validate ::create-account {::email    email
                                                       ::username username} form-inputs)]
          (debug "Validation: " validation)
