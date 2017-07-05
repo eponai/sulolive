@@ -529,10 +529,19 @@
                                  {:user-id (:user-id auth)}))
                  (store/create env params))))})
 
+(defn log-product 
+  "Return map with fields we want to log of a product."
+  [product]
+  (-> (select-keys product [:db/id :store.item/name :store.item/price :store.item/uuid :store.item/category])
+      (assoc :store.item/description-length
+             (when-let [d (:store.item/description product)]
+               (when (seqable? d)
+                 (count d))))))
+
 (defmutation store/create-product
   [{:keys [db] :as env} _ {:keys [product store-id] :as p}]
   {:auth {::auth/store-owner {:store-id store-id}}
-   :log  (-> (select-keys product [:store.item/name :store.item/price :store.item/uuid])
+   :log  (-> (log-product product)
              (assoc :store-id store-id))
    :resp {:success "Your product was created."
           :error   "Sorry, could not create your product. Try again later."}}
@@ -543,7 +552,8 @@
 (defmutation store/update-product
   [{:keys [db] :as env} _ {:keys [product store-id product-id] :as p}]
   {:auth {::auth/store-owner {:store-id store-id}}
-   :log  (merge product {:store-id store-id :product-id product-id})
+   :log  (merge (log-product product)
+                {:store-id store-id :product-id product-id})
    :resp {:success "Your product was updated."
           :error   "Sorry, could not update your product. Try again later."}}
   {:action (fn []
