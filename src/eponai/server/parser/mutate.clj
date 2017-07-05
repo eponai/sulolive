@@ -425,15 +425,20 @@
              (let [temp-file (File/createTempFile "stripe-s3" (str store-id))]
                (debug "Downloading file from s3 to temp.")
                ;; TODO: Use etag?
-               (s3/download-object (:system/aws-s3 system) {:bucket bucket :key key} temp-file)
-               (if (= file-size (.length temp-file))
-                 (debug "Download OK! File sizes are equal: " file-size)
-                 (warn "File size downloaded does not match file size on upload. Downloaded: " (.length temp-file)
-                       " Uploaded: " file-size))
-               (stripe/upload-identity-document (:system/stripe system)
-                                                (:stripe/id (stripe/pull-stripe (db/db state) store-id))
-                                                {:file      temp-file
-                                                 :file-type file-type})))})
+               (try
+                 (s3/download-object (:system/aws-s3 system) {:bucket bucket :key key} temp-file)
+                 (if (= file-size (.length temp-file))
+                   (debug "Download OK! File sizes are equal: " file-size)
+                   (warn "File size downloaded does not match file size on upload. Downloaded: " (.length temp-file)
+                         " Uploaded: " file-size))
+                 (stripe/upload-identity-document (:system/stripe system)
+                                                  (:stripe/id (stripe/pull-stripe (db/db state) store-id))
+                                                  {:file      temp-file
+                                                   :file-type file-type})
+                 (finally
+                   (try
+                     (.delete temp-file)
+                     (catch Exception ignore))))))})
 
 (defmutation stripe/update-account
   [{:keys [state ::parser/return ::parser/exception system client-ip] :as env} _ {:keys [store-id account-params accept-terms?]}]
