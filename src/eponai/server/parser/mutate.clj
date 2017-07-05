@@ -439,7 +439,7 @@
    :log  nil
    :resp {:success return
           :error   (if (some? exception)
-                     (or (:message (ex-data exception)) "Something went wrong")
+                     (or (.getMessage exception) "Something went wrong")
                      "Something went wrong!")}}
   {:action (fn []
              (debug "Stripe update customer: " params)
@@ -459,7 +459,7 @@
                                                                      :postal_code (:shipping.address/postal address)
                                                                      :city        (:shipping.address/locality address)
                                                                      :state       (:shipping.address/region address)
-                                                                     :country     (:shipping.address/country address)}})
+                                                                     :country     (:country/code (:shipping.address/country address))}})
 
                                          (some? default-source)
                                          (assoc :default_source default-source))]

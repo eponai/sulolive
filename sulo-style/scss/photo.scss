@@ -91,11 +91,12 @@ $primary-color: map-get($foundation-palette, primary);
 	border-radius: inherit;
 	overflow: hidden;
 	.background {
+		display: inline-block;
 		border-radius: inherit;
 		position: absolute;
 		background-size: inherit;
 		background-repeat: inherit;
-		background-position: inherit;
+		background-position: center center;
 		transition: opacity .25s ease-in;
 		width: 100%;
 		height: 100%;

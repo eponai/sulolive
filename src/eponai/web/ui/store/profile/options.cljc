@@ -360,28 +360,29 @@
               (render-store-open this)
               (render-store-closed this))))
 
-        (dom/div
-          (css/add-class :section-title)
-          (dom/h2 nil "Danger zone"))
-        (callout/callout
-          nil
-          (menu/vertical
-            (css/add-class :section-list)
-            (menu/item
-              nil
-              (grid/row
-                (->> (css/add-class :collapse)
-                     (css/align :middle))
-                (grid/column
-                  (grid/column-size {:small 12 :medium 8})
-                  (dom/label nil (str "Delete " (get-in store [:store/profile :store.profile/name])))
-                  (dom/p nil
-                         (dom/small nil (dom/strong nil "IMPORTANT: "))
-                         (dom/small nil "Deleting your store is a permanent action. Once confirmed, you will not be able to restore your settings in the future. Want to hit pause? Close your store temporarily instead.")))
-                (grid/column
-                  (css/text-align :right)
-                  (button/default-hollow
-                    (css/add-classes [:alert :small] {:onClick #(om/update-state! this assoc :modal :modal/delete-store)})
-                    (dom/span nil "Delete store")))))))))))
+        ;(dom/div
+        ;  (css/add-class :section-title)
+        ;  (dom/h2 nil "Danger zone"))
+        ;(callout/callout
+        ;  nil
+        ;  (menu/vertical
+        ;    (css/add-class :section-list)
+        ;    (menu/item
+        ;      nil
+        ;      (grid/row
+        ;        (->> (css/add-class :collapse)
+        ;             (css/align :middle))
+        ;        (grid/column
+        ;          (grid/column-size {:small 12 :medium 8})
+        ;          (dom/label nil (str "Delete " (get-in store [:store/profile :store.profile/name])))
+        ;          (dom/p nil
+        ;                 (dom/small nil (dom/strong nil "IMPORTANT: "))
+        ;                 (dom/small nil "Deleting your store is a permanent action. Once confirmed, you will not be able to restore your settings in the future. Want to hit pause? Close your store temporarily instead.")))
+        ;        (grid/column
+        ;          (css/text-align :right)
+        ;          (button/default-hollow
+        ;            (css/add-classes [:alert :small] {:onClick #(om/update-state! this assoc :modal :modal/delete-store)})
+        ;            (dom/span nil "Delete store")))))))
+        ))))
 
 (def ->StoreStatus (om/factory StoreStatus))

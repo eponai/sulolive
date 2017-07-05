@@ -53,6 +53,17 @@
 		.orbit-container {
 			.photo-container {
 				background: transparent;
+				&:hover {
+					img {
+						opacity: 0;
+					}
+					.background {
+						// background-size: 100%;
+					}
+				}
+				.background {
+					background-size: contain;
+				}
 			}
 		}
 		.orbit-bullets {

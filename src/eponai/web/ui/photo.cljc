@@ -43,7 +43,7 @@
              (set! (.-src image-large) url))))))
 
   (render [this]
-    (let [{:keys [content src photo-id classes ext]} (om/props this)]
+    (let [{:keys [content src photo-id classes ext background? id onMouseMove onMouseOut]} (om/props this)]
       (cond (some? photo-id)
             (let [{:keys [loaded-main?]} (om/get-state this)
                   url-small (photos/transform photo-id :transformation/micro ext)
@@ -52,27 +52,32 @@
                 (warn "Ignoring invalid photo src type, expecting a URL string. Got src: " photo-id)
                 (dom/div
                   {:classes (conj classes ::css/photo)}
-                  ;(if background?)
-                  ;[(dom/div
-                  ;   (cond-> (css/add-class :background {:style {:backgroundImage (str "url(" url ")")}})
-                  ;           ;loaded-main?
-                  ;           ;(assoc :style {:backgroundImage (str "url(" url ")")})
-                  ;           loaded-main?
-                  ;           (update :classes conj :loaded)))
-                  ; (dom/div (css/add-class :content)
-                  ;          content)]
+                  (when background?
+                    (dom/div
+                      (cond-> (css/add-class :background {:style {:backgroundImage (str "url(" url ")")}
+                                                          :id    (when id (str id "-background"))})
+                              ;loaded-main?
+                              ;(assoc :style {:backgroundImage (str "url(" url ")")})
+                              loaded-main?
+                              (update :classes conj :loaded))))
+                  ;[
+                  ;(dom/div (css/add-class :content)
+                  ;         content)
+                  ;]
                   (when url-small
                     (dom/img
                       {
                        ;:data-src url-small
-                       :src      url-small
-                       :classes  ["small"]}))
+                       :src     url-small
+                       :classes ["small"]}))
                   (dom/img
                     (cond->> {
                               ;:data-src (when loaded-main? url)
-                              :src      url
-                              :classes  ["main"]
-                              :onLoad   #(om/update-state! this assoc :loaded-main? true)}
+                              :onMouseMove onMouseMove
+                              :onMouseOut onMouseOut
+                              :src         url
+                              :classes     ["main"]
+                              :onLoad      #(om/update-state! this assoc :loaded-main? true)}
                              loaded-main?
                              (css/add-class :loaded))))))
 
@@ -84,8 +89,8 @@
               (dom/img
                 {
                  ;:data-src src
-                 :src      src
-                 :classes  ["main loaded"]})
+                 :src     src
+                 :classes ["main loaded"]})
 
               (when (some? content)
                 (dom/div (css/add-class :content)
@@ -103,9 +108,10 @@
       (css/add-class ::css/photo-overlay-content)
       content)))
 
-(defn photo [{:keys [status classes] :as props} & content]
+(defn photo [{:keys [status classes id] :as props} & content]
   (dom/div
-    {:classes (disj (set (conj classes ::css/photo-container status)) :thumbnail)}
+    {:classes (disj (set (conj classes ::css/photo-container status)) :thumbnail)
+     :id      (when id (str id "-container"))}
     ;(update props :classes into [::css/photo-container status]) ;(css/add-classes [::css/photo-container status])
     (->Photo props)
     (cond (= status :edit)
@@ -144,20 +150,23 @@
 ;                       :transformation :transformation/preview})
 ;         (overlay nil (dom/i {:classes ["fa fa-camera fa-fw"]}))))
 
-(defn product-photo [product & [{:keys [index transformation classes]} & content]]
+(defn product-photo [product & [{:keys [index transformation classes background?] :as opts} & content]]
   (let [{:store.item/keys [photos]} product
         {item-photo :store.item.photo/photo} (get (into [] (sort-by :store.item.photo/index photos)) (or index 0))
         photo-id (:photo/id item-photo "static/storefront")]
-    (photo {:photo-id       photo-id
-            :transformation transformation
-            :classes        (conj classes :product-photo)}
+    (photo (merge opts {:photo-id    photo-id
+                        :classes     (conj classes :product-photo)
+                        :background? (if (some? background?) background? true)})
            content)))
 
 (defn product-preview [product & [opts & content]]
-  (product-photo product (css/add-class :square opts) content))
+  (let [params (assoc opts :background? false)]
+    (product-photo product (css/add-class :square params) content)))
 
 (defn product-thumbnail [product & [opts]]
-  (product-preview product (css/add-class :thumbnail opts)))
+  (product-preview product
+                   (->> (assoc opts :background? false)
+                        (css/add-class :thumbnail))))
 
 (defn store-photo [store props & content]
   (let [photo (get-in store [:store/profile :store.profile/photo])
