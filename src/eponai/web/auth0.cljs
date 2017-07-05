@@ -28,13 +28,14 @@
                                             :scope        "openid email"})]
     (reify IAuth0Client
       (login-with-credentials [_ email password f]
-        (.loginWithCredentials (.-redirect web-auth)
-                               #js {:connection "Username-Password-Authentication"
-                                    :username   email
-                                    :password   password}
-                               (fn [err res]
-                                 (f (js->clj res :keywordize-keys true)
-                                    (js->clj err :keywordize-keys true)))))
+        (let [^js/auth0.WebAuth.Redirect redirect (.-redirect web-auth)]
+          (.loginWithCredentials redirect
+                                 #js {:connection "Username-Password-Authentication"
+                                      :username   email
+                                      :password   password}
+                                 (fn [err res]
+                                   (f (js->clj res :keywordize-keys true)
+                                      (js->clj err :keywordize-keys true))))))
       (authorize-social [_ {:keys [connection redirectUri]}]
         (let [params (cond-> {:connection connection}
                              (not-empty redirectUri)
@@ -60,11 +61,12 @@
                                   (js->clj err :keywordize-keys true)))))
 
       (user-info [this access-token f]
-        (.userInfo (.-client web-auth)
-                   access-token
-                   (fn [err user]
-                     (f (js->clj user :keywordize-keys true)
-                        (js->clj err :keywordize-keys true))))))))
+        (let [^js/auth0.WebAuth.Client client (.-client web-auth)]
+          (.userInfo client
+                     access-token
+                     (fn [err user]
+                       (f (js->clj user :keywordize-keys true)
+                          (js->clj err :keywordize-keys true)))))))))
 
 (defmethod shared/shared-component [:shared/auth0 :env/dev]
   [_ _ _]
