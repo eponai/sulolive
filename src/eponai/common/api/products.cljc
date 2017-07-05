@@ -66,14 +66,15 @@
       (when sub-category '?sub)
       (when top-category '?top)))
 
-(defn find-with-category-names [locality category-names]
-  (db/merge-query (category-names-query category-names)
-                  {:where   (-> '[(listed-store ?s ?l)
-                                  [?s :store/items ?e]
-                                  [?e :store.item/category ?item-category]]
-                                (conj (list 'category-or-child-category
-                                            (smallest-category category-names)
-                                            '?item-category)))
-                   :symbols {'?l (:db/id locality)}
-                   :rules   [db.rules/category-or-child-category
-                             db.rules/listed-store]}))
+(defn find-with-category-names [locality {:keys [top-category sub-category] :as category-names}]
+  (cond-> {:where   '[(listed-store ?s ?l)
+                      [?s :store/items ?e]]
+           :symbols {'?l (:db/id locality)}
+           :rules   [db.rules/listed-store]}
+          (or (some? top-category) (some? sub-category))
+          (db/merge-query (db/merge-query (category-names-query category-names)
+                                          {:where ['[?e :store.item/category ?item-category]
+                                                   (list 'category-or-child-category
+                                                         (smallest-category category-names)
+                                                         '?item-category)]
+                                           :rules [db.rules/category-or-child-category]}))))

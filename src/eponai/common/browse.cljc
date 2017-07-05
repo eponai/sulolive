@@ -113,10 +113,8 @@
   "Returns items and their prices based on selected category"
   [db {:keys [locations categories price-range order] :as browse-params}]
   (debug "Browsing category: " browse-params)
-  (let [{:keys [top-category sub-category]} categories
-        items-by-cat (if (or (some? top-category) (some? sub-category))
-                       (products/find-with-category-names locations categories)
-                       {})
+  (let [items-by-cat (products/find-with-category-names locations categories)
+
         price-filter (price-where-clause price-range)
         item-query (cond-> items-by-cat
                            (some? price-filter)
