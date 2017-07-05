@@ -42,21 +42,22 @@
      (str js/window.location.origin path)))
 
 (defn render-user-password [component]
-  (let [{:keys [login-error]} (om/get-state component)]
+  (let [{:keys [login-error input-validation]} (om/get-state component)]
     [(dom/p nil (dom/span nil "Sign in to SULO Live to connect with brands and other shoppers in your favourite city."))
-     (dom/div
+     (dom/form
        (css/add-class :login-content)
        (dom/label nil "Email")
-       (dom/input {:type        "email"
-                   :id          (::username form-inputs)
-                   :placeholder "youremail@example.com"})
+       (v/input {:type        "email"
+                 :id          (::username form-inputs)
+                 :placeholder "youremail@example.com"}
+                input-validation)
        (dom/label nil "Password")
        (dom/input {:type "password"
                    :id   (::password form-inputs)})
 
        (when login-error
          (dom/p (css/add-class :text-alert) (dom/small nil "Wrong email or password")))
-       (button/default-hollow
+       (button/submit-button
          (css/add-classes [:sulo-dark :expanded] {:onClick #(.login component)})
          ;(dom/i {:classes ["fa fa-envelope-o fa-fw"]})
          ;; TODO @diana Enable this when allowing sign ups
@@ -88,7 +89,7 @@
     [(dom/p nil (dom/span nil "Finish creating your SULO Live account"))
      (dom/p nil (dom/a {:href (routes/url :login)} (dom/span nil "I already have an account")))
 
-     (dom/div
+     (dom/form
        (css/add-class :login-content)
        (if (nil? auth-identity)
          ;; Show loading spinner before we got the user info
@@ -125,7 +126,7 @@
                       :target    "_blank"} (dom/small nil "Privacy Policy")))
        (when-let [err (:error/create-user state)]
          (dom/p (css/add-class :text-alert) (dom/small nil (str (:message err)))))
-       (button/default-hollow
+       (button/submit-button
          (css/add-classes [:expanded :sulo-dark] {:onClick (when-not is-loading?
                                                              #(.create-account component))})
          (dom/span nil "Create account")))]))
@@ -217,9 +218,12 @@
   (login [this]
     #?(:cljs
        (let [username (web-utils/input-value-by-id (::username form-inputs))
-             pass (web-utils/input-value-by-id (::password form-inputs))]
-         (auth0/login-with-credentials (shared/by-key this :shared/auth0) username pass (fn [res err]
-                                                                                          (om/update-state! this assoc :login-error err))))))
+             pass (web-utils/input-value-by-id (::password form-inputs))
+             validation (v/validate ::email username form-inputs)]
+         (when (nil? validation)
+           (auth0/login-with-credentials (shared/by-key this :shared/auth0) username pass (fn [res err]
+                                                                                            (om/update-state! this assoc :login-error err))))
+         (om/update-state! this assoc :input-validation validation))))
   (authorize-social [this provider]
     #?(:cljs
        (auth0/authorize-social (shared/by-key this :shared/auth0) {:connection (name provider)})))
