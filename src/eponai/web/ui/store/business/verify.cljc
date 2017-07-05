@@ -226,7 +226,7 @@
                          input-validation)))))))))])))
 
 (defn personal-details [component]
-  (let [{:keys [input-validation entity-type document-upload]} (om/get-state component)
+  (let [{:keys [input-validation entity-type document-upload uploaded-document]} (om/get-state component)
         all-required-fields (set (required-fields component))
         {:keys [store]} (om/get-computed component)
         personal-fields (into #{}
@@ -328,19 +328,29 @@
                       (css/text-align :right))
 
                  (s3/->FileUploader (om/computed {:id (:field.legal-entity/document form-inputs)}
-                                                 {:on-upload (fn [{:keys [file]}]
+                                                 {:on-upload (fn [{:keys [file response error-message]}]
                                                                (debug "Changed to file: " file)
-                                                               (om/update-state! component assoc :document-upload {:name (.-name file)}))
-                                                  :owner store}))
+                                                               (om/update-state! component assoc :document-upload
+                                                                                 {:error?        (some? error-message)
+                                                                                  :error-message error-message
+                                                                                  :file          file
+                                                                                  :response      response}))
+                                                  :owner     store}))
                  ;(dom/input
                  ;  (css/show-for-sr {:type        "file"
                  ;                    :placeholder "First"
                  ;                    :accept      "image/png,image/jpeg"
                  ;                    :onChange    #(.select-document component %)
                  ;                    :id          (:field.legal-entity/document form-inputs)}))
-                 (dom/p nil
+                 (when (:error uploaded-document)
+                   (dom/p (css/add-class :text-alert)
+                          (dom/small nil "Something went wrong uploading your file to Stripe 🙁")))
+                 (dom/p (when (:error? document-upload)
+                          (css/add-class :text-alert))
                         (if (not-empty document-upload)
-                          (dom/small nil (str (:name document-upload)))
+                          (dom/small nil (if (:error? document-upload)
+                                           (str (:error-message document-upload))
+                                           (str (some-> (:file document-upload) (.-name)))))
                           (dom/small nil (dom/i nil "No file selected"))))
                  (dom/div
                    nil
@@ -467,9 +477,28 @@
                                                      :field.external-account/transit-number     transit
                                                      :field.external-account/account-number     account})})
              validation (v/validate :account/activate input-map form-inputs)]
+         ;; TODO: Validate document upload
          (debug "Validation: " validation)
 
          (when (nil? validation)
+           (when (and (some? (:response document-upload))
+                      (not (:error? document-upload)))
+             (let [{:keys [bucket key etag]} (:response document-upload)
+                   file (:file document-upload)
+                   file-type (.-type file)
+                   file-size (.-size file)]
+               (msg/om-transact! this `[(~'stripe/upload-identity-document
+                                          ~{:store-id  (:db/id store)
+                                            :bucket    bucket
+                                            :key       key
+                                            :etag      etag
+                                            :file-size file-size
+                                            :file-type file-type})])))
+           ;; response:
+           ;; {:location <full-url>
+           ;;  :bucket <bucket>
+           ;;  :key <key>
+           ;;  :etag <etag>}
            (if (some? (:field/external-account input-map))
              (stripe/bank-account (shared/by-key this :shared/stripe)
                                   {:country        (:stripe/country stripe-account)
@@ -479,18 +508,24 @@
                                   {:on-success (fn [token ip]
                                                  (let [tos-acceptance {:field.tos-acceptance/ip   ip
                                                                        :field.tos-acceptance/date (date/current-secs)}]
-                                                   (msg/om-transact! this `[(stripe/update-account
+                                                   (msg/om-transact! this `[(~'stripe/update-account
                                                                               ~{:account-params (-> input-map
                                                                                                     (assoc :field/external-account token)
                                                                                                     (assoc :field/tos-acceptance tos-acceptance))
                                                                                 :store-id       (:db/id store)})
                                                                             :query/stripe-account])))})
-             (msg/om-transact! this `[(stripe/update-account
+             (msg/om-transact! this `[(~'stripe/update-account
                                         ~{:account-params input-map
                                           :store-id       (:db/id store)})
                                       :query/stripe-account])))
 
          (om/update-state! this assoc :input-validation validation))))
+
+  (try-exit-verify [this]
+    (let [{:keys [store]} (om/get-computed this)]
+      (when-not (msg/any-messages? this ['stripe/update-account 'stripe/upload-identity-document])
+        (routes/set-url! this :store-dashboard {:store-id (:db/id store)}))))
+
   (initLocalState [this]
     {:entity-type :individual})
 
@@ -499,7 +534,19 @@
           {:keys [store]} (om/get-computed this)]
       (when (msg/final? message)
         (when (msg/success? message)
-          (routes/set-url! this :store-dashboard {:store-id (:db/id store)})))))
+          (msg/clear-messages! this 'stripe/update-account)
+          (.try-exit-verify this))))
+
+    (let [upload-msg (msg/last-message this 'stripe/upload-identity-document)]
+      (when (msg/final? upload-msg)
+        (let [upload-response (msg/message upload-msg)]
+          (debug "Got upload-response: " upload-response)
+          (if (msg/success? upload-msg)
+            (do
+              (msg/clear-messages! this 'stripe/upload-identity-document)
+              (.try-exit-verify this))
+            (om/update-state! this assoc
+                              :uploaded-document (select-keys upload-response [:error])))))))
   (render [this]
     (let [{:query/keys [stripe-country-spec]} (om/props this)
           {:keys [entity-type input-validation]} (om/get-state this)
