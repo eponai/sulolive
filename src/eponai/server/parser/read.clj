@@ -156,8 +156,9 @@
                                                               [?st :status/type :status.type/open]
                                                               [?s :store/status ?st]
                                                               [?e :stream/store ?s]
-                                                              [?s :store/profile ?p]
-                                                              [?p :store.profile/photo _]]
+                                                              ;[?s :store/profile ?p]
+                                                              ;[?p :store.profile/photo _]
+                                                              ]
                                                    :symbols {'?l (:db/id locations)}})
                    (feature-all :stream))))})
 

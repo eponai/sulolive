@@ -331,7 +331,7 @@
     #?(:cljs
        (let [autocomplete (places/mount-places-address-autocomplete {:element-id "auto-complete"
                                                                      :on-change  (fn [place]
-                                                                                   (prefill-address-form {:shipping/address (google-place->shipping place)}))})]
+                                                                                   )})]
          (om/update-state! this assoc :autocomplete autocomplete)
          (let [{:keys [shipping]} (om/props this)
                country (get-in shipping [:shipping/address :shipping.address/country :country/code])]

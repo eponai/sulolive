@@ -50,15 +50,17 @@
         (quill/->QuillRenderer {:html (f/bytes->str shipping-policy)})))))
 
 (defn store-not-found [component]
-  (let [{:query/keys [store featured-stores]} (om/props component)]
+  (let [{:query/keys [store featured-stores locations]} (om/props component)]
     [
      (grid/row-column
        (css/add-class :store-not-found (css/text-align :center))
+       (dom/div (css/add-classes [:not-found-code])
+                (dom/p (css/add-class :stat) "404"))
        (dom/h1 nil "Store not found")
        (dom/div (css/add-class :empty-container)
                 (dom/p (css/add-class :shoutout) "Oops, that store doesn't seem to exist."))
-       (button/default-hollow
-         {:href (routes/url :live)}
+       (button/store-navigation-default
+         {:href (routes/url :live {:locality (:sulo-locality/path locations)})}
          (dom/span nil "Browse stores")))
      (grid/row-column
             nil
@@ -141,6 +143,7 @@
                               {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                                          :store.item.photo/index]}]}]}
      {:query/store-items (om/get-query item/Product)}
+     :query/locations
      :query/current-route])
   Object
   (initLocalState [this]
