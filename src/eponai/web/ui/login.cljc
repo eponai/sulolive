@@ -19,12 +19,15 @@
     [eponai.common.ui.elements.input-validate :as v]
     [eponai.client.parser.message :as msg]
     [eponai.common.shared :as shared]
-    [eponai.common.mixpanel :as mixpanel]))
+    [eponai.common.mixpanel :as mixpanel]
+    [clojure.string :as string]))
 
 (def form-inputs
   {::email    "sulo.login.email"
    ::username "sulo.login.name"
-   ::code     "sulo.login.code"})
+   ::code     "sulo.login.code"
+
+   ::password "sulo.login.password"})
 
 (s/def ::email #(client-utils/valid-email? %))
 (s/def ::username (s/and #(string? (not-empty %))
@@ -37,6 +40,41 @@
 (defn redirect-to [path]
   #?(:cljs
      (str js/window.location.origin path)))
+
+(defn render-user-password [component]
+  (let [{:keys [login-error]} (om/get-state component)]
+    [(dom/p nil (dom/span nil "Sign in to SULO Live to connect with brands and other shoppers in your favourite city."))
+     (dom/div
+       (css/add-class :login-content)
+       (dom/label nil "Email")
+       (dom/input {:type        "email"
+                   :id          (::username form-inputs)
+                   :placeholder "youremail@example.com"})
+       (dom/label nil "Password")
+       (dom/input {:type "password"
+                   :id   (::password form-inputs)})
+
+       (when login-error
+         (dom/p (css/add-class :text-alert) (dom/small nil "Wrong email or password")))
+       (button/default-hollow
+         (css/add-classes [:sulo-dark :expanded] {:onClick #(.login component)})
+         ;(dom/i {:classes ["fa fa-envelope-o fa-fw"]})
+         ;; TODO @diana Enable this when allowing sign ups
+         ;(dom/span nil "Sign up or sign in with email")
+         (dom/span nil "Sign in")
+         )
+       (dom/p (css/add-class :info)
+              (dom/small nil "By signing in you accept our ")
+              (dom/a {:href   (routes/url :tos)
+                      :target "_blank"} (dom/small nil "Terms of Service"))
+              (dom/small nil " and ")
+              (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
+                      :className "iubenda-nostyle no-brand iubenda-embed"
+                      :title     "Privacy Policy"
+                      :target    "_blank"} (dom/small nil "Privacy Policy"))
+              (dom/small nil ". To use SULO Live you must have cookies enabled.")
+              ;(dom/small nil " We’ll never post to Twitter or Facebook without your permission.")
+              ))]))
 
 (defn render-create-account [component]
   (let [{:keys [user token-error input-validation] :as state} (om/get-state component)
@@ -72,7 +110,7 @@
 
        (dom/p (css/add-class :info)
               (dom/small nil "By creating an account you accept our ")
-              (dom/a {:href (routes/url :tos)
+              (dom/a {:href   (routes/url :tos)
                       :target "_blank"} (dom/small nil "Terms of Service"))
               (dom/small nil " and ")
               (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
@@ -146,12 +184,12 @@
        (css/add-classes [:sulo-dark :expanded] {:onClick #(om/update-state! component assoc :login-state :login-email)})
        ;(dom/i {:classes ["fa fa-envelope-o fa-fw"]})
        ;; TODO @diana Enable this when allowing sign ups
-        ;(dom/span nil "Sign up or sign in with email")
+       ;(dom/span nil "Sign up or sign in with email")
        (dom/span nil "Sign in with email")
        )
      (dom/p (css/add-class :info)
             (dom/small nil "By signing in you accept our ")
-            (dom/a {:href (routes/url :tos)
+            (dom/a {:href   (routes/url :tos)
                     :target "_blank"} (dom/small nil "Terms of Service"))
             (dom/small nil " and ")
             (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
@@ -170,6 +208,12 @@
      :query/auth0-info])
 
   Object
+  (login [this]
+    #?(:cljs
+       (let [username (web-utils/input-value-by-id (::username form-inputs))
+             pass (web-utils/input-value-by-id (::password form-inputs))]
+         (auth0/login-with-credentials (shared/by-key this :shared/auth0) username pass (fn [res err]
+                                                                                          (om/update-state! this assoc :login-error err))))))
   (authorize-social [this provider]
     #?(:cljs
        (auth0/authorize-social (shared/by-key this :shared/auth0) {:connection (name provider)})))
@@ -222,14 +266,20 @@
           (debug "Got message: " message)
           (msg/clear-messages! this 'user/create)
           (if (msg/success? create-msg)
-            (let [new-user (:user message)]
+            (let [new-user (:user message)
+                  user-id (:user-id message)
+                  provider (when (not-empty user-id)
+                             (first (string/split user-id #"\|")))]
+              (debug "User: " user-id)
               (mixpanel/set-alias (:db/id new-user))
-              (if (:user/verified new-user)
+              (if (or (:user/verified new-user) (= provider "auth0"))
                 (do
                   (debug "User created routing to: " (routes/url :auth nil (:query-params current-route)))
                   #?(:cljs
                      (js/window.location.replace (routes/url :auth nil (:query-params current-route)))))
-                (.authorize-email this)))
+                (.authorize-email this)
+                )
+              )
             (om/update-state! this assoc :error/create-user message))))))
 
   (componentDidMount [this]
@@ -283,7 +333,9 @@
           (render-send-email-code this)
 
           :else
-          (render-select-login-type this))))))
+          (render-user-password this)
+          ;(render-select-login-type this)
+          )))))
 
 (def ->Login (om/factory Login))
 

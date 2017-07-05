@@ -21,6 +21,7 @@
          :country/continent            {:db/valueType :db.type/ref}
          :continent/code               {:db/unique :db.unique/identity}
          :taxes/id                     {:db/unique :db.unique/identity}
+         :auth0/id                     {:db/unique :db.unique/identity}
          ;:store.item/uuid {:db/unique :db.unique/identity}
          :db/ident                     {:db/unique :db.unique/identity}
          ;; Datascript doesn't have an :vaet index, so to speed up

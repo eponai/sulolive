@@ -245,7 +245,10 @@
       (let [should-verify? (and (not (:user/verified sulo-user)) (not-empty (:email profile)))]
         (when should-verify?
           (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]]))
-        (auth0/link-with-same-email auth0management (assoc profile :user_id user-id))
+        (try
+          (auth0/link-with-same-email auth0management (assoc profile :user_id user-id))
+          (catch ExceptionInfo e
+            (error e)))
         (do-authenticate request id-token sulo-user))
 
       ;; User is signin in for the first time, and should go through creating an account.
