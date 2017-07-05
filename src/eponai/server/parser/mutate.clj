@@ -391,7 +391,7 @@
 (defmutation store/update-username
   [{:keys [state ::parser/exception ::parser/return]} _ {:keys [store-id username] :as p}]
   {:auth {::auth/store-owner {:store-id store-id}}
-   :log  {:store-id store-id}
+   :log  {:store-id store-id :username username}
    :resp {:success return                                   ;"Your username was successfully updated."
           :error   (if exception
                      (ex-data exception)
@@ -417,7 +417,7 @@
 (defmutation stripe/upload-identity-document
   [{:keys [state system] ::parser/keys [return exception] :as env} _ {:keys [etag bucket key store-id file-type file-size]}]
   {:auth {::auth/store-owner {:store-id store-id}}
-   :log  [:store-id :location :bucket :key :etag :file-name :file-type :file-size]
+   :log  [:store-id :bucket :key :etag :file-type :file-size]
    :resp {:success "Your identity document was uploaded"
           :error   {:error (or (some-> exception (.getMessage))
                                "Something went wrong")}}}
@@ -440,10 +440,23 @@
                      (.delete temp-file)
                      (catch Exception ignore))))))})
 
+(defn walk-map-entries
+  "Returns all the keys of a nested map"
+  [m]
+  (letfn [(children [x]
+            (if (map-entry? x)
+              (let [v (val x)]
+                (when (coll? v) v))
+              (seq x)))]
+    (->> (tree-seq coll? children m)
+         (filter map-entry?))))
+
 (defmutation stripe/update-account
   [{:keys [state ::parser/return ::parser/exception system client-ip] :as env} _ {:keys [store-id account-params accept-terms?]}]
   {:auth {::auth/store-owner {:store-id store-id}}
-   :log  [:store-id]
+   :log  {:store-id           store-id
+          :accept-terms?      accept-terms?
+          :account-param-keys (not-empty (vec (map key (walk-map-entries account-params))))}
    :resp {:success "Your account was updated"
           :error   (if (some? exception)
                      (or (.getMessage exception) "Something went wrong")
@@ -505,7 +518,7 @@
 (defmutation store/create
   [{:keys [state ::parser/return ::parser/exception auth system] :as env} _ params]
   {:auth ::auth/any-user
-   :log  nil
+   :log  [:country :name :locality]
    :resp {:success return
           :error   "Could not create Stripe account"}}
   {:action (fn []
@@ -530,7 +543,7 @@
 (defmutation store/update-product
   [{:keys [db] :as env} _ {:keys [product store-id product-id] :as p}]
   {:auth {::auth/store-owner {:store-id store-id}}
-   :log  {:store-id store-id :product-id product-id}
+   :log  (merge product {:store-id store-id :product-id product-id})
    :resp {:success "Your product was updated."
           :error   "Sorry, could not update your product. Try again later."}}
   {:action (fn []
@@ -549,7 +562,8 @@
 (defmutation store/create-order
   [{::parser/keys [return exception db] :as env} _ {:keys [order store-id] :as p}]
   {:auth ::auth/any-user
-   :log  {:store-id store-id :items (into [] (map :db/id) (:items order))}
+   :log  (merge (select-keys p [:subtotal :grandtotal :tax-amount :shipping-rate])
+                {:store-id store-id :items (into [] (map :db/id) (:items order))})
    :resp {:success return
           :error   (let [default-msg "Could not create order"]
                      (if (some? exception)
@@ -572,7 +586,7 @@
 (defmutation store/update-order
   [{:keys [db] :as env} _ {:keys [order-id store-id params] :as p}]
   {:auth {::auth/store-owner {:store-id store-id}}
-   :log  {:store-id store-id :order-id order-id}
+   :log  {:store-id store-id :order-id order-id :order/status (:order/status params)}
    :resp {:success "Order was updated"
           :error   "Sorry, could not update order. Try again later."}}
   {:action (fn []
