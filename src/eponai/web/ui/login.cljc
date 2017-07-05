@@ -257,7 +257,7 @@
              {:create-user/keys [input-email input-name]} (om/get-state this)
              email (or (:auth0/email auth0-info)
                        input-email)
-             username input-name
+             username (or input-name (:auth0/nickname auth0-info))
              validation (v/validate ::create-account {::email    email
                                                       ::username username} form-inputs)]
          (debug "Validation: " validation)

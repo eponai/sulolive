@@ -156,8 +156,9 @@
                                                               [?st :status/type :status.type/open]
                                                               [?s :store/status ?st]
                                                               [?e :stream/store ?s]
-                                                              [?s :store/profile ?p]
-                                                              [?p :store.profile/photo _]]
+                                                              ;[?s :store/profile ?p]
+                                                              ;[?p :store.profile/photo _]
+                                                              ]
                                                    :symbols {'?l (:db/id locations)}})
                    (feature-all :stream))))})
 
@@ -355,12 +356,20 @@
                       :symbols {'[?e ...] sku-ids}})})
 
 (defread query/item
-  [{:keys [db db-history query route-params]} _ _]
+  [{:keys [db db-history query route-params auth]} _ _]
   {:auth    ::auth/public
    :uniq-by {:route-params [:product-id]}}
-  {:value (query/one db db-history query
-                     {:where   '[[?e _ _]]
-                      :symbols {'?e (:product-id route-params)}})})
+  {:value (let [product-id (:product-id route-params)
+                item (db/pull db [{:store/_items [{:store/status [:status/type]}
+                                                  {:store/owners [{:store.owner/user [:user/email]}]}]}] product-id)
+                {:store/keys [status owners]} (:store/_items item)]
+            ;(debug "AUTH: " auth)
+            (if (or (= (:status/type status) :status.type/open)
+                    (= (:email auth) (get-in owners [:store.owner/user :user/email])))
+              (query/one db db-history query {:where   '[[?e _ _]]
+                                              :symbols {'?e (:product-id route-params)}})
+              {:db/id                 product-id
+               :store.item/not-found? true}))})
 
 (defread query/auth
   [{:keys [auth query db]} _ _]

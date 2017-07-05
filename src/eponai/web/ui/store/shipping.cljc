@@ -224,10 +224,10 @@
         (css/add-class :section-title)
         (cond (and (= section :shipping-rule.section/destinations)
                    (not= modal :modal/add-shipping-rate))
-              (dom/p (css/add-class :header) (dom/span nil "Add destinations"))
+              (dom/h4 (css/add-class :header) (dom/span nil "Add destinations"))
               (or (= section :shipping-rule.section/rates)
                   (= modal :modal/add-shipping-rate))
-              (dom/p (css/add-class :header) (dom/span nil "Add shipping rate"))))
+              (dom/h4 (css/add-class :header) (dom/span nil "Add shipping rate"))))
 
       (dom/div
         (css/add-classes [:section-container (name (or section ""))])

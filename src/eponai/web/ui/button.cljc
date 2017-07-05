@@ -83,3 +83,6 @@
                         (or  content
                              (dom/span nil "delete"))))
 
+(defn store-setting-warning [opts & content]
+  (button (css/add-classes [:warning :small :hollow] opts) content))
+

@@ -23,7 +23,8 @@
     #?(:cljs
        [cljs-http.client :as http])
     [eponai.common.shared :as shared]
-    [eponai.web.ui.button :as button]))
+    [eponai.web.ui.button :as button]
+    [eponai.common.mixpanel :as mixpanel]))
 
 (def stripe-fields
   {:field.legal-entity.address/line1      "legal_entity.address.line1"
@@ -480,6 +481,9 @@
              last-name (utils/input-value-by-id (:field.legal-entity/last-name form-inputs))
              personal-id-number (utils/input-value-by-id (:field.legal-entity/personal-id-number form-inputs))
 
+             business-tax-id (utils/input-value-by-id (:field.legal-entity/business-tax-id form-inputs))
+             business-name (utils/input-value-by-id (:field.legal-entity/business-name form-inputs))
+
              currency (utils/selected-value-by-id (:field.external-account/currency form-inputs))
              transit (utils/input-value-by-id (:field.external-account/transit-number form-inputs))
              institution (utils/input-value-by-id (:field.external-account/institution-number form-inputs))
@@ -499,7 +503,11 @@
                                                      :field.legal-entity/type               entity-type
                                                      :field.legal-entity/first-name         first-name
                                                      :field.legal-entity/last-name          last-name
-                                                     :field.legal-entity/personal-id-number personal-id-number})
+                                                     :field.legal-entity/personal-id-number personal-id-number
+
+                                                     :field.legal-entity/business-tax-id    business-tax-id
+                                                     :field.legal-entity/business-name      business-name
+                                                     })
                           :field/external-account (cond-> {:field.external-account/institution-number institution
                                                            :field.external-account/transit-number     transit
                                                            :field.external-account/account-number     account}
@@ -516,6 +524,8 @@
                    file (:file document-upload)
                    file-type (.-type file)
                    file-size (.-size file)]
+               (mixpanel/track "Store: Upload verification document." {:store-id   (:db/id store)
+                                                                       :store-name (get-in store [:store/profile :store.profile/name])})
                (msg/om-transact! this `[(~'stripe/upload-identity-document
                                           ~{:store-id  (:db/id store)
                                             :bucket    bucket
@@ -534,22 +544,23 @@
                                    :currency       currency
                                    :routing_number (str transit institution)
                                    :account_number account}
-                                  {:on-success (fn [token ip]
-                                                 ;(let [tos-acceptance {:field.tos-acceptance/ip   ip
-                                                 ;                      :field.tos-acceptance/date (date/current-secs)}])
+                                  {:on-success (fn [{:keys [token]}]
+                                                 (mixpanel/track "Store: Verify account." {:store-id   (:db/id store)
+                                                                                           :store-name (get-in store [:store/profile :store.profile/name])})
                                                  (msg/om-transact! this [(list 'stripe/update-account
                                                                                {:account-params (-> input-map
-                                                                                                    (assoc :field/external-account token)
-                                                                                                    ;(assoc :field/tos-acceptance tos-acceptance)
-                                                                                                    )
+                                                                                                    (assoc :field/external-account token))
                                                                                 :accept-terms?  true
                                                                                 :store-id       (:db/id store)})
                                                                          :query/stripe-account]))})
-             (msg/om-transact! this [(list 'stripe/update-account
-                                           {:account-params input-map
-                                            :accept-terms? true
-                                            :store-id       (:db/id store)})
-                                     :query/stripe-account])))
+             (do
+               (mixpanel/track "Store: Verify account." {:store-id   (:db/id store)
+                                                         :store-name (get-in store [:store/profile :store.profile/name])})
+               (msg/om-transact! this [(list 'stripe/update-account
+                                             {:account-params input-map
+                                              :accept-terms?  true
+                                              :store-id       (:db/id store)})
+                                       :query/stripe-account]))))
 
          (om/update-state! this assoc :input-validation validation))))
 

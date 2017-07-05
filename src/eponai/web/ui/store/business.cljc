@@ -198,7 +198,7 @@
      ;{:proxy/general (om/get-query general/General)}
      {:proxy/finances (om/get-query finances/StoreFinances)}
      {:query/auth [:user/email]}
-     {:query/store [:db/id {:store/profile [:store.profile/email]}]}
+     {:query/store [:db/id {:store/profile [:store.profile/email :store.profile/name]}]}
      :query/current-route
      :query/messages])
 
@@ -248,6 +248,7 @@
   (save-business-info [this]
     #?(:cljs
        (let [{:keys [entity-type]} (om/get-state this)
+             {:query/keys [store]} (om/props this)
              street (utils/input-value-or-nil-by-id (prefixed-id :field.legal-entity.address/line1))
              postal (utils/input-value-or-nil-by-id (prefixed-id :field.legal-entity.address/postal))
              city (utils/input-value-or-nil-by-id (prefixed-id :field.legal-entity.address/city))
@@ -256,12 +257,14 @@
              ;entity-type (when (keyword? entity-type) (name entity-type))
 
              input-map (.get-legal-entity this)]
-         (mixpanel/track "Store: Save business information")
+         (mixpanel/track "Store: Save business information" {:store-id (:db/id store)
+                                                             :store-name (get-in store [:store/profile :store.profile/name])})
          (.save-legal-entity this input-map))))
 
   (save-personal-info [this]
     #?(:cljs
-       (let [first-name (utils/input-value-or-nil-by-id (prefixed-id :field.legal-entity/first-name))
+       (let [{:query/keys [store]} (om/props this)
+             first-name (utils/input-value-or-nil-by-id (prefixed-id :field.legal-entity/first-name))
              last-name (utils/input-value-or-nil-by-id (prefixed-id :field.legal-entity/last-name))
              year (utils/input-value-or-nil-by-id (prefixed-id :field.legal-entity.dob/year))
              month (utils/input-value-or-nil-by-id (prefixed-id :field.legal-entity.dob/month))
@@ -271,7 +274,8 @@
                         :field.legal-entity/dob        {:field.legal-entity.dob/year  year
                                                         :field.legal-entity.dob/month month
                                                         :field.legal-entity.dob/day   day}}]
-         (mixpanel/track "Store: Save personal information")
+         (mixpanel/track "Store: Save personal information" {:store-id (:db/id store)
+                                                             :store-name (get-in store [:store/profile :store.profile/name])})
          (.save-legal-entity this input-map))))
 
   (save-email [this]
@@ -282,7 +286,8 @@
          (debug "Validation: " validation)
          (if (nil? validation)
            (do
-             (mixpanel/track "Store: Update contact email")
+             (mixpanel/track "Store: Update contact email" {:store-id (:db/id store)
+                                                            :store-name (get-in store [:store/profile :store.profile/name])})
              (msg/om-transact! this [(list 'store/update-info {:db/id         (:db/id store)
                                                                :store/profile {:store.profile/email email}})
                                      :query/store])

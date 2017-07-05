@@ -57,7 +57,7 @@ $foundation-palette: (
   primary: #444444,//#240061, //#2199e8,
   secondary: $dark-gray,//#D9D7D9, //#3A5288,
   success: darken(#3adb76, 10%),
-  warning: #ffae00,
+  warning: darken(#ffae00, 3%),
   alert: #ec5840,
   highlight: #FC302D,
   gray: #444444,
@@ -581,7 +581,7 @@ $titlebar-icon-spacing: 0.25rem;
 
 $has-tip-font-weight: $global-weight-bold;
 $has-tip-border-bottom: dotted 1px $dark-gray;
-$tooltip-background-color: $black;
+$tooltip-background-color: darken($primary-color, 10%);
 $tooltip-color: $white;
 $tooltip-padding: 0.75rem;
 $tooltip-font-size: $small-font-size;
