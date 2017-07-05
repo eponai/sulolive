@@ -458,7 +458,8 @@
                                            {:store.item/photos [{:store.item.photo/photo [:photo/id]}
                                                                 :store.item.photo/index]}
                                            {:store/_items [:db/id
-                                                           {:store/shipping [{:shipping/rules [:shipping.rule/pickup?
+                                                           {:store/shipping [{:shipping/rules [
+                                                                                               ;:shipping.rule/pickup?
                                                                                                {:shipping.rule/destinations [:country/code]}
                                                                                                {:shipping.rule/rates [:shipping.rate/title]}]}]}
                                                            {:store/profile [:store.profile/name

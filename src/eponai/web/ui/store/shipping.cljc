@@ -391,7 +391,7 @@
                         {:country/continent [:continent/code
                                              :continent/name]}]}
      {:query/store [{:store/shipping [{:shipping/rules [:db/id
-                                                        :shipping.rule/pickup?
+                                                        ;:shipping.rule/pickup?
                                                         :shipping.rule/title
                                                         {:shipping.rule/rates [:db/id
                                                                                :shipping.rate/title
@@ -410,7 +410,7 @@
   (initLocalState [this]
     {:selected-countries    []
      :shipping-rule/section :shipping-rule.section/destinations})
-  (update-free-shipping [this allow-pickup?]
+  (update-free-pickup [this allow-pickup?]
     #?(:cljs
        (let [{:query/keys [store]} (om/props this)
              shipping-rules (get-in store [:store/shipping :shipping/rules])
@@ -630,7 +630,7 @@
         ;            (cond-> {:title    "Allow free pickup"
         ;                     :id       "sulo-pickup"
         ;                     :classes  [:sulo-dark]
-        ;                     :onChange #(.update-free-shipping this (.-checked (.-target %)))}
+        ;                     :onChange #(.update-free-pickup this (.-checked (.-target %)))}
         ;                    (nil? shipping)
         ;                    (assoc :disabled true))
         ;            (dom/span (css/add-class :switch-inactive) "No")
