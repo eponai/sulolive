@@ -9,7 +9,8 @@
     [clojure.data.json :as json]
     [clojure.string :as string]
     [eponai.common.format.date :as date])
-  (:import (java.io File)))
+  (:import (java.io File)
+           (org.apache.commons.io FileUtils)))
 
 (defn pull-stripe [db store-id]
   (when store-id
@@ -289,6 +290,7 @@
         temp-dir (File/createTempFile "stripe-stub" "temp-dir")]
     (.delete temp-dir)
     (.mkdir temp-dir)
+    (.deleteOnExit temp-dir)
     (reify IStripeConnect
       (-get-country-spec [_ code]
         (let [specs (get stub/country-specs code)]
@@ -336,10 +338,23 @@
           (swap! state update :accounts assoc account-id stripe-account)
           (f/stripe->account stripe-account)))
 
-      (-file-upload [this params]
-        ;; TODO: Use temp-dir created above.
-        (throw (ex-info "TODO: Implement file-upload" {:params params}))
-        )
+      (-file-upload [_ {:keys [purpose file file-type]}]
+        (let [id (str "fake_upload_file_" (rand-int 100000000))
+              to-file (File. temp-dir id)
+              _ (.createNewFile to-file)
+              _ (.deleteOnExit to-file)
+              _ (FileUtils/copyFile ^File file to-file)
+              ret {:id      id,
+                   :object  "file_upload",
+                   :created (.lastModified to-file)
+                   :purpose purpose
+                   :size    (.length to-file)
+                   :type    (cond-> file-type
+                                    (string/starts-with? file-type "image/")
+                                    (string/replace-first "image/" ""))
+                   :url     nil}]
+          (swap! state assoc-in [:file-uploads id] ret)
+          ret))
 
       (-create-customer [_ params]
         (let [{:keys [customers]} @state
