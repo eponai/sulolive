@@ -2,7 +2,8 @@
   (:require
     [amazonica.aws.s3 :as aws-s3]
     [s3-beam.handler :as s3]
-    [taoensso.timbre :refer [debug]])
+    [taoensso.timbre :refer [debug]]
+    [clojure.java.io :as io])
   (:import (com.amazonaws.services.s3.model CannedAccessControlList AmazonS3Exception)))
 
 (defprotocol IAWSS3
@@ -14,7 +15,10 @@
     "Move object from temp folder to real folder.")
 
   (upload-object [this params]
-    "Move object from temp folder to real folder."))
+    "Move object from temp folder to real folder.")
+
+  (download-object [this params to-file]
+    "Downloads object to a file on the server"))
 
 (defrecord AwsS3 [bucket access-key secret zone]
   IAWSS3
@@ -37,7 +41,12 @@
         (move-object this bucket key real-key)
         s3-upload-url)
       (catch AmazonS3Exception e
-        (throw (ex-info (.getMessage e) {:message (.getMessage e)}))))))
+        (throw (ex-info (.getMessage e) {:message (.getMessage e)})))))
+
+  (download-object [this {:keys [bucket key]} to-file]
+    (with-open [in (:input-stream (aws-s3/get-object bucket key))
+                out (io/output-stream to-file)]
+      (io/copy in out))))
 
 (defn aws-s3-stub []
   (reify IAWSS3

@@ -244,24 +244,25 @@
 
 (defn items-in-category [db {:browse-result/keys [type items]} categories]
   (let [categories (select-keys categories [:top-category :sub-category :sub-sub-category])]
-    (condp = type
-      ::category items
-      ::search (if (empty? categories)
-                 (map #(nth % 0) items)
-                 (let [allowed-categories (into #{}
-                                                (db/all-with
-                                                  db
-                                                  (db/merge-query
-                                                    (products/category-names-query categories)
-                                                    {:where [(list 'category-or-child-category
-                                                                   (products/smallest-category categories)
-                                                                   '?e)]
-                                                     :rules [db.rules/category-or-child-category]})))]
-                   (eduction
-                     (comp (filter (fn [[_ category-id]]
-                                     (contains? allowed-categories category-id)))
-                           (map #(nth % 0)))
-                     items))))))
+    (when type
+      (condp = type
+       ::category items
+       ::search (if (empty? categories)
+                  (map #(nth % 0) items)
+                  (let [allowed-categories (into #{}
+                                                 (db/all-with
+                                                   db
+                                                   (db/merge-query
+                                                     (products/category-names-query categories)
+                                                     {:where [(list 'category-or-child-category
+                                                                    (products/smallest-category categories)
+                                                                    '?e)]
+                                                      :rules [db.rules/category-or-child-category]})))]
+                    (eduction
+                      (comp (filter (fn [[_ category-id]]
+                                      (contains? allowed-categories category-id)))
+                            (map #(nth % 0)))
+                      items)))))))
 
 (defn page-items-xf [page-range]
   (let [{:keys [page-num page-size]

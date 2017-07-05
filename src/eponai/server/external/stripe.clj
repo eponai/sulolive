@@ -8,7 +8,9 @@
     [taoensso.timbre :refer [debug error info]]
     [clojure.data.json :as json]
     [clojure.string :as string]
-    [eponai.common.format.date :as date]))
+    [eponai.common.format.date :as date])
+  (:import (java.io File)
+           (org.apache.commons.io FileUtils)))
 
 (defn pull-stripe [db store-id]
   (when store-id
@@ -24,7 +26,8 @@
 (defprotocol IStripeEndpoint
   (-post [this params path])
   (-get [this path])
-  (-delete [this path]))
+  (-delete [this path])
+  (-upload [this params path]))
 
 (defprotocol IStripeConnect
 
@@ -43,6 +46,9 @@
 
   (-update-account [this account-id params])
 
+  (-file-upload [this params]
+    "Uploads a file using the FileUpload api: https://stripe.com/docs/file-upload")
+
   (-get-balance [this account-id secret])
 
   ;; Customers
@@ -57,7 +63,6 @@
   (-create-charge [this params])
   (-get-charge [this charge-id])
   (-create-refund [this params]))
-
 
 ;(defn- set-api-key [api-key]
 ;  (if (some? api-key)
@@ -83,6 +88,16 @@
     (debug "Update account params: " params)
     (debug "Update account: " account)
     ;(s/assert :ext.stripe.params/update-account account)
+    (-update-account stripe account-id account)))
+
+(defn upload-identity-document [stripe account-id {:keys [file file-type]}]
+  (let [{:keys [id]} (-file-upload stripe {:file      file
+                                           :file-type file-type
+                                           :purpose   "identity_document"})
+        account (f/input->account-params {:field/legal-entity
+                                          {:field.legal-entity/verification
+                                           {:field.legal-entity.verification/document id}}})]
+    (debug "Updating account: " account)
     (-update-account stripe account-id account)))
 
 (defn get-balance [stripe account-id secret]
@@ -117,6 +132,7 @@
 
 (def stripe-api-version "2017-06-05")
 (def stripe-api-host "https://api.stripe.com/v1")
+(def stripe-upload-api-host "https://uploads.stripe.com/v1")
 
 (defrecord StripeRecord [api-key]
   IStripeEndpoint
@@ -125,6 +141,11 @@
       (json/read-str (:body (client/post url {:form-params params
                                               :basic-auth  api-key
                                               :headers     {"Stripe-Version" stripe-api-version}})) :key-fn keyword)))
+  (-upload [_ multipart-params path]
+    (let [url (string/join "/" (into [stripe-upload-api-host] (remove nil? path)))]
+      (json/read-str (:body (client/post url {:multipart  multipart-params
+                                              :basic-auth api-key
+                                              :headers    {"Stripe-Version" stripe-api-version}})) :key-fn keyword)))
   (-get [_ path]
     (let [url (string/join "/" (into [stripe-api-host] (remove nil? path)))]
       (json/read-str (:body (client/get url {:basic-auth api-key
@@ -134,6 +155,7 @@
     (let [url (string/join "/" (into [stripe-api-host] (remove nil? path)))]
       (json/read-str (:body (client/delete url {:basic-auth api-key
                                                 :headers    {"Stripe-Version" stripe-api-version}})) :key-fn keyword)))
+
   IStripeConnect
   (-get-country-spec [this code]
     (let [country-spec (-get this ["country_specs" code])]
@@ -166,6 +188,19 @@
       (catch [:status 400] r
         (let [{:keys [body]} r
               {:keys [error]} (json/read-str body :key-fn keyword)]
+          (throw (ex-info (:message error) error))))))
+
+  (-file-upload [this {:keys [purpose file file-type]}]
+    (try+
+      (let [uploaded (-upload this [{:name "file" :content file :mime-type file-type}
+                                    {:name "purpose" :content purpose}]
+                              ["files"])]
+        (debug "Uploaded file: " file " response: " uploaded)
+        uploaded)
+      (catch [:status 400] r
+        (let [{:keys [body]} r
+              {:keys [error]} (json/read-str body :key-fn keyword)]
+          (debug "Error uploading file: " file " error: " (:message error))
           (throw (ex-info (:message error) error))))))
 
   (-get-balance [this account-id secret]
@@ -251,7 +286,11 @@
                      :customers {"0" {:id      "0"
                                       :sources {:data [{:brand "Visa", :last4 1234, :exp_year 2018, :exp_month 4}
                                                        {:brand "MasterCard" :last4 1234 :exp_year 2018 :exp_month 4}
-                                                       {:brand "Random" :last4 1234 :exp_year 2018 :exp_month 4}]}}}})]
+                                                       {:brand "Random" :last4 1234 :exp_year 2018 :exp_month 4}]}}}})
+        temp-dir (File/createTempFile "stripe-stub" "temp-dir")]
+    (.delete temp-dir)
+    (.mkdir temp-dir)
+    (.deleteOnExit temp-dir)
     (reify IStripeConnect
       (-get-country-spec [_ code]
         (let [specs (get stub/country-specs code)]
@@ -298,6 +337,24 @@
           (debug "Updated fake Stripe account: " stripe-account)
           (swap! state update :accounts assoc account-id stripe-account)
           (f/stripe->account stripe-account)))
+
+      (-file-upload [_ {:keys [purpose file file-type]}]
+        (let [id (str "fake_upload_file_" (rand-int 100000000))
+              to-file (File. temp-dir id)
+              _ (.createNewFile to-file)
+              _ (.deleteOnExit to-file)
+              _ (FileUtils/copyFile ^File file to-file)
+              ret {:id      id,
+                   :object  "file_upload",
+                   :created (.lastModified to-file)
+                   :purpose purpose
+                   :size    (.length to-file)
+                   :type    (cond-> file-type
+                                    (string/starts-with? file-type "image/")
+                                    (string/replace-first "image/" ""))
+                   :url     nil}]
+          (swap! state assoc-in [:file-uploads id] ret)
+          ret))
 
       (-create-customer [_ params]
         (let [{:keys [customers]} @state

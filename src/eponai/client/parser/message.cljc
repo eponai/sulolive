@@ -180,6 +180,11 @@
        (sort-by :tx)
        (into [])))
 
+(defn any-messages?
+  "Returns true if there are any messages for the given mutation keys."
+  [component mutation-keys]
+  (not-empty (mapcat #(all-messages component %) mutation-keys)))
+
 (defn last-message
   "Returns the latest message for a component and key, where latest is defined by :tx order."
   [component mutation-key]

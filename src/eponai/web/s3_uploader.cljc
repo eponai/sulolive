@@ -13,7 +13,8 @@
     [eponai.common.ui.dom :as dom]
     [taoensso.timbre :refer [error debug]]
     #?(:cljs
-       [cljs.reader :as reader]))
+       [cljs.reader :as reader])
+    [eponai.common.format.date :as date])
   #?(:cljs
      (:import
        [goog.events EventType]
@@ -50,10 +51,11 @@
             chars 2
             level1 (clojure.string/join (take chars sha-dbid))
             level2 (clojure.string/join (take chars (drop chars sha-dbid)))
+            filename-with-time (str (date/current-millis) "_" filename)
             ]
         (debug "Owner: " owner)
         (if (:db/id owner)
-          (str "id-docs/temp/" level1 "/" level2 "/" (:db/id owner) "/" filename)
+          (str "id-docs/temp/" level1 "/" level2 "/" (:db/id owner) "/" filename-with-time)
           (error "Trying to create S3 key without a :db/id for the document owner. Make sure you pass in an entity that owns this document (i.e. a store or user)")))))
   (initLocalState [this]
     #?(:cljs
