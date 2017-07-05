@@ -155,14 +155,13 @@
                     ;       (dom/em nil (get-in store [:store/profile :store.profile/name]))
                     ;       (dom/span nil " updated via your store dashboard"))
 
-                    (dom/a (->> (css/button {:onClick #(do
-                                                        ;#?(:cljs
-                                                        ;   (when (nil? (utils/get-locality))
-                                                        ;     (utils/set-locality)))
-                                                        (routes/set-url! this :store-dashboard {:store-id (:db/id store)}))})
-                                ;(css/add-class :green)
-                                (css/add-class :expanded))
-                           (dom/span nil (str "Continue to " (get-in store [:store/profile :store.profile/name]))))
+                    (button/store-navigation-cta
+                      (css/add-class :expanded {:onClick #(do
+                                                           ;#?(:cljs
+                                                           ;   (when (nil? (utils/get-locality))
+                                                           ;     (utils/set-locality)))
+                                                           (routes/set-url! this :store-dashboard {:store-id (:db/id store)}))})
+                      (dom/span nil (str "Continue to " (get-in store [:store/profile :store.profile/name]))))
                     (dom/p nil
                            (dom/small nil (str "Logged in as " (:user/email auth)))))
                   (callout/callout
@@ -187,7 +186,7 @@
                              (dom/small nil (str "Logged in as " (:user/email auth)))))
                     (dom/div
                       (css/text-align :center)
-                      (button/button
+                      (button/store-navigation-cta
                         {:onClick #(.start-store this)}
                         (dom/span nil "Start store"))))))))
 
@@ -237,7 +236,7 @@
                                               :classes ["iubenda-nostyle no-brand iubenda-embed"]
                                               :title   "Privacy Policy"}
                                              (dom/span nil "Privacy Policy"))))
-                    (button/button
+                    (button/store-navigation-cta
                       {:onClick #(.request-access this)}
                       (dom/span nil "Get me access!"))
                     (cond (msg/pending? request-message)
