@@ -36,6 +36,7 @@
         :store           {:entries    [eponai.common.ui.store]
                           :depends-on [:stream+chat]}
         :stores          {:entries [eponai.web.ui.stores]}
+        :tos             {:entries [eponai.web.ui.tos]}
         :checkout        {:entries [eponai.common.ui.checkout
                                     eponai.common.ui.checkout.shipping
                                     eponai.common.ui.checkout.payment
