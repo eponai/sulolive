@@ -365,11 +365,11 @@
         (db/transact state all-txs)
         (log/info! logger ::account-updated (assoc log-data :success? true))
         (catch Exception e
-          (= (ex-data (.getCause (:exception (ex-data e)))) {:db/error})
           (let [db-error (some-> (ex-data e) (:exception) (.getCause) (ex-data) (:db/error))]
             (if (= db-error :db.error/unique-conflict)
               (log/info! logger ::account-updated (assoc log-data :success? true
                                                                   :duplicate-event true))
               (do
+
                 (log/error! logger ::account-updated (assoc log-data :exception (log/render-exception e)))
                 (throw e)))))))))
