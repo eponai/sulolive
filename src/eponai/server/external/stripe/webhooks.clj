@@ -70,4 +70,4 @@
   (let [account (get-in event [:data :object])]
     (store/stripe-account-updated env (stripe-format/stripe->account account))
     ;(utils/account-updated env (stripe-format/stripe->account account))
-    ))
+    nil))
