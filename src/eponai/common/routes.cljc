@@ -137,14 +137,15 @@
                      :tos
                      :not-found
                      :login
-                     :link-social}
+                     :link-social
+                     :unauthorized}
                    route)
         (= :store-dashboard route)
         (= (name :store-dashboard) (namespace route)))))
 
 (defn auth-roles [handler]
   (cond
-    (#{:landing-page :sell :about :not-found :login :tos} handler)
+    (#{:landing-page :sell :about :not-found :login :tos :unauthorized} handler)
     ::auth/public
     (= handler :store-dashboard)
     ::auth/store-owner

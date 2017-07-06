@@ -146,36 +146,7 @@
                                                (take 4 featured-streams))))
                                       "More streams"))
 
-            (common/content-section
-              {:href  (routes/url :live route-params)
-               :class "new-brands"}
-              "New stores"
-              ;(grid/row-column
-              ;  (css/text-align :center))
-              ;(dom/div
-              ;  (css/add-class :section-title)
-              ;  (dom/h2 nil "New brands"))
-              (dom/div
-                {:classes ["sulo-items-container"]}
-                (grid/row
-                  (grid/columns-in-row {:small 2 :medium 4})
-                  (map (fn [store]
-                         (let [store-name (get-in store [:store/profile :store.profile/name])]
-                           (grid/column
-                             nil
-                             (dom/div
-                               (->> (css/add-class :content-item)
-                                    (css/add-class :stream-item))
-                               (dom/a
-                                 {:href (routes/store-url store :store)}
-                                 (photo/store-photo store {:transformation :transformation/thumbnail-large}))
-                               (dom/div
-                                 (->> (css/add-class :text)
-                                      (css/add-class :header))
-                                 (dom/a {:href (routes/store-url store :store)}
-                                        (dom/strong nil store-name)))))))
-                       (take 4 featured-stores))))
-              "See more stores")
+
 
             (common/content-section {:class "collections"}
                                     "Shop by collection"
@@ -217,6 +188,37 @@
                                     ;     ["Home" "Kids" "Women" "Men"])
                                     ""
                                     )
+
+            (common/content-section
+              {:href  (routes/url :live route-params)
+               :class "new-brands"}
+              "New stores"
+              ;(grid/row-column
+              ;  (css/text-align :center))
+              ;(dom/div
+              ;  (css/add-class :section-title)
+              ;  (dom/h2 nil "New brands"))
+              (dom/div
+                {:classes ["sulo-items-container"]}
+                (grid/row
+                  (grid/columns-in-row {:small 2 :medium 4})
+                  (map (fn [store]
+                         (let [store-name (get-in store [:store/profile :store.profile/name])]
+                           (grid/column
+                             nil
+                             (dom/div
+                               (->> (css/add-class :content-item)
+                                    (css/add-class :stream-item))
+                               (dom/a
+                                 {:href (routes/store-url store :store)}
+                                 (photo/store-photo store {:transformation :transformation/thumbnail-large}))
+                               (dom/div
+                                 (->> (css/add-class :text)
+                                      (css/add-class :header))
+                                 (dom/a {:href (routes/store-url store :store)}
+                                        (dom/strong nil store-name)))))))
+                       (take 4 featured-stores))))
+              "See more stores")
 
             (common/content-section {:href  (routes/url :browse/all-items route-params)
                                      :class "new-arrivals"}
