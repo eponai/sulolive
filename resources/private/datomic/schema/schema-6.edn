@@ -1,9 +1,11 @@
 [
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :shipping.rule/pickup?
-  :db/valueType          :db.type/boolean
+  :db/ident              :stripe.webhook/event-id
+  :db/valueType          :db.type/uuid
+  :db/unique             :db.unique/value
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Allow customer to pickup."
+  :db/doc                "Identifier of a stripe webhook event."
   :db.install/_attribute :db.part/db}
- 
+
   ]
+

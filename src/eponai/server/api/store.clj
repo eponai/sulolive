@@ -323,7 +323,7 @@
         (zipmap address-keys [line1 postal city state {:country/code country}])))))
 
 
-(defn stripe-account-updated [{:keys [state logger]} updated-stripe-account]
+(defn stripe-account-updated [{:keys [state logger webhook-event]} updated-stripe-account]
   (let [{:stripe/keys                                  [id details-submitted? tos-acceptance payouts-enabled? charges-enabled?]
          {:stripe.verification/keys [disabled-reason]} :stripe/verification} updated-stripe-account
         stripe (db/pull (db/db state) [:stripe/status
@@ -350,7 +350,10 @@
                                [[:db/add (:db/id store-old-status) :status/type store-new-status]])
                              [{:db/id        (:db/id store)
                                :store/status {:status/type store-new-status}}]))
-        all-txs (into stripe-status-txs store-status-txs)]
+        all-txs (cond-> (into stripe-status-txs store-status-txs)
+                        (some? (:id webhook-event))
+                        (cons {:db/id                   (db/tempid :db.part/tx)
+                               :stripe.webhook/event-id (:id webhook-event)}))]
     (log/info! logger ::account-updated {:stripe-account    updated-stripe-account
                                          :store-id          (:db/id store)
                                          :status            store-new-status

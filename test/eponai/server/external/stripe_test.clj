@@ -24,8 +24,10 @@
                                         :charges_enabled   true
                                         :tos_acceptance    {:date 1234}} account)}})
         send-webhook (fn [e]
-                       (stripe-wh/handle-connected-webhook {:state  conn
-                                                            :logger (force log/no-op-logger)} e))
+                       (stripe-wh/handle-connected-webhook {:state         conn
+                                                            :logger        (force log/no-op-logger)
+                                                            :webhook-event e}
+                                                           (get-in e [:data :object])))
         pull-stripe #(db/pull (db/db conn) [{:stripe/status [:status/type]}] [:stripe/id stripe-id])
         pull-store #(db/pull (db/db conn) [{:store/status [:status/type]}] [:store/uuid store-uuid])]
     
