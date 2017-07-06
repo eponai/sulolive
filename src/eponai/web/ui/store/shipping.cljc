@@ -237,7 +237,9 @@
                    (and (= section :shipping-rule.section/destinations)
                         (not= modal :modal/add-shipping-rate))
                    (css/add-class :is-active))
-          (dom/p nil (dom/small nil "Select which countries you want to ship to. You'll add rates in the next step. "))
+          (dom/p nil (dom/small nil "Select which countries you want to ship to. You'll add rates in the next step.")
+                 (dom/br nil)
+                 (dom/small nil (dom/strong nil "Tip: ") (dom/span nil "Select entire continents to add all their countries not already in a rule.")))
           (select/->SelectOne (om/computed {:options     (reduce (fn [l [con cs]]
                                                                    (into l (into [{:value     (:continent/code con)
                                                                                    :label     (:continent/name con)
@@ -253,7 +255,7 @@
                                                                                       (sort-by :country/name cs)))))
                                                                  []
                                                                  countries-by-continent)
-                                            :placeholder "Select destinations..."}
+                                            :placeholder "Select destinasions (e.g. Canada, Europe)"}
                                            {:on-change #(add-shipping-destination component % used-country-codes)}))
           (if (not-empty selected-countries)
             (menu/vertical
@@ -266,8 +268,7 @@
                     (dom/a
                       (->> {:onClick #(remove-country component c)}
                            (css/add-classes [:icon :icon-delete])))))
-                (sort-by :country/name selected-countries)))
-            (dom/p nil (dom/small nil (dom/strong nil "Tip: ") (dom/span nil "Select entire continents to add all their countries not already in a rule."))))
+                (sort-by :country/name selected-countries))))
           (dom/div
             (css/add-class :action-buttons)
             (button/cancel
