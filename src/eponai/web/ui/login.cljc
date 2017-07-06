@@ -80,7 +80,8 @@
 (defn render-create-account [component]
   (let [{:keys             [user token-error input-validation] :as state
          :create-user/keys [input-email input-name]} (om/get-state component)
-        {:query/keys [current-route auth0-info]} (om/props component)
+        {:query/keys [current-route]} (om/props component)
+        {:keys [auth0-info]} (om/get-computed component)
         {:keys [query-params]} current-route
         auth-identity (first (:auth0/identities auth0-info))
         create-message (msg/last-message component 'user/create)
@@ -211,8 +212,7 @@
   static om/IQuery
   (query [this]
     [:query/current-route
-     :query/messages
-     :query/auth0-info])
+     :query/messages])
 
   Object
   (login [this]
@@ -253,7 +253,8 @@
 
   (create-account [this]
     #?(:cljs
-       (let [{:query/keys [current-route auth0-info]} (om/props this)
+       (let [{:query/keys [current-route]} (om/props this)
+             {:keys [auth0-info]} (om/get-computed this)
              {:create-user/keys [input-email input-name]} (om/get-state this)
              email (or (:auth0/email auth0-info)
                        input-email)
