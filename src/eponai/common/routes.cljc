@@ -96,7 +96,7 @@
              "l"                                                          :landing-page/locality
              ["" [#"(yvr|yul)" :locality]]                                locality-routes
              "sell"                                                       :sell
-             ["products/" [#"\d+" :product-id] "/" [#".+" :product-name]] :product
+             ["products/" [#"\d+" :product-id] "/" [#".*" :product-name]] :product
              ;"products"                    product-routes
              ;"browse"                      browse-categories
 

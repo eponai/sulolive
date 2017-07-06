@@ -55,9 +55,9 @@
 (defn product-url [product]
   (if-let [product-id (:db/id product)]
     (routes/url :product {:product-id   product-id
-                          :product-name (some-> (:store.item/name product "")
-                                                (subs 0 (min (count (:store.item/name product)) 40))
-                                                (string/replace #" " "-"))})
+                          :product-name (-> (:store.item/name product "")
+                                            (subs 0 (min (count (:store.item/name product)) 40))
+                                            (string/replace #" " "-"))})
     (error "Trying to create URL for product with no :product-id, doing nothing. Make sure product has a :db/id")))
 
 (defui Product
