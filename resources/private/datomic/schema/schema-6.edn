@@ -1,7 +1,7 @@
 [
  {:db/id                 #db/id[:db.part/db]
   :db/ident              :stripe.webhook/event-id
-  :db/valueType          :db.type/uuid
+  :db/valueType          :db.type/string
   :db/unique             :db.unique/value
   :db/cardinality        :db.cardinality/one
   :db/doc                "Identifier of a stripe webhook event."

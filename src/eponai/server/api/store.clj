@@ -350,16 +350,26 @@
                                [[:db/add (:db/id store-old-status) :status/type store-new-status]])
                              [{:db/id        (:db/id store)
                                :store/status {:status/type store-new-status}}]))
-        all-txs (cond-> (into stripe-status-txs store-status-txs)
-                        (some? (:id webhook-event))
-                        (cons {:db/id                   (db/tempid :db.part/tx)
-                               :stripe.webhook/event-id (:id webhook-event)}))]
-    (log/info! logger ::account-updated {:stripe-account    updated-stripe-account
-                                         :store-id          (:db/id store)
-                                         :status            store-new-status
-                                         :old-status        store-old-status
-                                         :stripe-status     new-status
-                                         :old-stripe-status old-status})
-
+        all-txs (cond->> (into stripe-status-txs store-status-txs)
+                         (some? (:id webhook-event))
+                         (cons {:db/id                   (db/tempid :db.part/tx)
+                                :stripe.webhook/event-id (:id webhook-event)}))
+        log-data {:stripe-account    updated-stripe-account
+                  :store-id          (:db/id store)
+                  :status            store-new-status
+                  :old-status        store-old-status
+                  :stripe-status     new-status
+                  :old-stripe-status old-status}]
     (when (not-empty all-txs)
-      (db/transact state all-txs))))
+      (try
+        (db/transact state all-txs)
+        (log/info! logger ::account-updated (assoc log-data :success? true))
+        (catch Exception e
+          (= (ex-data (.getCause (:exception (ex-data e)))) {:db/error})
+          (let [db-error (some-> (ex-data e) (:exception) (.getCause) (ex-data) (:db/error))]
+            (if (= db-error :db.error/unique-conflict)
+              (log/info! logger ::account-updated (assoc log-data :success? true
+                                                                  :duplicate-event true))
+              (do
+                (log/error! logger ::account-updated (assoc log-data :exception (log/render-exception e)))
+                (throw e)))))))))
