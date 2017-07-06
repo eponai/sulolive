@@ -203,11 +203,11 @@
       {:on-close on-close
        :classes  [:store-username-modal]
        :size     "tiny"}
-      (dom/p (css/add-class :header) "Change store username")
-      (dom/p nil (dom/small nil "Your store username is the same as your store address."))
+      (dom/p (css/add-class :header) "Change store URL")
+      (dom/p nil (dom/small nil "Your store URL is the link to your SULO store."))
       ;(dom/p nil )
       (dom/p nil
-             (dom/span (css/add-class :host) "sulo.live/store/")
+             (dom/span (css/add-class :host) "https://sulo.live/store/")
              (dom/strong nil (or input-username (:store/username store ""))))
       (dom/div
         (css/add-class :username-input)
@@ -338,21 +338,21 @@
                 (->> (css/add-class :collapse)
                      (css/align :middle))
                 (grid/column
-                  nil
-                  (dom/label nil "Store username")
-                  (dom/p nil (dom/small nil "Your store username is the same as your store address.")
+                  (grid/column-size {:small 12 :medium 6})
+                  (dom/label nil "Store URL")
+                  (dom/p nil (dom/small nil "Your store URL is the link to your SULO store.")
                          ;(dom/br nil)
                          ;(dom/small nil (dom/strong nil input-username))
                          ))
                 (grid/column
                   (css/text-align :right)
                   (dom/p nil
-                         (dom/small nil "sulo.live/store/ ")
+                         (dom/small nil "https://sulo.live/store/ ")
                          (dom/span nil (or (:store/username store)
                                            (:db/id store))))
                   (button/store-setting-default
                     {:onClick #(om/update-state! this assoc :modal :modal/username)}
-                    (dom/span nil "Change username")))))))
+                    (dom/span nil "Change URL")))))))
 
         (dom/div
           (css/add-class :section-title)
