@@ -173,7 +173,7 @@
                     (conj [:db/add store-id :store/shipping (:db/id new-shipping)]))]
     (db/transact state txs)))
 
-(defn update-status [{:keys [state]} store-id status]
+(defn update-status [{:keys [state logger]} store-id status]
   (let [db-store (db/pull (db/db state) [:store/status] store-id)
         old-status (:store/status db-store)
         new-status (cond-> (cf/add-tempid (select-keys status [:status/type]))
@@ -183,7 +183,6 @@
         txs (cond-> [new-status]
                     (db/tempid? (:db/id new-status))
                     (conj [:db/add store-id :store/status (:db/id new-status)]))]
-
     (db/transact state txs)))
 
 (defn delete-product [{:keys [state]} product-id]
@@ -344,15 +343,20 @@
                               :stripe/status {:status/type new-status}}])
 
         store-old-status (:store/status store)
+        store-new-status (when (= new-status :status.type/inactive) :store.status/closed)
         store-status-txs (when (= new-status :status.type/inactive)
                            (if (some? store-old-status)
-                             (when-not (= (:status/type store-old-status) :status.type/closed)
-                               [[:db/add (:db/id store-old-status) :status/type :status.type/closed]])
+                             (when-not (= (:status/type store-old-status) store-new-status)
+                               [[:db/add (:db/id store-old-status) :status/type store-new-status]])
                              [{:db/id        (:db/id store)
-                               :store/status {:status/type :status.type/closed}}]))
+                               :store/status {:status/type store-new-status}}]))
         all-txs (into stripe-status-txs store-status-txs)]
-    (log/info! logger ::account-updated {:old-stripe-status old-status
-                                         :new-stripe-status new-status})
+    (log/info! logger ::account-updated {:stripe-account    updated-stripe-account
+                                         :store-id          (:db/id store)
+                                         :status            store-new-status
+                                         :old-status        store-old-status
+                                         :stripe-status     new-status
+                                         :old-stripe-status old-status})
 
     (when (not-empty all-txs)
       (db/transact state all-txs))))

@@ -322,6 +322,7 @@
 (defmutation store/update-status
   [{:keys [state ::parser/return ::parser/exception auth system] :as env} _ {:keys [store-id status]}]
   {:auth {::auth/store-owner {:store-id store-id}}
+   :log  [:store-id :status]
    :resp {:success "Your store info was successfully updated."
           :error   "Sorry, your info could not be updated. Try again later."}}
   {:action (fn []
@@ -330,7 +331,7 @@
 (defmutation store/update-shipping
   [{:keys [state ::parser/return ::parser/exception auth system] :as env} _ {:keys [shipping store-id]}]
   {:auth {::auth/store-owner {:store-id store-id}}
-   :log  [:store-id]
+   :log  [:store-id :shipping]
    :resp {:success "Your store info was successfully updated."
           :error   "Sorry, your info could not be updated. Try again later."}}
   {:action (fn []
@@ -466,7 +467,7 @@
                    params (cond-> account-params
                                   accept-terms?
                                   (assoc :field/tos-acceptance {:field.tos-acceptance/ip   client-ip
-                                                                   :field.tos-acceptance/date (date/current-secs)}))
+                                                                :field.tos-acceptance/date (date/current-secs)}))
                    _ (debug "Updating account with params: " params)
                    new-account (stripe/update-account (:system/stripe system) id params)]
                (store/stripe-account-updated env new-account)
@@ -529,7 +530,7 @@
                                  {:user-id (:user-id auth)}))
                  (store/create env params))))})
 
-(defn log-product 
+(defn log-product
   "Return map with fields we want to log of a product."
   [product]
   (-> (select-keys product [:db/id :store.item/name :store.item/price :store.item/uuid :store.item/category])
