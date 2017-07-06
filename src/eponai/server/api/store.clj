@@ -171,8 +171,7 @@
         txs (cond-> [new-shipping]
                     (db/tempid? (:db/id new-shipping))
                     (conj [:db/add store-id :store/shipping (:db/id new-shipping)]))]
-    (debug "Transacting shipping: " txs)
-    (debug "TranactedL " (db/transact state txs))))
+    (db/transact state txs)))
 
 (defn update-status [{:keys [state]} store-id status]
   (let [db-store (db/pull (db/db state) [:store/status] store-id)

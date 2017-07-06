@@ -173,7 +173,7 @@
            (when-not (= :status.type/open
                         (get-in store [:store/status :status/type]))
              (callout/callout-small
-               (->> (css/text-align :center)
+               (->> (css/text-align :center {:id "store-closed-banner"})
                     (css/add-classes [:alert :store-closed]))
                (dom/div (css/add-class :sl-tooltip)
                       (dom/h3

@@ -552,7 +552,9 @@
                                                                                                     (assoc :field/external-account token))
                                                                                 :accept-terms?  true
                                                                                 :store-id       (:db/id store)})
-                                                                         :query/stripe-account]))})
+                                                                         :query/stripe-account]))
+                                   :on-error (fn [error-message]
+                                               (om/update-state! this assoc :error-message error-message))})
              (do
                (mixpanel/track "Store: Verify account." {:store-id   (:db/id store)
                                                          :store-name (get-in store [:store/profile :store.profile/name])})
@@ -661,7 +663,8 @@
                          :target "_blank"}
                         (dom/small nil "Terms of service"))
                  (dom/small nil " and the ")
-                 (dom/a {:href "https://stripe.com/ca/connect-account/legal"} (dom/small nil "Stripe Connected Account Agreement"))
+                 (dom/a {:href   "https://stripe.com/ca/connect-account/legal"
+                         :target "_blank"} (dom/small nil "Stripe Connected Account Agreement"))
                  (dom/small nil ".")))))))
 
 (def Verify (script-loader/stripe-loader Verify-no-loader))
