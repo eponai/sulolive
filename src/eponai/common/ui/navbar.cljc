@@ -620,7 +620,8 @@
                                (dom/span nil "Business")))
                       (menu/item
                         (when (#{:store-dashboard/finances
-                                 :store-dashboard/finances#settings} (:route current-route))
+                                 :store-dashboard/finances#settings
+                                 :store-dashboard/finances#taxes} (:route current-route))
                           (css/add-class :is-active))
                         (dom/a {:href    (routes/store-url owned-store :store-dashboard/finances)
                                 :onClick #(track-event ::mixpanel/go-to-finances)}
