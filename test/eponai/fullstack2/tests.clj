@@ -240,15 +240,17 @@
 (defn route->route-data [conn route]
   (letfn [(get-id [query]
             (str (db/one-with (db/db conn) query)))]
-    (merge
-      {:route route}
-      (cond
-        (#{:checkout :store :store-dashboard} route)
-        {:route-params {:store-id (get-id {:where '[[?e :store/owners]]})}}
-        (#{:product} route)
-        {:route-params {:product-id (get-id {:where '[[?e :store.item/name]]})}}
-        (#{:user} route)
-        {:route-params {:user-id (get-id {:where '[[?e :user/email]]})}}))))
+    (let [route route]
+      (merge-with
+        merge
+        {:route route :route-params {:locality "yvr"}}
+        (cond
+          (#{:checkout :store :store-dashboard} route)
+          {:route-params {:store-id (get-id {:where '[[?e :store/owners]]})}}
+          (#{:product} route)
+          {:route-params {:product-id (get-id {:where '[[?e :store.item/name]]})}}
+          (#{:user} route)
+          {:route-params {:user-id (get-id {:where '[[?e :user/email]]})}})))))
 
 (defn test-dedupe-parser-returns-super-set-of-original-parser []
   (let [original (parser/client-parser (parser/client-parser-state {::parser/skip-dedupe true
@@ -286,7 +288,7 @@
                        ;; send remote.
                        (remove #{:unauthorized})
                        (map route->test-parser-returning-same-thing))
-                     router/routes)}))
+                     (remove #{:browse} router/routes))}))
 
 
 (test/deftest full-stack-tests
