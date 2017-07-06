@@ -183,3 +183,10 @@
         (update :order/shipping shipping)
         (update :order/items #(map item* %))
         cf/add-tempid)))
+
+;; TODO: Remove this once we've fixed auth issues.
+(defn auth0->user [auth0]
+  {:db/id           (d/tempid :db.part/user)
+   :user/email      (:email auth0)
+   :user/verified   (:email_verified auth0)
+   :user/created-at (date/current-millis)})
