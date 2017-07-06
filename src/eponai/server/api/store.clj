@@ -343,7 +343,7 @@
                               :stripe/status {:status/type new-status}}])
 
         store-old-status (:store/status store)
-        store-new-status (when (= new-status :status.type/inactive) :store.status/closed)
+        store-new-status (when (= new-status :status.type/inactive) :status.type/closed)
         store-status-txs (when (= new-status :status.type/inactive)
                            (if (some? store-old-status)
                              (when-not (= (:status/type store-old-status) store-new-status)
