@@ -185,7 +185,7 @@
 (defonce reconciler-atom (atom nil))
 
 (defn- run [{:keys        [login modules loading-bar]
-             :shared/keys [login modules auth0]
+             :shared/keys [login modules auth0 photos]
              :or          {loading-bar (loading-bar/loading-bar)}
              :as          run-options}]
   (let [modules (or modules (modules/advanced-compilation-modules router/routes))
@@ -233,6 +233,7 @@
                                        :shared/stripe              ::shared/client-env
                                        :shared/auth0               auth0
                                        :shared/login               login
+                                       :shared/photos              photos
                                        :instrument                 (::plomber run-options)})]
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
@@ -280,13 +281,15 @@
 (defn run-simple [& [deps]]
   (when-not-timbre-level
     (timbre/set-level! :debug))
-  (run (merge {:shared/auth0 :env/dev
-               :shared/login (auth/login reconciler-atom)}
+  (run (merge {:shared/auth0  :env/dev
+               :shared/photos :env/prod
+               :shared/login  (auth/login reconciler-atom)}
               deps)))
 
 (defn run-dev [& [deps]]
   (run (merge {
                :shared/auth0   :env/dev
+               :shared/photos  :env/dev
                :shared/login   (auth/login reconciler-atom)
                :shared/modules (modules/dev-modules router/routes)
                }

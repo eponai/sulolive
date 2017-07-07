@@ -49,7 +49,8 @@
                              modules
                              stripe
                              auth0
-                             login]
+                             login
+                             photos]
                :or          {conn          (utils/create-conn)
                              local-storage (local-storage/->local-storage)
                              remotes       (remote-order)
@@ -62,15 +63,16 @@
                                          :remotes    remotes
                                          :send       send-fn
                                          :merge      merge
-                                         :shared     {:shared/stripe              stripe
-                                                      :shared/scroll-helper       scroll-helper
-                                                      :shared/loading-bar         loading-bar
-                                                      :shared/modules             modules
+                                         :shared     {:shared/auth0               auth0
                                                       :shared/browser-history     browser-history
+                                                      :shared/loading-bar         loading-bar
                                                       :shared/local-storage       local-storage
-                                                      :shared/auth0               auth0
+                                                      :shared/login               login
+                                                      :shared/modules             modules
+                                                      :shared/photos              photos
+                                                      :shared/scroll-helper       scroll-helper
                                                       :shared/store-chat-listener store-chat-listener
-                                                      :shared/login               login}
+                                                      :shared/stripe              stripe}
                                          :tx-listen  tx-listen
                                          :migrate    nil
                                          :instrument instrument}))]
