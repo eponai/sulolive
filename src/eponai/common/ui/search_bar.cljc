@@ -21,7 +21,8 @@
   ISearchBar
   (trigger-search! [this]
     (let [route-map (routes/current-route this)]
-      (if-let [input-search (not-empty (str/trim (:input-search (om/get-state this))))]
+      (if-let [input-search (not-empty (some-> (:input-search (om/get-state this))
+                                               (str/trim)))]
         (let [route-map (-> route-map
                             (assoc :route :browse/all-items)
                             (update :route-params select-keys [:locality])
