@@ -15,7 +15,8 @@
     (if-let [component (get-in @components [key env])]
       component
       (let [component (shared-component reconciler key env)]
-        (swap! components assoc-in [key env] component)
+        #?(:cljs
+           (swap! components assoc-in [key env] component))
         component)))
 
   (defn clear-components! []

@@ -26,17 +26,17 @@
     [eponai.common.database :as db]))
 
 (def form-elements
-  {:input-price            "input-price"
-   :input-on-sale?         "input-on-sale?"
-   :input-sale-price       "input-sale-price"
-   :input-name             "input-name"
-   :input-desc             "input-desc"
-   :input-main-inventory   "input-main-inventory"
+  {:input-price             "input-price"
+   :input-on-sale?          "input-on-sale?"
+   :input-sale-price        "input-sale-price"
+   :input-name              "input-name"
+   :input-desc              "input-desc"
+   :input-main-inventory    "input-main-inventory"
 
-   :input-sku-value        "input-sku-value-"
-   :input-sku-inventory    "input-sku-inventory-"
+   :input-sku-value         "input-sku-value-"
+   :input-sku-inventory     "input-sku-inventory-"
 
-   :input-sku-group        "input-sku-group"
+   :input-sku-group         "input-sku-group"
 
    ::select-top-category    "select.top-category"
    ::select-sub-category    "select.sub-category"
@@ -176,12 +176,15 @@
 
   Object
   (componentDidUpdate [this _ _]
-    (when-let [action-finished (some #(when (msg/final? (msg/last-message this %)) %)
-                                     ['store/update-product
-                                      'store/create-product
-                                      'store/delete-product])]
-      (msg/clear-one-message! this action-finished)
-      (routes/set-url! this :store-dashboard/product-list {:store-id (:store-id (get-route-params this))})))
+    (let [{:keys [create-another?]} (om/get-state this)]
+      (when-let [action-finished (some #(when (msg/final? (msg/last-message this %)) %)
+                                       ['store/update-product
+                                        'store/create-product
+                                        'store/delete-product])]
+        (msg/clear-one-message! this action-finished)
+        (if create-another?
+          (om/update-state! this dissoc :uploaded-photos)
+          (routes/set-url! this :store-dashboard/product-list {:store-id (:store-id (get-route-params this))})))))
   (delete-product [this]
     (let [{:keys [product-id store-id]} (get-route-params this)]
       (mixpanel/track "Store: Delete product" {:product-id product-id})
@@ -288,7 +291,7 @@
        :selected-category-seq (category-seq this category)}))
 
   (render [this]
-    (let [{:keys [uploaded-photos queue-photo did-mount? sku-count selected-section store-sections selected-category-seq input-validation]} (om/get-state this)
+    (let [{:keys [uploaded-photos queue-photo did-mount? sku-count selected-section store-sections selected-category-seq input-validation create-another?]} (om/get-state this)
           {:query/keys [navigation current-route categories item]} (om/props this)
           {:keys [product-id store-id]} (get-route-params this)
           ;{:keys [product]} (om/get-computed this)
@@ -597,6 +600,14 @@
                               (om/update-state! this update :sku-count inc))}
                   (dom/span nil "Add variation..."))))))
 
+        (when-not (some? product-id)
+          (dom/div
+            (css/add-class :create-another-checkbox (css/text-align :right))
+            (dom/input {:type     "checkbox"
+                        :id       "sulo.product.create.other"
+                        :checked  (boolean create-another?)
+                        :onChange #(om/update-state! this assoc :create-another? (.-checked (.-target %)))})
+            (dom/label {:htmlFor "sulo.product.create.other"} "Copy and create another")))
         (grid/row
           (css/add-classes [:expanded :collapse])
           (grid/column
@@ -606,6 +617,7 @@
               (dom/a {:classes ["button hollow alert"]
                       :onClick #(.delete-product this)}
                      (dom/span nil "Delete product"))))
+
           (grid/column
             (css/add-class :action-buttons)
             (button/store-navigation-secondary

@@ -41,6 +41,9 @@
         reconciler (client.reconciler/create {:conn         (datascript/conn-from-db (:empty-datascript-db request-env))
                                               :parser       parser
                                               :send-fn      send-fn
+                                              :shared/photos (if (:release? request-env)
+                                                               :env/prod
+                                                               :env/dev)
                                               :history      2
                                               :route        (:route request-env)
                                               :route-params (:route-params request-env)

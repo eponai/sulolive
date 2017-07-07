@@ -144,6 +144,7 @@
     [{:query/inventory [:store.item/name
                         :store.item/description
                         :store.item/index
+                        :store.item/price
                         {:store.item/section [:db/id]}
                         {:store.item/photos [{:store.item.photo/photo [:photo/id :photo/path]}
                                              :store.item.photo/index]}]}

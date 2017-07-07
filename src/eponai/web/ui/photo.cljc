@@ -4,7 +4,8 @@
     [eponai.common.ui.dom :as dom]
     [eponai.common.photos :as photos]
     [eponai.common.ui.elements.css :as css]
-    [taoensso.timbre :refer [debug warn]]))
+    [taoensso.timbre :refer [debug warn]]
+    [eponai.common.shared :as shared]))
 
 #?(:cljs
    (let [loaded-url-cache (atom nil)]
@@ -27,7 +28,8 @@
   Object
   (large-image-url [this]
     (let [{:keys [photo-id transformation ext]} (om/props this)]
-      (photos/transform photo-id (or transformation :transformation/preview) ext)))
+      (photos/main (shared/by-key this :shared/photos) photo-id {:transformation (or transformation :transformation/preview)
+                                                                 :ext ext})))
   (initLocalState [this]
     {:loaded-main? #?(:clj  false
                       :cljs (when (string? (:photo-id (om/props this)))
@@ -46,7 +48,7 @@
     (let [{:keys [content src photo-id classes ext background? id onMouseMove onMouseOut]} (om/props this)]
       (cond (some? photo-id)
             (let [{:keys [loaded-main?]} (om/get-state this)
-                  url-small (photos/transform photo-id :transformation/micro ext)
+                  url-small (photos/mini (shared/by-key this :shared/photos) photo-id {:ext ext})
                   url (.large-image-url this)]
               (if-not (string? photo-id)
                 (warn "Ignoring invalid photo src type, expecting a URL string. Got src: " photo-id)

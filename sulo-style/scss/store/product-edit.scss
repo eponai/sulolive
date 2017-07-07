@@ -68,6 +68,18 @@
 			display: none !important;
 		}
 	}
+	label[for] {
+		color: $body-font-color;
+	}
+	.create-another-checkbox {
+		display: flex;
+		flex-direction: row-reverse;
+		align-items: center;
+		input {
+			margin: 0;
+		}
+		margin: $global-margin 0;
+	}
 
 }
 

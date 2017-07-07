@@ -3,7 +3,8 @@
     #?(:clj [clj-http.client :as http]
        :cljs [cljs-http.client :as http])
             [clojure.string :as string]
-            [taoensso.timbre :refer [debug]]))
+            [taoensso.timbre :refer [debug]]
+            [eponai.common.shared :as shared]))
 
 (def transformations
   {:transformation/micro           "micro"
@@ -45,3 +46,31 @@
                                         :upload_preset (get presets selected-preset)}
                     :headers           {"X-Requested-With" "XMLHttpRequest"}
                     :with-credentials? false})))
+
+(defprotocol IPhotos
+  (mini [this photo-id opts])
+  (main [this photo-id opts]))
+
+(defmethod shared/shared-component [:shared/photos :env/prod]
+  [_ _ _]
+  (reify IPhotos
+    (mini [this photo-id {:keys [ext]}]
+      (transform photo-id :transformation/micro ext))
+    (main [this photo-id {:keys [ext transformation]}]
+      (transform photo-id transformation ext))))
+
+(defmethod shared/shared-component [:shared/photos :env/dev]
+  [_ _ _]
+  (let [url-fn (fn [photo-id]
+                 (let [static-key (last (string/split photo-id #"/"))
+                       photo-key (or (some #{"storefront-cover-2" "storefront-2"} [static-key]) "cat-profile-3")]
+                   (debug "Make URL: " (str "/assets/img/" photo-key ".jpg"))
+                   (str "/assets/img/" photo-key ".jpg")))]
+    (reify IPhotos
+      (mini [this photo-id {:keys [ext]}]
+        (debug "PHOTO+KRU: " photo-id)
+        (url-fn photo-id))
+      (main [this photo-id {:keys [ext transformation]}]
+        ;(transform photo-id :transformation/micro ext)
+        (url-fn photo-id)
+        ))))
