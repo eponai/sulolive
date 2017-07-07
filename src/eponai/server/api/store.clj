@@ -185,14 +185,16 @@
                         (some? (:db/id old-tax))
                         (assoc :db/id (:db/id old-tax)))
 
-        tax-rule (cond-> (first (:tax/rules new-tax))
-                         (some? (:db/id old-rule))
-                         (assoc :db/id (:db/id old-rule)))
+        tax-rule (when (not-empty (:tax/rules new-tax))
+                   (cond-> (first (:tax/rules new-tax))
+                           (some? (:db/id old-rule))
+                           (assoc :db/id (:db/id old-rule))))
 
-        txs (cond-> [(dissoc new-tax :tax/rules)
-                     tax-rule]
+        txs (cond-> [(dissoc new-tax :tax/rules)]
                     (db/tempid? (:db/id new-tax))
                     (conj [:db/add store-id :store/tax (:db/id new-tax)])
+                    (some? tax-rule)
+                    (conj tax-rule)
                     (db/tempid? (:db/id tax-rule))
                     (conj [:db/add (:db/id new-tax) :tax/rules (:db/id tax-rule)]))]
 
