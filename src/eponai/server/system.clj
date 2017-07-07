@@ -21,6 +21,7 @@
     [eponai.server.external.aws-s3 :as s3]
     [eponai.server.external.email :as email]
     [eponai.server.external.client-env :as client-env]
+    [eponai.server.external.stripe.webhooks :as stripe-webhooks]
     [eponai.server.external.request-handler :as request-handler]))
 
 (def system-keys #{:system/aleph
@@ -43,7 +44,8 @@
                    :system/product-search
                    :system/wowza
                    :system/email
-                   :system/auth0management})
+                   :system/auth0management
+                   :system/stripe-webhooks})
 
 (defn resume-requests
   "Resumes requests when a system has been restarted."
@@ -78,7 +80,8 @@
                                    {:datomic :system/datomic})
    :system/server-address (c/using (server-address/map->ServerAddress {:schema (:server-url-schema env)
                                                                        :host   (:server-url-host env)})
-                                   {:aws-elb :system/aws-elb})})
+                                   {:aws-elb :system/aws-elb})
+   :system/stripe-webhooks (stripe-webhooks/->StripeWebhooksExecutor)})
 
 (defn real-components [{:keys [env] :as config}]
   {:system/auth0           (c/using (auth0/map->Auth0 {:client-id     (:auth0-client-id env)
