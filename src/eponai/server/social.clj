@@ -10,7 +10,7 @@
             [eponai.common.format :as f]))
 
 (defn- store [{:keys [state system]} store-id]
-  (when-let [store-id (c/parse-long-safe store-id)]
+  (when-let [store-id (db/store-id->dbid (db/db state) store-id)]
     (when-let [store (db/pull (db/db state)
                               [{:store/profile [:store.profile/name
                                                 :store.profile/tagline
