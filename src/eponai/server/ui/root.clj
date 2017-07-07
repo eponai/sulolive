@@ -46,8 +46,6 @@
           ;; Powr can be loaded last, because it just hooks in to a div that we've specified.
           (dom/script {:src "//www.powr.io/powr.js"
                        :external-type "html"})
-          ;; Dompurify didn't work without externs. Not sure how to extern either..
-          (dom/script {:src "https://cdnjs.cloudflare.com/ajax/libs/dompurify/0.9.0/purify.min.js"})
 
           (cond
             (= cljs-build-id "release")

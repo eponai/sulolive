@@ -19,8 +19,13 @@
     (let [allowed-classes ["ql-align-right" "ql-align-center" "ql-size-small" "ql-size-large"]
           allowed-tags ["p" "span" "strong" "ul" "ol" "li" "u" "s" "i" "em" "br"]]
 
-      #?(:cljs (let [policy #js {:ALLOWED_TAGS (into-array allowed-tags)}]
-                 (.sanitize js/DOMPurify dirty-html policy))
+      ;; TODO: Sanitize html client-side?
+      #?(:cljs (let [
+                     ;; policy #js {:ALLOWED_TAGS (into-array allowed-tags)}
+                     ]
+                 ;;(.sanitize js/DOMPurify dirty-html policy)
+                 dirty-html
+                 )
          :clj  (let [policy (a/html-policy :allow-common-inline-formatting-elements
                                            :allow-common-block-elements
                                            :allow-attributes ["class"
