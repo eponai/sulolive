@@ -21,8 +21,7 @@
           allowed-tags ["p" "span" "strong" "ul" "ol" "li" "u" "s" "i" "em" "br"]]
 
       #?(:cljs (let [policy (clj->js {:ALLOWED_TAGS allowed-tags})]
-                 (js/DOMPurify.sanitize dirty-html policy)
-                 dirty-html)
+                 (.sanitize js/DOMPurify dirty-html policy))
          :clj  (let [policy (a/html-policy :allow-common-inline-formatting-elements
                                            :allow-common-block-elements
                                            :allow-attributes ["class"
