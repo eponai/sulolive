@@ -59,7 +59,7 @@
 
 ;; "Takes a route and its route-params and returns an url"
 (defn url
-  ([route] (url route nil))
+  ([route] (url route nil nil))
   ([route route-params] (url route route-params nil))
   ([route route-params query-params]
    (routes/path route route-params query-params)))
