@@ -1,5 +1,4 @@
 (def npm-deps {
-               :dompurify "0.9.0"
                })
 (def closure-warns {:non-standard-jsdoc :off})
 
