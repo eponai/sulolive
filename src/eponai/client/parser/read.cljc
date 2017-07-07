@@ -37,6 +37,12 @@
   (when-not target
     {:value (db/pull-one-with db query {:where '[[?e :ui/singleton :ui.singleton/login-modal]]})}))
 
+(defmethod client-read :query/notifications
+  [{:keys [db query target]} _ _]
+  (when-not target
+    {:value (db/pull-all-with db query {:where '[[?n :ui/singleton :ui.singleton/notify]
+                                                 [?n :ui.singleton.notify/notifications ?e]]})}))
+
 
 ;; ################ Remote reads ####################
 ;; Remote reads goes here. We share these reads
@@ -50,7 +56,6 @@
 
 (defmethod client-read :query/stores
   [{:keys [db query target]} _ {:keys [states]}]
-  (debug "Read query/stores: " states)
   (if target
     {:remote true}
     {:value (when-let [loc (client.auth/current-locality db)]
@@ -60,7 +65,7 @@
                                                        [?e :store/status ?st]
                                                        [?s :stream/state ?states]
                                                        [?s :stream/store ?e]]
-                                            :symbols {'?l (:db/id loc)
+                                            :symbols {'?l            (:db/id loc)
                                                       '[?states ...] states}})
                 (db/pull-all-with db query {:where   '[[?e :store/locality ?l]
                                                        [?st :status/type :status.type/open]
@@ -277,10 +282,10 @@
     (if target
       {:remote true}
       {:value (do (debug "Query " query) (db/pull-all-with db query {:where   '[[?u :user/cart ?c]
-                                                         [?c :user.cart/items ?e]
-                                                         [?i :store.item/skus ?e]
-                                                         [?s :store/items ?i]]
-                                              :symbols {'?s store-id}}))})))
+                                                                                [?c :user.cart/items ?e]
+                                                                                [?i :store.item/skus ?e]
+                                                                                [?s :store/items ?i]]
+                                                                     :symbols {'?s store-id}}))})))
 
 (defmethod client-read :query/taxes
   [{:keys [db query route-params target]} _ {:keys [destination] :as p}]

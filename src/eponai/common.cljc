@@ -48,6 +48,15 @@
 (defn two-decimal-percent [rate]
   (str (format-str "%.2f" (* 100 (double (or rate 0)))) "%"))
 
+(defn substring
+  ([s start]
+   (substring s start nil))
+  ([s start end]
+   (let [length (count s)
+         st (-> start (min length) (max 0))
+         en (if end (-> end (min length) (max 0)) length)]
+     (subs (or s "") st en))))
+
 
 ;; ########## TRANSIT ##############
 (defn read-transit [input & [format]]

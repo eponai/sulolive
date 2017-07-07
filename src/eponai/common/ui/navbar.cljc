@@ -19,6 +19,7 @@
     [eponai.web.social :as social]
     [eponai.web.ui.login :as login]
     [eponai.web.ui.button :as button]
+    [eponai.web.ui.notifications :as note]
     [eponai.common.mixpanel :as mixpanel]
     [eponai.client.utils :as client.utils]
     [eponai.client.auth :as client.auth]))
@@ -389,6 +390,7 @@
      {:query/navigation [:category/name :category/label :category/path :category/route-map]}
      {:proxy/loading-bar (om/get-query LoadingBar)}
      {:proxy/login-modal (om/get-query login/LoginModal)}
+     {:proxy/notification (om/get-query note/Notifications)}
      :query/current-route])
   Object
   #?(:cljs
@@ -461,7 +463,7 @@
 
   (render [this]
     (let [{:query/keys [current-route navigation]
-           :proxy/keys [loading-bar login-modal]} (om/props this)
+           :proxy/keys [loading-bar login-modal notification]} (om/props this)
           {:keys [route]} current-route]
       (dom/div
         nil
@@ -496,7 +498,8 @@
         ;(let [is-loading? (:ui.singleton.loading-bar/show? loading-bar)])
 
         (login/->LoginModal login-modal)
-        (->LoadingBar loading-bar)))))
+        (->LoadingBar loading-bar)
+        (note/->Notifications notification)))))
 
 (def ->Navbar (om/factory Navbar))
 

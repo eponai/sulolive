@@ -1,5 +1,5 @@
 {
- "name": "App",
+ "name": "SULO Live",
  "icons": [
   {
    "src": "\/android-icon-36x36.png",
@@ -37,5 +37,6 @@
    "type": "image\/png",
    "density": "4.0"
   }
- ]
+ ],
+ "gcm_sender_id": "103953800507"
 }

@@ -52,6 +52,24 @@
                (db/transact state [{:ui/singleton                   :ui.singleton/login-modal
                                     :ui.singleton.login-modal/show? false}]))}))
 
+(defmethod client-mutate 'notification/receive
+  [{:keys [state target]} _ notification]
+  (when-not target
+    {:action (fn []
+               (debug "Firebase - notification/receive: " notification)
+               (let [db-notification (assoc notification :db/id -1)]
+                 (db/transact state [db-notification
+                                     [:db/add [:ui/singleton :ui.singleton/notify] :ui.singleton.notify/notifications -1]])))}))
+
+(defmethod client-mutate 'notification/remove
+  [{:keys [state target]} _ {:keys [id]}]
+  (when-not target
+    {:action (fn []
+               (debug "Firebase - notification/remove: " id)
+               (when-let [notification (db/one-with (db/db state) {:where   '[[?e :notification/id ?id]]
+                                                                   :symbols {'?id id}})]
+                 (db/transact state [[:db.fn/retractEntity notification]])))}))
+
 ;; ################ Remote mutations ####################
 ;; Remote mutations goes here. We share these mutations
 ;; with all client platforms (web, ios, android).
@@ -370,4 +388,11 @@
   [{:keys [state target]} _ _]
   (when target
     {:remote true}))
+
+(defmethod client-mutate 'firebase/register-token
+  [{:keys [state target]} _ _]
+  (when target
+    {:remote true}))
+
+
 

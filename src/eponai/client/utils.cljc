@@ -33,6 +33,7 @@
    {:ui/singleton :ui.singleton/product-search}
    {:ui/singleton :ui.singleton/chat-config}
    {:ui/singleton :ui.singleton/client-env}
+   {:ui/singleton :ui.singleton/notify}
    ])
 
 (defn create-conn []

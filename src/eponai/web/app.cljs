@@ -24,12 +24,14 @@
     ;; [eponai.web.scroll-helper :as scroll-helper]
     [cljs.core.async :as async]
     [eponai.common.shared :as shared]
+    ;[cljsjs.firebase]
     [eponai.client.chat :as client.chat]
     [cemerick.url :as url]
     [medley.core :as medley]
     [eponai.client.auth :as client.auth]
     [eponai.common.database :as db]
     [eponai.client.cart :as client.cart]
+    [eponai.web.firebase :as firebase]
     [eponai.web.utils :as web.utils]
     [eponai.client.routes :as client.routes]))
 
@@ -184,6 +186,9 @@
 (defonce history-atom (atom nil))
 (defonce reconciler-atom (atom nil))
 
+
+
+
 (defn- run [{:keys        [login modules loading-bar]
              :shared/keys [login modules auth0 photos]
              :or          {loading-bar (loading-bar/loading-bar)}
@@ -235,6 +240,8 @@
                                        :shared/login               login
                                        :shared/photos              photos
                                        :instrument                 (::plomber run-options)})]
+    (firebase/initialize reconciler)
+
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
       (pushy/start! history))
