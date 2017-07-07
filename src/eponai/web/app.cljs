@@ -275,8 +275,9 @@
           (error "Stack: " (.-stack e)))))))
 
 (defn run-prod []
-  (run {:shared/auth0 :env/prod
-        :shared/login (auth/login reconciler-atom)}))
+  (run {:shared/auth0  :env/prod
+        :shared/photos :env/prod
+        :shared/login  (auth/login reconciler-atom)}))
 
 (defn run-simple [& [deps]]
   (when-not-timbre-level
