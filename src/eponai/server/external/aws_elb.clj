@@ -34,7 +34,7 @@
       (letfn [(is-in-staging? [environment-name]
                 (when-let [env (find-environment environment-name)]
                   (= (or (env/env :aws-elb-staging-url-prefix)
-                         "sulo-staging")
+                         "sulo-stage")
                      (-> (:cname env)
                          (str/split #"\.")
                          (first)))))]
