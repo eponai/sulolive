@@ -1,12 +1,5 @@
 [
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :shipping.rule/pickup?
-  :db/valueType          :db.type/boolean
-  :db/cardinality        :db.cardinality/one
-  :db/doc                "Allow customer to pickup."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
   :db/ident              :store/tax
   :db/valueType          :db.type/ref
   :db/isComponent        true
@@ -34,13 +27,6 @@
   :db/valueType          :db.type/bigdec
   :db/cardinality        :db.cardinality/one
   :db/doc                "Rate for this tax rule."
-  :db.install/_attribute :db.part/db}
-
- {:db/id                 #db/id[:db.part/db]
-  :db/ident              :tax.rule/destinations
-  :db/valueType          :db.type/ref
-  :db/cardinality        :db.cardinality/many
-  :db/doc                "Tax destinations (e.g. country)."
   :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
