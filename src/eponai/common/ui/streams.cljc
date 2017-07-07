@@ -106,7 +106,7 @@
                                     (css/add-class :header))
                                (my-dom/a {:href (routes/store-url store :store)}
                                          (my-dom/strong nil store-name)))))))
-                     (take 6 stores)))
+                     (take 8 stores)))
               (dom/div
                 (css/add-class :section-footer)
                 (button/default-hollow
