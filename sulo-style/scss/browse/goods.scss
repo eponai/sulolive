@@ -219,6 +219,16 @@
 		h2 {
 			color: map-get($foundation-palette, sulo-dark);
 		}
+		.column {
+			.section-title {
+				justify-content: center;
+			}
+			.section-footer {
+				margin-top: $global-margin;
+				display: flex;
+				justify-content: center;
+			}
+		}
 	}
 	.navigation {
 		// margin-top: 4rem;

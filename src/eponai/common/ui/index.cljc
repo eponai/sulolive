@@ -190,7 +190,7 @@
                                     )
 
             (common/content-section
-              {:href  (routes/url :live route-params)
+              {:href  (routes/url :stores route-params)
                :class "new-brands"}
               "New stores"
               ;(grid/row-column

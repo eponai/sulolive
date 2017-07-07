@@ -53,28 +53,28 @@
         ;    ))
         (grid/row
           (css/add-class :section)
-          (grid/column
-            (->> (css/add-class :navigation)
-                 (grid/column-size {:large 3})
-                 (css/show-for :large))
-            (menu/vertical
-              (css/add-class :sl-navigation-parent)
-              (menu/item (css/add-class :is-active) (dom/a nil "Live now"))
-              ;(menu/item-link nil "Scheduled streams")
-              ;(menu/item-link nil "New arrivals")
-              ;(menu/item-link nil "Popular")
-              )
-            )
+          ;(grid/column
+          ;  (->> (css/add-class :navigation)
+          ;       (grid/column-size {:large 3})
+          ;       (css/show-for :large))
+          ;  (menu/vertical
+          ;    (css/add-class :sl-navigation-parent)
+          ;    (menu/item (css/add-class :is-active) (dom/a nil "Live now"))
+          ;    ;(menu/item-link nil "Scheduled streams")
+          ;    ;(menu/item-link nil "New arrivals")
+          ;    ;(menu/item-link nil "Popular")
+          ;    )
+          ;  )
           (grid/column
             nil
             (my-dom/div
               (css/add-class :section-title)
-              (my-dom/h2 nil "LIVE now"))
+              (my-dom/h2 nil "LIVE right now"))
             (if (not-empty streams)
               (my-dom/div {:classes ["sulo-items-container"]}
                           ;(my-dom/h3 (css/add-class :header) "LIVE right now")
                           (grid/row
-                            (grid/columns-in-row {:small 2 :medium 3})
+                            (grid/columns-in-row {:small 2 :medium 3 :large 4})
                             (map (fn [s]
                                    (grid/column
                                      nil
@@ -84,15 +84,13 @@
                 {:classes ["sulo-items-container empty-container"]}
                 (my-dom/span (css/add-class :shoutout) "No stores are LIVE right now :'(")))
             (my-dom/div
-              {:classes ["sulo-items-container"]}
+              {:classes ["sulo-items-container section"]}
               (my-dom/div
                 (css/add-class :section-title)
                 (my-dom/h4 nil "Other cool stores currently offline")
-                (button/default-hollow
-                  (css/add-classes [:sulo-dark] {:href (routes/url :stores {:locality (:sulo-locality/path locations)})})
-                  (dom/span nil "All stores")))
+                )
               (grid/row
-                (grid/columns-in-row {:small 2 :medium 3})
+                (grid/columns-in-row {:small 2 :medium 3 :large 4})
                 (map (fn [store]
                        (let [store-name (get-in store [:store/profile :store.profile/name])]
                          (grid/column
@@ -108,7 +106,12 @@
                                     (css/add-class :header))
                                (my-dom/a {:href (routes/store-url store :store)}
                                          (my-dom/strong nil store-name)))))))
-                     (take 6 stores))))))))))
+                     (take 6 stores)))
+              (dom/div
+                (css/add-class :section-footer)
+                (button/default-hollow
+                  (css/add-classes [:sulo-dark] {:href (routes/url :stores {:locality (:sulo-locality/path locations)})})
+                  (dom/span nil "See all stores"))))))))))
 
 (def ->Streams (om/factory Streams))
 

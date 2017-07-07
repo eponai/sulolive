@@ -204,13 +204,13 @@
                     (dom/h3 nil (str "New arrivals in " (:sulo-locality/title locations)))))
              (grid/row
                (->>
-                 (grid/columns-in-row {:small 2 :medium 3 :large 6}))
+                 (grid/columns-in-row {:small 2 :medium 3 :large 5}))
                (map
                  (fn [p]
                    (grid/column
                      (css/add-class :new-arrival-item)
                      (pi/product-element {:open-url? true} p)))
-                 (take 6 featured-items)))]))))))
+                 (take 5 featured-items)))]))))))
 
 (def ->ShoppingBag (om/factory ShoppingBag))
 
