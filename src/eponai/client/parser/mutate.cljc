@@ -276,6 +276,23 @@
   (if target
     {:remote true}))
 
+(defmethod client-mutate 'store/update-tax
+  [{:keys [target state]} _ {:keys [store-id tax] :as p}]
+  (debug "store/update-tax with params: " p)
+  (if target
+    {:remote true}
+    {:action (fn []
+               (let [{old-tax :store/tax} (db/pull (db/db state) [{:store/tax [:db/id :tax/rules]}] store-id)
+                     new-tax (cond-> (format/tax tax)
+                                     (some? (:db/id old-tax))
+                                     (assoc :db/id (:db/id old-tax)))
+
+                     txs (cond-> [new-tax]
+                                 (db/tempid? (:db/id new-tax))
+                                 (conj [:db/add store-id :store/tax (:db/id new-tax)]))]
+                 (debug "Transacting new tax: " txs)
+                 (db/transact state txs)))}))
+
 (defmethod client-mutate 'store/update-username
   [{:keys [target]} _ p]
   (debug "store/update-username with params: " p)

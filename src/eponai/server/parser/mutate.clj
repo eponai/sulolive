@@ -338,6 +338,15 @@
              (debug "Update shipping: " shipping)
              (store/update-shipping env store-id shipping))})
 
+(defmutation store/update-tax
+  [{:keys [state ::parser/return ::parser/exception auth system] :as env} _ {:keys [tax store-id]}]
+  {:auth {::auth/store-owner {:store-id store-id}}
+   :log  [:store-id :tax]
+   :resp {:success "Your store info was successfully updated."
+          :error   "Sorry, your info could not be updated. Try again later."}}
+  {:action (fn []
+             (store/update-tax env store-id tax))})
+
 (defmutation store/update-product-order
   [{:keys [state ::parser/return ::parser/exception auth system]} _ {:keys [items store-id]}]
   {:auth {::auth/store-owner {:store-id store-id}}

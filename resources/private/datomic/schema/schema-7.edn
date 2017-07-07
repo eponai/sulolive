@@ -5,4 +5,48 @@
   :db/cardinality        :db.cardinality/one
   :db/doc                "Allow customer to pickup."
   :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :store/tax
+  :db/valueType          :db.type/ref
+  :db/isComponent        true
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Store has tax rules for their customer."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :tax/automatic?
+  :db/valueType          :db.type/boolean
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Use automatic tax calculation."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :tax/rules
+  :db/valueType          :db.type/ref
+  :db/isComponent        true
+  :db/cardinality        :db.cardinality/many
+  :db/doc                "Custom tax rules"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :tax.rule/rate
+  :db/valueType          :db.type/bigdec
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Rate for this tax rule."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :tax.rule/destinations
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/many
+  :db/doc                "Tax destinations (e.g. country)."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :tax.rule/include-shipping?
+  :db/valueType          :db.type/boolean
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Should tax be applied to shipping?"
+  :db.install/_attribute :db.part/db}
  ]

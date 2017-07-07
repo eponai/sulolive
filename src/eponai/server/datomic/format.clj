@@ -146,6 +146,16 @@
         cf/add-tempid
         cf/remove-nil-keys)))
 
+(defn tax [t]
+  (let [rule* (fn [r]
+                (-> (select-keys r [:tax.rule/rate :tax.rule/include-shipping?])
+                    cf/add-tempid
+                    cf/remove-nil-keys))]
+    (-> (select-keys t [:tax/rules :tax/automatic?])
+        (update :tax/rules #(map rule* %))
+        cf/add-tempid
+        cf/remove-nil-keys)))
+
 (defn shipping-rate [r]
   (-> r
       (select-keys [:shipping.rate/first :shipping.rate/additional :shipping.rate/free-above :shipping.rate/title :shipping.rate/info])

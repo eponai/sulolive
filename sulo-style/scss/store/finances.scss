@@ -3,6 +3,15 @@
 	margin: 0 auto;
 	// padding-top: $subnav-height;
 
+	.callout {
+		transition: opacity .25s ease-in-out;
+	}
+	label[for] {
+		color: $body-font-color;
+	}
+	.callout.disabled {
+		opacity: 0;
+	}
 
 	.payout-schedule {
 		p {

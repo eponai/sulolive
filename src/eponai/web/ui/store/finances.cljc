@@ -8,6 +8,7 @@
     [om.next :as om :refer [defui]]
     ;[eponai.common.ui.store.account.payouts :as payouts]
     [eponai.web.ui.store.finances.settings :as settings]
+    [eponai.web.ui.store.finances.taxes :as taxes]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.elements.menu :as menu]
@@ -19,12 +20,13 @@
   static om/IQuery
   (query [_]
     [{:proxy/settings (om/get-query settings/FinancesSettings)}
+     {:proxy/taxes (om/get-query taxes/FinancesTaxes)}
      {:query/stripe-balance [:stripe/balance]}
      :query/current-route])
 
   Object
   (render [this]
-    (let [{:proxy/keys [settings]
+    (let [{:proxy/keys [settings taxes]
            :query/keys [current-route stripe-balance]} (om/props this)
           {:keys [route route-params]} current-route
           {:keys [stripe-account]} (om/get-computed this)]
@@ -44,6 +46,11 @@
                 (css/add-class :is-active))
               (dom/a {:href (routes/url :store-dashboard/finances route-params)}
                      (dom/span nil "Overview")))
+            (menu/item
+              (when (= route :store-dashboard/finances#taxes)
+                (css/add-class :is-active))
+              (dom/a {:href (routes/url :store-dashboard/finances#taxes route-params)}
+                     (dom/span nil "Taxes")))
             (menu/item
               (when (= route :store-dashboard/finances#settings)
                 (css/add-class :is-active))
@@ -85,6 +92,9 @@
                    (dom/span (css/add-class :shoutout) "No deposits made")))]
 
               (= route :store-dashboard/finances#settings)
-              (settings/->FinancesSettings settings settings))))))
+              (settings/->FinancesSettings settings settings)
+
+              (= route :store-dashboard/finances#taxes)
+              (taxes/->FinancesTaxes taxes))))))
 
 (def ->StoreFinances (om/factory StoreFinances))

@@ -13,7 +13,8 @@
                  "/policies" :store-dashboard/policies
                  "/shipping" :store-dashboard/shipping
                  "/finances" {""          :store-dashboard/finances
-                              "/settings" :store-dashboard/finances#settings}
+                              "/settings" :store-dashboard/finances#settings
+                              "/taxes"    :store-dashboard/finances#taxes}
                  "/business" {""        :store-dashboard/business
                               "/verify" :store-dashboard/business#verify}
                  ;"/settings" {""          :store-dashboard/settings
@@ -77,9 +78,9 @@
 (def locality-routes
   [["" {
         ;"/"         :index
-        "/stores"   :stores
-        "/browse"   browse-categories
-        "/live"     :live}]
+        "/stores" :stores
+        "/browse" browse-categories
+        "/live"   :live}]
    [true :index]])
 
 (defn normalize-browse-route [route]
