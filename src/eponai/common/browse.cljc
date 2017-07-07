@@ -9,7 +9,7 @@
     [clojure.string :as string]
     [eponai.common :as c]))
 
-(def default-page-size 25)
+(def default-page-size 30)
 (def category-order-values ["newest" "lowest-price" "highest-price"])
 (def search-order-values (into ["relevance"] category-order-values))
 (def order-labels {"newest" "Recently added"
