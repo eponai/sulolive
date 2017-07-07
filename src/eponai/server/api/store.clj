@@ -58,11 +58,16 @@
             new)))
 
 (defn photo-entities [cloudinary ps]
-  (map-indexed (fn [i new-photo]
-                 (if (some? (:url new-photo))
-                   (f/item-photo (cloudinary/upload-dynamic-photo cloudinary new-photo) i)
-                   (-> new-photo (assoc :store.item.photo/index i) cf/add-tempid)))
-               ps))
+  ;; Execute all futures first
+  (let [futures (doall
+                  (map-indexed (fn [i new-photo]
+                                 (future
+                                   (if (some? (:url new-photo))
+                                     (f/item-photo (cloudinary/upload-dynamic-photo cloudinary new-photo) i)
+                                     (-> new-photo (assoc :store.item.photo/index i) cf/add-tempid))))
+                               ps))]
+    ;; Deref/wait for all of them before returning
+    (into [] (map deref) futures)))
 
 (defn create-product [{:keys [state system]} store-id {:store.item/keys [photos skus section] :as params}]
   (let [new-section (cf/add-tempid section)
