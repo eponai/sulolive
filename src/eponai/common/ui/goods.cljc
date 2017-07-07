@@ -284,7 +284,8 @@
                                       (when (pos? (count items))
                                         (dom/span nil (str " - Showing items "
                                                            (let [{:keys [page-size page-num]} page-range
-                                                                 page-start (* page-num page-size)]
+                                                                 page-start (* (browse/zero-indexed-page-num page-num)
+                                                                               page-size)]
                                                              (str (inc page-start)
                                                                   " to "
                                                                   (+ page-start (count items))

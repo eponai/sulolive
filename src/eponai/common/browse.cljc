@@ -10,6 +10,7 @@
     [eponai.common :as c]))
 
 (def default-page-size 30)
+(def default-page-num 1)
 (def category-order-values ["newest" "lowest-price" "highest-price"])
 (def search-order-values (into ["relevance"] category-order-values))
 (def order-labels {"newest" "Recently added"
@@ -176,7 +177,7 @@
 (defn query-params->page-range [query-params]
   (let [page-range (select-keys query-params [:page-num :page-size])]
     (-> page-range
-        (update :page-num (fnil c/parse-long-safe 0))
+        (update :page-num (fnil c/parse-long-safe default-page-num))
         (update :page-size (fnil c/parse-long-safe default-page-size)))))
 
 (defn make-browse-params
@@ -233,13 +234,17 @@
            (first)
            (:db/id)))))
 
+(defn zero-indexed-page-num [page-num]
+  (- page-num default-page-num))
+
 (defn pages [{:browse-result/keys [page-range items]}]
   (when-let [item-count (count (not-empty items))]
     (let [{:keys [page-size] :or {page-size default-page-size}} page-range
           pages (cond-> (long (/ item-count page-size))
                         (pos? (rem item-count page-size))
                         inc)]
-      (range pages))))
+      ;; Increase by the start number
+      (map #(+ default-page-num %) (range pages)))))
 
 (defn items-in-category [db {:browse-result/keys [type items]} categories]
   (let [categories (select-keys categories [:top-category :sub-category :sub-sub-category])]
@@ -265,9 +270,10 @@
 
 (defn page-items-xf [page-range]
   (let [{:keys [page-num page-size]
-         :or   {page-num  0
+         :or   {page-num  default-page-num
                 page-size default-page-size}} page-range]
-    (comp (drop (* page-num page-size))
+    (comp (drop (* (zero-indexed-page-num page-num)
+                   page-size))
           (take page-size))))
 
 (defn page-items
