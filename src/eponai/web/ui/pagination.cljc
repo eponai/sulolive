@@ -2,7 +2,8 @@
   (:require
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
-    [om.next :as om :refer [defui]]))
+    [om.next :as om :refer [defui]]
+    [eponai.common.browse :as browse]))
 
 ;; How many pages in front of and after the current page in the paginator.
 (def buffer 2)
@@ -21,8 +22,9 @@
   Object
   (render [this]
     (let [{:keys [current-page pages page->anchor-opts]} (om/props this)]
-      (let [first-page? (zero? current-page)
-            last-page? (= current-page (dec (count pages)))
+      (let [first-page? (zero? (browse/zero-indexed-page-num current-page))
+            last-page? (= (browse/zero-indexed-page-num current-page)
+                          (dec (count pages)))
             pages (into [] pages)
 
             first-number (first pages)

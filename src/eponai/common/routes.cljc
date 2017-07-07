@@ -1,6 +1,6 @@
 (ns eponai.common.routes
   (:require [bidi.bidi :as bidi]
-            [taoensso.timbre :refer [debug error]]
+            [taoensso.timbre :as timbre :refer [debug error]]
             [eponai.common.auth :as auth]
             [clojure.string :as str]
             [cemerick.url :as url]))
@@ -173,5 +173,4 @@
             (error "Error when trying to create url from route: " route
                    " route-params: " route-params
                    " error: " e)
-       #?(:clj (.printStackTrace e))
        nil))))

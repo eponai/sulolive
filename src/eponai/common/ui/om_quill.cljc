@@ -4,7 +4,7 @@
        [cljsjs.quill])
     #?(:clj
         [autoclave.core :as a])
-    ;; #?(:cljs dompurify)
+    #?(:cljs dompurify)
         [om.dom :as dom]
         [om.next :as om :refer [defui]]
         [taoensso.timbre :refer [debug error]]
@@ -21,8 +21,7 @@
           allowed-tags ["p" "span" "strong" "ul" "ol" "li" "u" "s" "i" "em" "br"]]
 
       #?(:cljs (let [policy (clj->js {:ALLOWED_TAGS allowed-tags})]
-                 (error "DOM PURIFY IS NOT USED YET! PUT IT BACK IN!")
-                 ;; (js/DOMPurify.sanitize dirty-html policy)
+                 (js/DOMPurify.sanitize dirty-html policy)
                  dirty-html)
          :clj  (let [policy (a/html-policy :allow-common-inline-formatting-elements
                                            :allow-common-block-elements
