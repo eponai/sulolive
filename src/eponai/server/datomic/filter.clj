@@ -145,6 +145,7 @@
      :stripe/status                  stripe-owner
      :status/type                    public-attr
      :store/uuid                     public-attr
+     :store/tax                      public-attr
      :store/locality                 public-attr
      :store/status                   public-attr
      :store/created-at               public-attr
@@ -237,7 +238,13 @@
      :country/name                   public-attr
      :country/continent              public-attr
      :continent/code                 public-attr
-     :continent/name                 public-attr}))
+     :continent/name                 public-attr
+
+     :tax/automatic?                 public-attr
+     :tax/rules                      public-attr
+     :tax.rule/include-shipping?     public-attr
+     :tax.rule/rate                  public-attr
+     }))
 
 (defn filter-authed [authed-user-id authed-store-ids]
   (let [authed-store-ids (set authed-store-ids)

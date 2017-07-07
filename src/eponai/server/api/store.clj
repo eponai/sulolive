@@ -173,6 +173,26 @@
                     (conj [:db/add store-id :store/shipping (:db/id new-shipping)]))]
     (db/transact state txs)))
 
+(defn update-tax [{:keys [state]} store-id tax]
+  (let [{old-tax :store/tax} (db/pull (db/db state) [{:store/tax [:db/id :tax/rules]}] store-id)
+        old-rule (first (:tax/rules old-tax))
+        new-tax (cond-> (cf/tax tax)
+                        (some? (:db/id old-tax))
+                        (assoc :db/id (:db/id old-tax)))
+
+        tax-rule (cond-> (first (:tax/rules new-tax))
+                         (some? (:db/id old-rule))
+                         (assoc :db/id (:db/id old-rule)))
+
+        txs (cond-> [(dissoc new-tax :tax/rules)
+                     tax-rule]
+                    (db/tempid? (:db/id new-tax))
+                    (conj [:db/add store-id :store/tax (:db/id new-tax)])
+                    (db/tempid? (:db/id tax-rule))
+                    (conj [:db/add (:db/id new-tax) :tax/rules (:db/id tax-rule)]))]
+
+    (db/transact state txs)))
+
 (defn update-status [{:keys [state logger]} store-id status]
   (let [db-store (db/pull (db/db state) [:store/status] store-id)
         old-status (:store/status db-store)

@@ -171,6 +171,22 @@
 ;    (server-edit env k p conform-fn)
 ;    (client-edit env k p conform-fn)))
 
+
+(defn tax [t]
+  (let [rule* (fn [r]
+                (-> (select-keys r [:tax.rule/rate :tax.rule/include-shipping?])
+                    (update :tax.rule/rate #(when (not-empty %)
+                                             (let [rate (* 0.01 (str->number %))]
+                                               #?(:cljs rate
+                                                  :clj (bigdec rate)))))
+                    add-tempid
+                    remove-nil-keys))]
+
+    (-> (select-keys t [:tax/rules :tax/automatic?])
+        (update :tax/rules #(map rule* %))
+        add-tempid
+        remove-nil-keys)))
+
 (defn chat-message [db store user text]
   (when-not (db/dbid? (:db/id user))
     (throw (ex-info "No user id found in when sending chat message."
