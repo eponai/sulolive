@@ -21,7 +21,7 @@ messaging.setBackgroundMessageHandler(function(payload) {
   // Customize notification here
   const notificationTitle = payload["data"]["title]"];
   const notificationOptions = {
-    body: payload["data"]["body]"],
+    body: payload["data"]["message]"],
     icon: '/assets/img/auth0-icon.png'
   };
 

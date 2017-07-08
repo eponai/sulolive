@@ -25,16 +25,17 @@
 (defn on-message [messaging reconciler]
   (.onMessage messaging (fn [payload]
                           (debug "FIREBASE - Received message with payload: " payload)
-                          (let [timestamp (date/current-millis)
-                                notification {:notification/id      timestamp
-                                              :notification/payload {:payload/title (aget payload "data" "title]")
-                                                                     :payload/body  (aget payload "data" "message]")
-                                                                     :payload/subtitle (aget payload "data" "subtitle]")}}]
-                            (om/transact! reconciler [(list 'notification/receive notification)
-                                                      {:query/notifications [:notification/id :notification/payload]}])
-                            (js/setTimeout (fn [] (om/transact! reconciler [(list 'notification/remove {:id timestamp})
-                                                                            {:query/notifications [:notification/id :notification/payload]}])) 5000)
-                            ))))
+                          ;(let [timestamp (date/current-millis)
+                          ;      notification {:notification/id      timestamp
+                          ;                    :notification/payload {:payload/title (aget payload "data" "title]")
+                          ;                                           :payload/body  (aget payload "data" "message]")
+                          ;                                           :payload/subtitle (aget payload "data" "subtitle]")}}]
+                          ;  (om/transact! reconciler [(list 'notification/receive notification)
+                          ;                            {:query/notifications [:notification/id :notification/payload]}])
+                          ;  (js/setTimeout (fn [] (om/transact! reconciler [(list 'notification/remove {:id timestamp})
+                          ;                                                  {:query/notifications [:notification/id :notification/payload]}])) 5000)
+                          ;  )
+                          )))
 
 (defn initialize [reconciler]
   (.initializeApp js/firebase #js{:apiKey            "AIzaSyBS99Iuv0WAacB4ain4zQMahksDrt6jmJY"

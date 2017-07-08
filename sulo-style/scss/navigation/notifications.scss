@@ -10,21 +10,31 @@
 		width: 15rem;
 		max-width: 15rem;
 		// position: fixed;
-		display: flex;
+		margin: 0;
+		display: none;
+		// &:last-child {
+		// 	display: flex;
+		// 	// width: 100%;
+		// }
+		@include breakpoint(large) {
+			display: flex;
+		}
 		align-items: center;
-		// background: map-get($foundation-palette, warning);
+		background: $white;//map-get($foundation-palette, warning);
 		color: $black;
 		padding: 0.75rem $global-padding;
 		box-shadow: 1px 1px 1px 0 rgba($black, 0.1);
-		margin-top: $global-margin;
+		margin-top: 0.5rem;//$global-margin;
 		border-radius: $global-radius;
 		border: $global-border;
-		// border-color: $sulo-color;
+		border-color: rgba($sulo-color, 0.5);
+
 		p {
 			margin-left: $global-margin;
-			line-height: 1.2;
+			line-height: 1;
 			overflow: hidden;
 			text-overflow: ellipsis; 
+			margin-bottom: 0;
 			small {
 				white-space: nowrap;
 			}

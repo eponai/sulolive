@@ -4,7 +4,8 @@
     [taoensso.timbre :refer [debug]]
     [cheshire.core :as cheshire]
     [clojure.java.io :as io]
-    [eponai.common :as c])
+    [eponai.common :as c]
+    [eponai.common.format.date :as date])
   (:import (com.google.firebase FirebaseOptions FirebaseOptions$Builder FirebaseApp)
            (com.google.firebase.auth FirebaseCredential FirebaseCredentials)
            (com.google.firebase.database FirebaseDatabase DatabaseReference ValueEventListener DataSnapshot DatabaseError DatabaseReference$CompletionListener)))
@@ -43,14 +44,20 @@
 (defrecord Firebase [server-key private-key private-key-id]
   IFirebaseNotifications
   (-send [this user-id {:keys [title message subtitle] :as params}]
-    (-get-token this user-id (fn [token]
-                               (debug "FIREBASE - send chat notification")
-                               (http/post "https://fcm.googleapis.com/fcm/send"
-                                          {:form-params {:to   token
-                                                         :data {:title   (c/substring title 0 100)
-                                                                :subtitle (c/substring subtitle 0 100)
-                                                                :message (c/substring message 0 100)}}
-                                           :headers     {"Authorization" (str "key=" server-key)}}))))
+    (let [new-notification {:timestamp (date/current-millis)
+                            :title     (c/substring title 0 100)
+                            :subtitle  (c/substring subtitle 0 100)
+                            :message   (c/substring message 0 100)}
+          notifications-ref (.child database "notifications")
+          user-notifications-ref (.child notifications-ref (str user-id))]
+      (-> (.push user-notifications-ref)
+          (.setValue (clojure.walk/stringify-keys new-notification)))
+      (-get-token this user-id (fn [token]
+                                 (debug "FIREBASE - send chat notification")
+                                 (http/post "https://fcm.googleapis.com/fcm/send"
+                                            {:form-params {:to   token
+                                                           :data new-notification}
+                                             :headers     {"Authorization" (str "key=" server-key)}})))))
   (-register-token [this user-id token]
     (when user-id
 

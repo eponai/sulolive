@@ -30,7 +30,7 @@
 (defmethod client-read :query/loading-bar
   [{:keys [db query target]} _ _]
   (when-not target
-    {:value (db/pull-one-with db query {:where '[[?e :ui/singleton :ui.singleton/loading-bar]]})}))
+    {:value (do (debug "Query/loading bar: " query) (db/pull-one-with db query {:where '[[?e :ui/singleton :ui.singleton/loading-bar]]}))}))
 
 (defmethod client-read :query/login-modal
   [{:keys [db query target]} _ _]
