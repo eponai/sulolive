@@ -27,7 +27,8 @@
     [eponai.server.external.taxjar :as taxjar]
     [eponai.common :as c]
     [eponai.common.database.rules :as db.rules]
-    [medley.core :as medley])
+    [medley.core :as medley]
+    [eponai.server.external.firebase :as firebase])
   (:import (datomic.db Db)))
 
 (defmacro defread
@@ -372,12 +373,21 @@
                :store.item/not-found? true}))})
 
 (defread query/auth
-  [{:keys [auth query db]} _ _]
+  [{:keys [auth query db system]} _ _]
   {:auth ::auth/any-user}
   {:value (let [can-open-store? (boolean (get-in auth [:user_metadata :can_open_store]))
                 authed-user (db/pull db query (:user-id auth))]
             (when authed-user
               (assoc authed-user :user/can-open-store? can-open-store?)))})
+
+(defread query/firebase
+  [{:keys [auth query db system]} _ _]
+  {:auth ::auth/any-user}
+  {:value (let [authed-user (db/pull db [:db/id :store.owner/_user] (:user-id auth))
+                is-store-owner (some? (:store.owner/_user authed-user))]
+            (when authed-user
+              {:token (firebase/-generateAuthToken (:system/firebase system) (:user-id auth)
+                                                   {:store-owner is-store-owner})}))})
 
 (defread query/auth0-info
   [{:keys [auth query db] :as env} _ _]

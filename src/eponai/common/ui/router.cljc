@@ -56,6 +56,8 @@
   static om/IQuery
   (query [this]
     [:query/current-route
+     :query/firebase
+     {:query/owned-store [:db/id]}
      {:routing/app-root (into {}
                               (map (juxt identity #(or (some-> (route->component %) :component om/get-query)
                                                        [])))
@@ -70,6 +72,16 @@
     ;; TODO: Change this to shared/by-key when merged with other branch.
     ;; (scroll-helper/scroll-on-did-render (shared/by-key this :shared/scroll-helper))
     )
+  (componentDidMount [this]
+    (debug "Router did mount")
+    #?(:cljs
+       (let [{:query/keys [owned-store]
+              fb-token :query/firebase} (om/props this)]
+         (when (some? owned-store)
+           (-> (.auth js/firebase)
+               (.signInWithCustomToken (:token fb-token))
+               (.catch (fn [err]
+                         (debug "Firebase could not sign in: " err))))))))
   (render [this]
     (let [{:keys [routing/app-root query/current-route]} (om/props this)
           route (normalize-route (:route current-route))

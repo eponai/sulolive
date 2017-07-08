@@ -206,7 +206,8 @@
 
 
 (defn manage-store-navbar [component]
-  (let [{:query/keys [auth owned-store current-route locations]} (om/props component)
+  (let [{:proxy/keys [notification]
+         :query/keys [auth owned-store current-route locations]} (om/props component)
         {:keys [inline-sidebar-hidden?]} (om/get-state component)
         toggle-inline-sidebar (fn []
                                 #?(:cljs
@@ -254,69 +255,74 @@
         (menu/horizontal
           nil
           (menu/item-link
+            {:href (routes/store-url owned-store :store-dashboard/stream (:route-params current-route))}
+            (note/->Notifications notification))
+          (menu/item-link
             (->> {:href    (routes/store-url owned-store :store (:route-params current-route))
                   :classes ["store-name"]})
             (dom/span nil (get-in owned-store [:store/profile :store.profile/name])))
           (user-menu-item component))))))
 
 (defn standard-navbar [component]
-  (let [{:query/keys [cart loading-bar current-route locations auth]} (om/props component)]
+  (let [{:proxy/keys [notification]
+         :query/keys [cart loading-bar current-route locations auth]} (om/props component)]
 
-    (navbar-content
-      nil
-      (dom/div
-        {:classes ["top-bar-left"]}
-        (menu/horizontal
-          nil
-          (when (some? auth)
-            (menu/item
-              nil
-              (dom/a
-                (css/hide-for :large {:onClick #(.open-sidebar component)})
-                (dom/i {:classes ["fa fa-bars fa-fw"]}))))
-          (navbar-brand (if (and (not-empty locations)
-                                 (some? auth))
-                          (routes/url :index {:locality (:sulo-locality/path locations)})
-                          (routes/url :landing-page)))
-          (live-link component)
+    [(navbar-content
+       nil
+       (dom/div
+         {:classes ["top-bar-left"]}
+         (menu/horizontal
+           nil
+           (when (some? auth)
+             (menu/item
+               nil
+               (dom/a
+                 (css/hide-for :large {:onClick #(.open-sidebar component)})
+                 (dom/i {:classes ["fa fa-bars fa-fw"]}))))
+           (navbar-brand (if (and (not-empty locations)
+                                  (some? auth))
+                           (routes/url :index {:locality (:sulo-locality/path locations)})
+                           (routes/url :landing-page)))
+           (live-link component)
 
-          (collection-links component "navbar")
+           (collection-links component "navbar")
 
-          (when (:ui.singleton.loading-bar/show? loading-bar)
-            ;; TODO: Do a pretty loading bar somwhere in this navbar.
-            ;; (menu/item nil "Loading...")
-            )))
-      (dom/div
-        {:classes ["top-bar-right"]}
-        (menu/horizontal
-          nil
-          ;(menu/item (css/add-class :search-input)
-          ;           (dom/div
-          ;             (css/show-for :medium)
-          ;             (search-bar/->SearchBar {:placeholder     "Search on SULO..."
-          ;                                      :default-value   (or (get-in current-route [:query-params :search]) "")
-          ;                                      :mixpanel-source "navbar"})
-          ;             ))
+           (when (:ui.singleton.loading-bar/show? loading-bar)
+             ;; TODO: Do a pretty loading bar somwhere in this navbar.
+             ;; (menu/item nil "Loading...")
+             )))
+       (dom/div
+         {:classes ["top-bar-right"]}
+         (menu/horizontal
+           nil
+           ;(menu/item (css/add-class :search-input)
+           ;           (dom/div
+           ;             (css/show-for :medium)
+           ;             (search-bar/->SearchBar {:placeholder     "Search on SULO..."
+           ;                                      :default-value   (or (get-in current-route [:query-params :search]) "")
+           ;                                      :mixpanel-source "navbar"})
+           ;             ))
 
-          ;(menu/item
-          ;  nil
-          ;  (dom/a nil
-          ;         (dom/span (css/add-classes ["icon icon-heart"]))))
-          (when (nil? auth)
-            (menu/item
-              nil
-              (dom/a {:href (routes/url :about)}
-                     (dom/strong nil (dom/small nil "About us")))))
-          (user-menu-item component)
-          (when (some? auth)
-            (menu/item
-              (css/add-class :shopping-bag)
-              (dom/a {:classes ["shopping-bag-icon"]
-                      :href    (routes/url :shopping-bag)}
-                     ;(dom/span (css/add-class ["icon icon-shopping-bag"]))
-                     (icons/shopping-bag)
-                     (when (< 0 (count (:user.cart/items cart)))
-                       (dom/span (css/add-class :badge) (count (:user.cart/items cart))))))))))))
+           ;(menu/item
+           ;  nil
+           ;  (dom/a nil
+           ;         (dom/span (css/add-classes ["icon icon-heart"]))))
+           (when (nil? auth)
+             (menu/item
+               nil
+               (dom/a {:href (routes/url :about)}
+                      (dom/strong nil (dom/small nil "About us")))))
+           (user-menu-item component)
+           (when (some? auth)
+             (menu/item
+               (css/add-class :shopping-bag)
+               (dom/a {:classes ["shopping-bag-icon"]
+                       :href    (routes/url :shopping-bag)}
+                      ;(dom/span (css/add-class ["icon icon-shopping-bag"]))
+                      (icons/shopping-bag)
+                      (when (< 0 (count (:user.cart/items cart)))
+                        (dom/span (css/add-class :badge) (count (:user.cart/items cart))))))))))
+     (note/->Notifications notification)]))
 
 (defui LoadingBar
   static om/IQuery
@@ -499,7 +505,7 @@
 
         (login/->LoginModal login-modal)
         (->LoadingBar loading-bar)
-        (note/->Notifications notification)))))
+        ))))
 
 (def ->Navbar (om/factory Navbar))
 

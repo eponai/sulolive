@@ -440,6 +440,12 @@
     {:remote true}
     {:value (db/singleton-value db :ui.singleton.auth/auth0)}))
 
+(defmethod client-read :query/firebase
+  [{:keys [target db]} _ _]
+  (if target
+    {:remote true}
+    {:value (db/singleton-value db :ui.singleton.firebase/token)}))
+
 (defmethod client-read :query/locations
   [{:keys [target db query]} _ _]
   (if target

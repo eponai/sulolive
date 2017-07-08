@@ -22,6 +22,7 @@
   [{:ui/component :ui.component/cart
     :ui.component.cart/items #{}}
    {:ui/singleton :ui.singleton/app}
+   {:ui/singleton :ui.singleton/firebase}
    {:ui/singleton :ui.singleton/routes}
    {:ui/singleton :ui.singleton/auth}
    {:ui/component :ui.component/root}

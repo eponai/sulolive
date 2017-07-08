@@ -66,6 +66,13 @@
                   [:db/add [:ui/singleton :ui.singleton/auth] :ui.singleton.auth/user (:db/id val)]])
     db))
 
+(defmethod client-merge :query/firebase
+  [db _ val]
+  (if (some? val)
+    (db-with db [val
+                 [:db/add [:ui/singleton :ui.singleton/firebase] :ui.singleton.firebase/token val]])
+    db))
+
 (defmethod client-merge :query/auth0-info
   [db _ val]
   (cond-> db

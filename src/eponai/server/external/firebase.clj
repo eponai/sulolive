@@ -7,8 +7,9 @@
     [eponai.common :as c]
     [eponai.common.format.date :as date])
   (:import (com.google.firebase FirebaseOptions FirebaseOptions$Builder FirebaseApp)
-           (com.google.firebase.auth FirebaseCredential FirebaseCredentials)
-           (com.google.firebase.database FirebaseDatabase DatabaseReference ValueEventListener DataSnapshot DatabaseError DatabaseReference$CompletionListener)))
+           (com.google.firebase.auth FirebaseAuth FirebaseCredential FirebaseCredentials)
+           (com.google.firebase.database FirebaseDatabase DatabaseReference ValueEventListener DataSnapshot DatabaseError DatabaseReference$CompletionListener)
+           (com.google.firebase.tasks OnSuccessListener)))
 
 (def firebase-db "https://leafy-firmament-160421.firebaseio.com/")
 
@@ -40,8 +41,30 @@
   (-register-token [this user-id token])
   (-get-token [this user-id cb]))
 
+(defprotocol IFirebaseAuth
+  (-generateAuthToken [this user-id claims]))
+
+;FirebaseAuth.getInstance().createCustomToken(uid)
+;.addOnSuccessListener(new OnSuccessListener<String>() {
+;                                                       @Override
+;                                                       public void onSuccess(String customToken) {
+;                                                                                                  // Send token back to client
+;                                                                                                  }
+;                                                       });
 
 (defrecord Firebase [server-key private-key private-key-id]
+  IFirebaseAuth
+  (-generateAuthToken [this user-id claims]
+    (let [fb-instance (FirebaseAuth/getInstance)
+          p (promise)]
+      (-> (.createCustomToken fb-instance (str user-id) (clojure.walk/stringify-keys claims))
+          (.addOnSuccessListener
+            (reify OnSuccessListener
+              (^void onSuccess [this customtoken]
+                (debug "FIREBASE GOT TOKEN: " customtoken)
+                (deliver p customtoken)))))
+      (deref p 2000 :firebase/token-timeout)))
+
   IFirebaseNotifications
   (-send [this user-id {:keys [title message subtitle] :as params}]
     (let [new-notification {:timestamp (date/current-millis)
@@ -53,7 +76,7 @@
       (-> (.push user-notifications-ref)
           (.setValue (clojure.walk/stringify-keys new-notification)))
       (-get-token this user-id (fn [token]
-                                 (debug "FIREBASE - send chat notification")
+                                 (debug "FIREBASE - send chat notification: " new-notification)
                                  (http/post "https://fcm.googleapis.com/fcm/send"
                                             {:form-params {:to   token
                                                            :data new-notification}
