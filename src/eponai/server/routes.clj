@@ -31,7 +31,9 @@
     [eponai.server.external.email.templates :as templates]
     [eponai.common.format.date :as date]
     [eponai.common.location :as location]
-    [cemerick.url :as url]))
+    [cemerick.url :as url]
+    [medley.core :as medley]
+    [eponai.common.format :as f]))
 
 (defn html [& path]
   (-> (clj.string/join "/" path)
@@ -65,7 +67,11 @@
   ([{::m/keys [logger] :as request} route-map user-id]
    {:pre [(or (nil? user-id) (number? user-id))]}
    (let [start (System/currentTimeMillis)
-         route (select-keys route-map [:route :route-params :query-params])
+         route-map (-> (select-keys route-map [:route :route-params :query-params])
+                       ;; Make all route-params be logged as strings
+                       (update :route-params #(not-empty (medley/map-vals str %)))
+                       (update :query-params #(not-empty (medley/map-vals str %))))
+         route (f/remove-nil-keys route-map)
          ip (client-ip request)]
      (cond-> (log/with logger #(cond-> (assoc % :context-start start)
                                        (some? ip)
@@ -246,6 +252,7 @@
 
   ;; Websockets
   (GET "/ws/chat" {::m/keys [system] :as request}
+    ()
     (websocket/handle-get-request (:system/chat-websocket system) request))
   (POST "/ws/chat" {::m/keys [system] :as request}
     (websocket/handler-post-request (:system/chat-websocket system) request))
