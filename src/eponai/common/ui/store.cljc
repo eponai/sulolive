@@ -158,7 +158,7 @@
            store-name          :store.profile/name} profile
           stream (first stream)
           is-live? false                                    ;(= :stream.state/live (:stream/state stream))
-          show-chat? (:show-chat? st is-live?)
+          show-chat? (:show-chat? st (or is-live? (some? cover)))
           {:keys [route route-params]} current-route]
       (debug "Store: " store)
       (common/page-container
@@ -189,36 +189,28 @@
                   (css/add-class :expanded))
              (grid/column
                (grid/column-order {:small 2 :medium 1})
-               (cond
-                 is-live?
-                 (dom/div
-                   (cond->> (css/add-class :stream-container)
-                            show-chat?
-                            (css/add-class :sulo-show-chat)
-                            fullscreen?
-                            (css/add-class :fullscreen))
+               (dom/div
+                 (cond->> (css/add-class :stream-container)
+                          show-chat?
+                          (css/add-class :sulo-show-chat)
+                          fullscreen?
+                          (css/add-class :fullscreen))
+                 (cond
+                   is-live?
                    (stream/->Stream (om/computed (:proxy/stream props)
                                                  {:stream-title         (:stream/title stream)
                                                   :widescreen?          true
                                                   :store                store
                                                   :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
-                   (chat/->StreamChat (om/computed (:proxy/chat props)
-                                                   {:on-toggle-chat  (fn [show?]
-                                                                       (om/update-state! this assoc :show-chat? show?))
-                                                    :store           store
-                                                    :stream-overlay? true
-                                                    :show?           is-live?})))
-                 (some? cover)
-                 (dom/div
-                   (css/add-class :stream-container)
-                   (photo/store-cover store nil)
+                   (some? cover)
+                   (photo/store-cover store nil))
 
-                   (chat/->StreamChat (om/computed (:proxy/chat props)
-                                                   {:on-toggle-chat  (fn [show?]
-                                                                       (om/update-state! this assoc :show-chat? show?))
-                                                    :store           store
-                                                    :stream-overlay? true
-                                                    :show?           is-live?})))))
+                 (chat/->StreamChat (om/computed (:proxy/chat props)
+                                                 {:on-toggle-chat  (fn [show?]
+                                                                     (om/update-state! this assoc :show-chat? show?))
+                                                  :store           store
+                                                  :stream-overlay? true
+                                                  :show?           show-chat?}))))
 
 
              (grid/column
