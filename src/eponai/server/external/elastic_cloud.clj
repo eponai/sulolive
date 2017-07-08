@@ -7,13 +7,35 @@
     [taoensso.timbre :refer [error debug]]
     [cheshire.core :as cheshire]
     [clj-time.coerce]
-    [clj-time.format])
+    [clj-time.format]
+    [clojure.string :as string])
   (:import (org.elasticsearch.common.settings Settings)
            (org.elasticsearch.client.transport TransportClient)
            (org.elasticsearch.common.transport InetSocketTransportAddress)
            (java.net InetAddress Inet6Address Inet4Address UnknownHostException)
            (org.elasticsearch.action.bulk BulkResponse)
            (org.elasticsearch.xpack.client PreBuiltXPackTransportClient)))
+
+(def string-id?
+  (memoize
+    (fn [k]
+      (and (keyword? k)
+           (or (= :db/id k)
+               (string/ends-with? (name k) "-id"))))))
+
+(defn- string-ids [m]
+  (if-not (map? m)
+    m
+    (persistent!
+      (reduce-kv
+        (fn [m k v]
+          (if (map? v)
+            (assoc! m k (string-ids v))
+            (cond-> m
+                    (string-id? k)
+                    (assoc! k (str v)))))
+        (transient m)
+        m))))
 
 (defonce avoid-setting-available-processors
          (delay (do
@@ -117,10 +139,11 @@
                                              (str index-name "-" ymd)
                                              (str (:id msg)))
                               (.setSource (cheshire/generate-string
-                                            (assoc (:data msg)
-                                              "@timestamp" timestamp
-                                              :level (:level msg)
-                                              :host (:host this))
+                                            (-> (:data msg)
+                                                (string-ids)
+                                                (assoc "@timestamp" timestamp
+                                                       :level (:level msg)
+                                                       :host (:host this)))
                                             json-opts))))))
               bulk-response ^BulkResponse (.get bulk-builder)]
           (when (.hasFailures bulk-response)
