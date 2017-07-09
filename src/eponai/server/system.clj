@@ -49,6 +49,9 @@
                    :system/auth0management
                    :system/stripe-webhooks})
 
+(defn test-env? [env]
+  (true? (::is-test-env? env)))
+
 (defn resume-requests
   "Resumes requests when a system has been restarted."
   [system]
@@ -132,7 +135,9 @@
    :system/firebase        (firebase/firebase-stub)
    :system/email           (email/email-stub)
    :system/mailchimp       (mailchimp/mail-chimp-stub)
-   :system/stripe          (stripe/stripe-stub (:stripe-secret-key env))
+   :system/stripe          (stripe/stripe-stub (if (test-env? env)
+                                                 "no-stripe-keys-in-test-environment"
+                                                 (:stripe-secret-key env)))
    :system/taxjar          (taxjar/taxjar-stub)
    :system/wowza           (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})})
 
@@ -178,10 +183,15 @@
   ;; We should make sure we've set a "real" stripe-publishable key
   ;; when in production (in aws).
   ;; Otherwise, just use the test key if we haven't set it already.
-  (if (aws-env? env)
+  (cond
+    (aws-env? env)
     (do (assert (contains? env :stripe-publishable-key)
                 (str "Env did not contain :stripe-publishable-key"))
         env)
+    (test-env? env)
+    ;; Don't require that we're using real keys in the test environemnt.
+    env
+    :else
     (update env :stripe-publishable-key
             (fnil identity "pk_test_VhkTdX6J9LXMyp5nqIqUTemM"))))
 
@@ -192,12 +202,14 @@
                              :in-aws? (aws-env? environ/env))]
     (real-system config)))
 
-(defn- dev-config [config]
-  (assoc config :env (-> environ/env (with-stripe-publishable-key))
-                :in-prod? false
-                :in-aws? false
-                ::disable-ssl true
-                ::disable-anti-forgery true))
+(defn- dev-config
+  ([config] (dev-config config environ/env))
+  ([config env]
+   (assoc config :env (-> env (with-stripe-publishable-key))
+                 :in-prod? false
+                 :in-aws? false
+                 ::disable-ssl true
+                 ::disable-anti-forgery true)))
 
 (defn dev-system [config]
   {:post [(= (set (keys %)) system-keys)]}
@@ -217,4 +229,4 @@
 (defn test-system [config]
   {:post [(= (set (keys %)) system-keys)]}
   ;; Never uses a real implementation.
-  (fake-system (dev-config config)))
+  (fake-system (dev-config config {::is-test-env? true})))
