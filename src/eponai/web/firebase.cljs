@@ -2,7 +2,8 @@
   (:require
     [taoensso.timbre :refer [debug]]
     [om.next :as om]
-    [eponai.common.format.date :as date]))
+    [eponai.common.format.date :as date]
+    [eponai.common.shared :as shared]))
 
 
 (defn request-permission [messaging & [f-success f-error]]
@@ -45,16 +46,83 @@
                                   :projectId         "leafy-firmament-160421"
                                   :storageBucket     "leafy-firmament-160421.appspot.com"
                                   :messagingSenderId "252203166563"})
-  (if (.-serviceWorker js/navigator)
-    (.addEventListener js/window
-                       "load"
-                       (fn []
-                         (debug "Firebase register service worker")
-                         (-> (.register (.-serviceWorker js/navigator) "/lib/firebase/firebase-messaging-sw.js")
-                             (.then (fn [registration]
-                                      (let [messaging (.messaging js/firebase)
-                                            save-token #(om/transact! reconciler [(list 'firebase/register-token {:token %})])]
-                                        (.useServiceWorker messaging registration)
-                                        (request-permission messaging (fn [] (get-token messaging save-token)))
-                                        (.onTokenRefresh messaging (fn [] (get-token messaging save-token)))
-                                        (on-message messaging reconciler)))))))))
+  ;; TODO enable when we want to activate Web push notifications.
+  ;; We might want to think about when to ask the user's permission first.
+  (comment
+    (if (.-serviceWorker js/navigator)
+      (.addEventListener js/window
+                         "load"
+                         (fn []
+                           (debug "Firebase register service worker")
+                           (-> (.register (.-serviceWorker js/navigator) "/lib/firebase/firebase-messaging-sw.js")
+                               (.then (fn [registration]
+                                        (let [messaging (.messaging js/firebase)
+                                              save-token #(om/transact! reconciler [(list 'firebase/register-token {:token %})])]
+                                          (.useServiceWorker messaging registration)
+                                          (request-permission messaging (fn [] (get-token messaging save-token)))
+                                          (.onTokenRefresh messaging (fn [] (get-token messaging save-token)))
+                                          (on-message messaging reconciler))))))))))
+
+(defn snapshot->map [snapshot]
+  {:key   (.-key snapshot)
+   :ref   (.-ref snapshot)
+   :value (js->clj (.val snapshot) :keywordize-keys true)})
+
+(defprotocol IFirebase
+  (-ref-notifications [this user-id])
+
+  (-limit-to-last [this n ref])
+
+  (-remove [this ref])
+  (-update [this ref v])
+
+  (-off [this ref])
+  (-on-child-added [this f ref])
+  (-on-child-removed [this f ref ]))
+
+(defonce fb-initialized? (atom false))
+
+(defmethod shared/shared-component [:shared/firebase :env/prod]
+  [reconciler _ _]
+  (when-not @fb-initialized?
+    (initialize reconciler)
+    (reset! fb-initialized? true))
+  (reify IFirebase
+    ;; Refs
+    (-ref-notifications [this user-id]
+      (-> (.database js/firebase)
+          (.ref (str "notifications/" user-id))))
+
+    (-limit-to-last [this n ref]
+      (.limitToLast ref n))
+
+    (-remove [this ref]
+      (.remove ref))
+
+    (-update [this ref v]
+      (.update ref v))
+
+    (-off [this ref]
+      (.off ref))
+
+    ;; Listeners
+    (-on-child-added [this f ref]
+      (.on ref "child_added" (fn [snapshot] (f (snapshot->map snapshot)))))
+    (-on-child-removed [this f ref]
+      (.on ref "child_removed" (fn [snapshot] (f (snapshot->map snapshot)))))))
+
+(defmethod shared/shared-component [:shared/firebase :env/dev]
+  [reconciler _ _]
+  (reify IFirebase
+    ;; Refs
+    (-ref-notifications [this user-id])
+
+    (-limit-to-last [this n ref])
+
+    (-remove [this ref])
+    (-update [this ref v])
+    (-off [this ref])
+
+    ;; Listeners
+    (-on-child-added [this f ref])
+    (-on-child-removed [this f ref])))

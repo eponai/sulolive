@@ -71,12 +71,15 @@
           user-notifications-ref (.getReference @database (str "notifications/" user-id))]
       (-> (.push user-notifications-ref)
           (.setValue (clojure.walk/stringify-keys new-notification)))
-      (-get-token this user-id (fn [token]
-                                 (debug "FIREBASE - send chat notification: " new-notification)
-                                 (http/post "https://fcm.googleapis.com/fcm/send"
-                                            {:form-params {:to   token
-                                                           :data new-notification}
-                                             :headers     {"Authorization" (str "key=" server-key)}})))))
+
+      ;; TODO enable when we are ready to send web push notifications
+      (comment
+        (-get-token this user-id (fn [token]
+                                   (debug "FIREBASE - send chat notification: " new-notification)
+                                   (http/post "https://fcm.googleapis.com/fcm/send"
+                                              {:form-params {:to   token
+                                                             :data new-notification}
+                                               :headers     {"Authorization" (str "key=" server-key)}}))))))
   (-register-token [this user-id token]
     (when user-id
 
@@ -104,3 +107,16 @@
                    (FirebaseDatabase/getInstance)))))]
     (when db (reset! database db)))
   (map->Firebase {:server-key server-key :private-key private-key :private-key-id private-key-id}))
+
+(defn firebase-stub []
+  (reify
+    IFirebaseChat
+    (-user-online [this store-id])
+    IFirebaseAuth
+    (-generateAuthToken [this user-id claims]
+      "some-token")
+    IFirebaseNotifications
+    (-send [this user-id data])
+    (-register-token [this user-id token])
+    (-get-token [this user-id cb]
+      (cb "some token"))))

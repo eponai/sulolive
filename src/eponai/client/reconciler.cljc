@@ -49,6 +49,7 @@
                              modules
                              stripe
                              auth0
+                             firebase
                              login
                              photos]
                :or          {conn          (utils/create-conn)
@@ -65,6 +66,7 @@
                                          :merge      merge
                                          :shared     {:shared/auth0               auth0
                                                       :shared/browser-history     browser-history
+                                                      :shared/firebase            firebase
                                                       :shared/loading-bar         loading-bar
                                                       :shared/local-storage       local-storage
                                                       :shared/login               login

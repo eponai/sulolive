@@ -106,7 +106,7 @@
             (css/text-align :center)
             (dom/div
               (css/add-class :section-title)
-              (dom/h1 nil (dom/span nil "Your local marketplace online")))
+              (dom/h1 nil (dom/span nil "Shop local live")))
             (dom/p nil (dom/span nil "Global change starts local. Shop and hang out LIVE with your favourite local brands and people from your city."))))
         (dom/div
           {:classes ["top-features"]}
