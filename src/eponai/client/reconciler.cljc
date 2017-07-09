@@ -2,9 +2,10 @@
   (:require [om.next :as om]
             [eponai.client.parser.merge :as merge]
             [eponai.client.remotes :as remotes]
-            [eponai.client.routes :as routes]
+
             [eponai.client.utils :as utils]
-            [eponai.client.local-storage :as local-storage]))
+            [eponai.client.local-storage :as local-storage]
+            [eponai.common.ui.router :as router]))
 
 (defn remote-order []
   [:remote :remote/chat])
@@ -79,7 +80,7 @@
                                          :migrate    nil
                                          :instrument instrument}))]
     (when (some? route)
-      (routes/transact-route! reconciler route {:route-params route-params
+      (router/transact-route! reconciler route {:route-params route-params
                                                 :query-params query-params
                                                 :queue?       false}))
     reconciler))

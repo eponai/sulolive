@@ -3,12 +3,9 @@
     [eponai.common.ui.router :as router]
     [eponai.common.ui.dom :as dom]
     [om.next :as om :refer [defui]]
-    [eponai.common.ui.navbar :as nav]
-    [eponai.common.ui.common :as common]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.css :as css]
     [eponai.web.ui.button :as button]
-    [eponai.web.ui.footer :as foot]
     [eponai.client.routes :as routes]
     [eponai.common.ui.product-item :as pi]
     [taoensso.timbre :refer [debug]]))
@@ -16,9 +13,7 @@
 (defui Unauthorized
   static om/IQuery
   (query [this]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/footer (om/get-query foot/Footer)}
-     {:query/featured-items [:db/id
+    [{:query/featured-items [:db/id
                              :store.item/name
                              :store.item/price
                              :store.item/created-at
@@ -31,12 +26,10 @@
      :query/messages])
   Object
   (render [this]
-    (let [{:proxy/keys [navbar footer]
-           :query/keys [locations featured-items]} (om/props this)]
-      (debug "Footer: " footer)
-      (common/page-container
-        {:navbar navbar :footer (om/computed footer
-                                             {:on-change-location #(om/transact! this [:query/featured-items])}) :id "sulo-unauthorized"}
+    (let [{:query/keys [locations featured-items]} (om/props this)]
+
+      (dom/div
+        { :id "sulo-unauthorized"}
         (grid/row-column
           (css/text-align :center)
           (dom/h1 nil "Unauthorized")

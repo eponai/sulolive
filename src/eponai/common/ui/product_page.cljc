@@ -1,19 +1,15 @@
 (ns eponai.common.ui.product-page
   (:require
     [om.next :as om :refer [defui]]
-    [eponai.common.ui.common :as common]
-    [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.router :as router]
     [eponai.common.ui.product :as product]
     [taoensso.timbre :refer [debug]]
-    [eponai.web.ui.footer :as foot]
     [eponai.web.ui.store.profile.options :as options]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
     [eponai.web.ui.button :as button]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.client.routes :as routes]
-    [eponai.common.ui.product-item :as pi]
     [eponai.common.ui.elements.callout :as callout]))
 
 (defn product-not-found [component]
@@ -37,9 +33,7 @@
 (defui ProductPage
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/footer (om/get-query foot/Footer)}
-     {:query/item (om/get-query product/Product)}
+    [{:query/item (om/get-query product/Product)}
      {:query/featured-items [:db/id
                              :store.item/name
                              :store.item/price
@@ -51,10 +45,10 @@
      :query/locations])
   Object
   (render [this]
-    (let [{:keys [query/item proxy/navbar proxy/footer]} (om/props this)
+    (let [{:keys [query/item]} (om/props this)
           store (:store/_items item)]
-      (common/page-container
-        {:navbar navbar :footer footer :id "sulo-product-page"}
+      (dom/div
+        {:id "sulo-product-page"}
         (debug "Item: " item)
         (debug "Store: " store)
         ;(when-not (options/store-is-open? store)

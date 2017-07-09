@@ -1,10 +1,7 @@
 (ns eponai.web.ui.checkout
   (:require
-    [clojure.spec.alpha :as s]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.router :as router]
-    [eponai.common.ui.navbar :as nav]
-    [eponai.web.ui.footer :as foot]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.dom :as dom]
     [taoensso.timbre :refer [debug]]
@@ -447,9 +444,7 @@
 (defui Checkout-no-loader
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     ;{:proxy/footer (om/get-query foot/Footer)}
-
+    [
      {:query/checkout [:db/id
                        :store.item.sku/variation
                        :store.item.sku/inventory
@@ -582,9 +577,13 @@
           country (when country-code (some #(when (= (:country/code %) country-code) %) countries))
           updated-shipping (assoc-in current-shipping [:shipping/address :shipping.address/country] (or country
                                                                                                         {:country/code "CA"}))]
-      {:checkout/shipping      (merge-with merge (.default-shipping this) updated-shipping)
-       :shipping/edit-shipping (when-not (shipping-available? shipping-rules)
-                                 (merge-with merge (.default-shipping this) updated-shipping))}))
+      (debug "UPdated shipping: " updated-shipping)
+      {:checkout/shipping      updated-shipping
+       ;(merge-with merge (.default-shipping this) updated-shipping)
+       :shipping/edit-shipping updated-shipping
+                               ;(when-not (shipping-available? shipping-rules)
+                               ;  (merge-with merge (.default-shipping this) updated-shipping))
+       }))
 
   (componentDidUpdate [this _ _]
 
@@ -646,8 +645,7 @@
     (.initial-state this (om/props this)))
 
   (render [this]
-    (let [{:proxy/keys [navbar]
-           :query/keys [checkout taxes]} (om/props this)
+    (let [{:query/keys [checkout taxes]} (om/props this)
           {:shipping/keys [selected-rate edit-shipping]
            :keys          [error-message]} (om/get-state this)
           subtotal (compute-subtotal checkout)
@@ -656,9 +654,8 @@
           grandtotal (+ subtotal shipping-fee tax-amount)
           ]
 
-      (common/page-container
-        {:id     "sulo-checkout"
-         :navbar navbar}
+      (dom/div
+        nil
         (when-let [loading-message (:loading/message (om/get-state this))]
           (common/loading-spinner nil (dom/span nil loading-message)))
         (grid/row-column
@@ -688,11 +685,9 @@
     )
   static script-loader/IRenderLoadingScripts
   (render-while-loading-scripts [this props]
-    (let [{:proxy/keys [navbar]} props]
-      (common/page-container
-        {:id     "sulo-checkout"
-         :navbar navbar}
-        (dom/i {:classes ["fa fa-spinner fa-pulse"]})))))
+    (dom/div
+      {:id     "sulo-checkout"}
+      (dom/i {:classes ["fa fa-spinner fa-pulse"]}))))
 
 (def Checkout (script-loader/stripe-loader
                 Checkout-no-loader

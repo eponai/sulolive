@@ -1,8 +1,6 @@
 (ns eponai.common.ui.index
   (:require
     [eponai.common.ui.common :as common]
-    [eponai.common.ui.navbar :as nav]
-    [eponai.common.ui.search-bar :as search-bar]
     [eponai.web.ui.photo :as photo]
     [eponai.common.ui.product-item :as pi]
     [om.next :as om :refer [defui]]
@@ -10,12 +8,8 @@
     [eponai.common.ui.dom :as dom :refer [div a]]
     [eponai.common.ui.elements.css :as css]
     [eponai.client.routes :as routes]
-    [eponai.common.ui.icons :as icons]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.router :as router]
-    [eponai.web.ui.button :as button]
-    [eponai.common.mixpanel :as mixpanel]
-    [eponai.web.ui.footer :as foot]))
+    [eponai.common.ui.router :as router]))
 
 ;(defn banner [{:keys [color align] :as opts} primary secondary]
 ;  (let [align (or align :left)
@@ -47,9 +41,7 @@
 (defui Index
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/footer (om/get-query foot/Footer)}
-     :query/locations
+    [:query/locations
      :query/current-route
      {:query/featured-items [:db/id
                              :store.item/name
@@ -92,10 +84,8 @@
       ;(debug "Items: " featured-stores)
       (debug "Selected location: " locations)
 
-      (common/page-container
-        {:navbar navbar
-         :footer footer
-         :id     "sulo-index"}
+      (dom/div
+        nil
         (dom/div {:id "sulo-index-container"}
 
                  (common/city-banner this locations)

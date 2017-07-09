@@ -1,4 +1,4 @@
-(ns eponai.web.ui.footer
+(ns eponai.web.ui.nav.footer
   (:require
     [om.next :as om :refer [defui]]
     [eponai.common.ui.dom :as dom]

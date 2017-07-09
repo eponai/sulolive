@@ -2,7 +2,6 @@
   (:require
     [clojure.spec.alpha :as s]
     [eponai.common.ui.dom :as dom]
-    [eponai.common.ui.router :as router]
     [om.next :as om :refer [defui]]
     [eponai.web.ui.button :as button]
     [eponai.common.ui.elements.css :as css]
@@ -363,6 +362,7 @@
   (render [this]
     (let [{:query/keys [login-modal]
            :proxy/keys [login]} (om/props this)]
+      (debug "Login modal")
       (when (:ui.singleton.login-modal/show? login-modal)
         (modal/modal
           {:id       "sulo-login-modal"

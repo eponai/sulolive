@@ -1,9 +1,5 @@
 
 #sulo-store-dashboard {
-	#sulo-navbar, .sl-global-spinner  {
-		// position: fixed;
-		// background: map-get($foundation-palette, sulo);
-	}
 	.reveal h4 {
 		margin-top: 0;
 	}
@@ -11,7 +7,9 @@
 		  // top: $navbar-height;
 	}
 	.buttons {
-		.button { margin: 0;}
+		.button { 
+			margin: 0;
+		}
 		margin-bottom: $global-margin;
 	}
 	.action-buttons {
@@ -99,10 +97,10 @@
 	#sulo-navbar {
 		.top-bar {
 			.top-bar-right {
-					@include breakpoint(large) {
-						font-size: 120%;
-					}
+				@include breakpoint(large) {
+					font-size: 120%;
 				}
+			}
 		}
 		.top-bar-left {
 			ul {

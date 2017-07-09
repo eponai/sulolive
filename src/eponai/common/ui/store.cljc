@@ -1,6 +1,5 @@
 (ns eponai.common.ui.store
   (:require
-    [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.product-item :as pi]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.chat :as chat]
@@ -20,7 +19,6 @@
     [eponai.web.social :as social]
     [eponai.common.photos :as photos]
     [eponai.common.mixpanel :as mixpanel]
-    [eponai.web.ui.footer :as foot]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.web.ui.button :as button]))
 
@@ -109,9 +107,7 @@
 (defui Store
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/footer (om/get-query foot/Footer)}
-     {:proxy/stream (om/get-query stream/Stream)}
+    [{:proxy/stream (om/get-query stream/Stream)}
      {:proxy/chat (om/get-query chat/StreamChat)}
      {:query/store [:db/id
                     :store/locality
@@ -152,8 +148,7 @@
     {:selected-navigation :all-items})
   (render [this]
     (let [{:keys [fullscreen? selected-navigation] :as st} (om/get-state this)
-          {:query/keys [store store-items current-route store-chat-status]
-           :proxy/keys [navbar footer] :as props} (om/props this)
+          {:query/keys [store store-items current-route store-chat-status] :as props} (om/props this)
           {:store/keys [profile]
            stream      :stream/_store} store
           {:store.profile/keys [photo cover tagline description]
@@ -163,10 +158,8 @@
           show-chat? (:show-chat? st true)
           {:keys [route route-params]} current-route]
       (debug "Store: " store)
-      (common/page-container
-        {:navbar navbar
-         :footer footer
-         :id     "sulo-store"}
+      (dom/div
+        {:id     "sulo-store"}
 
         (if (:store/not-found? store)
           (store-not-found this)

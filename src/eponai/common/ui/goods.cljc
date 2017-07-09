@@ -7,7 +7,6 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.product :as product]
     [eponai.common.ui.product-filters :as pf]
     [eponai.common.ui.product-item :as pi]
@@ -18,7 +17,6 @@
     [taoensso.timbre :refer [debug error]]
     [eponai.web.ui.button :as button]
     [eponai.common.ui.search-bar :as search-bar]
-    [eponai.web.ui.footer :as foot]
     [clojure.string :as string]
     [eponai.common.browse :as browse]
     [eponai.common.database :as db]
@@ -129,9 +127,7 @@
 (defui Goods
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/footer (om/get-query foot/Footer)}
-     {:query/browse-products-2 [{:browse-result/items (om/get-query product/Product)}
+    [{:query/browse-products-2 [{:browse-result/items (om/get-query product/Product)}
                                 :browse-result/meta]}
      {:query/navigation [:db/id :category/name :category/label :category/path :category/route-map]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
@@ -149,7 +145,7 @@
   (initLocalState [_]
     {:filters-open? false})
   (render [this]
-    (let [{:proxy/keys [navbar product-filters footer]
+    (let [{:proxy/keys [product-filters]
            :query/keys [browse-products-2 navigation locations current-route countries]} (om/props this)
           {:keys [filters-open?]} (om/get-state this)
           [top-category sub-category :as categories] (category-seq this)
@@ -167,8 +163,8 @@
           pages (browse/pages browse-result)
           searching? (contains? query-params :search)]
 
-      (common/page-container
-        {:navbar navbar :id "sulo-items" :class-name "sulo-browse" :footer footer}
+      (dom/div
+        {:id "sulo-items" :classes ["sulo-browse"]}
         (common/city-banner this locations)
         (when filters-open?
           (dom/div

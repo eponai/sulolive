@@ -1,14 +1,10 @@
 (ns eponai.web.ui.stores
   (:require
     [om.next :as om :refer [defui]]
-    [eponai.common.ui.navbar :as nav]
-    [eponai.web.ui.footer :as foot]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.dom :as dom]
-    [eponai.web.ui.button :as button]
     [eponai.client.routes :as routes]
     [eponai.web.ui.photo :as photo]
     [taoensso.timbre :refer [debug]]
@@ -18,9 +14,7 @@
 
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/footer (om/get-query foot/Footer)}
-     {:query/stores [:db/id
+    [{:query/stores [:db/id
                      {:stream/_store [:stream/state
                                       :stream/store]}
                      :store/locality
@@ -32,11 +26,10 @@
      :query/locations])
   Object
   (render [this]
-    (let [{:proxy/keys [navbar footer]
-           :query/keys [locations stores]} (om/props this)]
+    (let [{:query/keys [locations stores]} (om/props this)]
 
-      (common/page-container
-        {:navbar navbar :footer footer :id "sulo-stores" :class-name "sulo-browse"}
+      (dom/div
+        {:id "sulo-stores" :class-name "sulo-browse"}
         (common/city-banner this locations)
         ;(grid/row
         ;  nil

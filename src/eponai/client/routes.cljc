@@ -6,56 +6,8 @@
     [om.next :as om]
     [eponai.common.database :as db]
     [taoensso.timbre :as timbre :refer [error debug warn]]
-    [cemerick.url :as url]
     [eponai.common.shared :as shared]
-    [eponai.common.ui.router :as router]
     [eponai.common :as c]))
-
-(def root-route-key :routing/app-root)
-
-(defn transact-route!
-  "Warning: Probably not what you want to use. See: (set-route!) instead.
-
-  Set's the app route given either a reconciler or a component, and a route.
-   Also optinally takes
-   :route-params - a map with route specific parameters.
-   :queue? - re-renders from the root component, defaults to true
-   :tx - an additional transaction to be transacted after the route has been set.
-         Can be a mutation, a read-key or a vector of those things.
-
-   Examples:
-   - Set route to be a store:
-     (set-route! this :store {:route-params {:store-id 12345}})
-   - Set route to index and re-read :cart/price
-     (set-route! this :index {:tx :cart/price})
-     (set-route! this :index {:tx [:cart/price]})
-
-   Heavily inspired by compassus/set-route! (github.com/compassus/compassus),
-   which we doesn't use because it's too frameworky (We'd have to use its parser
-   for example, and I'm not sure it works with datascript(?))."
-  ([x route]
-   (transact-route! x route nil))
-  ([x route {:keys [delayed-queue queue? route-params query-params tx] :or {queue? true}}]
-   {:pre [(or (om/reconciler? x) (om/component? x))
-          (keyword? route)]}
-   (let [reconciler (cond-> x (om/component? x) (om/get-reconciler))
-         tx (when-not (nil? tx)
-              (cond->> tx (not (vector? tx)) (vector)))
-         reads-fn (fn []
-                    [:query/current-route
-                     {root-route-key {(router/normalize-route route)
-                                      (om/get-query
-                                        (:component
-                                          (router/route->component route)))}}])
-         tx (cond-> [(list 'routes/set-route! {:route        route
-                                               :route-params route-params
-                                               :query-params query-params})]
-                    :always (into tx)
-                    queue? (into (reads-fn)))]
-     (debug "Transacting tx: " tx)
-     (om/transact! reconciler tx)
-     (when (fn? delayed-queue)
-       (delayed-queue #(om/transact! reconciler (reads-fn)))))))
 
 ;; "Takes a route and its route-params and returns an url"
 (defn url
