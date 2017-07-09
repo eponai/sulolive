@@ -602,6 +602,7 @@
                      (.getMessage exception)
                      "Someting went wrong!")}}
   {:action (fn []
+             (chat/write-message (:system/chat system) store user text)
              (let [user-entity (db/lookup-entity (db/db state) (:db/id user))
                    store-entity (db/lookup-entity (db/db state) (:db/id store))
                    {:keys [store/owners]} (db/pull (db/db state) [{:store/owners [:store.owner/user]}] (:db/id store))]
@@ -612,7 +613,7 @@
                                   :subtitle (str (c/substring (get-in user-entity [:user/profile :user.profile/name] "anonymous") 0 20) " wrote:")
                                   :type     :notification.type/chat
                                   :message  text})))
-             (chat/write-message (:system/chat system) store user text))})
+             nil)})
 
 (defmutation store/update-order
   [{:keys [db] :as env} _ {:keys [order-id store-id params] :as p}]
@@ -676,5 +677,5 @@
           :error   "Something went wrong when creating your account."}}
   {:action (fn []
              (debug "FIREBASE ROKEN FOR AUTH: " auth)
-             (firebase/-register-token (:system/firebase system) (:user-id auth) token)
+             (firebase/-register-device-token (:system/firebase system) (:user-id auth) token)
              nil)})
