@@ -2,6 +2,7 @@
   (:require
     [clj-http.client :as client]
     [slingshot.slingshot :refer [try+]]
+    [com.stuartsierra.component :as component]
     [eponai.common.database :as db]
     [eponai.server.external.stripe.format :as f]
     [eponai.server.external.stripe.stub :as stub]
@@ -135,6 +136,14 @@
 (def stripe-upload-api-host "https://uploads.stripe.com/v1")
 
 (defrecord StripeRecord [api-key]
+  component/Lifecycle
+  (start [this]
+    ;; Do the check for the API key once we're trying to start the system
+    (assert (some? api-key) "Stripe was not provided with an API key, make sure a key is set in you environment.")
+    this)
+  (stop [this]
+    this)
+
   IStripeEndpoint
   (-post [_ params path]
     (let [url (string/join "/" (into [stripe-api-host] (remove nil? path)))]
@@ -275,12 +284,10 @@
 ;; ################## Public ##################
 
 (defn stripe [api-key]
-  (assert (some? api-key) "Stripe was not provided with an API key, make sure a key is set in you environment.")
   (->StripeRecord api-key))
 
 
 (defn stripe-stub [api-key]
-  (assert (some? api-key) "DEV - Fake Stripe: Stripe was not provided with an API key, make sure a string key is set in you environment. The provided key will not be used, but is required to replicate real behavior.")
   (let [state (atom {:accounts  {"acct_19k3ozC0YaFL9qxh" (stub/default-account "acct_19k3ozC0YaFL9qxh")}
                      :charges   {}
                      :customers {"0" {:id      "0"
@@ -291,7 +298,16 @@
     (.delete temp-dir)
     (.mkdir temp-dir)
     (.deleteOnExit temp-dir)
-    (reify IStripeConnect
+    (reify
+      component/Lifecycle
+      (start [this]
+        ;; Do the check for the API key once we're trying to start the system
+        (assert (some? api-key) "DEV - Fake Stripe: Stripe was not provided with an API key, make sure a string key is set in you environment. The provided key will not be used, but is required to replicate real behavior.")
+        this)
+      (stop [this]
+        this)
+
+      IStripeConnect
       (-get-country-spec [_ code]
         (let [specs (get stub/country-specs code)]
           (f/stripe->country-spec specs)))
