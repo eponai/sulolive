@@ -524,6 +524,12 @@
                                                            (assoc (get users-by-id id) :db/id id)))))
                                           messages))))))})))
 
+(defmethod client-read :query/store-chat-status
+  [{:keys [target db route-params query]} _ _]
+  (if (some? target)
+    {:remote true}
+    {:value (db/pull db query (:store-id route-params))}))
+
 (defmethod client-read :datascript/schema
   [{:keys [target]} _ _]
   (when target

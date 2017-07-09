@@ -46,7 +46,7 @@
     #?(:cljs
        (let [{:query/keys [auth]} (om/props this)]
          (-> (.database js/firebase)
-             (.ref (str "server/sulolive/notifications/" (:db/id auth)))
+             (.ref (str "notifications/" (:db/id auth)))
              (.off)))))
 
   (componentWillMount [this]
@@ -55,7 +55,7 @@
               fb-token :query/firebase} (om/props this)]
          (when (some? owned-store)
            (let [notifications-ref (-> (.database js/firebase)
-                                       (.ref (str "server/sulolive/notifications/" (:db/id auth))))]
+                                       (.ref (str "notifications/" (:db/id auth))))]
 
              (.on notifications-ref "child_added" (fn [snapshot]
                                                     (debug "FIREBASE snapsho: " (.val snapshot))
@@ -74,9 +74,9 @@
     (let [{:query/keys [current-route auth]} next-props]
       #?(:cljs
          (when-not (= (:route current-route) (:route (:query/current-route (om/props this))))
-           (if (is-watching-owned-store? next-props)
+           (when (is-watching-owned-store? next-props)
              (-> (.database js/firebase)
-                 (.ref (str "server/sulolive/notifications/" (:db/id auth)))
+                 (.ref (str "notifications/" (:db/id auth)))
                  (.remove)))))))
 
   (render [this]

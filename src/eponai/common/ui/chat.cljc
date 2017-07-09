@@ -14,7 +14,9 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.mixpanel :as mixpanel]
-    [eponai.common.format.date :as date]))
+    [eponai.common.format.date :as date]
+    #?(:cljs [eponai.web.firebase :as fb])
+    [eponai.web.ui.photo :as photo]))
 
 (def hour-in-millis (* 3600 1000))
 
@@ -69,7 +71,7 @@
                        :placeholder "Say something..."
                        :value       (or chat-message "")
                        :onKeyDown   #?(:cljs #(when (utils/enter-pressed? %)
-                                                (on-enter this))
+                                               (on-enter this))
                                        :clj  identity)
                        :maxLength   150
                        :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))})
@@ -79,6 +81,22 @@
           (my-dom/i {:classes ["fa fa-send-o fa-fw"]}))))))
 
 (def ->ChatInput (om/factory ChatInput))
+
+(defn status-message [online-status]
+  (cond (number? online-status)
+        (let [interval (date/interval online-status (date/current-millis))
+              in-hours (date/in-hours interval)
+              in-mins (date/in-minutes interval)]
+          (cond (>= 0 in-hours)
+                (str "active " in-mins " mins ago")
+                (>= 24 in-hours)
+                (str "active " in-hours " hrs ago")
+                :else
+                ""))
+        (true? online-status)
+        "online"
+        :else
+        "offline"))
 
 (defui StreamChat
   static om/IQuery
@@ -121,30 +139,39 @@
     (let [{:keys [show?]} (om/get-computed this)]
       {:show-chat? show?}))
   (render [this]
-    (let [{:keys [show-chat?]} (om/get-state this)
+    (let [{:keys [show-chat? store-online]} (om/get-state this)
           messages (get-messages this)
-          {:keys [stream-overlay?]} (om/get-computed this)]
+          {:keys [stream-overlay? store store-chat-status]} (om/get-computed this)
+          online-status (:store/chat-online store-chat-status)
+          status-msg (status-message online-status) ]
+      (debug "Store online: " (:store/chat-online store-chat-status))
       (my-dom/div
         (cond->> (css/add-class :chat-container)
                  show-chat?
                  (css/add-class :show)
                  stream-overlay?
                  (css/add-class :stream-chat-container))
-        (menu/horizontal
-          nil
-          (menu/item
-            nil
-            (my-dom/a
-              (->> (css/button {:onClick   #(.toggle-chat this true)})
-                   (css/add-classes [:toggle-button :show-button]))
-              (my-dom/i {:classes ["fa fa-comments fa-fw"]})))
-          (menu/item
-            nil
-            (my-dom/a
-              (->> (css/button-hollow {:onClick #(.toggle-chat this false)})
-                   (css/add-classes [:secondary :toggle-button :hide-button]))
-              (my-dom/i
-                (css/add-class "fa fa-chevron-right fa-fw")))))
+        (my-dom/div
+          (cond->> (css/add-class :chat-menu)
+                   (= true online-status)
+                   (css/add-class :is-online)
+                   (not= status-msg "offline")
+                   (css/add-class :just-online))
+          (my-dom/a
+            (->> (css/button {:onClick #(.toggle-chat this true)})
+                 (css/add-classes [:toggle-button :show-button]))
+            (my-dom/span {:classes ["fa fa-comments fa-fw"]}))
+          (my-dom/a
+            (->> (css/button-hollow {:onClick #(.toggle-chat this false)})
+                 (css/add-classes [:secondary :toggle-button :hide-button]))
+            (my-dom/i
+              (css/add-class "fa fa-chevron-right fa-fw")))
+          (my-dom/div
+            (css/add-class :chat-status)
+
+            (my-dom/p nil (my-dom/span nil status-msg))
+            (photo/store-photo store {:transformation :transformation/thumbnail-tiny})))
+
 
         (my-dom/div
           (css/add-class :chat-content {:id "sl-chat-content"})

@@ -126,6 +126,7 @@
                                      :store.profile/return-policy
                                      {:store.profile/photo [:photo/path :photo/id]}
                                      {:store.profile/cover [:photo/path :photo/id]}]}
+                    {:store/owners [:store.owner/user]}
                     {:store/shipping [:shipping/policy]}]}
      {:query/featured-items [:db/id
                              :store.item/name
@@ -143,6 +144,7 @@
                               {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                                          :store.item.photo/index]}]}]}
      {:query/store-items (om/get-query item/Product)}
+     {:query/store-chat-status [:store/chat-online]}
      :query/locations
      :query/current-route])
   Object
@@ -150,7 +152,7 @@
     {:selected-navigation :all-items})
   (render [this]
     (let [{:keys [fullscreen? selected-navigation] :as st} (om/get-state this)
-          {:query/keys [store store-items current-route]
+          {:query/keys [store store-items current-route store-chat-status]
            :proxy/keys [navbar footer] :as props} (om/props this)
           {:store/keys [profile]
            stream      :stream/_store} store
@@ -158,7 +160,7 @@
            store-name          :store.profile/name} profile
           stream (first stream)
           is-live? false                                    ;(= :stream.state/live (:stream/state stream))
-          show-chat? (:show-chat? st (or is-live? (some? cover)))
+          show-chat? (:show-chat? st true)
           {:keys [route route-params]} current-route]
       (debug "Store: " store)
       (common/page-container
@@ -210,7 +212,8 @@
                                                                      (om/update-state! this assoc :show-chat? show?))
                                                   :store           store
                                                   :stream-overlay? true
-                                                  :show?           show-chat?}))))
+                                                  :show?           show-chat?
+                                                  :store-chat-status store-chat-status}))))
 
 
              (grid/column

@@ -22,8 +22,7 @@
                         (.setDatabaseUrl firebase-db)
                         (.build))]
              (FirebaseApp/initializeApp opts)
-             (-> (FirebaseDatabase/getInstance)
-                 (.getReference "server/sulolive")))))
+             (FirebaseDatabase/getInstance))))
 
 (defn db-ref->value [^DatabaseReference db cb]
   "Returns the value snapshot for a db ref"
@@ -44,15 +43,20 @@
 (defprotocol IFirebaseAuth
   (-generateAuthToken [this user-id claims]))
 
-;FirebaseAuth.getInstance().createCustomToken(uid)
-;.addOnSuccessListener(new OnSuccessListener<String>() {
-;                                                       @Override
-;                                                       public void onSuccess(String customToken) {
-;                                                                                                  // Send token back to client
-;                                                                                                  }
-;                                                       });
+(defprotocol IFirebaseChat
+  (-user-online [this store-id]))
 
 (defrecord Firebase [server-key private-key private-key-id]
+  IFirebaseChat
+  (-user-online [this user-id]
+    (debug "Check online status: " user-id)
+    (let [ref (.getReference database (str "presence/" user-id))
+          p (promise)]
+      (db-ref->value ref (fn [snapshot]
+                           (let [v (.getValue snapshot)]
+                             (deliver p v))))
+      (deref p 2000 :firebase/store-online-timeout)))
+
   IFirebaseAuth
   (-generateAuthToken [this user-id claims]
     (let [fb-instance (FirebaseAuth/getInstance)
@@ -71,8 +75,7 @@
                             :title     (c/substring title 0 100)
                             :subtitle  (c/substring subtitle 0 100)
                             :message   (c/substring message 0 100)}
-          notifications-ref (.child database "notifications")
-          user-notifications-ref (.child notifications-ref (str user-id))]
+          user-notifications-ref (.getReference database (str "notifications/" user-id))]
       (-> (.push user-notifications-ref)
           (.setValue (clojure.walk/stringify-keys new-notification)))
       (-get-token this user-id (fn [token]
@@ -84,11 +87,11 @@
   (-register-token [this user-id token]
     (when user-id
 
-      (let [tokens-ref (.child database "tokens")]
+      (let [tokens-ref (.getReference database "tokens")]
         (.updateChildren tokens-ref {(str user-id) token}))))
   (-get-token [this user-id cb]
     (db-ref->value
-      (.child database "tokens")
+      (.getReference database "tokens")
       (fn [tokens]
         (let [token (some-> (.getValue tokens)
                             (.get (str user-id)))]

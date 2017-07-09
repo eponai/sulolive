@@ -57,6 +57,7 @@
   (query [this]
     [:query/current-route
      :query/firebase
+     {:query/auth [:db/id]}
      {:query/owned-store [:db/id]}
      {:routing/app-root (into {}
                               (map (juxt identity #(or (some-> (route->component %) :component om/get-query)
@@ -75,13 +76,24 @@
   (componentDidMount [this]
     (debug "Router did mount")
     #?(:cljs
-       (let [{:query/keys [owned-store]
+       (let [{:query/keys [owned-store auth]
               fb-token :query/firebase} (om/props this)]
+         (debug "Firebase token: " fb-token)
          (when (some? owned-store)
            (-> (.auth js/firebase)
                (.signInWithCustomToken (:token fb-token))
                (.catch (fn [err]
-                         (debug "Firebase could not sign in: " err))))))))
+                         (debug "Firebase could not sign in: " err)))))
+         (when (some? owned-store)
+           (let [am-online (-> (.database js/firebase)
+                               (.ref ".info/connected"))
+                 user-ref (-> (.database js/firebase)
+                              (.ref (str "presence/" (:db/id auth))))]
+             (.on am-online "value" (fn [snapshot]
+                                      (when (.val snapshot)
+                                        (-> (.onDisconnect user-ref)
+                                            (.set js/firebase.database.ServerValue.TIMESTAMP))
+                                        (.set user-ref true)))))))))
   (render [this]
     (let [{:keys [routing/app-root query/current-route]} (om/props this)
           route (normalize-route (:route current-route))

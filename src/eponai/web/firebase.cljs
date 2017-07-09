@@ -4,6 +4,7 @@
     [om.next :as om]
     [eponai.common.format.date :as date]))
 
+
 (defn request-permission [messaging & [f-success f-error]]
   (-> (.requestPermission messaging)
       (.then (fn []

@@ -175,3 +175,15 @@
                     (/ now 1000)))
        :cljs (int (/ now 1000)))))
 
+(defn interval [a b]
+  (t/interval (date-time a) (date-time b)))
+
+(defn in-minutes [inter]
+  (t/in-minutes inter))
+
+(defn in-hours [inter]
+  (t/in-hours inter))
+
+
+
+
