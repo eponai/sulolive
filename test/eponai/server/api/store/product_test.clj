@@ -83,7 +83,7 @@
           ;; Prepare data for creating new products
           params {:store.item/name "product" :store.item/photos [(photo-service-input "first-photo")
                                                                  (photo-service-input "second-photo")] :store.item/price "10"}
-          s3-chan (async/chan 1)]
+          s3-chan (async/chan 2)]
       (store/create-product {:state conn :system {photo-service-key (photo-service s3-chan)}} (:db/id db-store) params)
       (let [result-db (db/db conn)
             ;; Pull new data after creation
@@ -96,8 +96,9 @@
         (is (= 1 (count (:store/items new-db-store))))      ;;Verify that our store has one product
         (is (= (:store.item/name db-product) (:store.item/name params))) ;;Verify that the store's item is the same as the newly created product
         (is (= 2 (count item-photos)))                      ;; Verify that the new product has two photos
-        (is (= (async/poll! s3-chan)
-               (get-in (first item-photos) [:store.item.photo/photo :photo/path]))) ;;Verify that S3 was called with the photo we wanted to upload
+        (is (= (into #{} (comp (take 2) (map #(get-in % [:store.item.photo/photo :photo/path])))
+                     item-photos)
+               (into #{} (take 2) (repeatedly #(async/poll! s3-chan)))))  ;;Verify that S3 was called with the photos we wanted to upload
         ))))
 
 ;; ######################### UPDATE ############################
@@ -216,8 +217,9 @@
         ;; Verify
         (is (= (get-in (first sorted-new-photos) [:store.item.photo/photo :photo/path]) "newfirst")) ; Verify the first photo is now replaced
         (is (= (get-in (second sorted-new-photos) [:store.item.photo/photo :photo/path]) "newsecond")) ; Verify the second photo exists
-        (is (= (async/poll! s3-chan) (get-in (first sorted-new-photos) [:store.item.photo/photo :photo/path]))) ; Verify the first new photo was passed to S3
-        (is (= (async/poll! s3-chan) (get-in (second sorted-new-photos) [:store.item.photo/photo :photo/path]))) ; Verify the second new photo was passed to S3
+        (is (= (into #{} (comp (take 2) (map #(get-in % [:store.item.photo/photo :photo/path])))
+                     sorted-new-photos)
+               (into #{} (take 2) (repeatedly #(async/poll! s3-chan))))) ; Verify the first and second new photo was passed to S3 in any order
         (is (= (:store.item/name new-db-product) (:store.item/name new-params))) ;; Verify that the name of the updated entity matches our parameters
         (is (= 2 (count new-db-photos) (count all-photos) (count all-product-photos)))) ;; Verify that we replaced the old photo entity and created a new one.
       )))
