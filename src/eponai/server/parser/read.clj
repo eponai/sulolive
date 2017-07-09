@@ -27,7 +27,8 @@
     [eponai.server.external.taxjar :as taxjar]
     [eponai.common :as c]
     [eponai.common.database.rules :as db.rules]
-    [medley.core :as medley])
+    [medley.core :as medley]
+    [eponai.server.external.firebase :as firebase])
   (:import (datomic.db Db)))
 
 (defmacro defread
@@ -372,12 +373,21 @@
                :store.item/not-found? true}))})
 
 (defread query/auth
-  [{:keys [auth query db]} _ _]
+  [{:keys [auth query db system]} _ _]
   {:auth ::auth/any-user}
   {:value (let [can-open-store? (boolean (get-in auth [:user_metadata :can_open_store]))
                 authed-user (db/pull db query (:user-id auth))]
             (when authed-user
               (assoc authed-user :user/can-open-store? can-open-store?)))})
+
+(defread query/firebase
+  [{:keys [auth query db system]} _ _]
+  {:auth ::auth/any-user}
+  {:value (let [authed-user (db/pull db [:db/id :store.owner/_user] (:user-id auth))
+                is-store-owner (some? (:store.owner/_user authed-user))]
+            (when authed-user
+              {:token (firebase/-generateAuthToken (:system/firebase system) (:user-id auth)
+                                                   {:store-owner is-store-owner})}))})
 
 (defread query/auth0-info
   [{:keys [auth query db] :as env} _ _]
@@ -435,6 +445,19 @@
               " with route-params: " route-params)
         {:value (parser/value-with-basis-t {} {:chat-db (:chat-db read-basis-t-for-this-key)
                                                :sulo-db (datomic/basis-t db)})})))
+
+(defread query/store-chat-status
+  [{:keys         [db query system route-params]
+    ::parser/keys [read-basis-t-for-this-key chat-update-basis-t]} k _]
+  {:auth    ::auth/public
+   :log     ::parser/no-logging
+   :uniq-by {:route-params [:store-id]}}
+  {:value (when-some [store-id (:store-id route-params)]
+            (let [{owner :store/owners} (db/pull db [{:store/owners [:store.owner/user]}] store-id)
+                  store-online (firebase/-user-online (:system/firebase system) (get-in owner [:store.owner/user :db/id]))]
+              (when store-online
+                {:db/id             store-id
+                 :store/chat-online store-online})))})
 
 ;; Get all categories.
 (defread query/navigation

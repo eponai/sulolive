@@ -34,7 +34,7 @@
   (render [this]
     (let [{:proxy/keys [navbar footer]
            :query/keys [locations stores]} (om/props this)]
-      (debug "Stores props: " (om/props this))
+
       (common/page-container
         {:navbar navbar :footer footer :id "sulo-stores" :class-name "sulo-browse"}
         (common/city-banner this locations)

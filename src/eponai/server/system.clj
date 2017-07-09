@@ -22,6 +22,7 @@
     [eponai.server.external.email :as email]
     [eponai.server.external.client-env :as client-env]
     [eponai.server.external.stripe.webhooks :as stripe-webhooks]
+    [eponai.server.external.firebase :as firebase]
     [eponai.server.external.request-handler :as request-handler]))
 
 (def system-keys #{:system/aleph
@@ -36,6 +37,7 @@
                    :system/cloudinary
                    :system/datomic
                    :system/elastic-cloud
+                   :system/firebase
                    :system/handler
                    :system/mailchimp
                    :system/server-address
@@ -54,33 +56,33 @@
     (request-handler/resume-requests request-handler)))
 
 (defn components-without-fakes [{:keys [env in-aws?] :as config}]
-  {:system/aleph          (c/using (aleph/map->Aleph (select-keys config [:handler :port :netty-options]))
-                                   {:handler :system/handler})
-   :system/cloudinary     (cloudinary/cloudinary
-                            (:cloudinary-api-key env)
-                            (:cloudinary-api-secret env)
-                            (:in-prod? config))
-   :system/chat           (c/using (chat/map->DatomicChat {})
-                                   {:chat-datomic :system/chat-datomic
-                                    :sulo-datomic :system/datomic})
-   :system/chat-datomic   (datomic/map->Datomic
-                            {:db-url           (:chat-db-url env)
-                             :add-mocked-data? false})
-   :system/chat-websocket (c/using (websocket/map->StoreChatWebsocket {})
-                                   {:chat :system/chat})
-   :system/client-env     (client-env/map->ClientEnvironment
-                            {:client-env (select-keys env [:stripe-publishable-key
-                                                           :auth0-client-id
-                                                           :auth0-domain])})
-   :system/datomic        (datomic/map->Datomic
-                            {:db-url           (:db-url env)
-                             :provided-conn    (::provided-conn config)
-                             :add-mocked-data? true})
-   :system/product-search (c/using (product-search/map->ProductSearch {})
-                                   {:datomic :system/datomic})
-   :system/server-address (c/using (server-address/map->ServerAddress {:schema (:server-url-schema env)
-                                                                       :host   (:server-url-host env)})
-                                   {:aws-elb :system/aws-elb})
+  {:system/aleph           (c/using (aleph/map->Aleph (select-keys config [:handler :port :netty-options]))
+                                    {:handler :system/handler})
+   :system/cloudinary      (cloudinary/cloudinary
+                             (:cloudinary-api-key env)
+                             (:cloudinary-api-secret env)
+                             (:in-prod? config))
+   :system/chat            (c/using (chat/map->DatomicChat {})
+                                    {:chat-datomic :system/chat-datomic
+                                     :sulo-datomic :system/datomic})
+   :system/chat-datomic    (datomic/map->Datomic
+                             {:db-url           (:chat-db-url env)
+                              :add-mocked-data? false})
+   :system/chat-websocket  (c/using (websocket/map->StoreChatWebsocket {})
+                                    {:chat :system/chat})
+   :system/client-env      (client-env/map->ClientEnvironment
+                             {:client-env (select-keys env [:stripe-publishable-key
+                                                            :auth0-client-id
+                                                            :auth0-domain])})
+   :system/datomic         (datomic/map->Datomic
+                             {:db-url           (:db-url env)
+                              :provided-conn    (::provided-conn config)
+                              :add-mocked-data? true})
+   :system/product-search  (c/using (product-search/map->ProductSearch {})
+                                    {:datomic :system/datomic})
+   :system/server-address  (c/using (server-address/map->ServerAddress {:schema (:server-url-schema env)
+                                                                        :host   (:server-url-host env)})
+                                    {:aws-elb :system/aws-elb})
    :system/stripe-webhooks (stripe-webhooks/->StripeWebhooksExecutor)})
 
 (defn real-components [{:keys [env] :as config}]
@@ -109,6 +111,8 @@
                                        :xpack-user       (:elastic-cloud-xpack-user env)
                                        :index-name       (:elastic-cloud-index-name env)})
                                     {:server-address :system/server-address})
+   :system/firebase        (firebase/firebase {:server-key      (:firebase-server-key env)
+                                               :service-account (:firebase-service-account env)})
    :system/mailchimp       (mailchimp/mail-chimp (:mailchimp-api-key env))
    :system/stripe          (stripe/stripe (:stripe-secret-key env))
    :system/taxjar          (taxjar/taxjar (:taxjar-api-key env))
@@ -125,6 +129,7 @@
    :system/aws-elb         (elb/aws-elastic-beanstalk-stub)
    :system/aws-s3          (s3/aws-s3-stub)
    :system/elastic-cloud   (elastic-cloud/elastic-cloud-stub)
+   :system/firebase        (firebase/firebase-stub)
    :system/email           (email/email-stub)
    :system/mailchimp       (mailchimp/mail-chimp-stub)
    :system/stripe          (stripe/stripe-stub (:stripe-secret-key env))
@@ -198,7 +203,8 @@
   {:post [(= (set (keys %)) system-keys)]}
   (fake-system (dev-config config)
                ;; Put keys under here to use the real implementation
-               ;:system/stripe
+               :system/stripe
+               :system/firebase
                ;:system/auth0
                ;:system/auth0management
                ;:system/email

@@ -24,12 +24,14 @@
     ;; [eponai.web.scroll-helper :as scroll-helper]
     [cljs.core.async :as async]
     [eponai.common.shared :as shared]
+    ;[cljsjs.firebase]
     [eponai.client.chat :as client.chat]
     [cemerick.url :as url]
     [medley.core :as medley]
     [eponai.client.auth :as client.auth]
     [eponai.common.database :as db]
     [eponai.client.cart :as client.cart]
+    [eponai.web.firebase :as firebase]
     [eponai.web.utils :as web.utils]
     [eponai.client.routes :as client.routes]))
 
@@ -184,8 +186,11 @@
 (defonce history-atom (atom nil))
 (defonce reconciler-atom (atom nil))
 
+
+
+
 (defn- run [{:keys        [login modules loading-bar]
-             :shared/keys [login modules auth0 photos]
+             :shared/keys [login modules auth0 photos firebase]
              :or          {loading-bar (loading-bar/loading-bar)}
              :as          run-options}]
   (let [modules (or modules (modules/advanced-compilation-modules router/routes))
@@ -232,9 +237,11 @@
                                        :shared/store-chat-listener ::shared/prod
                                        :shared/stripe              ::shared/client-env
                                        :shared/auth0               auth0
+                                       :shared/firebase            firebase
                                        :shared/login               login
                                        :shared/photos              photos
                                        :instrument                 (::plomber run-options)})]
+
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
       (pushy/start! history))
@@ -275,24 +282,27 @@
           (error "Stack: " (.-stack e)))))))
 
 (defn run-prod []
-  (run {:shared/auth0  :env/prod
-        :shared/photos :env/prod
-        :shared/login  (auth/login reconciler-atom)}))
+  (run {:shared/auth0    :env/prod
+        :shared/firebase :env/prod
+        :shared/photos   :env/prod
+        :shared/login    (auth/login reconciler-atom)}))
 
 (defn run-simple [& [deps]]
   (when-not-timbre-level
     (timbre/set-level! :debug))
-  (run (merge {:shared/auth0  :env/dev
-               :shared/photos :env/prod
-               :shared/login  (auth/login reconciler-atom)}
+  (run (merge {:shared/auth0    :env/dev
+               :shared/firebase :env/dev
+               :shared/photos   :env/dev
+               :shared/login    (auth/login reconciler-atom)}
               deps)))
 
 (defn run-dev [& [deps]]
   (run (merge {
-               :shared/auth0   :env/dev
-               :shared/photos  :env/dev
-               :shared/login   (auth/login reconciler-atom)
-               :shared/modules (modules/dev-modules router/routes)
+               :shared/auth0    :env/dev
+               :shared/firebase :env/prod
+               :shared/photos   :env/dev
+               :shared/login    (auth/login reconciler-atom)
+               :shared/modules  (modules/dev-modules router/routes)
                }
               deps)))
 

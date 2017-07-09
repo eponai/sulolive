@@ -11,6 +11,11 @@
 	#sulo-video-container {
 		width: 100%;
 	}
+	.chat-menu {
+		background: $white;
+		justify-content: flex-end;
+		border-bottom: $global-border;
+	}
 
 	.section-title {
 		margin-bottom: 0.5rem;

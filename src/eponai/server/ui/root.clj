@@ -19,6 +19,12 @@
                       :cljs-build-id  cljs-build-id})
         (dom/body
           nil
+          (dom/script {:src "https://www.gstatic.com/firebasejs/4.1.3/firebase.js"
+                       :type common/text-javascript})
+          ;(dom/script {:src "/lib/firebase/firebase-app.js"
+          ;             :type common/text-javascript})
+          ;(dom/script {:src "/lib/firebase/firebase-messaging.js"
+          ;             :type common/text-javascript})
           (dom/div {:height "100%" :id router/dom-app-id}
             app-html)
 
@@ -33,6 +39,8 @@
 
           (dom/script {:src "https://cdn.auth0.com/js/auth0/8.7/auth0.min.js"
                        :type common/text-javascript})
+
+
 
           ;<script src="//www.powr.io/powr.js" external-type="html"></script>
 

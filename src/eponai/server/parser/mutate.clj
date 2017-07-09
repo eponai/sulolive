@@ -22,7 +22,8 @@
     [eponai.server.external.cloudinary :as cloudinary]
     [eponai.server.external.email :as email]
     [eponai.server.api.user :as user]
-    [eponai.common.format.date :as date])
+    [eponai.common.format.date :as date]
+    [eponai.server.external.firebase :as firebase])
   (:import (java.io File)))
 
 (defmacro defmutation
@@ -601,6 +602,16 @@
                      (.getMessage exception)
                      "Someting went wrong!")}}
   {:action (fn []
+             (let [user-entity (db/lookup-entity (db/db state) (:db/id user))
+                   store-entity (db/lookup-entity (db/db state) (:db/id store))
+                   {:keys [store/owners]} (db/pull (db/db state) [{:store/owners [:store.owner/user]}] (:db/id store))]
+               (when-not (= (:db/id (:store.owner/user owners)) (:db/id user-entity))
+                 (firebase/-send (:system/firebase system)
+                                 (get-in owners [:store.owner/user :db/id])
+                                 {:title    (c/substring (get-in store-entity [:store/profile :store.profile/name]) 0 20)
+                                  :subtitle (str (c/substring (get-in user-entity [:user/profile :user.profile/name] "anonymous") 0 20) " wrote:")
+                                  :type     :notification.type/chat
+                                  :message  text})))
              (chat/write-message (:system/chat system) store user text))})
 
 (defmutation store/update-order
@@ -656,3 +667,14 @@
   {:action (fn []
              (debug "user/unlink-account with params: " params)
              {:unlinked-accounts (user/unlink-user env params)})})
+
+(defmutation firebase/register-token
+  [{:keys [system auth state ::parser/exception ::parser/return] :as env} _ {:keys [token]}]
+  {:auth ::auth/public
+   :log  nil
+   :resp {:success "Some message"
+          :error   "Something went wrong when creating your account."}}
+  {:action (fn []
+             (debug "FIREBASE ROKEN FOR AUTH: " auth)
+             (firebase/-register-token (:system/firebase system) (:user-id auth) token)
+             nil)})

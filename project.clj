@@ -133,6 +133,7 @@
                  [org.martinklepsch/s3-beam "0.6.0-alpha1"]
                  [slingshot "0.12.2"]
                  [inflections "0.13.0"]
+                 [com.google.firebase/firebase-admin "5.2.0"]
 
                  ;; CLJS
                  [cljsjs/react "15.4.2-2"]
@@ -155,6 +156,7 @@
                  [cljsjs/quill "1.1.0-3"]
                  [cljsjs/react-select "1.0.0-rc.1"]
                  [cljsjs/react-grid-layout "0.13.7-0"]
+                 [cljsjs/firebase "4.0.0-0"]
                  [bidi "2.0.10"]
                  [kibu/pushy "0.3.6"]
                  [prone "1.1.4"]

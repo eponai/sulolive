@@ -144,7 +144,7 @@
                                              (if (<= 8 (count featured-streams))
                                                (take 8 featured-streams)
                                                (take 4 featured-streams))))
-                                      "More streams"))
+                                      "See more streams"))
 
 
 

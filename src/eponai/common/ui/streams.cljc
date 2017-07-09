@@ -87,7 +87,7 @@
               {:classes ["sulo-items-container section"]}
               (my-dom/div
                 (css/add-class :section-title)
-                (my-dom/h4 nil "Other cool stores currently offline")
+                (my-dom/h4 nil "Other cool stores")
                 )
               (grid/row
                 (grid/columns-in-row {:small 2 :medium 3 :large 4})

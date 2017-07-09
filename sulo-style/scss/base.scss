@@ -14,7 +14,7 @@ $footer-height-small: 6rem;
 $footer-height: 4rem;
 
 $chat-width-large: rem-calc(400);
-$chat-width-small: rem-calc(200);
+$chat-width-small: rem-calc(350);
 
 @mixin sulo-typography() {
 	@each $name, $color in $foundation-palette {
