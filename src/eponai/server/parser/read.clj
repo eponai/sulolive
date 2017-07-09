@@ -386,8 +386,9 @@
   {:value (let [authed-user (db/pull db [:db/id :store.owner/_user] (:user-id auth))
                 is-store-owner (some? (:store.owner/_user authed-user))]
             (when authed-user
-              {:token (firebase/-generateAuthToken (:system/firebase system) (:user-id auth)
-                                                   {:store-owner is-store-owner})}))})
+              {:token (firebase/-generate-client-auth-token (:system/firebase system)
+                                                            (:user-id auth)
+                                                            {:store-owner is-store-owner})}))})
 
 (defread query/auth0-info
   [{:keys [auth query db] :as env} _ _]
