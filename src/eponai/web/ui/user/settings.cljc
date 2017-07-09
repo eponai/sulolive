@@ -445,7 +445,7 @@
           is-loading? (.is-loading? this)]
       (debug "Got auth0 " auth0-info)
       (dom/div
-        {:id "sulo-user-settings"}
+        nil
         (when is-loading?
           (common/loading-spinner nil))
         (render-error-message this)

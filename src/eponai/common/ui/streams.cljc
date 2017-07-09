@@ -39,7 +39,7 @@
     (let [{:query/keys [locations streams stores]} (om/props this)]
       (debug "Live props: " (om/props this))
       (dom/div
-        {:id "sulo-live" :class-name "sulo-browse"}
+        {:classes ["sulo-browse"]}
         (common/city-banner this locations)
         ;(grid/row
         ;  nil

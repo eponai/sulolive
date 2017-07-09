@@ -29,7 +29,7 @@
     (let [{:query/keys [locations stores]} (om/props this)]
 
       (dom/div
-        {:id "sulo-stores" :class-name "sulo-browse"}
+        {:classes ["sulo-browse"]}
         (common/city-banner this locations)
         ;(grid/row
         ;  nil

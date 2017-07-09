@@ -49,15 +49,12 @@
         ;; Wrap in span for server and client to render the same html
         (dom/span nil "Live")))))
 
-(defn navbar-brand [& [href title subtitle]]
+(defn navbar-brand [& [href title]]
   (menu/item-link
     {:href (or href "/")
      :id   "navbar-brand"}
     (or title
-        (dom/span nil "Sulo"))
-    ;(or subtitle
-    ;    (dom/small nil "Preview"))
-    ))
+        (dom/span nil "Sulo"))))
 
 (defn user-dropdown [component user owned-store]
   (let [{:keys [dropdown-key]} (om/get-state component)
@@ -183,9 +180,7 @@
                                      (if inline-sidebar-hidden?
                                        (web.utils/remove-class-to-element body "inline-sidebar-hidden")
                                        (web.utils/add-class-to-element body "inline-sidebar-hidden"))
-                                     ;(.addEventListener js/document "touchstart" on-close-sidebar-fn)
-                                     (om/update-state! component assoc :inline-sidebar-hidden? (not inline-sidebar-hidden?))
-                                     )))]
+                                     (om/update-state! component assoc :inline-sidebar-hidden? (not inline-sidebar-hidden?)))))]
     (navbar-content
       {:classes ["store-dashboard"]}
       (dom/div
@@ -200,13 +195,10 @@
             (dom/a
               (css/show-for :large {:onClick toggle-inline-sidebar})
               (dom/i {:classes ["fa fa-bars fa-fw"]})))
-          ;(navbar-brand)
           (menu/item-link
             (css/show-for :large {:href (routes/url :store-dashboard (:route-params current-route))
                                   :id   "navbar-brand"})
-            (dom/span nil "SULO")
-            ;(dom/small nil "Store")
-            )
+            (dom/span nil "SULO"))
 
           (menu/item
             nil
@@ -214,9 +206,7 @@
                                (routes/url :index {:locality (:sulo-locality/path locations)})
                                (routes/url :landing-page))
                     :onClick #(mixpanel/track "Store: Go back to marketplace" {:source "navbar"})}
-                   (dom/strong nil (dom/small nil "Back to marketplace"))))
-          ;(menu/item-text nil (dom/span nil (get routes->titles (:route current-route))))
-          ))
+                   (dom/strong nil (dom/small nil "Back to marketplace"))))))
 
       (dom/div
         (css/add-class :top-bar-right)
@@ -254,12 +244,8 @@
                            (routes/url :landing-page)))
            (live-link component)
 
-           (nav.common/collection-links component "navbar")
+           (nav.common/collection-links component "navbar")))
 
-           (when (:ui.singleton.loading-bar/show? loading-bar)
-             ;; TODO: Do a pretty loading bar somwhere in this navbar.
-             ;; (menu/item nil "Loading...")
-             )))
        (dom/div
          {:classes ["top-bar-right"]}
          (menu/horizontal
@@ -315,23 +301,6 @@
          (when-not (= (.-id (.-target event)) id)
            (om/update-state! this dissoc :dropdown-key)
            (.removeEventListener js/document "click" on-click-event-fn)))))
-
-  (open-signin [this]
-    (debug "Open signin")
-    ;#?(:cljs (let [{:keys [lock]} (om/get-state this)
-    ;               current-url js/window.location.href
-    ;               options (clj->js {:connections  ["facebook"]
-    ;                                 :callbackURL  (str js/window.location.origin "/auth")
-    ;                                 :authParams   {:scope            "openid email user_friends"
-    ;                                                :connectionScopes {"facebook" ["email" "public_profile" "user_friends"]}
-    ;                                                :state            current-url}
-    ;                                 :primaryColor "#9A4B4F"
-    ;                                 :dict         {:title "SULO"}
-    ;                                 :icon         ""
-    ;                                 ;:container "modal"
-    ;                                 })]
-    ;           (.socialOrMagiclink lock options)))
-    )
 
   (open-sidebar [this]
     #?(:cljs (let [body (first (web.utils/elements-by-class "page-container"))
@@ -402,12 +371,8 @@
 
                 :else
                 (standard-navbar this)))))
-        ;(let [is-loading? (:ui.singleton.loading-bar/show? loading-bar)])
 
         (login/->LoginModal login-modal)
         (loading/->LoadingBar loading-bar)))))
 
 (def ->Navbar (om/factory Navbar))
-
-(defn navbar [props]
-  (->Navbar props))

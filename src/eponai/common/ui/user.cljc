@@ -23,7 +23,7 @@
            :query/keys [auth current-route]} (om/props this)
           {:keys [route]} current-route]
       (dom/div
-        {:id     "sulo-user"}
+        nil
         (condp = route
           :user/order-list (uo/->OrderList order-list)
           :user/order (o/->Order order)
