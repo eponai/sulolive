@@ -6,16 +6,15 @@
     [clojure.java.io :as io]
     [eponai.common :as c]
     [eponai.common.format.date :as date]
-    [buddy.core.codecs.base64 :as b64])
-  (:import (com.google.firebase FirebaseOptions FirebaseOptions$Builder FirebaseApp)
-           (com.google.firebase.auth FirebaseAuth FirebaseCredential FirebaseCredentials)
-           (com.google.firebase.database FirebaseDatabase DatabaseReference ValueEventListener DataSnapshot DatabaseError DatabaseReference$CompletionListener)
+    [buddy.core.codecs.base64 :as b64]
+    [com.stuartsierra.component :as component]
+    [suspendable.core :as suspendable])
+  (:import (com.google.firebase FirebaseOptions$Builder FirebaseApp)
+           (com.google.firebase.auth FirebaseAuth FirebaseCredentials)
+           (com.google.firebase.database FirebaseDatabase DatabaseReference ValueEventListener DataSnapshot DatabaseError )
            (com.google.firebase.tasks OnSuccessListener)))
 
 (def firebase-db "https://leafy-firmament-160421.firebaseio.com/")
-
-
-(defonce database (atom nil))
 
 (defn db-ref->value [^DatabaseReference db cb]
   "Returns the value snapshot for a db ref"
@@ -39,11 +38,31 @@
 (defprotocol IFirebaseChat
   (-user-online [this store-id]))
 
-(defrecord Firebase [server-key private-key private-key-id]
+(defrecord Firebase [server-key private-key private-key-id service-account]
+  component/Lifecycle
+  (start [this]
+    (if (:database this)
+      this
+      (let [service-account-dec (b64/decode service-account)
+            ;; Initialize app once.
+            firebase-app (if-let [app (FirebaseApp/getInstance)]
+                           app
+                           (with-open [service-account (io/input-stream service-account-dec)]
+                             (let [opts (-> (FirebaseOptions$Builder.)
+                                            (.setCredential (FirebaseCredentials/fromCertificate service-account))
+                                            (.setDatabaseUrl firebase-db)
+                                            (.build))]
+                               (FirebaseApp/initializeApp opts))))
+            ;; Once the app has been initialized, get the db instance.
+            db (FirebaseDatabase/getInstance ^FirebaseApp firebase-app)]
+        (assoc this :database db))))
+  (stop [this]
+    (dissoc this :database))
+
   IFirebaseChat
   (-user-online [this user-id]
     (debug "Check online status: " user-id)
-    (let [ref (.getReference @database (str "presence/" user-id))
+    (let [ref (.getReference (:database this) (str "presence/" user-id))
           p (promise)]
       (db-ref->value ref (fn [snapshot]
                            (let [v (.getValue snapshot)]
@@ -68,7 +87,7 @@
                             :title     (c/substring title 0 100)
                             :subtitle  (c/substring subtitle 0 100)
                             :message   (c/substring message 0 100)}
-          user-notifications-ref (.getReference @database (str "notifications/" user-id))]
+          user-notifications-ref (.getReference (:database this) (str "notifications/" user-id))]
       (-> (.push user-notifications-ref)
           (.setValue (clojure.walk/stringify-keys new-notification)))
 
@@ -83,30 +102,21 @@
   (-register-token [this user-id token]
     (when user-id
 
-      (let [tokens-ref (.getReference @database "tokens")]
+      (let [tokens-ref (.getReference (:database this) "tokens")]
         (.updateChildren tokens-ref {(str user-id) token}))))
   (-get-token [this user-id cb]
     (db-ref->value
-      (.getReference @database "tokens")
+      (.getReference (:database this) "tokens")
       (fn [tokens]
         (let [token (some-> (.getValue tokens)
                             (.get (str user-id)))]
           (cb token))))))
 
 (defn firebase [{:keys [server-key private-key private-key-id service-account]}]
-  (let [db (when (and (nil? @database) (some? service-account))
-             (let [service-account-dec (b64/decode service-account)]
-               (with-open
-                 [service-account (io/input-stream service-account-dec)]
-                 (let [opts (->
-                              (FirebaseOptions$Builder.)
-                              (.setCredential (FirebaseCredentials/fromCertificate service-account))
-                              (.setDatabaseUrl firebase-db)
-                              (.build))]
-                   (FirebaseApp/initializeApp opts)
-                   (FirebaseDatabase/getInstance)))))]
-    (when db (reset! database db)))
-  (map->Firebase {:server-key server-key :private-key private-key :private-key-id private-key-id}))
+  (map->Firebase {:service-account service-account
+                  :server-key server-key
+                  :private-key private-key
+                  :private-key-id private-key-id}))
 
 (defn firebase-stub []
   (reify
