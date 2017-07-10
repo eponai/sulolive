@@ -1,7 +1,7 @@
 (ns eponai.server.external.firebase
   (:require
     [clj-http.client :as http]
-    [taoensso.timbre :refer [debug]]
+    [taoensso.timbre :refer [debug warn]]
     [cheshire.core :as cheshire]
     [clojure.java.io :as io]
     [eponai.common :as c]
@@ -60,19 +60,17 @@
   (.getValue (ref->snapshot ref)))
 
 (defn- create-firebase-db [service-account]
-  (when (some? service-account)
-    (let [service-account-dec (b64/decode service-account)
-          ;; Initialize app once.
-          firebase-app (if (not-empty (FirebaseApp/getApps))
-                         (FirebaseApp/getInstance)
-                         (with-open [service-account (io/input-stream service-account-dec)]
-                           (let [opts (-> (FirebaseOptions$Builder.)
-                                          (.setCredential (FirebaseCredentials/fromCertificate service-account))
-                                          (.setDatabaseUrl firebase-db)
-                                          (.build))]
-                             (FirebaseApp/initializeApp opts))))]
-      ;; Once the app has been initialized, get the db instance.
-      (FirebaseDatabase/getInstance ^FirebaseApp firebase-app))))
+  ;; Initialize app once.
+  (let [firebase-app (if (not-empty (FirebaseApp/getApps))
+                       (FirebaseApp/getInstance)
+                       (with-open [service-account (io/input-stream (b64/decode service-account))]
+                         (let [opts (-> (FirebaseOptions$Builder.)
+                                        (.setCredential (FirebaseCredentials/fromCertificate service-account))
+                                        (.setDatabaseUrl firebase-db)
+                                        (.build))]
+                           (FirebaseApp/initializeApp opts))))]
+    ;; Once the app has been initialized, get the db instance.
+    (FirebaseDatabase/getInstance ^FirebaseApp firebase-app)))
 
 (defrecord Firebase [server-key private-key private-key-id service-account]
   component/Lifecycle
@@ -137,12 +135,6 @@
         (.child (str user-id))
         (ref->value))))
 
-(defn firebase [{:keys [server-key private-key private-key-id service-account]}]
-  (map->Firebase {:service-account service-account
-                  :server-key server-key
-                  :private-key private-key
-                  :private-key-id private-key-id}))
-
 (defn firebase-stub []
   (reify
     IFirebaseChat
@@ -155,3 +147,12 @@
     (-register-device-token [this user-id token])
     (-get-device-token [this user-id]
       "some token")))
+
+(defn firebase [{:keys [server-key private-key private-key-id service-account]}]
+  (if (some? service-account)
+    (map->Firebase {:service-account service-account
+                    :server-key      server-key
+                    :private-key     private-key
+                    :private-key-id  private-key-id})
+    (do (warn "Got nil for service account. Using firebase-stub.")
+        (firebase-stub))))
