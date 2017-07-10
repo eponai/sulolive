@@ -1,4 +1,4 @@
 [
  {:db/id     :user.profile/name
-  :db/unique :db.unique/value}
+  :db/index  true}
  ]
