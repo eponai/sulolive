@@ -76,7 +76,7 @@
 		color: $dark-gray;
 		&.is-online {
 			color: $white;
-			p {
+			.chat-status p {
 				position: relative;
 				&::before {
 					position: absolute;
@@ -107,6 +107,30 @@
 			max-width: 2rem;
 			min-width: 2rem;
 			// margin: 0.5rem;
+		}
+	}
+
+	.visitor-count {
+		padding: 0.1rem $global-padding;
+		display: flex;
+		align-items: center;
+		color: $white;
+
+		p {
+			margin: 0;
+		}
+
+		i {
+			margin-right: 0.25rem;
+			font-size: 80%;
+		}
+		
+		.sl-tooltip-text {
+			bottom: 120%;
+			top: auto;
+			left: 50%;
+			
+			// transform: translateY(5px);
 		}
 	}
 }
@@ -179,8 +203,8 @@
 		padding-left: 0.5rem;
 	}
 	.message-input-container {
-		padding: 0.5rem;
-		padding-top: 0;
+		padding: 0 0.5rem;
+		// padding-top: 0;
 	}
 	.message-container {
 		.message-photo {

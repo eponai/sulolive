@@ -13,6 +13,7 @@
     [eponai.web.ui.nav.navbar :as navbar]
     [eponai.web.ui.nav.sidebar :as sidebar]
     [eponai.common.ui.elements.css :as css]
+    #?(:cljs [eponai.web.firebase :as firebase])
     [eponai.web.ui.nav.footer :as foot]))
 
 (def dom-app-id "the-sulo-app")
@@ -120,21 +121,30 @@
 
               fb-token    :query/firebase} (om/props this)]
          (debug "Firebase token: " fb-token)
-         (when (some? owned-store)
+         (if (some? auth)
            (-> (.auth js/firebase)
                (.signInWithCustomToken (:token fb-token))
                (.catch (fn [err]
-                         (debug "Firebase could not sign in: " err)))))
+                         (debug "Firebase could not sign in: " err))))
+           (-> (.auth js/firebase)
+               (.signInAnonymously)))
          (when (some? owned-store)
-           (let [am-online (-> (.database js/firebase)
-                               (.ref ".info/connected"))
-                 user-ref (-> (.database js/firebase)
-                              (.ref (str "presence/" (:db/id auth))))]
-             (.on am-online "value" (fn [snapshot]
-                                      (when (.val snapshot)
-                                        (-> (.onDisconnect user-ref)
-                                            (.set js/firebase.database.ServerValue.TIMESTAMP))
-                                        (.set user-ref true)))))))))
+           (let [fb (shared/by-key this :shared/firebase)
+                 presence-ref (firebase/-ref fb (str "presence/" (:db/id auth)))]
+             (firebase/-add-connected-listener fb
+                                               presence-ref
+                                               {:on-connect    #(firebase/-set fb % true)
+                                                :on-disconnect #(firebase/-set fb % (firebase/-timestamp fb))}))
+           ;(let [am-online (-> (.database js/firebase)
+           ;                    (.ref ".info/connected"))
+           ;      user-ref (-> (.database js/firebase)
+           ;                   (.ref (str "presence/" (:db/id auth))))]
+           ;  (.on am-online "value" (fn [snapshot]
+           ;                           (when (.val snapshot)
+           ;                             (-> (.onDisconnect user-ref)
+           ;                                 (.set js/firebase.database.ServerValue.TIMESTAMP))
+           ;                             (.set user-ref true)))))
+           ))))
   (render [this]
     (let [{:keys       [routing/app-root query/current-route]
            :proxy/keys [navbar sidebar footer]} (om/props this)

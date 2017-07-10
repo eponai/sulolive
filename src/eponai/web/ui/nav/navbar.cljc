@@ -16,7 +16,8 @@
     [eponai.web.ui.nav.loading-bar :as loading]
     [eponai.common.ui.icons :as icons]
     [eponai.web.ui.nav.common :as nav.common]
-    [eponai.web.ui.login :as login]))
+    [eponai.web.ui.login :as login]
+    [eponai.web.ui.notifications :as note]))
 
 (def dropdown-elements
   {:dropdown/user       "sl-user-dropdown"
@@ -214,7 +215,7 @@
           nil
           (menu/item-link
             {:href (routes/store-url owned-store :store-dashboard/stream (:route-params current-route))}
-            ;(note/->Notifications notification)
+            (note/->Notifications notification)
             )
           (menu/item-link
             (->> {:href    (routes/store-url owned-store :store (:route-params current-route))
@@ -277,8 +278,7 @@
                       (icons/shopping-bag)
                       (when (< 0 (count (:user.cart/items cart)))
                         (dom/span (css/add-class :badge) (count (:user.cart/items cart))))))))))
-     ;(note/->Notifications notification)
-     ]))
+     (note/->Notifications notification)]))
 
 (defui Navbar
   static om/IQuery

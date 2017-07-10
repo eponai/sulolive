@@ -31,6 +31,7 @@
     [eponai.client.auth :as client.auth]
     [eponai.common.database :as db]
     [eponai.client.cart :as client.cart]
+    [eponai.web.firebase :as firebase]
     [eponai.web.utils :as web.utils]))
 
 (defn add-root! [reconciler]
@@ -239,6 +240,7 @@
                                        :shared/login               login
                                        :shared/photos              photos
                                        :instrument                 (::plomber run-options)})]
+    (firebase/initialize reconciler)
 
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]

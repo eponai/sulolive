@@ -10,7 +10,8 @@
        [eponai.web.utils :as web-utils])
     [eponai.common.mixpanel :as mixpanel]
     [eponai.web.ui.login :as login]
-    [eponai.web.ui.nav.loading-bar :as loading]))
+    [eponai.web.ui.nav.loading-bar :as loading]
+    [eponai.web.ui.notifications :as note]))
 
 (defn navbar-route [component href]
   (let [{:query/keys [auth locations]} (om/props component)]
@@ -60,5 +61,5 @@
    {:query/navigation [:category/name :category/label :category/path :category/route-map]}
    {:proxy/loading-bar (om/get-query loading/LoadingBar)}
    {:proxy/login-modal (om/get-query login/LoginModal)}
-   ;{:proxy/notification (om/get-query note/Notifications)}
+   {:proxy/notification (om/get-query note/Notifications)}
    :query/current-route])

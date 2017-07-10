@@ -20,7 +20,9 @@
     [eponai.common.photos :as photos]
     [eponai.common.mixpanel :as mixpanel]
     [eponai.common.ui.elements.callout :as callout]
-    [eponai.web.ui.button :as button]))
+    [eponai.web.ui.button :as button]
+    #?(:cljs [eponai.web.firebase :as firebase])
+    [eponai.common.shared :as shared]))
 
 
 (defn about-section [component]
@@ -61,11 +63,11 @@
          {:href (routes/url :live {:locality (:sulo-locality/path locations)})}
          (dom/span nil "Browse stores")))
      (grid/row-column
-            nil
-            (dom/hr nil)
-            (dom/div
-              (css/add-class :section-title)
-              (dom/h3 nil "New stores")))
+       nil
+       (dom/hr nil)
+       (dom/div
+         (css/add-class :section-title)
+         (dom/h3 nil "New stores")))
      (grid/row
        (grid/columns-in-row {:small 2 :medium 5})
        (map (fn [store]
@@ -144,10 +146,29 @@
      :query/locations
      :query/current-route])
   Object
+  (componentDidMount [this]
+    #?(:cljs
+       (let [{:query/keys [store]} (om/props this)
+             fb (shared/by-key this :shared/firebase)
+             presence-ref (firebase/-ref fb (str "presence/stores" (:db/id store)))
+             user-ref (firebase/-push fb presence-ref)]
+         (firebase/-on-value-changed fb
+                                     (fn [{:keys [value]}]
+                                       (om/update-state! this assoc :visitor-count (count value)))
+                                     presence-ref)
+         (firebase/-set fb user-ref true)
+         (firebase/-remove-on-disconnect fb user-ref)
+         (om/update-state! this assoc :user-ref user-ref :presence-ref presence-ref))))
+  (componentWillUnmount [this]
+    #?(:cljs
+       (let [{:keys [presence-ref user-ref]} (om/get-state this)
+             fb (shared/by-key this :shared/firebase)]
+         (firebase/-remove fb user-ref)
+         (firebase/-off fb presence-ref))))
   (initLocalState [this]
     {:selected-navigation :all-items})
   (render [this]
-    (let [{:keys [fullscreen? selected-navigation] :as st} (om/get-state this)
+    (let [{:keys [fullscreen? selected-navigation visitor-count] :as st} (om/get-state this)
           {:query/keys [store store-items current-route store-chat-status] :as props} (om/props this)
           {:store/keys [profile]
            stream      :stream/_store} store
@@ -157,9 +178,9 @@
           is-live? false                                    ;(= :stream.state/live (:stream/state stream))
           show-chat? (:show-chat? st true)
           {:keys [route route-params]} current-route]
-      (debug "Store: " store)
+
       (dom/div
-        {:id     "sulo-store"}
+        {:id "sulo-store"}
 
         (if (:store/not-found? store)
           (store-not-found this)
@@ -171,11 +192,11 @@
                (->> (css/text-align :center {:id "store-closed-banner"})
                     (css/add-classes [:alert :store-closed]))
                (dom/div (css/add-class :sl-tooltip)
-                      (dom/h3
-                        (css/add-class :closed)
-                        (dom/strong nil "Closed - "))
-                      (dom/span (css/add-class :sl-tooltip-text)
-                                "Only you can see your store. Customers who try to view your store will see a not found page."))
+                        (dom/h3
+                          (css/add-class :closed)
+                          (dom/strong nil "Closed - "))
+                        (dom/span (css/add-class :sl-tooltip-text)
+                                  "Only you can see your store. Customers who try to view your store will see a not found page."))
                (dom/a {:href (routes/url :store-dashboard/profile#options route-params)}
                       (dom/span nil "Go to options"))))
            (grid/row
@@ -183,7 +204,7 @@
                   (css/add-class :collapse)
                   (css/add-class :expanded))
              (grid/column
-               (grid/column-order {:small 2 :medium 1})
+               (grid/column-order {:small 3 :medium 1})
                (dom/div
                  (cond->> (css/add-class :stream-container)
                           show-chat?
@@ -201,16 +222,19 @@
                    (photo/store-cover store nil))
 
                  (chat/->StreamChat (om/computed (:proxy/chat props)
-                                                 {:on-toggle-chat  (fn [show?]
-                                                                     (om/update-state! this assoc :show-chat? show?))
-                                                  :store           store
-                                                  :stream-overlay? true
-                                                  :show?           show-chat?
+                                                 {:on-toggle-chat    (fn [show?]
+                                                                       (om/update-state! this assoc :show-chat? show?))
+                                                  :store             store
+                                                  :visitor-count     visitor-count
+                                                  :stream-overlay?   true
+                                                  :show?             show-chat?
                                                   :store-chat-status store-chat-status}))))
 
 
+
+
              (grid/column
-               (->> (grid/column-order {:small 1 :medium 2})
+               (->> (grid/column-order {:small 1 :medium 3})
                     (css/add-class :store-container))
 
                (grid/row
@@ -234,10 +258,11 @@
                             (common/follow-button nil)
                             (common/contact-button nil))))
                ))
+
            (grid/row
              (css/add-class :collapse)
              (grid/column
-               nil
+               (css/add-class :store-submenu)
 
                ;(dom/h3 (css/add-class :sl-tooltip)
                ;        (dom/span
@@ -252,6 +277,13 @@
                ;        (when (= stream-state :stream.state/offline)
                ;          (dom/span (css/add-class :sl-tooltip-text)
                ;                    "See the help checklist below to get started streaming")))
+               (dom/div
+                 (css/add-class :store-stats)
+                 (dom/div (css/add-class :sl-tooltip)
+                          (dom/h6 nil
+                                  (dom/small nil "Active visitors: ")
+                                  (dom/span nil (str visitor-count)))
+                          (dom/span (css/add-class :sl-tooltip-text) "Visitors in store right now")))
                (let [store-url (store-url (:store-id route-params))]
                  (menu/horizontal
                    (->> (css/align :right)

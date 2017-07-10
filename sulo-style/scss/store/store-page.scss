@@ -84,6 +84,18 @@
 			padding: 0;
 		}
 	}
+	.store-submenu {
+		display: flex;
+		flex-direction: row;
+		align-items: flex-end;
+		.store-stats {
+			flex: 0 0 auto;
+			padding-left: $global-padding;
+			.sl-tooltip-text {
+				margin-top: -1rem;
+			}
+		}
+	}
 	#shop {
 		.menu-container {
 			overflow-x: scroll;

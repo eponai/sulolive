@@ -34,6 +34,7 @@ p > a {
 	
 	display: inline-block;
 	.sl-tooltip-text {
+		transition: visibility .25s linear 0s, opacity .25s ease-in-out;
 		margin-top: 0.2rem;
 		left: 50%;
 		// top: 100%;
@@ -41,6 +42,11 @@ p > a {
 		font-size: 0.8rem;
 		width: 10rem;
 		// transform: translateX(50%);
+	}
+	&:hover {
+		.sl-tooltip-text {
+			transition: visibility .75s linear 0s, opacity .25s ease-in-out .5s;
+		}
 	}
 }
 
