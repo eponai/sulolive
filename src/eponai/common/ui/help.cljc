@@ -1,6 +1,5 @@
 (ns eponai.common.ui.help
   (:require
-    [eponai.common.ui.common :as common]
     [eponai.common.ui.help.first-stream :as first-stream]
     [eponai.common.ui.help.mobile-stream :as mobile-stream]
     [eponai.common.ui.help.quality :as stream-quality]
@@ -8,14 +7,12 @@
     [eponai.common.ui.help.faq :as faq]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.router :as router]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.client.routes :as routes]
-    [eponai.web.ui.footer :as foot]))
+    [eponai.client.routes :as routes]))
 
 (def guides
   {:help/first-stream   {:guide       ::live-stream
@@ -55,16 +52,14 @@
 (defui Help
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/footer (om/get-query foot/Footer)}
+    [:query/auth
      :query/current-route])
   Object
   (render [this]
-    (let [{:proxy/keys [navbar footer]
-           :query/keys [current-route]} (om/props this)
+    (let [{:query/keys [current-route]} (om/props this)
           {:keys [route]} current-route]
-      (common/page-container
-        {:navbar navbar :footer footer :id "sulo-help"}
+      (dom/div
+        nil
         (grid/row-column
           nil
           (dom/div

@@ -32,8 +32,7 @@
     [eponai.common.database :as db]
     [eponai.client.cart :as client.cart]
     [eponai.web.firebase :as firebase]
-    [eponai.web.utils :as web.utils]
-    [eponai.client.routes :as client.routes]))
+    [eponai.web.utils :as web.utils]))
 
 (defn add-root! [reconciler]
   (binding [parser/*parser-allow-remote* false]
@@ -75,7 +74,7 @@
         ;; There's no reason to read local reads when transacting.
         ;; Should this go into om.next?
         (binding [parser/*parser-allow-local-read* false]
-          (routes/transact-route! reconciler handler
+          (router/transact-route! reconciler handler
                                   {:route-params  route-params
                                    :query-params  query-params
                                    :queue?        (and loaded-route?
@@ -241,6 +240,7 @@
                                        :shared/login               login
                                        :shared/photos              photos
                                        :instrument                 (::plomber run-options)})]
+    (firebase/initialize reconciler)
 
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]

@@ -58,7 +58,7 @@
 	}
 
 	.callout a {
-		color: map-get($foundation-palette, action);
+		color: map-get($foundation-palette, sulo-dark);
 		&:hover {
 			text-decoration: underline;
 		}

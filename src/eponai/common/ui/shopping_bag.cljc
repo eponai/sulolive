@@ -3,10 +3,8 @@
     [eponai.common.ui.dom :as dom]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.css :as css]
-    [eponai.common.ui.common :as common]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.utils :as utils]
-    [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.router :as router]
     [taoensso.timbre :refer [debug]]
     [eponai.client.routes :as routes]
@@ -16,7 +14,6 @@
     [eponai.common.ui.elements.callout :as callout]
     [eponai.web.ui.button :as button]
     [eponai.common.mixpanel :as mixpanel]
-    [eponai.web.ui.footer :as foot]
     [eponai.common.ui.product-item :as pi]
     [eponai.common.ui.product :as product]))
 
@@ -136,9 +133,7 @@
 (defui ShoppingBag
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/footer (om/get-query foot/Footer)}
-     {:query/cart [{:user.cart/items [:store.item.sku/variation
+    [{:query/cart [{:user.cart/items [:store.item.sku/variation
                                       :db/id
                                       :store.item.sku/inventory
                                       {:store.item/_skus [:store.item/price
@@ -174,9 +169,8 @@
           {:keys [user.cart/items]} cart
           skus-by-store (items-by-store items)]
       (debug "Shopping bag: " cart)
-      (common/page-container
-        {:navbar navbar :footer (om/computed footer
-                                             {:on-change-location #(om/transact! this [:query/featured-items])}) :id "sulo-shopping-bag"}
+      (dom/div
+        {:id "sulo-shopping-bag"}
 
         (grid/row-column
           nil

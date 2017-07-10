@@ -76,7 +76,7 @@
 		color: $dark-gray;
 		&.is-online {
 			color: $white;
-			p {
+			.chat-status p {
 				position: relative;
 				&::before {
 					position: absolute;
@@ -109,13 +109,36 @@
 			// margin: 0.5rem;
 		}
 	}
+
+	.visitor-count {
+		padding: 0.1rem $global-padding;
+		display: flex;
+		align-items: center;
+		color: $white;
+
+		p {
+			margin: 0;
+		}
+
+		i {
+			margin-right: 0.25rem;
+			font-size: 80%;
+		}
+		
+		.sl-tooltip-text {
+			bottom: 120%;
+			top: auto;
+			left: 50%;
+			
+			// transform: translateY(5px);
+		}
+	}
 }
 
-
 .stream-chat-container {
+
 	position: relative;
 	z-index: $chat-zindex;
-	display: none;
 	background: rgba($chat-container-bg-color, 0.6);//linear-gradient(to right, rgba($chat-container-bg-color, 0.6), rgba($chat-container-bg-color, 0.9));
 	box-shadow: -1px 0 10rem 0 rgba($chat-container-box-shadow-color, 0.35);
 	padding: 0;
@@ -136,7 +159,7 @@
 		z-index: 2;
 	}
 	transition: right .25s ease-in-out;
-	.toggle-button {
+	.toggle-button, .toggle-button-small {
 		display: block;
 		&.show-button {
 			margin-top: 1rem;
@@ -196,6 +219,48 @@
 			strong {
 				color: darken($medium-gray, 5%);
 			}
+		}
+		.message-auto {
+			color: $medium-gray;
+			span {
+				font-style: italic;
+			}
+		}
+	}
+	@include breakpoint(medium-small down) {
+		box-shadow: none;
+		display: flex;
+		width: 100%;
+		right: -100%;
+		z-index: $navbar-zindex;
+		max-width: 100%;
+		// height: 100vh;
+		position: fixed;
+		// top: $navbar-height;
+		// bottom: 0;
+		.toggle-button-small {
+			&.show-button {
+				top: $navbar-height;
+				position: absolute;
+				right: 100%;
+				z-index: 10;
+				opacity: 1;
+				visibility: visible;
+			}
+			// position: absolute;
+			// right: 0;
+			// position: fixed;
+			// top: 0;
+		}
+		.chat-menu {
+			height: $navbar-height;
+			background: rgba(black, 0.7);
+		}
+		// .show-small {
+		// 	display: block
+		// }
+		&.show-small {
+			right: 0;
 		}
 	}
 }

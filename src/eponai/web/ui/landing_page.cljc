@@ -1,18 +1,15 @@
 (ns eponai.web.ui.landing-page
   (:require
-    [cemerick.url :as url]
     [clojure.spec.alpha :as s]
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.router :as router]
-    [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.common :as common]
     [taoensso.timbre :refer [debug]]
     [eponai.web.ui.photo :as photo]
     [eponai.common.ui.elements.grid :as grid]
     #?(:cljs [eponai.web.utils :as web-utils])
-    [eponai.web.ui.button :as button]
     [eponai.client.auth :as auth]
     [eponai.common.shared :as shared]
     [eponai.client.routes :as routes]
@@ -21,8 +18,7 @@
     [eponai.web.social :as social]
     [eponai.client.utils :as client-utils]
     [eponai.client.parser.message :as msg]
-    [medley.core :as medley]
-    [eponai.web.ui.footer :as foot]))
+    [medley.core :as medley]))
 
 (def form-inputs
   {:field/email    "field.email"
@@ -49,9 +45,7 @@
 (defui LandingPage
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/footer (om/get-query foot/Footer)}
-     :query/current-route
+    [:query/current-route
      {:query/auth [:db/id]}
      {:query/sulo-localities [:sulo-locality/title
                               :sulo-locality/path
@@ -93,13 +87,12 @@
         ;       (set! (.-value (web-utils/element-by-id (:field/location form-inputs))) ""))))
         (om/update-state! this assoc :user-message (msg/message last-message)))))
   (render [this]
-    (let [{:proxy/keys [navbar footer]
-           :query/keys [auth sulo-localities]} (om/props this)
+    (let [{:query/keys [auth sulo-localities]} (om/props this)
           {:keys [input-validation user-message]} (om/get-state this)
           last-message (msg/last-message this 'location/suggest)]
       (debug "Localitites: " sulo-localities)
-      (common/page-container
-        {:navbar navbar :footer footer :id "sulo-landing"}
+      (dom/div
+        {:id "sulo-landing"}
         (photo/cover
           {:photo-id "static/shop"}
           (grid/row-column

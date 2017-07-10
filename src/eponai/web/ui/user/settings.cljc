@@ -6,7 +6,6 @@
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.common :as common]
-    [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.input-validate :as v]
@@ -20,10 +19,8 @@
     #?(:cljs
        [eponai.client.ui.photo-uploader :as pu])
     [eponai.client.parser.message :as msg]
-    [clojure.string :as string]
     [eponai.common.ui.elements.callout :as callout]
     [eponai.web.ui.button :as button]
-    [eponai.web.ui.footer :as foot]
     [eponai.common.shared :as shared]
     #?(:cljs
        [eponai.web.auth0 :as auth0])
@@ -327,9 +324,7 @@
 (defui UserSettings
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/footer (om/get-query foot/Footer)}
-     {:query/auth [:user/email
+    [{:query/auth [:user/email
                    {:user/profile [:user.profile/name
                                    {:user.profile/photo [:photo/id]}]}
                    :user/stripe]}
@@ -443,15 +438,14 @@
           (msg/pending? photo-msg)
           (msg/pending? stripe-msg))))
   (render [this]
-    (let [{:proxy/keys [navbar footer]
-           :query/keys [auth current-route stripe-customer auth0-info]} (om/props this)
+    (let [{:query/keys [auth current-route stripe-customer auth0-info]} (om/props this)
           {:keys [modal photo-upload queue-photo]} (om/get-state this)
           {user-profile :user/profile} auth
           {:keys [route-params]} current-route
           is-loading? (.is-loading? this)]
       (debug "Got auth0 " auth0-info)
-      (common/page-container
-        {:navbar navbar :footer footer :id "sulo-user-settings"}
+      (dom/div
+        nil
         (when is-loading?
           (common/loading-spinner nil))
         (render-error-message this)

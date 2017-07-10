@@ -11,7 +11,6 @@
     [om.next :as om :refer [defui]]
     [eponai.common.ui.router :as router]
     [eponai.common.ui.common :as common]
-    [eponai.common.ui.navbar :as nav]
 
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.grid :as grid]
@@ -24,8 +23,7 @@
     [eponai.web.ui.photo :as photo]
     [eponai.common.mixpanel :as mixpanel]
     [eponai.web.ui.button :as button]
-    [eponai.common :as c]
-    [eponai.web.ui.footer :as foot]))
+    [eponai.common :as c]))
 
 (def form-inputs
   {:field.store/name     "store.name"
@@ -57,9 +55,7 @@
 (defui StartStore
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/footer (om/get-query foot/Footer)}
-     {:query/auth [:user/email
+    [{:query/auth [:user/email
                    :user/can-open-store?
                    {:store.owner/_user [{:store/_owners [:db/id
                                                          {:store/profile [:store.profile/name]}]}]}]}
@@ -110,15 +106,14 @@
             (routes/set-url! this :store-dashboard {:store-id (:db/id new-store)}))))))
 
   (render [this]
-    (let [{:proxy/keys [navbar footer]
-           :query/keys [auth sulo-localities]} (om/props this)
+    (let [{:query/keys [auth sulo-localities]} (om/props this)
           {:keys [input-validation]} (om/get-state this)
           message (msg/last-message this 'store/create)
           request-message (msg/last-message this 'user/request-store-access)
           store (-> auth :store.owner/_user first :store/_owners)]
       (debug "Current auth: " auth)
-      (common/page-container
-        {:navbar navbar :footer footer :id "sulo-start-store"}
+      (dom/div
+        {:id "sulo-start-store"}
         (cond (msg/pending? message)
               (common/loading-spinner nil (dom/span nil "Starting store...")))
         ;(common/city-banner this locations)

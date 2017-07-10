@@ -2,8 +2,6 @@
   (:require
     [eponai.client.routes :as routes]
     [eponai.common :as c]
-    [eponai.common.ui.common :as common]
-    [eponai.common.ui.navbar :as nav]
     [eponai.common.ui.store.order-edit-form :as oef]
     [eponai.common.ui.store.order-list :as ol]
     [eponai.common.ui.store.product-edit-form :as pef]
@@ -19,7 +17,7 @@
     [eponai.web.ui.store.home :as home]
     [eponai.web.ui.store.finances :as finances]
     [eponai.web.ui.store.business :as business]
-    [eponai.web.ui.footer :as foot]))
+    ))
 
 (defn find-product [store product-id]
   (let [product-id (c/parse-long product-id)]
@@ -49,7 +47,7 @@
                                                        :computed-fn compute-store}
                 :store-dashboard/business             {:component   business/AccountSettings
                                                        :computed-fn compute-store}
-                :store-dashboard/finances             {:component finances/StoreFinances
+                :store-dashboard/finances             {:component   finances/StoreFinances
                                                        :computed-fn compute-route-params}
                 :store-dashboard/product-list         {:component   pl/ProductList
                                                        :computed-fn compute-route-params}
@@ -85,9 +83,7 @@
 (defui Dashboard
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/footer (om/get-query foot/Footer)}
-     {:query/store [:db/id
+    [{:query/store [:db/id
                     :store/uuid
                     {:store/profile [:store.profile/description
                                      :store.profile/name
@@ -137,10 +133,8 @@
           store-id (get-in current-route [:route-params :store-id])
           stream-state (or (-> store :stream/_store first :stream/state) :stream.state/offline)]
 
-      (common/page-container
-        {:navbar     navbar
-         :footer footer
-         :id         "sulo-store-dashboard"}
+      (dom/div
+        {:id "sulo-store-dashboard-content"}
 
         (let [{:keys [component computed-fn factory]} (get route-map (parse-route route))
               factory (or factory (om/factory component))

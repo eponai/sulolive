@@ -10,7 +10,7 @@
     [com.stuartsierra.component :as component])
   (:import (com.google.firebase FirebaseOptions$Builder FirebaseApp)
            (com.google.firebase.auth FirebaseAuth FirebaseCredentials)
-           (com.google.firebase.database FirebaseDatabase DatabaseReference ValueEventListener DataSnapshot DatabaseError )
+           (com.google.firebase.database FirebaseDatabase DatabaseReference ValueEventListener DataSnapshot DatabaseError)
            (com.google.firebase.tasks OnSuccessListener)))
 
 
@@ -79,9 +79,9 @@
       this
       (let [db (create-firebase-db service-account)]
         (assoc this :database db
-                    :refs {:notifications (.getReference db "notifications")
-                           :tokens        (.getReference db "tokens")
-                           :presence      (doto (.getReference db "presence")
+                    :refs {:notifications (.getReference db "v1/notifications")
+                           :tokens        (.getReference db "v1/tokens")
+                           :presence      (doto (.getReference db "v1/presence")
                                             (.keepSynced true))}))))
   (stop [this]
     (dissoc this :database :refs))
@@ -107,11 +107,12 @@
   IFirebaseNotifications
   (-send [this user-id {:keys [title message subtitle] :as params}]
     (let [new-notification {:timestamp (date/current-millis)
+                            :type      "chat"
                             :title     (c/substring title 0 100)
                             :subtitle  (c/substring subtitle 0 100)
                             :message   (c/substring message 0 100)}
           user-notifications-ref (-> (:notifications (:refs this))
-                                     (.child (str user-id)))]
+                                     (.child (str user-id "/unread/chat")))]
       (-> (.push user-notifications-ref)
           (.setValue (clojure.walk/stringify-keys new-notification)))
 

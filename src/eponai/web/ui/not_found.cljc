@@ -3,21 +3,16 @@
     [eponai.common.ui.router :as router]
     [om.next :as om :refer [defui]]
     [eponai.common.ui.dom :as dom]
-    [eponai.common.ui.navbar :as nav]
-    [eponai.common.ui.common :as common]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.css :as css]
     [eponai.web.ui.button :as button]
     [eponai.client.routes :as routes]
-    [eponai.common.ui.product-item :as pi]
-    [eponai.web.ui.footer :as foot]))
+    [eponai.common.ui.product-item :as pi]))
 
 (defui NotFound
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/footer (om/get-query foot/Footer)}
-     {:query/featured-items [:db/id
+    [{:query/featured-items [:db/id
                              :store.item/name
                              :store.item/price
                              :store.item/created-at
@@ -29,11 +24,9 @@
      :query/current-route])
   Object
   (render [this]
-    (let [{:proxy/keys [navbar footer]
-           :query/keys [featured-items locations]} (om/props this)]
-      (common/page-container
-        {:navbar navbar :footer (om/computed footer
-                                             {:on-change-location #(om/transact! this [:query/featured-items])}) :id "sulo-not-found"}
+    (let [{:query/keys [featured-items locations]} (om/props this)]
+      (dom/div
+        {:id "sulo-not-found"}
         (grid/row-column
           (css/text-align :center)
           (dom/div (css/add-classes [:not-found-code])

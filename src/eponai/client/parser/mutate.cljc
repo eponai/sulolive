@@ -42,6 +42,7 @@
   [{:keys [state target]} _ _]
   (when-not target
     {:action (fn []
+               (debug "Transact show login")
                (db/transact state [{:ui/singleton                   :ui.singleton/login-modal
                                     :ui.singleton.login-modal/show? true}]))}))
 

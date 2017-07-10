@@ -6,8 +6,6 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.elements.menu :as menu]
-    [eponai.common.ui.navbar :as nav]
-    [eponai.web.ui.footer :as foot]
     [taoensso.timbre :refer [debug error]]
     [om.next :as om]
     [eponai.web.ui.photo :as photo]
@@ -157,20 +155,20 @@
                      (css/add-classes [:drop-shadow]))
                 (dom/span nil "Search")))))))))
 
-(defn page-container [{:keys [navbar id class-name no-footer? footer]} & content]
-  (dom/div
-    (css/add-class (str "sulo-page " class-name) {:id id})
-    (dom/div
-      (css/add-class :page-container)
-      (nav/navbar navbar)
-      (dom/div
-        (css/add-class :page-content-container {:key "content-container"})
-        (nav/->Sidebar navbar)
-        (dom/div
-          (css/add-class :page-content)
-          content))
-      (when-not no-footer?
-        (foot/->Footer footer)))))
+;(defn page-container [{:keys [navbar id class-name no-footer? footer]} & content]
+;  (dom/div
+;    (css/add-class (str "sulo-page " class-name) {:id id})
+;    (dom/div
+;      (css/add-class :page-container)
+;      ;(nav/navbar navbar)
+;      (dom/div
+;        (css/add-class :page-content-container {:key "content-container"})
+;        (nav/->Sidebar navbar)
+;        (dom/div
+;          (css/add-class :page-content)
+;          content))
+;      (when-not no-footer?
+;        (foot/->Footer footer)))))
 
 
 

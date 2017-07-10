@@ -10,7 +10,9 @@
          [cljs-time.coerce :as cljs-time]
          [goog.date]
          [goog.object]
-         [goog.format.EmailAddress]]))
+         [goog.format.EmailAddress]
+         [eponai.web.modules :as modules]])
+            [eponai.common.shared :as shared])
   #?(:clj
      (:import [datascript.db DB]
               [javax.mail.internet InternetAddress])))
@@ -401,6 +403,7 @@
       (when did-sync
         (did-sync this-state (om/get-state component))))))
 
+
 ;;############# Debugging ############################
 
 #?(:cljs
@@ -490,3 +493,14 @@
 
 (def set-trace #(set-level :trace))
 (def set-debug #(set-level :debug))
+
+#?(:cljs
+   (defn should-update-when-route-is-loaded
+     "Returns true when route is loaded and the default om shouldComponentUpdate returns true."
+     [component props state]
+     (let [next-route (some-> (shouldComponentUpdate-next-props props)
+                              (get-in [:query/current-route :route]))]
+
+       (and (or (nil? next-route)
+                (modules/loaded-route? (shared/by-key component :shared/modules) next-route))
+            (shouldComponentUpdate-om component props state)))))

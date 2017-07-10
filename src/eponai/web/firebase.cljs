@@ -69,14 +69,22 @@
    :value (js->clj (.val snapshot) :keywordize-keys true)})
 
 (defprotocol IFirebase
+  (-ref [this path])
   (-ref-notifications [this user-id])
+  (-timestamp [this])
+  (-add-connected-listener [this ref {:keys [on-connect on-disconnect]}])
+
+  (-remove-on-disconnect [this ref])
 
   (-limit-to-last [this n ref])
 
+  (-set [this ref v])
+  (-push [this ref])
   (-remove [this ref])
   (-update [this ref v])
 
   (-off [this ref])
+  (-on-value-changed [this f ref])
   (-on-child-added [this f ref])
   (-on-child-removed [this f ref ]))
 
@@ -84,21 +92,45 @@
 
 (defmethod shared/shared-component [:shared/firebase :env/prod]
   [reconciler _ _]
-  (when-not @fb-initialized?
-    (initialize reconciler)
-    (reset! fb-initialized? true))
+  ;(initialize reconciler)
+  ;(when-not @fb-initialized?
+  ;
+  ;  (reset! fb-initialized? true))
   (reify IFirebase
+    (-remove-on-disconnect [this ref]
+      (-> (.onDisconnect ref)
+          (.remove)))
+    (-timestamp [this]
+      js/firebase.database.ServerValue.TIMESTAMP)
+    (-add-connected-listener [this ref {:keys [on-connect on-disconnect]}]
+      (let [am-online (-ref this ".info/connected")]
+        (.on am-online "value" (fn [snapshot]
+                                 (when (.val snapshot)
+                                   (-> (.onDisconnect ref)
+                                       on-disconnect)
+                                   (on-connect ref))))))
+
     ;; Refs
-    (-ref-notifications [this user-id]
+    (-ref [this path]
       (-> (.database js/firebase)
-          (.ref (str "notifications/" user-id))))
+          (.ref (str "v1/" path))))
+
+    (-ref-notifications [this user-id]
+      (-> (-ref this (str "notifications/" user-id))
+          (.limitToLast 100)))
 
     (-limit-to-last [this n ref]
       (.limitToLast ref n))
 
     (-remove [this ref]
+      (debug "FIREBASE removed: " ref)
       (.remove ref))
 
+    (-push [this ref]
+      (.push ref))
+    (-set [this ref v]
+      (debug "Setting value: " v)
+      (.set ref v))
     (-update [this ref v]
       (.update ref v))
 
@@ -106,6 +138,8 @@
       (.off ref))
 
     ;; Listeners
+    (-on-value-changed [this f ref]
+      (.on ref "value" (fn [snapshot] (f (snapshot->map snapshot)))))
     (-on-child-added [this f ref]
       (.on ref "child_added" (fn [snapshot] (f (snapshot->map snapshot)))))
     (-on-child-removed [this f ref]

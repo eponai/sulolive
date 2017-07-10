@@ -3,23 +3,19 @@
     [eponai.common.ui.common :as common]
     [eponai.common.ui.dom :as my-dom]
     [om.next :as om :refer [defui]]
-    [eponai.common.ui.navbar :as nav]
     [taoensso.timbre :refer [debug]]
     [eponai.common.ui.elements.css :as css]
-    [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.common.ui.router :as router]
     [eponai.client.routes :as routes]
     [eponai.web.ui.photo :as photo]
-    [eponai.web.ui.footer :as foot]
     [eponai.common.ui.dom :as dom]
     [eponai.web.ui.button :as button]))
 
 (defui Streams
   static om/IQuery
   (query [_]
-    [{:proxy/navbar (om/get-query nav/Navbar)}
-     {:proxy/footer (om/get-query foot/Footer)}
+    [
      {:query/streams [:stream/title
                       :stream/state
                       {:stream/store [:db/id
@@ -40,11 +36,10 @@
      :query/locations])
   Object
   (render [this]
-    (let [{:proxy/keys [navbar footer]
-           :query/keys [locations streams stores]} (om/props this)]
+    (let [{:query/keys [locations streams stores]} (om/props this)]
       (debug "Live props: " (om/props this))
-      (common/page-container
-        {:navbar navbar :footer footer :id "sulo-live" :class-name "sulo-browse"}
+      (dom/div
+        {:classes ["sulo-browse"]}
         (common/city-banner this locations)
         ;(grid/row
         ;  nil

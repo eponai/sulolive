@@ -15,7 +15,6 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.mixpanel :as mixpanel]
     [eponai.common.format.date :as date]
-    #?(:cljs [eponai.web.firebase :as fb])
     [eponai.web.ui.photo :as photo]))
 
 (def hour-in-millis (* 3600 1000))
@@ -135,20 +134,34 @@
       (when on-toggle-chat
         (on-toggle-chat show?))
       (om/update-state! this assoc :show-chat? show?)))
+
+  (toggle-chat-small [this show?]
+    (let [{:keys [on-toggle-chat]} (om/get-computed this)]
+      (mixpanel/track "Toggle chat window" {:show show?})
+      (debug "Toggle chat: " show?)
+      (when on-toggle-chat
+        (on-toggle-chat show?))
+      (om/update-state! this assoc :show-chat-small? show?)))
   (initLocalState [this]
     (let [{:keys [show?]} (om/get-computed this)]
       {:show-chat? show?}))
   (render [this]
-    (let [{:keys [show-chat? store-online]} (om/get-state this)
-          messages (get-messages this)
-          {:keys [stream-overlay? store store-chat-status]} (om/get-computed this)
+    (let [{:keys [show-chat? show-chat-small? store-online]} (om/get-state this)
+          {:keys [stream-overlay? store store-chat-status visitor-count]} (om/get-computed this)
           online-status (:store/chat-online store-chat-status)
-          status-msg (status-message online-status) ]
+          welcome-msg (if (and (number? visitor-count) (< 1 visitor-count))
+                        "Other users are in this store, try to say hi"
+                        "Use the chat to hangout with store owners and other users")
+          messages (or (not-empty (get-messages this)) [{:chat.message/user :automatic :chat.message/text welcome-msg}])
+          status-msg (status-message online-status)]
+      (debug "Chat messages: " messages)
       (debug "Store online: " (:store/chat-online store-chat-status))
       (my-dom/div
         (cond->> (css/add-class :chat-container)
                  show-chat?
                  (css/add-class :show)
+                 show-chat-small?
+                 (css/add-class :show-small)
                  stream-overlay?
                  (css/add-class :stream-chat-container))
         (my-dom/div
@@ -159,18 +172,35 @@
                    (css/add-class :just-online))
           (my-dom/a
             (->> (css/button {:onClick #(.toggle-chat this true)})
-                 (css/add-classes [:toggle-button :show-button]))
+                 (css/add-classes [:toggle-button :show-button])
+                 (css/show-for :medium))
             (my-dom/span {:classes ["fa fa-comments fa-fw"]}))
           (my-dom/a
             (->> (css/button-hollow {:onClick #(.toggle-chat this false)})
-                 (css/add-classes [:secondary :toggle-button :hide-button]))
+                 (css/add-classes [:secondary :toggle-button :hide-button])
+                 (css/show-for :medium))
             (my-dom/i
               (css/add-class "fa fa-chevron-right fa-fw")))
-          (my-dom/div
-            (css/add-class :chat-status)
 
-            (my-dom/p nil (my-dom/span nil status-msg))
-            (photo/store-photo store {:transformation :transformation/thumbnail-tiny})))
+          (my-dom/a
+            (->> (css/button {:onClick #(.toggle-chat-small this true)})
+                 (css/add-classes [:toggle-button-small :show-button])
+                 (css/hide-for :medium))
+            (my-dom/span {:classes ["fa fa-comments fa-fw"]}))
+          (my-dom/a
+            (->> (css/button-hollow {:onClick #(.toggle-chat-small this false)})
+                 (css/add-classes [:secondary :toggle-button-small :hide-button])
+                 (css/hide-for :medium))
+            (my-dom/i
+              (css/add-class "fa fa-chevron-right fa-fw")))
+
+          (my-dom/div
+            (css/add-classes [:chat-status])
+            (my-dom/p (css/add-class :sl-tooltip) (my-dom/span nil status-msg)
+                      (my-dom/span (css/add-class :sl-tooltip-text)
+                                   (str (get-in store [:store/profile :store.profile/name]) " is " (if (= true online-status) "online" "offline") " right now")))
+            (photo/store-photo store {:transformation :transformation/thumbnail-tiny})
+            ))
 
 
         (my-dom/div
@@ -178,6 +208,12 @@
           (elements/message-list messages))
         (->ChatInput (om/computed {}
                                   {:on-enter (fn [chat-input]
-                                               (send-message this chat-input))}))))))
+                                               (send-message this chat-input))}))
+        ;(my-dom/div
+        ;  (css/add-classes [ :visitor-count])
+        ;  (my-dom/p (css/add-class :sl-tooltip)
+        ;            (my-dom/i {:classes ["fa fa-user fa-fw"]}) (my-dom/span nil (str visitor-count))
+        ;            (my-dom/span (css/add-classes [:top :sl-tooltip-text]) "Visitors in store right now")))
+        ))))
 
 (def ->StreamChat (om/factory StreamChat))
