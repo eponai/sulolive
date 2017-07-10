@@ -1,0 +1,8 @@
+[
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :shipping.rule/pickup?
+  :db/valueType          :db.type/boolean
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Allow customer to pickup."
+  :db.install/_attribute :db.part/db}
+ ]
