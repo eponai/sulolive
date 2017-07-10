@@ -1,6 +1,7 @@
 (ns env.web.main
   (:require-macros [eponai.common.macros :refer [when-not-timbre-level]])
   (:require [eponai.web.app :as app]
+    [eponai.common.ui-namespaces]
     ;;[eponai.client.devtools :as devtools]
             ))
 

@@ -389,7 +389,7 @@
                                                                 :verbose         true
                                                                 :compiler-stats  true
                                                                 :npm-deps        ~npm-deps
-                                                                :modules         ~(modules "resources/public/release/js/out/")
+                                                                ;; :modules         ~(modules "resources/public/release/js/out/")
                                                                 }}]}}
              :web      {:jvm-opts  ^:replace ["-Xmx3g" "-server"]
                         :cljsbuild {:builds [{:id           "dev"
