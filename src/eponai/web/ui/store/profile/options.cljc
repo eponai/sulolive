@@ -207,7 +207,7 @@
       (dom/p nil (dom/small nil "Your store URL is the link to your SULO store."))
       ;(dom/p nil )
       (dom/p nil
-             (dom/span (css/add-class :host) "https://sulo.live/store/")
+             (dom/span (css/add-class :host) "https://sulo.live/shop/")
              (dom/strong nil (or input-username (:store/username store ""))))
       (dom/div
         (css/add-class :username-input)
@@ -347,7 +347,7 @@
                 (grid/column
                   (css/text-align :right)
                   (dom/p nil
-                         (dom/small nil "https://sulo.live/store/ ")
+                         (dom/small nil "https://sulo.live/shop/ ")
                          (dom/span nil (or (:store/username store)
                                            (:db/id store))))
                   (button/store-setting-default
