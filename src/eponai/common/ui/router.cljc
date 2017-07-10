@@ -121,13 +121,14 @@
 
               fb-token    :query/firebase} (om/props this)]
          (debug "Firebase token: " fb-token)
-         (if (some? auth)
+         (when (some? auth)
            (-> (.auth js/firebase)
                (.signInWithCustomToken (:token fb-token))
                (.catch (fn [err]
                          (debug "Firebase could not sign in: " err))))
-           (-> (.auth js/firebase)
-               (.signInAnonymously)))
+           ;(-> (.auth js/firebase)
+           ;    (.signInAnonymously))
+           )
          (when (some? owned-store)
            (let [fb (shared/by-key this :shared/firebase)
                  presence-ref (firebase/-ref fb (str "presence/" (:db/id auth)))]

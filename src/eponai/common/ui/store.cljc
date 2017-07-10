@@ -157,12 +157,14 @@
                                        (om/update-state! this assoc :visitor-count (count value)))
                                      presence-ref)
          (firebase/-set fb user-ref true)
+
          (firebase/-remove-on-disconnect fb user-ref)
          (om/update-state! this assoc :user-ref user-ref :presence-ref presence-ref))))
   (componentWillUnmount [this]
     #?(:cljs
        (let [{:keys [presence-ref user-ref]} (om/get-state this)
              fb (shared/by-key this :shared/firebase)]
+         (debug "FIREBASE - store unmount remove" user-ref)
          (firebase/-remove fb user-ref)
          (when presence-ref
            (firebase/-off fb presence-ref)))))

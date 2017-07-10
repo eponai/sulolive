@@ -26,6 +26,7 @@
          (let [removes (drop 1 (sort > (keys notifications)))
                updates (reduce (fn [m [_ n]] (assoc m (:notification/id n) nil)) {} (select-keys notifications removes))]
            (when (not-empty updates)
+             (debug "FIREBASE - remove notifications: " removes)
              (firebase/-update fb notifications-ref (clj->js updates)))))
        (om/update-state! component update :notifications (fn [ns] (assoc ns (:timestamp value) notification))))))
 
@@ -75,7 +76,9 @@
              (firebase/-on-child-added fb
                                        (fn [{:keys [key ref value]}]
                                          (if (is-watching-owned-store? (om/props this))
-                                           (firebase/-remove fb ref)
+                                           (do
+                                             (debug "FIREBASE - add then remove notification: " value)
+                                             (firebase/-remove fb ref))
                                            (save-notification this {:key   key
                                                                     :ref   ref
                                                                     :value value})))
@@ -96,7 +99,7 @@
       #?(:cljs
          (when-not (= (:route current-route) (:route (:query/current-route (om/props this))))
            (when (is-watching-owned-store? next-props)
-             (debug "Removing notifications")
+             (debug "FIREBASE - Props Removing notifications")
              (firebase/-remove fb notifications-ref))))))
 
   (render [this]
