@@ -140,10 +140,14 @@
       {:show-chat? show?}))
   (render [this]
     (let [{:keys [show-chat? store-online]} (om/get-state this)
-          messages (get-messages this)
           {:keys [stream-overlay? store store-chat-status visitor-count]} (om/get-computed this)
           online-status (:store/chat-online store-chat-status)
-          status-msg (status-message online-status)]
+          welcome-msg (if (< 1 visitor-count)
+                        "Other users are in this store, try to say hi"
+                        "Use the chat to hangout with store owners and other users")
+          messages (or (not-empty (get-messages this)) [{:chat.message/user :automatic :chat.message/text welcome-msg}])
+          status-msg (status-message online-status) ]
+      (debug "Chat messages: " messages)
       (debug "Store online: " (:store/chat-online store-chat-status))
       (my-dom/div
         (cond->> (css/add-class :chat-container)
@@ -168,7 +172,7 @@
               (css/add-class "fa fa-chevron-right fa-fw")))
 
           (my-dom/div
-            (css/add-classes [:chat-status])
+            (css/add-classes [ :chat-status])
             (my-dom/p (css/add-class :sl-tooltip) (my-dom/span nil status-msg)
                       (my-dom/span (css/add-class :sl-tooltip-text)
                                    (str (get-in store [:store/profile :store.profile/name]) " is " (if (= true online-status) "online" "offline") " right now")))
@@ -182,10 +186,11 @@
         (->ChatInput (om/computed {}
                                   {:on-enter (fn [chat-input]
                                                (send-message this chat-input))}))
-        (my-dom/div
-          (css/add-classes [:visitor-count])
-          (my-dom/p (css/add-class :sl-tooltip)
-                    (my-dom/i {:classes ["fa fa-user fa-fw"]}) (my-dom/span nil (str visitor-count))
-                    (my-dom/span (css/add-classes [:top :sl-tooltip-text]) "Visitors in store right now")))))))
+        ;(my-dom/div
+        ;  (css/add-classes [ :visitor-count])
+        ;  (my-dom/p (css/add-class :sl-tooltip)
+        ;            (my-dom/i {:classes ["fa fa-user fa-fw"]}) (my-dom/span nil (str visitor-count))
+        ;            (my-dom/span (css/add-classes [:top :sl-tooltip-text]) "Visitors in store right now")))
+        ))))
 
 (def ->StreamChat (om/factory StreamChat))

@@ -53,7 +53,8 @@
        (let [{:query/keys [auth]} (om/props this)
              {:keys [notifications-ref]} (om/get-state this)
              fb (shared/by-key this :shared/firebase)]
-         (firebase/-off fb notifications-ref))))
+         (when fb
+           (firebase/-off fb notifications-ref)))))
 
   (componentWillMount [this]
     #?(:cljs

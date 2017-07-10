@@ -150,7 +150,7 @@
     #?(:cljs
        (let [{:query/keys [store]} (om/props this)
              fb (shared/by-key this :shared/firebase)
-             presence-ref (firebase/-ref fb (str "presence/stores" (:db/id store)))
+             presence-ref (firebase/-ref fb (str "presence/stores/" (:db/id store)))
              user-ref (firebase/-push fb presence-ref)]
          (firebase/-on-value-changed fb
                                      (fn [{:keys [value]}]
@@ -164,7 +164,8 @@
        (let [{:keys [presence-ref user-ref]} (om/get-state this)
              fb (shared/by-key this :shared/firebase)]
          (firebase/-remove fb user-ref)
-         (firebase/-off fb presence-ref))))
+         (when presence-ref
+           (firebase/-off fb presence-ref)))))
   (initLocalState [this]
     {:selected-navigation :all-items})
   (render [this]
@@ -225,8 +226,8 @@
                                                  {:on-toggle-chat    (fn [show?]
                                                                        (om/update-state! this assoc :show-chat? show?))
                                                   :store             store
-                                                  :visitor-count     visitor-count
                                                   :stream-overlay?   true
+                                                  :visitor-count     visitor-count
                                                   :show?             show-chat?
                                                   :store-chat-status store-chat-status}))))
 

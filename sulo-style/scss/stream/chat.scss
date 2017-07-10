@@ -203,8 +203,8 @@
 		padding-left: 0.5rem;
 	}
 	.message-input-container {
-		padding: 0 0.5rem;
-		// padding-top: 0;
+		padding: 0.5rem;
+		padding-top: 0;
 	}
 	.message-container {
 		.message-photo {
@@ -219,6 +219,12 @@
 			}
 			strong {
 				color: darken($medium-gray, 5%);
+			}
+		}
+		.message-auto {
+			color: $medium-gray;
+			span {
+				font-style: italic;
 			}
 		}
 	}
