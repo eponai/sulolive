@@ -103,7 +103,8 @@
     (-timestamp [this]
       js/firebase.database.ServerValue.TIMESTAMP)
     (-add-connected-listener [this ref {:keys [on-connect on-disconnect]}]
-      (let [am-online (-ref this ".info/connected")]
+      (let [am-online (-> (.database js/firebase)
+                          (.ref ".info/connected"))]
         (.on am-online "value" (fn [snapshot]
                                  (when (.val snapshot)
                                    (-> (.onDisconnect ref)
