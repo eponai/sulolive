@@ -142,7 +142,7 @@
     (let [{:keys [show-chat? store-online]} (om/get-state this)
           {:keys [stream-overlay? store store-chat-status visitor-count]} (om/get-computed this)
           online-status (:store/chat-online store-chat-status)
-          welcome-msg (if (< 1 visitor-count)
+          welcome-msg (if (and (number? visitor-count) (< 1 visitor-count))
                         "Other users are in this store, try to say hi"
                         "Use the chat to hangout with store owners and other users")
           messages (or (not-empty (get-messages this)) [{:chat.message/user :automatic :chat.message/text welcome-msg}])

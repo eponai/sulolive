@@ -202,21 +202,22 @@
             (dom/span nil "SULO"))
 
           (menu/item
-            nil
+            (css/show-for :medium)
             (dom/a {:href    (if locations
                                (routes/url :index {:locality (:sulo-locality/path locations)})
                                (routes/url :landing-page))
                     :onClick #(mixpanel/track "Store: Go back to marketplace" {:source "navbar"})}
-                   (dom/strong nil (dom/small nil "Back to marketplace"))))))
+                   (dom/strong nil (dom/small nil "Back to marketplace"))))
+          (menu/item-link
+            (->> {:href (routes/store-url owned-store :store (:route-params current-route))}
+                 (css/add-class :chat-notifications))
+            (note/->Notifications (om/computed notification {:style :style/navbar})))))
 
       (dom/div
         (css/add-class :top-bar-right)
         (menu/horizontal
           nil
-          (menu/item-link
-            {:href (routes/store-url owned-store :store-dashboard/stream (:route-params current-route))}
-            (note/->Notifications notification)
-            )
+
           (menu/item-link
             (->> {:href    (routes/store-url owned-store :store (:route-params current-route))
                   :classes ["store-name"]})
@@ -225,7 +226,7 @@
 
 (defn standard-navbar [component]
   (let [{:proxy/keys [notification]
-         :query/keys [cart loading-bar current-route locations auth]} (om/props component)]
+         :query/keys [owned-store cart loading-bar current-route locations auth]} (om/props component)]
 
     [(navbar-content
        nil
@@ -268,6 +269,10 @@
                nil
                (dom/a {:href (routes/url :about)}
                       (dom/strong nil (dom/small nil "About us")))))
+           (when (some? owned-store)
+             (menu/item-link
+               (css/add-class :chat-notifications {:href (routes/store-url owned-store :store)})
+               (note/->Notifications (om/computed notification {:style :style/navbar}))))
            (user-menu-item component)
            (when (some? auth)
              (menu/item
@@ -278,7 +283,7 @@
                       (icons/shopping-bag)
                       (when (< 0 (count (:user.cart/items cart)))
                         (dom/span (css/add-class :badge) (count (:user.cart/items cart))))))))))
-     (note/->Notifications notification)]))
+     (note/->Notifications (om/computed notification {:style :style/popup}))]))
 
 (defui Navbar
   static om/IQuery

@@ -38,6 +38,14 @@
     (and (contains? #{:store :store-dashboard/stream} route)
          (contains? #{(str (:db/id owned-store)) (:store/username owned-store)} (:store-id route-params)))))
 
+(defn navbar-notification [component]
+  (let [{:keys [notifications]} (om/get-state component)]
+    (dom/div
+      (css/add-class :sulo-notification)
+      (dom/span (css/add-classes [:icon :icon-chat]))
+      (when (pos? (count notifications))
+        (dom/p nil (dom/span (css/add-classes [:alert :badge]) (count notifications)))))))
+
 (defui Notifications
   static om/IQuery
   (query [_]
@@ -53,7 +61,7 @@
        (let [{:query/keys [auth]} (om/props this)
              {:keys [notifications-ref]} (om/get-state this)
              fb (shared/by-key this :shared/firebase)]
-         (when fb
+         (when notifications-ref
            (firebase/-off fb notifications-ref)))))
 
   (componentWillMount [this]
@@ -91,32 +99,32 @@
     (let [{:query/keys [owned-store current-route]} (om/props this)
           {:keys [notifications]} (om/get-state this)
           {:keys [route route-params]} current-route
+          {:keys [style]} (om/get-computed this)
           fb (shared/by-key this :shared/firebase)
           remove-ref (fn [r] #?(:cljs (firebase/-remove fb r)))]
       (debug "Notification route: " current-route)
       (dom/div
-        {:id "sulo-notifications"}
-        (if (and (some? route) (or (= route :store-dashboard) (= (namespace route) "store-dashboard")))
-          (dom/div
-            (css/add-class :sulo-notification)
-            (dom/span (css/add-classes [:icon :icon-chat]))
-            (when (pos? (count notifications))
-              (dom/p nil (dom/span (css/add-classes [:alert :badge]) (count notifications)))))
-          (map (fn [[timestamp {:notification/keys [payload id ref]}]]
-                 (let [{:payload/keys [title subtitle body]} payload]
-                   (callout/callout
-                     (css/add-classes [:sulo :sulo-notification])
-                     (dom/a
-                       {:href    (routes/store-url owned-store :store)
-                        :onClick #(remove-ref ref)}
-                       (dom/span (css/add-classes [:icon :icon-chat]))
-                       (dom/p nil
-                              (dom/strong nil title)
-                              (dom/br nil)
-                              (dom/strong nil (dom/small nil subtitle))
-                              (dom/br nil)
-                              (dom/small nil body)))
-                     (dom/a (css/add-class :close-button {:onClick #(remove-ref ref)}) "x"))))
-               notifications))))))
+        {:id "sulo-notifications" :classes ["sulo-notifications" (name (or style "popup"))]}
+        (cond (= style :style/navbar)
+              (navbar-notification this)
+              :else
+              (when-not (and (some? route) (or (= route :store-dashboard)
+                                               (= (namespace route) "store-dashboard")))
+                (map (fn [[timestamp {:notification/keys [payload id ref]}]]
+                       (let [{:payload/keys [title subtitle body]} payload]
+                         (callout/callout
+                           (css/add-classes [:sulo :sulo-notification])
+                           (dom/a
+                             {:href    (routes/store-url owned-store :store)
+                              :onClick #(remove-ref ref)}
+                             (dom/span (css/add-classes [:icon :icon-chat]))
+                             (dom/p nil
+                                    (dom/strong nil title)
+                                    (dom/br nil)
+                                    (dom/strong nil (dom/small nil subtitle))
+                                    (dom/br nil)
+                                    (dom/small nil body)))
+                           (dom/a (css/add-class :close-button {:onClick #(remove-ref ref)}) "x"))))
+                     notifications)))))))
 
 (def ->Notifications (om/factory Notifications))

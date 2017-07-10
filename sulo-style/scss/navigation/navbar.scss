@@ -66,14 +66,13 @@
 			min-width: 2rem;
 		}
 	}
-	.icon {
-		width: 24px;
-		height: 24px;
-		opacity: 1;
-	}
+
 	.shopping-bag-icon {
 		position: relative;
 		display: block;
+		.icon {
+			opacity: 0.7;
+		}
 		$color: map-get($foundation-palette, search);
 		// align-items: top;
 		// .badge-container {
@@ -104,6 +103,9 @@
 		pointer-events: none;
 		color: $medium-gray;
 		// text-decoration: line-through;
+	}
+	li a.chat-notifications {
+		padding: 0.5rem $global-padding;
 	}
 }
 
