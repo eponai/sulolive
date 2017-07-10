@@ -208,10 +208,10 @@
                                (routes/url :landing-page))
                     :onClick #(mixpanel/track "Store: Go back to marketplace" {:source "navbar"})}
                    (dom/strong nil (dom/small nil "Back to marketplace"))))
-          (menu/item-link
-            (->> {:href (routes/store-url owned-store :store (:route-params current-route))}
-                 (css/add-class :chat-notifications))
-            (note/->Notifications (om/computed notification {:style :style/navbar})))))
+          (menu/item
+            (css/add-class :chat-notifications)
+            (note/->Notifications (om/computed notification {:href (routes/store-url owned-store :store (:route-params current-route))
+                                                             :type :notification.type/chat})))))
 
       (dom/div
         (css/add-class :top-bar-right)
@@ -270,9 +270,10 @@
                (dom/a {:href (routes/url :about)}
                       (dom/strong nil (dom/small nil "About us")))))
            (when (some? owned-store)
-             (menu/item-link
-               (css/add-class :chat-notifications {:href (routes/store-url owned-store :store)})
-               (note/->Notifications (om/computed notification {:style :style/navbar}))))
+             (menu/item
+               (css/add-class :chat-notifications)
+               (note/->Notifications (om/computed notification {:type :notification.type/chat
+                                                                :href (routes/store-url owned-store :store)}))))
            (user-menu-item component)
            (when (some? auth)
              (menu/item
@@ -283,7 +284,8 @@
                       (icons/shopping-bag)
                       (when (< 0 (count (:user.cart/items cart)))
                         (dom/span (css/add-class :badge) (count (:user.cart/items cart))))))))))
-     (note/->Notifications (om/computed notification {:style :style/popup}))]))
+     ;(note/->Notifications (om/computed notification {:type :notification.type/chat}))
+     ]))
 
 (defui Navbar
   static om/IQuery

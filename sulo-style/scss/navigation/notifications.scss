@@ -52,27 +52,33 @@
 		}
 	}
 
-	&.navbar {
+	&.chat {
 		.sulo-notification {
 			i {
 				margin-right: 0;
+				font-size: 1.25rem;
+				color: rgba($black, 0.25);
+				&.is-active {
+					color: $sulo-dark-color;
+				}
 			}
 		}
 		position: relative;
 		align-items: center;
 		display: flex;
-		.icon {
-			width: 24px;
-			height: 24px;
-		}
-		p {
-			font-size: 0.8rem;
+		// .icon {
+		// 	width: 24px;
+		// 	height: 24px;
+		// }
+		.badge {
+			// font-size: 0.75rem;
+			font-weight: $global-weight-bold;
 			position: absolute;
 			// top: 0;
-			bottom: 40%;
+			bottom: 45%;
 			margin: 0;
 			left: 50%;
-			padding: 0.05rem;
+			// padding: 0.05rem;
 		}
 	}
 }

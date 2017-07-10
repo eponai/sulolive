@@ -113,20 +113,23 @@
     ;; Refs
     (-ref [this path]
       (-> (.database js/firebase)
-          (.ref path)))
+          (.ref (str "v1/" path))))
 
     (-ref-notifications [this user-id]
-      (-ref this (str "notifications/" user-id)))
+      (-> (-ref this (str "notifications/" user-id))
+          (.limitToLast 100)))
 
     (-limit-to-last [this n ref]
       (.limitToLast ref n))
 
     (-remove [this ref]
+      (debug "FIREBASE removed: " ref)
       (.remove ref))
 
     (-push [this ref]
       (.push ref))
     (-set [this ref v]
+      (debug "Setting value: " v)
       (.set ref v))
     (-update [this ref v]
       (.update ref v))

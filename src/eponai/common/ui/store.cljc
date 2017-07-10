@@ -150,7 +150,7 @@
     #?(:cljs
        (let [{:query/keys [store]} (om/props this)
              fb (shared/by-key this :shared/firebase)
-             presence-ref (firebase/-ref fb (str "presence/stores/" (:db/id store)))
+             presence-ref (firebase/-ref fb (str "visitors/" (:db/id store)))
              user-ref (firebase/-push fb presence-ref)]
          (firebase/-on-value-changed fb
                                      (fn [{:keys [value]}]

@@ -300,7 +300,7 @@
   (run (merge {
                :shared/auth0    :env/dev
                :shared/firebase :env/prod
-               :shared/photos   :env/prod
+               :shared/photos   :env/dev
                :shared/login    (auth/login reconciler-atom)
                :shared/modules  (modules/dev-modules router/routes)
                }

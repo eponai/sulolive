@@ -15,7 +15,6 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.mixpanel :as mixpanel]
     [eponai.common.format.date :as date]
-    #?(:cljs [eponai.web.firebase :as fb])
     [eponai.web.ui.photo :as photo]))
 
 (def hour-in-millis (* 3600 1000))
