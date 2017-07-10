@@ -435,7 +435,7 @@
     (let [store (db/entity db store-id)
           chat (:system/chat system)
           _ (when chat-update-basis-t
-              (chat/sync-up-to! chat chat-update-basis-t))
+              (chat/sync-up-to! chat store chat-update-basis-t))
           chat-reader (chat/store-chat-reader chat (when (datomic/is-filtered db)
                                                      (.getFilter ^Db db)))]
       {:value (-> (if (nil? read-basis-t-for-this-key)

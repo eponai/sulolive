@@ -205,6 +205,7 @@
          [:db/add chat-id :chat/messages message-id]]
         (with-meta {::message-id message-id
                     ::chat-id    chat-id}))))
+
 (defn photo [url]
   {:pre [(string? url)]}
   {:db/id      (db/tempid :db.part/user)

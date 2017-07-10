@@ -31,7 +31,7 @@
                    :system/aws-elb
                    :system/aws-s3
                    :system/chat
-                   :system/chat-datomic
+                   ;; :system/chat-datomic
                    :system/chat-websocket
                    :system/client-env
                    :system/cloudinary
@@ -65,12 +65,15 @@
                              (:cloudinary-api-key env)
                              (:cloudinary-api-secret env)
                              (:in-prod? config))
-   :system/chat            (c/using (chat/map->DatomicChat {})
-                                    {:chat-datomic :system/chat-datomic
+   :system/chat            (c/using (chat/map->FirebaseStoreChat {})
+                                    {:firebase     :system/firebase
                                      :sulo-datomic :system/datomic})
-   :system/chat-datomic    (datomic/map->Datomic
-                             {:db-url           (:chat-db-url env)
-                              :add-mocked-data? false})
+   ;:system/chat            (c/using (chat/map->DatomicChat {})
+   ;                                {:chat-datomic :system/chat-datomic
+   ;                                 :sulo-datomic :system/datomic})
+   ;:system/chat-datomic    (datomic/map->Datomic
+   ;                          {:db-url           (:chat-db-url env)
+   ;                           :add-mocked-data? false})
    :system/chat-websocket  (c/using (websocket/map->StoreChatWebsocket {})
                                     {:chat :system/chat})
    :system/client-env      (client-env/map->ClientEnvironment

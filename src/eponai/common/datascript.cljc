@@ -34,6 +34,8 @@
          :category/path                     {:db/index true}
          :category/name                     {:db/index true}
          :store.item/name                   {:db/index true}
+
+         :chat.message/id                   {:db/unique :db.unique/identity}
          }
         browse/browse-datascript-schema))
 

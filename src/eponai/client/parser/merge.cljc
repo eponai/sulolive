@@ -137,8 +137,11 @@
     (db/datoms db :aevt attr)))
 
 (defmethod client-merge :query/chat
-  [db k {:keys [sulo-db-tx chat-db-tx]}]
-  (let [chat-db (-> (client.chat/get-or-create-chat-db db)
+  [db k {:keys [sulo-db-tx chat-db-tx] :as v}]
+  (debug "MERGING query/chat: " v)
+  (let [chat-db (client.chat/get-or-create-chat-db db)
+        _ (debug "chat.message/user schema: " (get-in (:schema chat-db) [:chat.message/user]))
+        chat-db (-> chat-db
                     (db-with chat-db-tx)
                     (client.chat/trim-chat-messages client.chat/message-limit))
         ;; datascript can't have refs without having the ref in the same database. Lame.
