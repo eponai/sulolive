@@ -7,8 +7,7 @@
     [eponai.common :as c]
     [eponai.common.format.date :as date]
     [buddy.core.codecs.base64 :as b64]
-    [com.stuartsierra.component :as component]
-    [suspendable.core :as suspendable])
+    [com.stuartsierra.component :as component])
   (:import (com.google.firebase FirebaseOptions$Builder FirebaseApp)
            (com.google.firebase.auth FirebaseAuth FirebaseCredentials)
            (com.google.firebase.database FirebaseDatabase DatabaseReference ValueEventListener DataSnapshot DatabaseError )
@@ -60,23 +59,27 @@
   "Returns the value snapshot for a db ref"
   (.getValue (ref->snapshot ref)))
 
+(defn- create-firebase-db [service-account]
+  (when (some? service-account)
+    (let [service-account-dec (b64/decode service-account)
+          ;; Initialize app once.
+          firebase-app (if (not-empty (FirebaseApp/getApps))
+                         (FirebaseApp/getInstance)
+                         (with-open [service-account (io/input-stream service-account-dec)]
+                           (let [opts (-> (FirebaseOptions$Builder.)
+                                          (.setCredential (FirebaseCredentials/fromCertificate service-account))
+                                          (.setDatabaseUrl firebase-db)
+                                          (.build))]
+                             (FirebaseApp/initializeApp opts))))]
+      ;; Once the app has been initialized, get the db instance.
+      (FirebaseDatabase/getInstance ^FirebaseApp firebase-app))))
+
 (defrecord Firebase [server-key private-key private-key-id service-account]
   component/Lifecycle
   (start [this]
     (if (:database this)
       this
-      (let [service-account-dec (b64/decode service-account)
-            ;; Initialize app once.
-            firebase-app (if (not-empty (FirebaseApp/getApps))
-                           (FirebaseApp/getInstance)
-                           (with-open [service-account (io/input-stream service-account-dec)]
-                             (let [opts (-> (FirebaseOptions$Builder.)
-                                            (.setCredential (FirebaseCredentials/fromCertificate service-account))
-                                            (.setDatabaseUrl firebase-db)
-                                            (.build))]
-                               (FirebaseApp/initializeApp opts))))
-            ;; Once the app has been initialized, get the db instance.
-            db (FirebaseDatabase/getInstance ^FirebaseApp firebase-app)]
+      (let [db (create-firebase-db service-account)]
         (assoc this :database db
                     :refs {:notifications (.getReference db "notifications")
                            :tokens        (.getReference db "tokens")
