@@ -40,19 +40,20 @@
                                ))
 
       (dom/div
-        (->> (css/add-class :header)
-             (css/add-class :text))
+        (css/add-classes [:header :text :sl-tooltip])
         (dom/a {:onClick on-click
                 :href    goods-href}
-               (dom/span nil item-name)))
+               (dom/span nil item-name))
+        (when store-online?
+          (dom/small (css/add-class :sl-tooltip-text) (str (:store.profile/name (:store/profile store)) " is online right now, say hi in their store."))))
       (dom/a
-        (css/add-classes [:text :store-name] {:href (routes/store-url store :store)})
+        (css/add-classes [:text :store-name :sl-tooltip] {:href (routes/store-url store :store)})
 
         (dom/small
           nil
-          (str "by " "Willow and stump furniture design"
-               ;(:store.profile/name (:store/profile store))
-               )))
+          (str "by " (:store.profile/name (:store/profile store))))
+        (when store-online?
+          (dom/small (css/add-class :sl-tooltip-text) (str (:store.profile/name (:store/profile store)) " is online right now, say hi in their store."))))
 
       (dom/div
         (css/add-class :text)

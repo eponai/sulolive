@@ -6,7 +6,7 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 		margin-bottom: 0.5rem;
 	}
 	.text {
-		a, small, div {
+		a, small:not(.sl-tooltip-text), div {
 			@include wrap-text;
 		}
 		display: flex;
