@@ -70,7 +70,7 @@
 (defn snapshot->map [snapshot]
   {:key   (.-key snapshot)
    :ref   (.-ref snapshot)
-   :value (js->clj (.val snapshot) :keywordize-keys true)})
+   :value (js->clj (.val snapshot))})
 
 (defprotocol IFirebase
   (-ref [this path])
@@ -90,7 +90,8 @@
   (-off [this ref])
   (-on-value-changed [this f ref])
   (-on-child-added [this f ref])
-  (-on-child-removed [this f ref ]))
+  (-on-child-removed [this f ref ])
+  (-once [this f ref]))
 
 (defonce fb-initialized? (atom false))
 
@@ -148,7 +149,9 @@
     (-on-child-added [this f ref]
       (.on ref "child_added" (fn [snapshot] (f (snapshot->map snapshot)))))
     (-on-child-removed [this f ref]
-      (.on ref "child_removed" (fn [snapshot] (f (snapshot->map snapshot)))))))
+      (.on ref "child_removed" (fn [snapshot] (f (snapshot->map snapshot)))))
+    (-once [this f ref]
+      (.once ref "value" (fn [snapshot] (f (snapshot->map snapshot)))))))
 
 (defmethod shared/shared-component [:shared/firebase :env/dev]
   [reconciler _ _]

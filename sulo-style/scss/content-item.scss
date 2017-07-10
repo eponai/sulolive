@@ -12,6 +12,62 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 		display: flex;
 		justify-content: center;
 	}
+	&.product-item {
+		&.is-online {
+			.store-name {
+				position: relative;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				&::after {
+					content:'online';
+					flex: 0 0 auto;
+					right: 0;
+					font-size: 70%;
+					// position: absolute;
+					// border-radius: 50%;
+					// width: 10px;
+					// height: 10px;
+					color: $white;
+					padding: 0 0.25rem;
+					border-radius: $global-radius;
+					background: $success-color;
+				}
+				&::before {
+					content:'online';
+					flex: 0 0 auto;
+					font-size: 70%;
+					color: transparent;
+					padding: 0 0.25rem;
+					// position: absolute;
+					// width: 10px;
+					// height: 10px;
+				}
+
+				// background: $success-color;
+				// color: $white;
+			}
+		}
+		.photo-container {
+			position: relative;
+			.online-status {
+				$online-color: lighten($success-color, 10%);
+				position: absolute;
+				bottom: 0;
+				right: 0;
+				margin: 0;
+				padding: 0.25rem 0.5rem;
+				background: rgba($online-color, 0.7);
+				border-radius: $global-radius;
+				color: $white;
+				text-transform: uppercase;
+				font-size: 70%;
+				font-weight: $global-weight-bold;
+				letter-spacing: 0.5px;
+			}
+		}
+	
+	}
 
 	&.stream-item {
 		a {

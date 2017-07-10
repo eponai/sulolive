@@ -12,10 +12,13 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.web.ui.photo :as photo]
     [clojure.string :as string]
-    [cemerick.url :as url]))
+    [cemerick.url :as url]
+    #?(:cljs
+       [eponai.web.firebase :as firebase])
+    [eponai.common.shared :as shared]))
 
 (defn product-element [opts product & children]
-  (let [{:keys [on-click open-url?]} opts
+  (let [{:keys [on-click open-url? store-online?]} opts
         goods-href (when (or open-url? (nil? on-click)) (product/product-url product))
         on-click (when-not open-url? on-click)
         {:store.item/keys [photos price]
@@ -23,27 +26,33 @@
          store            :store/_items} product
         {:store.item.photo/keys [photo]} (first (sort-by :store.item.photo/index photos))]
     (dom/div
-      (->> (css/add-class :content-item)
-           (css/add-class :product-item))
+      (cond->> (css/add-classes [:content-item :product-item])
+               store-online?
+               (css/add-class :is-online))
+
       (dom/a
         (->> {:onClick on-click
               :href    goods-href}
              (css/add-class :primary-photo))
-        (photo/product-preview product))
+        (photo/product-preview product nil
+                               ;(when store-online?
+                               ;              (dom/p (css/add-class :online-status) "online"))
+                               ))
 
       (dom/div
         (->> (css/add-class :header)
-            (css/add-class :text))
+             (css/add-class :text))
         (dom/a {:onClick on-click
                 :href    goods-href}
                (dom/span nil item-name)))
-      (dom/div
-        (css/add-class :text)
+      (dom/a
+        (css/add-classes [:text :store-name] {:href (routes/store-url store :store)})
+
         (dom/small
           nil
-          (dom/span nil "by ")
-          (dom/a {:href (routes/store-url store :store)}
-                 (dom/span nil (:store.profile/name (:store/profile store))))))
+          (str "by " "Willow and stump furniture design"
+               ;(:store.profile/name (:store/profile store))
+               )))
 
       (dom/div
         (css/add-class :text)
@@ -59,20 +68,32 @@
     #?(:cljs (om/update-state! this assoc :breakpoint (utils/breakpoint js/window.innerWidth))))
   (componentDidMount [this]
     #?(:cljs (.addEventListener js/window "resize" (:resize-listener (om/get-state this)))))
+  (componentWillMount [this]
+    #?(:cljs
+       (let [fb (shared/by-key this :shared/firebase)
+             {:keys [product]} (om/props this)
+             store-owner (-> product :store/_items :store/owners :store.owner/user)
+             presence-ref (firebase/-ref fb "presence")]
+         (firebase/-once fb (fn [snapshot]
+                              (let [is-online? (= true (get (:value snapshot) (str (:db/id store-owner))))]
+                                (om/update-state! this assoc :store-online? is-online?)))
+                         presence-ref))))
+
   (componentWillUnmount [this]
     #?(:cljs (.removeEventListener js/window "resize" (:resize-listener (om/get-state this)))))
 
   (render [this]
     (let [{:keys [product]} (om/props this)
           {:keys [display-content]} (om/get-computed this)
-          {:keys [show-item? breakpoint]} (om/get-state this)
+          {:keys [show-item? breakpoint store-online?]} (om/get-state this)
           on-click #(om/update-state! this assoc :show-item? true)
           #?@(:cljs [open-url? (utils/bp-compare :large breakpoint >)]
               :clj  [open-url? false])]
 
       (product-element
-        {:on-click on-click
-         :open-url? open-url?}
+        {:on-click      on-click
+         :open-url?     open-url?
+         :store-online? store-online?}
         product
         (when show-item?
           (common/modal {:on-close #(om/update-state! this assoc :show-item? false)

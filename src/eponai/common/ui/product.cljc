@@ -78,6 +78,7 @@
                             :category/name]}
      {:store/_items [{:store/profile [{:store.profile/photo [:photo/path :photo/id]}
                                       :store.profile/name]}
+                     {:store/owners [:store.owner/user]}
                      {:store/locality [:sulo-locality/path]}
                      {:store/shipping [{:shipping/rules [{:shipping.rule/destinations [:country/code]}]}]}
                      {:store/status [:status/type]}
