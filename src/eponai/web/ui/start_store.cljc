@@ -172,7 +172,7 @@
                                :defaultValue ""}
                               input-validation
                               (dom/option {:value    ""
-                                           :disabled true} "Select locality")
+                                           :disabled true} "--- Select locality ---")
                               (map (fn [l]
                                      (dom/option {:value (:db/id l)} (:sulo-locality/title l)))
                                    sulo-localities))

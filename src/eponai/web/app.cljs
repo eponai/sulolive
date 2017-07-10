@@ -240,7 +240,6 @@
                                        :shared/login               login
                                        :shared/photos              photos
                                        :instrument                 (::plomber run-options)})]
-    (firebase/initialize reconciler)
 
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
@@ -258,6 +257,8 @@
           (async/<! initial-merge-chan)
           (debug "init user cart...")
           (init-user-cart! reconciler)
+          (debug "init firebase...")
+          (firebase/initialize reconciler)
           (debug "Adding reconciler to root!")
           (add-root! reconciler)
           ; Pre fetch data which makes the site less jumpy

@@ -74,9 +74,13 @@
    :system/chat-websocket  (c/using (websocket/map->StoreChatWebsocket {})
                                     {:chat :system/chat})
    :system/client-env      (client-env/map->ClientEnvironment
-                             {:client-env (select-keys env [:stripe-publishable-key
-                                                            :auth0-client-id
-                                                            :auth0-domain])})
+                             {:client-env (select-keys env [;; Stripe
+                                                            :stripe-publishable-key
+                                                            ;; Auth0
+                                                            :auth0-client-id :auth0-domain
+                                                            ;; Firebase
+                                                            :firebase-api-key :firebase-auth-domain :firebase-database-url
+                                                            :firebase-project-id :firebase-storage-bucket :firebase-messaging-sender-id])})
    :system/datomic         (datomic/map->Datomic
                              {:db-url           (:db-url env)
                               :provided-conn    (::provided-conn config)
@@ -115,7 +119,8 @@
                                        :index-name       (:elastic-cloud-index-name env)})
                                     {:server-address :system/server-address})
    :system/firebase        (firebase/firebase {:server-key      (:firebase-server-key env)
-                                               :service-account (:firebase-service-account env)})
+                                               :service-account (:firebase-service-account env)
+                                               :database-url    (:firebase-database-url env)})
    :system/mailchimp       (mailchimp/mail-chimp (:mailchimp-api-key env))
    :system/stripe          (stripe/stripe (:stripe-secret-key env))
    :system/taxjar          (taxjar/taxjar (:taxjar-api-key env))
@@ -215,7 +220,7 @@
   {:post [(= (set (keys %)) system-keys)]}
   (fake-system (dev-config config)
                ;; Put keys under here to use the real implementation
-               :system/stripe
+               ;:system/stripe
                :system/firebase
                ;:system/auth0
                ;:system/auth0management

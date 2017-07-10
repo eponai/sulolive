@@ -3,7 +3,8 @@
     [taoensso.timbre :refer [debug]]
     [om.next :as om]
     [eponai.common.format.date :as date]
-    [eponai.common.shared :as shared]))
+    [eponai.common.shared :as shared]
+    [eponai.common.database :as db]))
 
 
 (defn request-permission [messaging & [f-success f-error]]
@@ -40,12 +41,15 @@
                           )))
 
 (defn initialize [reconciler]
-  (.initializeApp js/firebase #js{:apiKey            "AIzaSyBS99Iuv0WAacB4ain4zQMahksDrt6jmJY"
-                                  :authDomain        "leafy-firmament-160421.firebaseapp.com"
-                                  :databaseURL       "https://leafy-firmament-160421.firebaseio.com"
-                                  :projectId         "leafy-firmament-160421"
-                                  :storageBucket     "leafy-firmament-160421.appspot.com"
-                                  :messagingSenderId "252203166563"})
+  (let [{:keys [firebase-api-key firebase-auth-domain firebase-database-url
+                firebase-project-id firebase-storage-bucket firebase-messaging-sender-id]}
+        (db/singleton-value (db/to-db reconciler) :ui.singleton.client-env/env-map)]
+    (.initializeApp js/firebase #js{:apiKey            firebase-api-key
+                                    :authDomain        firebase-auth-domain
+                                    :databaseURL       firebase-database-url
+                                    :projectId         firebase-project-id
+                                    :storageBucket     firebase-storage-bucket
+                                    :messagingSenderId firebase-messaging-sender-id}))
   ;; TODO enable when we want to activate Web push notifications.
   ;; We might want to think about when to ask the user's permission first.
   (comment

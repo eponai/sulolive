@@ -13,10 +13,6 @@
            (com.google.firebase.database FirebaseDatabase DatabaseReference ValueEventListener DataSnapshot DatabaseError)
            (com.google.firebase.tasks OnSuccessListener)))
 
-
-
-(def firebase-db "https://leafy-firmament-160421.firebaseio.com/")
-
 (defprotocol IFirebaseNotifications
   (-send [this user-id data])
   (-register-device-token [this user-id token])
@@ -59,25 +55,25 @@
   "Returns the value snapshot for a db ref"
   (.getValue (ref->snapshot ref)))
 
-(defn- create-firebase-db [service-account]
+(defn- create-firebase-db [service-account database-url]
   ;; Initialize app once.
   (let [firebase-app (if (not-empty (FirebaseApp/getApps))
                        (FirebaseApp/getInstance)
                        (with-open [service-account (io/input-stream (b64/decode service-account))]
                          (let [opts (-> (FirebaseOptions$Builder.)
                                         (.setCredential (FirebaseCredentials/fromCertificate service-account))
-                                        (.setDatabaseUrl firebase-db)
+                                        (.setDatabaseUrl database-url)
                                         (.build))]
                            (FirebaseApp/initializeApp opts))))]
     ;; Once the app has been initialized, get the db instance.
     (FirebaseDatabase/getInstance ^FirebaseApp firebase-app)))
 
-(defrecord Firebase [server-key private-key private-key-id service-account]
+(defrecord Firebase [server-key private-key private-key-id service-account database-url]
   component/Lifecycle
   (start [this]
     (if (:database this)
       this
-      (let [db (create-firebase-db service-account)]
+      (let [db (create-firebase-db service-account database-url)]
         (assoc this :database db
                     :refs {:notifications (.getReference db "v1/notifications")
                            :tokens        (.getReference db "v1/tokens")
@@ -149,11 +145,12 @@
     (-get-device-token [this user-id]
       "some token")))
 
-(defn firebase [{:keys [server-key private-key private-key-id service-account]}]
+(defn firebase [{:keys [server-key private-key private-key-id service-account database-url]}]
   (if (some? service-account)
     (map->Firebase {:service-account service-account
                     :server-key      server-key
                     :private-key     private-key
-                    :private-key-id  private-key-id})
+                    :private-key-id  private-key-id
+                    :database-url    database-url})
     (do (warn "Got nil for service account. Using firebase-stub.")
         (firebase-stub))))

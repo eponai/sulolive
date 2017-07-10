@@ -57,8 +57,11 @@
                   (menu/item
                     nil
                     (dom/select
-                      {:value    (:db/id locations)
+                      {:value    (or (:db/id locations) "")
                        :onChange #(.change-location this (.-value (.-target %)))}
+                      (dom/option {:value ""
+                                   :disabled true}
+                                  "--- Select locality ---")
                       (map (fn [l]
                              (dom/option
                                {:value (:db/id l)} (:sulo-locality/title l)))
