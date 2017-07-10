@@ -292,7 +292,7 @@
   (when-not-timbre-level
     (timbre/set-level! :debug))
   (run (merge {:shared/auth0    :env/dev
-               :shared/firebase :env/dev
+               :shared/firebase :env/prod
                :shared/photos   :env/dev
                :shared/login    (auth/login reconciler-atom)}
               deps)))
