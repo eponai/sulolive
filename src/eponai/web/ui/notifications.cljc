@@ -22,8 +22,8 @@
                                                   :payload/body     (:message value)
                                                   :payload/subtitle (:subtitle value)}}]
        ;;; If we have more than 5 notifications, remove the rest
-       (when (<= 5 (count notifications))
-         (let [removes (drop 4 (sort > (keys notifications)))
+       (when (<= 2 (count notifications))
+         (let [removes (drop 1 (sort > (keys notifications)))
                updates (reduce (fn [m [_ n]] (assoc m (:notification/id n) nil)) {} (select-keys notifications removes))]
            (when (not-empty updates)
              (firebase/-update fb notifications-ref (clj->js updates)))))
@@ -42,9 +42,9 @@
   (let [{:keys [notifications]} (om/get-state component)]
     (dom/div
       (css/add-class :sulo-notification)
-      (dom/span (css/add-classes [:icon :icon-chat]))
+      (dom/span (css/add-classes [:icon :icon-shop]))
       (when (pos? (count notifications))
-        (dom/p nil (dom/span (css/add-classes [:alert :badge]) (count notifications)))))))
+        (dom/p nil (dom/span (css/add-classes [:alert :badge]) (dom/i {:classes ["fa fa-comments"]})))))))
 
 (defui Notifications
   static om/IQuery
@@ -69,6 +69,7 @@
        (let [{:query/keys [auth current-route owned-store]
               fb-token    :query/firebase} (om/props this)
              fb (shared/by-key this :shared/firebase)]
+
          (when (some? owned-store)
            (let [notifications-ref (firebase/-ref-notifications fb (:db/id auth))]
              (firebase/-on-child-added fb
@@ -90,9 +91,12 @@
     (let [{:query/keys [current-route auth]} next-props
           {:keys [notifications-ref]} (om/get-state this)
           fb (shared/by-key this :shared/firebase)]
+      (debug "NOtifications:  is on owned store: " (is-watching-owned-store? next-props) {:new current-route
+                                                                                          :old (:query/current-route (om/props this))})
       #?(:cljs
          (when-not (= (:route current-route) (:route (:query/current-route (om/props this))))
            (when (is-watching-owned-store? next-props)
+             (debug "Removing notifications")
              (firebase/-remove fb notifications-ref))))))
 
   (render [this]

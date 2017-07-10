@@ -53,6 +53,11 @@
 	}
 
 	&.navbar {
+		.sulo-notification {
+			i {
+				margin-right: 0;
+			}
+		}
 		position: relative;
 		align-items: center;
 		display: flex;
