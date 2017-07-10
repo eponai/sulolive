@@ -38,6 +38,10 @@
        {
          "name": "ASSET_VERSION",
          "value": "<ASSET_VERSION>"
+       },
+       {
+         "name": "FIREBASE_SERVICE_ACCOUNT",
+         "value": "<FIREBASE_SERVICE_ACCOUNT>"
        }
      ],
      "portMappings": [
