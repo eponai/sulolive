@@ -114,6 +114,7 @@
      {:query/store [:db/id
                     :store/locality
                     {:store/sections [:store.section/label :store.section/path :db/id]}
+                    :store/username
                     ;{:store/items (om/get-query item/Product)}
                     :store/not-found?
                     {:store/status [:status/type]}
@@ -180,7 +181,8 @@
           stream (first stream)
           is-live? (= :stream.state/live (:stream/state stream))
           show-chat? (:show-chat? st true)
-          {:keys [route route-params]} current-route]
+          {:keys [route route-params]} current-route
+          store-status (get-in store [:store/status :status/type])]
 
       (dom/div
         {:id "sulo-store"}
@@ -189,8 +191,8 @@
           (store-not-found this)
           [
            (dom/h1 (css/show-for-sr) store-name)
-           (when-not (= :status.type/open
-                        (get-in store [:store/status :status/type]))
+           (when (or (nil? store-status)
+                     (= :status.type/closed store-status))
              (callout/callout-small
                (->> (css/text-align :center {:id "store-closed-banner"})
                     (css/add-classes [:alert :store-closed]))
