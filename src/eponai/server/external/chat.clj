@@ -136,7 +136,10 @@
 
 (defn- firebase-chat-messages->datascript-messages [firebase-chat-rooms store last-read]
   (let [values (firebase/ref->value (-> (get-store-chatroom firebase-chat-rooms (:db/id store))
-                                        (.startAt (double last-read))))
+                                        ;; We want to start from +1 of the last read
+                                        ;; because otherwise we'll get the last message
+                                        ;; as well.
+                                        (.startAt (double (inc last-read)))))
         messages (into []
                        (map (fn [[k ^HashMap m]]
                               (when (some? m)
