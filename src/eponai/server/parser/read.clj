@@ -157,6 +157,7 @@
                                                               [?st :status/type :status.type/open]
                                                               [?s :store/status ?st]
                                                               [?e :stream/store ?s]
+                                                              [?e :stream/state :stream.state/live]
                                                               ;[?s :store/profile ?p]
                                                               ;[?p :store.profile/photo _]
                                                               ]

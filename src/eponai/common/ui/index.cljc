@@ -46,17 +46,7 @@
     [:query/locations
      :query/current-route
      {:query/featured-items (om/get-query product/Product)}
-     {:query/featured-stores [:db/id
-                              {:store/profile [:store.profile/name
-                                               {:store.profile/photo [:photo/path :photo/id]}]}
-                              {:store/locality [:sulo-locality/path]}
-                              {:store/status [:status/type]}
-                              :store/username
-                              :store/created-at
-                              :store/featured
-                              :store/featured-img-src
-                              {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
-                                                                         :store.item.photo/index]}]}]}
+     {:query/featured-stores (om/get-query ci/StoreItem)}
      {:query/featured-streams (om/get-query ci/OnlineChannel)}
      {:query/auth [:db/id :user/email]}
      {:query/owned-store [:db/id
@@ -186,17 +176,7 @@
                          (let [store-name (get-in store [:store/profile :store.profile/name])]
                            (grid/column
                              nil
-                             (dom/div
-                               (->> (css/add-class :content-item)
-                                    (css/add-class :stream-item))
-                               (dom/a
-                                 {:href (routes/store-url store :store)}
-                                 (photo/store-photo store {:transformation :transformation/thumbnail-large}))
-                               (dom/div
-                                 (->> (css/add-class :text)
-                                      (css/add-class :header))
-                                 (dom/a {:href (routes/store-url store :store)}
-                                        (dom/strong nil store-name)))))))
+                             (ci/->StoreItem store))))
                        (take 4 featured-stores))))
               "See more stores")
 
