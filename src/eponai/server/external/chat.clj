@@ -10,7 +10,8 @@
             [eponai.server.external.datomic :as datomic]
             [eponai.client.chat :as client.chat]
             [eponai.common.format.date :as date]
-            [datascript.core :as datascript])
+            [datascript.core :as datascript]
+            [eponai.common :as c])
   (:import (com.google.firebase.database DatabaseReference FirebaseDatabase$DatabaseInstances FirebaseDatabase ChildEventListener DataSnapshot DatabaseError ServerValue)
            (java.util HashMap)))
 
@@ -222,7 +223,7 @@
                                            (swap! basis-t-atom max created-at))))
                                      ;; Put this new event on to the store-id-chan
                                      (async/put! store-id-chan {:event-type :store-id
-                                                                :store-id   store-id
+                                                                :store-id   (c/parse-long-safe store-id)
                                                                 :basis-t    @basis-t-atom}))))
 
             all-chats-ref (.getReference ^FirebaseDatabase (:database firebase) "store-chats")
