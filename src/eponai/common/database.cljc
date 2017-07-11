@@ -504,7 +504,7 @@
         singleton (keyword (subs singleton-key-ns 0 last-dot)
                            (subs singleton-key-ns (inc last-dot) (count singleton-key-ns)))
         singleton-entity (lookup-entity db [:ui/singleton singleton])]
-    (when (nil? (get singleton-entity singleton-key))
+    (when (nil? singleton-entity)
       (warn "Singleton was nil for singleton-key: " singleton-key " singleton: " singleton))
     (get singleton-entity singleton-key)))
 

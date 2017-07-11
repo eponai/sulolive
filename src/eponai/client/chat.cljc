@@ -2,6 +2,7 @@
   (:require
     [datascript.core :as datascript]
     [eponai.client.routes :as routes]
+    [clojure.data :as data]
     [eponai.common]
     [eponai.common.database :as db]
     [eponai.common.parser :as parser]
@@ -22,6 +23,7 @@
                          ;; ex chat modes: :chat.mode/public :chat.mode/sub-only :chat.mode/fb-authed :chat.mode/owner-only
                          :chat/modes
                          {:chat/messages [:chat.message/client-side-message?
+                                          :chat.message/id
                                           {:chat.message/user [:user/email
                                                                :db/id
                                                                {:user/profile [{:user.profile/photo [:photo/id]}
@@ -104,6 +106,7 @@
                               (update m id (fnil conj []) (into {:db/id id} e))))
                 {}
                 chat-messages)
+
         pulled-messages (db/pull-many chat-db (focus-chat-message-query query) chat-messages)
         pulled-chat (db/pull chat-db (parser.util/remove-query-key :chat/messages query) chat-id)
         ;; TODO: Get :chat/modes from chat-db or sulo-db.

@@ -8,7 +8,9 @@
     [taoensso.sente.packers.transit :as sente-transit]
     [taoensso.timbre :refer [debug error warn]]
     [datascript.core :as d]
-    [eponai.common.database :as db]))
+    [eponai.common.database :as db]
+    [taoensso.timbre :as timbre]
+    [suspendable.core :as suspendable]))
 
 (defprotocol IWebsocket
   (handle-get-request [this request])
@@ -185,6 +187,15 @@
           (debug "Stopped StoreChatWebsocket successfully")
           (debug "Timed out stopping StoreChatWebsocket..."))))
     (dissoc this ::started? :sente :ch-recv :stop-fn :sends-chan :subscription-store))
+
+  suspendable/Suspendable
+  (suspend [this]
+    this)
+  (resume [this old-this]
+    (if (::started? this)
+      (reduce-kv assoc this (select-keys old-this [::started? :sente :ch-recv :stop-fn :sends-chan :subscription-store]))
+      (do (component/stop old-this)
+          (component/start this))))
 
   IWebsocket
   (handle-get-request [this request]
