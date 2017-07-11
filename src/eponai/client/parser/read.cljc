@@ -165,6 +165,16 @@
       {:remote true}
       {:value (db/pull db query store-id)})))
 
+(defmethod client-read :query/online-stores
+  [{:keys [db query target route-params] :as env} _ _]
+  (if target
+    {:remote true}
+    {:value (when-let [loc (client.auth/current-locality db)]
+              (db/pull-all-with db query {:where '[[?e :store/online _]
+                                                   [?e :store/locality ?l]]
+                                          :symbols {'?l (:db/id loc)}}))}
+    ))
+
 (defmethod client-read :query/store-items
   [{:keys [db query target route-params]} _ _]
   (let [{:keys [store-id navigation]} route-params]

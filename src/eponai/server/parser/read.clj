@@ -157,6 +157,7 @@
                                                               [?st :status/type :status.type/open]
                                                               [?s :store/status ?st]
                                                               [?e :stream/store ?s]
+                                                              [?e :stream/state :stream.state/live]
                                                               ;[?s :store/profile ?p]
                                                               ;[?p :store.profile/photo _]
                                                               ]
@@ -226,6 +227,23 @@
                                               :symbols {'?e store-id}})
               {:db/id            store-id
                :store/not-found? true}))})
+
+(defread query/online-stores
+  [{:keys [db db-history query auth route-params system locations]} _ _]
+  {:auth    ::auth/public
+   :uniq-by {:route-params [:store-id]}}
+  {:value (let [online-store-owners (firebase/-online-users (:system/firebase system))
+                _ (debug "GOT ONLINE USERS: " (keys online-store-owners))
+                user-dbids (map #(Long/parseLong %) (keys online-store-owners))
+                _ (debug "PULL USERS: " (into [] user-dbids))
+                stores (db/pull-all-with db query {:where   '[[?o :store.owner/user ?user]
+                                                              [?e :store/locality ?l]
+                                                              [?e :store/owners ?o]
+                                                              [?e :store/status ?st]
+                                                              [?st :status/type :status.type/open]]
+                                                   :symbols {'[?user ...] user-dbids
+                                                             '?l (:db/id locations)}})]
+            (map #(assoc % :store/online true) stores))})
 
 (defread query/store-has-streamed
   [{:keys [db db-history query auth route-params]} _ _]

@@ -169,7 +169,6 @@
           nil
           (grid/row
             nil
-
             (grid/column
               (css/text-align :center)
               (dom/h3 nil "Balance")
@@ -189,7 +188,8 @@
                 (dom/span nil "Products")
                 (dom/i {:classes ["fa fa-chevron-right"]})))
             (grid/column
-              (css/text-align :center)
+              (->> (css/text-align :center)
+                   (grid/column-size {:small 12 :medium 4}))
               (dom/h3 nil "Orders")
               (dom/p (css/add-class :stat) (count (:order/_store store)))
               (button/store-navigation-default

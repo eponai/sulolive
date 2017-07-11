@@ -22,6 +22,7 @@
   (-generate-client-auth-token [this user-id claims]))
 
 (defprotocol IFirebaseChat
+  (-online-users [this])
   (-user-online [this store-id]))
 
 (defn ref->snapshot
@@ -87,6 +88,8 @@
     (debug "Check online status: " user-id)
     (ref->value (-> (:presence (:refs this))
                     (.child (str user-id)))))
+  (-online-users [this]
+    (ref->value (:presence (:refs this))))
 
   IFirebaseAuth
   (-generate-client-auth-token [this user-id claims]
