@@ -180,11 +180,14 @@
           ;; return new messages created after this new max.
           (reset! basis-t (max-created-at messages))
           ;; Re-using everything we had before:
-          (client.chat/read-chat chat-db
-                                 sulo-db
-                                 query
-                                 store
-                                 client.chat/message-limit)))
+          (-> (client.chat/read-chat chat-db
+                                  sulo-db
+                                  query
+                                  store
+                                  client.chat/message-limit)
+              (update-in [:chat-db-tx :chat/messages]
+                         (fn [messages]
+                           (into [] (map #(dissoc % :db/id)) messages))))))
       (read-messages [this store query last-read]
         (let [{:keys [last-read-chat-db]} last-read
               {:keys [messages]} (firebase-chat-messages->datascript-messages all-chats-ref
