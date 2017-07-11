@@ -97,6 +97,8 @@
      {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                 :store.item.photo/index]}]}])
   Object
+  (initLocalState [this]
+    {:visitor-count 0})
   (componentWillMount [this]
     #?(:cljs
        (let [store (om/props this)
@@ -133,12 +135,13 @@
         (dom/a
           {:href (routes/store-url store :store)}
           (photo/store-photo store {:transformation :transformation/thumbnail-large}
-                             (photo/overlay
-                               nil
-                               (dom/div
-                                 (css/add-class :visitor-count)
-                                 (dom/i {:classes ["fa fa-user"]})
-                                 (dom/span nil (str visitor-count))))))
+                             (when (pos? visitor-count)
+                               (photo/overlay
+                                 nil
+                                 (dom/div
+                                   (css/add-class :visitor-count)
+                                   (dom/i {:classes ["fa fa-user"]})
+                                   (dom/span nil (str visitor-count)))))))
         (dom/div
           (css/add-classes [:text :header online-status])
           (dom/a {:href (routes/store-url store :store)}

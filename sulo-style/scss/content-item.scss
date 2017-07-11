@@ -127,6 +127,7 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 			color: $body-font-color;
 		}
 		.photo-container {
+			border-radius: $global-radius;
 			.overlay {
 				transition: background .25s ease-in-out;
 				.content {
@@ -161,7 +162,7 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 					color: $primary-color;
 					background: rgba($white, 0.7);
 					padding: 0.25rem 0.5rem;
-					border-radius: $global-radius;
+					border-top-left-radius: $global-radius;
 					right: 0;
 					bottom: 0;
 					font-size: 80%;
