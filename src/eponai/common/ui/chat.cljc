@@ -151,7 +151,7 @@
           online-status (:store/chat-online store-chat-status)
           welcome-msg (if (and (number? visitor-count) (< 1 visitor-count))
                         "Other users are in this store, try to say hi"
-                        "Use the chat to hangout with store owners and other users")
+                        (str "Use the chat to hangout with " (get-in store [:store/profile :store.profile/name]) " and other users"))
           messages (or (not-empty (get-messages this)) [{:chat.message/user :automatic :chat.message/text welcome-msg}])
           status-msg (status-message online-status)]
       (debug "Chat messages: " messages)

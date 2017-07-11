@@ -178,7 +178,7 @@
           {:store.profile/keys [photo cover tagline description]
            store-name          :store.profile/name} profile
           stream (first stream)
-          is-live? false                                    ;(= :stream.state/live (:stream/state stream))
+          is-live? (= :stream.state/live (:stream/state stream))
           show-chat? (:show-chat? st true)
           {:keys [route route-params]} current-route]
 
@@ -366,7 +366,8 @@
                                              store-items))]
                      (grid/products products
                                     (fn [p]
-                                      (pi/->ProductItem {:product p}))))))])))))
+                                      (pi/->ProductItem (om/computed {:product p}
+                                                                     {:current-route current-route})))))))])))))
 
 (def ->Store (om/factory Store))
 

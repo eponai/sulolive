@@ -225,7 +225,7 @@
                        ;:store.profile/photo (photo "mocked/isla_500x500.22177516_ath1ugrh")
                        }
     :store/status     {:status/type :status.type/open}
-    :store/locality   [:sulo-locality/path "yul"]
+    :store/locality   [:sulo-locality/path "yvr"]
     :store/items      [{:store.item/name     "Silver Twig Ring Milky"
                         :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1094898766_ewls"
                                                                                "mocked/il_570xN.1094898750_jnvm"])
@@ -281,7 +281,7 @@
     :store/profile  {:store.profile/name  "BangiShop"
                      :store.profile/cover (photo "mocked/isbl_3360x840.24031443_roffucs6")
                      :store.profile/photo (photo "mocked/isla_500x500.18128391_dro0qzqd")}
-    :store/locality [:sulo-locality/path "yul"]
+    :store/locality [:sulo-locality/path "yvr"]
     :store/stripe   {:stripe/id "acct_19jze1BbOp8CGZPS"}
     :store/status   {:status/type :status.type/open}
     :store/items    [{:store.item/name     "Leather Shoes (silver)"
@@ -309,7 +309,7 @@
                      ;:store/cover #db/id[:db.part/user -51]
                      :store.profile/photo   (photo "mocked/isla_500x500.17344782_h4dngp5g")}
     :store/username "mirimirifashion"
-    :store/locality [:sulo-locality/path "yul"]
+    :store/locality [:sulo-locality/path "yvr"]
     :store/items    [{:store.item/name     "Hoodie Dress"
                       :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1088263217_thkk"
                                                                              "mocked/il_570xN.1041709156_noxy"
@@ -335,7 +335,7 @@
     :store/profile  {:store.profile/name  "RecycledBeautifully"
                      :store.profile/cover (photo "mocked/isbl_3360x840.18460378_4d4b1gyn")
                      :store.profile/photo (photo "mocked/isla_500x500.23870003_5l3vsjlx")}
-    :store/locality [:sulo-locality/path "yul"]
+    :store/locality [:sulo-locality/path "yvr"]
     :store/items    [{:store.item/name     "Tree of Life wire"
                       :store.item/photos   [(item-photo "mocked/il_570xN.728670429_e1dd")]
                       :store.item/price    24.74M

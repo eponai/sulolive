@@ -13,39 +13,47 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 		justify-content: center;
 	}
 	&.product-item {
-		&.is-online {
+		.store-name {
+			position: relative;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			&::after {
+				flex: 0 0 auto;
+				right: 0;
+				font-size: 70%;
+				color: $white;
+				padding: 0 0.25rem;
+				border-radius: $global-radius;
+			}
+			&::before {
+				flex: 0 0 auto;
+				font-size: 70%;
+				color: transparent;
+				padding: 0 0.25rem;
+			}
+		}
+		&.is-online, &.is-live {
 			.store-name {
-				position: relative;
-				display: flex;
-				align-items: center;
 				justify-content: space-between;
-				&::after {
-					content:'online';
-					flex: 0 0 auto;
-					right: 0;
-					font-size: 70%;
-					// position: absolute;
-					// border-radius: 50%;
-					// width: 10px;
-					// height: 10px;
-					color: $white;
-					padding: 0 0.25rem;
-					border-radius: $global-radius;
-					background: $success-color;
-				}
+			}
+		}
+		&.is-online .store-name {
+			&::after {
+				content:'online';
+				background: $success-color;
+			}
 				&::before {
-					content:'online';
-					flex: 0 0 auto;
-					font-size: 70%;
-					color: transparent;
-					padding: 0 0.25rem;
-					// position: absolute;
-					// width: 10px;
-					// height: 10px;
-				}
-
-				// background: $success-color;
-				// color: $white;
+				content:'online';
+			}
+		}
+		&.is-live .store-name {
+			&::after {
+				content:'LIVE';
+				background: $alert-color;
+			}
+			&::before {
+				content:'LIVE';
 			}
 		}
 		.photo-container {
