@@ -9,6 +9,7 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.client.routes :as routes]
     [eponai.common.ui.elements.grid :as grid]
+    [eponai.web.ui.content-item :as ci]
     [eponai.common.ui.router :as router]
     [eponai.common.ui.product :as product]))
 
@@ -56,11 +57,7 @@
                               :store/featured-img-src
                               {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                                          :store.item.photo/index]}]}]}
-     {:query/featured-streams [:db/id :stream/title {:stream/store [:db/id
-                                                                    {:store/locality [:sulo-locality/path]}
-                                                                    {:store/profile [:store.profile/name {:store.profile/photo [:photo/path :photo/id]}]}
-                                                                    {:store/status [:status/type]}
-                                                                    :store/username]}]}
+     {:query/featured-streams (om/get-query ci/OnlineChannel)}
      {:query/auth [:db/id :user/email]}
      {:query/owned-store [:db/id
                           {:store/locality [:sulo-locality/path]}
@@ -123,7 +120,7 @@
                                         (map (fn [c]
                                                (grid/column
                                                  (css/add-class :online-stream)
-                                                 (common/online-channel-element c)))
+                                                 (ci/->OnlineChannel c)))
                                              (if (<= 8 (count featured-streams))
                                                (take 8 featured-streams)
                                                (take 4 featured-streams))))

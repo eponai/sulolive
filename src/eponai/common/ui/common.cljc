@@ -91,7 +91,7 @@
            (css/add-class :stream-item))
       (dom/a
         {:href store-link}
-        (photo/stream-photo store))
+        (photo/stream-photo store nil))
       ;(dom/div
       ;  (->> (css/add-class :text)
       ;       (css/add-class :header))

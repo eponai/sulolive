@@ -195,7 +195,7 @@
         (merge props p)
         content))))
 
-(defn stream-photo [store]
+(defn stream-photo [store opts & content]
   (let [photo (get-in store [:store/profile :store.profile/photo])
         photo-id (:photo/id photo "static/storefront-2")]
     (square
@@ -203,4 +203,5 @@
       (overlay
         nil
         (dom/div (css/add-class :video)
-                 (dom/i {:classes ["fa fa-play fa-fw"]}))))))
+                 (dom/i {:classes ["fa fa-play fa-fw"]}))
+        content))))

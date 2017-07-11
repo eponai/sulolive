@@ -105,8 +105,6 @@
           #?@(:cljs [open-url? (if (some? open-url?) open-url? (utils/bp-compare :large breakpoint >))]
               :clj  [open-url? (if (some? open-url?) open-url? false)])]
 
-      (debug "PRODUCT: " product)
-      (debug "STATE: " (om/get-state this))
       (product-element
         {:on-click      on-click
          :open-url?     open-url?

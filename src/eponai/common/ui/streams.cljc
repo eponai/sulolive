@@ -10,21 +10,14 @@
     [eponai.client.routes :as routes]
     [eponai.web.ui.photo :as photo]
     [eponai.common.ui.dom :as dom]
-    [eponai.web.ui.button :as button]))
+    [eponai.web.ui.button :as button]
+    [eponai.web.ui.content-item :as ci]))
 
 (defui Streams
   static om/IQuery
   (query [_]
     [
-     {:query/streams [:stream/title
-                      :stream/state
-                      {:stream/store [:db/id
-                                      {:store/profile [:store.profile/name
-                                                       {:store.profile/photo [:photo/path
-                                                                              :photo/id]}]}
-                                      :store/username
-                                      :store/locality
-                                      {:store/status [:status/type]}]}]}
+     {:query/streams (om/get-query ci/OnlineChannel)}
      `({:query/stores [:db/id
                        {:stream/_store [:stream/state]}
                        :store/locality
@@ -73,7 +66,7 @@
                             (map (fn [s]
                                    (grid/column
                                      nil
-                                     (common/online-channel-element s)))
+                                     (ci/->OnlineChannel s)))
                                  streams)))
               (my-dom/div
                 {:classes ["sulo-items-container empty-container"]}

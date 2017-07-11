@@ -111,6 +111,42 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 						font-size: 3rem;
 					}
 				}
+				.visitor-count {
+					position: absolute;
+					color: $white;
+					background: rgba($sulo-dark-color, 0.7);
+					padding: 0.25rem 0.5rem;
+					border-radius: $global-radius;
+					right: 0;
+					bottom: 0;
+					font-size: 75%;
+					font-weight: bold;
+					i {
+						margin-right: 0.25rem;
+					}
+				}
+			}
+		}
+		.text.is-live {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			&::after {
+				content: 'LIVE';
+				flex: 0 0 auto;
+				right: 0;
+				font-size: 70%;
+				color: $white;
+				padding: 0 0.25rem;
+				background: $alert-color;
+				border-radius: $global-radius;
+			}
+			&::before {
+				content: 'LIVE';
+				flex: 0 0 auto;
+				font-size: 70%;
+				color: transparent;
+				padding: 0 0.25rem;
 			}
 		}
 	}

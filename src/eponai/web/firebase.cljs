@@ -141,7 +141,8 @@
       (.update ref v))
 
     (-off [this ref]
-      (.off ref))
+      (when ref
+        (.off ref)))
 
     ;; Listeners
     (-on-value-changed [this f ref]
