@@ -10,6 +10,8 @@
     [taoensso.timbre :refer [warn debug error]]
     [eponai.client.auth :as client.auth]))
 
+(def message-time-limit (* 3600 1000))
+
 (defprotocol IStoreChatListener
   (start-listening! [this store-id])
   (stop-listening! [this store-id]))
@@ -40,9 +42,8 @@
     (some-> (read-basis-t-graph db)
             (parser.util/get-basis-t :query/chat {:locations (:sulo-locality/path (client.auth/current-locality db))
                                                   :store-id  store-id})
-            ;; Basis-t for query/chat consists of two basis-t. Once
-            ;; for each db (:chat-db and :sulo-db).
-            (:chat-db))
+            ;; query/chat has a map of last reads because of legacy reasons. (datomic-chat).
+            (:last-read-chat-db))
     (catch #?@(:clj [Exception e] :cljs [:default e])
            (error "Error getting current basis-t for chat: " e)
       ;; TODO: We should be able to display some kind of "something went wrong"
