@@ -236,7 +236,7 @@
                      :iss            "localhost"
                      :iat            now
                      :exp            tomorrow
-                     :user_metadata  {:can_open_store true}}
+                     (keyword "https://sulo.live/can_open_store")  true}
           jwt-secret (secret this)]
       (debug "Authing self-signed jwt token on localhost with auth-data: " auth-data)
       {:token        (jwt/sign auth-data jwt-secret)
