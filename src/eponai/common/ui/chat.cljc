@@ -70,7 +70,7 @@
                        :onKeyDown   #?(:cljs #(when (utils/enter-pressed? %)
                                                (on-enter this))
                                        :clj  identity)
-                       :maxLength   150
+                       :maxLength   500
                        :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))})
         (my-dom/a
           (->> (css/button-hollow {:onClick #(on-enter this)})
