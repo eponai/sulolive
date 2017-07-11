@@ -124,6 +124,9 @@
 
 ;; ### Firebase implementation start
 
+(defprotocol IFirebaseChatRooms
+  (get-store-chatroom [this store-id] "Gets a firebase ref to a store chat-room."))
+
 (def datascript-chat-db (db/db (datascript/create-conn
                                  {:chat/messages     {:db/valueType   :db.type/ref
                                                       :db/cardinality :db.cardinality/many}
@@ -131,22 +134,20 @@
                                   :chat.message/user {:db/valueType :db.type/ref}
                                   :chat.message/id   {:db/unique :db.unique/identity}})))
 
-(defn- firebase-chat-messages->datascript-messages [all-chats-ref store last-read]
-  (let [values (firebase/ref->value (-> (.child all-chats-ref (str (:db/id store)))
-                                        (.limitToLast client.chat/message-limit)))
+(defn- firebase-chat-messages->datascript-messages [firebase-chat-rooms store last-read]
+  (let [values (firebase/ref->value (-> (get-store-chatroom firebase-chat-rooms (:db/id store))
+                                        (.startAt (double last-read))))
         messages (into []
-                       (comp (filter (fn [[_ m]]
-                                       (when-let [created-at (when (some? m)
-                                                               (.get m "created-at"))]
-                                         (>= created-at last-read))))
-                             (map (fn [[k ^HashMap m]]
-                                    (when (some? m)
-                                      {:chat.message/id         k
-                                       :chat.message/created-at (.get m "created-at")
-                                       :chat.message/text       (.get m "text")
-                                       :chat.message/user       (.get m "user")}))))
+                       (map (fn [[k ^HashMap m]]
+                              (when (some? m)
+                                {:chat.message/id         k
+                                 :chat.message/created-at (.get m "created-at")
+                                 :chat.message/text       (.get m "text")
+                                 :chat.message/user       (.get m "user")})))
                        (when (some? values)
                          (into {} values)))
+        messages (->> (sort-by :chat.message/created-at #(compare %2 %1) messages)
+                      (take client.chat/message-limit))
         users (into [] (comp (map :chat.message/user)
                              ;; Associng any attribute to the user, because
                              ;; datascript won't be able to pull a ref if it
@@ -161,12 +162,15 @@
              0
              messages))
 
-(defn firebase-store-chat-reader [all-chats-ref sulo-db]
+(defn firebase-store-chat-reader [firebase-chat-rooms sulo-db]
   (let [basis-t (atom 0)]
     (reify
       IReadStoreChat
       (initial-read [this store query]
-        (let [{:keys [messages users]} (firebase-chat-messages->datascript-messages all-chats-ref store 0)
+        (let [{:keys [messages users]} (firebase-chat-messages->datascript-messages
+                                         firebase-chat-rooms
+                                         store
+                                         (- (System/currentTimeMillis) client.chat/message-time-limit))
               chat-db (datascript/db-with datascript-chat-db
                                           ;; Setting the chat entity's id the same as the chat/store.
                                           ;; The chat entity is unique within its own database and
@@ -190,7 +194,7 @@
                            (into [] (map #(dissoc % :db/id)) messages))))))
       (read-messages [this store query last-read]
         (let [{:keys [last-read-chat-db]} last-read
-              {:keys [messages]} (firebase-chat-messages->datascript-messages all-chats-ref
+              {:keys [messages]} (firebase-chat-messages->datascript-messages firebase-chat-rooms
                                                                               store
                                                                               last-read-chat-db)
               user-data (db/pull-all-with sulo-db
@@ -215,67 +219,87 @@
     (^void onChildMoved [_ ^DataSnapshot snapshot ^String prev])
     (^void onCancelled [_ ^DatabaseError snapshot])))
 
-(defn store-chat-room-ref [chats-ref store-id on-child-added]
-  (let [chat-room-ref (-> (.child chats-ref (str store-id))
+
+(defn- raw-store-chat-room-ref [firebase store-id]
+  (.getReference ^FirebaseDatabase (:database firebase) (str "store-chats/" store-id)))
+
+(defn- store-chat-room-query [firebase store-id]
+  (let [chat-room-ref (-> (raw-store-chat-room-ref firebase store-id)
+                          (.orderByChild "created-at")
                           (.limitToLast (* client.chat/message-limit 2)))]
     (doto chat-room-ref
-      (.keepSynced true)
-      (.addChildEventListener (child-listener {:on-child-added on-child-added})))))
+      (.keepSynced true))))
+
+(defn store-chat-listener [store-id store-id-chan basis-t-by-store-atom]
+  (fn [^DataSnapshot snapshot]
+    (let [v (.getValue snapshot)]
+      (when (and (seqable? v) (seq v))
+        (let [created-at (get (into {} v) "created-at")]
+          (when (number? created-at)
+            (swap! basis-t-by-store-atom update store-id (fnil max 0) created-at))))
+      ;; Put this new event on to the store-id-chan
+      (async/put! store-id-chan {:event-type :store-id
+                                 :store-id   store-id
+                                 :basis-t    (get @basis-t-by-store-atom store-id)}))))
 
 (defrecord FirebaseStoreChat [firebase sulo-datomic]
   component/Lifecycle
   (start [this]
-    (if (or (:stores this) (nil? (:database firebase)))
+    (if (or (:stores-atom this) (nil? (:database firebase)))
       this
       (let [stores-atom (atom {})
-            basis-t-atom (atom 0)
-            store-id-chan (async/chan (async/sliding-buffer 1000))
-            chat-room-listener (fn [store-id]
-                                 (fn [^DataSnapshot snapshot]
-                                   (let [v (.getValue snapshot)]
-                                     (when (seqable? v)
-                                       (let [created-at (get (into {} v) "created-at")]
-                                         (when (number? created-at)
-                                           (swap! basis-t-atom max created-at))))
-                                     ;; Put this new event on to the store-id-chan
-                                     (async/put! store-id-chan {:event-type :store-id
-                                                                :store-id   store-id
-                                                                :basis-t    @basis-t-atom}))))
-
-            all-chats-ref (.getReference ^FirebaseDatabase (:database firebase) "store-chats")
-            chats-listener (fn [^DataSnapshot snapshot]
-                             (let [store-id (c/parse-long-safe (.getKey snapshot))]
-                               ;; Keep all stores refs dowloaded and stored in the stores-atom.
-                               (when-not (contains? @stores-atom store-id)
-                                 (locking
-                                   (swap! stores-atom
-                                          (fn [stores]
-                                            ;; Check again in case we've already updated the store.
-                                            (cond-> stores
-                                                    (not (contains? stores store-id))
-                                                    (assoc store-id (store-chat-room-ref all-chats-ref
-                                                                                         store-id
-                                                                                         (chat-room-listener store-id))))))))))]
-        (.addChildEventListener all-chats-ref (child-listener {:on-child-added chats-listener}))
-        (assoc this :stores stores-atom
+            basis-t-atom (atom {})
+            store-id-chan (async/chan (async/sliding-buffer 1000))]
+        (assoc this :stores-atom stores-atom
                     :store-id-chan store-id-chan
-                    :basis-t-atom basis-t-atom
-                    :chats-ref all-chats-ref))))
+                    :basis-t-by-store-atom basis-t-atom))))
   (stop [this]
-    (dissoc this :stores :store-id-chan :basis-t-atom :chats-ref))
+    (doseq [[_ {:keys [added-query listener]}] @(:stores-atom this)]
+      (.removeEventListener added-query ^ChildEventListener listener))
+    (dissoc this :stores-atom :store-id-chan :basis-t-by-store-atom))
 
   suspendable/Suspendable
   (suspend [this] this)
   (resume [this old-this]
-    (if (or (:stores old-this) (nil? (:database firebase)))
-      (reduce-kv assoc this (select-keys old-this [:stores :store-id-chan :basis-t-atom :chats-ref]))
+    (if (or (:stores-atom old-this) (nil? (:database firebase)))
+      (reduce-kv assoc this (select-keys old-this [:stores-atom :store-id-chan :basis-t-by-store-atom]))
       (do (component/stop old-this)
           (component/start this))))
 
+  IFirebaseChatRooms
+  (get-store-chatroom [this store-id]
+    (let [stores-atom (:stores-atom this)]
+      (when-not (contains? @stores-atom store-id)
+        (locking
+          (swap! stores-atom
+                 (fn [stores]
+                   (cond-> stores
+                           ;; Check again in case we've already updated the store.
+                           (not (contains? stores store-id))
+                           (assoc store-id
+                                  (let [chat-room-query (store-chat-room-query firebase store-id)
+                                        added-messages-query (.startAt chat-room-query
+                                                                       (double (System/currentTimeMillis)))
+                                        ;; Listen for anything that's added from now.
+                                        listener (.addChildEventListener
+                                                   added-messages-query
+                                                   (child-listener
+                                                     {:on-child-added
+                                                      (store-chat-listener store-id
+                                                                           (:store-id-chan this)
+                                                                           (:basis-t-by-store-atom this))}))]
+
+                                    {:query       chat-room-query
+                                     :added-query added-messages-query
+                                     :listener    listener})))))))
+      ;; Return the :query without time restrictions.
+      ;; The others are used to clean up listeners.
+      (get-in @stores-atom [store-id :query])))
+
   IWriteStoreChat
   (write-message [this store user message]
-    (let [chat-room-ref (-> (:chats-ref this)
-                            (.child (str (:db/id store))))]
+    ;; Write to the raw chat-room database reference.
+    (let [chat-room-ref (raw-store-chat-room-ref firebase (:db/id store))]
       (-> (.push ^DatabaseReference chat-room-ref)
           (.setValue {"user"       (:db/id user)
                       "text"       message
@@ -283,14 +307,13 @@
 
   IReadStoreChatRef
   (store-chat-reader [this sulo-db-filter]
-    (firebase-store-chat-reader (:chats-ref this)
+    (firebase-store-chat-reader this
                                 (cond-> (db/db (:conn sulo-datomic))
                                         (some? sulo-db-filter)
                                         (d/filter sulo-db-filter))))
   (sync-up-to! [this store t]
-    (when (== t (max t @(:basis-t-atom this)))
-      (firebase/ref->value (-> (:chats-ref this)
-                               (.child (str (:db/id store)))))))
+    (when (== t (max t (get @(:basis-t-by-store-atom this) (:db/id store))))
+      (firebase/ref->value (get-store-chatroom this (:db/id store)))))
   (chat-update-stream [this]
     (:store-id-chan this)))
 
