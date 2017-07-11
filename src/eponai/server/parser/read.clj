@@ -232,9 +232,11 @@
   [{:keys [db db-history query auth route-params system locations]} _ _]
   {:auth    ::auth/public
    :uniq-by {:route-params [:store-id]}}
-  {:value (let [online-store-owners (firebase/-online-users (:system/firebase system))
-                _ (debug "GOT ONLINE USERS: " (keys online-store-owners))
-                user-dbids (map #(Long/parseLong %) (keys online-store-owners))
+  {:value (let [presence (firebase/-presence (:system/firebase system))
+                _ (debug "Got presence: " presence)
+                online-users (filter #(= true (get presence %)) (keys presence))
+                _ (debug "GOT ONLINE USERS: " (into [] online-users))
+                user-dbids (map #(Long/parseLong %) online-users)
                 _ (debug "PULL USERS: " (into [] user-dbids))
                 stores (if (not-empty user-dbids)
                          (db/pull-all-with db query {:where   '[[?o :store.owner/user ?user]
