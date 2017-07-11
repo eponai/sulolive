@@ -2,6 +2,7 @@
   (:require
     [datascript.core :as datascript]
     [eponai.client.routes :as routes]
+    [clojure.data :as data]
     [eponai.common]
     [eponai.common.database :as db]
     [eponai.common.parser :as parser]
@@ -22,6 +23,7 @@
                          ;; ex chat modes: :chat.mode/public :chat.mode/sub-only :chat.mode/fb-authed :chat.mode/owner-only
                          :chat/modes
                          {:chat/messages [:chat.message/client-side-message?
+                                          :chat.message/id
                                           {:chat.message/user [:user/email
                                                                :db/id
                                                                {:user/profile [{:user.profile/photo [:photo/id]}
@@ -96,7 +98,6 @@
                               (sort-by :tx
                                        #(compare %2 %1)
                                        (db/datoms chat-db :eavt chat-id :chat/messages))))
-        _ (debug "chat messages: " chat-messages)
         users (transduce
                 (comp (map #(db/entity chat-db %))
                       (map :chat.message/user)
@@ -105,14 +106,11 @@
                               (update m id (fnil conj []) (into {:db/id id} e))))
                 {}
                 chat-messages)
-        _ (debug "the query: " (focus-chat-message-query query))
+
         pulled-messages (db/pull-many chat-db (focus-chat-message-query query) chat-messages)
-        _ (debug "pulled-messagegs: " pulled-messages)
-        pulled-messages (into [] (map #(into {:db/id %} (db/entity chat-db (:db/id % %)))) chat-messages)
         pulled-chat (db/pull chat-db (parser.util/remove-query-key :chat/messages query) chat-id)
         ;; TODO: Get :chat/modes from chat-db or sulo-db.
         user-pattern (focus-chat-message-user-query query)
-        _ (debug "USERS:" users)
         user-data (db/pull-many sulo-db user-pattern (seq (keys users)))]
     {:sulo-db-tx user-data
      :chat-db-tx (assoc pulled-chat :chat/messages pulled-messages)}))

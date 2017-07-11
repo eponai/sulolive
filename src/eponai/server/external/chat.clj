@@ -11,8 +11,9 @@
             [eponai.client.chat :as client.chat]
             [eponai.common.format.date :as date]
             [datascript.core :as datascript]
-            [eponai.common :as c])
-  (:import (com.google.firebase.database DatabaseReference FirebaseDatabase$DatabaseInstances FirebaseDatabase ChildEventListener DataSnapshot DatabaseError ServerValue)
+            [eponai.common :as c]
+            [suspendable.core :as suspendable])
+  (:import (com.google.firebase.database DatabaseReference FirebaseDatabase ChildEventListener DataSnapshot DatabaseError ServerValue)
            (java.util HashMap)))
 
 (defprotocol IWriteStoreChat
@@ -132,51 +133,63 @@
 
 (defn- firebase-chat-messages->datascript-messages [all-chats-ref store last-read]
   (let [values (firebase/ref->value (-> (.child all-chats-ref (str (:db/id store)))
-                                        (.limitToLast client.chat/message-limit)))]
-    (into []
-          (comp (filter (fn [[_ m]]
-                          (when-let [created-at (when (some? m)
-                                                  (.get m "created-at"))]
-                            (>= created-at last-read))))
-                (map (fn [[k ^HashMap m]]
-                       (when (some? m)
-                         {:chat.message/id         k
-                          :chat.message/created-at (.get m "created-at")
-                          :chat.message/text       (.get m "text")
-                          :chat.message/user       (.get m "user")}))))
-          (when (some? values)
-            (into {} values)))))
+                                        (.limitToLast client.chat/message-limit)))
+        messages (into []
+                       (comp (filter (fn [[_ m]]
+                                       (when-let [created-at (when (some? m)
+                                                               (.get m "created-at"))]
+                                         (>= created-at last-read))))
+                             (map (fn [[k ^HashMap m]]
+                                    (when (some? m)
+                                      {:chat.message/id         k
+                                       :chat.message/created-at (.get m "created-at")
+                                       :chat.message/text       (.get m "text")
+                                       :chat.message/user       (.get m "user")}))))
+                       (when (some? values)
+                         (into {} values)))
+        users (into [] (comp (map :chat.message/user)
+                             ;; Associng any attribute to the user, because
+                             ;; datascript won't be able to pull a ref if it
+                             ;; doesn't have a value attached to the ref.
+                             (map #(hash-map :db/id % ::any-attr ::any-value))) messages)]
+    {:messages messages
+     :users    users}))
+
+(defn- max-created-at [messages]
+  (transduce (map :chat.message/created-at)
+             max
+             0
+             messages))
 
 (defn firebase-store-chat-reader [all-chats-ref sulo-db]
-  (let [basis-t (atom 0)
-        max-created-at (fn [messages]
-                         (transduce (map :chat.message/created-at) max 0 messages))]
+  (let [basis-t (atom 0)]
     (reify
       IReadStoreChat
       (initial-read [this store query]
-        (let [chat-messages (firebase-chat-messages->datascript-messages all-chats-ref store 0)
-              _ (debug "Chat messages: " chat-messages)
+        (let [{:keys [messages users]} (firebase-chat-messages->datascript-messages all-chats-ref store 0)
               chat-db (datascript/db-with datascript-chat-db
                                           ;; Setting the chat entity's id the same as the chat/store.
                                           ;; The chat entity is unique within its own database and
                                           ;; the store is in a different database, so this is good.
-                                          [{:db/id         (:db/id store)
-                                            :chat/store    (:db/id store)
-                                            :chat/messages chat-messages}])
-              _ (reset! basis-t (max-created-at chat-messages))
-              ;; Re-using everything we had before:
-              ret (client.chat/read-chat chat-db
-                                         sulo-db
-                                         query
-                                         store
-                                         client.chat/message-limit)]
-          (update-in ret [:chat-db-tx :chat/messages] (fn [messages]
-                                                        (debug "Updating messages: " messages)
-                                                        (into [] (map #(update % :chat.message/user :db/id)) messages)))))
+                                          (concat
+                                            users
+                                            [{:db/id         (:db/id store)
+                                              :chat/store    (:db/id store)
+                                              :chat/messages messages}]))]
+          ;; Setting new basis-t to max of created-at, such that we only need to
+          ;; return new messages created after this new max.
+          (reset! basis-t (max-created-at messages))
+          ;; Re-using everything we had before:
+          (client.chat/read-chat chat-db
+                                 sulo-db
+                                 query
+                                 store
+                                 client.chat/message-limit)))
       (read-messages [this store query last-read]
         (let [{:keys [last-read-chat-db]} last-read
-              messages (firebase-chat-messages->datascript-messages all-chats-ref store last-read-chat-db)
-              _ (debug "Chat messages: " messages)
+              {:keys [messages]} (firebase-chat-messages->datascript-messages all-chats-ref
+                                                                              store
+                                                                              last-read-chat-db)
               user-data (db/pull-all-with sulo-db
                                           (client.chat/focus-chat-message-user-query query)
                                           {:where   '[[?e :user/profile]]
@@ -223,12 +236,12 @@
                                            (swap! basis-t-atom max created-at))))
                                      ;; Put this new event on to the store-id-chan
                                      (async/put! store-id-chan {:event-type :store-id
-                                                                :store-id   (c/parse-long-safe store-id)
+                                                                :store-id   store-id
                                                                 :basis-t    @basis-t-atom}))))
 
             all-chats-ref (.getReference ^FirebaseDatabase (:database firebase) "store-chats")
             chats-listener (fn [^DataSnapshot snapshot]
-                             (let [store-id (.getKey snapshot)]
+                             (let [store-id (c/parse-long-safe (.getKey snapshot))]
                                ;; Keep all stores refs dowloaded and stored in the stores-atom.
                                (when-not (contains? @stores-atom store-id)
                                  (locking
@@ -246,7 +259,15 @@
                     :basis-t-atom basis-t-atom
                     :chats-ref all-chats-ref))))
   (stop [this]
-    (dissoc this :stores :database :store-id-chan :basis-t-atom))
+    (dissoc this :stores :store-id-chan :basis-t-atom :chats-ref))
+
+  suspendable/Suspendable
+  (suspend [this] this)
+  (resume [this old-this]
+    (if (or (:stores old-this) (nil? (:database firebase)))
+      (reduce-kv assoc this (select-keys old-this [:stores :store-id-chan :basis-t-atom :chats-ref]))
+      (do (component/stop old-this)
+          (component/start this))))
 
   IWriteStoreChat
   (write-message [this store user message]
