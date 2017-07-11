@@ -12,7 +12,8 @@
     [eponai.client.remotes :as remotes]
     [eponai.client.reconciler :as reconciler]
     [goog.dom :as gdom]
-    [om.next :as om :refer [defui]]
+    [om.next :as om :refer [defui ui]]
+    [om.dom :as dom]
     [taoensso.timbre :as timbre :refer [error debug warn info]]
     [bidi.bidi :as bidi]
     [pushy.core :as pushy]
@@ -309,11 +310,21 @@
                }
               deps)))
 
+(defn add-fake-root! [reconciler]
+  (debug "This will flash!")
+  (debug "Adding fake root first, then adding real root to make sure our components unmount and mount.")
+  (om/add-root! reconciler
+                (om/ui
+                  Object
+                  (render [this]
+                          (dom/div nil)))
+                (gdom/getElement router/dom-app-id)))
+
 (defn on-reload! []
   (shared/clear-components!)
   (if-let [reconciler @reconciler-atom]
     (do
       (client.chat/shutdown! (shared/by-key reconciler :shared/store-chat-listener))
-      (add-root! reconciler)
-      (.forceUpdate (om/app-root reconciler)))
+      (add-fake-root! reconciler)
+      (js/setTimeout #(add-root! reconciler) 0))
     (run-dev)))
