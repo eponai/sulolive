@@ -1,7 +1,13 @@
 #!/bin/bash -eu
 
 script_dir=$(dirname $0)
-cd "$script_dir/.."
+
+# Change directory to project dir. Can be run as a git hook.
+if [[ "$script_dir" = ".git/hooks" ]]; then
+  cd "$script_dir/../.."
+else
+  cd "$script_dir/.."
+fi 
 
 # Greps for case-insensitive xxx 
 
