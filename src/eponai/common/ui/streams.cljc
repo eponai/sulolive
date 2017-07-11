@@ -26,7 +26,7 @@
                                                                :photo/id]}]}
                        :store/username
                        {:store/status [:status/type]}]} ~{:states [:stream.state/offline :stream.state/online]})
-     {:query/online-stores (om/get-query ci/StoreItem) }
+     {:query/online-stores (om/get-query ci/StoreItem)}
      :query/locations])
   Object
   (render [this]
@@ -89,7 +89,12 @@
                          (grid/column
                            nil
                            (ci/->StoreItem store)))
-                       online-not-live)))
+                       online-not-live))
+                (dom/div
+                  (css/add-class :section-footer)
+                  (button/default-hollow
+                    (css/add-classes [:sulo-dark] {:href (routes/url :stores {:locality (:sulo-locality/path locations)})})
+                    (dom/span nil "See all stores"))))
 
               (my-dom/div
                 {:classes ["sulo-items-container section"]}

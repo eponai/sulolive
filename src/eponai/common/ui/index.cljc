@@ -54,15 +54,17 @@
                           {:store/status [:status/type]}
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.
-                          {:store/owners [{:store.owner/user [:db/id]}]}]}])
+                          {:store/owners [{:store.owner/user [:db/id]}]}]}
+     {:query/online-stores (om/get-query ci/StoreItem)}])
   Object
   (render [this]
     (let [{:proxy/keys [navbar footer]
-           :query/keys [locations featured-items featured-streams featured-stores current-route]} (om/props this)
+           :query/keys [locations featured-items featured-streams featured-stores current-route online-stores]} (om/props this)
           {:keys [route-params]} current-route]
       ;(debug "Items: " featured-items)
       ;(debug "Items: " featured-stores)
       (debug "Selected location: " locations)
+      (debug "ONLINE STORES: " online-stores)
 
       (dom/div
         nil
@@ -97,108 +99,125 @@
                  ;          (dom/span nil "Search"))))))
 
                  (dom/div
-            (css/add-class :sections)
-            (when (pos? (count featured-streams))
-              (common/content-section {:href  (routes/url :live route-params)
-                                       :class "online-channels"}
-                                      "Stores streaming right now"
-                                      (grid/row
-                                        (->>
-                                          (grid/columns-in-row {:small 2 :medium 4}))
-                                        ;(grid/column
-                                        ;  (css/add-class :online-streams))
-                                        (map (fn [c]
-                                               (grid/column
-                                                 (css/add-class :online-stream)
-                                                 (ci/->OnlineChannel c)))
-                                             (if (<= 8 (count featured-streams))
-                                               (take 8 featured-streams)
-                                               (take 4 featured-streams))))
-                                      "See more streams"))
+                   (css/add-class :sections)
+                   (cond (pos? (count featured-streams))
+                         (common/content-section {:href  (routes/url :live route-params)
+                                                  :class "online-channels"}
+                                                 "Stores streaming right now"
+                                                 (grid/row
+                                                   (->>
+                                                     (grid/columns-in-row {:small 2 :medium 4}))
+                                                   ;(grid/column
+                                                   ;  (css/add-class :online-streams))
+                                                   (map (fn [c]
+                                                          (grid/column
+                                                            (css/add-class :online-stream)
+                                                            (ci/->OnlineChannel c)))
+                                                        (if (<= 8 (count featured-streams))
+                                                          (take 8 featured-streams)
+                                                          (take 4 featured-streams))))
+                                                 "See more streams")
+                         (pos? (count online-stores))
+                         (common/content-section {:href  (routes/url :live route-params)
+                                                  :class "online-channels"}
+                                                 "Stores online right now"
+                                                 (grid/row
+                                                   (->>
+                                                     (grid/columns-in-row {:small 2 :medium 4}))
+                                                   ;(grid/column
+                                                   ;  (css/add-class :online-streams))
+                                                   (map (fn [store]
+                                                          (grid/column
+                                                            nil
+                                                            (ci/->StoreItem store)))
+                                                        (if (<= 8 (count online-stores))
+                                                          (take 8 online-stores)
+                                                          (take 4 online-stores))))
+                                                 "See more stores"))
 
 
 
-            (common/content-section {:class "collections"}
-                                    "Shop by collection"
-                                    (div nil
-                                         (grid/row
-                                           (grid/columns-in-row {:small 1 :medium 2})
-                                           (grid/column
-                                             (->> (css/add-class :content-item)
-                                                  (css/add-class :collection-item))
-                                             (collection-element {:href     (routes/url :browse/category (merge route-params
-                                                                                                                {:top-category "home"}))
-                                                                  :photo-id "static/home-4"
-                                                                  :title    "Home"}))
-                                           (grid/column
-                                             (->> (css/add-class :content-item)
-                                                  (css/add-class :collection-item))
-                                             (collection-element {:href     (routes/url :browse/gender (merge route-params
-                                                                                                              {:sub-category "women"}))
-                                                                  :photo-id "static/women-3"
-                                                                  :title    "Women"}))
-                                           (grid/column
-                                             (->> (css/add-class :content-item)
-                                                  (css/add-class :collection-item))
-                                             (collection-element {:href     (routes/url :browse/gender (merge route-params
-                                                                                                              {:sub-category "men"}))
-                                                                  :photo-id "static/men-3"
-                                                                  :title    "Men"}))
-                                           (grid/column
-                                             (->> (css/add-class :content-item)
-                                                  (css/add-class :collection-item))
-                                             (collection-element {:href     (routes/url :browse/gender (merge route-params
-                                                                                                              {:sub-category "unisex-kids"}))
-                                                                  :photo-id "static/kids-3"
-                                                                  :title    "Kids"}))))
-                                    ;(map (fn [s t]
-                                    ;       (collection-element {:url (first (:store/featured-img-src s))
-                                    ;                            :title t}))
-                                    ;     featured-stores
-                                    ;     ["Home" "Kids" "Women" "Men"])
-                                    ""
-                                    )
+                   (common/content-section {:class "collections"}
+                                           "Shop by collection"
+                                           (div nil
+                                                (grid/row
+                                                  (grid/columns-in-row {:small 1 :medium 2})
+                                                  (grid/column
+                                                    (->> (css/add-class :content-item)
+                                                         (css/add-class :collection-item))
+                                                    (collection-element {:href     (routes/url :browse/category (merge route-params
+                                                                                                                       {:top-category "home"}))
+                                                                         :photo-id "static/home-4"
+                                                                         :title    "Home"}))
+                                                  (grid/column
+                                                    (->> (css/add-class :content-item)
+                                                         (css/add-class :collection-item))
+                                                    (collection-element {:href     (routes/url :browse/gender (merge route-params
+                                                                                                                     {:sub-category "women"}))
+                                                                         :photo-id "static/women-3"
+                                                                         :title    "Women"}))
+                                                  (grid/column
+                                                    (->> (css/add-class :content-item)
+                                                         (css/add-class :collection-item))
+                                                    (collection-element {:href     (routes/url :browse/gender (merge route-params
+                                                                                                                     {:sub-category "men"}))
+                                                                         :photo-id "static/men-3"
+                                                                         :title    "Men"}))
+                                                  (grid/column
+                                                    (->> (css/add-class :content-item)
+                                                         (css/add-class :collection-item))
+                                                    (collection-element {:href     (routes/url :browse/gender (merge route-params
+                                                                                                                     {:sub-category "unisex-kids"}))
+                                                                         :photo-id "static/kids-3"
+                                                                         :title    "Kids"}))))
+                                           ;(map (fn [s t]
+                                           ;       (collection-element {:url (first (:store/featured-img-src s))
+                                           ;                            :title t}))
+                                           ;     featured-stores
+                                           ;     ["Home" "Kids" "Women" "Men"])
+                                           ""
+                                           )
 
-            (common/content-section
-              {:href  (routes/url :stores route-params)
-               :class "new-brands"}
-              "New stores"
-              ;(grid/row-column
-              ;  (css/text-align :center))
-              ;(dom/div
-              ;  (css/add-class :section-title)
-              ;  (dom/h2 nil "New brands"))
-              (dom/div
-                {:classes ["sulo-items-container"]}
-                (grid/row
-                  (grid/columns-in-row {:small 2 :medium 4})
-                  (map (fn [store]
-                         (let [store-name (get-in store [:store/profile :store.profile/name])]
-                           (grid/column
-                             nil
-                             (ci/->StoreItem store))))
-                       (take 4 featured-stores))))
-              "See more stores")
+                   (common/content-section
+                     {:href  (routes/url :stores route-params)
+                      :class "new-brands"}
+                     "New stores"
+                     ;(grid/row-column
+                     ;  (css/text-align :center))
+                     ;(dom/div
+                     ;  (css/add-class :section-title)
+                     ;  (dom/h2 nil "New brands"))
+                     (dom/div
+                       {:classes ["sulo-items-container"]}
+                       (grid/row
+                         (grid/columns-in-row {:small 2 :medium 4})
+                         (map (fn [store]
+                                (let [store-name (get-in store [:store/profile :store.profile/name])]
+                                  (grid/column
+                                    nil
+                                    (ci/->StoreItem store))))
+                              (take 4 featured-stores))))
+                     "See all stores")
 
-            (common/content-section {:href  (routes/url :browse/all-items route-params)
-                                     :class "new-arrivals"}
-                                    "New products"
-                                    (grid/row
-                                      (->> (css/add-class :collapse)
-                                           (grid/columns-in-row {:small 2 :medium 4 :large 5}))
-                                      (map
-                                        (fn [p]
-                                          (grid/column
-                                            (css/add-class :new-arrival-item)
-                                            (pi/->ProductItem (om/computed {:product p}
-                                                                           {:open-url? true
-                                                                            :current-route current-route}))))
-                                        (take 5 featured-items)))
-                                    "See more products")
+                   (common/content-section {:href  (routes/url :browse/all-items route-params)
+                                            :class "new-arrivals"}
+                                           "New products"
+                                           (grid/row
+                                             (->> (css/add-class :collapse)
+                                                  (grid/columns-in-row {:small 2 :medium 4 :large 5}))
+                                             (map
+                                               (fn [p]
+                                                 (grid/column
+                                                   (css/add-class :new-arrival-item)
+                                                   (pi/->ProductItem (om/computed {:product p}
+                                                                                  {:open-url?     true
+                                                                                   :current-route current-route}))))
+                                               (take 5 featured-items)))
+                                           "See more products")
 
 
 
-            (common/sell-on-sulo this)))))))
+                   (common/sell-on-sulo this)))))))
 
 
 (def ->Index (om/factory Index))
