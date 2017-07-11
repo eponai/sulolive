@@ -210,9 +210,9 @@
         ))))
 
 (def VideoPlayer (script-loader/js-loader {:component VideoPlayer-no-loader
-                                      #?@(:cljs [:scripts [[#(exists? js/Hls)
-                                                            "https://cdn.jsdelivr.net/hls.js/latest/hls.js"]
-                                                           [#(exists? js/plyr)
-                                                            "https://cdn.plyr.io/1.8.2/plyr.js"]]])}))
+                                           #?@(:cljs [:scripts [[#(exists? js/Hls)
+                                                                 "https://cdn.jsdelivr.net/hls.js/latest/hls.js"]
+                                                                [#(exists? js/plyr)
+                                                                 "https://cdn.plyr.io/2.0.12/plyr.js"]]])}))
 
 (def ->VideoPlayer (om/factory VideoPlayer))

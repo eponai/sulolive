@@ -18,14 +18,7 @@
   (query [_]
     [
      {:query/streams (om/get-query ci/OnlineChannel)}
-     `({:query/stores [:db/id
-                       {:stream/_store [:stream/state]}
-                       :store/locality
-                       {:store/profile [:store.profile/name
-                                        {:store.profile/photo [:photo/path
-                                                               :photo/id]}]}
-                       :store/username
-                       {:store/status [:status/type]}]} ~{:states [:stream.state/offline :stream.state/online]})
+     `({:query/stores ~(om/get-query ci/StoreItem)} ~{:states [:stream.state/offline :stream.state/online]})
      {:query/online-stores (om/get-query ci/StoreItem)}
      :query/locations])
   Object
