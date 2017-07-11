@@ -193,71 +193,81 @@
               (when (not-empty variations)
                 (dom/div nil
                          (dom/select
-                           {:id (get form-elements :selected-sku)}
+                           {:id           (get form-elements :selected-sku)
+                            :defaultValue (or (first (filter #(not= :out-of-stock (-> % :store.item.sku/inventory
+                                                                                      :store.item.sku.inventory/value)) variations))
+                                              (-> variations first :db/id))}
                            (map
                              (fn [sku]
-                               (dom/option
-                                 {:value (:db/id sku)} (:store.item.sku/variation sku)))
+                               (debug "SKU: " sku)
+                               (let [is-disabled (= :out-of-stock (-> sku :store.item.sku/inventory :store.item.sku.inventory/value))]
+                                 (dom/option
+                                   (cond-> {:value (:db/id sku)}
+                                            is-disabled
+                                            (assoc :disabled true))
+                                   (str (:store.item.sku/variation sku) (when is-disabled " - out of stock")))))
                              variations))))
-              (dom/div
-                (css/add-class :product-action-container)
-                ;(my-dom/div (->> (css/grid-row))
-                ;            (my-dom/div (->> (css/grid-column)
-                ;                             (css/grid-column-size {:small 6 :medium 8}))
-                ;                        (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
-                ;                                :className "button expanded"} "Add to bag"))
-                ;            (my-dom/div (css/grid-column)
-                ;                        (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
-                ;                                    :className "button expanded hollow"} "Save")))
-                ;(dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
-                ;            :className "button expanded hollow"} "Save")
+              (let [out-of-stock? (every? #(= :out-of-stock (-> % :store.item.sku/inventory :store.item.sku.inventory/value)) variations)]
+                (dom/div
+                  (css/add-class :product-action-container)
+                  ;(my-dom/div (->> (css/grid-row))
+                  ;            (my-dom/div (->> (css/grid-column)
+                  ;                             (css/grid-column-size {:small 6 :medium 8}))
+                  ;                        (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
+                  ;                                :className "button expanded"} "Add to bag"))
+                  ;            (my-dom/div (css/grid-column)
+                  ;                        (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
+                  ;                                    :className "button expanded hollow"} "Save")))
+                  ;(dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
+                  ;            :className "button expanded hollow"} "Save")
 
-                (dom/a
-                  (cond->> (->> {:onClick #(when (not-empty skus)
-                                            (.add-to-bag this))}
-                                (css/button)
-                                (css/expanded))
-                           (empty? skus)
-                           (css/add-class :disabled))
-                  (dom/span nil "Add to bag"))
-                (dom/p
-                  (when (or added-to-bag? (empty? skus))
-                    (css/add-class :show))
-                  (dom/small
-                    (cond added-to-bag?
-                          (css/add-class :text-success)
-                          (empty? skus)
-                          (css/add-class :text-alert))
-                    (if (empty? skus)
-                      "Out of stock"
-                      "Your shopping bag was updated")))
+                  (dom/a
+                    (cond->> (->> {:onClick #(when out-of-stock?
+                                              (.add-to-bag this))}
+                                  (css/button)
+                                  (css/expanded))
+                             out-of-stock?
+                             (css/add-class :disabled))
+                    (dom/span nil "Add to bag"))
+                  (dom/p
+                    (when (or added-to-bag? out-of-stock?)
+                      (css/add-class :show))
+                    (dom/small
+                      (cond added-to-bag?
+                            (css/add-class :text-success)
+                            out-of-stock?
+                            (css/add-class :text-alert))
 
-                (let [item-url (product-url item)]
-                  (menu/horizontal
-                    (->> (css/align :right)
-                         (css/add-class :share-menu))
-                    (menu/item
-                      nil
-                      (social/share-button {:on-click #(mixpanel/track "Share on social media" {:platform "facebook"
-                                                                                                :object   "product"})
-                                            :platform :social/facebook
-                                            :href     item-url}))
-                    (menu/item
-                      nil
-                      (social/share-button {:on-click    #(mixpanel/track "Share on social media" {:platform "twitter"
-                                                                                                   :object   "product"})
-                                            :platform    :social/twitter
-                                            :description item-name
-                                            :href        item-url}))
-                    (menu/item
-                      nil
-                      (social/share-button {:on-click    #(mixpanel/track "Share on social media" {:platform "pinterest"
-                                                                                                   :object   "product"})
-                                            :platform    :social/pinterest
-                                            :href        item-url
-                                            :description item-name
-                                            :media       (photos/transform (get-in (first photos) [:store.item.photo/photo :photo/id])
-                                                                           :transformation/thumbnail)})))))))
+                      (if out-of-stock?
+                        "Out of stock"
+                        "Your shopping bag was updated")))
+
+                  (let [item-url (product-url item)]
+                    (menu/horizontal
+                      (->> (css/align :right)
+                           (css/add-class :share-menu))
+                      (menu/item
+                        nil
+                        (social/share-button {:on-click #(mixpanel/track "Share on social media" {:platform "facebook"
+                                                                                                  :object   "product"})
+                                              :platform :social/facebook
+                                              :href     item-url}))
+                      (menu/item
+                        nil
+                        (social/share-button {:on-click    #(mixpanel/track "Share on social media" {:platform "twitter"
+                                                                                                     :object   "product"})
+                                              :platform    :social/twitter
+                                              :description item-name
+                                              :href        item-url}))
+                      (menu/item
+                        nil
+                        (social/share-button {:on-click    #(mixpanel/track "Share on social media" {:platform "pinterest"
+                                                                                                     :object   "product"})
+                                              :platform    :social/pinterest
+                                              :href        item-url
+                                              :description item-name
+                                              :media       (photos/transform (get-in (first photos) [:store.item.photo/photo :photo/id])
+                                                                             :transformation/thumbnail)}))))))))
 
           (grid/row-column
             (css/add-class :product-details)
