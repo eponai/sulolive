@@ -10,6 +10,7 @@
 @import "search-bar";
 @import "switch";
 @import "menu";
+@import "content-section";
 
 .sl-shipping {
 	.sl-shipping--address {
@@ -21,4 +22,22 @@
 .button.delete-button {
 	border: none !important;
 	font-weight: $global-weight-normal;
+}
+
+.pagination {
+	font-weight: $global-weight-bold;
+	li {
+		border: $global-border;
+		border-color: rgba($sulo-dark-color, 0.5);
+	}
+	li.pagination-previous, li.pagination-next {
+		font-weight: $global-weight-normal;
+		border: none;
+		a {
+			color: $body-font-color;
+			&:hover {
+				background: $white;
+			}
+		}
+	}
 }

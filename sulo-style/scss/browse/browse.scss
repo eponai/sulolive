@@ -14,7 +14,14 @@
 	}
 }
 
+#sulo-browse {
+	.page-content {
+		padding-bottom: 0;
+	}
+}
+
 .sulo-browse {
+
 	.section {
 		padding-top: $global-padding;
 	}
@@ -25,6 +32,9 @@
 		align-items: flex-end;
 		flex-wrap: wrap;
 		
+	}
+	.section-footer {
+		padding-top: 4rem;
 	}
 	.sulo-items-container.empty-container {
 		padding-bottom: 8rem;

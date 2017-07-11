@@ -306,28 +306,30 @@
                              (fn [p]
                                (pi/->ProductItem {:product p})))
               (when (< 1 (count pages))
-                (pagination/->Pagination
-                  {:current-page (:page-num page-range)
-                   :pages        (browse/pages browse-result)
-                   :page->anchor-opts
-                                 (fn [page]
-                                   {:href
-                                    (routes/map->url (routes/merge-route this {:query-params {:page-num page}}))
-                                    ;; When not clicking the active page, fetch data for clicked page.
-                                    :onClick
-                                    #(do
-                                       (fetch-item-data! this
-                                                        browse-result
-                                                        (assoc page-range :page-num page)
-                                                        route-params)
+                (dom/div
+                  (css/add-class :section-footer)
+                  (pagination/->Pagination
+                    {:current-page (:page-num page-range)
+                     :pages        (browse/pages browse-result)
+                     :page->anchor-opts
+                                   (fn [page]
+                                     {:href
+                                      (routes/map->url (routes/merge-route this {:query-params {:page-num page}}))
+                                      ;; When not clicking the active page, fetch data for clicked page.
+                                      :onClick
+                                      #(do
+                                        (fetch-item-data! this
+                                                          browse-result
+                                                          (assoc page-range :page-num page)
+                                                          route-params)
 
-                                       ;; Scroll to the top somewhere.
-                                       ;; Choosing sulo-search-bar because it looked good.
-                                       #?(:cljs
-                                          (let [el (.getElementById js/document "sulo-search-bar")]
-                                            (if (.-scrollIntoView el)
-                                              (.scrollIntoView el)
-                                              (.scrollTo js/window 0 0)))))})})))))))))
+                                        ;; Scroll to the top somewhere.
+                                        ;; Choosing sulo-search-bar because it looked good.
+                                        #?(:cljs
+                                           (let [el (.getElementById js/document "sulo-search-bar")]
+                                             (if (.-scrollIntoView el)
+                                               (.scrollIntoView el)
+                                               (.scrollTo js/window 0 0)))))})}))))))))))
 
 (def ->Goods (om/factory Goods))
 
