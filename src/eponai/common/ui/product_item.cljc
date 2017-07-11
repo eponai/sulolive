@@ -17,8 +17,11 @@
        [eponai.web.firebase :as firebase])
     [eponai.common.shared :as shared]))
 
+(defn show-status [current-route]
+  (not (contains? #{:store} (:route current-route))))
+
 (defn product-element [opts product & children]
-  (let [{:keys [on-click open-url? store-status]} opts
+  (let [{:keys [on-click open-url? store-status current-route]} opts
         goods-href (when (or open-url? (nil? on-click)) (product/product-url product))
         on-click (when-not open-url? on-click)
         {:store.item/keys [photos price]
@@ -42,13 +45,10 @@
                                ))
 
       (dom/div
-        (css/add-classes [:header :text :sl-tooltip])
+        (css/add-classes [:header :text])
         (dom/a {:onClick on-click
                 :href    goods-href}
-               (dom/span nil item-name))
-        (when (#{:live :online} store-status)
-          (dom/small (css/add-class :sl-tooltip-text) (str (:store.profile/name (:store/profile store))
-                                                           " is " (name store-status) " right now, say hi in their store."))))
+               (dom/span nil item-name)))
       (dom/a
         (css/add-classes [:text :store-name :sl-tooltip] {:href (routes/store-url store :store)})
 
@@ -85,11 +85,12 @@
              store-owner (-> product :store/_items :store/owners :store.owner/user)
              stream-state (-> product :store/_items :stream/_store first :stream/state)
              presence-ref (firebase/-ref fb "presence")]
-         (if (= :stream.state/live stream-state)
+         (if (and (= :stream.state/live stream-state)
+                  (show-status current-route))
            (om/update-state! this assoc :store-live? true)
            (firebase/-once fb (fn [snapshot]
                                 (let [is-online? (and (= true (get (:value snapshot) (str (:db/id store-owner))))
-                                                      (not (contains? #{:store} (:route current-route))))]
+                                                      (show-status current-route))]
                                   (om/update-state! this assoc :store-online? is-online?)))
                            presence-ref)))))
 
@@ -98,11 +99,11 @@
 
   (render [this]
     (let [{:keys [product]} (om/props this)
-          {:keys [display-content current-route]} (om/get-computed this)
+          {:keys [display-content current-route open-url?]} (om/get-computed this)
           {:keys [show-item? breakpoint store-online? store-live?]} (om/get-state this)
           on-click #(om/update-state! this assoc :show-item? true)
-          #?@(:cljs [open-url? (utils/bp-compare :large breakpoint >)]
-              :clj  [open-url? false])]
+          #?@(:cljs [open-url? (if (some? open-url?) open-url? (utils/bp-compare :large breakpoint >))]
+              :clj  [open-url? (if (some? open-url?) open-url? false)])]
 
       (debug "PRODUCT: " product)
       (debug "STATE: " (om/get-state this))

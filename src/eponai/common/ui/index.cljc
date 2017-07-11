@@ -9,7 +9,8 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.client.routes :as routes]
     [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.router :as router]))
+    [eponai.common.ui.router :as router]
+    [eponai.common.ui.product :as product]))
 
 ;(defn banner [{:keys [color align] :as opts} primary secondary]
 ;  (let [align (or align :left)
@@ -43,15 +44,7 @@
   (query [_]
     [:query/locations
      :query/current-route
-     {:query/featured-items [:db/id
-                             :store.item/name
-                             :store.item/price
-                             :store.item/created-at
-                             {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
-                                                  :store.item.photo/index]}
-                             {:store/_items [{:store/profile [:store.profile/name]}
-                                             {:store/locality [:sulo-locality/path]}
-                                             :store/username]}]}
+     {:query/featured-items (om/get-query product/Product)}
      {:query/featured-stores [:db/id
                               {:store/profile [:store.profile/name
                                                {:store.profile/photo [:photo/path :photo/id]}]}
@@ -220,7 +213,9 @@
                                         (fn [p]
                                           (grid/column
                                             (css/add-class :new-arrival-item)
-                                            (pi/product-element {:open-url? true} p)))
+                                            (pi/->ProductItem (om/computed {:product p}
+                                                                           {:open-url? true
+                                                                            :current-route current-route}))))
                                         (take 5 featured-items)))
                                     "See more products")
 
