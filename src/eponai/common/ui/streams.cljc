@@ -26,10 +26,14 @@
                                                                :photo/id]}]}
                        :store/username
                        {:store/status [:status/type]}]} ~{:states [:stream.state/offline :stream.state/online]})
+     {:query/online-stores (om/get-query ci/StoreItem) }
      :query/locations])
   Object
   (render [this]
-    (let [{:query/keys [locations streams stores]} (om/props this)]
+    (let [{:query/keys [locations streams stores online-stores]} (om/props this)
+          streaming-stores (set (map #(get-in % [:stream/store :db/id]) streams))
+          online-not-live (remove #(contains? streaming-stores (:db/id %)) online-stores)
+          offline-stores (remove #(contains? (set (map :db/id online-not-live)) (:db/id %)) stores)]
       (debug "Live props: " (om/props this))
       (dom/div
         {:classes ["sulo-browse"]}
@@ -71,35 +75,40 @@
               (my-dom/div
                 {:classes ["sulo-items-container empty-container"]}
                 (my-dom/span (css/add-class :shoutout) "No stores are LIVE right now :'(")))
-            (my-dom/div
-              {:classes ["sulo-items-container section"]}
+
+            (if (pos? (count online-not-live))
               (my-dom/div
-                (css/add-class :section-title)
-                (my-dom/h4 nil "Other cool stores")
-                )
-              (grid/row
-                (grid/columns-in-row {:small 2 :medium 3 :large 4})
-                (map (fn [store]
-                       (let [store-name (get-in store [:store/profile :store.profile/name])]
+                {:classes ["sulo-items-container section"]}
+                (my-dom/div
+                  (css/add-class :section-title)
+                  (my-dom/h4 nil "Other cool stores currently online")
+                  )
+                (grid/row
+                  (grid/columns-in-row {:small 2 :medium 3 :large 4})
+                  (map (fn [store]
                          (grid/column
                            nil
-                           (my-dom/div
-                             (->> (css/add-class :content-item)
-                                  (css/add-class :stream-item))
-                             (my-dom/a
-                               {:href (routes/store-url store :store)}
-                               (photo/store-photo store {:transformation :transformation/thumbnail-large}))
-                             (my-dom/div
-                               (->> (css/add-class :text)
-                                    (css/add-class :header))
-                               (my-dom/a {:href (routes/store-url store :store)}
-                                         (my-dom/strong nil store-name)))))))
-                     (take 8 stores)))
-              (dom/div
-                (css/add-class :section-footer)
-                (button/default-hollow
-                  (css/add-classes [:sulo-dark] {:href (routes/url :stores {:locality (:sulo-locality/path locations)})})
-                  (dom/span nil "See all stores"))))))))))
+                           (ci/->StoreItem store)))
+                       online-not-live)))
+
+              (my-dom/div
+                {:classes ["sulo-items-container section"]}
+                (my-dom/div
+                  (css/add-class :section-title)
+                  (my-dom/h4 nil "Offline stores")
+                  )
+                (grid/row
+                  (grid/columns-in-row {:small 2 :medium 3 :large 4})
+                  (map (fn [store]
+                         (grid/column
+                           nil
+                           (ci/->StoreItem store)))
+                       offline-stores))
+                (dom/div
+                  (css/add-class :section-footer)
+                  (button/default-hollow
+                    (css/add-classes [:sulo-dark] {:href (routes/url :stores {:locality (:sulo-locality/path locations)})})
+                    (dom/span nil "See all stores")))))))))))
 
 (def ->Streams (om/factory Streams))
 

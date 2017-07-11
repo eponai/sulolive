@@ -165,6 +165,7 @@
                        :store.owner/role :store.owner.role/admin}
     :store/stripe     (no-details-account)
     :store/created-at 2
+    :store/status {:status/type :status.type/open}
     ;:store/locality   [:sulo-locality/path "yvr"]
 
     :store/items      [{:store.item/name     "Linen duvet cover - Woodrose"

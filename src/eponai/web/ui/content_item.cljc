@@ -79,3 +79,28 @@
           )))))
 
 (def ->OnlineChannel (om/factory OnlineChannel))
+
+(defui StoreItem
+  static om/IQuery
+  (query [this]
+    [:db/id
+     {:store/profile [:store.profile/name
+                      {:store.profile/photo [:photo/path
+                                             :photo/id]}]}])
+  Object
+  (render [this]
+    (let [store (om/props this)
+          store-name (-> store :store/profile :store.profile/name)]
+      (dom/div
+        (->> (css/add-class :content-item)
+             (css/add-class :store-item))
+        (dom/a
+          {:href (routes/store-url store :store)}
+          (photo/store-photo store {:transformation :transformation/thumbnail-large}))
+        (dom/div
+          (->> (css/add-class :text)
+               (css/add-class :header))
+          (dom/a {:href (routes/store-url store :store)}
+                 (dom/strong nil store-name)))))))
+
+(def ->StoreItem (om/factory StoreItem))
