@@ -157,15 +157,22 @@
 (defmethod shared/shared-component [:shared/firebase :env/dev]
   [reconciler _ _]
   (reify IFirebase
-    ;; Refs
+    (-ref [this path])
     (-ref-notifications [this user-id])
+    (-timestamp [this])
+    (-add-connected-listener [this ref {:keys [on-connect on-disconnect]}])
+
+    (-remove-on-disconnect [this ref])
 
     (-limit-to-last [this n ref])
 
+    (-set [this ref v])
+    (-push [this ref])
     (-remove [this ref])
     (-update [this ref v])
-    (-off [this ref])
 
-    ;; Listeners
+    (-off [this ref])
+    (-on-value-changed [this f ref])
     (-on-child-added [this f ref])
-    (-on-child-removed [this f ref])))
+    (-on-child-removed [this f ref ])
+    (-once [this f ref])))

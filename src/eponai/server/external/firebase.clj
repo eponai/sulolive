@@ -139,6 +139,7 @@
   (reify
     IFirebaseChat
     (-user-online [this store-id])
+    (-online-users [this])
     IFirebaseAuth
     (-generate-client-auth-token [this user-id claims]
       "some-token")

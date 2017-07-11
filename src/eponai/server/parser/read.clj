@@ -236,13 +236,15 @@
                 _ (debug "GOT ONLINE USERS: " (keys online-store-owners))
                 user-dbids (map #(Long/parseLong %) (keys online-store-owners))
                 _ (debug "PULL USERS: " (into [] user-dbids))
-                stores (db/pull-all-with db query {:where   '[[?o :store.owner/user ?user]
-                                                              [?e :store/locality ?l]
-                                                              [?e :store/owners ?o]
-                                                              [?e :store/status ?st]
-                                                              [?st :status/type :status.type/open]]
-                                                   :symbols {'[?user ...] user-dbids
-                                                             '?l (:db/id locations)}})]
+                stores (if (not-empty user-dbids)
+                         (db/pull-all-with db query {:where   '[[?o :store.owner/user ?user]
+                                                                [?e :store/locality ?l]
+                                                                [?e :store/owners ?o]
+                                                                [?e :store/status ?st]
+                                                                [?st :status/type :status.type/open]]
+                                                     :symbols {'[?user ...] user-dbids
+                                                               '?l          (:db/id locations)}})
+                         [])]
             (map #(assoc % :store/online true) stores))})
 
 (defread query/store-has-streamed

@@ -31,7 +31,7 @@
                    :system/aws-elb
                    :system/aws-s3
                    :system/chat
-                   ;; :system/chat-datomic
+                   :system/chat-datomic
                    :system/chat-websocket
                    :system/client-env
                    :system/cloudinary
@@ -65,15 +65,8 @@
                              (:cloudinary-api-key env)
                              (:cloudinary-api-secret env)
                              (:in-prod? config))
-   :system/chat            (c/using (chat/map->FirebaseStoreChat {})
-                                    {:firebase     :system/firebase
-                                     :sulo-datomic :system/datomic})
-   ;:system/chat            (c/using (chat/map->DatomicChat {})
-   ;                                {:chat-datomic :system/chat-datomic
-   ;                                 :sulo-datomic :system/datomic})
-   ;:system/chat-datomic    (datomic/map->Datomic
-   ;                          {:db-url           (:chat-db-url env)
-   ;                           :add-mocked-data? false})
+
+
    :system/chat-websocket  (c/using (websocket/map->StoreChatWebsocket {})
                                     {:chat :system/chat})
    :system/client-env      (client-env/map->ClientEnvironment
@@ -110,6 +103,10 @@
                                            :zone       (:aws-s3-bucket-photos-zone env)
                                            :access-key (:aws-access-key-id env)
                                            :secret     (:aws-secret-access-key env)})
+   :system/chat            (c/using (chat/map->FirebaseStoreChat {})
+                                    {:firebase     :system/firebase
+                                     :sulo-datomic :system/datomic})
+   :system/chat-datomic    {}
    :system/email           (email/email {:host (:smtp-host env)
                                          ;:port (Long/parseLong (:smtp-port env))
                                          :ssl  true
@@ -139,6 +136,12 @@
    :system/aws-ec2         (ec2/aws-ec2-stub)
    :system/aws-elb         (elb/aws-elastic-beanstalk-stub)
    :system/aws-s3          (s3/aws-s3-stub)
+   :system/chat            (c/using (chat/map->DatomicChat {})
+                                    {:chat-datomic :system/chat-datomic
+                                     :sulo-datomic :system/datomic})
+   :system/chat-datomic    (datomic/map->Datomic
+                             {:db-url           nil
+                              :add-mocked-data? false})
    :system/elastic-cloud   (elastic-cloud/elastic-cloud-stub)
    :system/firebase        (firebase/firebase-stub)
    :system/email           (email/email-stub)
