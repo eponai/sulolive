@@ -20,6 +20,7 @@
   (query [_]
     [:db/id
      :stream/title
+     :stream/state
      {:stream/store [:db/id
                      {:store/locality [:sulo-locality/path]}
                      {:store/profile [:store.profile/name

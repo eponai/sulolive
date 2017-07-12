@@ -77,7 +77,7 @@
                 {:classes ["sulo-items-container section"]}
                 (my-dom/div
                   (css/add-class :section-title)
-                  (my-dom/h4 nil "Stores online")
+                  (my-dom/h3 nil "Stores online")
                   )
                 (grid/row
                   (grid/columns-in-row {:small 2 :medium 3 :large 4})
@@ -91,7 +91,7 @@
               {:classes ["sulo-items-container section"]}
               (my-dom/div
                 (css/add-class :section-title)
-                (my-dom/h4 nil (str "All SULO stores " (:sulo-locality/path locations)))
+                (my-dom/h3 nil (str "All SULO " (:sulo-locality/path locations) " stores"))
                 )
               (grid/row
                 (grid/columns-in-row {:small 2 :medium 3 :large 4})

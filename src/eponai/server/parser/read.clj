@@ -113,7 +113,10 @@
                                                        [?st :status/type :status.type/open]
                                                        [?s :store/status ?st]
                                                        [?e :stream/store ?s]
-                                                       [?e :stream/state :stream.state/live]]
+                                                       [?e :stream/state :stream.state/live]
+                                                       ;[?s :store/profile ?p]
+                                                       ;[?p :store.profile/photo _]
+                                                       ]
                                             :symbols {'?l (:db/id locations)}}))})
 
 (defread query/browse-items
