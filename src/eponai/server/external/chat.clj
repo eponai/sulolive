@@ -102,6 +102,14 @@
       (async/close! (:store-id-chan this)))
     (dissoc this ::started? :listener :store-id-chan))
 
+  suspendable/Suspendable
+  (suspend [this] this)
+  (resume [this old-this]
+    (if (::started? old-this)
+      (reduce-kv assoc this (select-keys old-this [::started? :listener :store-id-chan]))
+      (do (component/stop old-this)
+          (component/start this))))
+
   IWriteStoreChat
   (write-message [this store user message]
     (let [tx (format/chat-message (chat-db this) store user message)]
