@@ -116,7 +116,7 @@
                                                         (if (<= 8 (count featured-streams))
                                                           (take 8 featured-streams)
                                                           (take 4 featured-streams))))
-                                                 "See more streams")
+                                                 "See more")
                          (pos? (count online-stores))
                          (common/content-section {:href  (routes/url :live route-params)
                                                   :class "online-channels"}
@@ -133,7 +133,7 @@
                                                         (if (<= 8 (count online-stores))
                                                           (take 8 online-stores)
                                                           (take 4 online-stores))))
-                                                 "See more stores"))
+                                                 "See more"))
 
 
 
