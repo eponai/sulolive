@@ -32,15 +32,17 @@
 (s/def :shipping.address/street2 (s/or :value string? :empty nil?))
 (s/def :shipping.address/postal (s/and string? #(not-empty %)))
 (s/def :shipping.address/locality (s/and string? #(not-empty %)))
-(s/def :shipping.address/region (s/or :value #(re-matches #"\w{2}" %) :empty nil?))
+(s/def :shipping.address/region (s/or :value #(and (string? %) (re-matches #"\w{2}" %)) :empty nil?))
 (s/def :shipping.address/country (s/keys :req [:country/code]))
 
 (s/def :shipping/address (s/keys :req [:shipping.address/street
                                        :shipping.address/postal
                                        :shipping.address/locality]
 
-                                 :opt [:shipping.address/street2
-                                       :shipping.address/region]))
+                                 ;:opt [:shipping.address/street2
+                                 ;      :shipping.address/region
+                                 ;      ]
+                                 ))
 
 (s/def ::shipping (s/keys :req [:shipping/address
                                 :shipping/name]))
@@ -51,7 +53,12 @@
          "HI" "ID" "IL" "IN" "IA" "KS" "KY" "LA" "ME" "MD"
          "MA" "MI" "MN" "MS" "MO" "MT" "NE" "NV" "NH" "NJ"
          "NM" "NY" "NC" "ND" "OH" "OK" "OR" "PA" "RI" "SC"
-         "SD" "TN" "TX" "UT" "VT" "VA" "WA" "WV" "WI" "WY"]})
+         "SD" "TN" "TX" "UT" "VT" "VA" "WA" "WV" "WI" "WY"]
+   })
+
+(def region-names
+  {"CA" "Province"
+   "US" "State"})
 
 
 
