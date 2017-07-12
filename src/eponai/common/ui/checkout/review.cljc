@@ -56,7 +56,7 @@
                   (dom/div
                     (->> (css/add-class :sl-CheckoutItemlist-cell)
                          (css/add-class :sl-CheckoutItemlist-cell--photo))
-                    (photo/product-preview product))
+                    (photo/product-preview product nil))
                   (dom/div
                     (css/add-class :sl-CheckoutItemlist-cell)
                     (grid/row

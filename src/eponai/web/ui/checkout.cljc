@@ -91,7 +91,7 @@
                        (css/add-class :product-info)
                        (dom/a
                          {:href (product/product-url product)}
-                         (photo/product-preview product)
+                         (photo/product-preview product nil)
                          (dom/div nil
                                   (dom/span nil (:store.item/name product))
                                   (dom/br nil)

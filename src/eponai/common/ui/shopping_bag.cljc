@@ -14,7 +14,6 @@
     [eponai.common.ui.elements.callout :as callout]
     [eponai.web.ui.button :as button]
     [eponai.common.mixpanel :as mixpanel]
-    [eponai.common.ui.product-item :as pi]
     [eponai.common.ui.product :as product]
     [eponai.web.ui.content-item :as ci]))
 
@@ -153,7 +152,8 @@
                              {:store/_items [{:store/profile [:store.profile/name]}
                                              :store/locality]}]}
      :query/locations
-     {:query/auth [:user/email]}])
+     {:query/auth [:user/email]}
+     :query/current-route])
   Object
   (remove-item [this sku]
     (debug "SKU REMOVE: " sku)
@@ -166,7 +166,7 @@
         (om/update-state! this assoc :did-mount? true))))
   (render [this]
     (let [{:proxy/keys [navbar footer]
-           :query/keys [cart locations featured-items]} (om/props this)
+           :query/keys [current-route cart locations featured-items]} (om/props this)
           {:keys [user.cart/items]} cart
           skus-by-store (items-by-store items)]
       (debug "Shopping bag: " cart)
@@ -204,7 +204,9 @@
                  (fn [p]
                    (grid/column
                      (css/add-class :new-arrival-item)
-                     (ci/->ProductItem p)))
+                     (ci/->ProductItem (om/computed p
+                                                    {:current-route current-route
+                                                     :open-url? true}))))
                  (take 5 featured-items)))]))))))
 
 (def ->ShoppingBag (om/factory ShoppingBag))

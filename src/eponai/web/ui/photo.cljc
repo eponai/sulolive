@@ -161,7 +161,7 @@
                         :background? (if (some? background?) background? true)})
            content)))
 
-(defn product-preview [product & [opts & content]]
+(defn product-preview [product opts & content]
   (let [params (assoc opts :background? false)]
     (product-photo product (css/add-class :square params) content)))
 

@@ -1,6 +1,5 @@
 (ns eponai.common.ui.store
   (:require
-    [eponai.common.ui.product-item :as pi]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.chat :as chat]
     [eponai.common.ui.common :as common]

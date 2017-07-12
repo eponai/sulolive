@@ -2,7 +2,6 @@
   (:require
     [eponai.common.ui.common :as common]
     [eponai.web.ui.photo :as photo]
-    [eponai.common.ui.product-item :as pi]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug error]]
     [eponai.common.ui.dom :as dom :refer [div a]]

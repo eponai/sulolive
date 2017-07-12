@@ -15,7 +15,6 @@
     [eponai.common.ui.elements.menu :as menu]
     [clojure.string :as string]
     [eponai.web.ui.button :as button]
-    [eponai.common.ui.product-item :as pi]
     #?(:cljs [eponai.web.utils :as web.utils])
     [eponai.web.ui.content-item :as ci]))
 
@@ -162,7 +161,8 @@
                (fn [p]
                  (grid/column
                    (css/add-class :new-arrival-item)
-                   (ci/->ProductItem p)))
+                   (ci/->ProductItem (om/computed p
+                                                  {:current-route current-route}))))
                (take 5 featured-items)))])
         ))))
 

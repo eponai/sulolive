@@ -9,7 +9,6 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.product :as product]
     [eponai.common.ui.product-filters :as pf]
-    [eponai.common.ui.product-item :as pi]
     [eponai.common.ui.router :as router]
     [eponai.common.api.products :as products]
     [clojure.string :as str]
@@ -305,7 +304,8 @@
 
               (grid/products items
                              (fn [p]
-                               (ci/->ProductItem p)))
+                               (ci/->ProductItem (om/computed p
+                                                              {:current-route current-route}))))
               (when (< 1 (count pages))
                 (dom/div
                   (css/add-class :section-footer)

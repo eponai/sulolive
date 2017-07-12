@@ -11,7 +11,8 @@
        [eponai.web.firebase :as firebase])
     [eponai.common.ui.product :as product]
     [eponai.common.ui.common :as common]
-    [eponai.common.ui.utils :as ui-utils]))
+    [eponai.common.ui.utils :as ui-utils]
+    [eponai.web.ui.button :as button]))
 
 (defui OnlineChannel
   static om/IQuery
@@ -198,12 +199,22 @@
                  (css/add-class :is-live))
         (when show-item?
           (common/modal
-            {:on-close #(om/update-state! this assoc :show-item? false)
+            {:on-close #(do
+                         (om/update-state! this assoc :show-item? false)
+                         #?(:cljs
+                            (.replaceState js/history nil nil (routes/url (:route current-route)
+                                                                          (:route-params current-route)
+                                                                          (:query-params current-route)))))
              :size     :large}
             (product/->Product product)))
 
         (dom/a
-          (->> {:onClick on-click
+          (->> {:onClick #(when on-click
+                           (on-click)
+                           (debug "Chagne URL to: " goods-href)
+                           #?(:cljs
+                              (.replaceState js/history nil nil (product/product-url product))))
+
                 :href    goods-href}
                (css/add-class :primary-photo))
           (photo/product-preview product nil))
