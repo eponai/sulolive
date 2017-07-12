@@ -10,6 +10,7 @@
     #?(:cljs
        [eponai.web.firebase :as firebase])
     [eponai.common.ui.product :as product]
+    #?(:cljs [eponai.web.utils :as web.utils])
     [eponai.common.ui.common :as common]
     [eponai.common.ui.utils :as ui-utils]
     [eponai.web.ui.button :as button]))
@@ -163,6 +164,18 @@
   (query [_]
     (product/product-query))
   Object
+  (initLocalState [this]
+    #?(:cljs
+       {:resize-listener #(.on-window-resize this)
+        :breakpoint      (web.utils/breakpoint js/window.innerWidth)}))
+  (on-window-resize [this]
+    #?(:cljs (om/update-state! this assoc :breakpoint (web.utils/breakpoint js/window.innerWidth))))
+  (componentDidMount [this]
+    #?(:cljs
+       (let [product (om/props this)
+             stream-state (-> product :store/_items :stream/_store first :stream/state)]
+         (debug "Product stream state: " stream-state)
+         (.addEventListener js/window "resize" (:resize-listener (om/get-state this))))))
   (componentWillMount [this]
     #?(:cljs
        (let [fb (shared/by-key this :shared/firebase)
@@ -179,12 +192,15 @@
                                                       (show-status current-route))]
                                   (om/update-state! this assoc :store-online? is-online?)))
                            presence-ref)))))
+  (componentWillUnmount [this]
+    #?(:cljs (.removeEventListener js/window "resize" (:resize-listener (om/get-state this)))))
   (render [this]
     (let [product (om/props this)
           {:keys [current-route open-url? store-status]} (om/get-computed this)
-          {:keys [show-item? store-online? store-live?]} (om/get-state this)
+          {:keys [show-item? breakpoint store-online? store-live?]} (om/get-state this)
           on-click #(om/update-state! this assoc :show-item? true)
-
+          #?@(:cljs [open-url? (if (some? open-url?) open-url? (web.utils/bp-compare :large breakpoint >))]
+              :clj  [open-url? (if (some? open-url?) open-url? false)])
           goods-href (when (or open-url? (nil? on-click)) (product/product-url product))
           on-click (when-not open-url? on-click)
           {:store.item/keys [photos price]
