@@ -30,7 +30,7 @@ figwheel_server.log
 
 # node.js
 #
-/node_modules
+node_modules
 npm-debug.log
 yarn-error.log
 /bower_components
