@@ -208,8 +208,7 @@
                                             :class "new-arrivals"}
                                            "New products"
                                            (grid/row
-                                             (->> (css/add-class :collapse)
-                                                  (grid/columns-in-row {:small 2 :medium 4 :large 5}))
+                                             (grid/columns-in-row {:small 2 :medium 4 :large 5})
                                              (map
                                                (fn [p]
                                                  (grid/column
