@@ -33,7 +33,7 @@
 (defui ProductPage
   static om/IQuery
   (query [_]
-    [{:query/item (om/get-query product/Product)}
+    [{:query/item (product/product-query)}
      {:query/featured-items [:db/id
                              :store.item/name
                              :store.item/price

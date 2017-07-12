@@ -7,8 +7,8 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.web.ui.button :as button]
     [eponai.client.routes :as routes]
-    [eponai.common.ui.product-item :as pi]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.web.ui.content-item :as ci]))
 
 (defui Unauthorized
   static om/IQuery
@@ -26,7 +26,7 @@
      :query/messages])
   Object
   (render [this]
-    (let [{:query/keys [locations featured-items]} (om/props this)]
+    (let [{:query/keys [locations featured-items current-route]} (om/props this)]
 
       (dom/div
         { :id "sulo-unauthorized"}
@@ -60,7 +60,8 @@
                (fn [p]
                  (grid/column
                    (css/add-class :new-arrival-item)
-                   (pi/product-element {:open-url? true} p)))
+                   (ci/->ProductItem (om/computed p
+                                                  {:current-route current-route}))))
                (take 6 featured-items)))])))))
 
 (router/register-component :unauthorized Unauthorized)

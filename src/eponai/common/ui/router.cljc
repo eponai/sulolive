@@ -13,8 +13,11 @@
     [eponai.web.ui.nav.navbar :as navbar]
     [eponai.web.ui.nav.sidebar :as sidebar]
     [eponai.common.ui.elements.css :as css]
+    [eponai.web.ui.coming-soon :as coming-soon]
     #?(:cljs [eponai.web.firebase :as firebase])
-    [eponai.web.ui.nav.footer :as foot]))
+    [eponai.web.ui.nav.footer :as foot]
+    [clojure.string :as string]
+    [eponai.client.routes :as routes]))
 
 (def dom-app-id "the-sulo-app")
 (def root-route-key :routing/app-root)
@@ -95,11 +98,13 @@
   (query [this]
     [:query/current-route
      :query/firebase
+     :query/locations
      {:query/auth [:db/id]}
      {:query/owned-store [:db/id]}
      {:proxy/navbar (om/get-query navbar/Navbar)}
      {:proxy/sidebar (om/get-query sidebar/Sidebar)}
      {:proxy/footer (om/get-query foot/Footer)}
+     {:proxy/coming-soon (om/get-query coming-soon/ComingSoon)}
      {:routing/app-root (into {}
                               (map (juxt identity #(or (some-> (route->component %) :component om/get-query)
                                                        [])))
@@ -147,8 +152,8 @@
            ;                             (.set user-ref true)))))
            ))))
   (render [this]
-    (let [{:keys       [routing/app-root query/current-route]
-           :proxy/keys [navbar sidebar footer]} (om/props this)
+    (let [{:keys       [routing/app-root query/current-route query/locations]
+           :proxy/keys [navbar sidebar footer coming-soon]} (om/props this)
           route (normalize-route (:route current-route))
           {:keys [factory component]} (route->component route)]
       (when (nil? component)
@@ -157,6 +162,8 @@
                ". You also have to require your component's namespace in eponai.common.ui_namespaces.cljc"
                ". We're making it this complicated because we want module code splitting. "))
 
+      (debug "ROUTE: " (routes/url (:route current-route) (:route-params current-route)))
+      (debug "ROUTE SPLIT: " (string/split (routes/url (:route current-route) (:route-params current-route)) #"/"))
       (dom/div
         (css/add-class "sulo-page"
                        {:id (str "sulo-" (or (not-empty (namespace route)) (name route)))})
@@ -168,7 +175,11 @@
             (sidebar/->Sidebar sidebar)
             (dom/div
               (css/add-class :page-content)
-              (factory app-root)))
+
+              (let [current-loc-path (second (string/split (routes/url (:route current-route) (:route-params current-route)) #"/"))]
+                (if (contains? #{"yul"} current-loc-path)
+                  (coming-soon/->ComingSoon coming-soon)
+                  (factory app-root)))))
           ;(when-not no-footer?)
           (foot/->Footer footer)
           )))))

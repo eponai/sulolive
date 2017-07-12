@@ -9,7 +9,6 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.product :as product]
     [eponai.common.ui.product-filters :as pf]
-    [eponai.common.ui.product-item :as pi]
     [eponai.common.ui.router :as router]
     [eponai.common.api.products :as products]
     [clojure.string :as str]
@@ -20,7 +19,8 @@
     [clojure.string :as string]
     [eponai.common.browse :as browse]
     [eponai.common.database :as db]
-    [eponai.web.ui.pagination :as pagination]))
+    [eponai.web.ui.pagination :as pagination]
+    [eponai.web.ui.content-item :as ci]))
 
 ;(def sorting-vals
 ;  {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
@@ -37,7 +37,7 @@
 (defn fetch-item-data! [component browse-result page-range route-params]
   (om/transact!
     (om/get-reconciler component)
-    `[({:query/browse-product-items ~(om/get-query product/Product)}
+    `[({:query/browse-product-items ~(product/product-query)}
         {:product-items
          ~(into []
                 (browse/page-items
@@ -127,7 +127,7 @@
 (defui Goods
   static om/IQuery
   (query [_]
-    [{:query/browse-products-2 [{:browse-result/items (om/get-query product/Product)}
+    [{:query/browse-products-2 [{:browse-result/items (om/get-query ci/ProductItem)}
                                 :browse-result/meta]}
      {:query/navigation [:db/id :category/name :category/label :category/path :category/route-map]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
@@ -304,7 +304,8 @@
 
               (grid/products items
                              (fn [p]
-                               (pi/->ProductItem {:product p})))
+                               (ci/->ProductItem (om/computed p
+                                                              {:current-route current-route}))))
               (when (< 1 (count pages))
                 (dom/div
                   (css/add-class :section-footer)

@@ -1,6 +1,5 @@
 (ns eponai.common.ui.store
   (:require
-    [eponai.common.ui.product-item :as pi]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.chat :as chat]
     [eponai.common.ui.common :as common]
@@ -22,7 +21,9 @@
     [eponai.common.ui.elements.callout :as callout]
     [eponai.web.ui.button :as button]
     #?(:cljs [eponai.web.firebase :as firebase])
-    [eponai.common.shared :as shared]))
+    [eponai.common.shared :as shared]
+    [eponai.common.ui.product :as product]
+    [eponai.web.ui.content-item :as ci]))
 
 
 (defn about-section [component]
@@ -142,7 +143,7 @@
                               :store/featured-img-src
                               {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                                          :store.item.photo/index]}]}]}
-     {:query/store-items (om/get-query item/Product)}
+     {:query/store-items (om/get-query ci/ProductItem)}
      {:query/store-chat-status [:store/chat-online]}
      :query/locations
      :query/current-route])
@@ -368,7 +369,7 @@
                                              store-items))]
                      (grid/products products
                                     (fn [p]
-                                      (pi/->ProductItem (om/computed {:product p}
+                                      (ci/->ProductItem (om/computed p
                                                                      {:current-route current-route})))))))])))))
 
 (def ->Store (om/factory Store))

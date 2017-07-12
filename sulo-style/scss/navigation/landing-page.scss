@@ -8,6 +8,27 @@
 // 		}
 // 	}
 // }
+#sulo-coming-soon {
+	#sulo-city-banner .input-container {
+		display: none;
+	}
+	.graphics .photo-container {
+		max-width: 30rem;
+		margin: 0 auto;
+		background: transparent;
+		.photo {
+			// background-size: contain;
+			img {
+				object-fit: contain;
+			}
+		}
+	}
+	.section {
+		padding-top: 2rem;
+		margin-bottom: 4rem;
+		margin-top: 0;
+	}
+}
 #sulo-landing {
 	$sulo-color: rgba(map-get($foundation-palette, sulo), 0.8);
 	.section {

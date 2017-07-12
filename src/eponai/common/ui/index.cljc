@@ -2,7 +2,6 @@
   (:require
     [eponai.common.ui.common :as common]
     [eponai.web.ui.photo :as photo]
-    [eponai.common.ui.product-item :as pi]
     [om.next :as om :refer [defui]]
     [taoensso.timbre :refer [debug error]]
     [eponai.common.ui.dom :as dom :refer [div a]]
@@ -45,7 +44,7 @@
   (query [_]
     [:query/locations
      :query/current-route
-     {:query/featured-items (om/get-query product/Product)}
+     {:query/featured-items (om/get-query ci/ProductItem)}
      {:query/featured-stores (om/get-query ci/StoreItem)}
      {:query/featured-streams (om/get-query ci/OnlineChannel)}
      {:query/auth [:db/id :user/email]}
@@ -116,7 +115,7 @@
                                                         (if (<= 8 (count featured-streams))
                                                           (take 8 featured-streams)
                                                           (take 4 featured-streams))))
-                                                 "See more streams")
+                                                 "See more")
                          (pos? (count online-stores))
                          (common/content-section {:href  (routes/url :live route-params)
                                                   :class "online-channels"}
@@ -133,7 +132,7 @@
                                                         (if (<= 8 (count online-stores))
                                                           (take 8 online-stores)
                                                           (take 4 online-stores))))
-                                                 "See more stores"))
+                                                 "See more"))
 
 
 
@@ -209,7 +208,7 @@
                                                (fn [p]
                                                  (grid/column
                                                    (css/add-class :new-arrival-item)
-                                                   (pi/->ProductItem (om/computed {:product p}
+                                                   (ci/->ProductItem (om/computed p
                                                                                   {:open-url?     true
                                                                                    :current-route current-route}))))
                                                (take 5 featured-items)))

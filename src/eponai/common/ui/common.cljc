@@ -186,7 +186,7 @@
     (content-section
       {:href  (routes/url :sell)
        :class "sell-on-sulo"}
-      "Sell on SULO"
+      "Start your SULO store"
       (grid/row
         (css/align :center)
         (grid/column

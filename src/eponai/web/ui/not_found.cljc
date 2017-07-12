@@ -7,7 +7,7 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.web.ui.button :as button]
     [eponai.client.routes :as routes]
-    [eponai.common.ui.product-item :as pi]))
+    [eponai.web.ui.content-item :as ci]))
 
 (defui NotFound
   static om/IQuery
@@ -24,7 +24,7 @@
      :query/current-route])
   Object
   (render [this]
-    (let [{:query/keys [featured-items locations]} (om/props this)]
+    (let [{:query/keys [featured-items locations current-route]} (om/props this)]
       (dom/div
         {:id "sulo-not-found"}
         (grid/row-column
@@ -58,7 +58,8 @@
                (fn [p]
                  (grid/column
                    (css/add-class :new-arrival-item)
-                   (pi/product-element {:open-url? true} p)))
+                   (ci/->ProductItem (om/computed p
+                                                  {:current-route current-route}))))
                (take 6 featured-items)))])))))
 
 (router/register-component :not-found NotFound)

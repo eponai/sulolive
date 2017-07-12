@@ -118,6 +118,19 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 				font-weight: $global-weight-bold;
 				letter-spacing: 0.5px;
 			}
+			.interactive.overlay {
+				transition: background .25s ease-in-out;
+				.button {
+					transition: opacity .25s ease-in-out;
+					opacity: 0;
+				}
+				&:hover {
+					background: rgba($white, 0.75);
+					.button {
+						opacity: 1;
+					}
+				}
+			}
 		}
 	
 	}
