@@ -74,7 +74,7 @@
 
 (defprotocol IFirebase
   (-ref [this path])
-  (-ref-notifications [this user-id])
+
   (-timestamp [this])
   (-add-connected-listener [this ref {:keys [on-connect on-disconnect]}])
 
@@ -121,10 +121,6 @@
       (-> (.database js/firebase)
           (.ref (str "v1/" path))))
 
-    (-ref-notifications [this user-id]
-      (-> (-ref this (str "notifications/" user-id))
-          (.limitToLast 100)))
-
     (-limit-to-last [this n ref]
       (.limitToLast ref n))
 
@@ -158,7 +154,6 @@
   [reconciler _ _]
   (reify IFirebase
     (-ref [this path])
-    (-ref-notifications [this user-id])
     (-timestamp [this])
     (-add-connected-listener [this ref {:keys [on-connect on-disconnect]}])
 
