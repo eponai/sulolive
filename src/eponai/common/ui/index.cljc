@@ -107,38 +107,38 @@
 
                  (dom/div
                    (css/add-class :sections)
-                   (when (not-empty featured-streams)
-                     (common/content-section {:href  (routes/url :live route-params)
-                                              :class "online-channels"}
-                                             "LIVE right now"
-                                             (grid/row
-                                               (->>
-                                                 (grid/columns-in-row {:small 2 :medium 4}))
-                                               ;(grid/column
-                                               ;  (css/add-class :online-streams))
-                                               (map (fn [c]
-                                                      (grid/column
-                                                        (css/add-class :online-stream)
-                                                        (ci/->OnlineChannel c)))
-                                                    (if (<= 8 (count featured-streams))
-                                                      (take 8 featured-streams)
-                                                      (take 4 featured-streams))))
-                                             "See more"))
-                   (when (not-empty online-right-now)
-                     (common/content-section {:href  (routes/url :live route-params)
-                                              :class "online-channels"}
-                                             "Stores online"
-                                             (grid/row
-                                               (->>
-                                                 (grid/columns-in-row {:small 2 :medium 4}))
-                                               ;(grid/column
-                                               ;  (css/add-class :online-streams))
-                                               (map (fn [store]
-                                                      (grid/column
-                                                        nil
-                                                        (ci/->StoreItem store)))
-                                                    (take 4 online-right-now)))
-                                             "See more"))
+                   (cond (not-empty featured-streams)
+                         (common/content-section {:href  (routes/url :live route-params)
+                                                  :class "online-channels"}
+                                                 "LIVE right now"
+                                                 (grid/row
+                                                   (->>
+                                                     (grid/columns-in-row {:small 2 :medium 4}))
+                                                   ;(grid/column
+                                                   ;  (css/add-class :online-streams))
+                                                   (map (fn [c]
+                                                          (grid/column
+                                                            (css/add-class :online-stream)
+                                                            (ci/->OnlineChannel c)))
+                                                        (if (<= 8 (count featured-streams))
+                                                          (take 8 featured-streams)
+                                                          (take 4 featured-streams))))
+                                                 "See more")
+                         (not-empty online-right-now)
+                         (common/content-section {:href  (routes/url :live route-params)
+                                                  :class "online-channels"}
+                                                 "Stores online"
+                                                 (grid/row
+                                                   (->>
+                                                     (grid/columns-in-row {:small 2 :medium 4}))
+                                                   ;(grid/column
+                                                   ;  (css/add-class :online-streams))
+                                                   (map (fn [store]
+                                                          (grid/column
+                                                            nil
+                                                            (ci/->StoreItem store)))
+                                                        (take 4 online-right-now)))
+                                                 "See more"))
 
 
 

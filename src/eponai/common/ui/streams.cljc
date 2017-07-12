@@ -11,7 +11,8 @@
     [eponai.web.ui.photo :as photo]
     [eponai.common.ui.dom :as dom]
     [eponai.web.ui.button :as button]
-    [eponai.web.ui.content-item :as ci]))
+    [eponai.web.ui.content-item :as ci]
+    [eponai.common.format.date :as date]))
 
 (defui Streams
   static om/IQuery
@@ -26,7 +27,9 @@
     (let [{:query/keys [locations streams stores online-stores]} (om/props this)
           streaming-stores (set (map #(get-in % [:stream/store :db/id]) streams))
           online-not-live (remove #(contains? streaming-stores (:db/id %)) online-stores)
-          offline-stores (remove #(contains? (set (map :db/id online-not-live)) (:db/id %)) stores)]
+          offline-stores (remove #(contains? (set (map :db/id online-not-live)) (:db/id %)) stores)
+          online-right-now (filter #(or (= true (:store/online %))
+                                        (> 60000 (- (date/current-millis) (:store/online %)))) online-not-live)]
       (debug "Live props: " (om/props this))
       (dom/div
         {:classes ["sulo-browse"]}
@@ -69,7 +72,7 @@
                 {:classes ["sulo-items-container empty-container"]}
                 (my-dom/span (css/add-class :shoutout) "No stores are LIVE right now :'(")))
 
-            (when (not-empty online-not-live)
+            (when (not-empty online-right-now)
               (my-dom/div
                 {:classes ["sulo-items-container section"]}
                 (my-dom/div
@@ -82,7 +85,7 @@
                          (grid/column
                            nil
                            (ci/->StoreItem store)))
-                       online-not-live))))
+                       online-right-now))))
 
             (my-dom/div
               {:classes ["sulo-items-container section"]}
