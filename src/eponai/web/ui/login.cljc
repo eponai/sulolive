@@ -178,22 +178,18 @@
   [(dom/p nil (dom/span nil "Sign in to SULO Live to connect with brands and other shoppers in your favourite city."))
    (dom/div
      (css/add-class :login-content)
-     ;; TODO @diana Enable this when allowing sign ups
-     ;(button/button
-     ;  (css/add-classes [:expanded :facebook] {:onClick #(.authorize-social component :social/facebook)})
-     ;  (dom/i {:classes ["fa fa-facebook fa-fw"]})
-     ;  (dom/span nil "Continue with Facebook"))
-     ;(button/button
-     ;  (css/add-classes [:expanded :twitter] {:onClick #(.authorize-social component :social/twitter)})
-     ;  (dom/i {:classes ["fa fa-twitter fa-fw"]})
-     ;  (dom/span nil "Continue with Twitter"))
+     (button/button
+       (css/add-classes [:expanded :facebook] {:onClick #(.authorize-social component :social/facebook)})
+       (dom/i {:classes ["fa fa-facebook fa-fw"]})
+       (dom/span nil "Continue with Facebook"))
+     (button/button
+       (css/add-classes [:expanded :twitter] {:onClick #(.authorize-social component :social/twitter)})
+       (dom/i {:classes ["fa fa-twitter fa-fw"]})
+       (dom/span nil "Continue with Twitter"))
      (button/default-hollow
        (css/add-classes [:sulo-dark :expanded] {:onClick #(om/update-state! component assoc :login-state :login-email)})
-       ;(dom/i {:classes ["fa fa-envelope-o fa-fw"]})
-       ;; TODO @diana Enable this when allowing sign ups
-       ;(dom/span nil "Sign up or sign in with email")
-       (dom/span nil "Sign in with email")
-       )
+       (dom/i {:classes ["fa fa-envelope-o fa-fw"]})
+       (dom/span nil "Sign up or sign in with email"))
      (dom/p (css/add-class :info)
             (dom/small nil "By signing in you accept our ")
             (dom/a {:href   (routes/url :tos)
@@ -344,8 +340,8 @@
           (render-send-email-code this)
 
           :else
-          (render-user-password this)
-          ;(render-select-login-type this)
+          ;(render-user-password this)
+          (render-select-login-type this)
           )))))
 
 (def ->Login (om/factory Login))

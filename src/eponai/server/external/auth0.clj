@@ -14,7 +14,8 @@
     [clojure.string :as string]
     [cemerick.url :as url]
     [eponai.common :as c]
-    [slingshot.slingshot :refer [try+]]))
+    [slingshot.slingshot :refer [try+]])
+  (:import (clojure.lang ExceptionInfo)))
 
 (defn user-id [profile]
   (or (:user_id profile) (:sub profile)))
@@ -112,20 +113,21 @@
           response (http/post "https://sulo.auth0.com/oauth/token" {:form-params params})]
       (json/read-str (:body response) :key-fn keyword)))
   (get-user [this profile]
-    (cond (some? (:email profile))
-          ;; Search user account in Auth0 with matching email
-          (let [q (str "email.raw:\"" (:email profile) "\"")
-                accounts (-get this (get-token this) ["users"] {:search_engine "v2" :q q})]
+    (when (some? (user-id profile))
+      (try
+        (-get this (get-token this) ["users" (user-id profile)] nil)
+        (catch ExceptionInfo e
+          (if-some [email (:email profile)]
+            ;; Search user account in Auth0 with matching email
+            (let [q (str "email.raw:\"" email "\"")
+                  accounts (-get this (get-token this) ["users"] {:search_engine "v2" :q q})]
 
-            ;; Get the account with matching email again, just in case the search
-            ;; query failed (and Auth0 returns all accounts)
-            (let [user (some #(when (= (:email profile) (:email %)) %) accounts)]
-              (debug "Returning user: " user)
-              user))
-
-          ;; Get user account by user id if we have one
-          (some? (user-id profile))
-          (-get this (get-token this) ["users" (user-id profile)] nil)))
+              ;; Get the account with matching email again, just in case the search
+              ;; query failed (and Auth0 returns all accounts)
+              (let [user (some #(when (= email (:email %)) %) accounts)]
+                (debug "Returning user: " user)
+                user))
+            (throw e))))))
 
   (link-user-accounts-by-id [this primary-id secondary-id]
     (if-not (= primary-id secondary-id)
