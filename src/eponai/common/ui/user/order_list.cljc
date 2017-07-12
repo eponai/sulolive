@@ -16,7 +16,8 @@
     [clojure.string :as string]
     [eponai.web.ui.button :as button]
     [eponai.common.ui.product-item :as pi]
-    #?(:cljs [eponai.web.utils :as web.utils])))
+    #?(:cljs [eponai.web.utils :as web.utils])
+    [eponai.web.ui.content-item :as ci]))
 
 (defui OrderList
 
@@ -161,7 +162,7 @@
                (fn [p]
                  (grid/column
                    (css/add-class :new-arrival-item)
-                   (pi/product-element {:open-url? true} p)))
+                   (ci/->ProductItem p)))
                (take 5 featured-items)))])
         ))))
 

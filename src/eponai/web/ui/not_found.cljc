@@ -7,7 +7,8 @@
     [eponai.common.ui.elements.css :as css]
     [eponai.web.ui.button :as button]
     [eponai.client.routes :as routes]
-    [eponai.common.ui.product-item :as pi]))
+    [eponai.common.ui.product-item :as pi]
+    [eponai.web.ui.content-item :as ci]))
 
 (defui NotFound
   static om/IQuery
@@ -58,7 +59,7 @@
                (fn [p]
                  (grid/column
                    (css/add-class :new-arrival-item)
-                   (pi/product-element {:open-url? true} p)))
+                   (ci/->ProductItem p)))
                (take 6 featured-items)))])))))
 
 (router/register-component :not-found NotFound)

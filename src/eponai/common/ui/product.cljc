@@ -19,6 +19,30 @@
     [clojure.string :as string]
     [cemerick.url :as url]))
 
+(defn product-query []
+  [:db/id
+
+   :store.item/name
+   :store.item/price
+   :store.item/index
+   :store.item/not-found?
+   {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
+                        :store.item.photo/index]}
+   {:store.item/skus [:db/id :store.item.sku/variation :store.item.sku/inventory]}
+   :store.item/description
+   :store.item/section
+   {:store.item/category [:category/label
+                          :category/path
+                          :category/name]}
+   {:store/_items [{:store/profile [{:store.profile/photo [:photo/path :photo/id]}
+                                    :store.profile/name]}
+                   {:store/owners [:store.owner/user]}
+                   {:stream/_store [:stream/state]}
+                   {:store/locality [:sulo-locality/path]}
+                   {:store/shipping [{:shipping/rules [{:shipping.rule/destinations [:country/code]}]}]}
+                   {:store/status [:status/type]}
+                   :store/username]}])
+
 (defn get-pos [element]
   #?(:cljs
      (loop [el element
@@ -61,29 +85,29 @@
     (error "Trying to create URL for product with no :product-id, doing nothing. Make sure product has a :db/id")))
 
 (defui Product
-  static om/IQuery
-  (query [_]
-    [:db/id
-     :store.item/name
-     :store.item/price
-     :store.item/index
-     :store.item/not-found?
-     {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
-                          :store.item.photo/index]}
-     {:store.item/skus [:db/id :store.item.sku/variation :store.item.sku/inventory]}
-     :store.item/description
-     :store.item/section
-     {:store.item/category [:category/label
-                            :category/path
-                            :category/name]}
-     {:store/_items [{:store/profile [{:store.profile/photo [:photo/path :photo/id]}
-                                      :store.profile/name]}
-                     {:store/owners [:store.owner/user]}
-                     {:stream/_store [:stream/state]}
-                     {:store/locality [:sulo-locality/path]}
-                     {:store/shipping [{:shipping/rules [{:shipping.rule/destinations [:country/code]}]}]}
-                     {:store/status [:status/type]}
-                     :store/username]}])
+  ;static om/IQuery
+  ;(query [_]
+  ;  [:db/id
+  ;   :store.item/name
+  ;   :store.item/price
+  ;   :store.item/index
+  ;   :store.item/not-found?
+  ;   {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
+  ;                        :store.item.photo/index]}
+  ;   {:store.item/skus [:db/id :store.item.sku/variation :store.item.sku/inventory]}
+  ;   :store.item/description
+  ;   :store.item/section
+  ;   {:store.item/category [:category/label
+  ;                          :category/path
+  ;                          :category/name]}
+  ;   {:store/_items [{:store/profile [{:store.profile/photo [:photo/path :photo/id]}
+  ;                                    :store.profile/name]}
+  ;                   {:store/owners [:store.owner/user]}
+  ;                   {:stream/_store [:stream/state]}
+  ;                   {:store/locality [:sulo-locality/path]}
+  ;                   {:store/shipping [{:shipping/rules [{:shipping.rule/destinations [:country/code]}]}]}
+  ;                   {:store/status [:status/type]}
+  ;                   :store/username]}])
 
   Object
   (initLocalState [_]
@@ -92,11 +116,6 @@
 
   (select-photo [this index]
     #?(:cljs
-       ;    var background = new Image();
-       ;    background.src = "your-image.jpg";
-       ;
-       ;var bgHeight = background.height;
-       ;var bgWidth = background.width;
        (let [{:store.item/keys [photos]} (om/props this)
              {item-photo :store.item.photo/photo} (get (into [] (sort-by :store.item.photo/index photos)) (or index 0))
              img (new js/Image.)

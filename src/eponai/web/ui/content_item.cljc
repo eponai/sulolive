@@ -8,7 +8,10 @@
     [taoensso.timbre :refer [debug]]
     [eponai.common.shared :as shared]
     #?(:cljs
-       [eponai.web.firebase :as firebase])))
+       [eponai.web.firebase :as firebase])
+    [eponai.common.ui.product :as product]
+    [eponai.common.ui.common :as common]
+    [eponai.common.ui.utils :as ui-utils]))
 
 (defui OnlineChannel
   static om/IQuery
@@ -122,7 +125,7 @@
 
   (componentWillUnmount [this]
     #?(:cljs
-       (let [{:keys [presence-ref] } (om/get-state this)]
+       (let [{:keys [presence-ref]} (om/get-state this)]
          (firebase/-off (shared/by-key this :shared/firebase) presence-ref))))
   (render [this]
     (let [store (om/props this)
@@ -148,3 +151,81 @@
                  (dom/strong nil store-name)))))))
 
 (def ->StoreItem (om/factory StoreItem))
+
+
+
+(defn show-status [current-route]
+  (not (contains? #{:store} (:route current-route))))
+
+(defui ProductItem
+  static om/IQuery
+  (query [_]
+    (product/product-query))
+  Object
+  (componentWillMount [this]
+    #?(:cljs
+       (let [fb (shared/by-key this :shared/firebase)
+             product (om/props this)
+             {:keys [current-route]} (om/get-computed this)
+             store-owner (-> product :store/_items :store/owners :store.owner/user)
+             stream-state (-> product :store/_items :stream/_store first :stream/state)
+             presence-ref (firebase/-ref fb "presence")]
+         (if (and (= :stream.state/live stream-state)
+                  (show-status current-route))
+           (om/update-state! this assoc :store-live? true)
+           (firebase/-once fb (fn [snapshot]
+                                (let [is-online? (and (= true (get (:value snapshot) (str (:db/id store-owner))))
+                                                      (show-status current-route))]
+                                  (om/update-state! this assoc :store-online? is-online?)))
+                           presence-ref)))))
+  (render [this]
+    (let [product (om/props this)
+          {:keys [current-route open-url? store-status]} (om/get-computed this)
+          {:keys [show-item? store-online? store-live?]} (om/get-state this)
+          on-click #(om/update-state! this assoc :show-item? true)
+
+          goods-href (when (or open-url? (nil? on-click)) (product/product-url product))
+          on-click (when-not open-url? on-click)
+          {:store.item/keys [photos price]
+           item-name        :store.item/name
+           store            :store/_items} product
+          {:store.item.photo/keys [photo]} (first (sort-by :store.item.photo/index photos))]
+      (dom/div
+        (cond->> (css/add-classes [:content-item :product-item])
+                 (= store-status :online)
+                 (css/add-class :is-online)
+                 (= store-status :live)
+                 (css/add-class :is-live))
+        (when show-item?
+          (common/modal
+            {:on-close #(om/update-state! this assoc :show-item? false)
+             :size     :large}
+            (product/->Product product)))
+
+        (dom/a
+          (->> {:onClick on-click
+                :href    goods-href}
+               (css/add-class :primary-photo))
+          (photo/product-preview product nil))
+
+        (dom/div
+          (css/add-classes [:header :text])
+          (dom/a {:onClick on-click
+                  :href    goods-href}
+                 (dom/span nil item-name)))
+        (dom/a
+          (css/add-classes [:text :store-name :sl-tooltip] {:href (routes/store-url store :store)})
+
+          (dom/small
+            nil
+            (str "by " (:store.profile/name (:store/profile store))))
+          (when (#{:live :online} store-status)
+            (dom/small (css/add-class :sl-tooltip-text)
+                       (str (:store.profile/name (:store/profile store))
+                            " is " (name store-status) " right now, say hi in their store."))))
+
+        (dom/div
+          (css/add-class :text)
+          (dom/strong nil (ui-utils/two-decimal-price price)))))))
+
+(def ->ProductItem (om/factory ProductItem))

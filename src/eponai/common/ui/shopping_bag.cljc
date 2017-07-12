@@ -15,7 +15,8 @@
     [eponai.web.ui.button :as button]
     [eponai.common.mixpanel :as mixpanel]
     [eponai.common.ui.product-item :as pi]
-    [eponai.common.ui.product :as product]))
+    [eponai.common.ui.product :as product]
+    [eponai.web.ui.content-item :as ci]))
 
 (defn items-by-store [items]
   (group-by #(get-in % [:store.item/_skus :store/_items]) items))
@@ -203,7 +204,7 @@
                  (fn [p]
                    (grid/column
                      (css/add-class :new-arrival-item)
-                     (pi/product-element {:open-url? true} p)))
+                     (ci/->ProductItem p)))
                  (take 5 featured-items)))]))))))
 
 (def ->ShoppingBag (om/factory ShoppingBag))

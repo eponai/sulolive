@@ -8,7 +8,8 @@
     [eponai.web.ui.button :as button]
     [eponai.client.routes :as routes]
     [eponai.common.ui.product-item :as pi]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.web.ui.content-item :as ci]))
 
 (defui Unauthorized
   static om/IQuery
@@ -60,7 +61,7 @@
                (fn [p]
                  (grid/column
                    (css/add-class :new-arrival-item)
-                   (pi/product-element {:open-url? true} p)))
+                   (ci/->ProductItem p)))
                (take 6 featured-items)))])))))
 
 (router/register-component :unauthorized Unauthorized)

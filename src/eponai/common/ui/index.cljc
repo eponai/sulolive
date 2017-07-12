@@ -45,7 +45,7 @@
   (query [_]
     [:query/locations
      :query/current-route
-     {:query/featured-items (om/get-query product/Product)}
+     {:query/featured-items (om/get-query ci/ProductItem)}
      {:query/featured-stores (om/get-query ci/StoreItem)}
      {:query/featured-streams (om/get-query ci/OnlineChannel)}
      {:query/auth [:db/id :user/email]}
@@ -209,7 +209,7 @@
                                                (fn [p]
                                                  (grid/column
                                                    (css/add-class :new-arrival-item)
-                                                   (pi/->ProductItem (om/computed {:product p}
+                                                   (ci/->ProductItem (om/computed p
                                                                                   {:open-url?     true
                                                                                    :current-route current-route}))))
                                                (take 5 featured-items)))
