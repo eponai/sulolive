@@ -193,8 +193,8 @@
           (grid/column-size {:small 12 :medium 8 :large 8})
           (dom/p nil
                  (if locations
-                   (dom/span nil (str "Are you a local business in " (:sulo-locality/title locations) "? Start your own SULO store and explore new ways of connecting LIVE with your customers."))
-                   (dom/span nil (str "Are you a local business? Start your own SULO store and explore new ways of connecting LIVE with your customers."))))))
+                   (dom/span nil (str "Are you a local business in " (:sulo-locality/title locations) "? Start your own store and explore new ways of connecting LIVE with your customers on the SULO marketplace."))
+                   (dom/span nil (str "Are you a local business? Start your own store and explore new ways of connecting LIVE with your customers on the SULO marketplace."))))))
       "Contact us")))
 
 

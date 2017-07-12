@@ -18,7 +18,7 @@
   (query [_]
     [
      {:query/streams (om/get-query ci/OnlineChannel)}
-     `({:query/stores ~(om/get-query ci/StoreItem)} ~{:states [:stream.state/offline :stream.state/online]})
+     {:query/stores (om/get-query ci/StoreItem)}
      {:query/online-stores (om/get-query ci/StoreItem)}
      :query/locations])
   Object
@@ -69,7 +69,7 @@
                 {:classes ["sulo-items-container empty-container"]}
                 (my-dom/span (css/add-class :shoutout) "No stores are LIVE right now :'(")))
 
-            (if (pos? (count online-not-live))
+            (when (not-empty online-not-live)
               (my-dom/div
                 {:classes ["sulo-items-container section"]}
                 (my-dom/div

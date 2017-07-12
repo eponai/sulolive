@@ -95,6 +95,7 @@
      {:store/status [:status/type]}
      {:stream/_store [:stream/state]}
      :store/username
+     :store/online
      :store/created-at
      :store/featured
      :store/featured-img-src

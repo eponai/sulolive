@@ -233,21 +233,23 @@
   {:auth    ::auth/public
    :uniq-by {:route-params [:store-id]}}
   {:value (let [presence (firebase/-presence (:system/firebase system))
-                _ (debug "Got presence: " presence)
-                online-users (filter #(= true (get presence %)) (keys presence))
-                _ (debug "GOT ONLINE USERS: " (into [] online-users))
-                user-dbids (map #(Long/parseLong %) online-users)
+                user-dbids (map #(Long/parseLong %) (keys presence))
                 _ (debug "PULL USERS: " (into [] user-dbids))
-                stores (if (not-empty user-dbids)
-                         (db/pull-all-with db query {:where   '[[?o :store.owner/user ?user]
-                                                                [?e :store/locality ?l]
-                                                                [?e :store/owners ?o]
-                                                                [?e :store/status ?st]
-                                                                [?st :status/type :status.type/open]]
-                                                     :symbols {'[?user ...] user-dbids
-                                                               '?l          (:db/id locations)}})
-                         [])]
-            (map #(assoc % :store/online true) stores))})
+                store-users (if (not-empty user-dbids)
+                              (db/find-with db {:find    '[?e ?user]
+                                                :where   '[[?o :store.owner/user ?user]
+                                                           [?e :store/locality ?l]
+                                                           [?e :store/owners ?o]
+                                                           [?e :store/status ?st]
+                                                           [?st :status/type :status.type/open]]
+                                                :symbols {'[?user ...] user-dbids
+                                                          '?l          (:db/id locations)}})
+                              {})
+                _ (debug "Store-users" (into {} store-users))
+                store-usermap (into {} store-users)
+                stores (db/pull-many db query (keys (into {} store-usermap)))]
+            (debug "Store online: " (into [] (map #(assoc % :store/online (get presence (str (get store-usermap (:db/id %))))) stores)))
+            (map #(assoc % :store/online (get presence (str (get store-usermap (:db/id %))))) stores))})
 
 (defread query/store-has-streamed
   [{:keys [db db-history query auth route-params]} _ _]
