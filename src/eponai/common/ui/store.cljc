@@ -147,31 +147,14 @@
                               {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                                          :store.item.photo/index]}]}]}
      {:query/store-items (om/get-query ci/ProductItem)}
-     {:query/store-chat-status [:store/chat-online]}
      :query/locations
      :query/current-route])
   Object
-  (componentDidMount [this]
-    #?(:cljs
-       (let [{:query/keys [store]} (om/props this)]
-         ;; TODO: XXX Register stores via firebase/on-route-change directly
-         (firebase/register-store-visit
-           (shared/by-key this :shared/firebase)
-           (:db/id store)
-           (client.auth/current-auth this)
-           (get-in store [:store/locality :sulo-locality/path])))))
-  (componentWillUnmount [this]
-    #?(:cljs
-       (let [{:query/keys [store]} (om/props this)
-             fb (shared/by-key this :shared/firebase)]
-         (debug "Unregistering!")
-         (firebase/unregister-store-visit fb (:db/id store) (client.auth/current-auth this))
-         )))
   (initLocalState [this]
     {:selected-navigation :all-items})
   (render [this]
     (let [{:keys [fullscreen? selected-navigation] :as st} (om/get-state this)
-          {:query/keys [store store-items current-route store-chat-status] :as props} (om/props this)
+          {:query/keys [store store-items current-route] :as props} (om/props this)
           {:store/keys [profile visitor-count owners]
            stream      :stream/_store} store
           {:store.profile/keys [photo cover tagline description]

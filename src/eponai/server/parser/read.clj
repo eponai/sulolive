@@ -478,21 +478,6 @@
         {:value (parser/value-with-basis-t {} {:chat-db (:chat-db read-basis-t-for-this-key)
                                                :sulo-db (datomic/basis-t db)})})))
 
-(defread query/store-chat-status
-  [{:keys         [db query system route-params]
-    ::parser/keys [read-basis-t-for-this-key chat-update-basis-t]} k _]
-  {:auth    ::auth/public
-   :log     ::parser/no-logging
-   :uniq-by {:route-params [:store-id]}}
-  {:value (when-some [store-id (:store-id route-params)]
-            (let [store-entity (db/entity db store-id)
-                  store-online (firebase/-user-online (:system/firebase system)
-                                                      (get-in store-entity [:store/locality :sulo-locality/path])
-                                                      (get-in store-entity [:store/owners :store.owner/user :db/id]))]
-              (when store-online
-                {:db/id             store-id
-                 :store/chat-online store-online})))})
-
 ;; Get all categories.
 (defread query/navigation
   [{:keys [db db-history query]} _ _]
