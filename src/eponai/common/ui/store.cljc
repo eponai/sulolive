@@ -22,13 +22,10 @@
     [eponai.web.ui.button :as button]
     #?(:cljs [eponai.web.firebase :as firebase])
     [eponai.common.shared :as shared]
-<<<<<<< c82c628ab93d5d8016f854393bbb1280c0e9f893
     [eponai.common.ui.product :as product]
-    [eponai.web.ui.content-item :as ci]))
-=======
     [eponai.common.database :as db]
-    [eponai.client.auth :as client.auth]))
->>>>>>> WIP: Replaces all of the old code with new code.
+    [eponai.client.auth :as client.auth]
+    [eponai.web.ui.content-item :as ci]))
 
 
 (defn about-section [component]
