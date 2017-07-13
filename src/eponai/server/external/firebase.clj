@@ -102,7 +102,8 @@
   IFirebaseChat
   (-user-online [this locality user-id]
     (debug "Check online status. locality: " locality " user-id: " user-id)
-    (ref->value (store-owner-presence (:database this) locality user-id)))
+    (when user-id
+      (ref->value (store-owner-presence (:database this) locality user-id))))
   (-presence [this locality]
     (ref->value (store-owner-presence (:database this) locality)))
 
@@ -120,25 +121,27 @@
 
   IFirebaseNotifications
   (-send [this user-id {:keys [title message subtitle] :as params}]
-    (let [
-          ;new-notification {:timestamp (date/current-millis)
-          ;                  :type      "chat"
-          ;                  :title     (c/substring title 0 100)
-          ;                  :subtitle  (c/substring subtitle 0 100)
-          ;                  :message   (c/substring message 0 100)}
-          user-notifications-ref (chat-notification-ref (:database this) user-id)]
-      (debug "Sending notification to user: " user-id " ref-path: " (.getPath user-notifications-ref))
-      (-> (.push user-notifications-ref)
-          (.setValue true))
+    ;; Some stores in dev doesn't have an owner.
+    (when (some? user-id)
+      (let [
+            ;new-notification {:timestamp (date/current-millis)
+            ;                  :type      "chat"
+            ;                  :title     (c/substring title 0 100)
+            ;                  :subtitle  (c/substring subtitle 0 100)
+            ;                  :message   (c/substring message 0 100)}
+            user-notifications-ref (chat-notification-ref (:database this) user-id)]
+        (debug "Sending notification to user: " user-id " ref-path: " (.getPath user-notifications-ref))
+        (-> (.push user-notifications-ref)
+            (.setValue true))
 
-      ;; TODO enable when we are ready to send web push notifications
-      (comment
-        (let [token (-get-device-token this user-id)]
-          (debug "FIREBASE - send chat notification: " new-notification)
-          (http/post "https://fcm.googleapis.com/fcm/send"
-                     {:form-params {:to   token
-                                    :data new-notification}
-                      :headers     {"Authorization" (str "key=" server-key)}})))))
+        ;; TODO enable when we are ready to send web push notifications
+        (comment
+          (let [token (-get-device-token this user-id)]
+            (debug "FIREBASE - send chat notification: " new-notification)
+            (http/post "https://fcm.googleapis.com/fcm/send"
+                       {:form-params {:to   token
+                                      :data new-notification}
+                        :headers     {"Authorization" (str "key=" server-key)}}))))))
 
   (-register-device-token [this user-id token]
     (when user-id

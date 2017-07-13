@@ -3,6 +3,7 @@
   (:require
     [taoensso.timbre :refer [debug error]]
     [om.next :as om]
+    [goog.object :as gobj]
     [eponai.common.format.date :as date]
     [eponai.common.shared :as shared]
     [eponai.common.database :as db]
@@ -14,6 +15,9 @@
 
 (def path common.firebase/path)
 
+(defn- unlisten [listener]
+  (listener))
+
 (defn listen-to
   "Puts events from the firebase-route and params and puts them on the out-chan.
   Returns a function that stops listening."
@@ -24,33 +28,33 @@
               (comp
                 (map name)
                 (map (fn [event-type]
-                       (.on firebase-ref
-                            event-type
-                            (fn [^js/firebase.database.DataSnapshot snapshot]
-                              (async/put!
-                                out-chan
-                                (cond-> {:firebase-route              firebase-route
-                                         :firebase-route-params       firebase-route-params
-                                         :event-type                  (keyword event-type)
-                                         :snapshot                    snapshot
-                                         (get snapshot-keywords :key) (.-key snapshot)}
-                                        (some? (get snapshot-keywords :val))
-                                        (assoc (get snapshot-keywords :val) (.val snapshot)))))))))
+                       (let [listener
+                             (fn [^js/firebase.database.DataSnapshot snapshot]
+                               (async/put!
+                                 out-chan
+                                 (cond-> {:firebase-route              firebase-route
+                                          :firebase-route-params       firebase-route-params
+                                          :event-type                  (keyword event-type)
+                                          :snapshot                    snapshot
+                                          (get snapshot-keywords :key) (.-key snapshot)}
+                                         (some? (get snapshot-keywords :val))
+                                         (assoc (get snapshot-keywords :val) (.val snapshot)))))]
+                         ;; Listen to the event type
+                         (.on firebase-ref event-type listener)
+                         ;; Return a function that unlistens
+                         (fn []
+                           (.off firebase-ref event-type listener))))))
               (or events
                   [:child_added
                    :child_changed
                    :child_removed]))]
 
     (fn []
-      (run! (fn [listener]
-              (.off firebase-ref listener))
-            listeners))))
+      ;; Calls unlisten on all listeners
+      (run! unlisten listeners))))
 
-(defn- unlisten [listener]
-  (listener))
-
-(defn locality-listeners [{:keys [route-params]}]
-  (when-some [locality (:locality route-params)]
+(defn locality-listeners [{::keys [special-params]}]
+  (when-some [locality (:locality special-params)]
     [{:firebase-route        :visitor-counts
       :firebase-route-params {:locality locality}
       :snapshot-keywords     {:key :store-id
@@ -209,24 +213,28 @@
               old-listeners (:listeners @state)
               new-listeners (into {}
                                   (map (juxt #(listener-id-fn %) identity))
-                                  (all-listeners (assoc-in route-map [::special-params :user-id] user-id)))
+                                  (all-listeners (assoc-in route-map [::special-params]
+                                                           {:user-id  user-id
+                                                            :locality (:sulo-locality/path
+                                                                        (client.auth/current-locality reconciler))})))
 
               old-keys (set (keys old-listeners))
-              new-keys (set (keys new-listeners))
-
-              keys-to-stop (set/difference old-keys new-keys)
-              keys-to-start (set/difference new-keys old-keys)
-              ]
-          (debug "Will listen to new keys: " keys-to-start)
-          (debug "Will stop listening to: " keys-to-stop)
-          ;; Stop listeners we shouldn't listen to anymore.
-          (run! unlisten (map :listener (vals (select-keys old-listeners keys-to-stop))))
-          ;; Start new listeners
-          (swap! state assoc :listeners
-                 (into (apply dissoc keys-to-stop)
-                       (map (fn [[id m]]
-                              [id (assoc m :listener (listen-to database event-chan m))]))
-                       (select-keys new-listeners keys-to-start)))))
+              new-keys (set (keys new-listeners))]
+          ;; Only do stuff when there's stuff to do.
+          (when (not= old-keys new-keys)
+            (let [keys-to-stop (set/difference old-keys new-keys)
+                  keys-to-start (set/difference new-keys old-keys)]
+              (debug "Will listen to new keys: " keys-to-start)
+              (debug "Will stop listening to: " keys-to-stop)
+              ;; Stop listeners we shouldn't listen to anymore.
+              (run! unlisten (map :listener (vals (select-keys old-listeners keys-to-stop))))
+              ;; Start new listeners
+              (swap! state assoc :listeners
+                     (into (or (apply dissoc old-listeners keys-to-stop)
+                               {})
+                           (map (fn [[id m]]
+                                  [id (assoc m :listener (listen-to database event-chan m))]))
+                           (select-keys new-listeners keys-to-start)))))))
 
       IFirebase2Actions
       (register-store-owner-presence [this user-id store-id raw-locality]
@@ -306,6 +314,9 @@
                           ;  )
                           )))
 
+(defn is-initialized? []
+  (boolean (not-empty (gobj/get js/firebase "apps"))))
+
 (defn initialize [reconciler]
   (let [{:keys [firebase-api-key firebase-auth-domain firebase-database-url
                 firebase-project-id firebase-storage-bucket firebase-messaging-sender-id]}
@@ -315,7 +326,8 @@
                                     :databaseURL       firebase-database-url
                                     :projectId         firebase-project-id
                                     :storageBucket     firebase-storage-bucket
-                                    :messagingSenderId firebase-messaging-sender-id}))
+                                    :messagingSenderId firebase-messaging-sender-id})
+    )
   ;; TODO enable when we want to activate Web push notifications.
   ;; We might want to think about when to ask the user's permission first.
   (comment

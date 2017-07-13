@@ -97,10 +97,7 @@
   static om/IQuery
   (query [this]
     [:query/current-route
-     :query/firebase
      :query/locations
-     {:query/auth [:db/id]}
-     {:query/owned-store [:db/id {:store/locality [:sulo-locality/path]}]}
      {:proxy/navbar (om/get-query navbar/Navbar)}
      {:proxy/sidebar (om/get-query sidebar/Sidebar)}
      {:proxy/footer (om/get-query foot/Footer)}
@@ -115,32 +112,9 @@
        [this props state]
        (utils/should-update-when-route-is-loaded this props state)))
   (componentDidUpdate [this _ _]
-
     ;; TODO: Change this to shared/by-key when merged with other branch.
     ;; (scroll-helper/scroll-on-did-render (shared/by-key this :shared/scroll-helper))
     )
-  (componentDidMount [this]
-    (debug "Router did mount")
-    #?(:cljs
-       (let [{:query/keys [owned-store auth]
-
-              fb-token    :query/firebase} (om/props this)]
-         (debug "Firebase token: " fb-token)
-         (when (some? auth)
-           (-> (.auth js/firebase)
-               (.signInWithCustomToken (:token fb-token))
-               (.catch (fn [err]
-                         (debug "Firebase could not sign in: " err))))
-           ;(-> (.auth js/firebase)
-           ;    (.signInAnonymously))
-           )
-         (when (some? owned-store)
-           (firebase/register-store-owner-presence
-             (shared/by-key this :shared/firebase)
-             (:db/id auth)
-             (:db/id owned-store)
-             (get-in owned-store [:store/locality :sulo-locality/path]))
-           ))))
   (render [this]
     (let [{:keys       [routing/app-root query/current-route query/locations]
            :proxy/keys [navbar sidebar footer coming-soon]} (om/props this)
