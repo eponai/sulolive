@@ -22,8 +22,13 @@
     [eponai.web.ui.button :as button]
     #?(:cljs [eponai.web.firebase :as firebase])
     [eponai.common.shared :as shared]
+<<<<<<< c82c628ab93d5d8016f854393bbb1280c0e9f893
     [eponai.common.ui.product :as product]
     [eponai.web.ui.content-item :as ci]))
+=======
+    [eponai.common.database :as db]
+    [eponai.client.auth :as client.auth]))
+>>>>>>> WIP: Replaces all of the old code with new code.
 
 
 (defn about-section [component]
@@ -113,8 +118,9 @@
     [{:proxy/stream (om/get-query stream/Stream)}
      {:proxy/chat (om/get-query chat/StreamChat)}
      {:query/store [:db/id
-                    :store/locality
+                    {:store/locality [:sulo-locality/path]}
                     {:store/sections [:store.section/label :store.section/path :db/id]}
+                    :store/visitor-count
                     :store/username
                     ;{:store/items (om/get-query item/Product)}
                     :store/not-found?
@@ -152,30 +158,42 @@
     #?(:cljs
        (let [{:query/keys [store]} (om/props this)
              fb (shared/by-key this :shared/firebase)
-             presence-ref (firebase/-ref fb (str "visitors/" (:db/id store)))
-             user-ref (firebase/-push fb presence-ref)]
-         (firebase/-on-value-changed fb
-                                     (fn [{:keys [value]}]
-                                       (om/update-state! this assoc :visitor-count (count value)))
-                                     presence-ref)
-         (firebase/-set fb user-ref true)
-
-         (firebase/-remove-on-disconnect fb user-ref)
-         (om/update-state! this assoc :user-ref user-ref :presence-ref presence-ref))))
+             ;; presence-ref (firebase/-ref fb (str "visitors/" (:db/id store)))
+             ;; user-ref (firebase/-push fb presence-ref)
+             ]
+         (firebase/register-store-visit
+           fb
+           (:db/id store)
+           (client.auth/current-auth this)
+           (get-in store [:store/locality :sulo-locality/path]))
+         ;; XXX: uncomment when we see it working.
+         ;(firebase/-on-value-changed fb
+         ;                            (fn [{:keys [value]}]
+         ;                              (om/update-state! this assoc :visitor-count (count value)))
+         ;                            presence-ref)
+         ;(firebase/-set fb user-ref true)
+         ;
+         ;(firebase/-remove-on-disconnect fb user-ref)
+         ;(om/update-state! this assoc :user-ref user-ref :presence-ref presence-ref)
+         )))
   (componentWillUnmount [this]
     #?(:cljs
-       (let [{:keys [presence-ref user-ref]} (om/get-state this)
+       (let [{:query/keys [store]} (om/props this)
              fb (shared/by-key this :shared/firebase)]
-         (debug "FIREBASE - store unmount remove" user-ref)
-         (firebase/-remove fb user-ref)
-         (when presence-ref
-           (firebase/-off fb presence-ref)))))
+         ; xxx
+         ; (debug "FIREBASE - store unmount remove" user-ref)
+         (debug "Unregistering!")
+         (firebase/unregister-store-visit fb (:db/id store) (client.auth/current-auth this))
+         ;(firebase/-remove fb user-ref)
+         ;(when presence-ref
+         ;  (firebase/-off fb presence-ref))
+         )))
   (initLocalState [this]
     {:selected-navigation :all-items})
   (render [this]
-    (let [{:keys [fullscreen? selected-navigation visitor-count] :as st} (om/get-state this)
+    (let [{:keys [fullscreen? selected-navigation] :as st} (om/get-state this)
           {:query/keys [store store-items current-route store-chat-status] :as props} (om/props this)
-          {:store/keys [profile]
+          {:store/keys [profile visitor-count]
            stream      :stream/_store} store
           {:store.profile/keys [photo cover tagline description]
            store-name          :store.profile/name} profile

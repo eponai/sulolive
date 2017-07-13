@@ -4,10 +4,11 @@
     [taoensso.timbre :refer [error]]))
 
 (def locality-routes
-  {["visitor-count/" :store-id ""] {""                    :visitor-count
-                                    ["/" [#"\d+" :count]] :visitor-count+count}
-   "user-presence/store-owners"    {""             :user-presence/store-owners
-                                    ["/" :user-id] :user-presence/store-owner}})
+  {"visitor-count"              {""              :visitor-counts
+                                 ["/" :store-id] {""                    :visitor-count/store
+                                                  ["/" [#"\d+" :count]] :visitor-count/store+count}}
+   "user-presence/store-owners" {""             :user-presence/store-owners
+                                 ["/" :user-id] :user-presence/store-owner}})
 
 (def store-routes
   {"owner-presence" {""             :store/owner-presences

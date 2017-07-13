@@ -17,11 +17,11 @@
   "Puts events from the firebase-route and params and puts them on the out-chan.
   Returns a function that stops listening."
   [database out-chan {:keys [firebase-route firebase-route-params snapshot-keywords]}]
-  (let [visitor-counts (.ref database (path firebase-route firebase-route-params))
+  (let [firebase-ref (.ref database (path firebase-route firebase-route-params))
         listeners
         (into []
               (map (fn [event-type]
-                     (.on visitor-counts
+                     (.on firebase-ref
                           event-type
                           (fn [^js/firebase.database.DataSnapshot snapshot]
                             (async/put!
@@ -39,7 +39,7 @@
 
     (fn []
       (run! (fn [listener]
-              (.off visitor-counts listener))
+              (.off firebase-ref listener))
             listeners))))
 
 (defn- unlisten [listener]
@@ -47,7 +47,7 @@
 
 (defn locality-listeners [{:keys [route-params]}]
   (when-some [locality (:locality route-params)]
-    [{:firebase-route        :visitor-count
+    [{:firebase-route        :visitor-counts
       :firebase-route-params {:locality locality}
       :snapshot-keywords     {:key :store-id
                               :val :count}}
@@ -129,6 +129,19 @@
        ;; Reverse again.
        (reverse)))
 
+(def firebase-timestamp js/firebase.database.ServerValue.TIMESTAMP)
+
+(defprotocol IFirebase2Actions
+  (read-chat-notification [this chat-notification])
+  ;; These actions can be called from (on-route-change [])..
+  (register-store-owner-presence [this user-id store-id locality])
+  (register-store-visit [this store-id user-id locality])
+  (unregister-store-visit [this store-id user-id]))
+
+(defn- visitor-ref-id [store-id user-id]
+  ;; For readability
+  [store-id user-id])
+
 (defprotocol IFirebase2
   (route-changed [this route-map])
   (stop [this]))
@@ -141,13 +154,14 @@
         ;; wait 1 frame
         timeout-between-transacts 16]
     (go-loop []
-      (let [[v c] (async/alts! event-chan close-chan)]
+      (let [[v c] (async/alts! [event-chan close-chan])]
         (condp = c
           close-chan
           (debug "Exiting firebase!")
           event-chan
           (let [txs (into []
-                          (comp (take-while some?)
+                          (comp (map (fn [x] (debug "Got event: " x) x))
+                                (take-while some?)
                                 (mapcat firebase-event->txs))
                           (cons v (repeatedly #(async/poll! event-chan))))
                 _ (debug "Found firebase events: " (count txs))
@@ -188,18 +202,56 @@
           (debug "Will listen to new keys: " keys-to-start)
           (debug "Will stop listening to: " keys-to-stop)
           ;; Stop listeners we shouldn't listen to anymore.
-          (run! unlisten (vals (select-keys old-listeners keys-to-stop)))
+          (run! unlisten (map :listener (vals (select-keys old-listeners keys-to-stop))))
           ;; Start new listeners
           (swap! state assoc :listeners
                  (into (apply dissoc keys-to-stop)
                        (map (fn [[id m]]
-                              [id (listen-to database event-chan m)]))
-                       (select-keys new-listeners keys-to-start))))))))
+                              [id (assoc m :listener (listen-to database event-chan m))]))
+                       (select-keys new-listeners keys-to-start)))))
+
+      IFirebase2Actions
+      (register-store-owner-presence [this user-id store-id raw-locality]
+        (if-let [locality (cond-> raw-locality (map? raw-locality) :sulo-locality/path)]
+          (let [refs [(.ref database (path :user-presence/store-owner {:user-id  user-id
+                                                                       :locality locality}))
+                      (.ref database (path :store/owner-presence {:user-id  user-id
+                                                                  :store-id store-id}))]]
+            (let [am-online (.ref database ".info/connected")]
+              (.on am-online "value" (fn [snapshot]
+                                       (when (.val snapshot)
+                                         (run! (fn [ref]
+                                                 (.set (.onDisconnect ref) firebase-timestamp)
+                                                 (.set ref true))
+                                               refs))))))
+          (debug "No locality path for raw-locality: " raw-locality
+                 " store-id: " store-id
+                 " user-id: " user-id)))
+      (register-store-visit [this store-id user-id raw-locality]
+        (let [state-key (visitor-ref-id store-id user-id)]
+          (if-let [locality (cond-> raw-locality (map? raw-locality) :sulo-locality/path)]
+            (let [^js/firebase.database.Reference store-visitors
+                  (.ref database (path :store/visitors {:store-id store-id}))
+                  visitor-ref (.push store-visitors)]
+              (swap! state assoc-in [:visitor-refs state-key] visitor-ref)
+              (.set visitor-ref locality)
+              (.remove (.onDisconnect visitor-ref)))
+
+            (debug "No locality path for raw-locality: " raw-locality
+                   " store-id: " store-id
+                   " user-id: " user-id))))
+
+      (unregister-store-visit [this store-id user-id]
+        (let [state-key (visitor-ref-id store-id user-id)]
+          (when-let [visitor-ref (get-in @state [:visitor-refs state-key])]
+            (swap! state update :visitor-refs dissoc state-key)
+            (.remove visitor-ref))))
+
+      (read-chat-notification [this chat-notification]
+        (debug "SHOULD MOVE NOTIFICATION FROM UNREAD TO READ. NOT SURE HOW."
+               " notification: " chat-notification)))))
 
 ;; store-owner-presences (.ref database (path :user-presence/store-owners {:locality locality}))
-
-
-
 
 (defn request-permission [messaging & [f-success f-error]]
   (-> (.requestPermission messaging)
@@ -295,6 +347,33 @@
   ;(when-not @fb-initialized?
   ;
   ;  (reset! fb-initialized? true))
+  (firebase2 reconciler)
+  )
+
+(defmethod shared/shared-component [:shared/firebase :env/dev]
+  [reconciler _ _]
+  (reify IFirebase
+    (-ref [this path])
+    (-timestamp [this])
+    (-add-connected-listener [this ref {:keys [on-connect on-disconnect]}])
+
+    (-remove-on-disconnect [this ref])
+
+    (-limit-to-last [this n ref])
+
+    (-set [this ref v])
+    (-push [this ref])
+    (-remove [this ref])
+    (-update [this ref v])
+
+    (-off [this ref])
+    (-on-value-changed [this f ref])
+    (-on-child-added [this f ref])
+    (-on-child-removed [this f ref])
+    (-once [this f ref])))
+
+(comment
+  "Old prod firebase"
   (reify IFirebase
     (-remove-on-disconnect [this ref]
       (-> (.onDisconnect ref)
@@ -343,25 +422,3 @@
       (.on ref "child_removed" (fn [snapshot] (f (snapshot->map snapshot)))))
     (-once [this f ref]
       (.once ref "value" (fn [snapshot] (f (snapshot->map snapshot)))))))
-
-(defmethod shared/shared-component [:shared/firebase :env/dev]
-  [reconciler _ _]
-  (reify IFirebase
-    (-ref [this path])
-    (-timestamp [this])
-    (-add-connected-listener [this ref {:keys [on-connect on-disconnect]}])
-
-    (-remove-on-disconnect [this ref])
-
-    (-limit-to-last [this n ref])
-
-    (-set [this ref v])
-    (-push [this ref])
-    (-remove [this ref])
-    (-update [this ref v])
-
-    (-off [this ref])
-    (-on-value-changed [this f ref])
-    (-on-child-added [this f ref])
-    (-on-child-removed [this f ref])
-    (-once [this f ref])))

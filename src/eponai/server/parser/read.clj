@@ -235,8 +235,12 @@
   [{:keys [db db-history query auth route-params system locations]} _ _]
   {:auth    ::auth/public
    :uniq-by {:route-params [:store-id]}}
-  {:value (let [presence (firebase/-presence (:system/firebase system))
-                user-dbids (map #(Long/parseLong %) (keys presence))
+  {:value (let [presence (firebase/-presence (:system/firebase system)
+                                             (:sulo-locality/path (db/entity db (:db/id locations))))
+                _ (debug "Got presence: " presence)
+                online-users (filter #(= true (get presence %)) (keys presence))
+                _ (debug "GOT ONLINE USERS: " (into [] online-users))
+                user-dbids (map #(Long/parseLong %) online-users)
                 _ (debug "PULL USERS: " (into [] user-dbids))
                 store-users (if (not-empty user-dbids)
                               (db/find-with db {:find    '[?e ?user]
@@ -481,8 +485,10 @@
    :log     ::parser/no-logging
    :uniq-by {:route-params [:store-id]}}
   {:value (when-some [store-id (:store-id route-params)]
-            (let [{owner :store/owners} (db/pull db [{:store/owners [:store.owner/user]}] store-id)
-                  store-online (firebase/-user-online (:system/firebase system) (get-in owner [:store.owner/user :db/id]))]
+            (let [store-entity (db/entity db store-id)
+                  store-online (firebase/-user-online (:system/firebase system)
+                                                      (get-in store-entity [:store/locality :sulo-locality/path])
+                                                      (get-in store-entity [:store/owners :store.owner/user]))]
               (when store-online
                 {:db/id             store-id
                  :store/chat-online store-online})))})

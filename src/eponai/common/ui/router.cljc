@@ -100,7 +100,7 @@
      :query/firebase
      :query/locations
      {:query/auth [:db/id]}
-     {:query/owned-store [:db/id]}
+     {:query/owned-store [:db/id {:store/locality [:sulo-locality/path]}]}
      {:proxy/navbar (om/get-query navbar/Navbar)}
      {:proxy/sidebar (om/get-query sidebar/Sidebar)}
      {:proxy/footer (om/get-query foot/Footer)}
@@ -136,11 +136,20 @@
            )
          (when (some? owned-store)
            (let [fb (shared/by-key this :shared/firebase)
-                 presence-ref (firebase/-ref fb (str "presence/" (:db/id auth)))]
-             (firebase/-add-connected-listener fb
-                                               presence-ref
-                                               {:on-connect    #(firebase/-set fb % true)
-                                                :on-disconnect #(firebase/-set fb % (firebase/-timestamp fb))}))
+                 ;;xxx presence-ref (firebase/-ref fb (str "presence/" (:db/id auth)))
+                 ]
+
+             (firebase/register-store-owner-presence
+               fb
+               (:db/id auth)
+               (:db/id owned-store)
+               (get-in owned-store [:store/locality :sulo-locality/path]))
+             ;; XXX Un comment this when we see that it works.
+             ;(firebase/-add-connected-listener fb
+             ;                                  presence-ref
+             ;                                  {:on-connect    #(firebase/-set fb % true)
+             ;                                   :on-disconnect #(firebase/-set fb % (firebase/-timestamp fb))})
+             )
            ;(let [am-online (-> (.database js/firebase)
            ;                    (.ref ".info/connected"))
            ;      user-ref (-> (.database js/firebase)

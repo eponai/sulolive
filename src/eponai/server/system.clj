@@ -228,7 +228,7 @@
                ;; Put keys under here to use the real implementation
                :system/stripe
                :system/firebase
-               ;:system/chat
+               :system/chat
                ;:system/auth0
                ;:system/auth0management
                ;:system/email

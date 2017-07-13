@@ -33,7 +33,8 @@
     [eponai.common.database :as db]
     [eponai.client.cart :as client.cart]
     [eponai.web.firebase :as firebase]
-    [eponai.web.utils :as web.utils]))
+    [eponai.web.utils :as web.utils]
+    [eponai.client.routes :as client.routes]))
 
 (defn add-root! [reconciler]
   (binding [parser/*parser-allow-remote* false]
@@ -260,6 +261,9 @@
           (init-user-cart! reconciler)
           (debug "init firebase...")
           (firebase/initialize reconciler)
+          ;; Calling it to initialize stuff:
+          (firebase/route-changed (shared/by-key reconciler :shared/firebase)
+                                  (client.routes/current-route reconciler))
           (debug "Adding reconciler to root!")
           (add-root! reconciler)
           ; Pre fetch data which makes the site less jumpy
