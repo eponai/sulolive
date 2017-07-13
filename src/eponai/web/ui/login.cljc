@@ -264,7 +264,7 @@
          (when (nil? validation)
            (msg/om-transact! this [(list 'user/create {:user     {:user/email    email
                                                                   :user/profile  {:user.profile/name username}
-                                                                  :user/verified (:auth0/email-verified auth0-info)}
+                                                                  :user/verified (and (:auth0/email auth0-info) (:auth0/email-verified auth0-info))}
                                                        :id-token (get-in current-route [:query-params :token])})]))
          (om/update-state! this assoc :input-validation validation :error/create-user nil))))
 
@@ -283,7 +283,7 @@
                              (first (string/split user-id #"\|")))]
               (debug "User: " user-id)
               (mixpanel/set-alias (:db/id new-user))
-              (if (or (:user/verified new-user) (= provider "auth0"))
+              (if (and (:email (:query-params current-route)) (:user/verified new-user))
                 (do
                   (debug "User created routing to: " (routes/url :auth nil (:query-params current-route)))
                   #?(:cljs

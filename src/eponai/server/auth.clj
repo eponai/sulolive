@@ -240,6 +240,8 @@
         sulo-user (existing-user (db/db conn) profile)
         user-id (:sub profile)]
 
+    (debug "Found existing user: " sulo-user)
+
     ;; If we already have a user for this account and they're verified, we can authenticate
     (if (some? sulo-user)
       (let [should-verify? (and (not (:user/verified sulo-user)) (not-empty (:email profile)))]
@@ -254,7 +256,8 @@
       ;; User is signin in for the first time, and should go through creating an account.
       (let [path (routes/path :login nil (cf/remove-nil-keys
                                            {:access_token access-token
-                                            :token        id-token}))]
+                                            :token        id-token
+                                            :email        (:email profile)}))]
         (debug "Redirect to path: " path)
         (r/redirect path)))))
 
