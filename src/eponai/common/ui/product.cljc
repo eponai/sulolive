@@ -241,7 +241,7 @@
                   ;            :className "button expanded hollow"} "Save")
 
                   (dom/a
-                    (cond->> (->> {:onClick #(when out-of-stock?
+                    (cond->> (->> {:onClick #(when-not out-of-stock?
                                               (.add-to-bag this))}
                                   (css/button)
                                   (css/expanded))

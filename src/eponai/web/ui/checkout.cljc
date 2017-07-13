@@ -513,7 +513,7 @@
                           (.save-payment this (stripe/token->card token)))
              on-error (fn [error-message]
                         (om/update-state! this assoc :payment-error error-message))
-             input-validation (validate/validate ::shipping shipping form-inputs)]
+             input-validation (validate/validate ::ship/shipping shipping form-inputs)]
          (debug "Input validation: " input-validation)
          (cond (some? input-validation)
                (om/update-state! this assoc :error-message "Oh no, the shipping address looks invalid, please make sure all required fields are filled out correctly.")

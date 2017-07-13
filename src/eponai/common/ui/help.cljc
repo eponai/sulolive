@@ -11,6 +11,7 @@
     [om.next :as om :refer [defui]]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements.callout :as callout]
+    [eponai.web.ui.help.taxes :as taxes]
     [eponai.common.ui.elements.menu :as menu]
     [eponai.client.routes :as routes]))
 
@@ -32,7 +33,10 @@
                          :factory     nil}
    :help/shipping-rules {:guide       ::general
                          :anchor-text "Shipping rules"
-                         :factory     shipping-rules/->ShippingRules}})
+                         :factory     shipping-rules/->ShippingRules}
+   :help/taxes          {:guide       ::general
+                         :anchor-text "Taxes"
+                         :factory     taxes/->Taxes}})
 
 (defn render-guide [route]
   (let [{:keys [guide anchor-text factory]} (get guides route)]
@@ -75,7 +79,7 @@
             (dom/a
               {:href (routes/url :help)}
               (dom/span nil "SULO Live help")))
-          (if (contains? #{:help/first-stream :help/mobile-stream :help/faq :help/quality :help/shipping-rules} route)
+          (if (contains? #{:help/first-stream :help/mobile-stream :help/faq :help/quality :help/shipping-rules :help/taxes} route)
             (render-guide route)
             (callout/callout
               nil
@@ -111,6 +115,7 @@
                                                (dom/a {:href (when factory (routes/url route))}
                                                       ((if factory dom/span dom/s) nil anchor-text))))))
                                   [:help/shipping-rules
+                                   :help/taxes
                                    :help/fees
                                    :help/faq]))))
 
