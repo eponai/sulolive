@@ -157,12 +157,8 @@
   (read-chat-notifications [this user-id])
   ;; These actions can be called from (on-route-change [])..
   (register-store-owner-presence [this user-id store-id locality])
-  (register-store-visit [this store-id user-id locality])
-  (unregister-store-visit [this store-id user-id]))
-
-(defn- visitor-ref-id [store-id user-id]
-  ;; For readability
-  [store-id user-id])
+  (register-store-visit [this store-id locality])
+  (unregister-store-visit [this store-id]))
 
 (defprotocol IFirebase2
   (route-changed [this route-map prev-route-map]))
@@ -236,8 +232,7 @@
                         (not= (:store-id (:route-params route-map))
                               (:store-id (:route-params prev-route-map))))
                 (unregister-store-visit this
-                                        (:store-id (:route-params prev-route-map))
-                                        user-id)))
+                                        (:store-id (:route-params prev-route-map)))))
             ;; Enter store
             (when (= :store (:route route-map))
               (when (or (not= :store (:route prev-route-map))
@@ -246,7 +241,6 @@
                 (let [store-id (:store-id (:route-params route-map))]
                   (register-store-visit this
                                         store-id
-                                        user-id
                                         (-> (db/entity (db/to-db reconciler) store-id)
                                             (get-in [:store/locality :sulo-locality/path])))))))))
 
@@ -273,26 +267,24 @@
           (debug "No locality path for raw-locality: " raw-locality
                  " store-id: " store-id
                  " user-id: " user-id)))
-      (register-store-visit [this store-id user-id raw-locality]
-        (let [state-key (visitor-ref-id store-id user-id)]
-          (if-let [locality (cond-> raw-locality (map? raw-locality) :sulo-locality/path)]
-            (let [^js/firebase.database.Reference store-visitors
-                  (.ref database (path :store/visitors {:store-id store-id}))
-                  visitor-ref (.push store-visitors)]
-              (swap! state assoc-in [:visitor-refs state-key] visitor-ref)
-              (.set visitor-ref locality)
-              (.remove (.onDisconnect visitor-ref)))
+      (register-store-visit [this store-id raw-locality]
+        (if-let [locality (cond-> raw-locality (map? raw-locality) :sulo-locality/path)]
+          (let [^js/firebase.database.Reference store-visitors
+                (.ref database (path :store/visitors {:store-id store-id}))
+                visitor-ref (.push store-visitors)]
+            (swap! state assoc-in [:visitor-refs store-id] visitor-ref)
+            (.set visitor-ref locality)
+            (.remove (.onDisconnect visitor-ref)))
 
-            (debug "No locality path for raw-locality: " raw-locality
-                   " store-id: " store-id
-                   " user-id: " user-id))))
+          (debug "No locality path for raw-locality: " raw-locality
+                 " store-id: " store-id
+                 " user-id: " user-id)))
 
-      (unregister-store-visit [this store-id user-id]
-        (let [state-key (visitor-ref-id store-id user-id)]
-          (debug "Unregistering, here's the key: " state-key " here's the state: " @state)
-          (when-let [visitor-ref (get-in @state [:visitor-refs state-key])]
-            (swap! state update :visitor-refs dissoc state-key)
-            (.remove visitor-ref))))
+      (unregister-store-visit [this store-id]
+        (debug "Unregistering, here's the key: " store-id " here's the state: " @state)
+        (when-let [visitor-ref (get-in @state [:visitor-refs store-id])]
+          (swap! state update :visitor-refs dissoc store-id)
+          (.remove visitor-ref)))
 
       (read-chat-notifications [this user-id]
         (some->> (path :user/unread-chat-notifications {:user-id user-id})
