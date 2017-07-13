@@ -152,6 +152,20 @@
   Object
   (initLocalState [this]
     {:selected-navigation :all-items})
+  (componentDidMount [this]
+    #?(:cljs
+       (let [{:query/keys [store]} (om/props this)]
+         (firebase/register-store-visit
+           (shared/by-key this :shared/firebase)
+           (:db/id store)
+           (client.auth/current-auth this)
+           (get-in store [:store/locality :sulo-locality/path])))))
+  (componentWillUnmount [this]
+    #?(:cljs
+       (let [{:query/keys [store]} (om/props this)]
+         (firebase/unregister-store-visit (shared/by-key this :shared/firebase)
+                                          (:db/id store)
+                                          (client.auth/current-auth this)))))
   (render [this]
     (let [{:keys [fullscreen? selected-navigation] :as st} (om/get-state this)
           {:query/keys [store store-items current-route] :as props} (om/props this)
