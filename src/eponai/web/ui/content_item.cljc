@@ -80,7 +80,6 @@
      {:stream/_store [:stream/state]}
      :store/visitor-count
      :store/username
-     :store/online
      :store/created-at
      :store/featured
      :store/featured-img-src

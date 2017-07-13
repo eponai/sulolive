@@ -63,8 +63,10 @@
           {:keys [route-params]} current-route
           streaming-stores (set (map #(get-in % [:stream/store :db/id]) featured-streams))
           online-not-live (remove #(contains? streaming-stores (:db/id %)) online-stores)
-          online-right-now (filter #(or (= true (:store/online %))
-                                        (> 60000 (- (date/current-millis) (:store/online %)))) online-not-live)]
+          online-right-now (filter #(let [online (-> % :store/owners :store.owner/user :user/online?)]
+                                      (or (= true online)
+                                          (> 60000 (- (date/current-millis) online))))
+                                   online-not-live)]
       ;(debug "Items: " featured-items)
       ;(debug "Items: " featured-stores)
       (debug "Selected location: " locations)

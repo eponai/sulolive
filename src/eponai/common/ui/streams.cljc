@@ -28,8 +28,10 @@
           streaming-stores (set (map #(get-in % [:stream/store :db/id]) streams))
           online-not-live (remove #(contains? streaming-stores (:db/id %)) online-stores)
           offline-stores (remove #(contains? (set (map :db/id online-not-live)) (:db/id %)) stores)
-          online-right-now (filter #(or (= true (:store/online %))
-                                        (> 60000 (- (date/current-millis) (:store/online %)))) online-not-live)]
+          online-right-now (filter #(let [online (-> % :store/owners :store.owner/user :user/online?)]
+                                      (or (= true online)
+                                          (> 60000 (- (date/current-millis) online))))
+                                   online-not-live)]
       (debug "Live props: " (om/props this))
       (dom/div
         {:classes ["sulo-browse"]}
