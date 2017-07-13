@@ -616,3 +616,11 @@
   ;; Only for fetching product items, nothing else.
   (when target
     {:remote true}))
+
+(defmethod client-read :query/notification-count
+  [{:keys [target db]} _ _]
+  (when (nil? target)
+    {:value (some->> (client.auth/current-auth db)
+                     (db/entity db)
+                     (:user/chat-notifications)
+                     (count))}))

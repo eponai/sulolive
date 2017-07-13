@@ -602,10 +602,12 @@
                      (.getMessage exception)
                      "Someting went wrong!")}}
   {:action (fn []
+             (debug "In send-message.")
              (chat/write-message (:system/chat system) store user text)
              (let [user-entity (db/lookup-entity (db/db state) (:db/id user))
                    store-entity (db/lookup-entity (db/db state) (:db/id store))
                    {:keys [store/owners]} (db/pull (db/db state) [{:store/owners [:store.owner/user]}] (:db/id store))]
+               (debug "Will send notification to: " owners)
                (when-not (= (:db/id (:store.owner/user owners)) (:db/id user-entity))
                  (firebase/-send (:system/firebase system)
                                  (get-in owners [:store.owner/user :db/id])

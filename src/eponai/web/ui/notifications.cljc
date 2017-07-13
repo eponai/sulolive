@@ -37,15 +37,16 @@
          (contains? #{(str (:db/id owned-store)) (:store/username owned-store)} (:store-id route-params)))))
 
 (defn chat-notifications [component]
-  (let [{:keys [unread]} (om/get-state component)]
+  (let [{:query/keys [notification-count]} (om/props component)
+        notification-count (or notification-count 0)]
     (dom/div
       (css/add-class :sulo-notification)
       (dom/i
         (cond->> {:classes ["fa fa-comments"]}
-                 (pos? (count unread))
+                 (pos? notification-count)
                  (css/add-class :is-active)))
-      (when (pos? (count unread))
-        (dom/span (css/add-classes [:alert :badge]) (count unread))))))
+      (when (pos? notification-count)
+        (dom/span (css/add-classes [:alert :badge]) notification-count)))))
 
 (defui Notifications
   static om/IQuery
@@ -53,7 +54,8 @@
     [:query/current-route
      :query/firebase
      {:query/auth [:db/id]}
-     {:query/owned-store [:db/id :store/username]}])
+     {:query/owned-store [:db/id :store/username]}
+     :query/notification-count])
   Object
   (read-notifications [this new-notification]
     (let [{:keys [unread
@@ -63,7 +65,7 @@
           fb (shared/by-key this :shared/firebase)]
 
       #?(:cljs
-         (firebase/read-chat-notification fb new-notification))
+         (firebase/read-chat-notifications fb (get-in (om/props this) [:query/auth :db/id])))
       ;#?(:cljs
       ;   (doseq [v (cond-> (vec (vals unread))
       ;                     (some? new-notification)
@@ -123,7 +125,6 @@
 
   (componentWillReceiveProps [this next-props]
     (let [{:query/keys [current-route owned-store auth]} next-props
-          {:keys [unread-ref]} (om/get-state this)
           fb (shared/by-key this :shared/firebase)]
       ;(debug "NOtifications:  is on owned store: " (is-watching-owned-store? next-props) {:new current-route
       ;                                                                                    :old (:query/current-route (om/props this))})

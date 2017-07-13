@@ -9,33 +9,37 @@
     [eponai.common.firebase :as common.firebase]
     [cljs.core.async :as async]
     [eponai.common :as c]
-    [clojure.set :as set]))
+    [clojure.set :as set]
+    [eponai.client.auth :as client.auth]))
 
 (def path common.firebase/path)
 
 (defn listen-to
   "Puts events from the firebase-route and params and puts them on the out-chan.
   Returns a function that stops listening."
-  [database out-chan {:keys [firebase-route firebase-route-params snapshot-keywords]}]
+  [database out-chan {:keys [firebase-route firebase-route-params snapshot-keywords events]}]
   (let [firebase-ref (.ref database (path firebase-route firebase-route-params))
         listeners
         (into []
-              (map (fn [event-type]
-                     (.on firebase-ref
-                          event-type
-                          (fn [^js/firebase.database.DataSnapshot snapshot]
-                            (async/put!
-                              out-chan
-                              (cond-> {:firebase-route              firebase-route
-                                       :firebase-route-params       firebase-route-params
-                                       :event-type                  (keyword event-type)
-                                       :snapshot                    snapshot
-                                       (get snapshot-keywords :key) (.-key snapshot)}
-                                      (some? (get snapshot-keywords :val))
-                                      (assoc (get snapshot-keywords :val) (.val snapshot))))))))
-              ["child_added"
-               "child_changed"
-               "child_removed"])]
+              (comp
+                (map name)
+                (map (fn [event-type]
+                       (.on firebase-ref
+                            event-type
+                            (fn [^js/firebase.database.DataSnapshot snapshot]
+                              (async/put!
+                                out-chan
+                                (cond-> {:firebase-route              firebase-route
+                                         :firebase-route-params       firebase-route-params
+                                         :event-type                  (keyword event-type)
+                                         :snapshot                    snapshot
+                                         (get snapshot-keywords :key) (.-key snapshot)}
+                                        (some? (get snapshot-keywords :val))
+                                        (assoc (get snapshot-keywords :val) (.val snapshot)))))))))
+              (or events
+                  [:child_added
+                   :child_changed
+                   :child_removed]))]
 
     (fn []
       (run! (fn [listener]
@@ -63,11 +67,14 @@
       :snapshot-keywords     {:key :user-id
                               :val :timestamp}}]))
 
-(defn user-listeners [{:keys [route-params]}]
-  (when-some [user-id (:user-id route-params)]
-    [{:firebase-route        :user/chat-notifications
+(defn user-listeners [{::keys [special-params]}]
+  (when-some [user-id (:user-id special-params)]
+    [{:firebase-route        :user/unread-chat-notifications
       :firebase-route-params {:user-id user-id}
-      :snapshot-keywords     {:key :notification-id}}]))
+      :snapshot-keywords     {:key :notification-id
+                              :val :notification-val}
+      :events                [:child_added
+                              :value]}]))
 
 (defn all-listeners
   "Returns all listeners we should listen for given a route-map.
@@ -106,22 +113,33 @@
       [[:db.fn/retractAttribute user-id :user/online?]]
       [[:db/add user-id :user/online? timestamp]])))
 
-(defmethod firebase-event->txs :user/chat-notifications
-  [{:keys [event-type] :as params}]
-  (debug "Got chat-notification with params:" params)
-  (error "DOING NOTHING WITH THIS CHAT NOTIFICATION FYI."))
+(defmethod firebase-event->txs :user/unread-chat-notifications
+  [{:keys [event-type notification-id notification-val firebase-route-params] :as params}]
+  ;; Only care about :child_added, removed will be done by an action.
+  (when-let [user-id (c/parse-long-safe (:user-id firebase-route-params))]
+    (cond
+      (= event-type :child_added)
+      [{:db/id                   user-id
+        :user/chat-notifications [{:user.chat-notification/id notification-id}]}]
+      (and (= event-type :value)
+           (nil? notification-val))
+      [[:db.fn/retractAttribute user-id :user/chat-notifications]])))
 
 (defn dedupe-txs
   "Takes a coll of transaction vectors and dedupes them, i.e. removes transactions
   that would cancel each other out."
   [txs]
-  (->> (reduce (fn [{:keys [seen txs] :as m} [db-fn e a :as tx]]
-                 (let [x [db-fn e a]]
-                   (cond-> m
-                           ;; assoc tx only if we haven't seen it before.
-                           (not (contains? seen x))
-                           (-> (assoc! :seen (conj seen x))
-                               (assoc! :txs (conj txs tx))))))
+  (->> (reduce (fn [{:keys [seen txs] :as m} tx]
+                 ;; Don't care about maps.
+                 (if (map? tx)
+                   (assoc! m :txs (conj txs tx))
+                   ;; x -> [db-fn e a]
+                   (let [x (vec (take 3 tx))]
+                     (cond-> m
+                             ;; assoc tx only if we haven't seen it before.
+                             (not (contains? seen x))
+                             (-> (assoc! :seen (conj seen x))
+                                 (assoc! :txs (conj txs tx)))))))
                (transient {:seen #{} :txs []})
                ;; Walk transactions backwards
                (reverse txs))
@@ -132,7 +150,7 @@
 (def firebase-timestamp js/firebase.database.ServerValue.TIMESTAMP)
 
 (defprotocol IFirebase2Actions
-  (read-chat-notification [this chat-notification])
+  (read-chat-notifications [this user-id])
   ;; These actions can be called from (on-route-change [])..
   (register-store-owner-presence [this user-id store-id locality])
   (register-store-visit [this store-id user-id locality])
@@ -146,7 +164,7 @@
   (route-changed [this route-map])
   (stop [this]))
 
-(defn firebase2 [reconciler]
+(defn firebase2 [reconciler user-id]
   (let [event-chan (async/chan (async/sliding-buffer 100))
         close-chan (async/chan)
         state (atom {})
@@ -191,7 +209,7 @@
               old-listeners (:listeners @state)
               new-listeners (into {}
                                   (map (juxt #(listener-id-fn %) identity))
-                                  (all-listeners route-map))
+                                  (all-listeners (assoc-in route-map [::special-params :user-id] user-id)))
 
               old-keys (set (keys old-listeners))
               new-keys (set (keys new-listeners))
@@ -243,13 +261,15 @@
 
       (unregister-store-visit [this store-id user-id]
         (let [state-key (visitor-ref-id store-id user-id)]
+          (debug "Unregistering, here's the key: " state-key " here's the state: " @state)
           (when-let [visitor-ref (get-in @state [:visitor-refs state-key])]
             (swap! state update :visitor-refs dissoc state-key)
             (.remove visitor-ref))))
 
-      (read-chat-notification [this chat-notification]
-        (debug "SHOULD MOVE NOTIFICATION FROM UNREAD TO READ. NOT SURE HOW."
-               " notification: " chat-notification)))))
+      (read-chat-notifications [this user-id]
+        (some->> (path :user/unread-chat-notifications {:user-id user-id})
+                 (.ref database)
+                 (.remove))))))
 
 ;; store-owner-presences (.ref database (path :user-presence/store-owners {:locality locality}))
 
@@ -347,7 +367,7 @@
   ;(when-not @fb-initialized?
   ;
   ;  (reset! fb-initialized? true))
-  (firebase2 reconciler)
+  (firebase2 reconciler (client.auth/current-auth reconciler))
   )
 
 (defmethod shared/shared-component [:shared/firebase :env/dev]

@@ -18,7 +18,7 @@
    "chat"           {"" :store/chat}})
 
 (def user-routes
-  {"chat-notifications" {"" :user/chat-notifications}})
+  {"chat-notifications" {"/unread" :user/unread-chat-notifications}})
 
 (def firebase-routes-v2
   ["/v2/" {["locality/" :locality "/"] locality-routes

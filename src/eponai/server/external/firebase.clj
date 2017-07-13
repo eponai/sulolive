@@ -24,7 +24,7 @@
 
 (defprotocol IFirebaseChat
   (-presence [this locality])
-  (-user-online [this locality store-id]))
+  (-user-online [this locality user-id]))
 
 (defn ref->snapshot
   "Takes a ref and returns the DataSnapshot for the ref.
@@ -84,7 +84,7 @@
                     ;; We should move away from this map and just use common.firebase directly instead.
                     ;; XXX Fix chat-notifications.
                     :refs {:chat-notifications-fn (fn [user-id]
-                                                    (route->ref db :user/chat-notifications {:user-id user-id}))
+                                                    (route->ref db :user/unread-chat-notifications {:user-id user-id}))
                            ;; TODO: Implement tokens again.
                            :tokens                (.getReference db "v1/tokens")
                            :presence-fn           (fn
@@ -121,14 +121,16 @@
 
   IFirebaseNotifications
   (-send [this user-id {:keys [title message subtitle] :as params}]
-    (let [new-notification {:timestamp (date/current-millis)
-                            :type      "chat"
-                            :title     (c/substring title 0 100)
-                            :subtitle  (c/substring subtitle 0 100)
-                            :message   (c/substring message 0 100)}
+    (let [
+          ;new-notification {:timestamp (date/current-millis)
+          ;                  :type      "chat"
+          ;                  :title     (c/substring title 0 100)
+          ;                  :subtitle  (c/substring subtitle 0 100)
+          ;                  :message   (c/substring message 0 100)}
           user-notifications-ref ((:chat-notifications-fn (:refs this)) user-id)]
+      (debug "Sending notification to user: " user-id " ref-path: " (.getPath user-notifications-ref))
       (-> (.push user-notifications-ref)
-          (.setValue (clojure.walk/stringify-keys new-notification)))
+          (.setValue true))
 
       ;; TODO enable when we are ready to send web push notifications
       (comment

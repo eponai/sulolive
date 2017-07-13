@@ -488,7 +488,7 @@
             (let [store-entity (db/entity db store-id)
                   store-online (firebase/-user-online (:system/firebase system)
                                                       (get-in store-entity [:store/locality :sulo-locality/path])
-                                                      (get-in store-entity [:store/owners :store.owner/user]))]
+                                                      (get-in store-entity [:store/owners :store.owner/user :db/id]))]
               (when store-online
                 {:db/id             store-id
                  :store/chat-online store-online})))})

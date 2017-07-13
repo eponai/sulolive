@@ -398,4 +398,5 @@
 (defmethod client-mutate 'firebase/transact-event
   [{:keys [state target]} _ {:keys [txs]}]
   (if (nil? target)
-    (db/transact state txs)))
+    {:action (fn []
+               (db/transact state txs))}))
