@@ -71,7 +71,8 @@
 		}
 		display: flex;
 		justify-content: space-between;
-		align-items: center;
+		flex-direction: row;
+		// align-items: flex-start;
 		background: rgba(black, 0.2);
 		color: $dark-gray;
 		&.is-online {
@@ -92,6 +93,28 @@
 				}
 			}
 		}
+	}
+	.chat-controls {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		visibility: hidden;
+	}
+	.chat-info {
+		flex: 1;
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
+	}
+	.title {
+		margin: 0;
+		font-size: 1.1rem;
+		color: $dark-gray;
+		font-weight: $global-weight-bold;
+		font-size: 80%;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		margin: 0 0.5rem;
 	}
 	.chat-status {
 		p {
@@ -133,6 +156,10 @@
 			// transform: translateY(5px);
 		}
 	}
+	.message-auto {
+		color: $dark-gray;
+		font-style:  italic;
+	}
 }
 
 .stream-chat-container {
@@ -147,6 +174,13 @@
 	bottom: 0;
 	width: $chat-width-small;
 	border: none;
+
+	.chat-menu {
+		flex-direction: column;
+	}
+	.chat-controls {
+		visibility: visible;
+	}
 
 	@include breakpoint(large) {
 		width: $chat-width-large;
@@ -256,6 +290,7 @@
 			height: $navbar-height;
 			background: rgba(black, 0.7);
 		}
+
 		// .show-small {
 		// 	display: block
 		// }

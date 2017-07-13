@@ -10,7 +10,8 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.web.ui.content-item :as ci]
     [eponai.common.ui.router :as router]
-    [eponai.common.ui.product :as product]))
+    [eponai.common.ui.product :as product]
+    [eponai.common.format.date :as date]))
 
 ;(defn banner [{:keys [color align] :as opts} primary secondary]
 ;  (let [align (or align :left)
@@ -59,11 +60,18 @@
   (render [this]
     (let [{:proxy/keys [navbar footer]
            :query/keys [locations featured-items featured-streams featured-stores current-route online-stores]} (om/props this)
-          {:keys [route-params]} current-route]
+          {:keys [route-params]} current-route
+          streaming-stores (set (map #(get-in % [:stream/store :db/id]) featured-streams))
+          online-not-live (remove #(contains? streaming-stores (:db/id %)) online-stores)
+          online-right-now (filter #(or (= true (:store/online %))
+                                        (> 60000 (- (date/current-millis) (:store/online %)))) online-not-live)]
       ;(debug "Items: " featured-items)
       ;(debug "Items: " featured-stores)
       (debug "Selected location: " locations)
       (debug "ONLINE STORES: " online-stores)
+      (debug "Streaming stores: " streaming-stores)
+      (debug "ONLINE NOT LIVE: " online-not-live)
+      (debug "ONLINE RIGHT NOW: " online-right-now)
 
       (dom/div
         nil
@@ -99,10 +107,10 @@
 
                  (dom/div
                    (css/add-class :sections)
-                   (cond (pos? (count featured-streams))
+                   (cond (not-empty featured-streams)
                          (common/content-section {:href  (routes/url :live route-params)
                                                   :class "online-channels"}
-                                                 "Stores streaming right now"
+                                                 "LIVE right now"
                                                  (grid/row
                                                    (->>
                                                      (grid/columns-in-row {:small 2 :medium 4}))
@@ -116,10 +124,10 @@
                                                           (take 8 featured-streams)
                                                           (take 4 featured-streams))))
                                                  "See more")
-                         (pos? (count online-stores))
+                         (not-empty online-right-now)
                          (common/content-section {:href  (routes/url :live route-params)
                                                   :class "online-channels"}
-                                                 "Stores online right now"
+                                                 "Stores online"
                                                  (grid/row
                                                    (->>
                                                      (grid/columns-in-row {:small 2 :medium 4}))
@@ -129,9 +137,7 @@
                                                           (grid/column
                                                             nil
                                                             (ci/->StoreItem store)))
-                                                        (if (<= 8 (count online-stores))
-                                                          (take 8 online-stores)
-                                                          (take 4 online-stores))))
+                                                        (take 4 online-right-now)))
                                                  "See more"))
 
 
@@ -202,8 +208,7 @@
                                             :class "new-arrivals"}
                                            "New products"
                                            (grid/row
-                                             (->> (css/add-class :collapse)
-                                                  (grid/columns-in-row {:small 2 :medium 4 :large 5}))
+                                             (grid/columns-in-row {:small 2 :medium 4 :large 5})
                                              (map
                                                (fn [p]
                                                  (grid/column

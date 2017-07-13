@@ -32,12 +32,13 @@
                      :stream/token]}
      {:query/stream-config [:ui.singleton.stream-config/publisher-url]}
      {:proxy/chat (om/get-query chat/StreamChat)}
-     {:query/auth [:db/id :user/email]}])
+     {:query/auth [:db/id :user/email]}
+     :query/current-route])
 
   Object
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
-          {:query/keys [stream stream-config]
+          {:query/keys [stream stream-config current-route]
            :as         props
            :proxy/keys [chat]} (om/props this)
           stream-state (:stream/state stream)
@@ -125,7 +126,23 @@
                      ;; state change communication.
                      :allowed-stream-states #{:stream.state/offline
                                               :stream.state/live
-                                              :stream.state/online}})))))
+                                              :stream.state/online}}))
+                (grid/row-column
+                  nil
+                  (dom/div
+                    (css/add-class :dashboard-section)
+                    (callout/callout-small
+                      nil
+                      (grid/row
+                        (grid/columns-in-row {:small 2})
+                        (grid/column
+                          (css/text-align :center)
+                          (dom/h3 nil "Viewers")
+                          (dom/p (css/add-class :stat) 0))
+                        (grid/column
+                          (css/text-align :center)
+                          (dom/h3 nil "Messages/min")
+                          (dom/p (css/add-class :stat) 0)))))))))
           (grid/column
             (grid/column-size {:small 12 :large 6})
 
@@ -137,27 +154,8 @@
               (callout/callout-small
                 (css/add-class :flex)
                 (chat/->StreamChat (om/computed chat
-                                                {:store store}))))))
-        (grid/row-column
-          nil
-          (dom/div
-            (css/add-class :dashboard-section)
-            (callout/callout-small
-              nil
-              (grid/row
-                (grid/columns-in-row {:small 3})
-                (grid/column
-                  (css/text-align :center)
-                  (dom/h3 nil "Viewers")
-                  (dom/p (css/add-class :stat) 0))
-                (grid/column
-                  (css/text-align :center)
-                  (dom/h3 nil "Messages/min")
-                  (dom/p (css/add-class :stat) 0))
-                (grid/column
-                  (css/text-align :center)
-                  (dom/h3 nil "Payments")
-                  (dom/p (css/add-class :stat) 0))))))
+                                                {:store store
+                                                 :current-route current-route}))))))
 
         (grid/row
           nil

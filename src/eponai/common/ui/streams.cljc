@@ -11,14 +11,15 @@
     [eponai.web.ui.photo :as photo]
     [eponai.common.ui.dom :as dom]
     [eponai.web.ui.button :as button]
-    [eponai.web.ui.content-item :as ci]))
+    [eponai.web.ui.content-item :as ci]
+    [eponai.common.format.date :as date]))
 
 (defui Streams
   static om/IQuery
   (query [_]
     [
      {:query/streams (om/get-query ci/OnlineChannel)}
-     `({:query/stores ~(om/get-query ci/StoreItem)} ~{:states [:stream.state/offline :stream.state/online]})
+     {:query/stores (om/get-query ci/StoreItem)}
      {:query/online-stores (om/get-query ci/StoreItem)}
      :query/locations])
   Object
@@ -26,7 +27,9 @@
     (let [{:query/keys [locations streams stores online-stores]} (om/props this)
           streaming-stores (set (map #(get-in % [:stream/store :db/id]) streams))
           online-not-live (remove #(contains? streaming-stores (:db/id %)) online-stores)
-          offline-stores (remove #(contains? (set (map :db/id online-not-live)) (:db/id %)) stores)]
+          offline-stores (remove #(contains? (set (map :db/id online-not-live)) (:db/id %)) stores)
+          online-right-now (filter #(or (= true (:store/online %))
+                                        (> 60000 (- (date/current-millis) (:store/online %)))) online-not-live)]
       (debug "Live props: " (om/props this))
       (dom/div
         {:classes ["sulo-browse"]}
@@ -69,12 +72,12 @@
                 {:classes ["sulo-items-container empty-container"]}
                 (my-dom/span (css/add-class :shoutout) "No stores are LIVE right now :'(")))
 
-            (if (pos? (count online-not-live))
+            (when (not-empty online-right-now)
               (my-dom/div
                 {:classes ["sulo-items-container section"]}
                 (my-dom/div
                   (css/add-class :section-title)
-                  (my-dom/h4 nil "Stores online")
+                  (my-dom/h3 nil "Stores online")
                   )
                 (grid/row
                   (grid/columns-in-row {:small 2 :medium 3 :large 4})
@@ -82,13 +85,13 @@
                          (grid/column
                            nil
                            (ci/->StoreItem store)))
-                       online-not-live))))
+                       online-right-now))))
 
             (my-dom/div
               {:classes ["sulo-items-container section"]}
               (my-dom/div
                 (css/add-class :section-title)
-                (my-dom/h4 nil (str "All SULO stores " (:sulo-locality/path locations)))
+                (my-dom/h3 nil (str "All SULO " (:sulo-locality/path locations) " stores"))
                 )
               (grid/row
                 (grid/columns-in-row {:small 2 :medium 3 :large 4})

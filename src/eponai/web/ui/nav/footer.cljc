@@ -10,7 +10,8 @@
     [eponai.client.routes :as routes]
     [eponai.web.social :as social]
     [taoensso.timbre :refer [debug]]
-    [eponai.common :as c]))
+    [eponai.common :as c]
+    [clojure.string :as string]))
 
 (defui Footer
   static om/IQuery
@@ -29,7 +30,6 @@
           {:keys [on-change-location]} (om/get-computed this)
           {:keys [route route-params]} current-route
           location (some #(when (= (:db/id %) (c/parse-long location-id)) %) sulo-localities)]
-      (debug "Select location: " location)
       #?(:cljs
          (do
            (web-utils/set-locality location)
@@ -37,8 +37,9 @@
                                :query/locations])))
       (when (some? on-change-location)
         (on-change-location location))
-      (when (some? (:locality route-params))
-        (routes/set-url! this route (assoc route-params :locality (:sulo-locality/path location))))))
+      (if (some? (:locality route-params))
+        (routes/set-url! this route (assoc route-params :locality (:sulo-locality/path location)))
+        (routes/set-url! this :index {:locality (:sulo-locality/path location)}))))
 
   (render [this]
     (let [{:query/keys [sulo-localities locations auth]} (om/props this)]

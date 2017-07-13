@@ -10,6 +10,7 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.ui.elements.input-validate :as v]
     [eponai.common.mixpanel :as mixpanel]
+    [eponai.web.ui.checkout.shipping :as shipping]
     [eponai.web.ui.photo :as photo]
     #?(:cljs [cljs.spec.alpha :as s]
        :clj
@@ -36,20 +37,7 @@
    :shipping.address/locality "sulo-shipping-locality"
    :shipping.address/region   "sulo-shipping-region"
    :shipping.address/country  "sulo-shipping-country"})
-;(s/def :shipping/name (s/and string? #(not-empty %)))
-;(s/def :shipping.address/street (s/and string? #(not-empty %)))
-;(s/def :shipping.address/street2 (s/or :value string? :empty nil?))
-;(s/def :shipping.address/postal (s/and string? #(not-empty %)))
-;(s/def :shipping.address/locality (s/and string? #(not-empty %)))
-;(s/def :shipping.address/region (s/or :value #(string? (not-empty %)) :empty nil?))
-;(s/def :shipping.address/country (s/and string? #(re-matches #"\w{2}" %)))
 
-;(s/def :shipping/address (s/keys :req [:shipping.address/street
-;                                       :shipping.address/postal
-;                                       :shipping.address/locality
-;                                       :shipping.address/country]
-;                                 :opt [:shipping.address/street2
-;                                       :shipping.address/region]))
 (s/def ::shipping (s/keys :req [:shipping/address
                                 :shipping/name]))
 
@@ -147,9 +135,13 @@
   (let [{:query/keys [stripe-customer countries]} (om/props component)
         shipping (:stripe/shipping stripe-customer)         ;[{:brand "American Express" :last4 1234 :exp-year 2018 :exp-month 4}]
         address (:shipping/address shipping)
-        {:shipping/keys [input-validation error-message]} (om/get-state component)
+        {:shipping/keys [input-validation error-message selected-country]} (om/get-state component)
+        selected-country (if selected-country selected-country (or (:country/code (:shipping.address/country address))
+                                                                   "CA"))
         on-close #(do (mixpanel/track "Close shipping info")
                       (om/update-state! component dissoc :modal))]
+    (debug "Selected-country: " selected-country)
+    (debug "Address: " address)
     (common/modal
       {:on-close on-close
        :size     :full}
@@ -161,6 +153,8 @@
           (css/add-classes [:section-form :section-form--address])
           (dom/div
             nil
+            (grid/row nil
+                      (grid/column (css/add-class :no-margin) (dom/label nil "Name")))
             (grid/row
               nil
               (grid/column
@@ -175,6 +169,8 @@
 
           (dom/div
             nil
+            (grid/row nil
+                      (grid/column (css/add-class :no-margin) (dom/label nil "Country")))
             (grid/row
               nil
               (grid/column
@@ -183,11 +179,14 @@
                   {:id           (:shipping.address/country form-inputs)
                    :name         "ship-country"
                    :autoComplete "shipping country"
-                   :defaultValue (:country/code (:shipping.address/country address))}
+                   :defaultValue selected-country
+                   :onChange     #(om/update-state! component assoc :shipping/selected-country (.-value (.-target %)))}
                   ;input-validation
                   (map (fn [c]
                          (dom/option {:value (:country/code c)} (:country/name c)))
                        (sort-by :country/name countries)))))
+            (grid/row nil
+                      (grid/column (css/add-class :no-margin) (dom/label nil "Address")))
             (grid/row
               nil
               (grid/column
@@ -204,7 +203,7 @@
                 (v/input {:id           (:shipping.address/street2 form-inputs)
                           :type         "text"
                           :defaultValue (:shipping.address/street2 address)
-                          :placeholder  "Apt/Suite/Other"}
+                          :placeholder  "Apt/Suite/Other (optional)"}
                          input-validation)))
             (grid/row
               nil
@@ -215,7 +214,7 @@
                           :defaultValue (:shipping.address/postal address)
                           :name         "ship-zip"
                           :autoComplete "shipping postal-code"
-                          :placeholder  "Postal code"}
+                          :placeholder  "Zip/Postal code"}
                          input-validation))
               (grid/column
                 (grid/column-size {:small 12 :medium 4})
@@ -228,13 +227,24 @@
                          input-validation))
               (grid/column
                 (grid/column-size {:small 12 :medium 4})
-                (v/input {:id           (:shipping.address/region form-inputs)
-                          :type         "text"
-                          :defaultValue (:shipping.address/region address)
-                          :name         "ship-state"
-                          :autoComplete "shipping region"
-                          :placeholder  "Province/State"}
-                         input-validation)))))
+                (if-let [regions (get shipping/regions selected-country)]
+                  (v/select
+                    {:id           (:shipping.address/region form-inputs)
+                     :defaultValue (or (:shipping.address/region address) "")
+                     :name         "ship-state"
+                     :autoComplete "shipping region"}
+                    input-validation
+                    (dom/option {:value "" :disabled true} "--- Province/State ---")
+                    (map (fn [r]
+                           (dom/option {:value r} (str r)))
+                         (sort regions)))
+                  (dom/input
+                    {:id           (:shipping.address/region form-inputs)
+                     :defaultValue (or (:shipping.address/region address) "")
+                     :name         "ship-state"
+                     :autoComplete "shipping region"
+                     :type         "text"
+                     :placeholder  "Province/State (optional)"}))))))
         ;(callout/callout-small
         ;  (css/add-class :warning))
         ;(dom/p nil (dom/small nil "Shipping address cannot be saved yet. We're working on this."))
@@ -347,7 +357,7 @@
            (loading-bar/start-loading! (shared/by-key this :shared/loading-bar) (om/get-reconciler this))))))
 
   (unlink-account [this social-identity]
-    (msg/om-transact! this [(list 'user/unlink-account {:user-id (:auth0.identity/id social-identity)
+    (msg/om-transact! this [(list 'user/unlink-account {:user-id  (:auth0.identity/id social-identity)
                                                         :provider (:auth0.identity/provider social-identity)})
                             :query/auth0-info]))
 
@@ -596,8 +606,8 @@
                     (dom/div
                       (css/add-class :user-profile)
                       (dom/div nil (dom/span nil (:auth0.identity/name facebook-identity))
-                             (dom/br nil)
-                             (dom/a {:onClick #(.unlink-account this facebook-identity)} (dom/small nil "disconnect")))
+                               (dom/br nil)
+                               (dom/a {:onClick #(.unlink-account this facebook-identity)} (dom/small nil "disconnect")))
                       (photo/circle {:src (:auth0.identity/picture facebook-identity)}))))
                 (grid/row
                   (->> (css/align :middle)
@@ -611,7 +621,7 @@
                          (css/text-align :right))
                     (button/user-setting-cta
                       ;{:onClick #(.authorize-social this :social/facebook)}
-                      (css/add-classes [:facebook :disabled] )
+                      (css/add-classes [:facebook :disabled])
                       (dom/i {:classes ["fa fa-facebook fa-fw"]})
                       (dom/span nil "Connect to Facebook"))))))
 
@@ -646,7 +656,7 @@
                          (css/text-align :right))
                     (button/user-setting-cta
                       ;{:onClick #(.authorize-social this :social/twitter)}
-                      (css/add-classes [:twitter :disabled] )
+                      (css/add-classes [:twitter :disabled])
                       (dom/i {:classes ["fa fa-twitter fa-fw"]})
                       (dom/span nil "Connect to Twitter"))))))))))))
 

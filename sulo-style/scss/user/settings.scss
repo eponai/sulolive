@@ -1,11 +1,11 @@
 // $user-dashboard-background: 
 
 .section-form.section-form--address {
-	border-top: $global-border-secondary;
-	border-bottom: $global-border-secondary;
+	// border-top: $global-border-secondary;
+	// border-bottom: $global-border-secondary;
 	margin-bottom: 1rem;
 	> div {
-		border-bottom: $global-border-secondary;
+		// border-bottom: $global-border-secondary;
 		padding: 1rem 0 0 0;
 		&:last-child {
 			border: none;
@@ -187,6 +187,18 @@
 				}
 				margin-bottom: 0.5rem !important;
 			}
+		}
+		.column.no-margin {
+			margin: 0.5rem;
+		}
+		select {
+			margin: 0;
+		}
+
+		label {
+			font-size: 80%;
+			color: $dark-gray;
+			text-align: left;
 		}
 	}
 }

@@ -162,8 +162,6 @@
                ". You also have to require your component's namespace in eponai.common.ui_namespaces.cljc"
                ". We're making it this complicated because we want module code splitting. "))
 
-      (debug "ROUTE: " (routes/url (:route current-route) (:route-params current-route)))
-      (debug "ROUTE SPLIT: " (string/split (routes/url (:route current-route) (:route-params current-route)) #"/"))
       (dom/div
         (css/add-class "sulo-page"
                        {:id (str "sulo-" (or (not-empty (namespace route)) (name route)))})
@@ -176,7 +174,7 @@
             (dom/div
               (css/add-class :page-content)
 
-              (let [current-loc-path (second (string/split (routes/url (:route current-route) (:route-params current-route)) #"/"))]
+              (let [current-loc-path (:locality (:route-params current-route))]
                 (if (contains? #{"yul"} current-loc-path)
                   (coming-soon/->ComingSoon coming-soon)
                   (factory app-root)))))

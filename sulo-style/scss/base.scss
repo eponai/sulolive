@@ -143,8 +143,8 @@ a.disabled {
 }
 .product-grid {
 	> .column {
-		padding: 1rem;
-		@include breakpoint(small only) {
+		padding: 0.5rem;
+		@include breakpoint(medium-small down) {
 			&:nth-child(2n+1) {
 				padding-left: 0;
 			}
@@ -153,6 +153,19 @@ a.disabled {
 			}
 		}
 		@include breakpoint(medium) {
+			padding: 0.5rem;
+			&:nth-child(3n+1) {
+				padding-left: 0;
+			}
+			&:nth-child(3n+2) {
+				padding-right: 0.25rem;
+				padding-left: 0.25rem;
+			}
+			&:nth-child(3n) {
+				padding-right: 0;
+			}
+		}
+		@include breakpoint(large) {
 			padding: 1.5rem;
 			&:nth-child(3n+1) {
 				padding-left: 0;
@@ -160,19 +173,6 @@ a.disabled {
 			&:nth-child(3n+2) {
 				padding-right: 0.75rem;
 				padding-left: 0.75rem;
-			}
-			&:nth-child(3n) {
-				padding-right: 0;
-			}
-		}
-		@include breakpoint(large) {
-			padding: 1.5rem 2rem;
-			&:nth-child(3n+1) {
-				padding-left: 0;
-			}
-			&:nth-child(3n+2) {
-				padding-right: 1rem;
-				padding-left: 1rem;
 			}
 			&:nth-child(3n) {
 				padding-right: 0;

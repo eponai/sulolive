@@ -70,23 +70,6 @@ $section-footer-color: $primary-color;
 	}
 
 	.section {
-		&.online-channels {
-			.online-stream {
-				@include breakpoint(small only) {
-					padding: 0 0.5rem;
-					&:nth-child(even) {
-						padding-right: 0;
-					}
-					&:nth-child(odd) {
-						padding-left: 0;
-					}
-				}
-				@include breakpoint(medium) {
-					padding: 0.5rem;
-				}
-			}
-		}
-
 		&.collections {
 			// font-size: 1.7rem;
 			.section-footer {
@@ -109,22 +92,7 @@ $section-footer-color: $primary-color;
 				}
 			}
 		}
-		&.new-arrivals {
-			.new-arrival-item {
-				@include breakpoint(small only) {
-					padding: 0.5rem;
-					&:nth-child(even) {
-						padding-right: 0;
-					}
-					&:nth-child(odd) {
-						padding-left: 0;
-					}
-				}
-				@include breakpoint(medium) {
-					padding: 0.5rem;
-				}
-			}
-		}
+
 		.sell-on-sulo {
 			padding-top: $global-padding;
 		}
