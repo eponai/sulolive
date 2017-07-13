@@ -103,8 +103,12 @@
 	.chat-info {
 		flex: 1;
 		display: flex;
-		justify-content: flex-end;
+		justify-content: space-between;
 		align-items: center;
+		.chat-visitors {
+			padding: 0 $global-padding;
+			color: $medium-gray;
+		}
 	}
 	.title {
 		margin: 0;
@@ -287,7 +291,7 @@
 			// top: 0;
 		}
 		.chat-menu {
-			height: $navbar-height;
+			// height: $navbar-height;
 			background: rgba(black, 0.7);
 		}
 

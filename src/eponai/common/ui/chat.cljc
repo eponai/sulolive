@@ -1,6 +1,6 @@
 (ns eponai.common.ui.chat
   (:require
-    [eponai.common.ui.dom :as my-dom]
+    [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
     [eponai.common.ui.elements :as elements]
     [eponai.common.shared :as shared]
@@ -15,7 +15,8 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.common.mixpanel :as mixpanel]
     [eponai.common.format.date :as date]
-    [eponai.web.ui.photo :as photo]))
+    [eponai.web.ui.photo :as photo]
+    [eponai.web.ui.button :as button]))
 
 (defn get-messages [component]
   (let [messages (get-in (om/props component) [:query/chat :chat/messages])
@@ -61,9 +62,9 @@
   (render [this]
     (let [{:keys [chat-message]} (om/get-state this)
           {:keys [on-enter]} (om/get-computed this)]
-      (my-dom/div
+      (dom/div
         (css/add-class :message-input-container)
-        (my-dom/input {:className   ""
+        (dom/input {:className      ""
                        :type        "text"
                        :placeholder "Say something..."
                        :value       (or chat-message "")
@@ -72,12 +73,38 @@
                                        :clj  identity)
                        :maxLength   500
                        :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))})
-        (my-dom/a
+        (dom/a
           (->> (css/button-hollow {:onClick #(on-enter this)})
                (css/add-class :secondary))
-          (my-dom/i {:classes ["fa fa-send-o fa-fw"]}))))))
+          (dom/i {:classes ["fa fa-send-o fa-fw"]}))))))
 
 (def ->ChatInput (om/factory ChatInput))
+
+(defn toggle-button [component]
+  [
+   (dom/a
+     (->> (css/button {:onClick #(.toggle-chat component true)})
+          (css/add-classes [:toggle-button :show-button])
+          (css/show-for :medium))
+     (dom/span {:classes ["fa fa-comments fa-fw"]}))
+   (dom/a
+     (->> (css/button-hollow {:onClick #(.toggle-chat component false)})
+          (css/add-classes [:secondary :toggle-button :hide-button])
+          (css/show-for :medium))
+     (dom/i
+       (css/add-class "fa fa-chevron-right fa-fw")))
+
+   (dom/a
+     (->> (css/button {:onClick #(.toggle-chat-small component true)})
+          (css/add-classes [:toggle-button-small :show-button])
+          (css/hide-for :medium))
+     (dom/span {:classes ["fa fa-comments fa-fw"]}))
+   (dom/a
+     (->> (css/button-hollow {:onClick #(.toggle-chat-small component false)})
+          (css/add-classes [:secondary :toggle-button-small :hide-button])
+          (css/hide-for :medium))
+     (dom/i
+       (css/add-class "fa fa-chevron-right fa-fw")))])
 
 (defn status-message [online-status]
   (cond (number? online-status)
@@ -158,7 +185,7 @@
           status-msg (status-message store-online-status)]
       (debug "Chat messages: " messages)
       (debug "Store online: " store-online-status)
-      (my-dom/div
+      (dom/div
         (cond->> (css/add-class :chat-container)
                  show-chat?
                  (css/add-class :show)
@@ -168,52 +195,38 @@
                  (css/add-class :stream-chat-container))
 
 
-        (my-dom/div
+        (dom/div
           (cond->> (css/add-class :chat-menu)
                    (= true store-online-status)
                    (css/add-class :is-online)
                    (not= status-msg "offline")
                    (css/add-class :just-online))
 
-          (my-dom/div
-            (css/add-class :chat-controls)
-            (my-dom/a
-              (->> (css/button {:onClick #(.toggle-chat this true)})
-                   (css/add-classes [:toggle-button :show-button])
-                   (css/show-for :medium))
-              (my-dom/span {:classes ["fa fa-comments fa-fw"]}))
-            (my-dom/a
-              (->> (css/button-hollow {:onClick #(.toggle-chat this false)})
-                   (css/add-classes [:secondary :toggle-button :hide-button])
-                   (css/show-for :medium))
-              (my-dom/i
-                (css/add-class "fa fa-chevron-right fa-fw")))
+          (dom/div
+            (css/add-classes [:chat-controls])
 
-            (my-dom/a
-              (->> (css/button {:onClick #(.toggle-chat-small this true)})
-                   (css/add-classes [:toggle-button-small :show-button])
-                   (css/hide-for :medium))
-              (my-dom/span {:classes ["fa fa-comments fa-fw"]}))
-            (my-dom/a
-              (->> (css/button-hollow {:onClick #(.toggle-chat-small this false)})
-                   (css/add-classes [:secondary :toggle-button-small :hide-button])
-                   (css/hide-for :medium))
-              (my-dom/i
-                (css/add-class "fa fa-chevron-right fa-fw")))
-            (my-dom/p (css/add-class :title) (my-dom/span nil "Public live chat")))
+            (toggle-button this)
+            (dom/p (css/add-class :title) (dom/span nil "Public live chat")))
 
-          (my-dom/div
+          (dom/div
             (css/add-class :chat-info)
-            (my-dom/div
+            (dom/div
+              (css/add-classes [:sl-tooltip :chat-visitors])
+              (dom/i {:classes ["fa fa-user fa-fw"]})
+              (dom/span nil (str visitor-count))
+              (dom/span (css/add-class :sl-tooltip-text) (if (= 1 visitor-count)
+                                                              (str visitor-count " visitor is in this store right now")
+                                                              (str visitor-count " visitors are in this store right now"))))
+            (dom/div
               (css/add-classes [:chat-status])
-              (my-dom/p (css/add-class :sl-tooltip) (my-dom/span nil status-msg)
-                        (my-dom/span (css/add-class :sl-tooltip-text)
-                                     (str (get-in store [:store/profile :store.profile/name]) " is " (if (= true store-online-status) "online" "offline") " right now")))
+              (dom/p (css/add-class :sl-tooltip) (dom/span nil status-msg)
+                     (dom/span (css/add-class :sl-tooltip-text)
+                               (str (get-in store [:store/profile :store.profile/name]) " is " (if (= true store-online-status) "online" "offline") " right now")))
               (photo/store-photo store {:transformation :transformation/thumbnail-tiny})
               )))
 
 
-        (my-dom/div
+        (dom/div
           (css/add-class :chat-content {:id "sl-chat-content"})
           (elements/message-list messages))
         (->ChatInput (om/computed {}
