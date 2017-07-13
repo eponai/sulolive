@@ -108,11 +108,11 @@
                                                ;                        :query/user])
                                                )})))))
                 (v/input {:type         "text"
-                          :placeholder  "Name"
+                          :placeholder  "Username"
                           :id           (:user.info/name form-inputs)
                           :defaultValue (:user.profile/name user-profile)}
                          input-validation)
-                (dom/p nil (dom/small nil "This name will be visible to other users in chats.")))))
+                (dom/p nil (dom/small nil "Your username will be visible to other users in chats.")))))
           )
         (dom/div
           (css/add-class :action-buttons)
