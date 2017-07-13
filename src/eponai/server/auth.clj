@@ -238,30 +238,34 @@
 
         ;; Get our user from Datomic
         sulo-user (existing-user (db/db conn) profile)
-        user-id (:sub profile)]
-    (debug "Got profile: " profile)
+        user-id (:sub profile)
 
-    (debug "Found existing user: " sulo-user)
+        redirect-unauthed (fn [should-verify?]
+                            (let [path (routes/path :login nil (cf/remove-nil-keys
+                                                                 (cond-> {:access_token access-token
+                                                                          :token        id-token}
+                                                                         should-verify?
+                                                                         (assoc :verified false))))]
+                              (debug "Redirect to path: " path)
+                              (r/redirect path)))]
 
     ;; If we already have a user for this account and they're verified, we can authenticate
     (if (some? sulo-user)
       (let [should-verify? (and (not (:user/verified sulo-user)) (and (not-empty (:email profile))
                                                                       (:email_verified profile)))]
+        ;; If the Auth0 account is verified, but not our DB user, update our DB user
         (when should-verify?
           (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]]))
-        (try
-          (auth0/link-with-same-email auth0management (assoc profile :user_id user-id))
-          (catch ExceptionInfo e
-            (error e)))
-        (do-authenticate request id-token sulo-user))
+        ;; Link Auth0 accounts with the same email (if any others exist)
+        (auth0/link-with-same-email auth0management (assoc profile :user_id user-id))
+        (if (or (:user/verified sulo-user) should-verify?)
+          ;; Authenticate user if verified
+          (do-authenticate request id-token sulo-user)
+          ;; Redirect user to verify their email if not verified.
+          (redirect-unauthed true)))
 
-      ;; User is signin in for the first time, and should go through creating an account.
-      (let [path (routes/path :login nil (cf/remove-nil-keys
-                                           {:access_token access-token
-                                            :token        id-token
-                                            :email        (:email profile)}))]
-        (debug "Redirect to path: " path)
-        (r/redirect path)))))
+      ;; User logged in for the first time, redirect to create an account.
+      (redirect-unauthed false))))
 
 ;(defn- do-authenticate
 ;  "Returns a logged in response if authenticate went well."

@@ -100,50 +100,62 @@
         create-message (msg/last-message component 'user/create)
         is-loading? (or (nil? auth-identity) (msg/pending? create-message))
         ]
-    [(dom/p nil (dom/span nil "Finish creating your SULO Live account"))
-     (dom/p nil (dom/a {:href (routes/url :login)} (dom/span nil "I already have an account")))
+    (if (some? (:verified query-params))
+      [(dom/p nil (dom/span nil "Verify your email address"))
+       (dom/form
+         (css/add-class :login-content)
+         (dom/label nil "Email")
+         (dom/p (css/add-class :email) (dom/strong nil (str (:auth0/email auth0-info))))
+         (button/submit-button
+           (css/add-classes [:expanded :sulo-dark] {:onClick (when-not is-loading?
+                                                               #(.authorize-email component))})
+           (dom/i {:classes ["fa fa-envelope-o fa-fw"]})
+           (dom/span nil "Email me a verification code"))
+         (render-accept-terms))]
+      [(dom/p nil (dom/span nil "Finish creating your SULO Live account"))
+       (dom/p nil (dom/a {:href (routes/url :login)} (dom/span nil "I already have an account")))
 
-     (dom/form
-       (css/add-class :login-content)
-       (if (nil? auth-identity)
-         ;; Show loading spinner before we got the user info
-         (dom/p nil (dom/i {:classes ["fa fa-spinner fa-pulse"]}))
-         [(dom/label nil "Email")
+       (dom/form
+         (css/add-class :login-content)
+         (if (nil? auth-identity)
+           ;; Show loading spinner before we got the user info
+           (dom/p nil (dom/i {:classes ["fa fa-spinner fa-pulse"]}))
+           [(dom/label nil "Email")
 
-          (if (not-empty (:auth0/email auth0-info))
-            (dom/p (css/add-class :email) (dom/strong nil (str (:auth0/email auth0-info))))
-            (v/input
-              {:type        "email"
-               :id          (::email form-inputs)
-               :placeholder "youremail@example.com"
-               :value       (or input-email (:auth0/email auth0-info))
-               :onChange    #(when-not (not-empty (:auth0/email auth0-info))
-                              (om/update-state! component assoc :create-user/input-email (.-value (.-target %))))}
-              input-validation))
+            (if (not-empty (:auth0/email auth0-info))
+              (dom/p (css/add-class :email) (dom/strong nil (str (:auth0/email auth0-info))))
+              (v/input
+                {:type        "email"
+                 :id          (::email form-inputs)
+                 :placeholder "youremail@example.com"
+                 :value       (or input-email (:auth0/email auth0-info))
+                 :onChange    #(when-not (not-empty (:auth0/email auth0-info))
+                                (om/update-state! component assoc :create-user/input-email (.-value (.-target %))))}
+                input-validation))
 
-          (dom/label nil "Name")
-          (v/input {:type        "text"
-                    :id          (::username form-inputs)
-                    :placeholder "Your name"
-                    :value       (or input-name (:auth0/nickname auth0-info))
-                    :onChange    #(om/update-state! component assoc :create-user/input-name (.-value (.-target %)))}
-                   input-validation)])
+            (dom/label nil "Name")
+            (v/input {:type        "text"
+                      :id          (::username form-inputs)
+                      :placeholder "Your name"
+                      :value       (or input-name (:auth0/nickname auth0-info))
+                      :onChange    #(om/update-state! component assoc :create-user/input-name (.-value (.-target %)))}
+                     input-validation)])
 
-       (dom/p (css/add-class :info)
-              (dom/small nil "By creating an account you accept our ")
-              (dom/a {:href   (routes/url :tos)
-                      :target "_blank"} (dom/small nil "Terms of Service"))
-              (dom/small nil " and ")
-              (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
-                      :className "iubenda-nostyle no-brand iubenda-embed"
-                      :title     "Privacy Policy"
-                      :target    "_blank"} (dom/small nil "Privacy Policy")))
-       (when-let [err (:error/create-user state)]
-         (dom/p (css/add-class :text-alert) (dom/small nil (str (:message err)))))
-       (button/submit-button
-         (css/add-classes [:expanded :sulo-dark] {:onClick (when-not is-loading?
-                                                             #(.create-account component))})
-         (dom/span nil "Create account")))]))
+         (dom/p (css/add-class :info)
+                (dom/small nil "By creating an account you accept our ")
+                (dom/a {:href   (routes/url :tos)
+                        :target "_blank"} (dom/small nil "Terms of Service"))
+                (dom/small nil " and ")
+                (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
+                        :className "iubenda-nostyle no-brand iubenda-embed"
+                        :title     "Privacy Policy"
+                        :target    "_blank"} (dom/small nil "Privacy Policy")))
+         (when-let [err (:error/create-user state)]
+           (dom/p (css/add-class :text-alert) (dom/small nil (str (:message err)))))
+         (button/submit-button
+           (css/add-classes [:expanded :sulo-dark] {:onClick (when-not is-loading?
+                                                               #(.create-account component))})
+           (dom/span nil "Create account")))])))
 
 (defn render-enter-code [component]
   (let [state (om/get-state component)]
@@ -228,7 +240,9 @@
        (auth0/authorize-social (shared/by-key this :shared/auth0) {:connection (name provider)})))
   (authorize-email [this]
     #?(:cljs
-       (let [email (web-utils/input-value-by-id (::email form-inputs))
+       (let [{:keys [auth0-info]} (om/get-computed this)
+             email (or (web-utils/input-value-by-id (::email form-inputs))
+                       (:auth0/email auth0-info))
              {:keys [login-state user]} (om/get-state this)]
          (om/update-state! this dissoc :auth0error)
          (auth0/passwordless-start (shared/by-key this :shared/auth0)
