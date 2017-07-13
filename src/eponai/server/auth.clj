@@ -257,7 +257,10 @@
         (when should-verify?
           (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]]))
         ;; Link Auth0 accounts with the same email (if any others exist)
-        (auth0/link-with-same-email auth0management (assoc profile :user_id user-id))
+        (try
+          (auth0/link-with-same-email auth0management (assoc profile :user_id user-id))
+          (catch ExceptionInfo e
+            (error e)))
         (if (or (:user/verified sulo-user) should-verify?)
           ;; Authenticate user if verified
           (do-authenticate request id-token sulo-user)
