@@ -52,11 +52,11 @@
 		}
 	}
 
-	&.chat {
+	// &.chat {
 		.sulo-notification {
 			i {
 				margin-right: 0;
-				font-size: 1.25rem;
+				font-size: 1.1rem;
 				color: rgba($black, 0.25);
 				&.is-active {
 					color: $sulo-dark-color;
@@ -80,23 +80,6 @@
 			left: 50%;
 			// padding: 0.05rem;
 		}
-	}
-}
-
-.sulo-notifications.navbar {
-	
-
-	// .sulo-notification {
-	// 	display: block;
-	// 	margin: 0;
-	// 	position: relative;
-	// 	width: auto;
-	// 	padding: 0;
-	// 	border: none;
-	// 	box-shadow: none;
-	// 	bottom: none;
-
-		
-		
 	// }
 }
+

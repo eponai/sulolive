@@ -18,6 +18,9 @@ $video-control-highlight-color: map-get($foundation-palette, highlight);
 	  	border: none;
 	  	padding: 1.5rem;
 	  	border-radius: 50%;
+	  	svg {
+	  		pointer-events: none;
+	  	}
 	  }
 
 	  .plyr__controls {

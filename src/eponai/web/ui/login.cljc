@@ -40,6 +40,20 @@
   #?(:cljs
      (str js/window.location.origin path)))
 
+(defn render-accept-terms []
+  (dom/p (css/add-class :info)
+         (dom/small nil "By signing in you accept our ")
+         (dom/a {:href   (routes/url :tos)
+                 :target "_blank"} (dom/small nil "Terms of Service"))
+         (dom/small nil " and ")
+         (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
+                 :className "iubenda-nostyle no-brand iubenda-embed"
+                 :title     "Privacy Policy"
+                 :target    "_blank"} (dom/small nil "Privacy Policy"))
+         (dom/small nil ". To use SULO Live you must have cookies enabled.")
+         ;(dom/small nil " We’ll never post to Twitter or Facebook without your permission.")
+         ))
+
 (defn render-user-password [component]
   (let [{:keys [login-error input-validation]} (om/get-state component)]
     [(dom/p nil (dom/span nil "Sign in to SULO Live to connect with brands and other shoppers in your favourite city."))
@@ -134,7 +148,7 @@
 (defn render-enter-code [component]
   (let [state (om/get-state component)]
     [(dom/p nil (dom/span nil "We sent you a code to sign in. Please check your inbox and provide the code below."))
-     (dom/div
+     (dom/form
        (css/add-class :login-content)
        (dom/label nil "Code")
        (dom/input {:id           (::code form-inputs)
@@ -144,9 +158,10 @@
                    :defaultValue ""})
        (when-let [err (:error/verify-email state)]
          (dom/p (css/add-class :text-alert) "Ooops, something went wrong."))
-       (button/default-hollow
+       (button/submit-button
          (css/add-class :sulo-dark {:onClick #(.verify-email component)})
-         (dom/span nil "Sign me in")))]))
+         (dom/span nil "Sign me in")))
+     (render-accept-terms)]))
 
 (defn render-send-email-code [component]
   (let [{:keys [auth0error]} (om/get-state component)
@@ -154,9 +169,9 @@
                                          "Please provide a valid email."
                                          "Sorry, couldn't send email. Try again later."))]
     [(dom/p nil (dom/span nil "Enter your email address to sign in or create an account on SULO Live"))
-     (dom/div
+     (dom/form
        (css/add-class :login-content)
-       ;(dom/label nil "Email")
+       (dom/label nil "Email")
        (dom/input
          (cond->> {:id           (::email form-inputs)
                    :type         "email"
@@ -166,13 +181,13 @@
                   (css/add-class :is-invalid-input)))
        (when error-message
          (dom/p (css/add-class :text-alert) (dom/small nil error-message)))
-       ;; TODO @diana enable when we allow signups
-       ;(dom/p (css/add-class :go-back) (dom/a {:onClick #(om/update-state! component assoc :login-state :login)}
-       ;                                       (dom/span nil "Or sign in with Facebook or Twitter")))
-       (button/default-hollow
+       (dom/p (css/add-class :go-back) (dom/a {:onClick #(om/update-state! component assoc :login-state :login)}
+                                              (dom/span nil "Or sign in with Facebook or Twitter")))
+       (button/submit-button
          (css/add-classes [:expanded :sulo-dark] {:onClick #(.authorize-email component)})
          (dom/i {:classes ["fa fa-envelope-o fa-fw"]})
-         (dom/span nil "Email me a code to sign in")))]))
+         (dom/span nil "Email me a code to sign in")))
+     (render-accept-terms)]))
 
 (defn render-select-login-type [component]
   [(dom/p nil (dom/span nil "Sign in to SULO Live to connect with brands and other shoppers in your favourite city."))
@@ -189,19 +204,8 @@
      (button/default-hollow
        (css/add-classes [:sulo-dark :expanded] {:onClick #(om/update-state! component assoc :login-state :login-email)})
        (dom/i {:classes ["fa fa-envelope-o fa-fw"]})
-       (dom/span nil "Sign up or sign in with email"))
-     (dom/p (css/add-class :info)
-            (dom/small nil "By signing in you accept our ")
-            (dom/a {:href   (routes/url :tos)
-                    :target "_blank"} (dom/small nil "Terms of Service"))
-            (dom/small nil " and ")
-            (dom/a {:href      "//www.iubenda.com/privacy-policy/8010910"
-                    :className "iubenda-nostyle no-brand iubenda-embed"
-                    :title     "Privacy Policy"
-                    :target    "_blank"} (dom/small nil "Privacy Policy"))
-            (dom/small nil ". To use SULO Live you must have cookies enabled.")
-            ;(dom/small nil " We’ll never post to Twitter or Facebook without your permission.")
-            ))])
+       (dom/span nil "Sign up or sign in with email")))
+   (render-accept-terms)])
 
 (defui Login
   static om/IQuery

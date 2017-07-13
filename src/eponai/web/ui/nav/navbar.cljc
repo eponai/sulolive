@@ -269,6 +269,9 @@
                nil
                (dom/a {:href (routes/url :about)}
                       (dom/strong nil (dom/small nil "About us")))))
+           (menu/item
+             (css/add-class :sulo-notifications)
+             (dom/a (css/add-class :sulo-notification) (dom/i {:classes ["fa fa-bell"]})))
            (when (some? owned-store)
              (menu/item
                (css/add-class :chat-notifications)
