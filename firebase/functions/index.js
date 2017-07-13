@@ -10,10 +10,10 @@ admin.initializeApp(functions.config().firebase);
 // Counts the number of visitors for a store by counting their children.
 exports.countStoreVisitor = functions.database.ref('/v2/store/{storeId}/visitors/{visitorId}')
 .onWrite(event => {
-  const locality = event.data.val();
+  const locality = event.data.val() || event.data.previous.val();
   const storeId = event.params.storeId;
   const collectionRef = event.data.ref.parent;
-  const countPath = '/v2/' + locality + '/visitor-count/' + storeId;
+  const countPath = '/v2/locality/' + locality + '/visitor-count/' + storeId;
   const countRef = admin.database().ref(countPath)
 
   // Return the promise from countRef.transaction() so our function 
@@ -31,10 +31,10 @@ exports.countStoreVisitor = functions.database.ref('/v2/store/{storeId}/visitors
 });
 
 // If the number of visitors gets deleted, recount the number of visitors
-exports.recountStoreVisitors = functions.database.ref('/v2/{locality}/visitor_count/{storeId}').onWrite(event => {
+exports.recountStoreVisitors = functions.database.ref('/v2/locality/{locality}/visitor-count/{storeId}').onWrite(event => {
   if (!event.data.exists()) {
     const counterRef = event.data.ref;
-    const collectionRef = admin.database().ref('/v2/store/' + event.params.storeId '/visitors');
+    const collectionRef = admin.database().ref('/v2/store/' + event.params.storeId + '/visitors');
     
     // Return the promise from counterRef.set() so our function 
     // waits for this async event to complete before it exits.
