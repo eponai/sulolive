@@ -165,7 +165,7 @@
   [store-id user-id])
 
 (defprotocol IFirebase2
-  (route-changed [this route-map])
+  (route-changed [this route-map prev-route-map])
   (stop [this]))
 
 (defn firebase2 [reconciler user-id]
@@ -208,7 +208,7 @@
       (stop [this]
         (async/close! close-chan))
 
-      (route-changed [_ route-map]
+      (route-changed [this route-map prev-route-map]
         (let [listener-id-fn (juxt :firebase-route :firebase-route-params)
               old-listeners (:listeners @state)
               new-listeners (into {}
@@ -234,7 +234,26 @@
                                {})
                            (map (fn [[id m]]
                                   [id (assoc m :listener (listen-to database event-chan m))]))
-                           (select-keys new-listeners keys-to-start)))))))
+                           (select-keys new-listeners keys-to-start))))
+            ;; Leave store
+            (when (= :store (:route prev-route-map))
+              (when (or (not= :store (:route route-map))
+                        (not= (:store-id (:route-params route-map))
+                              (:store-id (:route-params prev-route-map))))
+                (unregister-store-visit this
+                                        (:store-id (:route-params prev-route-map))
+                                        user-id)))
+            ;; Enter store
+            (when (= :store (:route route-map))
+              (when (or (not= :store (:route prev-route-map))
+                        (not= (:store-id (:route-params route-map))
+                              (:store-id (:route-params prev-route-map))))
+                (let [store-id (:store-id (:route-params route-map))]
+                  (register-store-visit this
+                                        store-id
+                                        user-id
+                                        (-> (db/entity (db/to-db reconciler) store-id)
+                                            (get-in [:store/locality :sulo-locality/path])))))))))
 
       IFirebase2Actions
       (register-store-owner-presence [this user-id store-id raw-locality]

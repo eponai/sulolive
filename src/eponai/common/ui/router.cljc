@@ -111,10 +111,15 @@
      (shouldComponentUpdate
        [this props state]
        (utils/should-update-when-route-is-loaded this props state)))
-  (componentDidUpdate [this _ _]
-    ;; TODO: Change this to shared/by-key when merged with other branch.
-    ;; (scroll-helper/scroll-on-did-render (shared/by-key this :shared/scroll-helper))
-    )
+  #?(:cljs
+     (componentDidUpdate [this prev-props _]
+                         ;; TODO: Change this to shared/by-key when merged with other branch.
+                         ;; (scroll-helper/scroll-on-did-render (shared/by-key this :shared/scroll-helper))
+                         (when (not= (:query/current-route (om/props this))
+                                     (:query/current-route prev-props))
+                           (firebase/route-changed (shared/by-key this :shared/firebase)
+                                                   (routes/with-normalized-route-params this (:query/current-route (om/props this)))
+                                                   (routes/with-normalized-route-params this (:query/current-route prev-props))))))
   (render [this]
     (let [{:keys       [routing/app-root query/current-route query/locations]
            :proxy/keys [navbar sidebar footer coming-soon]} (om/props this)

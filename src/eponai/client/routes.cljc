@@ -77,6 +77,9 @@
              (update m k #(normalizer db %))))
          route-params)))
 
+(defn with-normalized-route-params [x route-map]
+  (update route-map :route-params normalize-route-params (db/to-db x)))
+
 (defn current-route [x]
   (let [db (db/to-db x)]
     (-> db

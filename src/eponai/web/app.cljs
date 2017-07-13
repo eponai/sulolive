@@ -102,13 +102,7 @@
                                                                   (binding [parser/*parser-allow-local-read* false]
                                                                     (queue-cb))
                                                                   (debug "called queue-cb!"))
-                                                              (debug "No root query, nothing to queue..")))))))}))
-        ;; After transacted route
-        (when (firebase/is-initialized?)
-          (firebase/route-changed (shared/by-key reconciler :shared/firebase)
-                                  {:route        handler
-                                   :route-params route-params
-                                   :query-params query-params})))
+                                                              (debug "No root query, nothing to queue..")))))))})))
       (catch :default e
         (let [data (ex-data e)]
           (if (= ::location-not-set (:type data))
@@ -170,7 +164,8 @@
 (defn initialize-firebase [reconciler]
   (firebase/initialize reconciler)
   (firebase/route-changed (shared/by-key reconciler :shared/firebase)
-                          (client.routes/current-route reconciler))
+                          (client.routes/current-route reconciler)
+                          nil)
   (register-user-presence reconciler))
 
 (defn init-user-cart!
