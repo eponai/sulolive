@@ -237,26 +237,24 @@
    :uniq-by {:route-params [:store-id]}}
   {:value (let [presence (firebase/-presence (:system/firebase system)
                                              (:sulo-locality/path (db/entity db (:db/id locations))))
+                ;; First convert from hashmap -> clojure mpa.
+                presence (->> (into {} presence)
+                              ;; Then parse the keys and values.
+                              (into {} (map (fn [[k v]]
+                                              [(c/parse-long-safe k) (if (true? v) v (c/parse-long-safe v))]))))
                 _ (debug "Got presence: " presence)
-                online-users (filter #(= true (get presence %)) (keys presence))
-                _ (debug "GOT ONLINE USERS: " (into [] online-users))
-                user-dbids (map #(Long/parseLong %) online-users)
-                _ (debug "PULL USERS: " (into [] user-dbids))
-                store-users (if (not-empty user-dbids)
-                              (db/find-with db {:find    '[?e ?user]
-                                                :where   '[[?o :store.owner/user ?user]
-                                                           [?e :store/locality ?l]
-                                                           [?e :store/owners ?o]
-                                                           [?e :store/status ?st]
-                                                           [?st :status/type :status.type/open]]
-                                                :symbols {'[?user ...] user-dbids
-                                                          '?l          (:db/id locations)}})
-                              {})
-                _ (debug "Store-users" (into {} store-users))
-                store-usermap (into {} store-users)
-                stores (db/pull-many db query (keys (into {} store-usermap)))]
-            (debug "Store online: " (into [] (map #(assoc % :store/online (get presence (str (get store-usermap (:db/id %))))) stores)))
-            (map #(assoc % :store/online (get presence (str (get store-usermap (:db/id %))))) stores))})
+                stores (if (not-empty presence)
+                         (db/pull-all-with db query {:where   '[[?e :store/locality ?l]
+                                                                [?o :store.owner/user ?user]
+                                                                [?e :store/owners ?o]
+                                                                [?e :store/status ?st]
+                                                                [?st :status/type :status.type/open]]
+                                                     :symbols {'[?user ...] (map key presence)
+                                                               '?l          (:db/id locations)}})
+                         [])]
+            (into stores
+                  (map (fn [[user-id v]] [:db/add user-id :user/online? v]))
+                  presence))})
 
 (defread query/store-has-streamed
   [{:keys [db db-history query auth route-params]} _ _]
