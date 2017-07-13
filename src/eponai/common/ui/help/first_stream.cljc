@@ -19,35 +19,40 @@
         (dom/p nil
                (dom/span nil
                          (str "In this guide we'll get you streaming from your first time from your computer to SULO Live. If you want"
-                              " to set up streaming on your mobile device instead of your computer, we recommend you read this"
-                              " guide first, then head over to the "))
-               (dom/a {:href (routes/path :help/mobile-stream)} "Mobile Stream Guide"))
-        (dom/p nil "Before you can start streaming on SULO Live, you need to download encoding software. Encoding software allows you to capture content, including your desktop, camera, microphone, and more, and send it to SULO Live to be streamed to all your fans.")
+                              " to set up streaming on your mobile device, head over to the "))
+               (dom/a {:href (routes/path :help/mobile-stream)} "Mobile Stream Guide") (dom/span nil "."))
+        (dom/h2 nil "Getting started")
+        (dom/h3 nil "Download encoding software")
 
-        (dom/h2 nil "Download encoding software")
+        (dom/p nil "Before you can start streaming on SULO Live, you need to download encoding software. Encoding software allows you to capture content, including your desktop, camera, microphone, and more, and send it to SULO Live to be streamed to all your fans.")
         (dom/p nil "The best encoding software for you depends on your needs. If you're not already familiar with encoding software we recommend you try Open Broadcaster Software. It is a free and open source software for video recording and live streaming, and it's easy to setup with SULO Live.")
         (grid/row
           (css/align :middle)
           (grid/column
             (grid/column-size {:small 3 :medium 2 :large 1})
-            (photo/square {:src "/assets/img/obs-logo.png"}))
+            (dom/p nil (photo/square {:src "/assets/img/obs-logo.png"})))
           (grid/column
             nil
             (dom/p nil
                    (dom/a {:href   "https://obsproject.com/"
                            :target "_blank"}
                           (dom/span nil "Download Open Broadcaster Software")))))
+        (callout/callout-small
+          (css/add-class :sulo)
+          (dom/p nil (dom/small nil (str "This guide is tailored for Open Broadcaster Software, but any software to stream to RTMP would work."
+                                         " Find the setting to add an RTMP destination or target and add SULO Live's Server URL and Stream Key as described in this guide."))))
+        (dom/h3 nil "Get your SULO Live settings")
+        (dom/p nil "You will need two things to publish your stream to SULO Live:")
+        (dom/ol nil (dom/li nil (dom/p nil (dom/span nil "Your ") (dom/strong nil "Server URL")))
+                (dom/li nil (dom/p nil (dom/span nil "Your ") (dom/strong nil "Stream key"))))
+        (dom/p nil
+               (dom/span nil "You can find the information under ")
+               (dom/em nil "Live stream")
+               (dom/span nil " in your store settings, which is also where you will be able to preview your stream and eventually go live."))
 
         (dom/h2 nil "Configure Open Broadcaster Software")
         (dom/ol
           nil
-          (dom/li nil
-                  (dom/p nil
-                         (dom/span nil "To publish your stream, you'll need a ")
-                         (dom/em nil "Server URL")
-                         (dom/span nil " and ")
-                         (dom/em nil "Stream key")
-                         (dom/span nil " for your store on SULO Live. You can find them in the stream settings.")))
           (dom/li nil
                   (dom/p nil "Install Open Broadcaster Software on your computer and start the software."))
           (dom/li nil
@@ -118,9 +123,11 @@
                (dom/em nil " Sources ")
                (dom/span nil " setup yet, your content is only a black screen."))
 
-        (dom/p nil
-               (dom/strong nil "Tip: ")
-               (dom/span nil "You can have multiple scenes setup and toggle between them as you are live streaming."))
+        (callout/callout-small
+          (css/add-class :sulo)
+          (dom/p nil
+                 (dom/strong nil "Tip: ")
+                 (dom/span nil "You can have multiple scenes setup and toggle between them as you are live streaming.")))
 
         (dom/h3 nil "Add a source")
         (dom/p nil (dom/span nil "Sources are the places your content is captured from, this can be a window on your computer, your webcam, or an external device like a video camera."))
@@ -152,9 +159,11 @@
         ;  (css/add-class :action))
         ;(dom/h4 nil (dom/div {:classes ["icon icon-idea"]})
         ;        (dom/span nil "Tip"))
-        (dom/p nil
-               (dom/strong nil "Tip: ")
-               (dom/span nil "Try moving and resizing the source in the preview window. You can add more sources to the same scene and arrange them with the move and resize tools."))
+        (callout/callout-small
+          (css/add-class :sulo)
+          (dom/p nil
+                 (dom/strong nil "Tip: ")
+                 (dom/span nil "Try moving and resizing the source in the preview window. You can add more sources to the same scene and arrange them with the move and resize tools.")))
 
 
 
@@ -199,11 +208,6 @@
                          (str " If you want to get inspiration and see what other people are doing"
                               " with live streaming we recommend you checkout other creatives at: "))
                (dom/a {:href "https://www.twitch.tv/directory/game/Creative"}
-                      (dom/span nil "twitch.tv/creative")))
-        (dom/h2 nil "More questions?")
-        (dom/p nil (dom/span nil "Do you still have questions? Contact us on ")
-               (dom/a {:href "mailto:help@sulo.live"}
-                      (dom/span nil "help@sulo.live"))
-               (dom/span nil ". We're happy to help!"))))))
+                      (dom/span nil "twitch.tv/creative")))))))
 
 (def ->FirstStream (om/factory FirstStream))

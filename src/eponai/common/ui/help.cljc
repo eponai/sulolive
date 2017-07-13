@@ -47,7 +47,15 @@
         (menu/item nil (dom/span nil anchor-text)))
       (callout/callout
         nil
-        (factory)))))
+        (factory))
+
+      (callout/callout
+        nil
+        (dom/h2 nil "Still have questions?")
+        (dom/p nil
+               (dom/span nil "Contact us ")
+               (dom/a {:href "mailto:hello@sulo.live"} "hello@sulo.live")
+               (dom/span nil ". Miriam, Diana or Petter will help you out."))))))
 
 (defui Help
   static om/IQuery
