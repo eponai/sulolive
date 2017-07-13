@@ -97,10 +97,7 @@
   static om/IQuery
   (query [this]
     [:query/current-route
-     :query/firebase
      :query/locations
-     {:query/auth [:db/id]}
-     {:query/owned-store [:db/id]}
      {:proxy/navbar (om/get-query navbar/Navbar)}
      {:proxy/sidebar (om/get-query sidebar/Sidebar)}
      {:proxy/footer (om/get-query foot/Footer)}
@@ -114,43 +111,15 @@
      (shouldComponentUpdate
        [this props state]
        (utils/should-update-when-route-is-loaded this props state)))
-  (componentDidUpdate [this _ _]
-
-    ;; TODO: Change this to shared/by-key when merged with other branch.
-    ;; (scroll-helper/scroll-on-did-render (shared/by-key this :shared/scroll-helper))
-    )
-  (componentDidMount [this]
-    (debug "Router did mount")
-    #?(:cljs
-       (let [{:query/keys [owned-store auth]
-
-              fb-token    :query/firebase} (om/props this)]
-         (debug "Firebase token: " fb-token)
-         (when (some? auth)
-           (-> (.auth js/firebase)
-               (.signInWithCustomToken (:token fb-token))
-               (.catch (fn [err]
-                         (debug "Firebase could not sign in: " err))))
-           ;(-> (.auth js/firebase)
-           ;    (.signInAnonymously))
-           )
-         (when (some? owned-store)
-           (let [fb (shared/by-key this :shared/firebase)
-                 presence-ref (firebase/-ref fb (str "presence/" (:db/id auth)))]
-             (firebase/-add-connected-listener fb
-                                               presence-ref
-                                               {:on-connect    #(firebase/-set fb % true)
-                                                :on-disconnect #(firebase/-set fb % (firebase/-timestamp fb))}))
-           ;(let [am-online (-> (.database js/firebase)
-           ;                    (.ref ".info/connected"))
-           ;      user-ref (-> (.database js/firebase)
-           ;                   (.ref (str "presence/" (:db/id auth))))]
-           ;  (.on am-online "value" (fn [snapshot]
-           ;                           (when (.val snapshot)
-           ;                             (-> (.onDisconnect user-ref)
-           ;                                 (.set js/firebase.database.ServerValue.TIMESTAMP))
-           ;                             (.set user-ref true)))))
-           ))))
+  #?(:cljs
+     (componentDidUpdate [this prev-props _]
+                         ;; TODO: Change this to shared/by-key when merged with other branch.
+                         ;; (scroll-helper/scroll-on-did-render (shared/by-key this :shared/scroll-helper))
+                         (when (not= (:query/current-route (om/props this))
+                                     (:query/current-route prev-props))
+                           (firebase/route-changed (shared/by-key this :shared/firebase)
+                                                   (routes/with-normalized-route-params this (:query/current-route (om/props this)))
+                                                   (routes/with-normalized-route-params this (:query/current-route prev-props))))))
   (render [this]
     (let [{:keys       [routing/app-root query/current-route query/locations]
            :proxy/keys [navbar sidebar footer coming-soon]} (om/props this)

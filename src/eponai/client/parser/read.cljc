@@ -170,8 +170,10 @@
   (if target
     {:remote true}
     {:value (when-let [loc (client.auth/current-locality db)]
-              (db/pull-all-with db query {:where '[[?e :store/online _]
-                                                   [?e :store/locality ?l]]
+              (db/pull-all-with db query {:where   '[[?e :store/owners ?owner]
+                                                     [?owner :store.owner/user ?user]
+                                                     [?user :user/online? true]
+                                                     [?e :store/locality ?l]]
                                           :symbols {'?l (:db/id loc)}}))}))
 
 (defmethod client-read :query/store-items
@@ -533,12 +535,6 @@
                                                            (assoc (get users-by-id id) :db/id id)))))
                                           messages))))))})))
 
-(defmethod client-read :query/store-chat-status
-  [{:keys [target db route-params query]} _ _]
-  (if (some? target)
-    {:remote true}
-    {:value (db/pull db query (:store-id route-params))}))
-
 (defmethod client-read :datascript/schema
   [{:keys [target]} _ _]
   (when target
@@ -614,3 +610,11 @@
   ;; Only for fetching product items, nothing else.
   (when target
     {:remote true}))
+
+(defmethod client-read :query/notification-count
+  [{:keys [target db]} _ _]
+  (when (nil? target)
+    {:value (some->> (client.auth/current-auth db)
+                     (db/entity db)
+                     (:user/chat-notifications)
+                     (count))}))

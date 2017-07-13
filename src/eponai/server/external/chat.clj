@@ -13,7 +13,7 @@
             [datascript.core :as datascript]
             [eponai.common :as c]
             [suspendable.core :as suspendable])
-  (:import (com.google.firebase.database DatabaseReference FirebaseDatabase ChildEventListener DataSnapshot DatabaseError ServerValue)
+  (:import (com.google.firebase.database DatabaseReference ChildEventListener DataSnapshot DatabaseError ServerValue)
            (java.util HashMap)))
 
 (defprotocol IWriteStoreChat
@@ -101,6 +101,14 @@
       (datomic/remove-tx-listener chat-datomic (:listener this))
       (async/close! (:store-id-chan this)))
     (dissoc this ::started? :listener :store-id-chan))
+
+  suspendable/Suspendable
+  (suspend [this] this)
+  (resume [this old-this]
+    (if (::started? old-this)
+      (reduce-kv assoc this (select-keys old-this [::started? :listener :store-id-chan]))
+      (do (component/stop old-this)
+          (component/start this))))
 
   IWriteStoreChat
   (write-message [this store user message]
@@ -224,7 +232,7 @@
 
 
 (defn- raw-store-chat-room-ref [firebase store-id]
-  (.getReference ^FirebaseDatabase (:database firebase) (str "store-chats/" store-id)))
+  (firebase/route->ref (:database firebase) :store/chat {:store-id store-id}))
 
 (defn- store-chat-room-query [firebase store-id]
   (let [chat-room-ref (-> (raw-store-chat-room-ref firebase store-id)

@@ -26,33 +26,16 @@
                      {:store/profile [:store.profile/name
                                       {:store.profile/photo [:photo/path :photo/id]}]}
                      {:store/status [:status/type]}
+                     :store/visitor-count
                      :store/username]}])
   Object
-  (initLocalState [_]
-    {:visitor-count 0})
-  (componentWillMount [this]
-    #?(:cljs
-       (let [channel (om/props this)
-             fb (shared/by-key this :shared/firebase)
-             presence-ref (firebase/-ref fb (str "visitors/" (-> channel :stream/store :db/id)))]
-         (debug "Reference for path: " (str "visitors/" (-> channel :stream/store :db/id)))
-         (firebase/-once fb (fn [snapshot]
-                              (debug "Got presence value: " snapshot)
-                              (let [visitors (count (or (:value snapshot) []))]
-                                (om/update-state! this assoc :visitor-count visitors)))
-                         presence-ref)
-         (om/update-state! this assoc :presence-ref presence-ref))))
-  (componentWillUnmount [this]
-    #?(:cljs
-       (let [{:keys [presence-ref]} (om/get-state this)]
-         (firebase/-off (shared/by-key this :shared/firebase) presence-ref))))
   (render [this]
     (let [channel (om/props this)
-          {:keys [visitor-count]} (om/get-state this)
           {:stream/keys [store]
            stream-name  :stream/title} channel
           {{:store.profile/keys [photo]
             store-name          :store.profile/name} :store/profile} store
+          visitor-count (or (:store/visitor-count store) 0)
           store-link (routes/store-url store :store)]
       (debug "Stream: " channel)
       (debug "Stream store: " (:stream/state channel))
@@ -95,54 +78,31 @@
      {:store/locality [:sulo-locality/path]}
      {:store/status [:status/type]}
      {:stream/_store [:stream/state]}
+     :store/visitor-count
      :store/username
-     :store/online
      :store/created-at
      :store/featured
      :store/featured-img-src
-     {:store/owners [:store.owner/user]}
+     {:store/owners [{:store.owner/user [:user/online?]}]}
      {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                 :store.item.photo/index]}]}])
   Object
-  (initLocalState [this]
-    {:visitor-count 0})
-  (componentWillMount [this]
-    #?(:cljs
-       (let [store (om/props this)
-             fb (shared/by-key this :shared/firebase)
-             presence-ref (firebase/-ref fb "presence")
-             visitors-ref (firebase/-ref fb (str "visitors/" (:db/id store)))
-             stream-state (-> store :stream/_store first :stream/state)
-             store-owner (-> store :store/owners :store.owner/user)]
-         (firebase/-once fb (fn [snapshot]
-                              (debug "Got presence value: " snapshot)
-                              (let [visitors (count (or (:value snapshot) []))]
-                                (om/update-state! this assoc :visitor-count visitors)))
-                         visitors-ref)
-         (if (= :stream.state/live stream-state)
-           (om/update-state! this assoc :store-live? true)
-           (firebase/-once fb (fn [snapshot]
-                                (let [is-online? (= true (get (:value snapshot) (str (:db/id store-owner))))]
-                                  (om/update-state! this assoc :store-online? is-online?)))
-                           presence-ref))
-         (om/update-state! this assoc :visitors-ref visitors-ref :presence-ref presence-ref))))
-
-  (componentWillUnmount [this]
-    #?(:cljs
-       (let [{:keys [presence-ref]} (om/get-state this)]
-         (firebase/-off (shared/by-key this :shared/firebase) presence-ref))))
   (render [this]
-    (let [store (om/props this)
-          {:keys [store-online? store-live? visitor-count]} (om/get-state this)
+    (let [{:store/keys [visitor-count] :as store} (om/props this)
           store-name (-> store :store/profile :store.profile/name)
-          online-status (cond store-live? :is-live store-online? :is-online :else :is-offline)]
+          stream-state (-> store :stream/_store first :stream/state)
+          store-owner-online? (-> store :store/owners :store.owner/user :user/online?)
+          online-status (cond
+                          (= :stream.state/live stream-state) :is-live
+                          store-owner-online? :is-online
+                          :else :is-offline)]
       (dom/div
         (->> (css/add-class :content-item)
              (css/add-class :store-item))
         (dom/a
           {:href (routes/store-url store :store)}
           (photo/store-photo store {:transformation :transformation/thumbnail-large}
-                             (when (pos? visitor-count)
+                             (when (pos? (or visitor-count 0))
                                (photo/overlay
                                  nil
                                  (dom/div
@@ -174,32 +134,13 @@
     #?(:cljs (om/update-state! this assoc :breakpoint (web.utils/breakpoint js/window.innerWidth))))
   (componentDidMount [this]
     #?(:cljs
-       (let [product (om/props this)
-             stream-state (-> product :store/_items :stream/_store first :stream/state)]
-         (debug "Product stream state: " stream-state)
-         (.addEventListener js/window "resize" (:resize-listener (om/get-state this))))))
-  (componentWillMount [this]
-    #?(:cljs
-       (let [fb (shared/by-key this :shared/firebase)
-             product (om/props this)
-             {:keys [current-route]} (om/get-computed this)
-             store-owner (-> product :store/_items :store/owners :store.owner/user)
-             stream-state (-> product :store/_items :stream/_store first :stream/state)
-             presence-ref (firebase/-ref fb "presence")]
-         (if (and (= :stream.state/live stream-state)
-                  (show-status current-route))
-           (om/update-state! this assoc :store-live? true)
-           (firebase/-once fb (fn [snapshot]
-                                (let [is-online? (and (= true (get (:value snapshot) (str (:db/id store-owner))))
-                                                      (show-status current-route))]
-                                  (om/update-state! this assoc :store-online? is-online?)))
-                           presence-ref)))))
+       (.addEventListener js/window "resize" (:resize-listener (om/get-state this)))))
   (componentWillUnmount [this]
     #?(:cljs (.removeEventListener js/window "resize" (:resize-listener (om/get-state this)))))
   (render [this]
     (let [product (om/props this)
-          {:keys [current-route open-url? store-status]} (om/get-computed this)
-          {:keys [show-item? breakpoint store-online? store-live?]} (om/get-state this)
+          {:keys [current-route open-url?]} (om/get-computed this)
+          {:keys [show-item? breakpoint]} (om/get-state this)
           on-click #(om/update-state! this assoc :show-item? true)
           #?@(:cljs [open-url? (if (some? open-url?) open-url? (web.utils/bp-compare :large breakpoint >))]
               :clj  [open-url? (if (some? open-url?) open-url? false)])
@@ -208,7 +149,14 @@
           {:store.item/keys [photos price]
            item-name        :store.item/name
            store            :store/_items} product
-          {:store.item.photo/keys [photo]} (first (sort-by :store.item.photo/index photos))]
+          {:store.item.photo/keys [photo]} (first (sort-by :store.item.photo/index photos))
+
+          store-live? (= :stream.state/live (-> product :store/_items :stream/_store first :stream/state))
+          store-online? (-> product :store/_items :store/owners :store.owner/user :user/online?)
+          store-status (when (show-status current-route)
+                         (cond store-live? :live
+                               store-online? :online
+                               :else :is-offline))]
       (dom/div
         (cond->> (css/add-classes [:content-item :product-item])
                  (= store-status :online)
@@ -218,20 +166,20 @@
         (when show-item?
           (common/modal
             {:on-close #(do
-                         (om/update-state! this assoc :show-item? false)
-                         #?(:cljs
-                            (.replaceState js/history nil nil (routes/url (:route current-route)
-                                                                          (:route-params current-route)
-                                                                          (:query-params current-route)))))
+                          (om/update-state! this assoc :show-item? false)
+                          #?(:cljs
+                             (.replaceState js/history nil nil (routes/url (:route current-route)
+                                                                           (:route-params current-route)
+                                                                           (:query-params current-route)))))
              :size     :large}
             (product/->Product product)))
 
         (dom/a
           (->> {:onClick #(when on-click
-                           (on-click)
-                           (debug "Chagne URL to: " goods-href)
-                           #?(:cljs
-                              (.replaceState js/history nil nil (product/product-url product))))
+                            (on-click)
+                            (debug "Chagne URL to: " goods-href)
+                            #?(:cljs
+                               (.replaceState js/history nil nil (product/product-url product))))
 
                 :href    goods-href}
                (css/add-class :primary-photo))

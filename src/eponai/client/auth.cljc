@@ -14,15 +14,17 @@
       (om/transact! @reconciler-atom [(list 'login-modal/show)
                                       {:query/login-modal [:ui.singleton.loading-bar/show?]}]))))
 
-(defn current-auth [db]
-  (some-> (db/lookup-entity db [:ui/singleton :ui.singleton/auth])
+(defn current-auth [x]
+  (some-> (db/to-db x)
+          (db/lookup-entity [:ui/singleton :ui.singleton/auth])
           (get-in [:ui.singleton.auth/user :db/id])))
 
 
-(defn authed-email [db]
-  (some->> (current-auth db)
-           (db/entity db)
-           (:user/email)))
+(defn authed-email [x]
+  (let [db (db/to-db x)]
+    (some->> (current-auth db)
+             (db/entity db)
+             (:user/email))))
 
 
 (defn current-locality [x]

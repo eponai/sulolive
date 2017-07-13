@@ -33,7 +33,8 @@
     [eponai.common.database :as db]
     [eponai.client.cart :as client.cart]
     [eponai.web.firebase :as firebase]
-    [eponai.web.utils :as web.utils]))
+    [eponai.web.utils :as web.utils]
+    [eponai.client.routes :as client.routes]))
 
 (defn add-root! [reconciler]
   (binding [parser/*parser-allow-remote* false]
@@ -137,6 +138,35 @@
                       [{:store/profile
                         [:store.profile/name]}]}]}])
 
+(defn register-user-presence [reconciler]
+  (when-let [user-id (client.auth/current-auth reconciler)]
+    (let [db (db/to-db reconciler)
+          owned-store (db/one-with db {:where   '[[?e :store/owners ?owner]
+                                                  [?owner :store.owner/user ?user]]
+                                       :symbols {'?user user-id}})
+          fb-token (db/singleton-value db :ui.singleton.firebase/token)]
+      (debug "Firebase token: " fb-token)
+      (-> (.auth js/firebase)
+          (.signInWithCustomToken (:token fb-token))
+          (.catch (fn [err]
+                    (debug "Firebase could not sign in: " err))))
+      ;(-> (.auth js/firebase)
+      ;    (.signInAnonymously))
+
+      (when (some? owned-store)
+        (firebase/register-store-owner-presence
+          (shared/by-key reconciler :shared/firebase)
+          user-id
+          owned-store
+          (get-in (db/entity db owned-store) [:store/locality :sulo-locality/path]))))))
+
+(defn initialize-firebase [reconciler]
+  (firebase/initialize reconciler)
+  (firebase/route-changed (shared/by-key reconciler :shared/firebase)
+                          (client.routes/current-route reconciler)
+                          nil)
+  (register-user-presence reconciler))
+
 (defn init-user-cart!
   "Initializing user cart. If the user has done anything when it was not
   logged in, it gets put in the cart once it has logged in."
@@ -210,7 +240,13 @@
                           (update :remote/chat #(remotes/send-with-chat-update-basis-t % reconciler-atom)))
         add-schema-to-query-once (apply-once (fn [q]
                                                {:pre [(sequential? q)]}
-                                               (into [:datascript/schema :query/client-env] q)))
+                                               (into [:datascript/schema
+                                                      :query/client-env
+                                                      ;; For firebase
+                                                      {:query/owned-store [:db/id
+                                                                           {:store/locality [:sulo-locality/path]}
+                                                                           {:store/owners [{:store.owner/user [:db/id]}]}]}]
+                                                     q)))
         initial-module-loaded-chan (async/chan)
         initial-merge-chan (async/chan)
         send-fn (backend/send! reconciler-atom
@@ -259,7 +295,7 @@
           (debug "init user cart...")
           (init-user-cart! reconciler)
           (debug "init firebase...")
-          (firebase/initialize reconciler)
+          (initialize-firebase reconciler)
           (debug "Adding reconciler to root!")
           (add-root! reconciler)
           ; Pre fetch data which makes the site less jumpy
@@ -324,7 +360,6 @@
   (shared/clear-components!)
   (if-let [reconciler @reconciler-atom]
     (do
-      (client.chat/shutdown! (shared/by-key reconciler :shared/store-chat-listener))
       (add-fake-root! reconciler)
       (js/setTimeout #(add-root! reconciler) 0))
     (run-dev)))

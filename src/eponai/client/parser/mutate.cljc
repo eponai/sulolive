@@ -395,5 +395,8 @@
   (when target
     {:remote true}))
 
-
-
+(defmethod client-mutate 'firebase/transact-event
+  [{:keys [state target]} _ {:keys [txs]}]
+  (if (nil? target)
+    {:action (fn []
+               (db/transact state txs))}))

@@ -37,15 +37,16 @@
          (contains? #{(str (:db/id owned-store)) (:store/username owned-store)} (:store-id route-params)))))
 
 (defn chat-notifications [component]
-  (let [{:keys [unread]} (om/get-state component)]
+  (let [{:query/keys [notification-count]} (om/props component)
+        notification-count (or notification-count 0)]
     (dom/div
       (css/add-class :sulo-notification)
       (dom/i
         (cond->> {:classes ["fa fa-comments"]}
-                 (pos? (count unread))
+                 (pos? notification-count)
                  (css/add-class :is-active)))
-      (when (pos? (count unread))
-        (dom/span (css/add-classes [:alert :badge]) (count unread))))))
+      (when (pos? notification-count)
+        (dom/span (css/add-classes [:alert :badge]) notification-count)))))
 
 (defui Notifications
   static om/IQuery
@@ -53,83 +54,26 @@
     [:query/current-route
      :query/firebase
      {:query/auth [:db/id]}
-     {:query/owned-store [:db/id :store/username]}])
+     {:query/owned-store [:db/id :store/username]}
+     :query/notification-count])
   Object
   (read-notifications [this new-notification]
-    (let [{:keys [unread unread-ref read-ref]} (om/get-state this)
-          fb (shared/by-key this :shared/firebase)]
-
-      #?(:cljs
-         (doseq [v (cond-> (vec (vals unread))
-                           (some? new-notification)
-                           (conj new-notification))]
-           (debug "Remove v: " v)
-           (firebase/-remove fb (:ref v))
-           (debug "Push read: " read-ref)
-           (let [new-read-ref (firebase/-push fb read-ref)]
-             (firebase/-set fb new-read-ref (clj->js (:value v))))))))
-
-  (initLocalState [this]
-    {:notifications (sorted-map)})
-  (componentWillUnmount [this]
     #?(:cljs
-       (let [{:query/keys [auth]} (om/props this)
-             {:keys [unread-ref read-ref]} (om/get-state this)
-             fb (shared/by-key this :shared/firebase)]
-         (when unread-ref
-           (firebase/-off fb unread-ref))
-         (when unread-ref
-           (firebase/-off fb read-ref)))))
-
-  (componentWillMount [this]
-    #?(:cljs
-       (let [{:query/keys [auth current-route owned-store]
-              fb-token    :query/firebase} (om/props this)
-
-             fb (shared/by-key this :shared/firebase)]
-
-         (when (some? owned-store)
-           (let [unread-ref (->> (firebase/-ref fb (str (str "notifications/" (:db/id auth) "/unread/chat")))
-                                 (firebase/-limit-to-last fb 100))
-                 read-ref (firebase/-ref fb (str (str "notifications/" (:db/id auth) "/read/chat")))]
-             (firebase/-on-child-added fb
-                                       (fn [{:keys [key ref value] :as n}]
-                                         (let [{:query/keys [current-route owned-store]} (om/props this)
-                                               {:keys [route route-params]} current-route]
-                                           (debug "FIREBASE - added value: " value)
-                                           ;(if (is-watching-owned-store? current-route owned-store)
-                                           ;  (.read-notifications this n))
-                                           (save-notification this {:key   key
-                                                                    :ref   ref
-                                                                    :value value})))
-                                       unread-ref)
-
-             (firebase/-on-child-removed fb
-                                         (fn [{:keys [value]}]
-                                           (debug "FIREBASE - removed value: " value)
-                                           (om/update-state! this update :unread dissoc (:timestamp value)))
-                                         unread-ref)
-             (om/update-state! this assoc :unread-ref unread-ref :read-ref read-ref))))))
+       (firebase/read-chat-notifications (shared/by-key this :shared/firebase)
+                                         (get-in (om/props this) [:query/auth :db/id]))))
 
   (componentWillReceiveProps [this next-props]
-    (let [{:query/keys [current-route owned-store auth]} next-props
-          {:keys [unread-ref]} (om/get-state this)
-          fb (shared/by-key this :shared/firebase)]
-      ;(debug "NOtifications:  is on owned store: " (is-watching-owned-store? next-props) {:new current-route
-      ;                                                                                    :old (:query/current-route (om/props this))})
-      #?(:cljs
+    #?(:cljs
+       (let [{:query/keys [current-route owned-store]} next-props]
          (when-not (= (:route current-route) (:route (:query/current-route (om/props this))))
            (when (is-watching-owned-store? current-route owned-store)
              (.read-notifications this nil))))))
 
   (render [this]
     (let [{:query/keys [owned-store current-route]} (om/props this)
-          {:keys [notifications]} (om/get-state this)
           {:keys [route route-params]} current-route
           {:keys [type href]} (om/get-computed this)
-          fb (shared/by-key this :shared/firebase)
-          remove-ref (fn [r] (debug "FIREBASE - remove ref")
-                       #?(:cljs (firebase/-remove fb r)))]
+          ]
       (debug "Notification route: " current-route)
       (dom/a
         {:href    href

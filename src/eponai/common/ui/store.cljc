@@ -23,6 +23,8 @@
     #?(:cljs [eponai.web.firebase :as firebase])
     [eponai.common.shared :as shared]
     [eponai.common.ui.product :as product]
+    [eponai.common.database :as db]
+    [eponai.client.auth :as client.auth]
     [eponai.web.ui.content-item :as ci]))
 
 
@@ -113,8 +115,9 @@
     [{:proxy/stream (om/get-query stream/Stream)}
      {:proxy/chat (om/get-query chat/StreamChat)}
      {:query/store [:db/id
-                    :store/locality
+                    {:store/locality [:sulo-locality/path]}
                     {:store/sections [:store.section/label :store.section/path :db/id]}
+                    :store/visitor-count
                     :store/username
                     ;{:store/items (om/get-query item/Product)}
                     :store/not-found?
@@ -126,7 +129,7 @@
                                      :store.profile/return-policy
                                      {:store.profile/photo [:photo/path :photo/id]}
                                      {:store.profile/cover [:photo/path :photo/id]}]}
-                    {:store/owners [:store.owner/user]}
+                    {:store/owners [{:store.owner/user [:user/online?]}]}
                     {:store/shipping [:shipping/policy]}]}
      {:query/featured-items [:db/id
                              :store.item/name
@@ -144,38 +147,29 @@
                               {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                                          :store.item.photo/index]}]}]}
      {:query/store-items (om/get-query ci/ProductItem)}
-     {:query/store-chat-status [:store/chat-online]}
      :query/locations
      :query/current-route])
   Object
-  (componentDidMount [this]
-    #?(:cljs
-       (let [{:query/keys [store]} (om/props this)
-             fb (shared/by-key this :shared/firebase)
-             presence-ref (firebase/-ref fb (str "visitors/" (:db/id store)))
-             user-ref (firebase/-push fb presence-ref)]
-         (firebase/-on-value-changed fb
-                                     (fn [{:keys [value]}]
-                                       (om/update-state! this assoc :visitor-count (count value)))
-                                     presence-ref)
-         (firebase/-set fb user-ref true)
-
-         (firebase/-remove-on-disconnect fb user-ref)
-         (om/update-state! this assoc :user-ref user-ref :presence-ref presence-ref))))
-  (componentWillUnmount [this]
-    #?(:cljs
-       (let [{:keys [presence-ref user-ref]} (om/get-state this)
-             fb (shared/by-key this :shared/firebase)]
-         (debug "FIREBASE - store unmount remove" user-ref)
-         (firebase/-remove fb user-ref)
-         (when presence-ref
-           (firebase/-off fb presence-ref)))))
   (initLocalState [this]
     {:selected-navigation :all-items})
+  ;(componentDidMount [this]
+  ;  #?(:cljs
+  ;     (let [{:query/keys [store]} (om/props this)]
+  ;       (firebase/register-store-visit
+  ;         (shared/by-key this :shared/firebase)
+  ;         (:db/id store)
+  ;         (client.auth/current-auth this)
+  ;         (get-in store [:store/locality :sulo-locality/path])))))
+  ;(componentWillUnmount [this]
+  ;  #?(:cljs
+  ;     (let [{:query/keys [store]} (om/props this)]
+  ;       (firebase/unregister-store-visit (shared/by-key this :shared/firebase)
+  ;                                        (:db/id store)
+  ;                                        (client.auth/current-auth this)))))
   (render [this]
-    (let [{:keys [fullscreen? selected-navigation visitor-count] :as st} (om/get-state this)
-          {:query/keys [store store-items current-route store-chat-status] :as props} (om/props this)
-          {:store/keys [profile]
+    (let [{:keys [fullscreen? selected-navigation] :as st} (om/get-state this)
+          {:query/keys [store store-items current-route] :as props} (om/props this)
+          {:store/keys [profile visitor-count owners]
            stream      :stream/_store} store
           {:store.profile/keys [photo cover tagline description]
            store-name          :store.profile/name} profile
@@ -183,7 +177,8 @@
           is-live? (= :stream.state/live (:stream/state stream))
           show-chat? (:show-chat? st true)
           {:keys [route route-params]} current-route
-          store-status (get-in store [:store/status :status/type])]
+          store-status (get-in store [:store/status :status/type])
+          store-owner-online? (-> owners :store.owner/user :user/online?)]
 
       (dom/div
         {:id "sulo-store"}
@@ -228,13 +223,13 @@
                    (photo/store-cover store nil))
 
                  (chat/->StreamChat (om/computed (:proxy/chat props)
-                                                 {:on-toggle-chat    (fn [show?]
-                                                                       (om/update-state! this assoc :show-chat? show?))
-                                                  :store             store
-                                                  :stream-overlay?   true
-                                                  :visitor-count     visitor-count
-                                                  :show?             show-chat?
-                                                  :store-chat-status store-chat-status}))))
+                                                 {:on-toggle-chat      (fn [show?]
+                                                                         (om/update-state! this assoc :show-chat? show?))
+                                                  :store               store
+                                                  :stream-overlay?     true
+                                                  :visitor-count       visitor-count
+                                                  :show?               show-chat?
+                                                  :store-online-status store-owner-online?}))))
 
 
 

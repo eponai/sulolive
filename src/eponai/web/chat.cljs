@@ -39,8 +39,8 @@
   (stop-listening! [this store-id]
     (sente/unsubscribe-event sente-sender (start-listening-event store-id))
     (sente/send-event sente-sender [:store-chat/stop-listening! {:store-id store-id}]))
-  chat/IStopChatListener
-  (shutdown! [this]
+  shared/IStoppableComponent
+  (stop [this]
     (debug "Shutting down ChatStoreListener: " this)
     (sente/stop-sente! sente-sender)))
 

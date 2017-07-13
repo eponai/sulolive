@@ -36,7 +36,7 @@
                           :category/name]}
    {:store/_items [{:store/profile [{:store.profile/photo [:photo/path :photo/id]}
                                     :store.profile/name]}
-                   {:store/owners [:store.owner/user]}
+                   {:store/owners [{:store.owner/user [:user/online?]}]}
                    {:stream/_store [:stream/state]}
                    {:store/locality [:sulo-locality/path]}
                    {:store/shipping [{:shipping/rules [{:shipping.rule/destinations [:country/code]}]}]}

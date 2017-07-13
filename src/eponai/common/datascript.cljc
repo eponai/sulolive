@@ -36,6 +36,9 @@
          :store.item/name                   {:db/index true}
 
          :chat.message/id                   {:db/unique :db.unique/identity}
+         :user/chat-notifications           {:db/cardinality :db.cardinality/many
+                                             :db/valueType   :db.type/ref}
+         :user.chat-notification/id         {:db/unique :db.unique/identity}
          }
         browse/browse-datascript-schema))
 

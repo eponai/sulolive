@@ -16,9 +16,6 @@
   (start-listening! [this store-id])
   (stop-listening! [this store-id]))
 
-(defprotocol IStopChatListener
-  (shutdown! [this]))
-
 ;; Puts the pattern here because it's important that we get exactly the same pattern.
 ;; The reasons is we use :query-hash in the read-basis-t-graph.
 (def query-chat-pattern [:chat/store

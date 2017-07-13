@@ -5,6 +5,7 @@
     [cheshire.core :as cheshire]
     [clojure.java.io :as io]
     [eponai.common :as c]
+    [eponai.common.firebase :as common.firebase]
     [eponai.common.format.date :as date]
     [buddy.core.codecs.base64 :as b64]
     [com.stuartsierra.component :as component])
@@ -22,8 +23,8 @@
   (-generate-client-auth-token [this user-id claims]))
 
 (defprotocol IFirebaseChat
-  (-presence [this])
-  (-user-online [this store-id]))
+  (-presence [this locality])
+  (-user-online [this locality user-id]))
 
 (defn ref->snapshot
   "Takes a ref and returns the DataSnapshot for the ref.
@@ -69,6 +70,23 @@
     ;; Once the app has been initialized, get the db instance.
     (FirebaseDatabase/getInstance ^FirebaseApp firebase-app)))
 
+(defn route->ref [database route route-params]
+  (.getReference database (common.firebase/path route route-params)))
+
+(defn chat-notification-ref [database user-id]
+  (route->ref database :user/unread-chat-notifications {:user-id user-id}))
+
+(defn store-owner-presence
+  ([database locality]
+   (assert (string? locality)
+           (str "locality was not passed as a string. Should be the locality path, was: " locality))
+   (doto (route->ref database :user-presence/store-owners {:locality locality})
+     (.keepSynced true)))
+  ([database locality user-id]
+   (assert (string? locality)
+           (str "locality was not passed as a string. Should be the locality path, was: " locality))
+   (route->ref database :user-presence/store-owner {:locality locality :user-id user-id})))
+
 (defrecord Firebase [server-key private-key private-key-id service-account database-url]
   component/Lifecycle
   (start [this]
@@ -76,20 +94,18 @@
       this
       (let [db (create-firebase-db service-account database-url)]
         (assoc this :database db
-                    :refs {:notifications (.getReference db "v1/notifications")
-                           :tokens        (.getReference db "v1/tokens")
-                           :presence      (doto (.getReference db "v1/presence")
-                                            (.keepSynced true))}))))
+                    ;; TODO: Implement tokens again.
+                    :refs {:tokens (.getReference db "v1/tokens")}))))
   (stop [this]
     (dissoc this :database :refs))
 
   IFirebaseChat
-  (-user-online [this user-id]
-    (debug "Check online status: " user-id)
-    (ref->value (-> (:presence (:refs this))
-                    (.child (str user-id)))))
-  (-presence [this]
-    (ref->value (:presence (:refs this))))
+  (-user-online [this locality user-id]
+    (debug "Check online status. locality: " locality " user-id: " user-id)
+    (when user-id
+      (ref->value (store-owner-presence (:database this) locality user-id))))
+  (-presence [this locality]
+    (ref->value (store-owner-presence (:database this) locality)))
 
   IFirebaseAuth
   (-generate-client-auth-token [this user-id claims]
@@ -105,24 +121,27 @@
 
   IFirebaseNotifications
   (-send [this user-id {:keys [title message subtitle] :as params}]
-    (let [new-notification {:timestamp (date/current-millis)
-                            :type      "chat"
-                            :title     (c/substring title 0 100)
-                            :subtitle  (c/substring subtitle 0 100)
-                            :message   (c/substring message 0 100)}
-          user-notifications-ref (-> (:notifications (:refs this))
-                                     (.child (str user-id "/unread/chat")))]
-      (-> (.push user-notifications-ref)
-          (.setValue (clojure.walk/stringify-keys new-notification)))
+    ;; Some stores in dev doesn't have an owner.
+    (when (some? user-id)
+      (let [
+            ;new-notification {:timestamp (date/current-millis)
+            ;                  :type      "chat"
+            ;                  :title     (c/substring title 0 100)
+            ;                  :subtitle  (c/substring subtitle 0 100)
+            ;                  :message   (c/substring message 0 100)}
+            user-notifications-ref (chat-notification-ref (:database this) user-id)]
+        (debug "Sending notification to user: " user-id " ref-path: " (.getPath user-notifications-ref))
+        (-> (.push user-notifications-ref)
+            (.setValue true))
 
-      ;; TODO enable when we are ready to send web push notifications
-      (comment
-        (let [token (-get-device-token this user-id)]
-          (debug "FIREBASE - send chat notification: " new-notification)
-          (http/post "https://fcm.googleapis.com/fcm/send"
-                     {:form-params {:to   token
-                                    :data new-notification}
-                      :headers     {"Authorization" (str "key=" server-key)}})))))
+        ;; TODO enable when we are ready to send web push notifications
+        (comment
+          (let [token (-get-device-token this user-id)]
+            (debug "FIREBASE - send chat notification: " new-notification)
+            (http/post "https://fcm.googleapis.com/fcm/send"
+                       {:form-params {:to   token
+                                      :data new-notification}
+                        :headers     {"Authorization" (str "key=" server-key)}}))))))
 
   (-register-device-token [this user-id token]
     (when user-id
@@ -138,8 +157,8 @@
 (defn firebase-stub []
   (reify
     IFirebaseChat
-    (-user-online [this store-id])
-    (-presence [this])
+    (-user-online [this locality user-id])
+    (-presence [this locality])
     IFirebaseAuth
     (-generate-client-auth-token [this user-id claims]
       "some-token")
