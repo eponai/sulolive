@@ -1,5 +1,13 @@
 (ns eponai.common.shared
-  (:require [om.next :as om]))
+  (:require [om.next :as om]
+            [taoensso.timbre :refer [debug]]))
+
+(defprotocol IStoppableComponent
+  (stop [this] "Called when clearing components in development."))
+
+(extend-type #?(:clj Object :cljs default)
+  IStoppableComponent
+  (stop [this]))
 
 ;; Returns a shared-component based on its shared key and which environment to use.
 (defmulti shared-component (fn [reconciler key env] [key env]))
@@ -12,14 +20,17 @@
 ;; All shared components are created only once.
 (let [components (atom {})]
   (defn singleton-components [reconciler key env]
-    (if-let [component (get-in @components [key env])]
+    (if-let [component (get @components [key env])]
       component
       (let [component (shared-component reconciler key env)]
         #?(:cljs
-           (swap! components assoc-in [key env] component))
+           (swap! components assoc [key env] component))
         component)))
 
   (defn clear-components! []
+    (run! (fn [component]
+            (stop component))
+          (vals @components))
     (reset! components {})))
 
 (defn by-key [x key]

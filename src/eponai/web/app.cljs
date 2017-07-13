@@ -139,7 +139,6 @@
                         [:store.profile/name]}]}]}])
 
 (defn register-user-presence [reconciler]
-  (debug "FIREBASE CURRENT AUTH: " (client.auth/current-auth reconciler))
   (when-let [user-id (client.auth/current-auth reconciler)]
     (let [db (db/to-db reconciler)
           owned-store (db/one-with db {:where   '[[?e :store/owners ?owner]
@@ -361,7 +360,6 @@
   (shared/clear-components!)
   (if-let [reconciler @reconciler-atom]
     (do
-      (client.chat/shutdown! (shared/by-key reconciler :shared/store-chat-listener))
       (add-fake-root! reconciler)
       (js/setTimeout #(add-root! reconciler) 0))
     (run-dev)))

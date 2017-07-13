@@ -165,8 +165,7 @@
   [store-id user-id])
 
 (defprotocol IFirebase2
-  (route-changed [this route-map prev-route-map])
-  (stop [this]))
+  (route-changed [this route-map prev-route-map]))
 
 (defn firebase2 [reconciler user-id]
   (let [event-chan (async/chan (async/sliding-buffer 100))
@@ -182,8 +181,7 @@
           (debug "Exiting firebase!")
           event-chan
           (let [txs (into []
-                          (comp (map (fn [x] (debug "Got event: " x) x))
-                                (take-while some?)
+                          (comp (take-while some?)
                                 (mapcat firebase-event->txs))
                           (cons v (repeatedly #(async/poll! event-chan))))
                 _ (debug "Found firebase events: " (count txs))
@@ -205,9 +203,6 @@
             (async/<! (async/timeout timeout-between-transacts))
             (recur)))))
     (reify IFirebase2
-      (stop [this]
-        (async/close! close-chan))
-
       (route-changed [this route-map prev-route-map]
         (let [listener-id-fn (juxt :firebase-route :firebase-route-params)
               old-listeners (:listeners @state)
@@ -254,6 +249,12 @@
                                         user-id
                                         (-> (db/entity (db/to-db reconciler) store-id)
                                             (get-in [:store/locality :sulo-locality/path])))))))))
+
+      shared/IStoppableComponent
+      (stop [this]
+        (debug "Stopping firebase!")
+        (run! unlisten (map :listener (vals (:listeners @state))))
+        (async/close! close-chan))
 
       IFirebase2Actions
       (register-store-owner-presence [this user-id store-id raw-locality]
