@@ -158,7 +158,8 @@
   ;; These actions can be called from (on-route-change [])..
   (register-store-owner-presence [this user-id store-id locality])
   (register-store-visit [this store-id locality])
-  (unregister-store-visit [this store-id]))
+  (unregister-store-visit [this store-id])
+  )
 
 (defprotocol IFirebase2
   (route-changed [this route-map prev-route-map]))
@@ -357,33 +358,6 @@
                                           (.onTokenRefresh messaging (fn [] (get-token messaging save-token)))
                                           (on-message messaging reconciler))))))))))
 
-(defn snapshot->map [snapshot]
-  {:key   (.-key snapshot)
-   :ref   (.-ref snapshot)
-   :value (js->clj (.val snapshot))})
-
-(defprotocol IFirebase
-  (-ref [this path])
-
-  (-timestamp [this])
-  (-add-connected-listener [this ref {:keys [on-connect on-disconnect]}])
-
-  (-remove-on-disconnect [this ref])
-
-  (-limit-to-last [this n ref])
-
-  (-set [this ref v])
-  (-push [this ref])
-  (-remove [this ref])
-  (-update [this ref v])
-
-  (-off [this ref])
-  (-on-value-changed [this f ref])
-  (-on-child-added [this f ref])
-  (-on-child-removed [this f ref])
-  (-once [this f ref]))
-
-(defonce fb-initialized? (atom false))
 
 (defmethod shared/shared-component [:shared/firebase :env/prod]
   [reconciler _ _]
@@ -396,73 +370,12 @@
 
 (defmethod shared/shared-component [:shared/firebase :env/dev]
   [reconciler _ _]
-  (reify IFirebase
-    (-ref [this path])
-    (-timestamp [this])
-    (-add-connected-listener [this ref {:keys [on-connect on-disconnect]}])
+  (reify
+    IFirebase2
+    (route-changed [this route-map prev-route-map])
 
-    (-remove-on-disconnect [this ref])
-
-    (-limit-to-last [this n ref])
-
-    (-set [this ref v])
-    (-push [this ref])
-    (-remove [this ref])
-    (-update [this ref v])
-
-    (-off [this ref])
-    (-on-value-changed [this f ref])
-    (-on-child-added [this f ref])
-    (-on-child-removed [this f ref])
-    (-once [this f ref])))
-
-(comment
-  "Old prod firebase"
-  (reify IFirebase
-    (-remove-on-disconnect [this ref]
-      (-> (.onDisconnect ref)
-          (.remove)))
-    (-timestamp [this]
-      js/firebase.database.ServerValue.TIMESTAMP)
-    (-add-connected-listener [this ref {:keys [on-connect on-disconnect]}]
-      (let [am-online (-> (.database js/firebase)
-                          (.ref ".info/connected"))]
-        (.on am-online "value" (fn [snapshot]
-                                 (when (.val snapshot)
-                                   (-> (.onDisconnect ref)
-                                       on-disconnect)
-                                   (on-connect ref))))))
-
-    ;; Refs
-    (-ref [this path]
-      (-> (.database js/firebase)
-          (.ref (str "v1/" path))))
-
-    (-limit-to-last [this n ref]
-      (.limitToLast ref n))
-
-    (-remove [this ref]
-      (debug "FIREBASE removed: " ref)
-      (.remove ref))
-
-    (-push [this ref]
-      (.push ref))
-    (-set [this ref v]
-      (debug "Setting value: " v)
-      (.set ref v))
-    (-update [this ref v]
-      (.update ref v))
-
-    (-off [this ref]
-      (when ref
-        (.off ref)))
-
-    ;; Listeners
-    (-on-value-changed [this f ref]
-      (.on ref "value" (fn [snapshot] (f (snapshot->map snapshot)))))
-    (-on-child-added [this f ref]
-      (.on ref "child_added" (fn [snapshot] (f (snapshot->map snapshot)))))
-    (-on-child-removed [this f ref]
-      (.on ref "child_removed" (fn [snapshot] (f (snapshot->map snapshot)))))
-    (-once [this f ref]
-      (.once ref "value" (fn [snapshot] (f (snapshot->map snapshot)))))))
+    IFirebase2Actions
+    (read-chat-notifications [this user-id])
+    (register-store-owner-presence [this user-id store-id locality])
+    (register-store-visit [this store-id locality])
+    (unregister-store-visit [this store-id])))
