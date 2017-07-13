@@ -110,16 +110,16 @@
          (dom/p nil (dom/i {:classes ["fa fa-spinner fa-pulse"]}))
          [(dom/label nil "Email")
 
-          (v/input
-            (cond-> {:type        "email"
-                     :id          (::email form-inputs)
-                     :placeholder "youremail@example.com"
-                     :value       (or input-email (:auth0/email auth0-info))
-                     :onChange    #(when-not (not-empty (:auth0/email auth0-info))
-                                    (om/update-state! component assoc :create-user/input-email (.-value (.-target %))))}
-                    (not-empty (:auth0/email auth0-info))
-                    (assoc :disabled true))
-            input-validation)
+          (if (not-empty (:auth0/email auth0-info))
+            (dom/p (css/add-class :email) (dom/strong nil (str (:auth0/email auth0-info))))
+            (v/input
+              {:type        "email"
+               :id          (::email form-inputs)
+               :placeholder "youremail@example.com"
+               :value       (or input-email (:auth0/email auth0-info))
+               :onChange    #(when-not (not-empty (:auth0/email auth0-info))
+                              (om/update-state! component assoc :create-user/input-email (.-value (.-target %))))}
+              input-validation))
 
           (dom/label nil "Name")
           (v/input {:type        "text"
@@ -278,19 +278,17 @@
           (msg/clear-messages! this 'user/create)
           (if (msg/success? create-msg)
             (let [new-user (:user message)
-                  user-id (:user-id message)
-                  provider (when (not-empty user-id)
-                             (first (string/split user-id #"\|")))]
-              (debug "User: " user-id)
+                  user-id (:user-id message)]
               (mixpanel/set-alias (:db/id new-user))
-              (if (and (:email (:query-params current-route)) (:user/verified new-user))
+              (if (:user/verified new-user)
                 (do
                   (debug "User created routing to: " (routes/url :auth nil (:query-params current-route)))
                   #?(:cljs
                      (js/window.location.replace (routes/url :auth nil (:query-params current-route)))))
-                (.authorize-email this)
-                )
-              )
+                (do
+                  #?(:cljs
+                     (let [email (web-utils/input-value-by-id (::email form-inputs))]
+                       (om/update-state! this assoc :login-state :verify-email :input-email email))))))
             (om/update-state! this assoc :error/create-user message))))))
 
   (componentDidMount [this]
@@ -318,7 +316,7 @@
       (debug "props: " (om/props this))
 
       (dom/div
-        (css/text-align :center {:id "sulo-login"})
+        (css/text-align :center {:id "sulo-login-modal-content"})
 
         (if (= route :login)
           (dom/div

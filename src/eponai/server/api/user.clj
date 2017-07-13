@@ -59,14 +59,15 @@
         (info "User - authenticated user did not exist, creating new user: " new-user)
         (db/transact-one state new-user)
 
-        (let [new-auth0-user (auth0/create-email-user auth0manage (:user/email new-user))]
+        (let [new-auth0-user (auth0/create-email-user auth0manage {:email    (:user/email new-user)
+                                                                   :verified (boolean (:user/verified new-user))})]
           (auth0/link-user-accounts-by-id auth0manage
                                           (auth0/user-id new-auth0-user)
                                           (auth0/user-id auth0-user)))
 
         (let [db-user (db/pull (db/db state) [:user/verified :db/id] [:user/email (:user/email new-user)])]
           (debug "Created user: " (into {} db-user))
-          {:user (into {} db-user) :user-id (auth0/user-id auth0-user) })))))
+          {:user (into {} db-user) :user-id (auth0/user-id auth0-user)})))))
 
 (defn customer [{:keys [auth state system]}]
   (debug "Pull stripe " auth)

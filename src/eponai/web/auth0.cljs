@@ -25,7 +25,7 @@
                                             :clientID     auth0-client-id
                                             :redirectUri  (redirect-to (routes/url :auth))
                                             :responseType "code"
-                                            :scope        "openid email"})]
+                                            :scope        "openid email verified"})]
     (reify IAuth0Client
       (login-with-credentials [_ email password f]
         (let [^js/auth0.WebAuth.Redirect redirect (.-redirect web-auth)]

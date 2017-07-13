@@ -239,12 +239,14 @@
         ;; Get our user from Datomic
         sulo-user (existing-user (db/db conn) profile)
         user-id (:sub profile)]
+    (debug "Got profile: " profile)
 
     (debug "Found existing user: " sulo-user)
 
     ;; If we already have a user for this account and they're verified, we can authenticate
     (if (some? sulo-user)
-      (let [should-verify? (and (not (:user/verified sulo-user)) (not-empty (:email profile)))]
+      (let [should-verify? (and (not (:user/verified sulo-user)) (and (not-empty (:email profile))
+                                                                      (:email_verified profile)))]
         (when should-verify?
           (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]]))
         (try
