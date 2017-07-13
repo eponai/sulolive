@@ -172,8 +172,8 @@
         close-chan (async/chan)
         state (atom {})
         database (.database js/firebase)
-        ;; wait 1 frame
-        timeout-between-transacts 16]
+        ;; wait 1 second to avoid spamming firebase renders.
+        timeout-between-transacts 1000]
     (go-loop []
       (let [[v c] (async/alts! [event-chan close-chan])]
         (condp = c
