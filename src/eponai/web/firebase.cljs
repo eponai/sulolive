@@ -85,7 +85,7 @@
   [e]
   (debug "No firebase event-handler for event: " e))
 
-(defmethod firebase-event->txs :visitor-count
+(defmethod firebase-event->txs :visitor-counts
   [{:keys [store-id count event-type]}]
   (when-let [store-id (c/parse-long-safe store-id)]
     (if (= event-type :child_removed)
