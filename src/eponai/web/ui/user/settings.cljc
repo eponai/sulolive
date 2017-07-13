@@ -123,13 +123,13 @@
               (dom/i {:classes ["fa fa-spinner fa-spin"]})
               (dom/span nil "Save"))))))))
 
-(def payment-logos {"Visa"             "icon-cc-visa"
-                    "American Express" "icon-cc-amex"
-                    "MasterCard"       "icon-cc-mastercard"
-                    "Discover"         "icon-cc-discover"
-                    "JCB"              "icon-cc-jcb"
-                    "Diners Club"      "icon-cc-diners"
-                    "Unknown"          "icon-cc-unknown"})
+;(def payment-logos {"Visa"             "icon-cc-visa"
+;                    "American Express" "icon-cc-amex"
+;                    "MasterCard"       "icon-cc-mastercard"
+;                    "Discover"         "icon-cc-discover"
+;                    "JCB"              "icon-cc-jcb"
+;                    "Diners Club"      "icon-cc-diners"
+;                    "Unknown"          "icon-cc-unknown"})
 
 (defn shipping-info-modal [component]
   (let [{:query/keys [stripe-customer countries]} (om/props component)
@@ -227,17 +227,17 @@
                          input-validation))
               (grid/column
                 (grid/column-size {:small 12 :medium 4})
-                (if-let [regions (get shipping/regions selected-country)]
+                (if-let [regions (not-empty (sort (get shipping/regions selected-country)))]
                   (v/select
                     {:id           (:shipping.address/region form-inputs)
-                     :defaultValue (or (:shipping.address/region address) "")
+                     :defaultValue (or (:shipping.address/region address) "default")
                      :name         "ship-state"
                      :autoComplete "shipping region"}
                     input-validation
-                    (dom/option {:value "" :disabled true} "--- Province/State ---")
+                    (dom/option {:value "default" :disabled true} "--- Province/State ---")
                     (map (fn [r]
                            (dom/option {:value r} (str r)))
-                         (sort regions)))
+                         regions))
                   (dom/input
                     {:id           (:shipping.address/region form-inputs)
                      :defaultValue (or (:shipping.address/region address) "")

@@ -39,9 +39,10 @@
                                        :shipping.address/postal
                                        :shipping.address/locality]
 
-                                 ;:opt [:shipping.address/street2
-                                 ;      :shipping.address/region
-                                 ;      ]
+                                 :opt [
+                                       ;:shipping.address/street2
+                                       :shipping.address/region
+                                       ]
                                  ))
 
 (s/def ::shipping (s/keys :req [:shipping/address
