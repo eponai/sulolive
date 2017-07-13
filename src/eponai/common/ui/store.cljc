@@ -129,7 +129,7 @@
                                      :store.profile/return-policy
                                      {:store.profile/photo [:photo/path :photo/id]}
                                      {:store.profile/cover [:photo/path :photo/id]}]}
-                    {:store/owners [:store.owner/user]}
+                    {:store/owners [{:store.owner/user [:user/online?]}]}
                     {:store/shipping [:shipping/policy]}]}
      {:query/featured-items [:db/id
                              :store.item/name
@@ -190,7 +190,7 @@
   (render [this]
     (let [{:keys [fullscreen? selected-navigation] :as st} (om/get-state this)
           {:query/keys [store store-items current-route store-chat-status] :as props} (om/props this)
-          {:store/keys [profile visitor-count]
+          {:store/keys [profile visitor-count owners]
            stream      :stream/_store} store
           {:store.profile/keys [photo cover tagline description]
            store-name          :store.profile/name} profile
@@ -198,7 +198,8 @@
           is-live? (= :stream.state/live (:stream/state stream))
           show-chat? (:show-chat? st true)
           {:keys [route route-params]} current-route
-          store-status (get-in store [:store/status :status/type])]
+          store-status (get-in store [:store/status :status/type])
+          store-owner-online? (-> owners :store.owner/user :user/online?)]
 
       (dom/div
         {:id "sulo-store"}
@@ -243,13 +244,13 @@
                    (photo/store-cover store nil))
 
                  (chat/->StreamChat (om/computed (:proxy/chat props)
-                                                 {:on-toggle-chat    (fn [show?]
-                                                                       (om/update-state! this assoc :show-chat? show?))
-                                                  :store             store
-                                                  :stream-overlay?   true
-                                                  :visitor-count     visitor-count
-                                                  :show?             show-chat?
-                                                  :store-chat-status store-chat-status}))))
+                                                 {:on-toggle-chat      (fn [show?]
+                                                                         (om/update-state! this assoc :show-chat? show?))
+                                                  :store               store
+                                                  :stream-overlay?     true
+                                                  :visitor-count       visitor-count
+                                                  :show?               show-chat?
+                                                  :store-online-status store-owner-online?}))))
 
 
 

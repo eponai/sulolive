@@ -144,10 +144,9 @@
     (let [{:keys [show?]} (om/get-computed this)]
       {:show-chat? show?}))
   (render [this]
-    (let [{:keys [show-chat? show-chat-small? store-online]} (om/get-state this)
-          {:keys [stream-overlay? store store-chat-status visitor-count current-route]} (om/get-computed this)
+    (let [{:keys [show-chat? show-chat-small?]} (om/get-state this)
+          {:keys [stream-overlay? store store-online-status visitor-count current-route]} (om/get-computed this)
           store-name (get-in store [:store/profile :store.profile/name])
-          online-status (:store/chat-online store-chat-status)
           welcome-msg (if (and (number? visitor-count) (< 1 visitor-count))
                         (if (= (:route current-route :store-dashboard/stream))
                           (str "Welcome to your public chat room! You have visitors in your store right now, try and say hi")
@@ -156,9 +155,9 @@
                           (str "Welcome to your public chat room! Your customers can use the chat to communicate with you")
                           (str "Welcome to " store-name " public chatroom! Use the chat to hangout with " store-name " and other users")))
           messages (or (not-empty (get-messages this)) [{:chat.message/user :automatic :chat.message/text welcome-msg}])
-          status-msg (status-message online-status)]
+          status-msg (status-message store-online-status)]
       (debug "Chat messages: " messages)
-      (debug "Store online: " (:store/chat-online store-chat-status))
+      (debug "Store online: " store-online-status)
       (my-dom/div
         (cond->> (css/add-class :chat-container)
                  show-chat?
@@ -171,7 +170,7 @@
 
         (my-dom/div
           (cond->> (css/add-class :chat-menu)
-                   (= true online-status)
+                   (= true store-online-status)
                    (css/add-class :is-online)
                    (not= status-msg "offline")
                    (css/add-class :just-online))
@@ -209,7 +208,7 @@
               (css/add-classes [:chat-status])
               (my-dom/p (css/add-class :sl-tooltip) (my-dom/span nil status-msg)
                         (my-dom/span (css/add-class :sl-tooltip-text)
-                                     (str (get-in store [:store/profile :store.profile/name]) " is " (if (= true online-status) "online" "offline") " right now")))
+                                     (str (get-in store [:store/profile :store.profile/name]) " is " (if (= true store-online-status) "online" "offline") " right now")))
               (photo/store-photo store {:transformation :transformation/thumbnail-tiny})
               )))
 

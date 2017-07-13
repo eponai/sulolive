@@ -183,34 +183,28 @@
     #?(:cljs (om/update-state! this assoc :breakpoint (web.utils/breakpoint js/window.innerWidth))))
   (componentDidMount [this]
     #?(:cljs
-       (let [product (om/props this)
-             stream-state (-> product :store/_items :stream/_store first :stream/state)]
-         (debug "Product stream state: " stream-state)
-         (.addEventListener js/window "resize" (:resize-listener (om/get-state this))))))
-  (componentWillMount [this]
-    #?(:cljs
-       (let [fb (shared/by-key this :shared/firebase)
-             product (om/props this)
-             {:keys [current-route]} (om/get-computed this)
-             store-owner (-> product :store/_items :store/owners :store.owner/user)
-             stream-state (-> product :store/_items :stream/_store first :stream/state)
-             ;presence-ref (firebase/-ref fb "presence")
-             ]
-         (if (and (= :stream.state/live stream-state)
-                  (show-status current-route))
-           (om/update-state! this assoc :store-live? true)
-           ;(firebase/-once fb (fn [snapshot]
-           ;                     (let [is-online? (and (= true (get (:value snapshot) (str (:db/id store-owner))))
-           ;                                           (show-status current-route))]
-           ;                       (om/update-state! this assoc :store-online? is-online?)))
-           ;                presence-ref)
-           ))))
+       (.addEventListener js/window "resize" (:resize-listener (om/get-state this)))))
+  ;(componentWillMount [this]
+  ;  #?(:cljs
+  ;     (let [fb (shared/by-key this :shared/firebase)
+  ;           product (om/props this)
+  ;           {:keys [current-route]} (om/get-computed this)
+  ;           ;presence-ref (firebase/-ref fb "presence")
+  ;           ]
+  ;       (if (and)
+  ;         (om/update-state! this assoc :store-live? true)
+  ;         ;(firebase/-once fb (fn [snapshot]
+  ;         ;                     (let [is-online? (and (= true (get (:value snapshot) (str (:db/id store-owner))))
+  ;         ;                                           (show-status current-route))]
+  ;         ;                       (om/update-state! this assoc :store-online? is-online?)))
+  ;         ;                presence-ref)
+  ;         ))))
   (componentWillUnmount [this]
     #?(:cljs (.removeEventListener js/window "resize" (:resize-listener (om/get-state this)))))
   (render [this]
     (let [product (om/props this)
-          {:keys [current-route open-url? store-status]} (om/get-computed this)
-          {:keys [show-item? breakpoint store-online? store-live?]} (om/get-state this)
+          {:keys [current-route open-url?]} (om/get-computed this)
+          {:keys [show-item? breakpoint]} (om/get-state this)
           on-click #(om/update-state! this assoc :show-item? true)
           #?@(:cljs [open-url? (if (some? open-url?) open-url? (web.utils/bp-compare :large breakpoint >))]
               :clj  [open-url? (if (some? open-url?) open-url? false)])
@@ -219,7 +213,14 @@
           {:store.item/keys [photos price]
            item-name        :store.item/name
            store            :store/_items} product
-          {:store.item.photo/keys [photo]} (first (sort-by :store.item.photo/index photos))]
+          {:store.item.photo/keys [photo]} (first (sort-by :store.item.photo/index photos))
+
+          store-live? (= :stream.state/live (-> product :store/_items :stream/_store first :stream/state))
+          store-online? (-> product :store/_items :store/owners :store.owner/user :user/online?)
+          store-status (when (show-status current-route)
+                         (cond store-live? :live
+                               store-online? :online
+                               :else :is-offline))]
       (dom/div
         (cond->> (css/add-classes [:content-item :product-item])
                  (= store-status :online)
@@ -229,20 +230,20 @@
         (when show-item?
           (common/modal
             {:on-close #(do
-                         (om/update-state! this assoc :show-item? false)
-                         #?(:cljs
-                            (.replaceState js/history nil nil (routes/url (:route current-route)
-                                                                          (:route-params current-route)
-                                                                          (:query-params current-route)))))
+                          (om/update-state! this assoc :show-item? false)
+                          #?(:cljs
+                             (.replaceState js/history nil nil (routes/url (:route current-route)
+                                                                           (:route-params current-route)
+                                                                           (:query-params current-route)))))
              :size     :large}
             (product/->Product product)))
 
         (dom/a
           (->> {:onClick #(when on-click
-                           (on-click)
-                           (debug "Chagne URL to: " goods-href)
-                           #?(:cljs
-                              (.replaceState js/history nil nil (product/product-url product))))
+                            (on-click)
+                            (debug "Chagne URL to: " goods-href)
+                            #?(:cljs
+                               (.replaceState js/history nil nil (product/product-url product))))
 
                 :href    goods-href}
                (css/add-class :primary-photo))
