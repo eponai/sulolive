@@ -70,8 +70,22 @@
     ;; Once the app has been initialized, get the db instance.
     (FirebaseDatabase/getInstance ^FirebaseApp firebase-app)))
 
-(defn route->ref [db route route-params]
-  (.getReference db (common.firebase/path route route-params)))
+(defn route->ref [database route route-params]
+  (.getReference database (common.firebase/path route route-params)))
+
+(defn chat-notification-ref [database user-id]
+  (route->ref database :user/unread-chat-notifications {:user-id user-id}))
+
+(defn store-owner-presence
+  ([database locality]
+   (assert (string? locality)
+           (str "locality was not passed as a string. Should be the locality path, was: " locality))
+   (doto (route->ref database :user-presence/store-owners {:locality locality})
+     (.keepSynced true)))
+  ([database locality user-id]
+   (assert (string? locality)
+           (str "locality was not passed as a string. Should be the locality path, was: " locality))
+   (route->ref database :user-presence/store-owner {:locality locality :user-id user-id})))
 
 (defrecord Firebase [server-key private-key private-key-id service-account database-url]
   component/Lifecycle
@@ -80,31 +94,17 @@
       this
       (let [db (create-firebase-db service-account database-url)]
         (assoc this :database db
-                    ;; We should move away from this map and just use common.firebase directly instead.
-                    ;; XXX Fix chat-notifications.
-                    :refs {:chat-notifications-fn (fn [user-id]
-                                                    (route->ref db :user/unread-chat-notifications {:user-id user-id}))
-                           ;; TODO: Implement tokens again.
-                           :tokens                (.getReference db "v1/tokens")
-                           :presence-fn           (fn
-                                                    ([locality]
-                                                     (assert (string? locality)
-                                                             (str "locality was not passed as a string. Should be the locality path, was: " locality))
-                                                     (doto (route->ref db :user-presence/store-owners {:locality locality})
-                                                       (.keepSynced true)))
-                                                    ([locality user-id]
-                                                     (assert (string? locality)
-                                                             (str "locality was not passed as a string. Should be the locality path, was: " locality))
-                                                     (route->ref db :user-presence/store-owner {:locality locality :user-id user-id})))}))))
+                    ;; TODO: Implement tokens again.
+                    :refs {:tokens (.getReference db "v1/tokens")}))))
   (stop [this]
     (dissoc this :database :refs))
 
   IFirebaseChat
   (-user-online [this locality user-id]
     (debug "Check online status. locality: " locality " user-id: " user-id)
-    (ref->value ((:presence-fn (:refs this)) locality user-id)))
+    (ref->value (store-owner-presence (:database this) locality user-id)))
   (-presence [this locality]
-    (ref->value ((:presence-fn (:refs this)) locality)))
+    (ref->value (store-owner-presence (:database this) locality)))
 
   IFirebaseAuth
   (-generate-client-auth-token [this user-id claims]
@@ -126,7 +126,7 @@
           ;                  :title     (c/substring title 0 100)
           ;                  :subtitle  (c/substring subtitle 0 100)
           ;                  :message   (c/substring message 0 100)}
-          user-notifications-ref ((:chat-notifications-fn (:refs this)) user-id)]
+          user-notifications-ref (chat-notification-ref (:database this) user-id)]
       (debug "Sending notification to user: " user-id " ref-path: " (.getPath user-notifications-ref))
       (-> (.push user-notifications-ref)
           (.setValue true))

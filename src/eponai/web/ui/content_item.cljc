@@ -29,24 +29,6 @@
                      :store/visitor-count
                      :store/username]}])
   Object
-  ;; XXX: This here listens for visitor-count changes.
-  ;;      Should be removed once we see store visitor counts working.
-  ;(componentWillMount [this]
-  ;  #?(:cljs
-  ;     (let [channel (om/props this)
-  ;           fb (shared/by-key this :shared/firebase)
-  ;           presence-ref (firebase/-ref fb (str "visitors/" (-> channel :stream/store :db/id)))]
-  ;       (debug "Reference for path: " (str "visitors/" (-> channel :stream/store :db/id)))
-  ;       (firebase/-once fb (fn [snapshot]
-  ;                            (debug "Got presence value: " snapshot)
-  ;                            (let [visitors (count (or (:value snapshot) []))]
-  ;                              (om/update-state! this assoc :visitor-count visitors)))
-  ;                       presence-ref)
-  ;       (om/update-state! this assoc :presence-ref presence-ref))))
-  ;(componentWillUnmount [this]
-  ;  #?(:cljs
-  ;     (let [{:keys [presence-ref]} (om/get-state this)]
-  ;       (firebase/-off (shared/by-key this :shared/firebase) presence-ref))))
   (render [this]
     (let [channel (om/props this)
           {:stream/keys [store]
@@ -106,36 +88,6 @@
      {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                 :store.item.photo/index]}]}])
   Object
-  ;(componentWillMount [this]
-  ;  #?(:cljs
-       ;; XXX: Gets the store visitor count.
-       ;;      Should be able to remove once we know that it works.
-       ;(let [store (om/props this)
-       ;      stream-state (-> store :stream/_store first :stream/state)
-             ;fb (shared/by-key this :shared/firebase)
-             ;presence-ref (firebase/-ref fb "presence")
-             ;visitors-ref (firebase/-ref fb (str "visitors/" (:db/id store)))
-             ;store-owner (-> store :store/owners :store.owner/user)
-             ;]
-         ;(firebase/-once fb (fn [snapshot]
-         ;                     (debug "Got presence value: " snapshot)
-         ;                     (let [visitors (count (or (:value snapshot) []))]
-         ;                       (om/update-state! this assoc :visitor-count visitors)))
-         ;                visitors-ref)
-         ;(if (= :stream.state/live stream-state)
-         ;  (om/update-state! this assoc :store-live? true)
-           ;(firebase/-once fb (fn [snapshot]
-           ;                     (let [is-online? (= true (get (:value snapshot) (str (:db/id store-owner))))]
-           ;                       (om/update-state! this assoc :store-online? is-online?)))
-           ;                presence-ref)
-           ;)
-         ;(om/update-state! this assoc :visitors-ref visitors-ref :presence-ref presence-ref)
-         ;)))
-  ;
-  ;(componentWillUnmount [this]
-  ;  #?(:cljs
-  ;     (let [{:keys [presence-ref] } (om/get-state this)]
-  ;       (firebase/-off (shared/by-key this :shared/firebase) presence-ref))))
   (render [this]
     (let [{:store/keys [visitor-count] :as store} (om/props this)
           store-name (-> store :store/profile :store.profile/name)
@@ -184,21 +136,6 @@
   (componentDidMount [this]
     #?(:cljs
        (.addEventListener js/window "resize" (:resize-listener (om/get-state this)))))
-  ;(componentWillMount [this]
-  ;  #?(:cljs
-  ;     (let [fb (shared/by-key this :shared/firebase)
-  ;           product (om/props this)
-  ;           {:keys [current-route]} (om/get-computed this)
-  ;           ;presence-ref (firebase/-ref fb "presence")
-  ;           ]
-  ;       (if (and)
-  ;         (om/update-state! this assoc :store-live? true)
-  ;         ;(firebase/-once fb (fn [snapshot]
-  ;         ;                     (let [is-online? (and (= true (get (:value snapshot) (str (:db/id store-owner))))
-  ;         ;                                           (show-status current-route))]
-  ;         ;                       (om/update-state! this assoc :store-online? is-online?)))
-  ;         ;                presence-ref)
-  ;         ))))
   (componentWillUnmount [this]
     #?(:cljs (.removeEventListener js/window "resize" (:resize-listener (om/get-state this)))))
   (render [this]

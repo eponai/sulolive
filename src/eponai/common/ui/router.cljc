@@ -135,30 +135,11 @@
            ;    (.signInAnonymously))
            )
          (when (some? owned-store)
-           (let [fb (shared/by-key this :shared/firebase)
-                 ;;xxx presence-ref (firebase/-ref fb (str "presence/" (:db/id auth)))
-                 ]
-
-             (firebase/register-store-owner-presence
-               fb
-               (:db/id auth)
-               (:db/id owned-store)
-               (get-in owned-store [:store/locality :sulo-locality/path]))
-             ;; XXX Un comment this when we see that it works.
-             ;(firebase/-add-connected-listener fb
-             ;                                  presence-ref
-             ;                                  {:on-connect    #(firebase/-set fb % true)
-             ;                                   :on-disconnect #(firebase/-set fb % (firebase/-timestamp fb))})
-             )
-           ;(let [am-online (-> (.database js/firebase)
-           ;                    (.ref ".info/connected"))
-           ;      user-ref (-> (.database js/firebase)
-           ;                   (.ref (str "presence/" (:db/id auth))))]
-           ;  (.on am-online "value" (fn [snapshot]
-           ;                           (when (.val snapshot)
-           ;                             (-> (.onDisconnect user-ref)
-           ;                                 (.set js/firebase.database.ServerValue.TIMESTAMP))
-           ;                             (.set user-ref true)))))
+           (firebase/register-store-owner-presence
+             (shared/by-key this :shared/firebase)
+             (:db/id auth)
+             (:db/id owned-store)
+             (get-in owned-store [:store/locality :sulo-locality/path]))
            ))))
   (render [this]
     (let [{:keys       [routing/app-root query/current-route query/locations]

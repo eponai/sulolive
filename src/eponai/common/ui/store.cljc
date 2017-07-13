@@ -153,37 +153,19 @@
   Object
   (componentDidMount [this]
     #?(:cljs
-       (let [{:query/keys [store]} (om/props this)
-             fb (shared/by-key this :shared/firebase)
-             ;; presence-ref (firebase/-ref fb (str "visitors/" (:db/id store)))
-             ;; user-ref (firebase/-push fb presence-ref)
-             ]
+       (let [{:query/keys [store]} (om/props this)]
+         ;; TODO: XXX Register stores via firebase/on-route-change directly
          (firebase/register-store-visit
-           fb
+           (shared/by-key this :shared/firebase)
            (:db/id store)
            (client.auth/current-auth this)
-           (get-in store [:store/locality :sulo-locality/path]))
-         ;; XXX: uncomment when we see it working.
-         ;(firebase/-on-value-changed fb
-         ;                            (fn [{:keys [value]}]
-         ;                              (om/update-state! this assoc :visitor-count (count value)))
-         ;                            presence-ref)
-         ;(firebase/-set fb user-ref true)
-         ;
-         ;(firebase/-remove-on-disconnect fb user-ref)
-         ;(om/update-state! this assoc :user-ref user-ref :presence-ref presence-ref)
-         )))
+           (get-in store [:store/locality :sulo-locality/path])))))
   (componentWillUnmount [this]
     #?(:cljs
        (let [{:query/keys [store]} (om/props this)
              fb (shared/by-key this :shared/firebase)]
-         ; xxx
-         ; (debug "FIREBASE - store unmount remove" user-ref)
          (debug "Unregistering!")
          (firebase/unregister-store-visit fb (:db/id store) (client.auth/current-auth this))
-         ;(firebase/-remove fb user-ref)
-         ;(when presence-ref
-         ;  (firebase/-off fb presence-ref))
          )))
   (initLocalState [this]
     {:selected-navigation :all-items})
