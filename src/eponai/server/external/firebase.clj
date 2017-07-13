@@ -70,8 +70,7 @@
     ;; Once the app has been initialized, get the db instance.
     (FirebaseDatabase/getInstance ^FirebaseApp firebase-app)))
 
-;; XXX: Rename this method from ref to route->ref
-(defn- route->ref [db route route-params]
+(defn route->ref [db route route-params]
   (.getReference db (common.firebase/path route route-params)))
 
 (defrecord Firebase [server-key private-key private-key-id service-account database-url]

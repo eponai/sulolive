@@ -13,7 +13,7 @@
             [datascript.core :as datascript]
             [eponai.common :as c]
             [suspendable.core :as suspendable])
-  (:import (com.google.firebase.database DatabaseReference FirebaseDatabase ChildEventListener DataSnapshot DatabaseError ServerValue)
+  (:import (com.google.firebase.database DatabaseReference ChildEventListener DataSnapshot DatabaseError ServerValue)
            (java.util HashMap)))
 
 (defprotocol IWriteStoreChat
@@ -232,7 +232,7 @@
 
 
 (defn- raw-store-chat-room-ref [firebase store-id]
-  (.getReference ^FirebaseDatabase (:database firebase) (str "store-chats/" store-id)))
+  (firebase/route->ref (:database firebase) :store/chat {:store-id store-id}))
 
 (defn- store-chat-room-query [firebase store-id]
   (let [chat-room-ref (-> (raw-store-chat-room-ref firebase store-id)
