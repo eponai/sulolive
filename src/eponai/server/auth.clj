@@ -204,92 +204,104 @@
   (when-let [email (:email auth0-profile)]
     (db/lookup-entity db [:user/email email])))
 
-;(defn- do-authenticate
-;  "Returns a logged in response if authenticate went well."
-;  [{:eponai.server.middleware/keys [system logger conn] :as request}
-;   token sulo-user]
-;  (let [loc (requested-location request)
-;        redirect-url (if (:sulo-locality/path loc)
-;                       (routes/path :index {:locality (:sulo-locality/path loc)})
-;                       (routes/path :landing-page))]
-;    (mixpanel/track "Sign in user" {:distinct_id (:db/id sulo-user)
-;                                    :ip          (:remote-addr request)})
-;    (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token} {:path "/"})))
-;
-;(defn authenticate
-;  [{:keys                          [params] :as request
-;    :eponai.server.middleware/keys [system logger conn]}]
-;  (debug "AUTHENTICATE: " params)
-;  (let [auth0 (:system/auth0 system)
-;        auth0management (:system/auth0management system)
-;        {:keys [code state token]} params
-;
-;        ;; A code in the request means we want to login
-;        auth-map (when (some? code) (auth0/authenticate auth0 code state))
-;
-;        ;; If we have a token in the request, it means this was the first login.
-;        ;; An account was created and we want to authenticate again
-;        token-info (when (some? token) {:profile (auth0/token-info auth0 token)
-;                                        :token   token})
-;
-;        ;; access-token is only present in case of login first step
-;        {:keys    [profile access-token]
-;         id-token :token} (or auth-map token-info)
-;
-;        ;; Get our user from Datomic
-;        sulo-user (existing-user (db/db conn) profile)
-;        user-id (:sub profile)]
-;
-;    ;; If we already have a user for this account and they're verified, we can authenticate
-;    (if (some? sulo-user)
-;      (let [should-verify? (and (not (:user/verified sulo-user)) (not-empty (:email profile)))]
-;        (when should-verify?
-;          (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]]))
-;        (try
-;          (auth0/link-with-same-email auth0management (assoc profile :user_id user-id))
-;          (catch ExceptionInfo e
-;            (error e)))
-;        (do-authenticate request id-token sulo-user))
-;
-;      ;; User is signin in for the first time, and should go through creating an account.
-;      (let [path (routes/path :login nil (cf/remove-nil-keys
-;                                           {:access_token access-token
-;                                            :token        id-token}))]
-;        (debug "Redirect to path: " path)
-;        (r/redirect path)))))
-
 (defn- do-authenticate
   "Returns a logged in response if authenticate went well."
-  [{:keys                          [params] :as request
-    :eponai.server.middleware/keys [system logger conn]}]
-  (let [auth0 (:system/auth0 system)
-        {:keys [code state]} params
-        {:keys [redirect-url token profile]} (auth0/authenticate auth0 code state)]
-    (when-let [email (:email profile)]
-      (let [old-user (db/lookup-entity (db/db conn) [:user/email email])
-            user (if-not (some? old-user)
-                   (let [new-user (f/auth0->user profile)
-                         _ (info "Auth - authenticated user did not exist, creating new user: " new-user)
-                         result (db/transact-one conn new-user)]
-                     (debug "Auth - new user: " new-user)
-                     (db/lookup-entity (:db-after result) [:user/email email]))
-                   old-user)]
-        (when-not (some? old-user)
-          (log/info! logger ::user-created {:user-id (:db/id user)}))
-        (when token
-          (mixpanel/track "Sign in user" {:distinct_id (:db/id user)
-                                          :ip          (:remote-addr request)})
-          (let [loc (requested-location request)
-                redirect-url (if (:sulo-locality/path loc)
-                               (routes/path :index {:locality (:sulo-locality/path loc)})
-                               (routes/path :landing-page))]
-            (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token} {:path "/"})))))))
+  [{:eponai.server.middleware/keys [system logger conn] :as request}
+   token sulo-user]
+  (let [loc (requested-location request)
+        redirect-url (if (:sulo-locality/path loc)
+                       (routes/path :index {:locality (:sulo-locality/path loc)})
+                       (routes/path :landing-page))]
+    (mixpanel/track "Sign in user" {:distinct_id (:db/id sulo-user)
+                                    :ip          (:remote-addr request)})
+    (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token} {:path "/"})))
 
 (defn authenticate
-  [request]
-  (or
-    (do-authenticate request)
-    (prompt-login request)))
+  [{:keys                          [params] :as request
+    :eponai.server.middleware/keys [system logger conn]}]
+  (debug "AUTHENTICATE: " params)
+  (let [auth0 (:system/auth0 system)
+        auth0management (:system/auth0management system)
+        {:keys [code state token]} params
+
+        ;; A code in the request means we want to login
+        auth-map (when (some? code) (auth0/authenticate auth0 code state))
+
+        ;; If we have a token in the request, it means this was the first login.
+        ;; An account was created and we want to authenticate again
+        token-info (when (some? token) {:profile (auth0/token-info auth0 token)
+                                        :token   token})
+
+        ;; access-token is only present in case of login first step
+        {:keys    [profile access-token]
+         id-token :token} (or auth-map token-info)
+
+        ;; Get our user from Datomic
+        sulo-user (existing-user (db/db conn) profile)
+        user-id (:sub profile)
+
+        redirect-unauthed (fn [should-verify?]
+                            (let [path (routes/path :login nil (cf/remove-nil-keys
+                                                                 (cond-> {:access_token access-token
+                                                                          :token        id-token}
+                                                                         should-verify?
+                                                                         (assoc :verified false))))]
+                              (debug "Redirect to path: " path)
+                              (r/redirect path)))]
+
+    ;; If we already have a user for this account and they're verified, we can authenticate
+    (if (some? sulo-user)
+      (let [should-verify? (and (not (:user/verified sulo-user)) (and (not-empty (:email profile))
+                                                                      (:email_verified profile)))]
+        ;; If the Auth0 account is verified, but not our DB user, update our DB user
+        (when should-verify?
+          (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]]))
+        ;; Link Auth0 accounts with the same email (if any others exist)
+        (try
+          (auth0/link-with-same-email auth0management (assoc profile :user_id user-id))
+          (catch ExceptionInfo e
+            (error e)))
+        (if (or (:user/verified sulo-user) should-verify?)
+          ;; Authenticate user if verified
+          (do-authenticate request id-token sulo-user)
+          ;; Redirect user to verify their email if not verified.
+          (redirect-unauthed true)))
+
+      ;; User logged in for the first time, redirect to create an account.
+      (redirect-unauthed false))))
+
+;(defn- do-authenticate
+;  "Returns a logged in response if authenticate went well."
+;  [{:keys                          [params] :as request
+;    :eponai.server.middleware/keys [system logger conn]}]
+;  (let [auth0 (:system/auth0 system)
+;        {:keys [code state]} params
+;        {:keys [redirect-url token profile]} (auth0/authenticate auth0 code state)]
+;    (when-let [email (:email profile)]
+;      (let [old-user (db/lookup-entity (db/db conn) [:user/email email])
+;            user (if-not (some? old-user)
+;                   (let [new-user (f/auth0->user profile)
+;                         _ (info "Auth - authenticated user did not exist, creating new user: " new-user)
+;                         result (db/transact-one conn new-user)]
+;                     (debug "Auth - new user: " new-user)
+;                     (db/lookup-entity (:db-after result) [:user/email email]))
+;                   old-user)]
+;        (when-not (some? old-user)
+;          (log/info! logger ::user-created {:user-id (:db/id user)}))
+;        (when token
+;          (mixpanel/track "Sign in user" {:distinct_id (:db/id user)
+;                                          :ip          (:remote-addr request)})
+;          (let [loc (requested-location request)
+;                redirect-url (if (:sulo-locality/path loc)
+;                               (routes/path :index {:locality (:sulo-locality/path loc)})
+;                               (routes/path :landing-page))]
+;            (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token} {:path "/"})))))))
+
+;(defn authenticate
+;  [request]
+;  (or
+;    (do-authenticate request)
+;    (prompt-login request)))
 
 (defn link-user [{:keys                          [params] :as request
                   :eponai.server.middleware/keys [system logger conn]}]

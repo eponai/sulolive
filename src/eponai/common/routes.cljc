@@ -48,7 +48,8 @@
    "/mobile-stream"  :help/mobile-stream
    "/shipping-rules" :help/shipping-rules
    "/quality"        :help/quality
-   "/faq"            :help/faq})
+   "/faq"            :help/faq
+   "/taxes"          :help/taxes})
 
 (def checkout-routes
   {""          :checkout
@@ -78,7 +79,7 @@
 (def locality-routes
   [["" {
         ;"/"         :index
-        "/shops" :stores
+        "/shops"  :stores
         "/browse" browse-categories
         "/live"   :live}]
    [true :index]])

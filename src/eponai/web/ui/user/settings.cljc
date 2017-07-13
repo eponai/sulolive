@@ -620,8 +620,7 @@
                     (->> (grid/column-size {:small 12 :medium 6})
                          (css/text-align :right))
                     (button/user-setting-cta
-                      ;{:onClick #(.authorize-social this :social/facebook)}
-                      (css/add-classes [:facebook :disabled])
+                      (css/add-classes [:facebook] {:onClick #(.authorize-social this :social/facebook)})
                       (dom/i {:classes ["fa fa-facebook fa-fw"]})
                       (dom/span nil "Connect to Facebook"))))))
 
@@ -655,8 +654,7 @@
                     (->> (grid/column-size {:small 12 :medium 6})
                          (css/text-align :right))
                     (button/user-setting-cta
-                      ;{:onClick #(.authorize-social this :social/twitter)}
-                      (css/add-classes [:twitter :disabled])
+                      (css/add-classes [:twitter] {:onClick #(.authorize-social this :social/twitter)})
                       (dom/i {:classes ["fa fa-twitter fa-fw"]})
                       (dom/span nil "Connect to Twitter"))))))))))))
 

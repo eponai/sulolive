@@ -264,16 +264,21 @@
            ;  nil
            ;  (dom/a nil
            ;         (dom/span (css/add-classes ["icon icon-heart"]))))
-           (when (nil? auth)
+
+           (when (some? auth)
              (menu/item
-               nil
-               (dom/a {:href (routes/url :about)}
-                      (dom/strong nil (dom/small nil "About us")))))
+               (css/add-class :sulo-notifications)
+               (dom/a (css/add-class :sulo-notification) (dom/i {:classes ["fa fa-bell"]}))))
            (when (some? owned-store)
              (menu/item
                (css/add-class :chat-notifications)
                (note/->Notifications (om/computed notification {:type :notification.type/chat
                                                                 :href (routes/store-url owned-store :store)}))))
+           (when (nil? auth)
+             (menu/item
+               nil
+               (dom/a {:href (routes/url :about)}
+                      (dom/strong nil (dom/small nil "About us")))))
            (user-menu-item component)
            (when (some? auth)
              (menu/item
