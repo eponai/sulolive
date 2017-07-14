@@ -181,7 +181,7 @@
         (let [{:keys [messages users]} (firebase-chat-messages->datascript-messages
                                          firebase-chat-rooms
                                          store
-                                         (- (System/currentTimeMillis) client.chat/message-time-limit))
+                                         (- (System/currentTimeMillis) client.chat/message-time-limit-ms))
               chat-db (datascript/db-with datascript-chat-db
                                           ;; Setting the chat entity's id the same as the chat/store.
                                           ;; The chat entity is unique within its own database and

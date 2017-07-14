@@ -24,7 +24,7 @@
         msgs (into []
                    (filter (fn [msg]
                              (let [millis-since-message (- now (:chat.message/created-at msg))]
-                               (> client.chat/message-time-limit millis-since-message))))
+                               (> client.chat/message-time-limit-ms millis-since-message))))
                    (concat (sort-by :chat.message/created-at server-side) client-side))]
     msgs))
 

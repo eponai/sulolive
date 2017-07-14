@@ -10,7 +10,7 @@
     [taoensso.timbre :refer [warn debug error]]
     [eponai.client.auth :as client.auth]))
 
-(def message-time-limit (* 3600 1000))
+(def message-time-limit-ms (* 4 3600 1000))
 
 (defprotocol IStoreChatListener
   (start-listening! [this store-id])
