@@ -21,7 +21,7 @@
   [reconciler _ _]
   (let [{:keys [auth0-client-id auth0-domain]} (db/singleton-value (db/to-db reconciler)
                                                                    :ui.singleton.client-env/env-map)
-        web-auth (new js/auth0.WebAuth #js {:domain       auth0-domain
+        ^js/auth0.WebAuth web-auth (new js/auth0.WebAuth #js {:domain       auth0-domain
                                             :clientID     auth0-client-id
                                             :redirectUri  (redirect-to (routes/url :auth))
                                             :responseType "code"
