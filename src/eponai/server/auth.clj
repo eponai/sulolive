@@ -257,17 +257,36 @@
           (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]]))
         ;; Link Auth0 accounts with the same email (if any others exist)
         (try
+          (log/info! logger ::link-accounts {:auth0-user-id user-id
+                                             :user-id       (:db/id sulo-user)})
           (auth0/link-with-same-email auth0management (assoc profile :user_id user-id))
           (catch ExceptionInfo e
+            (log/error! logger ::link-accounts-error {:auth0-user-id user-id
+                                                      :user-id       (str (:db/id sulo-user))
+                                                      :exception     (log/render-exception e)
+                                                      :verified      (:user/verified sulo-user)
+                                                      :did-verfy     should-verify?})
             (error e)))
         (if (or (:user/verified sulo-user) should-verify?)
           ;; Authenticate user if verified
-          (do-authenticate request id-token sulo-user)
+          (do
+            (log/info! logger ::login {:auth0-user-id user-id
+                                       :user-id       (str (:db/id sulo-user))
+                                       :verified      (:user/verified sulo-user)
+                                       :did-verify    should-verify?})
+            (do-authenticate request id-token sulo-user))
           ;; Redirect user to verify their email if not verified.
-          (redirect-unauthed true)))
+          (do
+            (log/info! logger ::verify-email {:auth0-user-id user-id
+                                              :user-id       (str (:db/id sulo-user))
+                                              :verified      (:user/verified sulo-user)
+                                              :did-verify    should-verify?})
+            (redirect-unauthed true))))
 
       ;; User logged in for the first time, redirect to create an account.
-      (redirect-unauthed false))))
+      (do
+        (log/info! logger ::create-account {:auth0-user-id user-id})
+        (redirect-unauthed false)))))
 
 ;(defn- do-authenticate
 ;  "Returns a logged in response if authenticate went well."
@@ -312,17 +331,23 @@
         {:keys [code state token]} params
         {:keys [profile]} (auth0/authenticate auth0 code state)
 
-        primary-user (auth0/get-user auth0management primary-profile)]
+        primary-user (auth0/get-user auth0management primary-profile)
+        primary-user-id (auth0/user-id primary-user)
+        secondary-user-id (auth0/user-id profile)]
 
     (try
       (if (auth0/email-provider? profile)
         (throw (ex-info "Already connected to another account"
                         {:message "Something went wrong and we couldnt' connect your social account. Please try again later."}))
         (do
-          (auth0/link-user-accounts-by-id auth0management (auth0/user-id primary-user) (auth0/user-id profile))
+          (log/info! logger ::link-accounts {:auth0-primary primary-user-id :auth0-secondary secondary-user-id})
+          (auth0/link-user-accounts-by-id auth0management primary-user-id secondary-user-id)
           (r/redirect (routes/path :user-settings))))
       (catch ExceptionInfo e
         (error e)
+        (log/error! logger ::link-accounts-error {:exception (log/render-exception e)
+                                                  :auth0-primary primary-user-id
+                                                  :auth0-secondary secondary-user-id})
         (r/redirect (routes/path :user-settings nil {:error "connect"}))))))
 
 
