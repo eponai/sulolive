@@ -268,9 +268,8 @@
                                 (when (and (some? auth)
                                            (nil? owned-store))
                                   (menu/item nil (dom/a
-                                                   (->> {:href    (routes/url :sell)
-                                                         :onClick #(track-event ::mixpanel/go-to-start-store)}
-                                                        (css/button)) (dom/span nil "Start a store"))))
+                                                   {:href    (routes/url :sell)
+                                                    :onClick #(track-event ::mixpanel/go-to-start-store)} (dom/span nil "Start a store"))))
                                 (if (some? auth)
                                   (menu/item nil (dom/a {:href    (routes/url :logout)
                                                          :onClick #(track-event ::mixpanel/signout)}

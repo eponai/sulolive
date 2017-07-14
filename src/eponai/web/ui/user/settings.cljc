@@ -473,7 +473,7 @@
                 (->> (css/align :middle)
                      (css/add-class :collapse))
                 (grid/column
-                  nil
+                  (grid/column-size {:small 12 :medium 6})
                   (dom/label nil "Email")
                   (dom/span nil (:user/email auth)))
                 (grid/column
@@ -497,7 +497,7 @@
                 (->> (css/align :middle)
                      (css/add-class :collapse))
                 (grid/column
-                  nil
+                  (grid/column-size {:small 12 :medium 6})
                   (dom/label nil "Public profile")
                   (dom/p nil (dom/small nil "This is how other users on SULO will see you when you interact and hang out in stores."))
                   )
@@ -525,7 +525,7 @@
                 (->> (css/align :middle)
                      (css/add-class :collapse))
                 (grid/column
-                  nil
+                  (grid/column-size {:small 12 :medium 6})
                   (dom/label nil "Payment info")
                   (dom/p nil (dom/small nil "Manage your saved credit cards. Change your default card or remove old ones.")))
                 (grid/column
@@ -556,7 +556,7 @@
                 (->> (css/align :middle)
                      (css/add-class :collapse))
                 (grid/column
-                  nil
+                  (grid/column-size {:small 12 :medium 6})
                   (dom/label nil "Shipping")
                   (dom/p nil (dom/small nil "Manage your saved shipping address. This address will be pre-filled for you at checkout.")))
                 (grid/column
@@ -596,7 +596,7 @@
                   (->> (css/align :middle)
                        (css/add-class :collapse))
                   (grid/column
-                    nil
+                    (grid/column-size {:small 12 :medium 6})
                     (dom/label nil "You are connected to Facebook")
                     (dom/p nil (dom/small nil "You can now sign in to SULO Live using your Facebook account. We will never post to Facebook or message your friends without your permission.")))
                   (grid/column
@@ -613,7 +613,7 @@
                   (->> (css/align :middle)
                        (css/add-class :collapse))
                   (grid/column
-                    nil
+                    (grid/column-size {:small 12 :medium 6})
                     (dom/label nil "Facebook")
                     (dom/p nil (dom/small nil "Connect to Facebook to sign in with your account. We will never post to Facebook or message your friends without your permission")))
                   (grid/column
@@ -631,7 +631,7 @@
                   (->> (css/align :middle)
                        (css/add-class :collapse))
                   (grid/column
-                    nil
+                    (grid/column-size {:small 12 :medium 6})
                     (dom/label nil "You are connected to Twitter")
                     (dom/p nil (dom/small nil "You can now sign in to SULO Live using your Twitter account. We will never post to Twitter or message your followers without your permission.")))
                   (grid/column
@@ -647,7 +647,7 @@
                   (->> (css/align :middle)
                        (css/add-class :collapse))
                   (grid/column
-                    nil
+                    (grid/column-size {:small 12 :medium 6})
                     (dom/label nil "Twitter")
                     (dom/p nil (dom/small nil "Connect to Twitter to sign in with your account. We will never post to Twitter or message your followers without your permission.")))
                   (grid/column
