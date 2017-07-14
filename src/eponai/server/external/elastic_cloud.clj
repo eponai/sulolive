@@ -97,13 +97,13 @@
                          (.build))
             client (PreBuiltXPackTransportClient. ^Settings settings [])]
         (add-transport-addresses client cluster-hostname)
-        (assoc this :client client :host (host/webserver-url server-address)))))
+        (assoc this :client client))))
   (stop [this]
     (when-let [c (:client this)]
       (try
         (.close ^TransportClient c)
         (catch Exception ignore)))
-    (dissoc this :client :host))
+    (dissoc this :client))
   suspendable/Suspendable
   (suspend [this]
     this)
@@ -130,6 +130,7 @@
         (let [^TransportClient client (:client this)
               bulk-builder (.prepareBulk client)
               json-opts {:date-format logstash-iso-format}
+              host (host/webserver-url server-address)
               _ (doseq [msg messages]
                   (let [date (clj-time.coerce/from-long (:millis msg))
                         ymd (clj-time.format/unparse yyyy-MM-dd-formatter date)
@@ -143,7 +144,7 @@
                                                 (string-ids)
                                                 (assoc "@timestamp" timestamp
                                                        :level (:level msg)
-                                                       :host (:host this)))
+                                                       :host host))
                                             json-opts))))))
               bulk-response ^BulkResponse (.get bulk-builder)]
           (when (.hasFailures bulk-response)
