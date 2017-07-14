@@ -91,7 +91,7 @@
     (let [{:store/keys [visitor-count] :as store} (om/props this)
           store-name (-> store :store/profile :store.profile/name)
           stream-state (-> store :stream/_store first :stream/state)
-          store-owner-online? (-> store :store/owners :store.owner/user :user/online?)
+          store-owner-online? (true? (-> store :store/owners :store.owner/user :user/online?))
           online-status (cond
                           (= :stream.state/live stream-state) :is-live
                           store-owner-online? :is-online
@@ -152,7 +152,7 @@
           {:store.item.photo/keys [photo]} (first (sort-by :store.item.photo/index photos))
 
           store-live? (= :stream.state/live (-> product :store/_items :stream/_store first :stream/state))
-          store-online? (-> product :store/_items :store/owners :store.owner/user :user/online?)
+          store-online? (true? (-> product :store/_items :store/owners :store.owner/user :user/online?))
           store-status (when (show-status current-route)
                          (cond store-live? :live
                                store-online? :online
