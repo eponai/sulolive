@@ -3,7 +3,8 @@
     [clj-http.client :as http]
     [clojure.data.json :as json]
     [taoensso.timbre :refer [debug]]
-    [eponai.common.format :as cf]))
+    [eponai.common.format :as cf]
+    [com.stuartsierra.component :as component]))
 
 
 (defn endpoint [path]
@@ -37,20 +38,37 @@
        :taxes/rate             0
        :taxes/freight-taxable? false})))
 
+(defn- tax-cache-key [params]
+  ((juxt :to_country :to_state :from_country :from_state) params))
 
 (defrecord Taxjar [api-key]
+  component/Lifecycle
+  (start [this]
+    (if (:state this)
+      this
+      (assoc this :state (atom {}))))
+  (stop [this]
+    (dissoc this :state))
+
   ITaxjar
-  (-calculate [_ id params]
+  (-calculate [this id params]
     (debug "Taxjar - calculate taxes: " params)
-    (let [response (json/read-str (:body (http/post (endpoint "taxes") {:form-params params
-                                                                        :oauth-token api-key}))
-                                  :key-fn keyword)]
-      (debug "Taxjar - recieved response: " response)
-      (cf/remove-nil-keys
-        {:taxes/id               id
-         :taxes/rate             (get-in response [:tax :rate])
-         :taxes/total-amount     (get-in response [:tax :order_total_amount])
-         :taxes/freight-taxable? (get-in response [:tax :freight_taxable])}))))
+    (let [cache-key (tax-cache-key params)]
+      ;; TODO: Don't use an infinite cache here? See clojure.cache (or clojure.memoize, I always forget).
+      (if-let [tax (get @(:state this) cache-key)]
+        (do (debug "Returning cached tax: " tax)
+            tax)
+        (let [response (json/read-str (:body (http/post (endpoint "taxes") {:form-params params
+                                                                            :oauth-token api-key}))
+                                      :key-fn keyword)
+              _ (debug "Taxjar - recieved response: " response)
+              ret (cf/remove-nil-keys
+                    {:taxes/id               id
+                     :taxes/rate             (get-in response [:tax :rate])
+                     :taxes/total-amount     (get-in response [:tax :order_total_amount])
+                     :taxes/freight-taxable? (get-in response [:tax :freight_taxable])})]
+          (swap! (:state this) assoc cache-key ret)
+          ret)))))
 
 (defn taxjar [api-key]
   (->Taxjar api-key))
