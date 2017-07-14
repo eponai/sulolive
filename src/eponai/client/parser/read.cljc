@@ -295,7 +295,9 @@
       {:value (do (debug "Query " query) (db/pull-all-with db query {:where   '[[?u :user/cart ?c]
                                                                                 [?c :user.cart/items ?e]
                                                                                 [?i :store.item/skus ?e]
-                                                                                [?s :store/items ?i]]
+                                                                                [?s :store/items ?i]
+                                                                                [?s :store/status ?st]
+                                                                                [?st :status/type :status.type/open]]
                                                                      :symbols {'?s store-id}}))})))
 
 (defmethod client-read :query/taxes

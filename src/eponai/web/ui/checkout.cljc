@@ -35,7 +35,7 @@
    :payment.stripe/card       "sulo-card-element"})
 
 (defn compute-subtotal [skus]
-  (reduce + (map #(get-in % [:store.item/_skus :store.item/price]) skus)))
+  (or (reduce + (map #(get-in % [:store.item/_skus :store.item/price]) skus)) 0))
 
 (defn compute-shipping-fee [rate items]
   (let [{:shipping.rate/keys [additional free-above]
@@ -54,6 +54,7 @@
          :taxes/keys [freight-taxable?]} taxes
         tax-rate (or tax-rate 0)]
 
+    (debug "Compute taxes: " taxes subtotal shipping-fee)
     (if freight-taxable?
       (* tax-rate (+ subtotal shipping-fee))
       (* tax-rate subtotal))))
@@ -483,7 +484,8 @@
                                                                                                                       :shipping.rate/free-above
                                                                                                                       :shipping.rate/title]}]}]}
                                                            {:store/profile [:store.profile/name
-                                                                            {:store.profile/photo [:photo/id]}]}]}]}]}
+                                                                            {:store.profile/photo [:photo/id]}]}
+                                                           {:store/status [:status/type]}]}]}]}
 
      {:query/stripe-customer [:stripe/id
                               :stripe/sources
@@ -496,7 +498,8 @@
      {:query/taxes [:taxes/id
                     :taxes/rate
                     :taxes/freight-taxable?]}
-     :query/messages])
+     :query/messages
+     :query/locations])
 
   Object
   (change-country [this country-code]
@@ -661,7 +664,7 @@
   (componentDidMount [this]
     #?(:cljs
        (let [init-state (.initial-state this (om/props this))
-             {:query/keys [checkout stripe-customer]} (om/props this)
+             {:query/keys [checkout stripe-customer locations]} (om/props this)
              country (or (get-in init-state [:checkout/shipping :shipping/address :shipping.address/country :country/code])
                          (get-in init-state [:shipping/edit-shipping :shipping/address :shipping.address/country :country/code]))
              card (stripe/card-element (shared/by-key this :shared/stripe) (str "#" (:payment.stripe/card form-inputs)))
@@ -669,13 +672,17 @@
                             {:element-id "sulo-auto-complete"
                              :on-change  (fn [address]
                                            (om/update-state! this assoc-in [:shipping/edit-shipping :shipping/address] address))})]
+         (when-not (= :status.type/open (-> (first checkout) :store.item/_skus :store/_items :store/status :status/type))
+           (routes/set-url! this :shopping-bag))
          (debug "Setting GOogle country: " country)
          (.setComponentRestrictions autocomplete (clj->js {:country (or country [])}))
          (om/update-state! this merge
                            init-state
                            {:card         card
                             :autocomplete autocomplete})
-         (when (some? (:stripe/shipping stripe-customer))
+         (debug "Got stripe customer: " stripe-customer)
+         (when (some? (-> stripe-customer :stripe/shipping :shipping/address :shipping.address/country :country/code))
+           (debug "Will calculate taxes")
            (read-taxes this (:checkout/shipping init-state) (compute-subtotal checkout))))))
 
   (initLocalState [this]

@@ -54,7 +54,8 @@
                                                                                                  :shipping.address/street]}]}
                                                            {:store/profile [:store.profile/name
                                                                             ;:store.profile/shipping-fee
-                                                                            {:store.profile/photo [:photo/id]}]}]}]}
+                                                                            {:store.profile/photo [:photo/id]}]}
+                                                           {:store/status [:status/type]}]}]}
                        ]}
      {:query/taxes [:taxes/id
                     :taxes/rate
