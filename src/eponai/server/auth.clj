@@ -251,8 +251,7 @@
 
     ;; If we already have a user for this account and they're verified, we can authenticate
     (if (some? sulo-user)
-      (let [should-verify? (and (not (:user/verified sulo-user)) (and (not-empty (:email profile))
-                                                                      (:email_verified profile)))]
+      (let [should-verify? (and (not (:user/verified sulo-user)) (not-empty (:email profile)) (:email_verified profile))]
         ;; If the Auth0 account is verified, but not our DB user, update our DB user
         (when should-verify?
           (db/transact conn [[:db/add (:db/id sulo-user) :user/verified true]]))

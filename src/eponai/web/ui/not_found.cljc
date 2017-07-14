@@ -12,14 +12,7 @@
 (defui NotFound
   static om/IQuery
   (query [_]
-    [{:query/featured-items [:db/id
-                             :store.item/name
-                             :store.item/price
-                             :store.item/created-at
-                             {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
-                                                  :store.item.photo/index]}
-                             {:store/_items [{:store/profile [:store.profile/name]}
-                                             :store/locality]}]}
+    [{:query/featured-items (om/get-query ci/ProductItem)}
      :query/locations
      :query/current-route])
   Object
