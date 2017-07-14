@@ -31,6 +31,19 @@
 			p {
 				margin: 0;
 			}
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-end;
+			.order-status {
+				p {
+					margin: 0;
+					text-transform: uppercase;
+					letter-spacing: 1px;
+					font-weight: bold;
+					font-size: 0.75rem;
+					border-radius: $global-radius;
+				}
+			}
 		}
 		.sl-order-card-title {
 			margin: 0;
@@ -76,38 +89,54 @@
 					margin: 0;
 				}
 			}
-			.menu {
-				padding: 0 $global-padding;
-				li {
-					display: flex;
-					border-bottom: $global-border-secondary;
-					&:first-child {
-						border-top: $global-border-secondary;
-					}
-					padding: $global-padding-small 0;
-					justify-content: space-between;
-					a {
-						padding: 0;
-						justify-content: space-between;
-						align-items: center;
-					}
-					p {
-						margin: 0;
-					}
-					.photo-container {
-						min-width: 2.5rem;
-						max-width: 2.5rem;
-						margin-right: $global-margin;
-						width: 3rem;
-					}
-					.sl-order-items-list-item--info {
-						margin-right: $global-margin-small;
-						p {
-							line-height: 1.1;
-						}
-					}
+			.sl-order-items-list {
+				border-top: $global-border-secondary;
+				border-bottom: $global-border-secondary;
+				padding-top: $global-padding;
+				p {
+					text-align: center;
+					line-height: 1;
+					@include wrap-text;
 				}
+				// background: rgba($light-gray, 0.5);
 			}
+			// .menu {
+			// 	padding: 0 $global-padding;
+			// 	li {
+			// 		display: flex;
+			// 		border-bottom: $global-border-secondary;
+			// 		&:first-child {
+			// 			border-top: $global-border-secondary;
+			// 		}
+			// 		padding: $global-padding-small 0;
+			// 		justify-content: space-between;
+			// 		a {
+			// 			padding: 0;
+			// 			justify-content: space-between;
+			// 			align-items: center;
+			// 		}
+			// 		p {
+			// 			margin: 0;
+			// 		}
+			// 		.photo-container {
+			// 			flex: 1 0 auto;
+
+			// 			// min-width: 10rem;
+			// 			// max-width: 10rem;
+			// 			margin-right: $global-margin;
+			// 			// width: 3rem;
+			// 		}
+			// 		.sl-order-items-list-item--info {
+
+			// 			max-width: 10rem;
+			// 			flex-direction: column;
+			// 			margin-right: $global-margin-small;
+			// 			p {
+			// 				line-height: 1.1;
+			// 			}
+			// 		}
+			// 	}
+			// }
 		}
 	}
 

@@ -65,7 +65,7 @@
     (when modal
       (common/modal
         {:on-close on-close
-         :size "tiny"}
+         :size     "tiny"}
         (dom/h4 (css/add-class :header) (get modal-message modal))
         (dom/p nil
                ;(dom/span nil (get modal-message modal))
@@ -73,10 +73,10 @@
                (dom/small nil (get modal-submessage modal)))
         (dom/div
           (css/add-class :action-buttons)
-          (button/user-setting-default
+          (button/cancel
             (css/button-hollow {:onClick on-close})
             (dom/span nil "No thanks"))
-          (button/user-setting-cta
+          (button/save
             (css/button {:onClick #(do
                                     (on-close)
                                     (.update-order component {:order/status order-status}))})
@@ -180,25 +180,24 @@
                 (css/add-class :action-buttons)
                 (cond
                   (= order-status :order.status/fulfilled)
-                  (dom/a
-                    (css/button-hollow {:onClick #(om/update-state! component assoc :modal :modal/mark-as-returned?)})
-                    "Mark as returned")
+                  (button/store-setting-default
+                    {:onClick #(om/update-state! component assoc :modal :modal/mark-as-returned?)}
+                    (dom/span nil "Mark as returned"))
                   (= order-status :order.status/returned)
                   (dom/a nil "")
                   :else
-                  (dom/a (cond->> (css/button {:onClick #(om/update-state! component assoc :modal :modal/mark-as-fulfilled?)})
-                                  (not= (:order/status order) :order.status/paid)
-                                  (css/add-class :disabled))
-                         (dom/span nil "Mark as shipped")))
+                  (button/store-setting-cta
+                    (cond->> {:onClick #(om/update-state! component assoc :modal :modal/mark-as-fulfilled?)}
+                             (not= (:order/status order) :order.status/paid)
+                             (css/add-class :disabled))
+                    (dom/span nil "Mark as shipped")))
                 (when (or (= order-status :order.status/created)
                           (= order-status :order.status/paid))
                   (dom/div
                     nil
-                    (dom/a
-                      (->> (css/button-hollow {:onClick #(om/update-state! component assoc :modal :modal/mark-as-canceled?)})
-                           (css/add-classes [:secondary])) "Cancel order"))))
-              )))
-        )
+                    (button/store-setting-default
+                      {:onClick #(om/update-state! component assoc :modal :modal/mark-as-canceled?)}
+                      (dom/span nil "Cancel order")))))))))
 
       (callout/callout
         nil
@@ -215,10 +214,11 @@
                        (grid/row
                          nil
                          (grid/column
-                           (->> (grid/column-size {:small 4 :medium 6})
+                           (->> (grid/column-size {:small 6 :medium 6})
                                 (css/add-class :order-item-info))
-                           (photo/product-photo {:photo-id       (get-in oi [:order.item/photo :photo/id])
-                                                 :transformation :transformation/thumbnail})
+                           (debug "Photo id: " (get-in oi [:order.item/photo :photo/id]))
+                           (photo/square {:photo-id       (get-in oi [:order.item/photo :photo/id])
+                                          :transformation :transformation/thumbnail})
                            (dom/p nil (dom/span nil (:db/id product))
                                   (dom/br nil)
                                   (dom/small nil (:order.item/title oi))))
@@ -226,9 +226,14 @@
                          ;  (css/add-class :order-item-info)
 
                          ;  (dom/p nil (dom/span nil (:order.item/title oi))))
-                         (grid/column nil (dom/p nil (dom/span nil (:order.item/description oi))))
+                         (grid/column
+                           (->> (grid/column-size {:small 12 :medium 3})
+                                (grid/column-order {:small 3 :medium 2}))
+                           (dom/p nil (dom/span nil (:order.item/description oi))))
                          (grid/column
                            (->> (css/text-align :right)
+                                (grid/column-order {:small 2 :medium 3})
+                                (grid/column-size {:small 6 :medium 3})
                                 (css/add-class :order-item-price))
                            (dom/p nil
                                   (ui-utils/two-decimal-price (:order.item/amount oi))))))))
@@ -361,6 +366,7 @@
                                    :order.item/amount
                                    :order.item/description
                                    :order.item/title
+                                   {:order.item/photo [:photo/id]}
                                    {:order.item/parent [:store.item.sku/variation {:store.item/_skus [:db/id :store.item/name :store.item/price]}]}]}
                     :order/amount
                     :order/status

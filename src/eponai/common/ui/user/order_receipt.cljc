@@ -111,12 +111,14 @@
                                                     {:store.profile/cover [:photo/id]}
                                                     :store.profile/email
                                                     :store.profile/tagline
-                                                    :store.profile/name]}]}]}
+                                                    :store.profile/name]}
+                                   {:store/owners [{:store.owner/user [:user/email]}]}]}]}
      {:query/auth [:user/email]}
      {:query/order-payment [:charge/id
                             :charge/source
                             :charge/created
-                            :charge/amount]}])
+                            :charge/amount
+                            :charge/amount-refunded]}])
   Object
   (render [this]
     (let [{:query/keys [current-route order order-payment auth]} (om/props this)
@@ -143,7 +145,8 @@
           (common/order-not-found this (routes/url :user/order-list route-params))
           (grid/row-column
             nil
-
+            (when (pos? (:charge/amount-refunded order-payment))
+              (dom/h3 (css/add-class :text-alert) (str (ui-utils/two-decimal-price (:charge/amount-refunded order-payment)) " refunded")))
             (dom/div
               (css/add-class :page-title)
               (photo/store-photo store {:transformation :transformation/thumbnail})
@@ -152,6 +155,7 @@
                        [
                         (dom/br nil)
                         (dom/span nil tagline)])))
+
             (dom/h1 nil "Order receipt")
             ;(dom/h1 nil (str "Order from " store-name))
             (grid/row
@@ -251,7 +255,8 @@
 
             (dom/div
               (css/add-class :contact)
-              (let [store-email (get-in store [:store/profile :store.profile/email] (:user/email auth))]
+              (let [store-email (or (get-in store [:store/profile :store.profile/email])
+                                    (get-in store [:store/owners :store.owner/user :user/email]))]
                 (dom/p nil
                        (dom/span nil "Still have questions? Contact the shop at ")
                        (dom/a {:href (when store-email (str "mailto:" store-email "?subject=SULO Live order #" (:db/id order)))} (dom/span nil store-email))

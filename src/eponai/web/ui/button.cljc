@@ -89,3 +89,6 @@
 (defn store-setting-warning [opts & content]
   (button (css/add-classes [:warning :small :hollow] opts) content))
 
+(defn store-setting-alert [opts & content]
+  (button (css/add-classes [:alert :small :hollow] opts) content))
+

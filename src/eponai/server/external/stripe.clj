@@ -270,7 +270,8 @@
        :charge/source  (:source charge)
        :charge/created (:created charge)
        :charge/amount  (f/stripe->price (:amount charge))
-       :charge/paid?   (:paid charge)}))
+       :charge/paid?   (:paid charge)
+       :charge/amount-refunded (f/stripe->price (:amount_refunded charge))}))
 
   (-create-refund [this {:keys [charge]}]
     (let [params {:charge           charge

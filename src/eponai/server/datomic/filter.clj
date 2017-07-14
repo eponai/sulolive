@@ -99,6 +99,10 @@
             (require-user user-id (fn [_ [e]] (= e user-id))))
           (store-attribute [_ store-ids]
             (require-stores store-ids (fn [_ [e]] (contains? store-ids e))))
+          (user-attribute-or-customer [user-id store-ids]
+            (filter-or (require-user user-id (fn [_ [e]] (= e user-id)))
+                       (store-path [:order/_user :order/store] store-ids)
+                       (user-path [:store.owner/_user :store/_owners :order/_store :order/user] user-id)))
 
           (stream-owner [_ store-ids]
             (store-path [:stream/store] store-ids))
@@ -128,7 +132,7 @@
      ;; TODO getting exception if :db/ident is not specified here, bug?
      :db/ident                       public-attr
 
-     :user/email                     user-attribute
+     :user/email                     user-attribute-or-customer
      :user/verified                  user-attribute
      :user/stripe                    user-attribute
      :user/cart                      user-attribute
