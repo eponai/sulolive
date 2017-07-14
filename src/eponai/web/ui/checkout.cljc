@@ -264,15 +264,28 @@
             (grid/column
               nil
               (dom/label nil "State/Province (optional)")
-              (validate/input
-                {:id           (:shipping.address/region form-inputs)
-                 :value        (:shipping.address/region address "")
-                 :name         "ship-state"
-                 :type         "text"
-                 :autoComplete "shipping region"
-                 :onChange     #(om/update-state! component update :shipping/edit-shipping assoc-in
-                                                  [:shipping/address :shipping.address/region] (.-value (.-target %)))}
-                input-validation))))
+              (if-let [regions (not-empty (sort (get ship/regions (or country-code "CA"))))]
+                (validate/select
+                  {:id           (:shipping.address/region form-inputs)
+                   :value        (or (:shipping.address/region address) "default")
+                   :name         "ship-state"
+                   :autoComplete "shipping region"
+                   :onChange     #(om/update-state! component update :shipping/edit-shipping assoc-in
+                                                    [:shipping/address :shipping.address/region] (.-value (.-target %)))}
+                  input-validation
+                  (dom/option {:value "default" :disabled true} "--- Province/State ---")
+                  (map (fn [r]
+                         (dom/option {:value r} (str r)))
+                       regions))
+                (dom/input
+                  {:id           (:shipping.address/region form-inputs)
+                   :value        (or (:shipping.address/region address) "")
+                   :name         "ship-state"
+                   :autoComplete "shipping region"
+                   :type         "text"
+                   :placeholder  "Province/State (optional)"
+                   :onChange     #(om/update-state! component update :shipping/edit-shipping assoc-in
+                                                    [:shipping/address :shipping.address/region] (.-value (.-target %)))})))))
 
         (dom/div
           nil
@@ -494,8 +507,12 @@
          (when autocomplete
            (.setComponentRestrictions autocomplete (clj->js {:country (or country-code [])}))))
       (om/update-state! this update
-                        :shipping/edit-shipping assoc-in
-                        [:shipping/address :shipping.address/country] (or country {:country/code country-code}))))
+                        :shipping/edit-shipping (fn [s]
+                                                  (cond-> (assoc-in s [:shipping/address :shipping.address/country] (or country {:country/code country-code}))
+                                                          (not-empty (get ship/regions country-code))
+                                                          (assoc-in [:shipping/address :shipping.address/region] "default")
+                                                          (empty? (get ship/regions country-code))
+                                                          (assoc-in [:shipping/address :shipping.address/region] ""))))))
   (save-shipping [this shipping]
     (let [{:query/keys [checkout]} (om/props this)
 
@@ -551,15 +568,16 @@
 
   (place-order [this payment]
     #?(:cljs
-       (let [{:query/keys [current-route checkout]} (om/props this)
+       (let [{:query/keys [taxes current-route checkout]} (om/props this)
              store (checkout-store checkout)
              {:checkout/keys [shipping]
               :shipping/keys [selected-rate]} (om/get-state this)
              subtotal (compute-subtotal checkout)
              shipping-fee (compute-shipping-fee selected-rate checkout)
-             tax-amount (compute-taxes this subtotal shipping-fee)
+             tax-amount (compute-taxes taxes subtotal shipping-fee)
              grandtotal (+ subtotal shipping-fee tax-amount)
              {:keys [source]} payment]
+
          (debug "Place order with payment: " payment)
          (let [items checkout]
            (msg/om-transact! this [(list 'store/create-order {:order    {:source        source
@@ -586,12 +604,13 @@
           shipping-rules (available-rules props current-shipping)
           country-code (get-in current-shipping [:shipping/address :shipping.address/country :country/code])
           country (when country-code (some #(when (= (:country/code %) country-code) %) countries))
-          updated-shipping (-> (merge (.default-shipping this) current-shipping)
-                               (assoc-in [:shipping/address :shipping.address/country] (or country
-                                                                                           {:country/code "CA"})))
+          updated-shipping (cond-> (assoc-in (merge (.default-shipping this) current-shipping) [:shipping/address :shipping.address/country] (or country
+                                                                                           {:country/code "CA"}))
+                                   (nil? country)
+                                   (assoc-in [:shipping/address :shipping.address/region] "default"))
 
           ]
-      (debug "UPdated shipping: " updated-shipping)
+
       {:checkout/shipping      (when (some? current-shipping) updated-shipping)
        :shipping/edit-shipping (when-not (shipping-available? shipping-rules)
                                  updated-shipping)

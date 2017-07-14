@@ -41,9 +41,7 @@
 
                                  :opt [
                                        ;:shipping.address/street2
-                                       :shipping.address/region
-                                       ]
-                                 ))
+                                       :shipping.address/region]))
 
 (s/def ::shipping (s/keys :req [:shipping/address
                                 :shipping/name]))
