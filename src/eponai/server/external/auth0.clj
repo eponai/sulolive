@@ -117,9 +117,10 @@
   (get-user [this profile]
     (when (some? (user-id profile))
       (try
-        (if (email-provider? profile)
+        (if (or (not (:email profile))
+                (email-provider? profile))
           (-get this (get-token this) ["users" (user-id profile)] nil)
-          (throw (ex-info "Not email provider account" {})))
+          (throw (ex-info "Not email provider account" {:code :continue})))
         (catch ExceptionInfo e
           (if-some [email (:email profile)]
             ;; Search user account in Auth0 with matching email
@@ -130,7 +131,8 @@
               ;; query failed (and Auth0 returns all accounts)
               (let [user (some #(when (= email (:email %)) %) accounts)]
                 (-get this (get-token this) ["users" (user-id user)] nil)))
-            (throw e))))))
+            (when-not (= :continue (:code (ex-data e)))
+              (throw e)))))))
 
   (link-user-accounts-by-id [this primary-id secondary-id]
     (if-not (= primary-id secondary-id)
