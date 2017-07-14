@@ -5,7 +5,11 @@
     [eponai.common.ui.router :as router]
     [eponai.server.ui.common :as common]
     [taoensso.timbre :refer [debug]]
-    [clojure.data.json :as json]))
+    [clojure.data.json :as json]
+    [environ.core :as env]))
+
+(defn quote-string [s]
+  (str "'" s "'"))
 
 (defui Root
   Object
@@ -21,6 +25,18 @@
           nil
           (dom/script {:src "https://www.gstatic.com/firebasejs/4.1.3/firebase.js"
                        :type common/text-javascript})
+          (when (contains? env/env :firebase-api-key)
+            (common/inline-javascript
+              ["var config = {"
+               " apiKey: " (quote-string (env/env :firebase-api-key))
+               ", authDomain: " (quote-string (env/env :firebase-auth-domain))
+               ", projectId: " (quote-string (env/env :firebase-project-id))
+               ", databaseURL: " (quote-string (env/env :firebase-database-url))
+               ", storageBucket: " (quote-string (env/env :firebase-storage-bucket))
+               ", messagingSenderId: " (quote-string (env/env :firebase-messaging-sender-id))
+               "};"
+               "firebase.initializeApp(config);"]))
+
           ;(dom/script {:src "/lib/firebase/firebase-app.js"
           ;             :type common/text-javascript})
           ;(dom/script {:src "/lib/firebase/firebase-messaging.js"

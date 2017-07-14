@@ -75,8 +75,10 @@
                                                             ;; Auth0
                                                             :auth0-client-id :auth0-domain
                                                             ;; Firebase
-                                                            :firebase-api-key :firebase-auth-domain :firebase-database-url
-                                                            :firebase-project-id :firebase-storage-bucket :firebase-messaging-sender-id])})
+                                                            ;; We're now using server side rendering instead of client side initialization
+                                                            ;:firebase-api-key :firebase-auth-domain :firebase-database-url
+                                                            ;:firebase-project-id :firebase-storage-bucket :firebase-messaging-sender-id
+                                                            ])})
    :system/datomic         (datomic/map->Datomic
                              {:db-url           (:db-url env)
                               :provided-conn    (::provided-conn config)

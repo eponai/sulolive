@@ -331,16 +331,6 @@
   (boolean (not-empty (gobj/get js/firebase "apps"))))
 
 (defn initialize [reconciler]
-  (let [{:keys [firebase-api-key firebase-auth-domain firebase-database-url
-                firebase-project-id firebase-storage-bucket firebase-messaging-sender-id]}
-        (db/singleton-value (db/to-db reconciler) :ui.singleton.client-env/env-map)]
-    (.initializeApp js/firebase #js{:apiKey            firebase-api-key
-                                    :authDomain        firebase-auth-domain
-                                    :databaseURL       firebase-database-url
-                                    :projectId         firebase-project-id
-                                    :storageBucket     firebase-storage-bucket
-                                    :messagingSenderId firebase-messaging-sender-id})
-    )
   ;; TODO enable when we want to activate Web push notifications.
   ;; We might want to think about when to ask the user's permission first.
   (comment
