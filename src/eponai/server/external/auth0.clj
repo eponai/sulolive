@@ -101,8 +101,10 @@
         (json/read-str (:body (http/delete url {:headers {"Authorization" (str token_type " " access_token)}})) :key-fn keyword))
       (catch Object r
         (let [{:keys [body]} r
-              {:keys [error error_description]} (json/read-str body :key-fn keyword)]
-          (throw (ex-info error_description {:error error :description error_description}))))))
+              _ (debug "RESPONSE: " r)
+              {:keys [error error_description]} (when body (json/read-str body :key-fn keyword))]
+          (when error_description
+            (throw (ex-info error_description {:error error :description error_description})))))))
 
   IAuth0Management
   (get-token [this]
@@ -115,7 +117,9 @@
   (get-user [this profile]
     (when (some? (user-id profile))
       (try
-        (-get this (get-token this) ["users" (user-id profile)] nil)
+        (if (email-provider? profile)
+          (-get this (get-token this) ["users" (user-id profile)] nil)
+          (throw (ex-info "Not email provider account" {})))
         (catch ExceptionInfo e
           (if-some [email (:email profile)]
             ;; Search user account in Auth0 with matching email
@@ -125,8 +129,7 @@
               ;; Get the account with matching email again, just in case the search
               ;; query failed (and Auth0 returns all accounts)
               (let [user (some #(when (= email (:email %)) %) accounts)]
-                (debug "Returning user: " user)
-                user))
+                (-get this (get-token this) ["users" (user-id user)] nil)))
             (throw e))))))
 
   (link-user-accounts-by-id [this primary-id secondary-id]
@@ -140,11 +143,14 @@
 
   (unlink-user-accounts [this primary-profile secondary-id secondary-provider]
     (let [token (get-token this)
-          primary-user (get-user this primary-profile)]
-      (info "Auth0 - Found primary user, will unlink: " primary-user)
+          primary-user (get-user this primary-profile)
+          secondary-user-id (str secondary-provider "|" secondary-id)]
+      (info "Auth0 - Found primary user, will unlink: " primary-user " secondary: " secondary-user-id)
       (when-let [primary-id (:user_id primary-user)]
-        (debug "Unlink accounts: " {:primary primary-id :secondary secondary-id :provider secondary-provider})
-        (-delete this token ["users" primary-id "identities" secondary-provider secondary-id]))))
+        (when-not (= primary-id secondary-user-id)
+          (debug "Unlink accounts: " {:primary primary-id :secondary secondary-id :provider secondary-provider})
+          (-delete this token ["users" primary-id "identities" secondary-provider secondary-id])
+          (-delete this token ["users" secondary-user-id])))))
 
   (link-with-same-email [this profile]
     (when (not-empty (:email profile))
@@ -152,7 +158,8 @@
       (let [token (get-token this)
             query-string (str "email.raw:\"" (:email profile) "\"")
             accounts (->> (-get this token ["users"] {:search_engine "v2" :q query-string})
-                          (filter #(= (:email %) (:email profile))))]
+                          (filter #(= (:email %) (:email profile)))
+                          (into [profile]))]
         (if (not-empty accounts)
           ;; Get main account with the email provider if one exists, if not we want to create one to keep as the main account.
           ;; Link all the accounts with the main account

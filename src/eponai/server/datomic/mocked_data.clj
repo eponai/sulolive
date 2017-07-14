@@ -22,7 +22,7 @@
 (defn stripe-account []
   (missing-personal-id-account))
 
-(def test-user-email "dev@sulo.live")
+(def test-user-email "dianagren@gmail.com")
 (def test-user-2-email "dev2@sulo.live")
 
 (defn photo [id]
