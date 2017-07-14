@@ -140,10 +140,13 @@
                      :not-found
                      :login
                      :link-social
-                     :unauthorized}
+                     :unauthorized
+                     }
                    route)
         (= :store-dashboard route)
-        (= (name :store-dashboard) (namespace route)))))
+        (= (name :store-dashboard) (namespace route))
+        (= :help route)
+        (= (name :help) (namespace route)))))
 
 (defn auth-roles [handler]
   (cond

@@ -111,15 +111,16 @@
                ret))})
 
 (defmutation location/suggest
-  [{:keys [state auth system] ::parser/keys [return exception]} _ {:keys [name site email]}]
+  [{:keys [state auth system] ::parser/keys [return exception]} _ {:keys [location site email]}]
   {:auth ::auth/public
    :resp {:success "Thank you! Check your inbox for a confirmation email."
           :error   (if exception (:detail (json/read-str (:body (ex-data exception)) :key-fn keyword) "") "")}}
   {:action (fn []
              (debug "location/suggest with email " email)
              (let [ret (mailchimp/subscribe (:system/mailchimp system)
-                                            {:email   email
-                                             :list-id (env/env :mailchimp-newsletter-id)})]
+                                            {:email        email
+                                             :merge-fields {"LOCATION" location}
+                                             :list-id      (env/env :mailchimp-newsletter-id)})]
                ret))})
 
 (defmutation photo/upload
