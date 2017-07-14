@@ -287,10 +287,12 @@
                        :href    (routes/url :shopping-bag)}
                       ;(dom/span (css/add-class ["icon icon-shopping-bag"]))
                       (icons/shopping-bag)
-                      (when (< 0 (count (:user.cart/items cart)))
-                        (dom/span (css/add-class :badge) (count (:user.cart/items cart))))))))))
-     ;(note/->Notifications (om/computed notification {:type :notification.type/chat}))
-     ]))
+                      (let [item-count (reduce (fn [sum sku]
+                                                 (let [store-is-open? (= :status.type/open
+                                                                         (-> sku :store.item/_skus :store/_items :store/status :status/type))]
+                                                   (if store-is-open? (inc sum) sum))) 0 (:user.cart/items cart))]
+                        (when (pos? item-count)
+                          (dom/span (css/add-class :badge) (count (:user.cart/items cart)))))))))))]))
 
 (defui Navbar
   static om/IQuery

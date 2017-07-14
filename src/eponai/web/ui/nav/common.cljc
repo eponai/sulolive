@@ -43,7 +43,8 @@
       navigation)))
 
 (defn query []
-  [{:query/cart [{:user.cart/items [:db/id]}
+  [{:query/cart [{:user.cart/items [:db/id
+                                    {:store.item/_skus [{:store/_items [{:store/status [:status/type]}]}]}]}
                  ;; To link the cart with the user.
                  {:user/_cart [:db/id]}]}
    {:query/auth [:db/id

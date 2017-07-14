@@ -8,7 +8,8 @@
     [eponai.common.format :as cf]
     [eponai.server.external.cloudinary :as cloudinary]
     [eponai.common.format.date :as date]
-    [eponai.server.log :as log]))
+    [eponai.server.log :as log]
+    [eponai.client.cart :as cart]))
 
 
 (defn create [{:keys [state auth system]} {:keys [country name locality]}]
@@ -223,7 +224,12 @@
   (let [
         {:keys [stripe/id]} (stripe/pull-stripe (db/db state) store-id)
         user-stripe (stripe/pull-user-stripe (db/db state) (:user-id auth))
-        {:keys [user/cart]} (db/pull (db/db state) [{:user/cart [:db/id]}] (:user-id auth))
+        _ (debug  "Create order for auth: " auth)
+        c (cart/find-user-cart (db/db state) (:user-id auth))
+        _ (debug "Found cart: " c)
+        {:keys [user/cart] :as user} (db/lookup-entity (db/db state) (:user-id auth))
+        _ (debug "Got user cart: " cart)
+        _ (debug "Got user: " (into {} user))
         {:keys [shipping/address]} shipping
         shipping-fee (:amount shipping-rate 0)
 
@@ -339,6 +345,7 @@
                                                                             {:shipping.address/country [:country/code]}]}]}
                                       {:store/stripe [:stripe/id]}] store-id)
         store-address (get-in store [:store/shipping :shipping/address])]
+    (debug "Got store address: " store-address)
 
     (if (some? store-address)
       store-address

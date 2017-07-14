@@ -153,144 +153,146 @@
     (debug "Edit address: " edit-shipping)
     ;(debug "All shipping rules: " (get-in store [:store/shipping :shipping/rules]))
     ;(debug "Shipping rules: " shipping-rules)
-    (if (nil? stripe-customer)
+    ;(if (nil? stripe-customer))
+    ;(dom/div
+    ;  nil
+    ;  (dom/i {:classes ["fa fa-spinner fa-pulse"]}))
+    (dom/div
+      (css/add-classes [:edit-address])
+      (grid/row
+        nil
+        (grid/column
+          nil
+          (dom/label nil "Country")
+          (dom/select
+            {:id           (:shipping.address/country form-inputs)
+             :name         "ship-country"
+             :autoComplete "shipping country"
+             :value        (or country-code "CA")
+             :onChange     #(.change-country component (.-value (.-target %)))}
+            (map (fn [c]
+                   (dom/option {:value (:country/code c)} (:country/name c)))
+                 (sort-by :country/name countries)))
+          (when-not (shipping-available? shipping-rules)
+            (callout/callout-small
+              (->> (css/add-class :sulo-dark)
+                   (css/text-align :center))
+              (dom/small nil (str "Sorry, " (get-in store [:store/profile :store.profile/name]) " doesn't ship to this country."))))))
+
+      (grid/row
+        nil
+        (grid/column
+          nil
+          (dom/label nil "Full name")
+          (validate/input
+            {:id           (:shipping/name form-inputs)
+             :type         "text"
+             :name         "name"
+             :autoComplete "name"
+             :value        (or shipping-name "")
+             :onChange     #(om/update-state! component update :shipping/edit-shipping assoc :shipping/name (.-value (.-target %)))
+             }
+            input-validation)))
+
       (dom/div
         nil
-        (dom/i {:classes ["fa fa-spinner fa-pulse"]}))
-      (dom/div
-        (css/add-classes [:edit-address])
         (grid/row
           nil
           (grid/column
             nil
-            (dom/label nil "Country")
-            (dom/select
-              {:id           (:shipping.address/country form-inputs)
-               :name         "ship-country"
-               :autoComplete "shipping country"
-               :value        (or country-code "CA")
-               :onChange     #(.change-country component (.-value (.-target %)))}
-              (map (fn [c]
-                     (dom/option {:value (:country/code c)} (:country/name c)))
-                   (sort-by :country/name countries)))
-            (when-not (shipping-available? shipping-rules)
-              (callout/callout-small
-                (->> (css/add-class :sulo-dark)
-                     (css/text-align :center))
-                (dom/small nil (str "Sorry, " (get-in store [:store/profile :store.profile/name]) " doesn't ship to this country."))))))
-
-        (grid/row
-          nil
-          (grid/column
-            nil
-            (dom/label nil "Full name")
-            (validate/input
-              {:id           (:shipping/name form-inputs)
-               :type         "text"
-               :name         "name"
-               :autoComplete "name"
-               :value        (or shipping-name "")
-               :onChange     #(om/update-state! component update :shipping/edit-shipping assoc :shipping/name (.-value (.-target %)))
-               }
-              input-validation)))
-
+            (dom/input {:id           "sulo-auto-complete"
+                        :placeholder  "Enter address..."
+                        :type         "text"
+                        :defaultValue ""})))
+        (dom/hr nil)
         (dom/div
           nil
+
+
+          (grid/row
+            nil
+            (grid/column
+              (grid/column-size {:small 12 :medium 8})
+              (dom/label nil "Address")
+              (validate/input
+                {:id           (:shipping.address/street form-inputs)
+                 :type         "text"
+                 :value        (:shipping.address/street address "")
+                 :onChange     #(om/update-state! component update :shipping/edit-shipping assoc-in
+                                                  [:shipping/address :shipping.address/street] (.-value (.-target %)))
+                 :name         "ship-address"
+                 :autoComplete "shipping address-line1"}
+                input-validation))
+            (grid/column
+              (grid/column-size {:small 12 :medium 4})
+              (dom/label nil "Apt/Suite/Other (optional)")
+              (validate/input
+                {:type     "text"
+                 :id       (:shipping.address/street2 form-inputs)
+                 :value    (:shipping.address/street2 address "")
+                 :onChange #(om/update-state! component update :shipping/edit-shipping assoc-in
+                                              [:shipping/address :shipping.address/street2] (.-value (.-target %)))
+                 }
+                input-validation)))
           (grid/row
             nil
             (grid/column
               nil
-              (dom/input {:id           "sulo-auto-complete"
-                          :placeholder  "Enter address..."
-                          :type         "text"
-                          :defaultValue ""})))
-          (dom/hr nil)
-          (dom/div
-            nil
-
-
-            (grid/row
+              (dom/label nil "Postal code")
+              (validate/input
+                {:id           (:shipping.address/postal form-inputs)
+                 :type         "text"
+                 :name         "ship-zip"
+                 :autoComplete "shipping postal-code"
+                 :value        (:shipping.address/postal address "")
+                 :onChange     #(om/update-state! component update :shipping/edit-shipping assoc-in
+                                                  [:shipping/address :shipping.address/postal] (.-value (.-target %)))
+                 }
+                input-validation))
+            (grid/column
+              (grid/column-size {:small 12 :large 4})
+              (dom/label nil "City")
+              (validate/input
+                {:type         "text"
+                 :id           (:shipping.address/locality form-inputs)
+                 :value        (:shipping.address/locality address "")
+                 :name         "ship-city"
+                 :autoComplete "shipping locality"
+                 :onChange     #(om/update-state! component update :shipping/edit-shipping assoc-in
+                                                  [:shipping/address :shipping.address/locality] (.-value (.-target %)))}
+                input-validation))
+            (grid/column
               nil
-              (grid/column
-                (grid/column-size {:small 12 :medium 8})
-                (dom/label nil "Address")
-                (validate/input
-                  {:id           (:shipping.address/street form-inputs)
-                   :type         "text"
-                   :value        (:shipping.address/street address "")
-                   :onChange     #(om/update-state! component update :shipping/edit-shipping assoc-in
-                                                    [:shipping/address :shipping.address/street] (.-value (.-target %)))
-                   :name         "ship-address"
-                   :autoComplete "shipping address-line1"}
-                  input-validation))
-              (grid/column
-                (grid/column-size {:small 12 :medium 4})
-                (dom/label nil "Apt/Suite/Other (optional)")
-                (validate/input
-                  {:type     "text"
-                   :id       (:shipping.address/street2 form-inputs)
-                   :value    (:shipping.address/street2 address "")
-                   :onChange #(om/update-state! component update :shipping/edit-shipping assoc-in
-                                                [:shipping/address :shipping.address/street2] (.-value (.-target %)))
-                   }
-                  input-validation)))
-            (grid/row
-              nil
-              (grid/column
-                nil
-                (dom/label nil "Postal code")
-                (validate/input
-                  {:id           (:shipping.address/postal form-inputs)
-                   :type         "text"
-                   :name         "ship-zip"
-                   :autoComplete "shipping postal-code"
-                   :value        (:shipping.address/postal address "")
-                   :onChange     #(om/update-state! component update :shipping/edit-shipping assoc-in
-                                                    [:shipping/address :shipping.address/postal] (.-value (.-target %)))
-                   }
-                  input-validation))
-              (grid/column
-                (grid/column-size {:small 12 :large 4})
-                (dom/label nil "City")
-                (validate/input
-                  {:type         "text"
-                   :id           (:shipping.address/locality form-inputs)
-                   :value        (:shipping.address/locality address "")
-                   :name         "ship-city"
-                   :autoComplete "shipping locality"
-                   :onChange     #(om/update-state! component update :shipping/edit-shipping assoc-in
-                                                    [:shipping/address :shipping.address/locality] (.-value (.-target %)))}
-                  input-validation))
-              (grid/column
-                nil
-                (dom/label nil "State/Province (optional)")
-                (validate/input
-                  {:id           (:shipping.address/region form-inputs)
-                   :value        (:shipping.address/region address "")
-                   :name         "ship-state"
-                   :type         "text"
-                   :autoComplete "shipping region"
-                   :onChange     #(om/update-state! component update :shipping/edit-shipping assoc-in
-                                                    [:shipping/address :shipping.address/region] (.-value (.-target %)))}
-                  input-validation))))
+              (dom/label nil "State/Province (optional)")
+              (validate/input
+                {:id           (:shipping.address/region form-inputs)
+                 :value        (:shipping.address/region address "")
+                 :name         "ship-state"
+                 :type         "text"
+                 :autoComplete "shipping region"
+                 :onChange     #(om/update-state! component update :shipping/edit-shipping assoc-in
+                                                  [:shipping/address :shipping.address/region] (.-value (.-target %)))}
+                input-validation))))
 
+        (dom/div
+          nil
+          (when input-validation
+            (dom/p
+              (css/text-align :center)
+              (dom/small (css/add-class :text-alert) "You have errors that need to be fixed before continuing")))
           (dom/div
-            nil
-            (when input-validation
-              (dom/p
-                (css/text-align :center)
-                (dom/small (css/add-class :text-alert) "You have errors that need to be fixed before continuing")))
-            (dom/div
-              (css/add-class :action-buttons)
-              (when (not-empty current-shipping)
-                (button/cancel
-                  {:onClick #(om/update-state! component dissoc :shipping/edit-shipping)}
-                  (dom/span nil "Cancel")))
-              (button/save
-                {:onClick #(.save-shipping component edit-shipping)}
-                (if (not-empty edit-shipping)
-                  (dom/span nil "Update address")
-                  (dom/span nil "Save address"))))))))))
+            (css/add-class :action-buttons)
+            (when (not-empty current-shipping)
+              (button/cancel
+                {:onClick #(om/update-state! component dissoc :shipping/edit-shipping)}
+                (dom/span nil "Cancel")))
+            (button/save
+              (cond-> {:onClick #(.save-shipping component edit-shipping)}
+                      (not (shipping-available? shipping-rules))
+                      (assoc :disabled true))
+              (if (not-empty current-shipping)
+                (dom/span nil "Update address")
+                (dom/span nil "Next")))))))))
 
 (defn render-shipping-details [component]
   (let [{:query/keys [checkout stripe-customer]} (om/props component)
@@ -441,6 +443,13 @@
 
         ))))
 
+(defn read-taxes [component shipping subtotal]
+  (om/transact! (om/get-reconciler component) [(list {:query/taxes
+                                                      [:taxes/id :taxes/rate :taxes/freight-taxable?]}
+                                                     {:destination shipping
+                                                      :subtotal    subtotal
+                                                      :shipping    10})]))
+
 (defui Checkout-no-loader
   static om/IQuery
   (query [_]
@@ -456,7 +465,10 @@
                                                            {:store/shipping [{:shipping/rules [
                                                                                                ;:shipping.rule/pickup?
                                                                                                {:shipping.rule/destinations [:country/code]}
-                                                                                               {:shipping.rule/rates [:shipping.rate/title]}]}]}
+                                                                                               {:shipping.rule/rates [:shipping.rate/first
+                                                                                                                      :shipping.rate/additional
+                                                                                                                      :shipping.rate/free-above
+                                                                                                                      :shipping.rate/title]}]}]}
                                                            {:store/profile [:store.profile/name
                                                                             {:store.profile/photo [:photo/id]}]}]}]}]}
 
@@ -494,11 +506,7 @@
       (debug "validation: " validation)
       (when (shipping-available? shipping-rules)
         (when (nil? validation)
-          (om/transact! (om/get-reconciler this) [(list {:query/taxes
-                                                         [:taxes/id :taxes/rate :taxes/freight-taxable?]}
-                                                        {:destination shipping
-                                                         :subtotal    subtotal
-                                                         :shipping    10})]))
+          (read-taxes this shipping subtotal))
         (om/update-state! this (fn [st]
                                  (cond-> (assoc st :input-validation validation)
                                          (nil? validation)
@@ -537,7 +545,9 @@
            (do
              (msg/om-transact! this [(list 'stripe/update-customer {:source source})])
              (om/update-state! this assoc :loading/message "Validating card..."))
-           (.place-order this selected-card)))))
+           (do
+             (debug "USing old card: " selected-card)
+             (.place-order this selected-card))))))
 
   (place-order [this payment]
     #?(:cljs
@@ -550,6 +560,7 @@
              tax-amount (compute-taxes this subtotal shipping-fee)
              grandtotal (+ subtotal shipping-fee tax-amount)
              {:keys [source]} payment]
+         (debug "Place order with payment: " payment)
          (let [items checkout]
            (msg/om-transact! this [(list 'store/create-order {:order    {:source        source
                                                                          :shipping      shipping
@@ -564,25 +575,26 @@
          (om/update-state! this assoc :loading/message "Placing your order..."))))
 
   (default-shipping [this]
-    {:shipping/name ""
-     :shipping/address {:shipping.address/street ""
-                        :shipping.address/postal ""
+    {:shipping/name    ""
+     :shipping/address {:shipping.address/street   ""
+                        :shipping.address/postal   ""
                         :shipping.address/locality ""
-                        :shipping.address/country {:country/code "CA"}}})
+                        :shipping.address/country  {:country/code "CA"}}})
   (initial-state [this props]
     (let [{:query/keys [stripe-customer countries]} props
           current-shipping (:stripe/shipping stripe-customer)
           shipping-rules (available-rules props current-shipping)
           country-code (get-in current-shipping [:shipping/address :shipping.address/country :country/code])
           country (when country-code (some #(when (= (:country/code %) country-code) %) countries))
-          updated-shipping (assoc-in current-shipping [:shipping/address :shipping.address/country] (or country
-                                                                                                        {:country/code "CA"}))]
+          updated-shipping (-> (merge (.default-shipping this) current-shipping)
+                               (assoc-in [:shipping/address :shipping.address/country] (or country
+                                                                                           {:country/code "CA"})))
+
+          ]
       (debug "UPdated shipping: " updated-shipping)
-      {:checkout/shipping      updated-shipping
-       ;(merge-with merge (.default-shipping this) updated-shipping)
-       :shipping/edit-shipping updated-shipping
-                               ;(when-not (shipping-available? shipping-rules)
-                               ;  (merge-with merge (.default-shipping this) updated-shipping))
+      {:checkout/shipping      (when (some? current-shipping) updated-shipping)
+       :shipping/edit-shipping (when-not (shipping-available? shipping-rules)
+                                 updated-shipping)
        }))
 
   (componentDidUpdate [this _ _]
@@ -623,23 +635,29 @@
               (routes/set-url! this :user/order {:order-id (:db/id message) :user-id (:db/id auth)}))
             ;; If order was unsuccessful, let's get the pending payment we added above and remove it from the customer.
             (let [{:checkout/keys [pending-payment]} (om/get-state this)]
-              (msg/om-transact! this [(list 'stripe/update-customer {:remove-source (:source pending-payment)})])
+              (when pending-payment
+                (msg/om-transact! this [(list 'stripe/update-customer {:remove-source (:source pending-payment)})]))
               (om/update-state! this assoc :error-message message :loading/message nil)))))))
 
   (componentDidMount [this]
     #?(:cljs
        (let [init-state (.initial-state this (om/props this))
-             country (get-in init-state [:checkout/shipping :shipping/address :shipping.address/country :country/code])
+             {:query/keys [checkout stripe-customer]} (om/props this)
+             country (or (get-in init-state [:checkout/shipping :shipping/address :shipping.address/country :country/code])
+                         (get-in init-state [:shipping/edit-shipping :shipping/address :shipping.address/country :country/code]))
              card (stripe/card-element (shared/by-key this :shared/stripe) (str "#" (:payment.stripe/card form-inputs)))
              autocomplete (places/mount-places-address-autocomplete
                             {:element-id "sulo-auto-complete"
                              :on-change  (fn [address]
                                            (om/update-state! this assoc-in [:shipping/edit-shipping :shipping/address] address))})]
+         (debug "Setting GOogle country: " country)
          (.setComponentRestrictions autocomplete (clj->js {:country (or country [])}))
          (om/update-state! this merge
                            init-state
                            {:card         card
-                            :autocomplete autocomplete}))))
+                            :autocomplete autocomplete})
+         (when (some? (:stripe/shipping stripe-customer))
+           (read-taxes this (:checkout/shipping init-state) (compute-subtotal checkout))))))
 
   (initLocalState [this]
     (.initial-state this (om/props this)))
@@ -653,6 +671,7 @@
           tax-amount (compute-taxes taxes subtotal shipping-fee)
           grandtotal (+ subtotal shipping-fee tax-amount)
           ]
+      (debug "Checkout state: " (om/get-state this))
 
       (dom/div
         nil
@@ -681,12 +700,11 @@
                (css/text-align :center {:id "card-errors"})
                ;(dom/small nil (or error payment-error))
                )])
-          )))
-    )
+          ))))
   static script-loader/IRenderLoadingScripts
   (render-while-loading-scripts [this props]
     (dom/div
-      {:id     "sulo-checkout"}
+      {:id "sulo-checkout-loading"}
       (dom/i {:classes ["fa fa-spinner fa-pulse"]}))))
 
 (def Checkout (script-loader/stripe-loader

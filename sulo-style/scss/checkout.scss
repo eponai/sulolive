@@ -1,4 +1,16 @@
 #sulo-checkout {
+	position: relative;
+	#sulo-checkout-loading {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: $dark-gray;
+		position: absolute;
+		top: $navbar-height;
+		bottom: 0;
+		left: 0;
+		right: 0;
+	}
 	background: rgba($primary-color, 0.03);
 	.row {
 		max-width: $user-dashboard-max-width;

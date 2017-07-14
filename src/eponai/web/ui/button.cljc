@@ -6,6 +6,9 @@
 (defn button [opts & content]
   (dom/a (css/add-class :button opts) content))
 
+(defn button-cta [opts & content]
+  (button (css/add-class :sulo-dark opts) content))
+
 (defn button-small [opts & content]
   (button (css/add-class :small opts) content))
 
