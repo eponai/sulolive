@@ -181,7 +181,8 @@
         (client.cart/remove-cart reconciler)
         (binding [parser/*parser-allow-local-read* false]
           (om/transact! reconciler `[(shopping-bag/add-items ~{:skus (vec skus)})
-                                     {:query/cart [{:user.cart/items ~skus-pattern}]}])))
+                                     {:query/cart [{:user.cart/items ~skus-pattern}
+                                                   {:user/_cart [:db/id]}]}])))
       (do (debug "User was not logged in. Restoring cart.")
           (client.cart/restore-cart reconciler)
           (when (seq skus)
@@ -340,7 +341,7 @@
   (run (merge {
                :shared/auth0    :env/dev
                :shared/firebase :env/prod
-               :shared/photos   :env/prod
+               :shared/photos   :env/dev
                :shared/login    (auth/login reconciler-atom)
                :shared/modules  (modules/dev-modules router/routes)
                }

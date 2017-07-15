@@ -139,7 +139,8 @@
                (when (some? selected-sku)
                  (mixpanel/track "Add product to bag")
                  (om/transact! this `[(shopping-bag/add-items ~{:skus [selected-sku]})
-                                      {:query/cart [:user.cart/items]}])
+                                      {:query/cart [{:user.cart/items [:db/id]}
+                                                    {:user/_cart [:db/id]}]}])
                  (om/update-state! this assoc :added-to-bag? true)))))
   (componentDidMount [this]
     (.select-photo this 0))

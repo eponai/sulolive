@@ -132,7 +132,8 @@
 (defui ShoppingBag
   static om/IQuery
   (query [_]
-    [{:query/cart [{:user.cart/items [:store.item.sku/variation
+    [{:query/cart [{:user/_cart [:db/id]}
+                   {:user.cart/items [:store.item.sku/variation
                                       :db/id
                                       :store.item.sku/inventory
                                       {:store.item/_skus [:store.item/price
