@@ -22,8 +22,7 @@
               nil
               (menu/item nil (dom/a {:href (routes/url :help)}
                                     (dom/span nil "SULO Live support")))
-              (menu/item nil (dom/a {:href (routes/url :help/accounts)}
-                                    (dom/span nil "Accounts"))))))
+              (menu/item nil (dom/span nil "Accounts")))))
         (grid/row-column
           nil
           (dom/h1 nil (dom/span nil "Accounts") (dom/br nil) (dom/small nil "Managing your SULO Live account"))

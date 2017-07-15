@@ -15,8 +15,20 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.client.routes :as routes]
     [eponai.web.ui.help.accounts :as accounts]
+    [eponai.web.ui.help.welcome :as welcome]
     [eponai.web.ui.help.stores :as stores]
     [eponai.web.ui.photo :as photo]))
+
+(defn render-contact-us []
+  (grid/row-column
+    nil
+    (callout/callout
+      (css/add-class :still-questions)
+      (dom/h2 nil "Still have questions?")
+      (dom/p nil
+             (dom/span nil "Contact us ")
+             (dom/a {:href "mailto:hello@sulo.live"} "hello@sulo.live")
+             (dom/span nil ". Miriam, Diana or Petter will help you out.")))))
 
 (defn render-guide [route]
   (let [{:keys [guide anchor-text factory]} (get stores/guides route)]
@@ -49,13 +61,7 @@
         ;  nil)
         (factory)
 
-        (callout/callout
-          nil
-          (dom/h2 nil "Still have questions?")
-          (dom/p nil
-                 (dom/span nil "Contact us ")
-                 (dom/a {:href "mailto:hello@sulo.live"} "hello@sulo.live")
-                 (dom/span nil ". Miriam, Diana or Petter will help you out.")))))))
+        (render-contact-us)))))
 
 (defui Help
   static om/IQuery
@@ -89,44 +95,37 @@
                        {:href (routes/url :help/welcome)}
                        (callout/callout-small
                          nil
-                         (photo/square {:src "//p6.zdassets.com/hc/theme_assets/224203/200019615/201998438.svg"})
-                         (dom/strong nil "Welcome"))))
+                         ;(dom/i {:classes [:fa :fa-user]})
+                         (photo/square {:photo-id "static/welcome"})
+                         (dom/h3 nil "Welcome"))))
                    (grid/column
                      (css/add-class :sulo-help-section)
                      (dom/a
                        {:href (routes/url :help/accounts)}
                        (callout/callout-small
                          nil
-                         (photo/square {:src "//p6.zdassets.com/hc/theme_assets/224203/200019615/201998438.svg"})
-                         (dom/strong nil "Accounts"))))
+                         ;(dom/i {:classes [:fa :fa-user :fa-4x]})
+                         (photo/square {:photo-id "static/help-profile"})
+                         (dom/h3 nil "Accounts"))))
                    (grid/column
                      (css/add-class :sulo-help-section)
                      (dom/a
                        {:href (routes/url :help/stores)}
                        (callout/callout-small
                          nil
-                         (photo/square {:src "//p6.zdassets.com/hc/theme_assets/224203/200019615/201998438.svg"})
-                         (dom/strong nil "Stores")))))]
+                         (photo/square {:photo-id "static/help-store"})
+                         (dom/h3 nil "Stores")))))]
                 (= route :help/welcome)
-                [(callout/callout-small
-                   (css/add-class :help-menu)
-                   (grid/row-column
-                     nil
-                     (menu/breadcrumbs
-                       nil
-                       (menu/item nil (dom/a {:href (routes/url :help)}
-                                             (dom/span nil "SULO Live support")))
-                       (menu/item nil (dom/a {:href (routes/url :help/welcome)}
-                                             (dom/span nil "Welcome"))))))
-                 (grid/row-column
-                   nil
-                   (dom/h1 nil "Welcome"))]
+                [(welcome/->Welcome)
+                 (render-contact-us)]
 
                 (= route :help/stores)
-                (stores/->Stores (om/computed {} {:current-route current-route}))
+                [(stores/->Stores (om/computed {} {:current-route current-route}))
+                 (render-contact-us)]
 
                 (= route :help/accounts)
-                (accounts/->Accounts)))
+                [(accounts/->Accounts)
+                 (render-contact-us)]))
         ))))
 
 (def ->Help (om/factory Help))

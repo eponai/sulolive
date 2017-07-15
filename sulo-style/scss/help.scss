@@ -10,7 +10,7 @@
 	}
 	.row {
 		&.sulo-help-sections {
-			max-width: $dashboard-content-width;
+			// max-width: $dashboard-content-width;
 		}
 		&.expanded {
 			.photo-container {
@@ -29,6 +29,10 @@
 		}
 		:first-child {
 			margin-top: 0;
+		}
+		&.still-questions {
+			margin-top: 2rem;
+			background: transparent;
 		}
 	}
 	.callout.help-menu {
@@ -49,9 +53,8 @@
 		}
 		a {
 			text-align: center;
-			.photo-container {
-				margin-bottom: $global-margin;
-
+			h3 {
+				margin: 0;
 			}
 			.callout {
 				padding: $global-padding;
@@ -71,7 +74,9 @@
 		}
 		section {
 			border-top: $global-border;
-			border-bottpm: $global-border;
+			&:last-child {
+				border-bottom: $global-border;
+			}
 			margin: 0;
 			overflow: hidden;
 			.help-item-content {

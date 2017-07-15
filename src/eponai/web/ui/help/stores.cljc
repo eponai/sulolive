@@ -43,7 +43,6 @@
   (render [this]
     (let [{:keys [current-route]} (om/get-computed this)
           {:keys [route]} current-route]
-      (debug "Route: " route)
       (dom/div
         nil
         (callout/callout-small
@@ -54,8 +53,7 @@
               nil
               (menu/item nil (dom/a {:href (routes/url :help)}
                                     (dom/span nil "SULO Live support")))
-              (menu/item nil (dom/a {:href (routes/url :help/stores)}
-                                    (dom/span nil "Stores"))))))
+              (menu/item nil (dom/span nil "Stores")))))
         (grid/row-column
           nil
           (dom/h1 nil (dom/span nil "Stores") (dom/br nil) (dom/small nil "Managing your SULO Live store"))
@@ -106,6 +104,13 @@
                   (->> {:href (routes/url :help/taxes)}
                        (css/add-class :header))
                   (dom/h3 nil (dom/span nil (-> guides :help/taxes :anchor-text))))
+                )
+              (dom/section
+                nil
+                (dom/a
+                  (->> {:href (routes/url :help/faq)}
+                       (css/add-class :header))
+                  (dom/h3 nil (dom/span nil (-> guides :help/faq :anchor-text))))
                 ))))))))
 
 (def ->Stores (om/factory Stores))
