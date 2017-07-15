@@ -63,8 +63,10 @@
          tx (when-not (nil? tx)
               (cond->> tx (not (vector? tx)) (vector)))
          reads-fn (fn []
-                    (om/get-query (om/app-root reconciler))
-                    )
+                    [:query/current-route
+                     {root-route-key
+                      {(normalize-route route)
+                       (om/get-query (:component (route->component route)))}}])
          tx (cond-> [(list 'routes/set-route! {:route        route
                                                :route-params route-params
                                                :query-params query-params})]
