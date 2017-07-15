@@ -9,6 +9,7 @@
     [taoensso.timbre :refer [debug error warn]]
     [datascript.core :as d]
     [eponai.common.database :as db]
+    [eponai.server.middleware :as middleware]
     [taoensso.timbre :as timbre]
     [suspendable.core :as suspendable]))
 
@@ -159,15 +160,17 @@
       this
       (let [{:keys [ch-recv] :as sente} (sente/make-channel-socket!
                                           (sente.aleph/get-sch-adapter)
-                                          {:packer     (sente-transit/get-transit-packer)
-                                           :user-id-fn (fn [{:keys [client-id] :as ring-req}]
-                                                         ;; client-id is assoc'ed by sente
-                                                         ;; before calling this fn.
-                                                         client-id
-                                                         ;; TODO: Figure out if we want the uid to be the same for
-                                                         ;; all users for some reason with this code:
-                                                         ;; (get-in ring-req [:identity :email])
-                                                         )})
+                                          {:packer        (sente-transit/get-transit-packer)
+                                           :csrf-token-fn (fn [request]
+                                                            (::middleware/anti-forgery-token request))
+                                           :user-id-fn    (fn [{:keys [client-id] :as ring-req}]
+                                                            ;; client-id is assoc'ed by sente
+                                                            ;; before calling this fn.
+                                                            client-id
+                                                            ;; TODO: Figure out if we want the uid to be the same for
+                                                            ;; all users for some reason with this code:
+                                                            ;; (get-in ring-req [:identity :email])
+                                                            )})
             control-chan (async/chan 1)
             subscription-store (atom (datascript-subscription-store))
             sends-chan (<send-store-ids-to-clients sente control-chan (chat/chat-update-stream chat) subscription-store)]

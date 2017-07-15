@@ -9,6 +9,7 @@
     [eponai.server.middleware :as m]
     [ring.util.response :as r]
     [ring.util.request :as ring.request]
+    [ring.middleware.anti-forgery :as anti-forgery]
     [bidi.bidi :as bidi]
     [bidi.ring :as bidi.ring]
     [eponai.common.routes :as common.routes]
@@ -33,7 +34,8 @@
     [eponai.common.location :as location]
     [cemerick.url :as url]
     [medley.core :as medley]
-    [eponai.common.format :as f]))
+    [eponai.common.format :as f]
+    [compojure.core :as compojure]))
 
 (defn html [& path]
   (-> (clj.string/join "/" path)
@@ -213,6 +215,15 @@
       (auth/restrict (auth/bidi-route-restrictions route))))
 
 (defroutes
+  websocket-routes
+  (GET "/ws/chat" {::m/keys [system] :as request}
+    (websocket/handle-get-request (:system/chat-websocket system)
+                                  (assoc request ::m/anti-forgery-token anti-forgery/*anti-forgery-token*)))
+
+  (POST "/ws/chat" {::m/keys [system] :as request}
+    (websocket/handler-post-request (:system/chat-websocket system) request)))
+
+(defroutes
   member-routes
   ;; Hooks in bidi routes with compojure.
   ;; TODO: Cache the handlers for each route.
@@ -254,11 +265,8 @@
                                           :release?      false})))
 
   ;; Websockets
-  (GET "/ws/chat" {::m/keys [system] :as request}
-    ()
-    (websocket/handle-get-request (:system/chat-websocket system) request))
-  (POST "/ws/chat" {::m/keys [system] :as request}
-    (websocket/handler-post-request (:system/chat-websocket system) request))
+  ;; sente websockets require ring's anti-forgery middleware which we don't have for the other
+  ;; requests.
 
   ;; Webhooks
   (POST "/stripe/connected" request (r/response (let [event (:body request)]
@@ -275,6 +283,13 @@
                                            :logger        (::m/logger request)
                                            :webhook-event event}
                                          (get-in event [:data :object])))))
+  (context "/" []
+    (compojure/wrap-routes
+      websocket-routes
+      (fn [handler]
+        (anti-forgery/wrap-anti-forgery handler
+                                        {:read-token (fn [request]
+                                                       (get-in request [:params :csrf-token]))}))))
 
   (context "/" [:as request]
     member-routes
