@@ -604,7 +604,8 @@
                      "Someting went wrong!")}}
   {:action (fn []
              (debug "In send-message.")
-             (chat/write-message (:system/chat system) store user text)
+             (let [message (c/substring text 0 500)]
+               (chat/write-message (:system/chat system) store user message))
              (let [user-entity (db/lookup-entity (db/db state) (:db/id user))
                    store-entity (db/lookup-entity (db/db state) (:db/id store))
                    {:keys [store/owners]} (db/pull (db/db state) [{:store/owners [:store.owner/user]}] (:db/id store))]
@@ -615,7 +616,7 @@
                                  {:title    (c/substring (get-in store-entity [:store/profile :store.profile/name]) 0 20)
                                   :subtitle (str (c/substring (get-in user-entity [:user/profile :user.profile/name] "anonymous") 0 20) " wrote:")
                                   :type     :notification.type/chat
-                                  :message  text})))
+                                  :message  (c/substring text 0 100)})))
              nil)})
 
 (defmutation store/update-order

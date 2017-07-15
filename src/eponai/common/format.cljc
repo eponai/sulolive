@@ -10,7 +10,8 @@
        [goog.crypt :as crypt])
     ;[datascript.core :as datascript]
     ;[datascript.db]
-    [taoensso.timbre :refer [debug error info warn]])
+    [taoensso.timbre :refer [debug error info warn]]
+    [eponai.common :as c])
   #?(:clj
      (:import
        (java.util UUID))))
@@ -198,9 +199,9 @@
         message-id (db/tempid :db.part/user)]
     (-> [{:db/id      chat-id
           :chat/store (:db/id store)}
-         {:db/id             message-id
-          :chat.message/user (select-keys user [:db/id])
-          :chat.message/text text
+         {:db/id                   message-id
+          :chat.message/user       (select-keys user [:db/id])
+          :chat.message/text       (c/substring text 0 500)
           :chat.message/created-at (date/current-millis)}
          [:db/add chat-id :chat/messages message-id]]
         (with-meta {::message-id message-id
