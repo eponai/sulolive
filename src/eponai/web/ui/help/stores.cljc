@@ -60,6 +60,33 @@
 
           (callout/callout
             nil
+            (dom/h2 nil "General")
+            (dom/div
+              (css/add-class :help-items)
+              (dom/section
+                nil
+                (dom/a
+                  (->> {:href (routes/url :help/shipping-rules)}
+                       (css/add-class :header))
+                  (dom/h3 nil (dom/span nil (-> guides :help/shipping-rules :anchor-text))))
+                )
+
+              (dom/section
+                nil
+                (dom/a
+                  (->> {:href (routes/url :help/taxes)}
+                       (css/add-class :header))
+                  (dom/h3 nil (dom/span nil (-> guides :help/taxes :anchor-text))))
+                )
+              (dom/section
+                nil
+                (dom/a
+                  (->> {:href (routes/url :help/faq)}
+                       (css/add-class :header))
+                  (dom/h3 nil (dom/span nil (-> guides :help/faq :anchor-text))))
+                ))
+
+
             (dom/h2 nil "Live streaming")
 
             (dom/div
@@ -85,32 +112,6 @@
                   (->> {:href (routes/url :help/quality)}
                        (css/add-class :header))
                   (dom/h3 nil (dom/span nil (-> guides :help/quality :anchor-text))))
-                ))
-
-            (dom/h2 nil "General")
-            (dom/div
-              (css/add-class :help-items)
-              (dom/section
-                nil
-                (dom/a
-                  (->> {:href (routes/url :help/shipping-rules)}
-                       (css/add-class :header))
-                  (dom/h3 nil (dom/span nil (-> guides :help/shipping-rules :anchor-text))))
-                )
-
-              (dom/section
-                nil
-                (dom/a
-                  (->> {:href (routes/url :help/taxes)}
-                       (css/add-class :header))
-                  (dom/h3 nil (dom/span nil (-> guides :help/taxes :anchor-text))))
-                )
-              (dom/section
-                nil
-                (dom/a
-                  (->> {:href (routes/url :help/faq)}
-                       (css/add-class :header))
-                  (dom/h3 nil (dom/span nil (-> guides :help/faq :anchor-text))))
                 ))))))))
 
 (def ->Stores (om/factory Stores))

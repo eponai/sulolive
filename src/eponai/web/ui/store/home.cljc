@@ -313,10 +313,8 @@
           (dom/h2 nil "Questions?"))
         (callout/callout
           nil
-          (dom/p nil
-                 (dom/span nil "We love to hear from you! Give us feedback, report problems, or just say hi, at ")
-                 (dom/a {:href "mailto:hello@sulo.live"} "hello@sulo.live")
-                 (dom/span nil ". Miriam, Diana or Petter will help you out.")))
+          (dom/p nil (dom/span nil "If you run into problems, checkout ")
+                 (dom/a {:href (routes/url :help)} (dom/span nil "SULO Live help center"))))
 
 
 

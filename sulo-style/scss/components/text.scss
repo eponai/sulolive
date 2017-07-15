@@ -5,7 +5,11 @@ p > a {
 	// 	text-decoration: underline;
 	// 	color: darken($color, 10%);
 	// }
+	color: $sulo-dark-color;
 	font-weight: $global-weight-bold;
+	&:hover {
+		color: darken($sulo-dark-color, 10%);
+	}
 }
 
 #sulo-landing {

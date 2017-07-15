@@ -26,8 +26,8 @@
       (css/add-class :still-questions)
       (dom/h2 nil "Still have questions?")
       (dom/p nil
-             (dom/span nil "Contact us ")
-             (dom/a {:href "mailto:hello@sulo.live"} "hello@sulo.live")
+             (dom/span nil "Don't hesitate to contact us ")
+             (dom/a {:href "mailto:help@sulo.live"} "help@sulo.live")
              (dom/span nil ". Miriam, Diana or Petter will help you out.")))))
 
 (defn render-guide [route]

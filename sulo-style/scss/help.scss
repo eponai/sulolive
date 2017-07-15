@@ -73,9 +73,9 @@
 			}
 		}
 		section {
-			border-top: $global-border;
+			border-bottom: $global-border-secondary;
 			&:last-child {
-				border-bottom: $global-border;
+				// border-bottom: none;
 			}
 			margin: 0;
 			overflow: hidden;
@@ -105,7 +105,9 @@
 	}
 
 	h2 {
-		margin-top: 2rem;
+		// margin-top: 2rem;
+		margin: 0;
+		margin-top: 4rem;
 		font-weight: normal;
 		color: $dark-gray;
 		// text-transform: none;
