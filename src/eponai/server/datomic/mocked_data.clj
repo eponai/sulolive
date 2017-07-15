@@ -150,6 +150,7 @@
                         :store.item/category [:category/path (category-path "jewelry" "women")]}]
     :store/owners     {:store.owner/user {:db/id        (db/tempid :db.part/user)
                                           :user/email   test-user-email
+                                          :user/verified true
                                           :user/profile {:user.profile/name "dev"}
                                           :user/stripe  {:stripe/id "cus_A9paOisnJJQ0wS"}}
                        :store.owner/role :store.owner.role/admin}}

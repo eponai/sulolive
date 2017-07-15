@@ -122,7 +122,7 @@
                            (dom/span nil "Total: ")
                            (dom/strong nil (utils/two-decimal-price (+ item-price shipping-price))))
                     (button/button-cta
-                      {:href    (routes/url :checkout {:store-id (:db/id s)})
+                      {:href    nil                         ;(routes/url :checkout {:store-id (:db/id s)})
                        :onClick #(mixpanel/track "Checkout shopping bag" {:store-id   (:db/id s)
                                                                           :store-name (get-in s [:store/profile :store.profile/name])
                                                                           :item-count (count skus)})}
@@ -143,14 +143,7 @@
                                                                           {:store/status [:status/type]}
                                                                           {:store/profile [:store.profile/name
                                                                                            {:store.profile/photo [:photo/id]}]}]}]}]}]}
-     {:query/featured-items [:db/id
-                             :store.item/name
-                             :store.item/price
-                             :store.item/created-at
-                             {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
-                                                  :store.item.photo/index]}
-                             {:store/_items [{:store/profile [:store.profile/name]}
-                                             :store/locality]}]}
+     {:query/featured-items (om/get-query ci/ProductItem)}
      :query/locations
      {:query/auth [:user/email]}
      :query/current-route])
