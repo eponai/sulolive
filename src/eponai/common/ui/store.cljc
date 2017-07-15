@@ -143,7 +143,6 @@
                                                {:store.profile/photo [:photo/path :photo/id]}]}
                               :store/created-at
                               :store/featured
-                              :store/featured-img-src
                               {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                                          :store.item.photo/index]}]}]}
      {:query/store-items (om/get-query ci/ProductItem)}

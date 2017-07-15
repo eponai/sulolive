@@ -107,32 +107,34 @@
 
 ;; ----- Featured
 
+(defn pull-featured [db query entity-query]
+  (when-not (= '[?e ?featured] (:find entity-query))
+    (warn "featured entity-query did not have '[?e ?featured] as :find. Was: " (:find entity-query)
+          " entity-query: " entity-query))
+  (->> (db/find-with db entity-query)
+       (sort-by #(nth % 1) #(compare %2 %1))
+       (map #(nth % 0))
+       (db/pull-many db query)))
+
 (defmethod client-read :query/featured-streams
   [{:keys [db query]} _ _]
   {:remote true
    :value  (when-let [loc (client.auth/current-locality db)]
-             (->> (db/all-with db {:where   '[[?e :stream/featured]
-                                              [?e :stream/store ?s]
-                                              [?s :store/locality ?l]]
-                                   :symbols {'?l (:db/id loc)}})
-                  (db/pull-many db query)
-                  (sort-by :db/id)))})
+             (pull-featured db query {:find    '[?e ?featured]
+                                      :where   '[[?e :stream/featured ?featured]
+                                                 [?e :stream/store ?s]
+                                                 [?s :store/locality ?l]]
+                                      :symbols {'?l (:db/id loc)}}))})
 
 (defmethod client-read :query/featured-items
   [{:keys [db query]} _ _]
   {:remote true
    :value  (when-let [loc (client.auth/current-locality db)]
-             (let [items (db/all-with db {:where   '[[?s :store/locality ?l]
-                                                     [?s :store/items ?e]
-                                                     [?e :store.item/featured]]
-                                          :symbols {'?l (:db/id loc)}})
-                   pulled (db/pull-many db query items)]
-               (sort #(let [c (compare (:store.item/created-at %2)
-                                       (:store.item/created-at %1))]
-                       (if (zero? c)
-                         (compare (:store.item/name %1) (:store.item/name %2))
-                         c))
-                     pulled)))})
+             (pull-featured db query {:find    '[?e ?featured]
+                                      :where   '[[?s :store/locality ?l]
+                                                 [?s :store/items ?e]
+                                                 [?e :store.item/featured ?featured]]
+                                      :symbols {'?l (:db/id loc)}}))})
 
 (defmethod client-read :query/featured-stores
   [{:keys [db query]} _ _]
@@ -140,21 +142,10 @@
   ;; TODO: Come up with a way to feature stores. DB SHUFFLE
   {:remote true
    :value  (when-let [loc (client.auth/current-locality db)]
-             (letfn [(photos-fn [store]
-                       (let [s (db/entity db store)
-                             [img-1 img-2] (->> (:store.item/_store s)
-                                                (sort-by :db/id)
-                                                (map :store.item/img-src)
-                                                (take 2))]
-                         {:db/id                  store
-                          :store/featured-img-src [img-1 (:store.profile/photo (:store/profile s)) img-2]}))]
-               (sort-by :store/created-at
-                        #(compare %2 %1)
-                        (into [] (comp (map photos-fn)
-                                       (map #(merge % (db/pull db query (:db/id %)))))
-                              (db/all-with db {:where   '[[?e :store/featured]
-                                                          [?e :store/locality ?l]]
-                                               :symbols {'?l (:db/id loc)}})))))})
+             (pull-featured db query {:find    '[?e ?featured]
+                                      :where   '[[?e :store/featured ?featured]
+                                                 [?e :store/locality ?l]]
+                                      :symbols {'?l (:db/id loc)}}))})
 
 ;################
 
