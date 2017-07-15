@@ -9,6 +9,7 @@
     [eponai.server.middleware :as m]
     [ring.util.response :as r]
     [ring.util.request :as ring.request]
+    [ring.middleware.anti-forgery :as anti-forgery]
     [bidi.bidi :as bidi]
     [bidi.ring :as bidi.ring]
     [eponai.common.routes :as common.routes]
@@ -254,11 +255,24 @@
                                           :release?      false})))
 
   ;; Websockets
+  ;; sente websockets require ring's anti-forgery middleware which we don't have for the other
+  ;; requests.
   (GET "/ws/chat" {::m/keys [system] :as request}
-    ()
-    (websocket/handle-get-request (:system/chat-websocket system) request))
+    (let [wrapped
+          (anti-forgery/wrap-anti-forgery
+            (fn [request]
+              (websocket/handle-get-request (:system/chat-websocket system)
+                                            (assoc request ::m/anti-forgery-token anti-forgery/*anti-forgery-token*))))]
+      (wrapped request)))
   (POST "/ws/chat" {::m/keys [system] :as request}
-    (websocket/handler-post-request (:system/chat-websocket system) request))
+    (let [wrapped
+          (anti-forgery/wrap-anti-forgery
+            (fn [request]
+              (websocket/handler-post-request (:system/chat-websocket system) request))
+            {:read-token (fn [request]
+                           (let [params (get-in request [:params :csrf-token])]
+                             params))})]
+      (wrapped request)))
 
   ;; Webhooks
   (POST "/stripe/connected" request (r/response (let [event (:body request)]
