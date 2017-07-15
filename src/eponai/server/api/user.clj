@@ -48,26 +48,31 @@
   (debug "QUERY PARAMS: " id-token)
   (let [auth0-user (auth0/token-info (:system/auth0 system) id-token)]
     (debug "Got secondary user: " auth0-user)
+
     (if-let [old-user (db/lookup-entity (db/db state) [:user/email (:user/email user)])]
       (throw (ex-info "User with email alreay exists"
                       {:message "You already have an account with that email"
                        :error   :error/account-exists
                        :user-id (:db/id old-user)}))
-      (let [new-user (f/user user)
-            ;provider (first (string/split (:user_id auth0-user) #"\|"))
-            auth0manage (:system/auth0management system)]
-        (info "User - authenticated user did not exist, creating new user: " new-user)
-        (db/transact-one state new-user)
+      (if-let [old-username (db/lookup-entity (db/db state) [:user.profile/name (-> user :user/profile :user.profile/name)])]
+        (throw (ex-info "Username already taken"
+                        {:message "Username is already taken"
+                         :error   :error/account-exists
+                         :user-id (:db/id old-username)}))
+        (let [new-user (f/user user)
+              auth0manage (:system/auth0management system)]
+          (info "User - authenticated user did not exist, creating new user: " new-user)
+          (db/transact-one state new-user)
 
-        (let [new-auth0-user (auth0/create-email-user auth0manage {:email    (:user/email new-user)
-                                                                   :verified (boolean (:user/verified new-user))})]
-          (auth0/link-user-accounts-by-id auth0manage
-                                          (auth0/user-id new-auth0-user)
-                                          (auth0/user-id auth0-user)))
+          (let [new-auth0-user (auth0/create-email-user auth0manage {:email    (:user/email new-user)
+                                                                     :verified (boolean (:user/verified new-user))})]
+            (auth0/link-user-accounts-by-id auth0manage
+                                            (auth0/user-id new-auth0-user)
+                                            (auth0/user-id auth0-user)))
 
-        (let [db-user (db/pull (db/db state) [:user/verified :db/id] [:user/email (:user/email new-user)])]
-          (debug "Created user: " (into {} db-user))
-          {:user (into {} db-user) :user-id (auth0/user-id auth0-user)})))))
+          (let [db-user (db/pull (db/db state) [:user/verified :db/id] [:user/email (:user/email new-user)])]
+            (debug "Created user: " (into {} db-user))
+            {:user (into {} db-user) :user-id (auth0/user-id auth0-user)}))))))
 
 (defn customer [{:keys [auth state system]}]
   (debug "Pull stripe " auth)

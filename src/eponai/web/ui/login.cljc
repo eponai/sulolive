@@ -133,7 +133,7 @@
                                 (om/update-state! component assoc :create-user/input-email (.-value (.-target %))))}
                 input-validation))
 
-            (dom/label nil "Name")
+            (dom/label nil "Username")
             (v/input {:type        "text"
                       :id          (::username form-inputs)
                       :placeholder "Your name"
