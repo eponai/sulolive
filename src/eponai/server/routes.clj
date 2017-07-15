@@ -277,6 +277,7 @@
                                                      :webhook-event event}
                                                     (get-in event [:data :object])))))
   (POST "/stripe" request (r/response (let [event (:body request)]
+                                        (debug "Received event: " event)
                                         (stripe-webhooks/handle-account-webhook
                                           {:state         (::m/conn request)
                                            :system        (::m/system request)

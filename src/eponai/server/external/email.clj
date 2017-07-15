@@ -24,7 +24,7 @@
                                            :subject (str "Your SULO Live receipt from " store-name " #" (:db/id order))
                                            :body    [{:type    "text/html"
                                                       :content (templates/order-receipt params)}]})]
-      (debug sent-email)))
+      (info "EMAIL - Send order receipt to customer" sent-email)))
 
   (-send-order-notification [this {:keys [charge order] :as params}]
     (debug "Sending email... " smtp)
@@ -36,10 +36,12 @@
           sent-email (postal/send-message smtp
                                           {:from    "SULO Live <hello@sulo.live>"
                                            :to      (:user/email store-owner)
-                                           :subject (str "Your SULO Live receipt from " store-name " #" (:db/id order))
+                                           :subject (str "You received a SULO Live order from " (:shipping/name shipping) " #" (:db/id order))
                                            :body    [{:type    "text/html"
                                                       :content (templates/order-notification params)}]})]
-      (debug sent-email)))
+
+      (info "EMAIL - Send order notification to store " sent-email)))
+
   (-send-store-access-request [_ {:field/keys [brand email website locality]
                                   user-id :user-id :as params}]
     (let [sent-email (postal/send-message smtp

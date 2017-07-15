@@ -5,7 +5,8 @@
     [eponai.common.format.date :as date]
     [eponai.common.routes :as routes]
     [clojure.string :as string]
-    [eponai.common.photos :as photos]))
+    [eponai.common.photos :as photos]
+    [eponai.client.routes :as client.routes]))
 
 (defn- container [title & content]
   (xhtml
@@ -125,24 +126,14 @@
         [:tr
          [:td {:align "center"}
           [:p {:style "font-size: 1.2em; padding-bottom:1em;margin-bottom:0em;"}
-           [:span "Congratulations on your order from "]
-           [:a {:style "text-decoration: none;"
-                :href  (str host (routes/path :store {:store-id (:db/id store)}))}
-            [:strong (str store-name)]]
-           [:span "!"]]]]
-        [:tr
-         [:td {:align "center"}
-          [:p {:style "font-size: 1em; padding-bottom:1em;margin-bottom:0em;"}
-           [:span "Your order number is "]
-           [:a {:style "text-decoration: none;"
-                :href  (str host (routes/path :user/order {:order-id (:db/id order)}))}
-            [:strong (str (:db/id order))]]]]])
+           [:span (str "Your received a SULO Live order from " (:shipping/name shipping))]
+           [:span "!"]]]])
 
       (table-column
         [:tr
          [:td
           [:p {:style "font-size:1em;margin-top:1em;margin:0;"}
-           [:span (date/date->string (* created 1000) "MMM dd YYYY")]]]
+           [:span (str "Order #" (str (:db/id order)) " on " (date/date->string (* created 1000) "MMM dd YYYY"))]]]
          [:td {:align "right"}
           [:p {:style "font-size:1em;margin-top:1em;margin:0;"}
            [:span {:style "margin-right:0.5em;"} (str brand)]
@@ -211,20 +202,19 @@
                                                     (:shipping.address/postal address)
                                                     (:shipping.address/region address)]))]
              [:br]
-             [:span (str (:shipping.address/country address))]]]]))
+             [:span (str (-> address :shipping.address/country :country/name))]]]]))
+      (table-column
+        [:tr
+         [:td {:align "center"}
+          [:p
+           [:a {:style "border-radius:2px;text-decoration: none;background:#4e9a9e; color:#fefefe; padding: 0.75em 1em;"
+                :href  (str host (client.routes/store-url store :store-dashboard/order {:order-id (:db/id order)}))}
+            [:strong "View order"]]]]])
 
       (table-column
         [:tr
          [:td {:align "center"}
-          [:p {:style "color:#8a8a8a;padding:1em;border-top: 1px solid #e6e6e6;font-size:0.9em;"}
-           [:span "You are receiving this email because you made a purchase at "]
-           [:a {:style "color:#8a8a8a;text-decoration: underline;"
-                :href  "https://sulo.live"} "SULO Live"]
-           [:span "."]
-           [:br] [:br]
-           [:span ". If you were not involved in this transaction, please contact us at "
-            [:a {:style "color:#8a8a8a;text-decoration: underline;"
-                 :href  "mailto:hello@sulo.live"} "hello@sulo.live"] [:span "."]]]]]))))
+          [:p {:style "color:#8a8a8a;padding:1em;border-top: 1px solid #e6e6e6;font-size:0.9em;"}]]]))))
 
 (defn order-receipt [{:keys [charge order]}]
   (let [{:keys [source created amount]} charge
@@ -240,7 +230,7 @@
           [:p {:style "font-size: 1.2em; padding-bottom:1em;margin-bottom:0em;"}
            [:span "Congratulations on your order from "]
            [:a {:style "text-decoration: none;"
-                :href  (str host (routes/path :store {:store-id (:db/id store)}))}
+                :href  (str host (client.routes/store-url store :store))}
             [:strong (str store-name)]]
            [:span "!"]]]]
         [:tr
@@ -324,7 +314,7 @@
                                                     (:shipping.address/postal address)
                                                     (:shipping.address/region address)]))]
              [:br]
-             [:span (str (:shipping.address/country address))]]]]))
+             [:span (str (-> address :shipping.address/country :country/name))]]]]))
 
       (table-column
         [:tr

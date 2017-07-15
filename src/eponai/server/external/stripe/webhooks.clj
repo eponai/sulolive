@@ -52,15 +52,8 @@
 
 ;; ############### SULO ACCOUNT ####################
 
-(defmulti handle-account-webhook (fn [_ event] (debug "Webhook event: " (:type event)) (:type event)))
-
-(defmethod handle-account-webhook :default
-  [_ event]
-  (debug "No handler implemented for account webhook event " (:type event) ", doing nothing."))
-
-(defn send-order-receipt [{:keys [state system]} event]
-  (let [charge (get-in event [:data :object])
-        order-uuid (f/str->uuid (get-in charge [:metadata :order_uuid]))
+(defn send-order-receipt [{:keys [state system]} charge]
+  (let [order-uuid (f/str->uuid (get-in charge [:metadata :order_uuid]))
         order (db/pull-one-with (db/db state)
                                 [:db/id
                                  {:order/items [{:order.item/parent [{:store.item/_skus [:store.item/name
@@ -70,13 +63,14 @@
                                                 :order.item/type
                                                 :order.item/amount]}
                                  {:order/shipping [:shipping/name
-                                                   {:shipping/address [:shipping.address/country
+                                                   {:shipping/address [{:shipping.address/country [:country/name]}
                                                                        :shipping.address/region
                                                                        :shipping.address/postal
                                                                        :shipping.address/locality
                                                                        :shipping.address/street
                                                                        :shipping.address/street2]}]}
                                  {:order/store [:db/id
+                                                :store/username
                                                 {:store/profile [:store.profile/name]}
                                                 {:store/owners [{:store.owner/user [:user/email]}]}]}
                                  {:order/user [:user/email]}]
@@ -85,15 +79,24 @@
     (email/-send-order-receipt (:system/email system) {:order order :charge charge})
     (email/-send-order-notification (:system/email system) {:order order :charge charge})))
 
+(defmulti handle-account-webhook (fn [{:keys [webhook-event]} _]
+                                   (debug "Webhook event: " webhook-event)
+                                   (:type webhook-event)))
+
+(defmethod handle-account-webhook :default
+  [{:keys [webhook-event]} object]
+  (debug "No handler implemented for account webhook event " (:type webhook-event) ", doing nothing."))
+
+
 (defmethod handle-account-webhook "charge.captured"
-  [{:keys [state system] :as env} event]
-  ;(debug "Will handle captured charged:  " event)
-  (send-order-receipt env event))
+  [{:keys [state system webhook-event] :as env} charge]
+  (debug "Will handle captured charged:  " webhook-event)
+  (send-order-receipt env charge))
 
 (defmethod handle-account-webhook "charge.succeeded"
-  [{:keys [state system] :as env} event]
-  ;(debug "Will handle captured succeeded:  " event)
-  (send-order-receipt env event))
+  [{:keys [state system webhook-event] :as env} charge]
+  (debug "Will handle captured succeeded:  " webhook-event)
+  (send-order-receipt env charge))
 
 ;; ############## CONNECTED ACCOUNT ################
 
