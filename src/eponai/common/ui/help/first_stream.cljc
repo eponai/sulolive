@@ -14,7 +14,7 @@
     (dom/div
       nil
       (dom/h1 nil "Your first stream")
-      (dom/div
+      (callout/callout
         nil
         (dom/p nil
                (dom/span nil
@@ -30,7 +30,7 @@
           (css/align :middle)
           (grid/column
             (grid/column-size {:small 3 :medium 2 :large 1})
-            (dom/p nil (photo/square {:src "/assets/img/obs-logo.png"})))
+            (photo/square {:src "/assets/img/obs-logo.png"}))
           (grid/column
             nil
             (dom/p nil

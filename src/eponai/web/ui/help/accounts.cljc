@@ -10,8 +10,6 @@
 
 (defui Accounts
   Object
-  (initLocalState [_]
-    {:active/sign-in false})
   (render [this]
     (let [{:active/keys [sign-in-social sign-in-email change-profile password]} (om/get-state this)]
       (dom/div
@@ -23,7 +21,7 @@
             (menu/breadcrumbs
               nil
               (menu/item nil (dom/a {:href (routes/url :help)}
-                                    "SULO Live support"))
+                                    (dom/span nil "SULO Live support")))
               (menu/item nil (dom/a {:href (routes/url :help/accounts)}
                                     (dom/span nil "Accounts"))))))
         (grid/row-column
@@ -49,7 +47,7 @@
                   (css/add-class :help-item-content)
                   (dom/p nil "To sign into SULO Live with your email:")
                   (dom/ul nil
-                          (dom/li nil "Click Sign up / Sign in, or visit sulo.live/login")
+                          (dom/li nil (dom/span nil "Click Sign up / Sign in, or visit sulo.live/login"))
                           (dom/li nil (dom/span nil "Choose ") (dom/em nil "Sign up or sign in with email"))
                           (dom/li nil (dom/span nil "Enter your email address and click ") (dom/em nil "Email me a code to sign in"))
                           (dom/li nil (dom/span nil "Go to your email inbox and open the verification email."))
@@ -67,11 +65,11 @@
                   (css/add-class :help-item-content)
                   (dom/p nil "To sign into SULO Live with your Facebook or Twitter account:")
                   (dom/ul nil
-                          (dom/li nil "Click Sign up / Sign in, or visit sulo.live/login")
+                          (dom/li nil (dom/span nil "Click Sign up / Sign in, or visit sulo.live/login"))
                           (dom/li nil (dom/span nil "Choose ") (dom/em nil "Continue with Facebook") (dom/span nil " or ")
                                   (dom/em nil "Continue with Twitter"))
-                          (dom/li nil "Sign in to your Facebook or Twitter account"))
-                  (dom/p nil "If an account with the same email as your social account already exists on SULO Live, you will be signed in to the existing account. If no email is associated with your social account or if the associated email does not exist in our system, you will be prompted to create a new account.")))
+                          (dom/li nil (dom/span nil "Sign in to your Facebook or Twitter account")))
+                  (dom/p nil (dom/span nil "If an account with the same email as your social account already exists on SULO Live, you will be signed in to the existing account. If no email is associated with your social account or if the associated email does not exist in our system, you will be prompted to create a new account."))))
 
               (dom/section
                 (when change-profile (css/add-class :is-active))
@@ -83,9 +81,9 @@
                   (css/add-class :help-item-content)
                   (dom/p nil "Your username and photo are used in the chat to let other users regonise you. You can update your username and password in your user settings:")
                   (dom/ul nil
-                          (dom/li nil "Click your profile picture in the top bar")
-                          (dom/li nil "Go to Settings > Edit profile")
-                          (dom/li nil "Update your username/photo and click Save"))))
+                          (dom/li nil (dom/span nil "Click your profile picture in the top bar"))
+                          (dom/li nil (dom/span nil "Go to Settings > Edit profile"))
+                          (dom/li nil (dom/span nil "Update your username/photo and click Save")))))
 
               (dom/section
                 (when password (css/add-class :is-active))
@@ -95,7 +93,7 @@
                   (dom/h3 nil "What's my password?"))
                 (dom/div
                   (css/add-class :help-item-content)
-                  (dom/p nil "If you sign in with your email, you will receive a one-time verification code to sign in. If you sign in with your social media account, you will use the credentials for that account.")
-                  (dom/p nil "For security reasons, SULO Live does not and will not support sign in with username/password on the site."))))))))))
+                  (dom/p nil (dom/span nil "If you sign in with your email, you will receive a one-time verification code to sign in. If you sign in with your social media account, you will use the credentials for that account."))
+                  (dom/p nil (dom/span nil "For security reasons, SULO Live does not and will not support sign in with username/password on the site.")))))))))))
 
 (def ->Accounts (om/factory Accounts))

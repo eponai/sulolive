@@ -23,6 +23,14 @@
 			}
 		}
 	}
+	.callout {
+		&:not(.small) {
+			padding: 2rem;
+		}
+		:first-child {
+			margin-top: 0;
+		}
+	}
 	.callout.help-menu {
 		padding: $global-padding 0;
 		ul {
@@ -32,12 +40,7 @@
 			}
 		}
 	}
-	.callout {
-		padding: 2rem;
-		:first-child {
-			margin-top: 0;
-		}
-	}
+	
 
 	.row .column.sulo-help-section {
 		transition: transform .25s ease-in-out;
@@ -78,7 +81,7 @@
 				overflow-y: hidden;
 				height: 0;
 			}
-			
+
 		}
 		section.is-active {
 			.help-item-content {
@@ -105,6 +108,9 @@
 	}
 	h3 {
 		text-transform: none;
+		// color: $dark-gray;
+		font-weight: $global-weight-normal;
+		margin-top: 2rem;
 	}
 	h4 {
 		font-weight: $global-weight-bold;
@@ -153,7 +159,7 @@
 	// 	}
 	// }
 
-	.callout a {
+	.callout a, p a {
 		color: map-get($foundation-palette, sulo-dark);
 		&:hover {
 			text-decoration: underline;
