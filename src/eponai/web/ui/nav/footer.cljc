@@ -98,7 +98,7 @@
                                               } (dom/span nil "About us"))
                              (menu/item-link {:href   "https://blog.sulo.live"
                                               :target "_blank"} (dom/span nil "Blog"))
-                             ;(menu/item-link nil (dom/span nil "FAQ"))
+                             (menu/item-link {:href   (routes/url :help)} (dom/span nil "Help center"))
                              ))
             (grid/column
               (->> (grid/column-size {:small 12 :medium 4})

@@ -159,7 +159,7 @@
 
 (defn render-enter-code [component]
   (let [state (om/get-state component)]
-    [(dom/p nil (dom/span nil "We sent you a code to sign in. Please check your inbox and provide the code below."))
+    [(dom/p nil (dom/span nil "We sent a verification code to your email to sign in. Please check your inbox and provide the code."))
      (dom/form
        (css/add-class :login-content)
        (dom/label nil "Code")
