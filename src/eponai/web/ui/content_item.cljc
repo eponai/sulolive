@@ -82,9 +82,7 @@
      :store/username
      :store/created-at
      :store/featured
-     {:store/owners [{:store.owner/user [:user/online?]}]}
-     {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
-                                                :store.item.photo/index]}]}])
+     {:store/owners [{:store.owner/user [:user/online?]}]}])
   Object
   (render [this]
     (let [{:store/keys [visitor-count] :as store} (om/props this)
