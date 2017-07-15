@@ -99,6 +99,8 @@
     (dom/meta {:name    "google-site-verification"
                :content "eWC2ZsxC6JcZzOWYczeVin6E0cvP4u6PE3insn9p76U"})
 
+    (dom/meta {:name    "p:domain_verify"
+               :content "f61e0ec64a4d48b5ac6f65e6dc3c5427"})
     (dom/meta {:charset "UTF-8"})
     (dom/meta {:http-equiv "X-UA-Compatible"
                :content    "IE=edge"})
