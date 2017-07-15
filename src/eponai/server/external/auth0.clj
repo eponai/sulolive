@@ -170,7 +170,10 @@
             (debug "Auth0 - Found " (count accounts) " with matching email: " (mapv #(user-id %) accounts) ", will link to main account: " (user-id main-account))
             (doseq [secondary accounts]
               (info "Auth0 - Linking accounts: " {:primary (user-id main-account) :secondary (user-id secondary)})
-              (link-user-accounts-by-id this (user-id main-account) (user-id secondary))))
+              (try
+                (link-user-accounts-by-id this (user-id main-account) (user-id secondary))
+                (catch ExceptionInfo e
+                  (error e)))))
           (info "Auth0 - Found no matching email account, doing nothing.")))))
 
   (create-email-user [this {:keys [email verified] :as a}]
