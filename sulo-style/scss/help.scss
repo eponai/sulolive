@@ -5,8 +5,103 @@
 }
 
 #sulo-help {
+	.page-container {
+		background: $dashboard-background;
+	}
+	.row {
+		&.sulo-help-sections {
+			max-width: $dashboard-content-width;
+		}
+		&.expanded {
+			.photo-container {
+				.photo.cover {
+					padding-top: 25%;
+				}
+				.overlay {
+					background: rgba($sulo-color, 0.25);
+				}
+			}
+		}
+	}
+	.callout.help-menu {
+		padding: $global-padding 0;
+		ul {
+			margin: 0;
+			li {
+				font-weight: $global-weight-bold;
+			}
+		}
+	}
+	.callout {
+		padding: 2rem;
+		:first-child {
+			margin-top: 0;
+		}
+	}
+
+	.row .column.sulo-help-section {
+		transition: transform .25s ease-in-out;
+		&:hover {
+			transform: scale(1.1);
+		}
+		a {
+			text-align: center;
+			.photo-container {
+				margin-bottom: $global-margin;
+
+			}
+			.callout {
+				padding: $global-padding;
+				margin: $global-margin;
+			}
+		}
+	}
+	.help-items {
+		.header {
+			font-size: 120%;
+			letter-spacing: 1px;
+			color: $body-font-color;
+			h3 {
+				font-weight: $global-weight-bold;
+				margin: $global-margin 0;
+			}
+		}
+		section {
+			border-top: $global-border;
+			border-bottpm: $global-border;
+			margin: 0;
+			overflow: hidden;
+			.help-item-content {
+				// transform: scale(1,0);
+				// transform-origin: 0 0;
+				// transition: transform .25s ease-in-out, height 0s ease-in-out .5s,;
+				overflow-y: hidden;
+				height: 0;
+			}
+			
+		}
+		section.is-active {
+			.help-item-content {
+				// transition: transform .25s ease-in-out, height 0s ease-in-out;
+				// transform: scale(1,1);
+				height: auto;
+			}
+		}
+	}
+	h1 { 
+		margin-top: 2rem;
+		small {
+			font-weight: $global-weight-normal;
+			text-transform: none;
+		}
+	}
+
 	h2 {
 		margin-top: 2rem;
+		font-weight: normal;
+		color: $dark-gray;
+		// text-transform: none;
+
 	}
 	h3 {
 		text-transform: none;
@@ -29,6 +124,7 @@
 	#sulo-navbar {
 		// position: absolute;
 		input {
+			display: none;
 			margin: 0 0.5rem;
 			max-width: 20rem;
 		}
@@ -48,14 +144,14 @@
 		}
 	}
 
-	.callout {
-		@include breakpoint(large) {
-			padding: 2.5rem;
-		}
-		.callout {
-			padding: 1rem;
-		}
-	}
+	// .callout {
+	// 	@include breakpoint(large) {
+	// 		padding: 2.5rem;
+	// 	}
+	// 	.callout {
+	// 		padding: 1rem;
+	// 	}
+	// }
 
 	.callout a {
 		color: map-get($foundation-palette, sulo-dark);

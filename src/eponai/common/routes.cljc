@@ -43,13 +43,17 @@
   {["/" [#"\d+" :product-id]] :product})
 
 (def help-routes
-  {""                :help
-   "/first-stream"   :help/first-stream
-   "/mobile-stream"  :help/mobile-stream
-   "/shipping-rules" :help/shipping-rules
-   "/quality"        :help/quality
-   "/faq"            :help/faq
-   "/taxes"          :help/taxes})
+  {""          :help
+   "/stores"   {""                :help/stores
+                "/first-stream"   :help/first-stream
+                "/mobile-stream"  :help/mobile-stream
+                "/shipping-rules" :help/shipping-rules
+                "/quality"        :help/quality
+                "/faq"            :help/faq
+                "/taxes"          :help/taxes}
+   "/accounts" :help/accounts
+   "/welcome"  :help/welcome
+   })
 
 (def checkout-routes
   {""          :checkout

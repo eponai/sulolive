@@ -9,6 +9,11 @@
     (dom/div
       nil
       (dom/h1 nil "FAQ")
+      (dom/h2 nil "Accounts")
+      (dom/section
+        nil
+        (dom/h3 nil "Why"))
+
       (dom/h2 nil "Stores")
       (dom/section
         nil

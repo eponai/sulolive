@@ -13,15 +13,18 @@
   (render [this]
     (dom/div
       nil
-      (dom/h1 nil "Shipping rules")
+      (dom/p nil "Before setting up your shipping rates, you need to decide on the following")
+      (dom/ul nil (dom/li nil "Where you will be shipping orders to (called shipping areas)")
+              (dom/li nil "How many different rates you need for each area (called shipping rates)"))
+      (dom/h2 nil "Shipping rules")
       (dom/p nil (dom/span nil "Shipping options are setup using ")
              (dom/i nil "shipping rules")
              (dom/span nil ". Shipping rules combine an area and a rate for you so that it's easy to see what your different areas and rates are. Once you use a rule to create rates, you can continue to add more rates to that area, or you can create another shipping rule to set up a new area."))
 
-      (dom/h2 nil "Shipping areas")
+      (dom/h3 nil "Shipping areas")
       (dom/p nil (dom/span nil "It's likely that you'll charge more the farther away an order is shipped, so SULO Live allows you to set shipping rates for groups of destinations called shipping areas. The areas will each have different rates, allowing you to tailor your rates to specific regions. You can choose entire continents (like all of North America or all of Europe) or individual countries."))
 
-      (dom/h2 nil "Shipping rates")
+      (dom/h3 nil "Shipping rates")
       (dom/p nil (dom/span nil "Once you decide where you're going to ship, you need to decide how much to charge and what to base it on. Shipping rates are the actual charges to your customers. You can make the rate a flat rate (one price for all orders shipped to that destination), or you can charge per item in an order."))
       (dom/p nil (dom/span nil "You can have more than one rate for each shipping area. For example, you might have one rate for standard shipping and another for overnight shipping."))
 
@@ -62,10 +65,7 @@
           nil
           (dom/p nil (dom/span nil "Select if you want to offer free shipping when the order is above a certain amount. Your customer will be presented with the information if they are about to place an order below that amount."))))
 
-      (dom/h2 nil "More questions?")
-      (dom/p nil (dom/span nil "Do you still have questions? Contact us on ")
-             (dom/a {:href "mailto:help@sulo.live"}
-                    (dom/span nil "help@sulo.live"))
-             (dom/span nil ". We're happy to help!")))))
+
+      )))
 
 (def ->ShippingRules (om/factory ShippingRules))
