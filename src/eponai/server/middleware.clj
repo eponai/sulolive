@@ -30,7 +30,8 @@
     [cheshire.core :as json]
     [medley.core :as medley]
     [eponai.server.log :as log])
-  (:import (datomic.query EntityMap)))
+  (:import (datomic.query EntityMap)
+           (clojure.lang ExceptionInfo)))
 
 (defn wrap-timing [handler]
   (fn [request]
@@ -63,7 +64,7 @@
                       (error e)
                       (let [error (ex-data e)
                             code (h/error-codes (or (:status error) ::h/internal-error))]
-                        {:status code :body error}))))))
+                        {:status code}))))))
           (wrap-prone-aleph [handler]
             (fn [request]
               (if-let [page (get @prone/pages (:uri request))]
@@ -98,29 +99,35 @@
         (ring-json/wrap-json-body {:keywords? true})
         (deferred-json-response))))
 
-(defn wrap-transit [handler]
-  (letfn [(deferred-transit-response [handler]
-            (fn [request]
-              (deferred/let-flow
-                [response (handler request)]
-                (ring-transit/transit-response
-                  response request
-                  (#'ring-transit/transit-response-options
-                    {:opts     {:handlers (merge {EntityMap datomic-transit}
-                                                 datascript.transit/write-handlers)}
-                     :encoding :json})))))]
-    (-> handler
-        (ring-transit/wrap-transit-body)
-        (deferred-transit-response))))
+(defn wrap-transit [handler logger]
+  (let [re-throw-ex-info (transit/write-handler
+                           (constantly "ex-info")
+                           (fn [v]
+                             (log/error! logger ::transit-error {:exception (log/render-exception v)})
+                             (throw v)))]
+    (letfn [(deferred-transit-response [handler]
+             (fn [request]
+               (deferred/let-flow
+                 [response (handler request)]
+                 (ring-transit/transit-response
+                   response request
+                   (#'ring-transit/transit-response-options
+                     {:opts     {:handlers (merge {EntityMap     datomic-transit
+                                                   ExceptionInfo re-throw-ex-info}
+                                                  datascript.transit/write-handlers)}
+                      :encoding :json})))))]
+     (-> handler
+         (ring-transit/wrap-transit-body)
+         (deferred-transit-response)))))
 
 
 
-(defn wrap-format [handler]
+(defn wrap-format [handler logger]
   (let [json-request? (fn [request]
                         (when-let [type (ring.response/get-header request "Content-Type")]
                           (not (empty? (re-find #"application/json" type)))))
         json-wrapper (wrap-json handler)
-        transit-wrapper (wrap-transit handler)]
+        transit-wrapper (wrap-transit handler logger)]
     (fn [request]
       (if (json-request? request)
         (json-wrapper request)

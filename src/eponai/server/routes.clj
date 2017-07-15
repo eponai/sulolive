@@ -129,7 +129,10 @@
   (debug "Handling parser request with query:" (:query body))
   (debug "Handling parser request with cookies:" cookies)
   (let [{:keys [user-id] :as auth} (request->auth request)
-        route-map (:route-map body)]
+        route-map (:route-map body)
+        logger (context-logger request route-map user-id)
+        query (:query body)]
+    (log/info! logger ::parser-call {:query query})
     ((parser-fn)
       {::parser/read-basis-t-graph  (some-> read-basis-t-graph (atom))
        ::parser/chat-update-basis-t (::parser/chat-update-basis-t body)
@@ -139,9 +142,9 @@
        :params                      (:params request)
        :system                      system
        :locations                   (auth/requested-location request)
-       :logger                      (context-logger request route-map user-id)
+       :logger                      logger
        :client-ip                   (client-ip request)}
-      (:query body))))
+      query)))
 
 (defn trace-parser-response-handlers
   "Wrapper with logging for parser.response/response-handler."
