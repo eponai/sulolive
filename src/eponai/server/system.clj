@@ -231,11 +231,11 @@
                ;:system/stripe
                :system/firebase
                :system/chat
-               :system/auth0
-               :system/auth0management
+               ;:system/auth0
+               ;:system/auth0management
                ;:system/email
                ;:system/mailchimp
-               ;:system/taxjar
+               :system/taxjar
                ;:system/aws-s3
                ;:system/elastic-cloud
                ))

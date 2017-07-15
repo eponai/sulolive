@@ -15,7 +15,7 @@
     "Calculate tax with given params"))
 
 (defn calculate [taxjar id {:keys [source-address destination-address shipping amount] :as params}]
-  (let [source-country (get-in source-address [:shipping.address/country :country/code])
+  (let [source-country "CA"                                 ;(get-in source-address [:shipping.address/country :country/code])
         destination-country (get-in destination-address [:shipping.address/country :country/code])]
     (debug "Calculate taxes: " params)
     (if (= source-country destination-country)

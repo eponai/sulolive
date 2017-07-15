@@ -497,10 +497,10 @@
              (debug "Stripe update customer: " params)
              (let [{:user/keys          [email]
                     {:stripe/keys [id]} :user/stripe} (db/pull (db/db state) [:user/email {:user/stripe [:stripe/id]}] (:user-id auth))
-                   new-card (when source (stripe/create-card (:system/stripe system) id source))
-                   remove-source (when remove-source (stripe/delete-card (:system/stripe system) id remove-source))
                    customer-id (or id
                                    (:stripe/id (stripe/create-customer (:system/stripe system) {:email email})))
+                   new-card (when source (stripe/create-card (:system/stripe system) customer-id source))
+                   remove-source (when remove-source (stripe/delete-card (:system/stripe system) customer-id remove-source))
 
                    address (:shipping/address shipping)
                    stripe-params (cond-> {}

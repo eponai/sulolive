@@ -101,33 +101,32 @@
     nil
     (map
       (fn [[s skus]]
-        (dom/div
-          (->> (css/callout)
-               (css/add-class :cart-checkout-item))
-          (store-element s)
-          (menu/vertical
-            nil
-            (map #(sku-menu-item component %) skus))
-          (grid/row
-            (->> (css/align :middle)
-                 (css/text-align :right)
-                 (css/add-class :item))
-            (let [item-price (compute-item-price (map #(get % :store.item/_skus) skus))
-                  shipping-price 0]
-              (grid/column
+        (let [store-is-open? (= :status.type/open (-> s :store/status :status/type))]
+          (when store-is-open?
+            (dom/div
+              (->> (css/callout)
+                   (css/add-class :cart-checkout-item))
+              (store-element s)
+              (menu/vertical
                 nil
-                (dom/p (css/add-class :total-price)
-                       (dom/span nil "Total: ")
-                       (dom/strong nil (utils/two-decimal-price (+ item-price shipping-price))))
-                (button/button
-                  {:href    nil                             ;(routes/url :checkout {:store-id (:db/id s)})
-                   :onClick #(mixpanel/track "Checkout shopping bag" {:store-id   (:db/id s)
-                                                                      :store-name (get-in s [:store/profile :store.profile/name])
-                                                                      :item-count (count skus)})}
-                  (dom/span nil "Checkout")))))
-          (callout/callout-small
-            (css/add-class :warning)
-            (dom/p nil (dom/strong nil (dom/small nil "Note: ")) (dom/small nil "Checkout is disabled until work on payments is finished. We're pretty close!")))))
+                (map #(sku-menu-item component %) skus))
+              (grid/row
+                (->> (css/align :middle)
+                     (css/text-align :right)
+                     (css/add-class :item))
+                (let [item-price (compute-item-price (map #(get % :store.item/_skus) skus))
+                      shipping-price 0]
+                  (grid/column
+                    nil
+                    (dom/p (css/add-class :total-price)
+                           (dom/span nil "Total: ")
+                           (dom/strong nil (utils/two-decimal-price (+ item-price shipping-price))))
+                    (button/button-cta
+                      {:href    nil                         ;(routes/url :checkout {:store-id (:db/id s)})
+                       :onClick #(mixpanel/track "Checkout shopping bag" {:store-id   (:db/id s)
+                                                                          :store-name (get-in s [:store/profile :store.profile/name])
+                                                                          :item-count (count skus)})}
+                      (dom/span nil "Checkout")))))))))
       skus-by-store)))
 
 (defui ShoppingBag
@@ -141,16 +140,10 @@
                                                                                :store.item.photo/index]}
                                                           :store.item/name
                                                           {:store/_items [:db/id
+                                                                          {:store/status [:status/type]}
                                                                           {:store/profile [:store.profile/name
                                                                                            {:store.profile/photo [:photo/id]}]}]}]}]}]}
-     {:query/featured-items [:db/id
-                             :store.item/name
-                             :store.item/price
-                             :store.item/created-at
-                             {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
-                                                  :store.item.photo/index]}
-                             {:store/_items [{:store/profile [:store.profile/name]}
-                                             :store/locality]}]}
+     {:query/featured-items (om/get-query ci/ProductItem)}
      :query/locations
      {:query/auth [:user/email]}
      :query/current-route])
@@ -165,18 +158,20 @@
       (if-not did-mount?
         (om/update-state! this assoc :did-mount? true))))
   (render [this]
-    (let [{:proxy/keys [navbar footer]
-           :query/keys [current-route cart locations featured-items]} (om/props this)
+    (let [{:query/keys [current-route cart locations featured-items]} (om/props this)
           {:keys [user.cart/items]} cart
-          skus-by-store (items-by-store items)]
+          store-is-open? (fn [s] (= :status.type/open (-> s :store/status :status/type)))
+          skus-by-store (filter #(store-is-open? (key %)) (items-by-store items))]
       (debug "Shopping bag: " cart)
+      (debug "Items by store: " (items-by-store items))
+      (debug "SKUS by store: " skus-by-store)
       (dom/div
         {:id "sulo-shopping-bag"}
 
         (grid/row-column
           nil
           (dom/h1 nil "Shopping bag")
-          (if (not-empty items)
+          (if (not-empty skus-by-store)
             (dom/div nil
                      (store-items-element this skus-by-store))
 

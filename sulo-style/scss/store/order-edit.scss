@@ -92,6 +92,7 @@
 
 	.section-list {
 		li {
+
 			padding: 0.5rem 0;
 			.order-item-info {
 				display: flex;
@@ -102,6 +103,7 @@
 				max-width: 3rem;
 				min-width: 3rem;
 				width: 3rem;
+				margin-right: 0.5rem;
 			}
 		}
 		li.secondary-items {
