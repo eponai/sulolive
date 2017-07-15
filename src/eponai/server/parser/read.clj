@@ -171,24 +171,24 @@
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
   {:value (when (some? (:db/id locations))
-            (letfn [(add-time-to-all [time items]
-                      (map #(if (nil? (:store.item/created-at %))
-                             (assoc % :store.item/created-at time)
-                             %)
-                           items))]
-              (->> (db/pull-all-with db query {:where   '[[?s :store/locality ?l]
-                                                          [?st :status/type :status.type/open]
-                                                          [?s :store/status ?st]
-                                                          [?s :store/items ?e]
-                                                          [?s :store/profile ?profile]
-                                                          [?profile :store.profile/photo _]
-                                                          [?e :store.item/photos ?p]
-                                                          [?p :store.item.photo/photo _]]
-                                               :symbols {'?l (:db/id locations)}})
-                   (add-time-to-all 0)
-                   (sort-by :store.item/created-at #(compare %2 %1))
-                   (take 10)
-                   (feature-all :store.item))))})
+            (->> (db/find-with db {:find    '[?e ?created-at]
+                                   :where   '[[?s :store/locality ?l]
+                                              [?st :status/type :status.type/open]
+                                              [?s :store/status ?st]
+                                              [?s :store/items ?e]
+                                              [?s :store/profile ?profile]
+                                              [?profile :store.profile/photo _]
+                                              [?e :store.item/photos ?p]
+                                              [?p :store.item.photo/photo _]
+                                              (or [?e :store.item/created-at ?created-at]
+                                                  (and [(missing? $ ?e :store.item/created-at)]
+                                                       [(identity 0) ?created-at]))]
+                                   :symbols {'?l (:db/id locations)}})
+                 (sort-by #(nth % 1) #(compare %2 %1))
+                 (take 10)
+                 (map #(nth % 0))
+                 (db/pull-many db query)
+                 (feature-all :store.item)))})
 
 (defread query/featured-stores
   [{:keys [db db-history query locations]} _ _]
