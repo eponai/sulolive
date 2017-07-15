@@ -148,10 +148,14 @@
                                              (products/find-all locations))))})
 
 ;; ------ Featured
-(defn feature-all [namespace coll]
-  (into []
-        (map #(assoc % (keyword (name namespace) "featured") true))
-        coll))
+
+(defn feature-all [db namespace coll]
+  (let [basis-t (datomic/basis-t db)]
+    (into []
+          (map-indexed (fn [idx m]
+                         (assoc m (keyword (name namespace) "featured")
+                                  (+ basis-t idx))))
+          (reverse coll))))
 
 (defread query/featured-streams
   [{:keys [db db-history query locations]} _ _]
@@ -167,7 +171,7 @@
                                                               ;[?p :store.profile/photo _]
                                                               ]
                                                    :symbols {'?l (:db/id locations)}})
-                   (feature-all :stream))))})
+                   (feature-all db :stream))))})
 
 (defread query/featured-items
   [{:keys [db db-history query locations]} _ _]
@@ -182,36 +186,32 @@
                                               [?profile :store.profile/photo _]
                                               [?e :store.item/photos ?p]
                                               [?p :store.item.photo/photo _]
-                                              (or [?e :store.item/created-at ?created-at]
-                                                  (and [(missing? $ ?e :store.item/created-at)]
-                                                       [(identity 0) ?created-at]))]
+                                              [?e :store.item/created-at ?created-at]]
                                    :symbols {'?l (:db/id locations)}})
                  (sort-by #(nth % 1) #(compare %2 %1))
-                 (take 10)
+                 (take 6)
                  (map #(nth % 0))
                  (db/pull-many db query)
-                 (feature-all :store.item)))})
+                 (feature-all db :store.item)))})
 
 (defread query/featured-stores
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
   ;; TODO: Come up with a way to feature stores.
   {:value (when (some? (:db/id locations))
-            (letfn [(add-time-to-all [time items]
-                      (map #(if (nil? (:store/created-at %))
-                             (assoc % :store/created-at time)
-                             %)
-                           items))]
-              (->> (db/pull-all-with db query {:where   '[[?e :store/locality ?l]
-                                                          [?st :status/type :status.type/open]
-                                                          [?e :store/status ?st]
-                                                          [?e :store/profile ?p]
-                                                          [?p :store.profile/photo _]]
-                                               :symbols {'?l (:db/id locations)}})
-                   (add-time-to-all 0)
-                   (sort-by :store/created-at #(compare %2 %1))
-                   (take 4)
-                   (feature-all :store))))})
+            (->> (db/find-with db {:find    '[?e ?created-at]
+                                   :where   '[[?e :store/locality ?l]
+                                              [?st :status/type :status.type/open]
+                                              [?e :store/status ?st]
+                                              [?e :store/profile ?p]
+                                              [?p :store.profile/photo _]
+                                              [?e :store/created-at ?created-at]]
+                                   :symbols {'?l (:db/id locations)}})
+                 (sort-by #(nth % 1) #(compare %2 %1))
+                 (take 4)
+                 (map #(nth % 0))
+                 (db/pull-many db query)
+                 (feature-all db :store)))})
 
 ;; ##############
 

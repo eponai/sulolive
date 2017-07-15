@@ -82,7 +82,6 @@
      :store/username
      :store/created-at
      :store/featured
-     :store/featured-img-src
      {:store/owners [{:store.owner/user [:user/online?]}]}
      {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                 :store.item.photo/index]}]}])
