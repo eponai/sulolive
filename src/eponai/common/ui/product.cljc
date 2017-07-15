@@ -226,7 +226,7 @@
                                             (assoc :disabled true))
                                    (str (:store.item.sku/variation sku) (when is-disabled " - out of stock")))))
                              variations))))
-              (let [out-of-stock? (every? #(= :out-of-stock (-> % :store.item.sku/inventory :store.item.sku.inventory/value)) variations)]
+              (let [out-of-stock? (every? #(= :out-of-stock (-> % :store.item.sku/inventory :store.item.sku.inventory/value)) skus)]
                 (dom/div
                   (css/add-class :product-action-container)
                   ;(my-dom/div (->> (css/grid-row))
