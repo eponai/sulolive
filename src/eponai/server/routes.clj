@@ -97,6 +97,10 @@
                                                :state        state
                                                :route        route
                                                :system       system})
+        site-info (social/site-info {:route-params route-params
+                                     :state        state
+                                     :route        route
+                                     :system       system})
 
         props {:empty-datascript-db (::m/empty-datascript-db request)
                :state               state
@@ -113,6 +117,7 @@
                :auth                (request->auth request)
                :locations           (auth/requested-location request)
                :social-sharing      sharing-objects
+               :site-info           site-info
                :client-ip           (client-ip request)}
         logger (context-logger request
                                (select-keys props [:route :route-params :query-params])
@@ -291,7 +296,7 @@
         (anti-forgery/wrap-anti-forgery handler
                                         {:read-token (fn [request]
                                                        (get-in request [:params :csrf-token]))}))))
-
+  
   (context "/" [:as request]
     member-routes
 

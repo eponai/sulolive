@@ -14,16 +14,17 @@
 (defui Root
   Object
   (render [this]
-    (let [{:keys [release? ::app-html route auth cljs-build-id social-sharing]} (om/props this)]
+    (let [{:keys [release? ::app-html route auth cljs-build-id social-sharing site-info]} (om/props this)]
       (debug "app-html: " app-html)
       (dom/html
         {:lang "en"}
         (common/head {:release?       release?
                       :social-sharing social-sharing
+                      :site-info      site-info
                       :cljs-build-id  cljs-build-id})
         (dom/body
           nil
-          (dom/script {:src "https://www.gstatic.com/firebasejs/4.1.3/firebase.js"
+          (dom/script {:src  "https://www.gstatic.com/firebasejs/4.1.3/firebase.js"
                        :type common/text-javascript})
           (when (contains? env/env :firebase-api-key)
             (common/inline-javascript
@@ -50,10 +51,10 @@
                                                          "fe5ab77ade7eee2c0d3e1e8f51692a7f")
                                      "'}"])
           (common/inline-javascript ["setTimeout(function(){var a=window.GretaOptions||{};a.lazyLoad=a.lazyLoad||{};var f=a.lazyLoad.imgAttribute||\"data-src\",g=a.lazyLoad.bgImgAttribute||\"data-bg-src\",h=\"DIV SECTION ARTICLE ASIDE B BODY FIGURE HTML I LI MAIN MARK NAV P SPAN STRONG SUMMARY TABLE TIME UL H1 H2 H3 H4 LABEL\".split(\" \"),e=a.lazyLoad.addClassOnLoad||\"\",a=\"boolean\"===typeof a.lazyLoad.enable?a.lazyLoad.enable:!0;!window.greta&&a&&setInterval(function(){for(var a,b=document.querySelectorAll(\"IMG[\"+f+\"]\"),c=0;c<b.length;c++)(a=b[c].getAttribute(f))&&b[c].src!==a&&(b[c].src=a,b[c].removeAttribute(f),0<e.length&&(b[c].className+=\" \"+e));for(c=0;c<h.length;c++)for(var b=document.querySelectorAll(h[c]+\"[\"+g+\"]\"),d=0;d<b.length;d++)(a=b[d].getAttribute(g))&&b[d].style.backgroundImage!==\"url(\"+a+\")\"&&(b[d].style.backgroundImage=\"url(\"+a+\")\",b[d].removeAttribute(g),0<e.length&&(b[d].className+=\" \"+e))},1E3)},1E3);"])
-          (dom/script {:src     "https://cdn.greta.io/greta.min.js"
-                       :type    common/text-javascript})
+          (dom/script {:src  "https://cdn.greta.io/greta.min.js"
+                       :type common/text-javascript})
 
-          (dom/script {:src "https://cdn.auth0.com/js/auth0/8.7/auth0.min.js"
+          (dom/script {:src  "https://cdn.auth0.com/js/auth0/8.7/auth0.min.js"
                        :type common/text-javascript})
 
 
@@ -68,7 +69,7 @@
                                        (str "mixpanel.people.set_once(" (json/write-str {:$email (:email auth) :$last_name (:email auth)}) ");")]))
 
           ;; Powr can be loaded last, because it just hooks in to a div that we've specified.
-          (dom/script {:src "//www.powr.io/powr.js"
+          (dom/script {:src           "//www.powr.io/powr.js"
                        :external-type "html"})
 
           (cond

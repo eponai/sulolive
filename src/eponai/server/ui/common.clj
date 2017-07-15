@@ -5,7 +5,8 @@
     [clojure.string :as string]
     [environ.core :as env]
     [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]
-    [eponai.common.mixpanel :as mixpanel]))
+    [eponai.common.mixpanel :as mixpanel]
+    [taoensso.timbre :refer [debug]]))
 
 ;; Utils
 
@@ -93,7 +94,8 @@
         twitter-tags (mapv tag-fn twitter)]
     (into facebook-tags twitter-tags)))
 
-(defn head [{:keys [release? exclude-icons? cljs-build-id social-sharing]}]
+(defn head [{:keys [release? exclude-icons? cljs-build-id social-sharing site-info]}]
+  (debug "SITE INFO: " site-info)
   (dom/head
     {:prefix "og: http://ogp.me/ns# fb: http://ogp.me/ns/fb#"}
     (dom/meta {:name    "google-site-verification"
@@ -110,10 +112,10 @@
     ;; Asset version is needed in our module urls.
     (dom/meta {:id "asset-version-meta" :name "asset-version" :content asset-version})
     (dom/meta {:name    "description"
-               :content "Shop local goods and hangout LIVE with your local vendors."})
+               :content (or (:description site-info) "Shop local goods and hangout LIVE with your local vendors.")})
     (comment (dom/meta {:http-equiv "Content-Type"
                         :content    "text/html; charset=utf-8"}))
-    (dom/title nil "Your local marketplace online, shop and hangout LIVE with your local vendors - SULO Live")
+    (dom/title nil (or (:title site-info) "Your local marketplace online, shop and hangout LIVE with your local vendors - SULO Live"))
     (when (= cljs-build-id "devcards")
       (dom/link {:href "/bower_components/nvd3/build/nv.d3.css"
                  :rel  "stylesheet"}))
