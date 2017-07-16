@@ -3,83 +3,72 @@
 		opacity: 1;
 		background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAE7UlEQVRoQ92aTXYaRxDHq3okb+OcINIJgk8gtM0LBJ0gAuzhZWX5BEIniLTyA0cMOoEI5GUrfALjE5icIGhrQf/zqpmZNMPHfPAhktlOdU39uqurqquHKcPzQ9PLHRCdgFCS4Qw6IqYjX9UIRAMCRqzUAEC/51Y+ZvhMqiGcVLr03juaOPqSicX4l0nHhXBAe8Lq7k+3PEg5NpF4LIgFcB5oBOEvBvdBugPljA7GNOz8Uh7K+5LnvRyPKcfQR0ycA5Bn5u/DsUDH0epdIJ/IygRCK0GKTe8tEa5DPaA7pbme1oipK+KcgHNi/sboY65335SvEtiYSGQhiMzq5An3TJT3tdyoCV+nBYhaIHr1V1wT08/yDkR955DPOuXyKJG1K4TmQMzHnvBARDkCHrVSpT/elPvrfsge/+MHL6+07virM1CHfLouzAyIDQHgs/NC5df9wLIJMKv+Vff9/bM2zAxIodl6EHfaNkQAZ8MA6PRq1bOsKx+CFJq350zsSURyDlVuWysxt2/ee0da6YG4GaDPerXXnSwwBsR3qS+SH9ZRlsUAGRNMIhGN1CEfZ5lEA1JstiTEvgXRx55bCSJVVrsyjSs0W30mOiHgqlur1tMqmYI0Wl+kxBgTv9pW5o0zzEQy4IFAw26tchwnH33PhcZvJWZ1L3uj51aDeimtno3IF5q3Qyb+TlwMQNvR6iZp7uJio9WWBAXgXa9W/TeLb8S0dEoCF7dHgdB2JuoqDogD39TMp5tOfOkwiALvWDBuRMT1rlu+WaaTi83WJ8niz7k/AuPCfbLEWsk1zgtVXhTVBAQyrutWYivhtDOcVt5PA3/HjFtYBfwXQYRzDmav9kica80EgUhJs1cgVoZP5JV2FSKuZbI6Ed103cpFIg1bEgpSQQr1o65b+Vbk2T+9fcqaUVN8NFa02GzJRk/VDwCh3HOrbROpgoz6HAVjQJfWrcJZ8Usav9a6rRPzpUSDrlt5FTt1WxAI6r0sqiUH2ucRU+c8R6lSbIQTmYWDxOYQxAp9ozHx6a6q4DQhdxmlHD9msrkVNXYC4wcaaXSk2uBRoDkQEdgVzKYgDBRouLAdNHnSA3MuyHhai3P04gfvkoDUp8ClrgV8ngeRZoADOb+TmvBx3Dkgzmj7vb8ffjU9sw0+C10rbAlt6Pzudxd/AtO51bncIIZxrbtIX+vWY2Lp0T4qrXLLVkMa2/rAb3sCc11IuWYAIUfMua0Zb01FGH5ner3A45hVPhp+dzKzGddJtsC01gLuzUVNBCI0nlBiNvcie/dIV7RXq+bCo66JYsA1KzWCf7cR3ZQg+p0IphMoXcl9oAqLxkLjdmBfxMwYBzyCuS/GO4eqY5+VrdbNs/HYDcVp9Su9LeIwJIIwmLAzXFWmrOh47AzM7vys1XBY1IfaGUXkILgWyHQ1V7jmtqhAd91aJbzTnO7ZNZ/oddqa6mKHB1EqKrg2SKBwh2628OphYyBW0GiHN7ex85tNYNHt1kZBxKypq2npxlxsE0ia2z23Wg6mYuMggeJp2aNLRCzF4km2uV89yr7e3hqIbULwN4TSOg82+WrmRMigIRGGRCz/tJg7+BSPaZ/uBCSFUWR+GVG6REwX/qVP7HApnfYOxLZ6WtDqEoikaA3/Z4mS7T3IIvdkreWME7qmVqovF1R7vSKxPmUJ/G9A/gEHNsBDdoosxAAAAABJRU5ErkJggg==");
 	}
-	&.popup {
-		position: fixed;
-		z-index: $navbar-zindex;
-		left: 0;
-		bottom: $global-margin;
-		.sulo-notification {
-			width: 15rem;
-			max-width: 15rem;
-			margin: 0;
-			display: none;
-			color: $black;
-			padding: 0.75rem $global-padding;
-			box-shadow: 1px 1px 1px 0 rgba($black, 0.1);
-			margin-top: 0.5rem;//$global-margin;
-			border-radius: $global-radius;
-			border: $global-border;
-			border-color: rgba($sulo-color, 0.5);
-			@include breakpoint(large) {
-				display: block;
-			}
-			transition: background .25s ease-in-out;
-			&:hover {
-				background: lighten($sulo-color, 30%);
-			}
+	.dropdown-pane {
+		max-width: 20rem;
+
+		li.notification-content {
+			display: flex;
+			align-items: flex-start;
+			padding: 0;
+
+			// border-top: $global-border;
+			border-bottom: $global-border;
 			a {
+				padding: 0.5rem;
 				display: flex;
 				align-items: center;
+				color: $body-font-color;
+				line-height: 1.5;
+				@include wrap-text;
+				span {
+					@include wrap-text;
+					> span, > i {
+						color: $sulo-dark-color;
+					}
+				}
+				i.fa-chevron-right {
+					flex: 0 0 auto;
+					margin-left: 0.5rem;
+					color: $medium-gray;
+				}
 				&:hover {
-					color: $body-font-color;
+					background: rgba($sulo-color, 0.1);
 				}
 			}
-			p {
-				margin-left: $global-margin;
-				line-height: 1.1;
-				overflow: hidden;
-				text-overflow: ellipsis; 
-				margin-bottom: 0;
-				small, strong {
-					white-space: nowrap;
-				}
+			p.empty {
+				@include wrap-text;
+				margin: 0;
+				padding: 0.5rem;
+				color: $dark-gray;
+				font-style: italic;
 			}
-			.icon {
-				flex: 0 0 auto;
-				width: 30px; 
-				height: 30px;
-			}
+			
 		}
 	}
+	
 
-	// &.chat {
-		.sulo-notification {
-			i {
-				margin-right: 0;
-				font-size: 1.1rem;
-				color: rgba($black, 0.25);
-				&.is-active {
-					color: $sulo-dark-color;
-				}
+	.sulo-notification {
+		i {
+			margin-right: 0;
+			font-size: 1.1rem;
+			color: rgba($black, 0.25);
+			&.is-active {
+				color: $sulo-dark-color;
 			}
 		}
-		position: relative;
-		align-items: center;
-		display: flex;
-		// .icon {
-		// 	width: 24px;
-		// 	height: 24px;
-		// }
-		.badge {
-			// font-size: 0.75rem;
-			font-weight: $global-weight-bold;
-			position: absolute;
-			// top: 0;
-			bottom: 45%;
-			margin: 0;
-			left: 50%;
-			// padding: 0.05rem;
-		}
-	// }
+
+	}
+	position: relative;
+	align-items: center;
+	display: flex;
+	.badge {
+		// font-size: 0.75rem;
+		font-weight: $global-weight-bold;
+		position: absolute;
+		// top: 0;
+		bottom: 45%;
+		margin: 0;
+		left: 50%;
+	}
 }
 

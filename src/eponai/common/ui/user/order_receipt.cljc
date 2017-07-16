@@ -148,7 +148,6 @@
             (when (pos? (:charge/amount-refunded order-payment))
               (dom/h3 (css/add-class :text-alert) (str (ui-utils/two-decimal-price (:charge/amount-refunded order-payment)) " refunded")))
 
-
             (callout/callout
               nil
               (dom/div

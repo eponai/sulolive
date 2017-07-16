@@ -611,3 +611,10 @@
                      (db/entity db)
                      (:user/chat-notifications)
                      (count))}))
+
+(defmethod client-read :query/notifications
+  [{:keys [target db]} _ _]
+  (when (nil? target)
+    {:value (some->> (client.auth/current-auth db)
+                     (db/entity db)
+                     (:user/notifications))}))

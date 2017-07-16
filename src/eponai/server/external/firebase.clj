@@ -15,7 +15,8 @@
            (com.google.firebase.tasks OnSuccessListener)))
 
 (defprotocol IFirebaseNotifications
-  (-send [this user-id data])
+  (-send-chat-notification [this user-id data])
+  (-send-notification [this user-id data])
   (-register-device-token [this user-id token])
   (-get-device-token [this user-id]))
 
@@ -76,6 +77,9 @@
 (defn chat-notification-ref [database user-id]
   (route->ref database :user/unread-chat-notifications {:user-id user-id}))
 
+(defn notification-ref [database user-id]
+  (route->ref database :user/unread-notifications {:user-id user-id}))
+
 (defn store-owner-presence
   ([database locality]
    (assert (string? locality)
@@ -120,7 +124,17 @@
       (deref p 2000 :firebase/token-timeout)))
 
   IFirebaseNotifications
-  (-send [this user-id {:keys [title message subtitle] :as params}]
+  (-send-notification [this user-id {:keys [title message type click-action] :as params}]
+    (debug "Send notification to: " user-id " params: " params)
+    (when (some? user-id)
+      (let [user-notification-ref (notification-ref (:database this) user-id)]
+        (-> (.push user-notification-ref)
+            (.setValue (clojure.walk/stringify-keys {:title        title
+                                                     :message      message
+                                                     :type         type
+                                                     :click-action click-action}))))))
+
+  (-send-chat-notification [this user-id {:keys [title message subtitle] :as params}]
     ;; Some stores in dev doesn't have an owner.
     (when (some? user-id)
       (let [
@@ -163,7 +177,8 @@
     (-generate-client-auth-token [this user-id claims]
       "some-token")
     IFirebaseNotifications
-    (-send [this user-id data])
+    (-send-chat-notification [this user-id data])
+    (-send-notification [this user-id data])
     (-register-device-token [this user-id token])
     (-get-device-token [this user-id]
       "some token")))

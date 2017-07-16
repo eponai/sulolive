@@ -604,12 +604,12 @@
                    {:keys [store/owners]} (db/pull (db/db state) [{:store/owners [:store.owner/user]}] (:db/id store))]
                (debug "Will send notification to: " owners)
                (when-not (= (:db/id (:store.owner/user owners)) (:db/id user-entity))
-                 (firebase/-send (:system/firebase system)
-                                 (get-in owners [:store.owner/user :db/id])
-                                 {:title    (c/substring (get-in store-entity [:store/profile :store.profile/name]) 0 20)
-                                  :subtitle (str (c/substring (get-in user-entity [:user/profile :user.profile/name] "anonymous") 0 20) " wrote:")
-                                  :type     :notification.type/chat
-                                  :message  (c/substring text 0 100)})))
+                 (firebase/-send-chat-notification (:system/firebase system)
+                                                   (get-in owners [:store.owner/user :db/id])
+                                                   {:title    (c/substring (get-in store-entity [:store/profile :store.profile/name]) 0 20)
+                                                    :subtitle (str (c/substring (get-in user-entity [:user/profile :user.profile/name] "anonymous") 0 20) " wrote:")
+                                                    :type     :notification.type/chat
+                                                    :message  (c/substring text 0 100)})))
              nil)})
 
 (defmutation store/update-order

@@ -78,7 +78,13 @@
       :snapshot-keywords     {:key :notification-id
                               :val :notification-val}
       :events                [:child_added
-                              :value]}]))
+                              :value]}
+     {:firebase-route        :user/unread-notifications
+      :firebase-route-params {:user-id user-id}
+      :snapshot-keywords     {:key :key
+                              :val :val}
+      :events                [:child_added
+                              :child_removed]}]))
 
 (defn all-listeners
   "Returns all listeners we should listen for given a route-map.
@@ -129,6 +135,18 @@
            (nil? notification-val))
       [[:db.fn/retractAttribute user-id :user/chat-notifications]])))
 
+(defmethod firebase-event->txs :user/unread-notifications
+  [{:keys [event-type key val firebase-route-params] :as params}]
+  ;; Only care about :child_added, removed will be done by an action.
+  (when-let [user-id (c/parse-long-safe (:user-id firebase-route-params))]
+    (cond
+      (= event-type :child_added)
+      [{:db/id                   user-id
+        :user/notifications [{:user.notification/id key
+                              :user.notification/value (js->clj val :keywordize-keys true)}]}]
+      (= event-type :child_removed)
+      [[:db/retract user-id :user/notifications [:user.notification/id key]]])))
+
 (defn dedupe-txs
   "Takes a coll of transaction vectors and dedupes them, i.e. removes transactions
   that would cancel each other out."
@@ -155,6 +173,7 @@
 
 (defprotocol IFirebase2Actions
   (read-chat-notifications [this user-id])
+  (read-notification [this user-id notification-id])
   ;; These actions can be called from (on-route-change [])..
   (register-store-owner-presence [this user-id store-id locality])
   (register-store-visit [this store-id locality])
@@ -289,6 +308,11 @@
 
       (read-chat-notifications [this user-id]
         (some->> (path :user/unread-chat-notifications {:user-id user-id})
+                 (.ref database)
+                 (.remove)))
+      (read-notification [this user-id notification-id]
+        (debug "REAAD NOTIFICATION: " (path :user/unread-notification {:user-id user-id :firebase-id notification-id}))
+        (some->> (path :user/unread-notification {:user-id user-id :firebase-id notification-id})
                  (.ref database)
                  (.remove))))))
 

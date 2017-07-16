@@ -51,7 +51,7 @@
         (css/add-class :user-dropdown-menu)
         (if owned-store
           (menu/item
-            (css/add-class :my-stores)
+            (css/add-class :parent)
             (dom/label nil (dom/small nil "Manage Store"))
             (menu/vertical
               (css/add-class :nested)
@@ -65,7 +65,7 @@
                                  )}
                   (dom/span nil store-name)))))
           (menu/item
-            (css/add-class :my-stores)
+            (css/add-class :parent)
             (dom/label nil (dom/small nil "Manage store"))
             (menu/vertical
               (css/add-class :nested)
@@ -75,7 +75,7 @@
                 (dom/small nil "Start a store")))))
         (when user
           (menu/item
-            (css/add-class :user-info)
+            (css/add-class :parent)
             (menu/vertical
               (css/add-class :nested)
               (dom/label nil (dom/small nil "Your account"))
@@ -181,10 +181,9 @@
                                (routes/url :landing-page))
                     :onClick #(mixpanel/track "Store: Go back to marketplace" {:source "navbar"})}
                    (dom/strong nil (dom/small nil "Back to marketplace"))))
-          (menu/item
-            (css/add-class :chat-notifications)
-            (note/->Notifications (om/computed notification {:href (routes/store-url owned-store :store (:route-params current-route))
-                                                             :type :notification.type/chat})))))
+
+          (note/->Notifications (om/computed notification {:href (routes/store-url owned-store :store (:route-params current-route))
+                                                           :type :notification.type/chat}))))
 
       (dom/div
         (css/add-class :top-bar-right)
@@ -226,14 +225,10 @@
            nil
 
            (when (some? auth)
-             (menu/item
-               (css/add-class :sulo-notifications)
-               (dom/a (css/add-class :sulo-notification) (dom/i {:classes ["fa fa-bell"]}))))
+             (note/->Notifications (om/computed notification {:type :notification.type/notification})))
            (when (some? owned-store)
-             (menu/item
-               (css/add-class :chat-notifications)
-               (note/->Notifications (om/computed notification {:type :notification.type/chat
-                                                                :href (routes/store-url owned-store :store)}))))
+             (note/->Notifications (om/computed notification {:type :notification.type/chat
+                                                              :href (routes/store-url owned-store :store)})))
            (when (nil? auth)
              (menu/item
                nil

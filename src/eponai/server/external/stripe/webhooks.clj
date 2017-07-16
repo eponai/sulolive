@@ -9,7 +9,10 @@
     [eponai.common.format :as f]
     [eponai.server.api.store :as store]
     [eponai.server.external.stripe.format :as stripe-format]
-    [eponai.server.log :as log])
+    [eponai.server.log :as log]
+    [eponai.server.external.firebase :as firebase]
+    [eponai.common.routes :as routes]
+    [eponai.client.routes :as client.routes])
   (:import (java.util.concurrent ExecutorService TimeUnit Executors)))
 
 (defprotocol IStripeWebhooksExecutor
@@ -72,12 +75,20 @@
                                  {:order/store [:db/id
                                                 :store/username
                                                 {:store/profile [:store.profile/name]}
-                                                {:store/owners [{:store.owner/user [:user/email]}]}]}
+                                                {:store/owners [{:store.owner/user [:db/id :user/email]}]}]}
                                  {:order/user [:user/email]}]
                                 {:where   '[[?e :order/uuid ?uuid]]
                                  :symbols {'?uuid order-uuid}})]
     (email/-send-order-receipt (:system/email system) {:order order :charge charge})
-    (email/-send-order-notification (:system/email system) {:order order :charge charge})))
+    (email/-send-order-notification (:system/email system) {:order order :charge charge})
+    (firebase/-send-notification (:system/firebase system)
+                                 (get-in order [:order/store :store/owners :store.owner/user :db/id])
+                                 {:title        "New order"
+                                  :message      (str "You received a new order from " (get-in order [:order/shipping :shipping/name]))
+                                  :click-action (client.routes/store-url (:order/store order)
+                                                                         :store-dashboard/order
+                                                                         {:order-id (:db/id order)})
+                                  :type         "new-order"})))
 
 (defmulti handle-account-webhook (fn [{:keys [logger webhook-event]} _]
                                    (debug "Webhook event: " webhook-event)

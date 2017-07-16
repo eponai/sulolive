@@ -15,7 +15,10 @@
 		&.expanded {
 			.photo-container {
 				.photo.cover {
-					padding-top: 25%;
+					padding-top: 40%;
+					@include breakpoint(medium) {
+						padding-top: 25%;
+					}
 				}
 				.overlay {
 					background: rgba($sulo-color, 0.25);
@@ -25,7 +28,10 @@
 	}
 	.callout {
 		&:not(.small) {
-			padding: 2rem;
+			padding: $global-padding;
+			@include breakpoint(medium) {
+				padding: 2rem;
+			}
 		}
 		:first-child {
 			margin-top: 0;

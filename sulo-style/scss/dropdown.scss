@@ -34,7 +34,7 @@
 			background: $white;
 			position: absolute;
 			width: auto;
-			top: auto;
+			top: 100%;;
 			margin-top: 0.5rem;
 			min-width: 13rem;
 		}
@@ -50,7 +50,7 @@
 			transition: color .25s ease-in-out;
 		}
 
-		&.user-dropdown {
+		// &.user-dropdown {
 			li {
 				padding: 0.1rem 0.5rem;
 				&:last-child {
@@ -67,7 +67,7 @@
 					// font-weight: $global-weight-bold;
 				}
 			}
-			li.my-stores {
+			li.parent {
 				li {
 					// padding: 0;
 				}
@@ -83,14 +83,13 @@
 					// text-transform: uppercase;
 					// font-weight: $global-weight-bold;
 				}
-			}
-			li.my-stores, li.user-info {
 				border-bottom: $global-border-secondary;
 			}
+
 			ul.nested {
 				margin: 0;
 			}
-		}
+		// }
 
 		// &.collection-dropdown {
 		// 	.categories {
