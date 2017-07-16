@@ -43,7 +43,7 @@ test:
     - lein clean
     - lein uberjar
     - docker build -t $DOCKER_IMAGE .
-    - docker run -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -p $PORT:$PORT $DOCKER_IMAGE; sleep 15
+    - docker run -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT $DOCKER_IMAGE; sleep 15
     - docker ps -l
     - docker ps -l -q | xargs docker logs
     - ./scripts/run-docker-img-test.sh localhost $PORT
