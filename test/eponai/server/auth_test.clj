@@ -42,8 +42,9 @@
                                 :cookies          cookies})]
         (= (:status response)
            status))
-      200 :landing-page nil (location-cookie)
       200 :index {:locality "yvr"} (location-cookie)
+      ;; Redirected to :index when going to landing page with :sulo-locality/path
+      red :landing-page nil (location-cookie)
       red :user-settings nil (location-cookie)
       red :store-dashboard {:store-id 123} (location-cookie))))
 
