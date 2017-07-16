@@ -284,12 +284,13 @@
                (debug "Default card: " default-card)
                (menu/vertical
                  (css/add-classes [:section-list :section-list--cards])
+
                  (map-indexed (fn [i c]
                                 (let [{:stripe.card/keys [brand last4 id]} c]
                                   (menu/item
                                     (css/add-class :section-list-item--card)
                                     (dom/a
-                                      {:onClick #(om/update-state! component assoc :payment/selected-card id)}
+                                      {:onClick #(.save-payment-info component id) }
                                       (dom/input {:type    "radio"
                                                   :name    "sulo-select-cc"
                                                   :checked (if (some? selected-card)
@@ -311,16 +312,13 @@
                                     (dom/div
                                       nil
                                       (button/user-setting-default
-                                        nil
+                                        {:onClick #(.remove-payment component id)}
                                         (dom/span nil "Remove"))))))
                               cards)))
              (dom/p nil (dom/small nil "New cards are saved at checkout.")))
            (dom/div
              (css/add-class :action-buttons)
-             (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))
-             (button/user-setting-cta {:onClick #(do
-                                                  (mixpanel/track "Save payment info")
-                                                  (.save-payment-info component))} (dom/span nil "Save")))])))))
+             (button/user-setting-default {:onClick on-close} (dom/span nil "Close")))])))))
 
 (defn render-error-message [component]
   (let [{:keys [error/show-social-error?]} (om/get-state component)
@@ -378,17 +376,22 @@
            (msg/om-transact! this [(list 'stripe/update-customer {:shipping shipping-map})
                                    :query/stripe-customer]))
          (om/update-state! this assoc :shipping/input-validation validation))))
-  (save-payment-info [this]
+  (save-payment-info [this selected-card]
     #?(:cljs
        (let [{:query/keys [stripe-customer]} (om/props this)
-             {:payment/keys [selected-card]} (om/get-state this)
+             ;{:payment/keys [selected-card]} (om/get-state this)
              default-card (some #(when (= (:stripe.card/id %) (:stripe/default-source stripe-customer)) %) (:stripe/sources stripe-customer))]
 
          (mixpanel/track "Save payment info")
-         (if-not (= selected-card (:stripe.card/id default-card))
+         (when-not (= selected-card (:stripe.card/id default-card))
            (msg/om-transact! this [(list 'stripe/update-customer {:default-source selected-card})
-                                   :query/stripe-customer])
-           (om/update-state! this dissoc :modal)))))
+                                   :query/stripe-customer])))))
+
+  (remove-payment [this selected-card]
+    (let [{:query/keys [stripe-customer]} (om/props this)
+          default-card (some #(when (= (:stripe.card/id %) (:stripe/default-source stripe-customer)) %) (:stripe/sources stripe-customer))]
+      (msg/om-transact! this [(list 'stripe/update-customer {:remove-source selected-card})
+                              :query/stripe-customer])))
 
   (save-user-info [this]
     #?(:cljs
@@ -411,7 +414,8 @@
 
           shipping-msg (msg/last-message this 'stripe/update-customer)]
       (debug "Messages: " {:info  info-msg
-                           :photo photo-msg})
+                           :photo photo-msg
+                           :stripe shipping-msg})
       (when (and (msg/final? info-msg)
                  (or (nil? photo-msg) (msg/final? photo-msg)))
         (cond (and (msg/success? info-msg)
@@ -444,6 +448,7 @@
     (let [info-msg (msg/last-message this 'user.info/update)
           photo-msg (msg/last-message this 'photo/upload)
           stripe-msg (msg/last-message this 'stripe/update-customer)]
+      (debug "Is loading: " stripe-msg)
       (or (msg/pending? info-msg)
           (msg/pending? photo-msg)
           (msg/pending? stripe-msg))))
