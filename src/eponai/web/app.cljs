@@ -139,7 +139,7 @@
                         [:store.profile/name]}]}]}])
 
 (defn register-user-presence [reconciler]
-  (when-let [user-id (client.auth/current-auth reconciler)]
+  (if-let [user-id (client.auth/current-auth reconciler)]
     (let [db (db/to-db reconciler)
           owned-store (db/one-with db {:where   '[[?e :store/owners ?owner]
                                                   [?owner :store.owner/user ?user]]
@@ -150,15 +150,14 @@
           (.signInWithCustomToken (:token fb-token))
           (.catch (fn [err]
                     (debug "Firebase could not sign in: " err))))
-      ;(-> (.auth js/firebase)
-      ;    (.signInAnonymously))
-
       (when (some? owned-store)
         (firebase/register-store-owner-presence
           (shared/by-key reconciler :shared/firebase)
           user-id
           owned-store
-          (get-in (db/entity db owned-store) [:store/locality :sulo-locality/path]))))))
+          (get-in (db/entity db owned-store) [:store/locality :sulo-locality/path]))))
+    (-> (.auth js/firebase)
+        (.signInAnonymously))))
 
 (defn initialize-firebase [reconciler]
   (firebase/initialize reconciler)
