@@ -57,7 +57,8 @@
        (do
          (web-utils/set-locality locality)
          (om/transact! this [(list 'client/set-locality {:locality locality})
-                             :query/locations]))))
+                             :query/locations])
+         (routes/set-url! this :index {:locality (:sulo-locality/path locality)}))))
   (submit-new-location [this]
     #?(:cljs
        (let [email (web-utils/input-value-by-id (:field/email form-inputs))
@@ -136,8 +137,7 @@
                        (grid/column
                          nil
                          (dom/a
-                           (->> {:href (routes/url :index {:locality (:sulo-locality/path loc)})
-                                 :onClick #(.select-locality this loc)}
+                           (->> {:onClick #(.select-locality this loc)}
                                 (css/add-class :city-anchor))
                            (photo/photo
                              {:photo-id       (:photo/id photo)
