@@ -11,24 +11,24 @@
     [eponai.common.mixpanel :as mixpanel]
     [eponai.web.ui.login :as login]
     [eponai.web.ui.nav.loading-bar :as loading]
-    [eponai.web.ui.notifications :as note]))
+    [eponai.web.ui.notifications :as note]
+    [taoensso.timbre :refer [debug]]))
 
 (defn navbar-route [component href]
   (let [{:query/keys [auth locations]} (om/props component)]
-    (when (some? auth)
-      (if (nil? href)
-        (routes/url :landing-page/locality)
-        href))))
+    (if (nil? href)
+      (routes/url :landing-page/locality)
+      href)))
 
 (defn collection-links [component source]
   (let [{:query/keys [auth locations navigation]} (om/props component)]
+    (debug "Locations: " locations)
     (map
       (fn [{:category/keys [route-map name path] :as a}]
         (let [opts {:href    (navbar-route
                                component
-                               (when-let [loc (:sulo-locality/path (client.auth/current-locality component))]
+                               (when-let [loc (:sulo-locality/path locations)]
                                  (routes/map->url (assoc-in route-map [:route-params :locality] loc))))
-                    :classes (when (nil? auth) [:unauthed])
                     :onClick #(do (mixpanel/track-key ::mixpanel/shop-by-category {:source   source
                                                                                    :category path})
                                   (when (empty? locations)
@@ -41,6 +41,24 @@
                      (css/show-for :large))
             (dom/span nil (str name)))))
       navigation)))
+
+(defn live-link [component source]
+  (let [{:query/keys [auth locations]} (om/props component)]
+    (menu/item-link
+      (->> {:href    (navbar-route component (when locations
+                                               (routes/url :live {:locality (:sulo-locality/path locations)})))
+            :onClick #(do
+                       (mixpanel/track-key ::mixpanel/shop-live {:source source})
+                       (when (empty? locations)
+                         #?(:cljs
+                            (when-let [locs (web-utils/element-by-id "sulo-locations")]
+                              (web-utils/scroll-to locs 250)))))}
+           (css/add-class :navbar-live)
+           (css/show-for :large))
+      (dom/span
+        nil
+        ;; Wrap in span for server and client to render the same html
+        (dom/span nil "Live")))))
 
 (defn query []
   [{:query/cart [{:user.cart/items [:db/id

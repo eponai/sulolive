@@ -256,7 +256,8 @@
                         (css/add-class :follow-section))
                    (dom/div nil
                             (common/follow-button nil)
-                            (common/contact-button nil))))
+                            ;(common/contact-button nil)
+                            )))
                ))
 
            (grid/row

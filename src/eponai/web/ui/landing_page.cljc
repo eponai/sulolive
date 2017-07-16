@@ -136,12 +136,9 @@
                        (grid/column
                          nil
                          (dom/a
-                           (css/add-class :city-anchor {:onClick #(do
-                                                                   (debug "Setting locality! " loc)
-                                                                   (.select-locality this loc)
-                                                                   (if (nil? auth)
-                                                                     (auth/show-login (shared/by-key this :shared/login))
-                                                                     (routes/set-url! this :index {:locality (:sulo-locality/path loc)})))})
+                           (->> {:href (routes/url :index {:locality (:sulo-locality/path loc)})
+                                 :onClick #(.select-locality this loc)}
+                                (css/add-class :city-anchor))
                            (photo/photo
                              {:photo-id       (:photo/id photo)
                               :transformation :transformation/preview}
@@ -157,7 +154,7 @@
                                  (dom/p (css/add-class :coming-soon) (dom/small nil coming-soon))))))))
 
                      ;; Assoc comming soon mesage for each city, position them in this array to keep order.
-                     [(assoc loc-vancouver :sulo-locality/coming-soon "Coming soon - Summer 2017")
+                     [loc-vancouver
                       (assoc loc-montreal :sulo-locality/coming-soon "Coming soon - Fall 2017")]))
 
 

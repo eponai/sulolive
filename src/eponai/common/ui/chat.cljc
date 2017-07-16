@@ -175,7 +175,7 @@
           {:keys [stream-overlay? store store-online-status visitor-count current-route]} (om/get-computed this)
           store-name (get-in store [:store/profile :store.profile/name])
           welcome-msg (if (and (number? visitor-count) (< 1 visitor-count))
-                        (if (= (:route current-route :store-dashboard/stream))
+                        (if (= (:route current-route) :store-dashboard/stream)
                           (str "Welcome to your public chat room! You have visitors in your store right now, try and say hi")
                           (str "Welcome to " store-name " public chatroom! Other users are in this store, try to say hi"))
                         (if (= (:route current-route) :store-dashboard/stream)

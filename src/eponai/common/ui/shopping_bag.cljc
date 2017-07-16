@@ -185,7 +185,7 @@
                (icons/empty-shopping-bag)
                ;(dom/p (css/add-class :header))
                (button/button
-                 (button/sulo-dark (button/hollow {:href (routes/url :browse/all-items {:locality (:sulo-locality/path locations)})}))
+                 (button/sulo-dark (button/hollow {:href (routes/url :live {:locality (:sulo-locality/path locations)})}))
                  (dom/span nil "Go to the market - start shopping")))
              (grid/row-column
                   nil

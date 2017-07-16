@@ -154,8 +154,18 @@
 
 (defn auth-roles [handler]
   (cond
+    ;; Always open paths
     (#{:landing-page :sell :about :not-found :login :tos :unauthorized} handler)
     ::auth/public
+    ;; Help center paths
+    (or (= handler :help) (= (namespace handler) "help"))
+    ::auth/public
+    ;; Open after launch paths
+    (#{:shopping-bag :store :product :live :index :stores} handler)
+    ::auth/public
+    (or (= handler :browse) (= (namespace handler) "browse"))
+    ::auth/public
+
     (= handler :store-dashboard)
     ::auth/store-owner
     (= (namespace handler) "store-dashboard")

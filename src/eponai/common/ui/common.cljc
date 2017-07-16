@@ -46,15 +46,19 @@
               "Canceled")))))
 
 (defn follow-button [opts]
-  (dom/a
-    (->> (css/button opts)
-         (css/add-class :disabled))
-    (dom/span nil "+ Follow")))
+  (dom/p (css/add-class :follow-button-container)
+         (dom/a
+           (->> (css/button opts)
+                (css/add-classes [:follow-button :sulo-dark :hollow]))
+           (dom/span nil "Follow"))
+         (dom/br nil)
+         (dom/small (css/add-class :text-sulo-dark) "Coming soon")))
 
 (defn contact-button [opts]
   (dom/a (->> (css/button-hollow opts)
-              (css/add-class :disabled))
-         (dom/span nil "Contact")))
+              (css/add-classes [:contact-button :sl-tooltip]))
+         (dom/span nil "Contact")
+         (dom/span (css/add-class :sl-tooltip-text) "Coming soon")))
 
 (defn modal [opts & content]
   (let [{:keys [classes on-close size require-close?]} opts]

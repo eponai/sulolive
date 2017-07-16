@@ -313,12 +313,13 @@
                 (dom/div
                   (css/add-class :store-name)
                   (dom/a
-                    {:href (str "/store/" (:db/id store))}
+                    {:href (routes/store-url store :store)}
                     (dom/span nil (:store.profile/name (:store/profile store)))))
                 (dom/div
                   (css/add-class :store-tagline) (dom/p nil (:store.profile/description (:store/profile store))))
                 (dom/div nil
-                         (common/follow-button nil))))
+                         (common/follow-button nil))
+                ))
             (dom/hr nil)))))))
 
 (def ->Product (om/factory Product))

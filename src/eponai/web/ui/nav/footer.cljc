@@ -48,31 +48,35 @@
         (dom/footer
           nil
           (grid/row
-            (grid/columns-in-row {:small 2 :medium (if (some? auth) 4 3)})
-            (when (some? auth)
-              (grid/column
-                nil
-                (menu/vertical
-                  (css/add-class :location-menu)
-                  (menu/item-text nil (dom/span nil "Change location"))
-                  (menu/item
-                    nil
-                    (dom/select
-                      {:value    (or (:db/id locations) "")
-                       :onChange #(.change-location this (.-value (.-target %)))}
-                      (dom/option {:value ""
-                                   :disabled true}
-                                  "--- Select locality ---")
-                      (map (fn [l]
-                             (dom/option
-                               {:value (:db/id l)} (:sulo-locality/title l)))
-                           sulo-localities)))
-                  ;(menu/item-link nil (dom/span nil "Vancouver"))
-                  ;(menu/item-link {:href (routes/url :browse/category {:top-category "home"})} (dom/span nil "HOME"))
-                  ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "women"})} (dom/span nil "WOMEN"))
-                  ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "men"})} (dom/span nil "MEN"))
-                  ;(menu/item-link {:href (routes/url :browse/gender {:sub-category "unisex-kids"})} (dom/span nil "KIDS"))
-                  )))
+            (grid/columns-in-row {:small 2 :medium 4})
+            (grid/column
+              nil
+              (menu/vertical
+                (css/add-class :location-menu)
+                (menu/item-text nil (dom/span nil "Change location"))
+                (menu/item
+                  nil
+                  (dom/select
+                    {:value    (or (:db/id locations) "")
+                     :onChange #(.change-location this (.-value (.-target %)))}
+                    (dom/option {:value    ""
+                                 :disabled true}
+                                "--- Select location ---")
+                    (map (fn [l]
+                           (dom/option
+                             {:value (:db/id l)} (:sulo-locality/title l)))
+                         sulo-localities))))
+              (menu/vertical
+                (css/add-class :location-menu)
+                (menu/item-text nil (dom/span nil "Currency"))
+                (menu/item
+                  nil
+                  (dom/select
+                    {:value "CAD"}
+                    (map (fn [c]
+                           (dom/option
+                             {:value (:currency/code c)} (:currency/code c)))
+                         [{:currency/code "CAD"}])))))
 
             (grid/column
               nil

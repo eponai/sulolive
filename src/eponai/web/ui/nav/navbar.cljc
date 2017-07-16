@@ -31,25 +31,6 @@
     content))
 
 
-
-(defn live-link [component]
-  (let [{:query/keys [auth locations]} (om/props component)]
-    (menu/item-link
-      (->> (css/add-class :navbar-live {:href    (nav.common/navbar-route component (when locations
-                                                                                                      (routes/url :live {:locality (:sulo-locality/path locations)})))
-                                        :onClick #(do
-                                                   (mixpanel/track-key ::mixpanel/shop-live {:source "navbar"})
-                                                   (when (empty? locations)
-                                                     #?(:cljs
-                                                        (when-let [locs (web.utils/element-by-id "sulo-locations")]
-                                                          (web.utils/scroll-to locs 250)))))
-                                        :classes (when (nil? auth) [:unauthed])})
-           (css/show-for :large))
-      (dom/span
-        nil
-        ;; Wrap in span for server and client to render the same html
-        (dom/span nil "Live")))))
-
 (defn navbar-brand [& [href title]]
   (menu/item-link
     {:href (or href "/")
@@ -132,15 +113,7 @@
            {:onClick #(do
                        (debug "Click login: " (shared/by-key component :shared/login))
                        (auth/show-login (shared/by-key component :shared/login)))}
-           (dom/strong nil (dom/small nil "Sign up / Sign in")))))
-     ;(when (some? auth)
-     ;  (menu/item
-     ;    (->> (css/hide-for :large)
-     ;         (css/add-class :user-photo-item))
-     ;    (dom/a
-     ;      {:href (routes/url :user {:user-id (:db/id auth)})}
-     ;      (p/user-photo auth {:transformation :transformation/thumbnail-tiny}))))
-     ]))
+           (dom/strong nil (dom/small nil "Sign up / Sign in")))))]))
 
 (defn help-navbar [component]
   (let [{:query/keys [auth owned-store]} (om/props component)]
@@ -151,7 +124,7 @@
         (menu/horizontal
           nil
           (navbar-brand)
-          (live-link component)
+          (nav.common/live-link component "navbar")
           (menu/item nil
                      (dom/input {:type        "text"
                                  :placeholder "Search on SULO Live Help..."}))))
@@ -240,11 +213,10 @@
                (dom/a
                  (css/hide-for :large {:onClick #(.open-sidebar component)})
                  (dom/i {:classes ["fa fa-bars fa-fw"]}))))
-           (navbar-brand (if (and (not-empty locations)
-                                  (some? auth))
+           (navbar-brand (if (not-empty locations)
                            (routes/url :index {:locality (:sulo-locality/path locations)})
                            (routes/url :landing-page)))
-           (live-link component)
+           (nav.common/live-link component "navbar")
 
            (nav.common/collection-links component "navbar")))
 
@@ -252,18 +224,6 @@
          {:classes ["top-bar-right"]}
          (menu/horizontal
            nil
-           ;(menu/item (css/add-class :search-input)
-           ;           (dom/div
-           ;             (css/show-for :medium)
-           ;             (search-bar/->SearchBar {:placeholder     "Search on SULO..."
-           ;                                      :default-value   (or (get-in current-route [:query-params :search]) "")
-           ;                                      :mixpanel-source "navbar"})
-           ;             ))
-
-           ;(menu/item
-           ;  nil
-           ;  (dom/a nil
-           ;         (dom/span (css/add-classes ["icon icon-heart"]))))
 
            (when (some? auth)
              (menu/item
@@ -280,19 +240,18 @@
                (dom/a {:href (routes/url :about)}
                       (dom/strong nil (dom/small nil "About us")))))
            (user-menu-item component)
-           (when (some? auth)
-             (menu/item
-               (css/add-class :shopping-bag)
-               (dom/a {:classes ["shopping-bag-icon"]
-                       :href    (routes/url :shopping-bag)}
-                      ;(dom/span (css/add-class ["icon icon-shopping-bag"]))
-                      (icons/shopping-bag)
-                      (let [item-count (reduce (fn [sum sku]
-                                                 (let [store-is-open? (= :status.type/open
-                                                                         (-> sku :store.item/_skus :store/_items :store/status :status/type))]
-                                                   (if store-is-open? (inc sum) sum))) 0 (:user.cart/items cart))]
-                        (when (pos? item-count)
-                          (dom/span (css/add-class :badge) (count (:user.cart/items cart)))))))))))]))
+           (menu/item
+             (css/add-class :shopping-bag)
+             (dom/a {:classes ["shopping-bag-icon"]
+                     :href    (routes/url :shopping-bag)}
+                    ;(dom/span (css/add-class ["icon icon-shopping-bag"]))
+                    (icons/shopping-bag)
+                    (let [item-count (reduce (fn [sum sku]
+                                               (let [store-is-open? (= :status.type/open
+                                                                       (-> sku :store.item/_skus :store/_items :store/status :status/type))]
+                                                 (if store-is-open? (inc sum) sum))) 0 (:user.cart/items cart))]
+                      (when (pos? item-count)
+                        (dom/span (css/add-class :badge) (count (:user.cart/items cart))))))))))]))
 
 (defui Navbar
   static om/IQuery

@@ -12,6 +12,14 @@ p > a {
 	}
 }
 
+p.follow-button-container {
+	margin: 0;
+}
+a.follow-button {
+	// opacity: 0.5;
+	text-decoration: none;
+}
+
 #sulo-landing {
 	h1 {
 		@include breakpoint(large) {

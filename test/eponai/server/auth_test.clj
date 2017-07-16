@@ -43,7 +43,7 @@
         (= (:status response)
            status))
       200 :landing-page nil (location-cookie)
-      red :index {:locality "yvr"} (location-cookie)
+      200 :index {:locality "yvr"} (location-cookie)
       red :user-settings nil (location-cookie)
       red :store-dashboard {:store-id 123} (location-cookie))))
 
