@@ -150,7 +150,7 @@
                                  (dom/div
                                    {:classes [:button :hollow]}
                                    (dom/span nil "Enter")))
-                               (when (and (not-empty coming-soon) (nil? auth))
+                               (when (not-empty coming-soon)
                                  (dom/p (css/add-class :coming-soon) (dom/small nil coming-soon))))))))
 
                      ;; Assoc comming soon mesage for each city, position them in this array to keep order.
