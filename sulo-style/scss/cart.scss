@@ -15,14 +15,14 @@
 			height: 200px;
 		}
 	}
-	.button {
-		margin: 0;
-	}
 
 	.callout {
 		border: $global-border;
 	}
 	.cart-checkout-item {
+		.button {
+			margin: 0;
+		}
 		.menu {
 			border-top: $global-border;			
 			border-bottom: $global-border;

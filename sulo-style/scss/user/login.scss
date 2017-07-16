@@ -27,6 +27,9 @@
 		margin-bottom: $global-margin;
 		// border: none;
 	}
+	.button {
+		margin-bottom: $global-margin !important;
+	}
 }
 
 #sulo-login-modal-content {	

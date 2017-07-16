@@ -664,7 +664,7 @@
   (componentDidMount [this]
     #?(:cljs
        (let [init-state (.initial-state this (om/props this))
-             {:query/keys [checkout stripe-customer locations]} (om/props this)
+             {:query/keys [checkout stripe-customer locations auth]} (om/props this)
              country (or (get-in init-state [:checkout/shipping :shipping/address :shipping.address/country :country/code])
                          (get-in init-state [:shipping/edit-shipping :shipping/address :shipping.address/country :country/code]))
              card (stripe/card-element (shared/by-key this :shared/stripe) (str "#" (:payment.stripe/card form-inputs)))
@@ -672,6 +672,8 @@
                             {:element-id "sulo-auto-complete"
                              :on-change  (fn [address]
                                            (om/update-state! this assoc-in [:shipping/edit-shipping :shipping/address] address))})]
+         (when (nil? auth)
+           (routes/set-url! this :login))
          (when-not (= :status.type/open (-> (first checkout) :store.item/_skus :store/_items :store/status :status/type))
            (routes/set-url! this :shopping-bag))
          (debug "Setting GOogle country: " country)
