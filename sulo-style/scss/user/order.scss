@@ -1,4 +1,7 @@
 #sulo-user-order-list {
+	// .page-container {
+		background: $dashboard-background;
+	// }
 	padding-top: $global-padding;
 	.row {
 		max-width: $dashboard-content-width;
@@ -21,13 +24,14 @@
 	}
 
 	.sl-order-card {
-		border: $global-border;
+		// border: $global-border;
+		// padding: 0;
 		margin-bottom: 4rem;
 		&:last-child {
 			margin-bottom: 10rem;
 		}
 		.sl-order-card-subtitle {
-			padding: $global-padding;
+			padding-top: $global-padding;
 			p {
 				margin: 0;
 			}
@@ -47,7 +51,7 @@
 		}
 		.sl-order-card-title {
 			margin: 0;
-			padding: $global-padding;
+			padding-bottom: $global-padding;
 			.button {
 				margin-bottom: 0;
 				margin-top: $global-margin-small;

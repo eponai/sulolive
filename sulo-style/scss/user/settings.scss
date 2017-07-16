@@ -108,6 +108,9 @@
 // }
 
 #sulo-user-settings {
+	.page-container {
+		background: $dashboard-background;
+	}
 	.page-content .row {
 		max-width: $user-dashboard-max-width;
 		margin-right: auto;
@@ -124,7 +127,18 @@
 }
 	
 	.section-list {
-		margin-bottom: 4rem;
+		border: none;
+		li {
+			&:first-child {
+				padding-top: 0;
+				border-top: none;
+			}
+			&:last-child {
+				padding-bottom: 0;
+				border-bottom: none;
+			}
+		}
+		// margin-bottom: 4rem;
 			.user-profile {
 			display: flex;
 			flex-direction: row;

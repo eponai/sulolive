@@ -62,8 +62,10 @@
 
         (grid/row-column
           nil
-          (dom/h1 nil "Purchases")
-          (if (not-empty orders)
+          (dom/h1 nil "Purchases"))
+        (if (not-empty orders)
+          (grid/row-column
+            nil
             (map (fn [[timestamp os]]
                    (dom/div
                      nil
@@ -74,10 +76,10 @@
                                {store-name :store.profile/name} (:store/profile store)
                                skus (filter #(= (:order.item/type %) :order.item.type/sku) (:order/items o))
                                shipping (some #(when (= (:order.item/type %) :order.item.type/shipping) %) (:order/items o))]
-                           (dom/div
+                           (callout/callout
                              (css/add-class :sl-order-card)
                              ;(photo/store-cover store nil)
-                             (callout/callout
+                             (dom/div
                                (css/add-classes [:section-title :sl-order-card-title])
 
                                (dom/a
@@ -126,7 +128,7 @@
                                      (dom/p nil (dom/span nil "Status: ")
                                             (cond (#{:order.status/created :order.status/paid} status)
                                                   (dom/span (css/add-class :text-success) "New")
-                                                  (#{:order.status/fulfilled } status)
+                                                  (#{:order.status/fulfilled} status)
                                                   (dom/span nil "Shipped")
                                                   :else
                                                   (dom/span nil (name status))))
@@ -146,31 +148,32 @@
                                ;    (button/user-setting-default {:href (routes/url :user/order {:order-id (:db/id o)})} "View receipt")))
                                ))))
                        (sort-by :order/created-at > os))))
-                 orders-by-month)
-            (dom/div
-              (css/add-class :empty-container)
-              (dom/p (css/add-class :shoutout) "You haven't made any purchases yet")
-              ;(dom/br nil)
-              (button/button
-                (button/sulo-dark (button/hollow {:href (routes/url :browse/all-items {:locality (:sulo-locality/path locations)})})) (dom/span nil "Browse products")))))
+                 orders-by-month))
+          (grid/row-column
+            (css/add-class :empty-container)
+            (dom/p (css/add-class :shoutout) "You haven't made any purchases yet")
+            ;(dom/br nil)
+            (button/button
+              (button/sulo-dark (button/hollow {:href (routes/url :browse/all-items {:locality (:sulo-locality/path locations)})})) (dom/span nil "Browse products"))))
 
         (when (some? locations)
-          [(grid/row-column
-             nil
-             (dom/hr nil)
-             (dom/div
-               (css/add-class :section-title)
-               (dom/h3 nil (str "New arrivals in " (:sulo-locality/title locations)))))
-           (grid/row
-             (->>
-               (grid/columns-in-row {:small 2 :medium 3 :large 5}))
-             (map
-               (fn [p]
-                 (grid/column
-                   (css/add-class :new-arrival-item)
-                   (ci/->ProductItem (om/computed p
-                                                  {:current-route current-route}))))
-               (take 5 featured-items)))])
+          (callout/callout
+            (css/add-class :featured)
+            (grid/row-column
+                  nil
+                  (dom/div
+                    (css/add-class :section-title)
+                    (dom/h3 nil (str "New arrivals in " (:sulo-locality/title locations)))))
+            (grid/row
+              (->>
+                (grid/columns-in-row {:small 2 :medium 3 :large 5}))
+              (map
+                (fn [p]
+                  (grid/column
+                    (css/add-class :new-arrival-item)
+                    (ci/->ProductItem (om/computed p
+                                                   {:current-route current-route}))))
+                (take 5 featured-items)))))
         ))))
 
 (def ->OrderList (om/factory OrderList))

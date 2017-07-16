@@ -1,7 +1,9 @@
 $user-dashboard-max-width: 44rem;
 
 #sulo-user {
-
+	.page-content {
+		padding-bottom: 0;
+	}
 	.go-back {
 		padding: 1rem 0;
 		padding-left: 0.5rem;

@@ -402,7 +402,7 @@
                  (if-let [loc (cookie-locality request)]
                    (if (auth/authed-for-roles?
                          (db/db (:eponai.server.middleware/conn request))
-                         ::auth/any-user
+                         ::auth/public
                          identity
                          nil)
                      (buddy/error loc)

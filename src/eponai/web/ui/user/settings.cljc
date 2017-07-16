@@ -465,198 +465,204 @@
           (dom/div
             (css/add-class :section-title)
             (dom/span nil "Account"))
-          (menu/vertical
-            (css/add-class :section-list)
-            (menu/item
-              nil
-              (grid/row
-                (->> (css/align :middle)
-                     (css/add-class :collapse))
-                (grid/column
-                  (grid/column-size {:small 12 :medium 6})
-                  (dom/label nil "Email")
-                  (dom/span nil (:user/email auth)))
-                (grid/column
-                  (grid/column-size {:small 12 :medium 6})
-                  ;(dom/a
-                  ;  (->> (css/button-hollow)
-                  ;       (css/add-class :secondary)
-                  ;       (css/add-class :small))
-                  ;  (dom/span nil "Edit email"))
-                  )
-                ))
-            (cond (= modal :modal/edit-profile)
-                  (edit-profile-modal this)
-                  (= modal :modal/payment-info)
-                  (payment-info-modal this)
-                  (= modal :modal/shipping-info)
-                  (shipping-info-modal this))
-            (menu/item
-              nil
-              (grid/row
-                (->> (css/align :middle)
-                     (css/add-class :collapse))
-                (grid/column
-                  (grid/column-size {:small 12 :medium 6})
-                  (dom/label nil "Public profile")
-                  (dom/p nil (dom/small nil "This is how other users on SULO will see you when you interact and hang out in stores."))
-                  )
-                (grid/column
-                  (->> (grid/column-size {:small 12 :medium 6})
-                       (css/text-align :right))
-                  (dom/div
-                    (css/add-class :user-profile)
-                    (dom/span nil (:user.profile/name user-profile))
-                    (photo/user-photo auth {:transformation :transformation/thumbnail}))
-                  (button/user-setting-default
-                    {:onClick #(do
-                                (mixpanel/track "Edit profile")
-                                (om/update-state! this assoc :modal :modal/edit-profile))}
-                    (dom/span nil "Edit profile"))))))
+          (callout/callout
+            nil
+            (menu/vertical
+              (css/add-class :section-list)
+              (menu/item
+                nil
+                (grid/row
+                  (->> (css/align :middle)
+                       (css/add-class :collapse))
+                  (grid/column
+                    (grid/column-size {:small 12 :medium 6})
+                    (dom/label nil "Email")
+                    (dom/span nil (:user/email auth)))
+                  (grid/column
+                    (grid/column-size {:small 12 :medium 6})
+                    ;(dom/a
+                    ;  (->> (css/button-hollow)
+                    ;       (css/add-class :secondary)
+                    ;       (css/add-class :small))
+                    ;  (dom/span nil "Edit email"))
+                    )
+                  ))
+              (cond (= modal :modal/edit-profile)
+                    (edit-profile-modal this)
+                    (= modal :modal/payment-info)
+                    (payment-info-modal this)
+                    (= modal :modal/shipping-info)
+                    (shipping-info-modal this))
+              (menu/item
+                nil
+                (grid/row
+                  (->> (css/align :middle)
+                       (css/add-class :collapse))
+                  (grid/column
+                    (grid/column-size {:small 12 :medium 6})
+                    (dom/label nil "Public profile")
+                    (dom/p nil (dom/small nil "This is how other users on SULO will see you when you interact and hang out in stores."))
+                    )
+                  (grid/column
+                    (->> (grid/column-size {:small 12 :medium 6})
+                         (css/text-align :right))
+                    (dom/div
+                      (css/add-class :user-profile)
+                      (dom/span nil (:user.profile/name user-profile))
+                      (photo/user-photo auth {:transformation :transformation/thumbnail}))
+                    (button/user-setting-default
+                      {:onClick #(do
+                                  (mixpanel/track "Edit profile")
+                                  (om/update-state! this assoc :modal :modal/edit-profile))}
+                      (dom/span nil "Edit profile")))))))
           (dom/div
             (css/add-class :section-title)
             (dom/span nil "Shopper details"))
-          (menu/vertical
-            (css/add-class :section-list)
+          (callout/callout
+            nil
+            (menu/vertical
+              (css/add-class :section-list)
 
-            (menu/item
-              nil
-              (grid/row
-                (->> (css/align :middle)
-                     (css/add-class :collapse))
-                (grid/column
-                  (grid/column-size {:small 12 :medium 6})
-                  (dom/label nil "Payment info")
-                  (dom/p nil (dom/small nil "Manage your saved credit cards. Change your default card or remove old ones.")))
-                (grid/column
-                  (->> (grid/column-size {:small 12 :medium 6})
-                       (css/text-align :right))
+              (menu/item
+                nil
+                (grid/row
+                  (->> (css/align :middle)
+                       (css/add-class :collapse))
+                  (grid/column
+                    (grid/column-size {:small 12 :medium 6})
+                    (dom/label nil "Payment info")
+                    (dom/p nil (dom/small nil "Manage your saved credit cards. Change your default card or remove old ones.")))
+                  (grid/column
+                    (->> (grid/column-size {:small 12 :medium 6})
+                         (css/text-align :right))
 
-                  (if-let [default-card (some #(when (= (:stripe/default-source stripe-customer) (:stripe.card/id %)) %)
-                                              (:stripe/sources stripe-customer))]
-                    (let [{:stripe.card/keys [brand last4]} default-card]
-                      (dom/div
-                        (css/add-classes [:payment-card :default-card])
-                        ;(dom/div {:classes ["icon" (get payment-logos brand "icon-cc-unknown")]})
-                        (dom/p nil
-                               (dom/span (css/add-class :payment-brand) brand)
-                               (dom/br nil)
-                               (dom/small (css/add-class :payment-last4) (str "ending in " last4)))
-                        ))
-                    (dom/p nil (dom/small nil (dom/i nil "No default card")))
-                    )
-                  (button/user-setting-default
-                    {:onClick #(do
-                                (mixpanel/track "Manage payment info")
-                                (om/update-state! this assoc :modal :modal/payment-info))}
-                    (dom/span nil "Manage payment info")))))
-            (menu/item
-              nil
-              (grid/row
-                (->> (css/align :middle)
-                     (css/add-class :collapse))
-                (grid/column
-                  (grid/column-size {:small 12 :medium 6})
-                  (dom/label nil "Shipping")
-                  (dom/p nil (dom/small nil "Manage your saved shipping address. This address will be pre-filled for you at checkout.")))
-                (grid/column
-                  (->> (grid/column-size {:small 12 :medium 6})
-                       (css/text-align :right))
-                  (if-let [shipping (:stripe/shipping stripe-customer)]
-                    (let [{:shipping/keys [address name]} shipping
-                          {:shipping.address/keys [street street2 locality postal region country]} address]
-                      (dom/div
-                        (css/add-classes [:shipping :default-shipping])
-                        ;(dom/div {:classes ["icon" (get payment-logos brand "icon-cc-unknown")]})
-                        (common/render-shipping shipping nil)
-                        ;(dom/p nil
-                        ;       (dom/span nil name)
-                        ;       (dom/br nil)
-                        ;       (dom/small nil (str street ", " locality " " postal))
-                        ;       (dom/br nil)
-                        ;       (dom/small nil (string/join ", " [region (:country/code country)])))
-                        ))
-                    (dom/p nil (dom/small nil (dom/i nil "No saved address")))
-                    )
-                  (button/user-setting-default
-                    {:onClick #(do
-                                (mixpanel/track "Manage shipping")
-                                (om/update-state! this assoc :modal :modal/shipping-info))}
-                    (dom/span nil "Manage shipping info"))))))
+                    (if-let [default-card (some #(when (= (:stripe/default-source stripe-customer) (:stripe.card/id %)) %)
+                                                (:stripe/sources stripe-customer))]
+                      (let [{:stripe.card/keys [brand last4]} default-card]
+                        (dom/div
+                          (css/add-classes [:payment-card :default-card])
+                          ;(dom/div {:classes ["icon" (get payment-logos brand "icon-cc-unknown")]})
+                          (dom/p nil
+                                 (dom/span (css/add-class :payment-brand) brand)
+                                 (dom/br nil)
+                                 (dom/small (css/add-class :payment-last4) (str "ending in " last4)))
+                          ))
+                      (dom/p nil (dom/small nil (dom/i nil "No default card")))
+                      )
+                    (button/user-setting-default
+                      {:onClick #(do
+                                  (mixpanel/track "Manage payment info")
+                                  (om/update-state! this assoc :modal :modal/payment-info))}
+                      (dom/span nil "Manage payment info")))))
+              (menu/item
+                nil
+                (grid/row
+                  (->> (css/align :middle)
+                       (css/add-class :collapse))
+                  (grid/column
+                    (grid/column-size {:small 12 :medium 6})
+                    (dom/label nil "Shipping")
+                    (dom/p nil (dom/small nil "Manage your saved shipping address. This address will be pre-filled for you at checkout.")))
+                  (grid/column
+                    (->> (grid/column-size {:small 12 :medium 6})
+                         (css/text-align :right))
+                    (if-let [shipping (:stripe/shipping stripe-customer)]
+                      (let [{:shipping/keys [address name]} shipping
+                            {:shipping.address/keys [street street2 locality postal region country]} address]
+                        (dom/div
+                          (css/add-classes [:shipping :default-shipping])
+                          ;(dom/div {:classes ["icon" (get payment-logos brand "icon-cc-unknown")]})
+                          (common/render-shipping shipping nil)
+                          ;(dom/p nil
+                          ;       (dom/span nil name)
+                          ;       (dom/br nil)
+                          ;       (dom/small nil (str street ", " locality " " postal))
+                          ;       (dom/br nil)
+                          ;       (dom/small nil (string/join ", " [region (:country/code country)])))
+                          ))
+                      (dom/p nil (dom/small nil (dom/i nil "No saved address")))
+                      )
+                    (button/user-setting-default
+                      {:onClick #(do
+                                  (mixpanel/track "Manage shipping")
+                                  (om/update-state! this assoc :modal :modal/shipping-info))}
+                      (dom/span nil "Manage shipping info")))))))
 
           (dom/div
             (css/add-class :section-title)
             (dom/span nil "Connections"))
-          (menu/vertical
-            (css/add-class :section-list)
-            (menu/item
-              nil
-              (if-let [facebook-identity (social-identity this :social/facebook)]
-                (grid/row
-                  (->> (css/align :middle)
-                       (css/add-class :collapse))
-                  (grid/column
-                    (grid/column-size {:small 12 :medium 6})
-                    (dom/label nil "You are connected to Facebook")
-                    (dom/p nil (dom/small nil "You can now sign in to SULO Live using your Facebook account. We will never post to Facebook or message your friends without your permission.")))
-                  (grid/column
-                    (->> (grid/column-size {:small 12 :medium 6})
-                         (css/text-align :right))
+          (callout/callout
+            nil
+            (menu/vertical
+              (css/add-class :section-list)
+              (menu/item
+                nil
+                (if-let [facebook-identity (social-identity this :social/facebook)]
+                  (grid/row
+                    (->> (css/align :middle)
+                         (css/add-class :collapse))
+                    (grid/column
+                      (grid/column-size {:small 12 :medium 6})
+                      (dom/label nil "You are connected to Facebook")
+                      (dom/p nil (dom/small nil "You can now sign in to SULO Live using your Facebook account. We will never post to Facebook or message your friends without your permission.")))
+                    (grid/column
+                      (->> (grid/column-size {:small 12 :medium 6})
+                           (css/text-align :right))
 
-                    (dom/div
-                      (css/add-class :user-profile)
-                      (dom/div nil (dom/span nil (:auth0.identity/name facebook-identity))
-                               (dom/br nil)
-                               (dom/a {:onClick #(.unlink-account this facebook-identity)} (dom/small nil "disconnect")))
-                      (photo/circle {:src (:auth0.identity/picture facebook-identity)}))))
-                (grid/row
-                  (->> (css/align :middle)
-                       (css/add-class :collapse))
-                  (grid/column
-                    (grid/column-size {:small 12 :medium 6})
-                    (dom/label nil "Facebook")
-                    (dom/p nil (dom/small nil "Connect to Facebook to sign in with your account. We will never post to Facebook or message your friends without your permission")))
-                  (grid/column
-                    (->> (grid/column-size {:small 12 :medium 6})
-                         (css/text-align :right))
-                    (button/user-setting-cta
-                      (css/add-classes [:facebook] {:onClick #(.authorize-social this :social/facebook)})
-                      (dom/i {:classes ["fa fa-facebook fa-fw"]})
-                      (dom/span nil "Connect to Facebook"))))))
+                      (dom/div
+                        (css/add-class :user-profile)
+                        (dom/div nil (dom/span nil (:auth0.identity/name facebook-identity))
+                                 (dom/br nil)
+                                 (dom/a {:onClick #(.unlink-account this facebook-identity)} (dom/small nil "disconnect")))
+                        (photo/circle {:src (:auth0.identity/picture facebook-identity)}))))
+                  (grid/row
+                    (->> (css/align :middle)
+                         (css/add-class :collapse))
+                    (grid/column
+                      (grid/column-size {:small 12 :medium 6})
+                      (dom/label nil "Facebook")
+                      (dom/p nil (dom/small nil "Connect to Facebook to sign in with your account. We will never post to Facebook or message your friends without your permission")))
+                    (grid/column
+                      (->> (grid/column-size {:small 12 :medium 6})
+                           (css/text-align :right))
+                      (button/user-setting-cta
+                        (css/add-classes [:facebook] {:onClick #(.authorize-social this :social/facebook)})
+                        (dom/i {:classes ["fa fa-facebook fa-fw"]})
+                        (dom/span nil "Connect to Facebook"))))))
 
-            (menu/item
-              nil
-              (if-let [twitter-identity (social-identity this :social/twitter)]
-                (grid/row
-                  (->> (css/align :middle)
-                       (css/add-class :collapse))
-                  (grid/column
-                    (grid/column-size {:small 12 :medium 6})
-                    (dom/label nil "You are connected to Twitter")
-                    (dom/p nil (dom/small nil "You can now sign in to SULO Live using your Twitter account. We will never post to Twitter or message your followers without your permission.")))
-                  (grid/column
-                    (->> (grid/column-size {:small 12 :medium 6})
-                         (css/text-align :right))
-                    (dom/div
-                      (css/add-class :user-profile)
-                      (dom/div nil (dom/span nil (:auth0.identity/screen-name twitter-identity))
-                               (dom/br nil)
-                               (dom/a {:onClick #(.unlink-account this twitter-identity)} (dom/small nil "disconnect")))
-                      (photo/circle {:src (:auth0.identity/picture twitter-identity)}))))
-                (grid/row
-                  (->> (css/align :middle)
-                       (css/add-class :collapse))
-                  (grid/column
-                    (grid/column-size {:small 12 :medium 6})
-                    (dom/label nil "Twitter")
-                    (dom/p nil (dom/small nil "Connect to Twitter to sign in with your account. We will never post to Twitter or message your followers without your permission.")))
-                  (grid/column
-                    (->> (grid/column-size {:small 12 :medium 6})
-                         (css/text-align :right))
-                    (button/user-setting-cta
-                      (css/add-classes [:twitter] {:onClick #(.authorize-social this :social/twitter)})
-                      (dom/i {:classes ["fa fa-twitter fa-fw"]})
-                      (dom/span nil "Connect to Twitter"))))))))))))
+              (menu/item
+                nil
+                (if-let [twitter-identity (social-identity this :social/twitter)]
+                  (grid/row
+                    (->> (css/align :middle)
+                         (css/add-class :collapse))
+                    (grid/column
+                      (grid/column-size {:small 12 :medium 6})
+                      (dom/label nil "You are connected to Twitter")
+                      (dom/p nil (dom/small nil "You can now sign in to SULO Live using your Twitter account. We will never post to Twitter or message your followers without your permission.")))
+                    (grid/column
+                      (->> (grid/column-size {:small 12 :medium 6})
+                           (css/text-align :right))
+                      (dom/div
+                        (css/add-class :user-profile)
+                        (dom/div nil (dom/span nil (:auth0.identity/screen-name twitter-identity))
+                                 (dom/br nil)
+                                 (dom/a {:onClick #(.unlink-account this twitter-identity)} (dom/small nil "disconnect")))
+                        (photo/circle {:src (:auth0.identity/picture twitter-identity)}))))
+                  (grid/row
+                    (->> (css/align :middle)
+                         (css/add-class :collapse))
+                    (grid/column
+                      (grid/column-size {:small 12 :medium 6})
+                      (dom/label nil "Twitter")
+                      (dom/p nil (dom/small nil "Connect to Twitter to sign in with your account. We will never post to Twitter or message your followers without your permission.")))
+                    (grid/column
+                      (->> (grid/column-size {:small 12 :medium 6})
+                           (css/text-align :right))
+                      (button/user-setting-cta
+                        (css/add-classes [:twitter] {:onClick #(.authorize-social this :social/twitter)})
+                        (dom/i {:classes ["fa fa-twitter fa-fw"]})
+                        (dom/span nil "Connect to Twitter")))))))))))))
 
 ;(def ->UserSettings (om/factory UserSettings))
 
