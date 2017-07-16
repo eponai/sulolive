@@ -60,11 +60,11 @@
 
 (defn edit-profile-modal [component]
   (let [{:query/keys [auth]} (om/props component)
-        {:keys         [photo-upload queue-photo]
-         :profile/keys [input-validation]} (om/get-state component)
+        {:keys         [photo-upload queue-photo error-message]
+         :profile/keys [input-validation ]} (om/get-state component)
         user-profile (:user/profile auth)
         is-loading? (.is-loading? component)
-        on-close #(om/update-state! component dissoc :modal :photo-upload :queue-photo)]
+        on-close #(om/update-state! component dissoc :modal :photo-upload :queue-photo :error-message)]
     (common/modal
       {:on-close on-close
        :size     "full"}
@@ -114,6 +114,7 @@
                          input-validation)
                 (dom/p nil (dom/small nil "Your username will be visible to other users in chats.")))))
           )
+        (dom/p (css/add-class :text-alert) (dom/small nil (str error-message)))
         (dom/div
           (css/add-class :action-buttons)
           (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))
@@ -290,7 +291,7 @@
                                   (menu/item
                                     (css/add-class :section-list-item--card)
                                     (dom/a
-                                      {:onClick #(.save-payment-info component id) }
+                                      {:onClick #(.save-payment-info component id)}
                                       (dom/input {:type    "radio"
                                                   :name    "sulo-select-cc"
                                                   :checked (if (some? selected-card)
@@ -412,17 +413,17 @@
           photo-msg (msg/last-message this 'photo/upload)
 
           shipping-msg (msg/last-message this 'stripe/update-customer)]
-      (debug "Messages: " {:info  info-msg
-                           :photo photo-msg
-                           :stripe shipping-msg})
       (when (and (msg/final? info-msg)
                  (or (nil? photo-msg) (msg/final? photo-msg)))
-        (cond (and (msg/success? info-msg)
+        (cond (not (msg/success? info-msg))
+              (om/update-state! this assoc :error-message (msg/message info-msg))
+              
+              (and (msg/success? info-msg)
                    (or (nil? photo-msg) (msg/success? photo-msg)))
               (do
                 (msg/clear-messages! this 'user.info/update)
                 (msg/clear-messages! this 'photo/upload)
-                (om/update-state! this dissoc :modal))))
+                (om/update-state! this dissoc :modal :error-message))))
 
       (when (msg/final? shipping-msg)
         (msg/clear-messages! this 'stripe/update-customer)

@@ -54,6 +54,7 @@
 			small {
 				color: $dark-gray;
 			}
+			
 			p {
 				text-align: left;
 				display: flex;
@@ -189,6 +190,11 @@
 				}
 			}
 		}
+		p.text-alert {
+				small {
+					color: $alert-color;
+				}
+			}
 		.action-buttons {
 			display: flex;
 			flex-direction: row;

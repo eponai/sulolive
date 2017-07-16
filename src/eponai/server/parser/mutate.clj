@@ -144,20 +144,13 @@
                (db/transact state profile-txs)))})
 
 (defmutation user.info/update
-  [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ {:keys [:user/name]}]
+  [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ {:keys [:user/name] :as profile}]
   {:auth ::auth/any-user
    :log  [:user/name]
    :resp {:success "Your info was successfully updated."
-          :error   "Sorry, your info could not be updated. Try again later."}}
+          :error (:message (ex-data exception) "Sorry, your info could not be updated. Try again later.")}}
   {:action (fn []
-             (let [old-profile (db/one-with (db/db state) {:where   '[[?u :user/profile ?e]]
-                                                           :symbols {'?u (:user-id auth)}})
-                   profile-txs (if (some? old-profile)
-                                 [[:db/add old-profile :user.profile/name name]]
-                                 (let [new-profile (f/add-tempid {:user.profile/name name})]
-                                   [new-profile
-                                    [:db/add (:user-id auth) :user/profile (:db/id new-profile)]]))]
-               (db/transact state profile-txs)))})
+             (user/update-profile env profile))})
 
 (defmutation store.photo/upload
   [{:keys [state ::parser/return ::parser/exception system auth] :as env} _ {:keys [photo photo-key store-id] :as p}]
@@ -655,9 +648,7 @@
   {:auth ::auth/public
    :log  nil
    :resp {:success return
-          :error   (if exception
-                     (ex-data exception)
-                     "Something went wrong when creating your account.")}}
+          :error   (:message (ex-data exception) "Something went wrong when creating your account.")}}
   {:action (fn []
              (user/create env params))})
 

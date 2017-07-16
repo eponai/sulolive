@@ -351,7 +351,7 @@
 
 (defn run-dev [& [deps]]
   (run (merge {
-               :shared/auth0    :env/dev
+               :shared/auth0    :env/prod
                :shared/firebase :env/prod
                :shared/photos   :env/prod
                :shared/login    (auth/login reconciler-atom)

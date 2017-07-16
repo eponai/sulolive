@@ -151,7 +151,7 @@
                         :title     "Privacy Policy"
                         :target    "_blank"} (dom/small nil "Privacy Policy")))
          (when-let [err (:error/create-user state)]
-           (dom/p (css/add-class :text-alert) (dom/small nil (str (:message err)))))
+           (dom/p (css/add-class :text-alert) (dom/small nil (str err))))
          (button/submit-button
            (css/add-classes [:expanded :sulo-dark] {:onClick (when-not is-loading?
                                                                #(.create-account component))})
