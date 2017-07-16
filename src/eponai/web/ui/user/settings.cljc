@@ -388,8 +388,7 @@
                                    :query/stripe-customer])))))
 
   (remove-payment [this selected-card]
-    (let [{:query/keys [stripe-customer]} (om/props this)
-          default-card (some #(when (= (:stripe.card/id %) (:stripe/default-source stripe-customer)) %) (:stripe/sources stripe-customer))]
+    (let [{:query/keys [stripe-customer]} (om/props this)]
       (msg/om-transact! this [(list 'stripe/update-customer {:remove-source selected-card})
                               :query/stripe-customer])))
 
@@ -428,7 +427,11 @@
       (when (msg/final? shipping-msg)
         (msg/clear-messages! this 'stripe/update-customer)
         (if (msg/success? shipping-msg)
-          (om/update-state! this dissoc :modal :error-message)
+          (let [message (msg/message shipping-msg)]
+            ;; If we were updating shipping addres, we should close the modal.
+            (om/update-state! this merge (cond-> {:error-message nil}
+                                                 (some? (:shipping message))
+                                                 (assoc :modal nil))))
           (om/update-state! this assoc :error-message (msg/message shipping-msg))))))
 
   (componentDidMount [this]
