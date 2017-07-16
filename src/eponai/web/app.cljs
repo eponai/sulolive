@@ -34,7 +34,8 @@
     [eponai.client.cart :as client.cart]
     [eponai.web.firebase :as firebase]
     [eponai.web.utils :as web.utils]
-    [eponai.client.routes :as client.routes]))
+    [eponai.client.routes :as client.routes]
+    [clojure.data :as data]))
 
 (defn add-root! [reconciler]
   (binding [parser/*parser-allow-remote* false]
@@ -260,9 +261,19 @@
                                                     (debug "Initial merge happened."))
                                                   (async/close! initial-merge-chan)))
                                 :query-fn     (fn [query remote]
-                                                (let [deduped-query (client.utils/parse @reconciler-atom query remote)]
+                                                ;; The reads of the query have been deduped once, but multiple
+                                                ;; calls to om/transact! will queue more reads. These reads will
+                                                ;; need to be deduped again, to make sure no data is discarded.
+                                                ;; Mutations must NOT be run again, as they contain important
+                                                ;; information from when the time they were run.
+                                                (let [{mutations true reads false} (group-by parser/mutation? query)
+                                                      deduped-reads (client.utils/parse @reconciler-atom reads remote)
+                                                      deduped-query (into (or (not-empty mutations) [])
+                                                                          deduped-reads)]
                                                   (debug "This was a bug when it's 'true': " (not= deduped-query query))
-                                                  (cond-> deduped-query (= :remote remote) (add-schema-to-query-once))))})
+                                                  (cond-> deduped-query
+                                                          (= :remote remote)
+                                                          (add-schema-to-query-once))))})
         reconciler (reconciler/create {:conn                       conn
                                        :parser                     parser
                                        :ui->props                  (client.utils/cached-ui->props-fn parser)
