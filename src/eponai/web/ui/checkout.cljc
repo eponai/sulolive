@@ -508,7 +508,7 @@
           country (some #(when (= (:country/code %) country-code) %) countries)]
       #?(:cljs
          (when autocomplete
-           (.setComponentRestrictions autocomplete (clj->js {:country (or country-code [])}))))
+           (places/set-country-restrictions autocomplete country-code)))
       (om/update-state! this update
                         :shipping/edit-shipping (fn [s]
                                                   (cond-> (assoc-in s [:shipping/address :shipping.address/country] (or country {:country/code country-code}))
@@ -677,7 +677,7 @@
          (when-not (= :status.type/open (-> (first checkout) :store.item/_skus :store/_items :store/status :status/type))
            (routes/set-url! this :shopping-bag))
          (debug "Setting GOogle country: " country)
-         (.setComponentRestrictions autocomplete (clj->js {:country (or country [])}))
+         (places/set-country-restrictions autocomplete country)
          (om/update-state! this merge
                            init-state
                            {:card         card
