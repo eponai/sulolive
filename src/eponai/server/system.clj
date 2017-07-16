@@ -58,13 +58,13 @@
   (when-let [request-handler (:system/handler system)]
     (request-handler/resume-requests request-handler)))
 
-(defn components-without-fakes [{:keys [env in-aws?] :as config}]
+(defn components-without-fakes [{:keys [env in-aws? in-prod?] :as config}]
   {:system/aleph           (c/using (aleph/map->Aleph (select-keys config [:handler :port :netty-options]))
                                     {:handler :system/handler})
    :system/cloudinary      (cloudinary/cloudinary
                              (:cloudinary-api-key env)
                              (:cloudinary-api-secret env)
-                             (:in-prod? config))
+                             in-prod?)
 
 
    :system/chat-websocket  (c/using (websocket/map->StoreChatWebsocket {})
@@ -90,7 +90,7 @@
                                     {:aws-elb :system/aws-elb})
    :system/stripe-webhooks (stripe-webhooks/->StripeWebhooksExecutor)})
 
-(defn real-components [{:keys [env] :as config}]
+(defn real-components [{:keys [env in-prod?] :as config}]
   {:system/auth0           (c/using (auth0/map->Auth0 {:client-id     (:auth0-client-id env)
                                                        :client-secret (:auth0-client-secret env)})
                                     {:server-address :system/server-address})
@@ -122,7 +122,8 @@
                                     {:server-address :system/server-address})
    :system/firebase        (firebase/firebase {:server-key      (:firebase-server-key env)
                                                :service-account (:firebase-service-account env)
-                                               :database-url    (:firebase-database-url env)})
+                                               :database-url    (:firebase-database-url env)
+                                               :in-prod?        in-prod?})
    :system/mailchimp       (mailchimp/mail-chimp (:mailchimp-api-key env))
    :system/stripe          (stripe/stripe (:stripe-secret-key env))
    :system/taxjar          (taxjar/taxjar (:taxjar-api-key env))
