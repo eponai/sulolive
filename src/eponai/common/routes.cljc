@@ -145,6 +145,8 @@
                      :login
                      :link-social
                      :unauthorized
+                     :store
+                     :product
                      }
                    route)
         (= :store-dashboard route)
