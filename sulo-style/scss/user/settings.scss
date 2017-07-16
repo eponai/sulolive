@@ -221,4 +221,15 @@
 			text-align: left;
 		}
 	}
+
+	#payment-info {
+		.section-list {
+			li:first-child {
+				padding-top: $global-padding;
+			}
+			li:last-child {
+				padding-bottom: $global-padding;
+			}
+		}
+	}
 }

@@ -268,7 +268,7 @@
       {:on-close on-close
        :size     :full}
       (grid/row-column
-        (css/text-align :center)
+        (css/text-align :center {:id "payment-info"})
         (dom/h2 nil "Credit cards")
         (if (empty? cards)
           [(dom/p nil
@@ -417,7 +417,7 @@
                  (or (nil? photo-msg) (msg/final? photo-msg)))
         (cond (not (msg/success? info-msg))
               (om/update-state! this assoc :error-message (msg/message info-msg))
-              
+
               (and (msg/success? info-msg)
                    (or (nil? photo-msg) (msg/success? photo-msg)))
               (do
