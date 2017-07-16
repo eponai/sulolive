@@ -26,10 +26,15 @@
     (system-fn config)))
 
 (defn -main [& _]
-  (let [system (component/start-system (make-system {::system-fn system/prod-system}))
-        server (get-in system [:system/aleph :server])]
-    (mixpanel/set-token ::mixpanel/token-release)
-    (aleph.netty/wait-for-close server)))
+  (try
+    (let [system (component/start-system (make-system {::system-fn system/prod-system}))
+          server (get-in system [:system/aleph :server])]
+      (mixpanel/set-token ::mixpanel/token-release)
+      (aleph.netty/wait-for-close server))
+    (catch Throwable e
+      (error "Error in -main: " e)
+      (.printStackTrace e)
+      (throw e))))
 
 (defn main-release-no-ssl
   []
