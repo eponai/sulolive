@@ -238,7 +238,7 @@
   {:auth    ::auth/public
    :uniq-by {:route-params [:store-id]}}
   {:value (let [presence (firebase/-presence (:system/firebase system)
-                                             (:sulo-locality/path (db/entity db (:db/id locations))))
+                                             (:sulo-locality/path locations))
                 ;; First convert from hashmap -> clojure mpa.
                 presence (->> (into {} presence)
                               ;; Then parse the keys and values.
