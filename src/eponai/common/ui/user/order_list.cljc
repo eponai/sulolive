@@ -107,7 +107,7 @@
 
                                           (grid/column
                                             nil
-                                            (dom/a
+                                            (dom/div
                                               (css/add-class :sl-order-items-list-item--info)
                                               (photo/product-preview product {:transformation :transformation/thumbnail})
                                               (dom/p nil (dom/small nil (:order.item/title oi))

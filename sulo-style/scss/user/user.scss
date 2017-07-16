@@ -1,6 +1,9 @@
 $user-dashboard-max-width: 44rem;
 
 #sulo-user {
+	.page-container {
+		background: $dashboard-background;
+	}
 	.page-content {
 		padding-bottom: 0;
 	}
@@ -35,6 +38,14 @@ $user-dashboard-max-width: 44rem;
 		font-size: 0.9rem;
 	}
 
+}
+
+#sulo-user, #sulo-user-settings, #sulo-shopping-bag {
+	.callout.featured {
+		margin: 0;
+		margin-top: 4rem;
+		padding-bottom: 2rem;
+	}
 }
 
 @import "settings";

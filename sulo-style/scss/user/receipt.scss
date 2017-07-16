@@ -1,4 +1,6 @@
 #sulo-order-receipt {
+	padding-bottom: 4rem;
+	
 	// .row {
 		max-width: $dashboard-content-width;
 		margin: 0 auto;
@@ -103,5 +105,8 @@
 	}
 	.contact {
 		margin-top: 4rem;
+		p {
+			margin: 0;
+		}
 	}
 }
