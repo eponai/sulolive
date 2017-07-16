@@ -2,6 +2,7 @@
   (:require
     [eponai.server.log :as log]
     [eponai.server.external.host :as host]
+    [eponai.server.external.aws-ec2 :as aws-ec2]
     [com.stuartsierra.component :as component]
     [suspendable.core :as suspendable]
     [taoensso.timbre :refer [error debug]]
@@ -76,7 +77,8 @@
                          ;; shield-user being "username:password"
                          ^String xpack-user
                          ^String index-name
-                         server-address]
+                         server-address
+                         aws-ec2]
   component/Lifecycle
   (start [this]
     (if (:client this)
@@ -131,6 +133,7 @@
               bulk-builder (.prepareBulk client)
               json-opts {:date-format logstash-iso-format}
               host (host/webserver-url server-address)
+              ec2-instance-id (::aws-ec2/instance-id aws-ec2)
               _ (doseq [msg messages]
                   (let [date (clj-time.coerce/from-long (:millis msg))
                         ymd (clj-time.format/unparse yyyy-MM-dd-formatter date)
@@ -144,7 +147,8 @@
                                                 (string-ids)
                                                 (assoc "@timestamp" timestamp
                                                        :level (:level msg)
-                                                       :host host))
+                                                       :host host
+                                                       :instance-id ec2-instance-id))
                                             json-opts))))))
               bulk-response ^BulkResponse (.get bulk-builder)]
           (when (.hasFailures bulk-response)

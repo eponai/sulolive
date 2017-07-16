@@ -119,7 +119,8 @@
                                        ;; xpack-user format: "username:password"
                                        :xpack-user       (:elastic-cloud-xpack-user env)
                                        :index-name       (:elastic-cloud-index-name env)})
-                                    {:server-address :system/server-address})
+                                    {:aws-ec2        :system/aws-ec2
+                                     :server-address :system/server-address})
    :system/firebase        (firebase/firebase {:server-key      (:firebase-server-key env)
                                                :service-account (:firebase-service-account env)
                                                :database-url    (:firebase-database-url env)})

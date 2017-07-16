@@ -28,6 +28,11 @@
 
 (defn aws-ec2 []
   (reify
+    component/Lifecycle
+    (start [this]
+      (assoc this ::instance-id (EC2MetadataUtils/getInstanceId)))
+    (stop [this]
+      (dissoc this ::instance-id))
     IAWSEc2
     (find-instance [this instance-id]
       (find-the-instance (ec2/describe-instances :instance-ids [instance-id])
