@@ -260,7 +260,9 @@
                                                     (debug "Initial merge happened."))
                                                   (async/close! initial-merge-chan)))
                                 :query-fn     (fn [query remote]
-                                                (cond-> query (= :remote remote) (add-schema-to-query-once)))})
+                                                (let [deduped-query (client.utils/parse @reconciler-atom query remote)]
+                                                  (debug "This was a bug when it's 'true': " (not= deduped-query query))
+                                                  (cond-> deduped-query (= :remote remote) (add-schema-to-query-once))))})
         reconciler (reconciler/create {:conn                       conn
                                        :parser                     parser
                                        :ui->props                  (client.utils/cached-ui->props-fn parser)
