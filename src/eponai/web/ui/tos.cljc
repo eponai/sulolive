@@ -108,7 +108,7 @@
                           (dom/p nil
                                  (dom/span nil " a ")
                                  (dom/em nil "transaction fee")
-                                 (dom/span nil " of 3% of the total amount of the sale, including tax and shipping.")))))
+                                 (dom/span nil " of $0.30 + 2.9% of the total amount of the sale, including tax and shipping.")))))
 
         (dom/section
           nil
