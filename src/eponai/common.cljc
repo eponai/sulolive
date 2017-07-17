@@ -42,10 +42,11 @@
      (subs (or s "") st en))))
 
 (defn price->str [n & [currency]]
-  (let [currency-symbol "$"
-        decimals (or (second (string/split (str n) #"\.")) "")
+  (let [num (if (number? n) n 0)
+        currency-symbol "$"
+        decimals (or (second (string/split (str num) #"\.")) "")
         decimal-long (or (parse-long-safe (substring decimals 0 2)) 0)]
-    (str (cl-format nil "$~:D" (int n))
+    (str (cl-format nil "$~:D" (int num))
          (cl-format nil ".~2'0D" (int decimal-long)))))
 
 (defn ordinal-number [n]

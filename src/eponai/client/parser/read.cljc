@@ -244,6 +244,14 @@
       {:value (db/pull-one-with db query {:where   '[[?s :store/stripe ?e]]
                                           :symbols {'?s store-id}})})))
 
+(defmethod client-read :query/stripe-payouts
+  [{:keys [route-params target db query]} _ _]
+  (when-let [store-id (:store-id route-params)]
+    (if target
+      {:remote true}
+      {:value (db/pull-one-with db query {:where   '[[?s :store/stripe ?e]]
+                                          :symbols {'?s store-id}})})))
+
 (defmethod client-read :query/stripe-customer
   [{:keys [target db query]} _ _]
   (if target

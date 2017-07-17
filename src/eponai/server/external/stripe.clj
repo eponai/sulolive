@@ -25,10 +25,10 @@
 ;; ########## Stripe protocol ################
 
 (defprotocol IStripeEndpoint
-  (-post [this params path])
-  (-get [this path])
-  (-delete [this path])
-  (-upload [this params path]))
+  (-post [this params path opts])
+  (-get [this path opts])
+  (-delete [this path opts])
+  (-upload [this params path opts]))
 
 (defprotocol IStripeConnect
 
@@ -50,7 +50,9 @@
   (-file-upload [this params]
     "Uploads a file using the FileUpload api: https://stripe.com/docs/file-upload")
 
+  ;; Connected account
   (-get-balance [this account-id secret])
+  (-get-payouts [this account-id])
 
   ;; Customers
   (-create-customer [this opts])
@@ -102,7 +104,14 @@
     (-update-account stripe account-id account)))
 
 (defn get-balance [stripe account-id secret]
-  (-get-balance stripe account-id secret))
+  (if (not-empty account-id)
+    (-get-balance stripe account-id secret)
+    (throw (ex-info "Cannot fetch balance for nil account" {}))))
+
+(defn get-payouts [stripe account-id]
+  (if (not-empty account-id)
+    (-get-payouts stripe account-id)
+    (throw (ex-info "Cannot fetch balance for nil account" {}))))
 
 (defn create-charge [stripe params]
   (debug "Create charge: " params)
@@ -145,35 +154,39 @@
     this)
 
   IStripeEndpoint
-  (-post [_ params path]
+  (-post [_ params path opts]
     (let [url (string/join "/" (into [stripe-api-host] (remove nil? path)))]
       (json/read-str (:body (client/post url {:form-params params
                                               :basic-auth  api-key
                                               :headers     {"Stripe-Version" stripe-api-version}})) :key-fn keyword)))
-  (-upload [_ multipart-params path]
+  (-upload [_ multipart-params path opts]
     (let [url (string/join "/" (into [stripe-upload-api-host] (remove nil? path)))]
       (json/read-str (:body (client/post url {:multipart  multipart-params
                                               :basic-auth api-key
                                               :headers    {"Stripe-Version" stripe-api-version}})) :key-fn keyword)))
-  (-get [_ path]
-    (let [url (string/join "/" (into [stripe-api-host] (remove nil? path)))]
+  (-get [_ path {:keys [connected-account]}]
+    (debug "STRIPE - get for account: " connected-account)
+    (let [url (string/join "/" (into [stripe-api-host] (remove nil? path)))
+          headers (cond-> {"Stripe-Version" stripe-api-version}
+                          (some? connected-account)
+                          (assoc "Stripe-Account" connected-account))]
       (json/read-str (:body (client/get url {:basic-auth api-key
-                                             :headers    {"Stripe-Version" stripe-api-version}})) :key-fn keyword)))
+                                             :headers    headers})) :key-fn keyword)))
 
-  (-delete [_ path]
+  (-delete [_ path opts]
     (let [url (string/join "/" (into [stripe-api-host] (remove nil? path)))]
       (json/read-str (:body (client/delete url {:basic-auth api-key
                                                 :headers    {"Stripe-Version" stripe-api-version}})) :key-fn keyword)))
 
   IStripeConnect
   (-get-country-spec [this code]
-    (let [country-spec (-get this ["country_specs" code])]
+    (let [country-spec (-get this ["country_specs" code] nil)]
       (debug "STRIPE - fetched country spec: " country-spec)
       (f/stripe->country-spec country-spec)))
 
   (-create-account [this {:keys [country]}]
     (let [params {:country country :type "custom"}
-          account (-post this params ["accounts"])
+          account (-post this params ["accounts"] nil)
           keys (:keys account)]
       (debug "STRIPE - created account: " account)
       {:id     (:id account)
@@ -181,17 +194,17 @@
        :publ   (:publishable keys)}))
 
   (-delete-account [this account-id]
-    (let [deleted (-delete this ["accounts" account-id])]
+    (let [deleted (-delete this ["accounts" account-id] nil)]
       deleted))
 
   (-get-account [this account-id]
-    (let [account (-get this ["accounts" account-id])]
+    (let [account (-get this ["accounts" account-id] nil)]
       (debug "STRIPE - fetched account: " account)
       (f/stripe->account account)))
 
   (-update-account [this account-id params]
     (try+
-      (let [updated (-post this params ["accounts" account-id])]
+      (let [updated (-post this params ["accounts" account-id] nil)]
         (debug "STRIPE - updated account: " updated)
         (f/stripe->account updated))
       (catch [:status 400] r
@@ -203,7 +216,7 @@
     (try+
       (let [uploaded (-upload this [{:name "file" :content file :mime-type file-type}
                                     {:name "purpose" :content purpose}]
-                              ["files"])]
+                              ["files"] nil)]
         (debug "Uploaded file: " file " response: " uploaded)
         uploaded)
       (catch [:status 400] r
@@ -213,29 +226,34 @@
           (throw (ex-info (:message error) error))))))
 
   (-get-balance [this account-id secret]
-    (let [balance (-get this ["balance"])]
+    (let [balance (-get this ["balance"] {:connected-account account-id})]
       (debug "STRIPE - fetch balance: " balance)
       (f/stripe->balance balance account-id)))
 
+  (-get-payouts [this account-id]
+    (let [payouts (-get this ["payouts"] {:connected-account account-id})]
+      (debug "Payouts: " payouts)
+      (f/stripe->payouts payouts account-id)))
+
   (-create-customer [this params]
-    (let [customer (-post this params ["customers"])]
+    (let [customer (-post this params ["customers"] nil)]
       (debug "STRIPE - created new customer: " customer)
       (f/stripe->customer customer)))
 
   (-update-customer [this customer-id params]
-    (let [customer (-post this params ["customers" customer-id])]
+    (let [customer (-post this params ["customers" customer-id] nil)]
       (debug "STRIPE - updated customer: " customer)
       (f/stripe->customer customer)))
 
   (-get-customer [this customer-id]
-    (let [customer (-get this ["customers" customer-id])]
+    (let [customer (-get this ["customers" customer-id] nil)]
       (debug "STRIPE - fetched customer: " customer)
       (f/stripe->customer customer)))
 
   (-create-card [this customer-id source]
     (try+
       (let [params {:source source}
-            card (-post this params ["customers" customer-id "sources"])]
+            card (-post this params ["customers" customer-id "sources"] nil)]
         (debug "STRIPE - created card: " card)
         card)
       (catch [:status 402] r
@@ -246,13 +264,13 @@
 
   (-delete-card [this customer-id card-id]
     ;https://api.stripe.com/v1/customers/{CUSTOMER_ID}/sources/{CARD_ID}
-    (let [deleted (-delete this ["customers" customer-id "sources" card-id])]
+    (let [deleted (-delete this ["customers" customer-id "sources" card-id] nil)]
       (debug "STRIPE - deleted card: " deleted)
       deleted))
 
   (-create-charge [this params]
     (try+
-      (let [charge (-post this params ["charges"])]
+      (let [charge (-post this params ["charges"] nil)]
         (debug "STRIPE - created charge: " charge)
         {:charge/status (:status charge)
          :charge/id     (:id charge)
@@ -263,7 +281,7 @@
           (throw (ex-info (:message error) error))))))
 
   (-get-charge [this charge-id]
-    (let [charge (-get this ["charges" charge-id])]
+    (let [charge (-get this ["charges" charge-id] nil)]
       (debug "STRIPE - fetched charge: " charge)
       {:charge/status  (:status charge)
        :charge/id      (:id charge)
@@ -276,7 +294,7 @@
   (-create-refund [this {:keys [charge]}]
     (let [params {:charge           charge
                   :reverse_transfer true}
-          refund (-post this params ["refunds"])]
+          refund (-post this params ["refunds"] nil)]
       (debug "STRIPE - created refund: " refund)
       {:refund/status (:status refund)
        :refund/id     (:id refund)})))

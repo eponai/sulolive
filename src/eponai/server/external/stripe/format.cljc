@@ -146,6 +146,16 @@
        :stripe/balance {:stripe.balance/available (map balance* (:available b))
                         :stripe.balance/pending   (map balance* (:pending b))}})))
 
+(defn stripe->payouts [payouts id]
+  (f/remove-nil-keys
+    {:stripe/id      id
+     :stripe/payouts (map (fn [p]
+                            (f/remove-nil-keys
+                              {:stripe.payout/description  (:description p)
+                               :stripe.payout/arrival-date (* 1000 (:arrival_date p))
+                               :stripe.payout/amount       (stripe->price (:amount p))}))
+                          (:data payouts))}))
+
 (defn input->legal-entity [legal-entity]
   (let [{:field.legal-entity/keys [type address business-name business-tax-id first-name last-name dob personal-id-number verification]} legal-entity
         {:field.legal-entity.address/keys [line1 postal city state]} address

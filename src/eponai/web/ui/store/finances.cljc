@@ -10,7 +10,8 @@
     [eponai.common.ui.elements.menu :as menu]
     [eponai.client.routes :as routes]
     [eponai.common :as c]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.common.format.date :as date]))
 
 (defui StoreFinances
   static om/IQuery
@@ -23,7 +24,7 @@
   Object
   (render [this]
     (let [{:proxy/keys [settings taxes]
-           :query/keys [current-route stripe-balance]} (om/props this)
+           :query/keys [current-route stripe-balance stripe-payouts]} (om/props this)
           {:keys [route route-params]} current-route
           {:keys [stripe-account]} (om/get-computed this)]
 
@@ -81,11 +82,29 @@
                (dom/div
                  (css/add-class :section-title)
                  (dom/h2 nil "Deposits"))
+
                (callout/callout
                  nil
                  (dom/div
                    (css/add-class :empty-container)
-                   (dom/span (css/add-class :shoutout) "No deposits made")))]
+                   (dom/span (css/add-class :shoutout) "No deposits made")))
+               ;(callout/callout
+               ;  nil
+               ;  (if (empty? (:stripe/payouts stripe-payouts))
+               ;    (dom/div
+               ;      (css/add-class :empty-container)
+               ;      (dom/span (css/add-class :shoutout) "No deposits made"))
+               ;    (menu/vertical
+               ;      (css/add-classes [:payout-list :section-list])
+               ;      (map (fn [p]
+               ;             (menu/item
+               ;               nil
+               ;               (dom/span nil (c/price->str (:stripe.payout/amount p)))
+               ;               (dom/span nil (:stripe.payout/description p))
+               ;
+               ;               (dom/span nil (date/date->string (:stripe.payout/arrival-date p)))))
+               ;           (:stripe/payouts stripe-payouts)))))
+               ]
 
               (= route :store-dashboard/finances#settings)
               (settings/->FinancesSettings settings settings)

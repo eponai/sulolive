@@ -366,6 +366,14 @@
    :uniq-by {:route-params [:store-id]}}
   {:value (store/balance env store-id)})
 
+(defread query/stripe-payouts
+  [{:keys              [db]
+    {:keys [store-id]} :route-params
+    :as                env} _ _]
+  {:auth    {::auth/store-owner {:store-id store-id}}
+   :uniq-by {:route-params [:store-id]}}
+  {:value (store/payouts env store-id)})
+
 (defread query/stripe-customer
   [env _ _]
   {:auth ::auth/any-user}
@@ -560,3 +568,5 @@
    :log  [:product-items]}
   {:value (when (seq product-items)
             (db/pull-many db query product-items))})
+
+

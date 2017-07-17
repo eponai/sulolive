@@ -120,6 +120,13 @@
 		}
 	}
 
+	.payout-list {
+		li {
+			padding: $global-padding 0;
+		}
+		background: $white;
+	}
+
 	// .bank-account-container {
 	// 	margin-bottom: 0.5rem;
 	// }

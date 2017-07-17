@@ -35,7 +35,7 @@
 (defn delete [{:keys [state system auth]} store-id]
   (let [stripe-account (stripe/pull-stripe (db/db state) store-id)
 
-        deleted-stripe (stripe/-delete (:system/stripe system) (:stripe/id stripe-account))
+        deleted-stripe (stripe/-delete (:system/stripe system) (:stripe/id stripe-account) nil)
 
         delete-txs [[:db.fn/retractEntity store-id]
                     [:db.fn/retractEntity (:db/id stripe-account)]]]
@@ -235,7 +235,7 @@
 
         total-amount (+ subtotal shipping-fee tax-amount)
         application-fee (* 0.2 subtotal)                    ;Convert to cents for Stripe
-        transaction-fee (* 0.029 total-amount)
+        transaction-fee (+ 0.3 (* 0.029 total-amount))
         sulo-fee (+ application-fee transaction-fee)
         destination-amount (- grandtotal sulo-fee)
 
@@ -331,6 +331,11 @@
   (let [{:keys [stripe/id stripe/secret] :as s} (stripe/pull-stripe (db/db state) store-id)]
     (when (some? id)
       (assoc (stripe/get-balance (:system/stripe system) id secret) :db/id (:db/id s)))))
+
+(defn payouts [{:keys [state system]} store-id]
+  (let [{:keys [stripe/id] :as s} (stripe/pull-stripe (db/db state) store-id)]
+    (when (some? id)
+      (assoc (stripe/get-payouts (:system/stripe system) id) :db/id (:db/id s)))))
 
 (defn address [{:keys [state system]} store-id]
   (let [address-keys [:shipping.address/street
