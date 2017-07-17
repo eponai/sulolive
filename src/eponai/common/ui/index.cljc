@@ -66,7 +66,21 @@
           online-right-now (filter #(let [online (-> % :store/owners :store.owner/user :user/online?)]
                                      (or (= true online)
                                          (> 60000 (- (date/current-millis) online))))
-                                   online-not-live)]
+                                   online-not-live)
+          online-items (vec (concat (map (fn [c]
+                                           (grid/column
+                                             (css/add-class :online-stream)
+                                             (ci/->OnlineChannel c)))
+                                         featured-streams)
+                                    (map (fn [c]
+                                           (grid/column
+                                             nil
+                                             (ci/->StoreItem c)))
+                                         online-not-live)))
+          online-items (if (<= 8 (count online-items))
+                         (take 8 online-items)
+                         (take 4 online-items))]
+
 
       (dom/div
         nil
@@ -111,20 +125,7 @@
                                                      (grid/columns-in-row {:small 2 :medium 4}))
                                                    ;(grid/column
                                                    ;  (css/add-class :online-streams))
-                                                   (map (fn [c]
-                                                          (if (:store/featured c)
-                                                            (grid/column
-                                                              nil
-                                                              (ci/->StoreItem c))
-                                                            (grid/column
-                                                              (css/add-class :online-stream)
-                                                              (ci/->OnlineChannel c))))
-                                                        (cond (<= 8 (count featured-streams))
-                                                              (take 8 featured-streams)
-                                                              (<= 4 (count featured-streams))
-                                                              (take 4 featured-streams)
-                                                              :else
-                                                              (take 4 (into (vec featured-streams) online-not-live)))))
+                                                   online-items)
                                                  "See more")
                          (not-empty online-right-now)
                          (common/content-section {:href  (routes/url :live route-params)
