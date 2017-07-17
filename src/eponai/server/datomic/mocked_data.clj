@@ -23,7 +23,7 @@
   (missing-personal-id-account))
 
 (def test-user-email "dev@sulo.live")
-(def test-user-2-email "dev2@sulo.live")
+(def test-user-2-email "dev+2@sulo.live")
 
 (defn photo [id]
   {:db/id      (db/tempid :db.part/user)
@@ -415,8 +415,8 @@
   (let [categories (mock-categories3)
         stores (mock-stores)
         chats (mock-chats stores)
-        live-streams nil                                    ;;(mock-streams (take 4 stores) :stream.state/live)
-        streams (mock-streams stores :stream.state/offline)
+        live-streams (mock-streams (take 1 stores) :stream.state/live)
+        streams (mock-streams (drop 1 stores) :stream.state/offline)
         countries (countries)
         ;storeless-user (user-no-store)
         stores-with-localities (map (fn [s]

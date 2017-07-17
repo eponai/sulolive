@@ -64,16 +64,9 @@
           streaming-stores (set (map #(get-in % [:stream/store :db/id]) featured-streams))
           online-not-live (remove #(contains? streaming-stores (:db/id %)) online-stores)
           online-right-now (filter #(let [online (-> % :store/owners :store.owner/user :user/online?)]
-                                      (or (= true online)
-                                          (> 60000 (- (date/current-millis) online))))
+                                     (or (= true online)
+                                         (> 60000 (- (date/current-millis) online))))
                                    online-not-live)]
-      ;(debug "Items: " featured-items)
-      ;(debug "Items: " featured-stores)
-      (debug "Selected location: " locations)
-      (debug "ONLINE STORES: " online-stores)
-      (debug "Streaming stores: " streaming-stores)
-      (debug "ONLINE NOT LIVE: " online-not-live)
-      (debug "ONLINE RIGHT NOW: " online-right-now)
 
       (dom/div
         nil
@@ -112,24 +105,31 @@
                    (cond (not-empty featured-streams)
                          (common/content-section {:href  (routes/url :live route-params)
                                                   :class "online-channels"}
-                                                 "LIVE right now"
+                                                 "Online right now"
                                                  (grid/row
                                                    (->>
                                                      (grid/columns-in-row {:small 2 :medium 4}))
                                                    ;(grid/column
                                                    ;  (css/add-class :online-streams))
                                                    (map (fn [c]
-                                                          (grid/column
-                                                            (css/add-class :online-stream)
-                                                            (ci/->OnlineChannel c)))
-                                                        (if (<= 8 (count featured-streams))
-                                                          (take 8 featured-streams)
-                                                          (take 4 featured-streams))))
+                                                          (if (:store/featured c)
+                                                            (grid/column
+                                                              nil
+                                                              (ci/->StoreItem c))
+                                                            (grid/column
+                                                              (css/add-class :online-stream)
+                                                              (ci/->OnlineChannel c))))
+                                                        (cond (<= 8 (count featured-streams))
+                                                              (take 8 featured-streams)
+                                                              (<= 4 (count featured-streams))
+                                                              (take 4 featured-streams)
+                                                              :else
+                                                              (take 4 (into (vec featured-streams) online-right-now)))))
                                                  "See more")
                          (not-empty online-right-now)
                          (common/content-section {:href  (routes/url :live route-params)
                                                   :class "online-channels"}
-                                                 "Stores online"
+                                                 "Online right now"
                                                  (grid/row
                                                    (->>
                                                      (grid/columns-in-row {:small 2 :medium 4}))
