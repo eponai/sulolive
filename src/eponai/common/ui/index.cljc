@@ -124,7 +124,7 @@
                                                               (<= 4 (count featured-streams))
                                                               (take 4 featured-streams)
                                                               :else
-                                                              (take 4 (into (vec featured-streams) online-right-now)))))
+                                                              (take 4 (into (vec featured-streams) online-not-live)))))
                                                  "See more")
                          (not-empty online-right-now)
                          (common/content-section {:href  (routes/url :live route-params)
