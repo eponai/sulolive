@@ -158,7 +158,7 @@
 
 (defn shipping-rate [r]
   (-> r
-      (select-keys [:shipping.rate/first :shipping.rate/additional :shipping.rate/free-above :shipping.rate/title :shipping.rate/info])
+      (select-keys [:db/id :shipping.rate/first :shipping.rate/additional :shipping.rate/free-above :shipping.rate/title :shipping.rate/info])
       (update :shipping.rate/first input->price)
       (update :shipping.rate/additional input->price)
       (update :shipping.rate/free-above input->price)
