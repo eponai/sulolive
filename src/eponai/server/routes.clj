@@ -139,7 +139,7 @@
         route-map (:route-map body)
         logger (context-logger request route-map user-id)
         query (:query body)]
-    (log/info! logger ::parser-call {:query query})
+    (log/info! logger ::parser-call {:query2 (str query)})
     ((parser-fn)
       {::parser/read-basis-t-graph  (some-> read-basis-t-graph (atom))
        ::parser/chat-update-basis-t (::parser/chat-update-basis-t body)
