@@ -149,7 +149,7 @@
                                  (dom/strong nil title)
                                  (dom/div
                                    {:classes [:button :hollow]}
-                                   (dom/span nil "Enter")))
+                                   (dom/span nil "Shop")))
                                (when (not-empty coming-soon)
                                  (dom/p (css/add-class :coming-soon) (dom/small nil coming-soon))))))))
 
