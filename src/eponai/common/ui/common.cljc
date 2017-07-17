@@ -49,10 +49,8 @@
   (dom/p (css/add-class :follow-button-container)
          (dom/a
            (->> (css/button opts)
-                (css/add-classes [:follow-button :sulo-dark :hollow]))
-           (dom/span nil "Follow"))
-         (dom/br nil)
-         (dom/small (css/add-class :text-sulo-dark) "Coming soon")))
+                (css/add-classes [:disabled :follow-button :sulo-dark :hollow]))
+           (dom/span nil "Follow"))))
 
 (defn contact-button [opts]
   (dom/a (->> (css/button-hollow opts)

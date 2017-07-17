@@ -107,7 +107,7 @@
 			text-shadow: 1px 1px 1px rgba($black, 0.5);
 		}
 		p {
-			margin: 0 auto;
+			// margin: 0 auto;
 			text-shadow: 1px 1px 1px rgba($black, 0.5);
 			// font-family: $header-font-family-sans-serif;
 			// font-size: 110%;
@@ -267,6 +267,7 @@
 				}				
 			}
 			&.inactive {
+				pointer-events: none;
 				cursor: default;
 				.photo-container .overlay {
 					background: rgba($white, 0.75);

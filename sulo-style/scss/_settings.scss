@@ -54,6 +54,7 @@ $dark-gray: #8a8a8a;
 $black: #10091B;
 $white: #fefefe;
 $foundation-palette: (
+  white: $white,
   primary: #444444,//#240061, //#2199e8,
   secondary: $dark-gray,//#D9D7D9, //#3A5288,
   success: darken(#3adb76, 10%),

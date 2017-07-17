@@ -18,7 +18,8 @@
     [eponai.web.social :as social]
     [eponai.client.utils :as client-utils]
     [eponai.client.parser.message :as msg]
-    [medley.core :as medley]))
+    [medley.core :as medley]
+    [eponai.web.ui.button :as button]))
 
 (def form-inputs
   {:field/email    "field.email"
@@ -101,7 +102,11 @@
             (dom/div
               (css/add-class :section-title)
               (dom/h1 nil (dom/span nil "Shop local live")))
-            (dom/p nil (dom/span nil "Global change starts local. Shop and hang out LIVE with your favourite local brands and people from your city."))))
+            (dom/p nil (dom/span nil "Global change starts local. Shop and hang out LIVE with your favourite local brands and people from your city."))
+            (let [loc-vancouver (medley/find-first #(= "yvr" (:sulo-locality/path %)) sulo-localities)]
+              (button/button {:onClick #(.select-locality this loc-vancouver)
+                                      :classes [:hollow :white :large]}
+                                     (dom/span nil (str "Shop in " (:sulo-locality/title loc-vancouver)))))))
         (dom/div
           {:classes ["top-features"]}
           (grid/row
@@ -137,8 +142,10 @@
                        (grid/column
                          nil
                          (dom/a
-                           (->> {:onClick #(.select-locality this loc)}
-                                (css/add-class :city-anchor))
+                           (cond->> (->> {:onClick #(.select-locality this loc)}
+                                         (css/add-class :city-anchor))
+                                    (some? coming-soon)
+                                    (css/add-class :inactive))
                            (photo/photo
                              {:photo-id       (:photo/id photo)
                               :transformation :transformation/preview}
