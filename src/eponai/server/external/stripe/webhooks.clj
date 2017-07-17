@@ -90,21 +90,29 @@
 
 
 (defmethod handle-account-webhook "charge.captured"
-  [{:keys [state system webhook-event] :as env} charge]
+  [{:keys [state system logger webhook-event] :as env} charge]
   (debug "Will handle captured charged:  " webhook-event)
   (execute-async (:system/stripe-webhooks system)
                  "charge.captured"
                  (fn []
-                   (send-order-receipt env charge)))
+                   (try
+                     (send-order-receipt env charge)
+                     (catch Throwable e
+                       (log/error! logger ::stripe-platform-webhook {:exception (log/render-exception e)
+                                                                     :event webhook-event})))))
   nil)
 
 (defmethod handle-account-webhook "charge.succeeded"
-  [{:keys [state system webhook-event] :as env} charge]
+  [{:keys [state system logger webhook-event] :as env} charge]
   (debug "Will handle captured succeeded:  " webhook-event)
   (execute-async (:system/stripe-webhooks system)
                  "charge.succeeded"
                  (fn []
-                   (send-order-receipt env charge)))
+                   (try
+                     (send-order-receipt env charge)
+                     (catch Throwable e
+                       (log/error! logger ::stripe-platform-webhook {:exception (log/render-exception e)
+                                                                     :event     webhook-event})))))
   nil)
 
 ;; ############## CONNECTED ACCOUNT ################
