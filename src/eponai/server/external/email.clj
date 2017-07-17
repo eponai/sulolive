@@ -43,7 +43,7 @@
       (info "EMAIL - Send order notification to store " sent-email)))
 
   (-send-store-access-request [_ {:field/keys [brand email website locality]
-                                  user-id :user-id :as params}]
+                                  user-id     :user-id :as params}]
     (let [sent-email (postal/send-message smtp
                                           {:from    (str (if (some? user-id) "SULO Live User" "SULO Live Visitor") " <hello@sulo.live>")
                                            :to      "hello@sulo.live"
@@ -69,9 +69,18 @@
                                                    :charge?   (some? charge)
                                                    :shipping? (some? shipping)
                                                    :store?    (some? store)})))
+    (-send-order-notification [this {:keys [charge order] :as params}]
+      (let [{:order/keys [store shipping user]} order
+            {store-name :store.profile/name} (:store/profile store)]
+        (info "Fake email - send order notification: " {:to        (-> store :store/owners :store.owner/user :user/email)
+                                                        :subject   (str "You received a SULO Live order from " (:shipping/name shipping) " #" (:db/id order))
+                                                        :order?    (some? order)
+                                                        :charge?   (some? charge)
+                                                        :shipping? (some? shipping)
+                                                        :store?    (some? store)})))
     (-send-store-access-request [_ {:field/keys [brand user-id] :as params}]
       (info "Fake email - send user request: " {:from    (str (if (some? user-id) "SULO Live User" "SULO Live Visitor") " <hello@sulo.live>")
-                                                 :to      "hello@sulo.live"
-                                                 :subject (str "Request start store access - " brand)
-                                                 :params  params}))))
+                                                :to      "hello@sulo.live"
+                                                :subject (str "Request start store access - " brand)
+                                                :params  params}))))
 
