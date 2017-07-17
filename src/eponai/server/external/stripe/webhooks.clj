@@ -79,8 +79,9 @@
     (email/-send-order-receipt (:system/email system) {:order order :charge charge})
     (email/-send-order-notification (:system/email system) {:order order :charge charge})))
 
-(defmulti handle-account-webhook (fn [{:keys [webhook-event]} _]
+(defmulti handle-account-webhook (fn [{:keys [logger webhook-event]} _]
                                    (debug "Webhook event: " webhook-event)
+                                   (log/info! logger ::stripe-platform-webhook {:event webhook-event})
                                    (:type webhook-event)))
 
 (defmethod handle-account-webhook :default
@@ -91,12 +92,20 @@
 (defmethod handle-account-webhook "charge.captured"
   [{:keys [state system webhook-event] :as env} charge]
   (debug "Will handle captured charged:  " webhook-event)
-  (send-order-receipt env charge))
+  (execute-async (:system/stripe-webhooks system)
+                 "charge.captured"
+                 (fn []
+                   (send-order-receipt env charge)))
+  nil)
 
 (defmethod handle-account-webhook "charge.succeeded"
   [{:keys [state system webhook-event] :as env} charge]
   (debug "Will handle captured succeeded:  " webhook-event)
-  (send-order-receipt env charge))
+  (execute-async (:system/stripe-webhooks system)
+                 "charge.succeeded"
+                 (fn []
+                   (send-order-receipt env charge)))
+  nil)
 
 ;; ############## CONNECTED ACCOUNT ################
 
