@@ -11,7 +11,7 @@
 (defui AboutSulo
   static om/IQuery
   (query [_]
-    [:query/auth])
+    [{:query/auth [:db/id]}])
   Object
   (render [this]
     (dom/div

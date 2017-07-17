@@ -10,7 +10,7 @@
   static om/IQuery
   (query [this]
     [:query/current-route
-     :query/auth])
+     {:query/auth [:db/id]}])
   Object
   (render [this]
     (dom/div
