@@ -162,7 +162,7 @@
     ;(dom/div
     ;  nil
     ;  (dom/i {:classes ["fa fa-spinner fa-pulse"]}))
-    (dom/div
+    (dom/form
       (css/add-classes [:edit-address])
       (grid/row
         nil
@@ -202,7 +202,8 @@
       (dom/div
         nil
         (grid/row
-          nil
+          (when manual-shipping
+            (css/add-class :hide))
           (grid/column
             nil
             (dom/label nil "Search address")
@@ -211,13 +212,26 @@
                         :type         "text"
                         :defaultValue ""})))
         (dom/div
-          (when (or manual-shipping
-                    has-provided-address?)
-            (css/add-class :hide))
-          (dom/p
-            (css/text-align :center)
-            (dom/a {:onClick #(om/update-state! component assoc :manual-shipping true)}
-                   (dom/small nil "Or enter address manually"))))
+          nil
+          (cond manual-shipping
+                (dom/p
+                  (css/text-align :center)
+                  (dom/a {:onClick #(om/update-state! component assoc :manual-shipping false)}
+                         (dom/small nil "Search address")))
+                (and (not manual-shipping)
+                     (not has-provided-address?))
+                (dom/p
+                  (css/text-align :center)
+                  (dom/a {:onClick #(om/update-state! component assoc :manual-shipping true)}
+                         (dom/small nil "Fill out address manually"))))
+          ;(when (or manual-shipping
+          ;          has-provided-address?)
+          ;  (css/add-class :hide))
+          ;(dom/p
+          ;  (css/text-align :center)
+          ;  (dom/a {:onClick #(om/update-state! component assoc :manual-shipping true)}
+          ;         (dom/small nil "Or enter address manually")))
+          )
 
         (dom/hr nil)
         (dom/div
@@ -313,11 +327,13 @@
           (dom/div
             (css/add-class :action-buttons)
             (when (not-empty current-shipping)
-              (button/cancel
-                {:onClick #(om/update-state! component dissoc :shipping/edit-shipping)}
+              (button/submit-cancel-button
+                {:onClick #(om/update-state! component dissoc :shipping/edit-shipping)
+                 :classes [:small]}
                 (dom/span nil "Cancel")))
-            (button/save
-              (cond-> {:onClick #(.save-shipping component edit-shipping)}
+            (button/submit-button-small
+              (cond-> {:onClick #(.save-shipping component edit-shipping)
+                       :classes [:small]}
                       (or (not has-provided-address?) (not (shipping-available? shipping-rules)))
                       (assoc :disabled true))
               (if (not-empty current-shipping)
@@ -638,12 +654,15 @@
           updated-shipping (cond-> (assoc-in (merge (.default-shipping this) current-shipping) [:shipping/address :shipping.address/country] (or country
                                                                                                                                                  {:country/code "CA"}))
                                    (nil? country)
-                                   (assoc-in [:shipping/address :shipping.address/region] ""))]
+                                   (assoc-in [:shipping/address :shipping.address/region] ""))
+
+          selected-card (or (:stripe/default-source stripe-customer) :new-card)]
 
       {:checkout/shipping      (when (some? current-shipping) updated-shipping)
        :shipping/edit-shipping (when-not (shipping-available? shipping-rules)
                                  updated-shipping)
-       }))
+       :payment/selected-card  selected-card
+       :payment/add-new-card?  (= selected-card :new-card)}))
 
   (componentDidUpdate [this _ _]
     (let [{:query/keys [checkout taxes]} (om/props this)
@@ -706,6 +725,7 @@
              autocomplete (places/mount-places-address-autocomplete
                             {:element-id "sulo-auto-complete"
                              :on-change  (fn [address]
+                                           (debug "Autocomplete address: " address)
                                            (om/update-state! this assoc-in [:shipping/edit-shipping :shipping/address] address))})]
          (debug "ga: Send ga events : " checkout)
          (ga/checkout-shipping-address checkout country)

@@ -33,12 +33,26 @@
     (css/add-classes [:secondary] opts)
     content))
 
+(defn submit-button-small [opts & content]
+  (let [{:keys [onClick]} opts
+        new-opts (assoc opts :onClick #(do
+                                        (.preventDefault %)
+                                        (when onClick (onClick %))))]
+    (dom/button (css/add-classes [:sulo-dark :small :button] new-opts) content)))
+
 (defn submit-button [opts & content]
   (let [{:keys [onClick]} opts
         new-opts (assoc opts :onClick #(do
                                         (.preventDefault %)
                                         (when onClick (onClick %))))]
     (dom/button (css/add-classes [:sulo-dark :hollow :button] new-opts) content)))
+
+(defn submit-cancel-button [opts & content]
+  (let [{:keys [onClick]} opts
+        new-opts (assoc opts :onClick #(do
+                                        (.preventDefault %)
+                                        (when onClick (onClick %))))]
+    (dom/button (css/add-classes [:hollow :button] new-opts) content)))
 
 (defn default-hollow [opts & content]
   (default (css/add-class :hollow opts) content))
