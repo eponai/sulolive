@@ -551,7 +551,8 @@
              on-success (fn [token]
                           (.save-payment this (stripe/token->card token)))
              on-error (fn [error-message]
-                        (om/update-state! this assoc :payment-error error-message))
+                        (debug "Payment error: " error-message)
+                        (om/update-state! this assoc :error-message error-message))
              input-validation (validate/validate ::ship/shipping shipping form-inputs)]
          (debug "Input validation: " input-validation)
          (cond (some? input-validation)
