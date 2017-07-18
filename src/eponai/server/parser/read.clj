@@ -99,12 +99,12 @@
             (debug "Read stores: " locations)
             (when (some? (:db/id locations))
               (query/all db db-history query {:where   '[[?e :store/locality ?l]
-                                                         [?status :status/type :status.type/open]
                                                          [?e :store/status ?status]
-                                                         [?s :stream/state _]
+                                                         [?status :status/type :status.type/open]
                                                          [?e :store/profile ?p]
                                                          [?p :store.profile/photo _]
-                                                         [?s :stream/store ?e]]
+                                                         [?s :stream/store ?e]
+                                                         [?s :stream/state _]]
                                               :symbols {'?l (:db/id locations)}})))})
 
 (defread query/streams
