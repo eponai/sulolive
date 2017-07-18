@@ -32,7 +32,7 @@
 (s/def :shipping.address/street2 (s/or :value string? :empty nil?))
 (s/def :shipping.address/postal (s/and string? #(not-empty %)))
 (s/def :shipping.address/locality (s/and string? #(not-empty %)))
-(s/def :shipping.address/region (s/or :value #(and (string? %) (re-matches #"\w{2}" %)) :empty nil?))
+(s/def :shipping.address/region (s/or :value #(string? (not-empty %)) :empty nil?))
 (s/def :shipping.address/country (s/keys :req [:country/code]))
 
 (s/def :shipping/address (s/keys :req [:shipping.address/street

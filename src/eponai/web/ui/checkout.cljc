@@ -144,14 +144,16 @@
       (some #(pos? (count (:shipping.rule/rates %))) rules)))
 
 (defn render-edit-address [component edit-shipping]
-  (let [{:keys            [input-validation]
+  (let [{:keys            [input-validation manual-shipping]
          current-shipping :checkout/shipping} (om/get-state component)
         {:query/keys [countries checkout stripe-customer]} (om/props component)
         store (checkout-store checkout)
         {:shipping/keys [address]
          shipping-name  :shipping/name} edit-shipping
         country-code (get-in address [:shipping.address/country :country/code])
-        shipping-rules (available-rules (om/props component) edit-shipping)]
+        shipping-rules (available-rules (om/props component) edit-shipping)
+
+        has-provided-address? (not-empty (filter #(not-empty (val %)) (dissoc (:shipping/address edit-shipping) :shipping.address/country :shipping.address/region)))]
 
     (debug "Edit address: " edit-shipping)
     ;(debug "All shipping rules: " (get-in store [:store/shipping :shipping/rules]))
@@ -203,13 +205,25 @@
           nil
           (grid/column
             nil
+            (dom/label nil "Search address")
             (dom/input {:id           "sulo-auto-complete"
                         :placeholder  "Enter address..."
                         :type         "text"
                         :defaultValue ""})))
+        (dom/div
+          (when (or manual-shipping
+                    has-provided-address?)
+            (css/add-class :hide))
+          (dom/p
+            (css/text-align :center)
+            (dom/a {:onClick #(om/update-state! component assoc :manual-shipping true)}
+                   (dom/small nil "Or enter address manually"))))
+
         (dom/hr nil)
         (dom/div
-          nil
+          (when (and (not manual-shipping)
+                     (not has-provided-address?))
+            (css/add-class :hide))
 
 
           (grid/row
@@ -270,13 +284,13 @@
               (if-let [regions (not-empty (sort (get ship/regions (or country-code "CA"))))]
                 (validate/select
                   {:id           (:shipping.address/region form-inputs)
-                   :value        (or (:shipping.address/region address) "default")
+                   :value        (or (:shipping.address/region address) "")
                    :name         "ship-state"
                    :autoComplete "shipping region"
                    :onChange     #(om/update-state! component update :shipping/edit-shipping assoc-in
                                                     [:shipping/address :shipping.address/region] (.-value (.-target %)))}
                   input-validation
-                  (dom/option {:value "default" :disabled true} "--- Province/State ---")
+                  (dom/option {:value "" :disabled true} "--- Province/State ---")
                   (map (fn [r]
                          (dom/option {:value r} (str r)))
                        regions))
@@ -304,7 +318,7 @@
                 (dom/span nil "Cancel")))
             (button/save
               (cond-> {:onClick #(.save-shipping component edit-shipping)}
-                      (not (shipping-available? shipping-rules))
+                      (or (not has-provided-address?) (not (shipping-available? shipping-rules)))
                       (assoc :disabled true))
               (if (not-empty current-shipping)
                 (dom/span nil "Update address")
@@ -523,7 +537,7 @@
                         :shipping/edit-shipping (fn [s]
                                                   (cond-> (assoc-in s [:shipping/address :shipping.address/country] (or country {:country/code country-code}))
                                                           (not-empty (get ship/regions country-code))
-                                                          (assoc-in [:shipping/address :shipping.address/region] "default")
+                                                          (assoc-in [:shipping/address :shipping.address/region] "")
                                                           (empty? (get ship/regions country-code))
                                                           (assoc-in [:shipping/address :shipping.address/region] ""))))))
   (save-shipping [this shipping]
@@ -624,9 +638,7 @@
           updated-shipping (cond-> (assoc-in (merge (.default-shipping this) current-shipping) [:shipping/address :shipping.address/country] (or country
                                                                                                                                                  {:country/code "CA"}))
                                    (nil? country)
-                                   (assoc-in [:shipping/address :shipping.address/region] "default"))
-
-          ]
+                                   (assoc-in [:shipping/address :shipping.address/region] ""))]
 
       {:checkout/shipping      (when (some? current-shipping) updated-shipping)
        :shipping/edit-shipping (when-not (shipping-available? shipping-rules)
