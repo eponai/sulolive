@@ -87,6 +87,9 @@ $sidenav-width: 75%;
 			color: $dark-gray;
 		}
 	}
+	li.sign-in-item {
+		padding: 0 $global-padding;
+	}
 	
 	.footer-menu {
 		li.menu-text {

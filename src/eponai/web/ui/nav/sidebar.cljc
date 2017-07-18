@@ -11,7 +11,8 @@
     [eponai.web.ui.nav.common :as nav.common]
     [eponai.common.mixpanel :as mixpanel]
     #?(:cljs
-       [eponai.web.utils :as web.utils])))
+       [eponai.web.utils :as web.utils])
+    [eponai.web.ui.button :as button]))
 
 (defui Sidebar
   static om/IQuery
@@ -173,7 +174,8 @@
                              :onClick #(when (empty? locations)
                                         #?(:cljs
                                            (when-let [locs (web.utils/element-by-id "sulo-locations")]
-                                             (web.utils/scroll-to locs 250))))})
+                                             (web.utils/scroll-to locs 250))))}
+                            (css/add-class :navbar-live))
                        (dom/span nil "LIVE")))
                    (nav.common/collection-links this "sidebar")
                    ;(map
@@ -274,11 +276,12 @@
                                   (menu/item nil (dom/a {:href    (routes/url :logout)
                                                          :onClick #(track-event ::mixpanel/signout)}
                                                         (dom/small nil "Sign out")))
-                                  (menu/item nil (dom/a
-                                                   (->> {:onClick #(do
-                                                                    (track-event ::mixpanel/open-signin)
-                                                                    (auth/show-login (shared/by-key this :shared/login)))}
-                                                        (css/button)) (dom/span nil "Sign up / Sign in")))
+                                  (menu/item
+                                    (css/add-class :sign-in-item)
+                                    (button/store-navigation-cta
+                                      {:onClick #(do
+                                                  (track-event ::mixpanel/open-signin)
+                                                  (auth/show-login (shared/by-key this :shared/login)))} (dom/span nil "Sign up / Sign in")))
                                   ;(menu/item nil (dom/a (css/button {:onClick #(auth/show-lock (shared/by-key this :shared/auth-lock))})
                                   ;                      (dom/span nil "Sign in")))
                                   )))

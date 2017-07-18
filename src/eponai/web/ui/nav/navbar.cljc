@@ -206,12 +206,11 @@
          {:classes ["top-bar-left"]}
          (menu/horizontal
            nil
-           (when (some? auth)
-             (menu/item
-               nil
-               (dom/a
-                 (css/hide-for :large {:onClick #(.open-sidebar component)})
-                 (dom/i {:classes ["fa fa-bars fa-fw"]}))))
+           (menu/item
+             nil
+             (dom/a
+               (css/hide-for :large {:onClick #(.open-sidebar component)})
+               (dom/i {:classes ["fa fa-bars fa-fw"]})))
            (navbar-brand (if (not-empty locations)
                            (routes/url :index {:locality (:sulo-locality/path locations)})
                            (routes/url :landing-page)))
@@ -232,8 +231,10 @@
            (when (nil? auth)
              (menu/item
                nil
-               (dom/a {:href (routes/url :about)}
-                      (dom/strong nil (dom/small nil "About us")))))
+               (dom/a
+                 (->> {:href (routes/url :about)}
+                      (css/show-for :medium))
+                 (dom/strong nil (dom/small nil "About us")))))
            (user-menu-item component)
            (menu/item
              (css/add-class :shopping-bag)
