@@ -21,7 +21,9 @@
     [eponai.web.ui.checkout.shipping :as ship]
     [eponai.common.ui.script-loader :as script-loader]
     [eponai.client.parser.message :as msg]
-    [eponai.client.routes :as routes]))
+    [eponai.client.routes :as routes]
+    [eponai.common.analytics.google :as ga]
+    [eponai.common.mixpanel :as mixpanel]))
 
 (def form-inputs
   {:shipping/name             "sulo-shipping-full-name"
@@ -350,11 +352,13 @@
           (menu/vertical
             (css/add-classes [:section-list :section-list--delivery])
             (map (fn [r]
-                   (let [{:shipping.rate/keys [free-above total info]} r]
+                   (let [{:shipping.rate/keys [free-above total info title]} r]
                      (menu/item
                        (css/add-class :section-list-item)
                        (dom/a
-                         {:onClick #(om/update-state! component assoc :shipping/selected-rate r)}
+                         {:onClick #(do
+                                     (ga/checkout-shipping-option checkout total)
+                                     (om/update-state! component assoc :shipping/selected-rate r))}
                          (dom/div
                            (css/add-class :shipping-info)
                            (dom/input
@@ -396,7 +400,7 @@
 
     (callout/callout
       (css/add-classes [:section :section--payment])
-      (dom/h4 (css/text-align :center) "Payment")
+      (dom/h4 (css/text-align :center) "Secure payment")
 
       (dom/div
         (cond->> (css/add-class :checkout-payment)
@@ -409,7 +413,9 @@
                            (menu/item
                              (css/add-class :section-list-item--card)
                              (dom/a
-                               {:onClick #(om/update-state! component assoc :payment/selected-card id)}
+                               {:onClick #(do
+                                           (ga/checkout-payment-option checkout brand)
+                                           (om/update-state! component assoc :payment/selected-card id))}
                                (dom/input {:type    "radio"
                                            :name    "sulo-select-cc"
                                            :checked (= selected-card id)})
@@ -432,7 +438,9 @@
           (menu/item
             (css/add-classes [:section-list-item--new-card])
             (dom/a
-              (cond->> {:onClick #(om/update-state! component assoc :payment/selected-card :new-card)}
+              (cond->> {:onClick #(do
+                                   (ga/checkout-payment-option checkout "New card")
+                                   (om/update-state! component assoc :payment/selected-card :new-card))}
                        (and (not-empty sources)
                             (not add-new-card?))
                        (css/add-class :hide))
@@ -451,8 +459,10 @@
             (if (and (not-empty sources)
                      (not add-new-card?))
               (button/store-setting-default
-                {:onClick #(om/update-state! component merge {:payment/add-new-card? true
-                                                              :payment/selected-card :new-card})}
+                {:onClick #(do
+                            (ga/checkout-payment-option checkout "New card")
+                            (om/update-state! component merge {:payment/add-new-card? true
+                                                               :payment/selected-card :new-card}))}
                 (dom/span nil "Add new card...")))))
 
         ))))
@@ -526,6 +536,7 @@
       (debug "validation: " validation)
       (when (shipping-available? shipping-rules)
         (when (nil? validation)
+          (ga/checkout-payment-details checkout (:checkout/selected-card (om/get-state this)))
           (read-taxes this shipping subtotal))
         (om/update-state! this (fn [st]
                                  (cond-> (assoc st :input-validation validation)
@@ -550,12 +561,14 @@
                (nil? selected-card)
                (om/update-state! this assoc :error-message "Oops, no payment option selected. Please select how to pay.")
                :else
-               (if (= selected-card :new-card)
-                 (stripe/source-card (shared/by-key this :shared/stripe)
-                                     card
-                                     {:on-success on-success
-                                      :on-error   on-error})
-                 (.save-payment this {:source selected-card}))))))
+               (do
+                 (mixpanel/track "Confirm purchase")
+                 (if (= selected-card :new-card)
+                   (stripe/source-card (shared/by-key this :shared/stripe)
+                                       card
+                                       {:on-success on-success
+                                        :on-error   on-error})
+                   (.save-payment this {:source selected-card})))))))
 
 
   (save-payment [this selected-card]
@@ -608,7 +621,7 @@
           country-code (get-in current-shipping [:shipping/address :shipping.address/country :country/code])
           country (when country-code (some #(when (= (:country/code %) country-code) %) countries))
           updated-shipping (cond-> (assoc-in (merge (.default-shipping this) current-shipping) [:shipping/address :shipping.address/country] (or country
-                                                                                           {:country/code "CA"}))
+                                                                                                                                                 {:country/code "CA"}))
                                    (nil? country)
                                    (assoc-in [:shipping/address :shipping.address/region] "default"))
 
@@ -620,46 +633,55 @@
        }))
 
   (componentDidUpdate [this _ _]
+    (let [{:query/keys [checkout taxes]} (om/props this)
+          {:shipping/keys [selected-rate edit-shipping]
+           :keys          [error-message]} (om/get-state this)
+          subtotal (compute-subtotal checkout)
+          shipping-fee (compute-shipping-fee selected-rate checkout)
+          tax-amount (compute-taxes taxes subtotal shipping-fee)
+          grandtotal (+ subtotal shipping-fee tax-amount)]
 
-    ;; Check response for creating a new card on the customer
-    ;; (this will only happen if the user added a new card when checking out)
-    (when-let [customer-response (msg/last-message this 'stripe/update-customer)]
-      (when (msg/final? customer-response)
-        (let [message (msg/message customer-response)]
-          (msg/clear-messages! this 'stripe/update-customer)
+      ;; Check response for creating a new card on the customer
+      ;; (this will only happen if the user added a new card when checking out)
+      (when-let [customer-response (msg/last-message this 'stripe/update-customer)]
+        (when (msg/final? customer-response)
+          (let [message (msg/message customer-response)]
+            (msg/clear-messages! this 'stripe/update-customer)
 
-          ;; Response success if the card is valid and added to the customer's list of cards
-          (if (msg/success? customer-response)
-            ;; If we had a pending payment already, that means we've already added a new card and tried
-            ;; to charge it by placing an order. However, it was declined for some reason and has been
-            ;; successfully removed from the customer again. (we do this so the user doesn't end up with
-            ;; many added cards that didn't actually work)
-            (if (some? (:checkout/pending-payment (om/get-state this)))
-              (om/update-state! this dissoc :checkout/pending-payment :loading/message)
-              ;; The newly created card was successfully created and added to the customer, let's place the order and charge the card.
-              (let [pending-payment {:source (:id (:new-card message))}]
-                ;; We created a new card, so let's add it to pending to make sure it's successfully charged.
-                ;; If it's not, we'll remove it from the customer again.
-                (om/update-state! this assoc :checkout/pending-payment pending-payment)
-                (.place-order this pending-payment)))
+            ;; Response success if the card is valid and added to the customer's list of cards
+            (if (msg/success? customer-response)
+              ;; If we had a pending payment already, that means we've already added a new card and tried
+              ;; to charge it by placing an order. However, it was declined for some reason and has been
+              ;; successfully removed from the customer again. (we do this so the user doesn't end up with
+              ;; many added cards that didn't actually work)
+              (if (some? (:checkout/pending-payment (om/get-state this)))
+                (om/update-state! this dissoc :checkout/pending-payment :loading/message)
+                ;; The newly created card was successfully created and added to the customer, let's place the order and charge the card.
+                (let [pending-payment {:source (:id (:new-card message))}]
+                  ;; We created a new card, so let's add it to pending to make sure it's successfully charged.
+                  ;; If it's not, we'll remove it from the customer again.
+                  (om/update-state! this assoc :checkout/pending-payment pending-payment)
+                  (.place-order this pending-payment)))
 
-            ;; If card couldn't be added, (invalid or other error) show user what's wrong.
-            (om/update-state! this assoc :error-message message :loading/message nil)))))
+              ;; If card couldn't be added, (invalid or other error) show user what's wrong.
+              (om/update-state! this assoc :error-message message :loading/message nil)))))
 
-    ;; Checked response from placing an order.
-    (when-let [response (msg/last-message this 'store/create-order)]
-      (when (msg/final? response)
-        (let [message (msg/message response)]
-          (msg/clear-messages! this 'store/create-order)
-          (if (msg/success? response)
-            ;; Successful order will re-route to user's orders.
-            (let [{:query/keys [auth]} (om/props this)]
-              (routes/set-url! this :user/order {:order-id (:db/id message) :user-id (:db/id auth)}))
-            ;; If order was unsuccessful, let's get the pending payment we added above and remove it from the customer.
-            (let [{:checkout/keys [pending-payment]} (om/get-state this)]
-              (when pending-payment
-                (msg/om-transact! this [(list 'stripe/update-customer {:remove-source (:source pending-payment)})]))
-              (om/update-state! this assoc :error-message message :loading/message nil)))))))
+      ;; Checked response from placing an order.
+      (when-let [response (msg/last-message this 'store/create-order)]
+        (when (msg/final? response)
+          (let [message (msg/message response)]
+            (msg/clear-messages! this 'store/create-order)
+            (if (msg/success? response)
+              ;; Successful order will re-route to user's orders.
+              (let [{:query/keys [auth]} (om/props this)]
+                ;; Successful order, send to Google analytics
+                (ga/send-transaction checkout {:revenue grandtotal :tax tax-amount :shipping shipping-fee :id (:db/id message)})
+                (routes/set-url! this :user/order {:order-id (:db/id message) :user-id (:db/id auth)}))
+              ;; If order was unsuccessful, let's get the pending payment we added above and remove it from the customer.
+              (let [{:checkout/keys [pending-payment]} (om/get-state this)]
+                (when pending-payment
+                  (msg/om-transact! this [(list 'stripe/update-customer {:remove-source (:source pending-payment)})]))
+                (om/update-state! this assoc :error-message message :loading/message nil))))))))
 
   (componentDidMount [this]
     #?(:cljs
@@ -672,6 +694,8 @@
                             {:element-id "sulo-auto-complete"
                              :on-change  (fn [address]
                                            (om/update-state! this assoc-in [:shipping/edit-shipping :shipping/address] address))})]
+         (debug "ga: Send ga events : " checkout)
+         (ga/checkout-shipping-address checkout country)
          (when (nil? auth)
            (routes/set-url! this :login))
          (when-not (= :status.type/open (-> (first checkout) :store.item/_skus :store/_items :store/status :status/type))

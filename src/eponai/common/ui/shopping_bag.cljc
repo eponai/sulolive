@@ -17,7 +17,8 @@
     [eponai.common.ui.product :as product]
     [eponai.web.ui.content-item :as ci]
     [eponai.client.auth :as auth]
-    [eponai.common.shared :as shared]))
+    [eponai.common.shared :as shared]
+    [eponai.common.analytics.google :as ga]))
 
 (defn items-by-store [items]
   (group-by #(get-in % [:store.item/_skus :store/_items]) items))
@@ -146,9 +147,11 @@
   Object
   (remove-item [this sku]
     (debug "SKU REMOVE: " sku)
-    (om/transact! this [(list 'shopping-bag/remove-item
-                              {:sku (:db/id sku)})
-                        :query/cart]))
+    (let [product (:store.item/_skus sku)]
+      (ga/send-remove-from-bag product sku)
+      (om/transact! this [(list 'shopping-bag/remove-item
+                                {:sku (:db/id sku)})
+                          :query/cart])))
   (componentWillReceiveProps [this p]
     (let [{:keys [did-mount?]} (om/get-state this)]
       (if-not did-mount?

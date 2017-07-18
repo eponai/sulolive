@@ -2,6 +2,7 @@
   (:require
     [om.next :as om :refer [defui]]
     [eponai.client.routes :as routes]
+    [eponai.common.analytics.google :as ga]
     [eponai.common.ui.elements.css :as css]
     [eponai.web.ui.photo :as photo]
     [eponai.common.ui.dom :as dom]
