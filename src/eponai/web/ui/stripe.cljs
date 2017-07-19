@@ -32,6 +32,7 @@
             (then (fn [^js/Stripe.card.createToken.Response res]
                     (if (.-error res)
                       (let [^js/Stripe.card.createToken.Reponse.Error error (.-error res)]
+                        (debug "Stripe error: " (.-error res))
                         (on-error (.-message error)))
                       (on-success (.-token res)))))))
       (card-element [this element-id]

@@ -17,7 +17,8 @@
     [eponai.client.routes :as routes]
     [eponai.common.mixpanel :as mixpanel]
     [clojure.string :as string]
-    [cemerick.url :as url]))
+    [cemerick.url :as url]
+    [eponai.common.analytics.google :as ga]))
 
 (defn product-query []
   [:db/id
@@ -138,12 +139,15 @@
                (debug "Selected sku value: " selected-sku)
                (when (some? selected-sku)
                  (mixpanel/track "Add product to bag")
+                 (ga/send-add-to-bag product (some #(when (= (:db/id %) selected-sku) %) skus))
                  (om/transact! this `[(shopping-bag/add-items ~{:skus [selected-sku]})
                                       {:query/cart [{:user.cart/items [:db/id]}
                                                     {:user/_cart [:db/id]}]}])
                  (om/update-state! this assoc :added-to-bag? true)))))
   (componentDidMount [this]
-    (.select-photo this 0))
+    (let [product (om/props this)]
+      (ga/send-product-detail-view product)
+      (.select-photo this 0)))
   (componentDidUpdate [this prev-props prev-state]
     #?(:cljs (let [{:keys [added-to-bag?]} (om/get-state this)]
                (if added-to-bag?

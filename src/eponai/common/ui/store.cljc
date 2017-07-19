@@ -112,7 +112,8 @@
 (defui Store
   static om/IQuery
   (query [_]
-    [{:proxy/stream (om/get-query stream/Stream)}
+    [
+     ;{:proxy/stream (om/get-query stream/Stream)}
      {:proxy/chat (om/get-query chat/StreamChat)}
      {:query/store [:db/id
                     {:store/locality [:sulo-locality/path]}

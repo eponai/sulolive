@@ -17,7 +17,8 @@
     [eponai.common.ui.product :as product]
     [eponai.web.ui.content-item :as ci]
     [eponai.client.auth :as auth]
-    [eponai.common.shared :as shared]))
+    [eponai.common.shared :as shared]
+    [eponai.common.analytics.google :as ga]))
 
 (defn items-by-store [items]
   (group-by #(get-in % [:store.item/_skus :store/_items]) items))
@@ -146,9 +147,11 @@
   Object
   (remove-item [this sku]
     (debug "SKU REMOVE: " sku)
-    (om/transact! this [(list 'shopping-bag/remove-item
-                              {:sku (:db/id sku)})
-                        :query/cart]))
+    (let [product (:store.item/_skus sku)]
+      (ga/send-remove-from-bag product sku)
+      (om/transact! this [(list 'shopping-bag/remove-item
+                                {:sku (:db/id sku)})
+                          :query/cart])))
   (componentWillReceiveProps [this p]
     (let [{:keys [did-mount?]} (om/get-state this)]
       (if-not did-mount?
@@ -198,27 +201,27 @@
               ;(dom/p (css/add-class :header))
               (button/button
                 (button/sulo-dark (button/hollow {:href (routes/url :live {:locality (:sulo-locality/path locations)})}))
-                (dom/span nil "Go to the market - start shopping")))
-            (when (some? (:sulo-locality/title locations))
-              [
-               (callout/callout
-                 (css/add-class :featured)
-                 (grid/row-column
-                   nil
-                   (dom/div
-                     (css/add-class :section-title)
-                     (dom/h3 nil (str "New arrivals in " (:sulo-locality/title locations)))))
-                 (grid/row
-                   (->>
-                     (grid/columns-in-row {:small 2 :medium 3 :large 5}))
-                   (map
-                     (fn [p]
-                       (grid/column
-                         (css/add-class :new-arrival-item)
-                         (ci/->ProductItem (om/computed p
-                                                        {:current-route current-route
-                                                         :open-url?     true}))))
-                     (take 5 featured-items))))])))))))
+                (dom/span nil "Go to the market - start shopping")))))
+        (when (some? (:sulo-locality/title locations))
+          [
+           (callout/callout
+             (css/add-class :featured)
+             (grid/row-column
+               nil
+               (dom/div
+                 (css/add-class :section-title)
+                 (dom/h3 nil (str "New arrivals in " (:sulo-locality/title locations)))))
+             (grid/row
+               (->>
+                 (grid/columns-in-row {:small 2 :medium 3 :large 5}))
+               (map
+                 (fn [p]
+                   (grid/column
+                     (css/add-class :new-arrival-item)
+                     (ci/->ProductItem (om/computed p
+                                                    {:current-route current-route
+                                                     :open-url?     true}))))
+                 (take 5 featured-items))))])))))
 
 (def ->ShoppingBag (om/factory ShoppingBag))
 

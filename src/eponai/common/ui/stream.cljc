@@ -7,7 +7,8 @@
     [taoensso.timbre :refer [debug error info]]
     [eponai.web.ui.stream.videoplayer :as video]
     #?(:cljs [eponai.web.modules :as modules])
-    [eponai.common.ui.elements.css :as css]))
+    [eponai.common.ui.elements.css :as css]
+    [eponai.common.database :as db]))
 
 (defn add-fullscreen-listener [f]
   #?(:cljs
@@ -20,10 +21,10 @@
        (.removeEventListener js/document (str prefix "fullscreenchange") f))))
 
 (defui Stream
-  static om/IQuery
-  (query [this]
-    [{:query/stream [:stream/store :stream/state]}
-     {:query/stream-config [:ui.singleton.stream-config/subscriber-url]}])
+  ;static om/IQuery
+  ;(query [this]
+  ;  [{:query/stream [:stream/store :stream/state]}
+  ;   {:query/stream-config [:ui.singleton.stream-config/subscriber-url]}])
 
   Object
   (componentWillUnmount [this]
@@ -46,9 +47,10 @@
                                  (on-fullscreen-change (not fullscreen?))))}))
 
   (render [this]
-    (let [{:query/keys [stream stream-config]} (om/props this)
+    (let [{:keys [stream stream-config]} (om/props this)
+          stream-config (db/singleton-value (db/to-db this) :ui.singleton.client-env/env-map)
           {:keys [widescreen? store]} (om/get-computed this)
-          subscriber-url (:ui.singleton.stream-config/subscriber-url stream-config)
+          subscriber-url (:wowza-subscriber-url stream-config)
           stream-id (stream/stream-id store)
           stream-url (stream/wowza-live-stream-url subscriber-url stream-id)
           {:stream/keys [title]} stream]

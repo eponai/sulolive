@@ -39,6 +39,13 @@
   (inline-javascript ["(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o), m=s.getElementsByTagName(o)[0];
   a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');"
                       "ga('create', 'UA-90954507-1', 'auto');"
+                      "ga('require', 'ec');"
+                      "ga('send', 'pageview');"]))
+(defn google-analytics-sulo-master []
+  (inline-javascript ["(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o), m=s.getElementsByTagName(o)[0];
+  a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');"
+                      "ga('create', 'UA-102742593-1', 'auto');"
+                      "ga('require', 'ec');"
                       "ga('send', 'pageview');"]))
 
 ;; Facebook login init code
@@ -145,8 +152,9 @@
                :content (versionize "/assets/img/favicon/ms-icon-144x144.png")})
     (dom/meta {:name "theme-color" :content "#ffffff"})
 
-    (when release?
-      (google-analytics))))
+    (if release?
+      (google-analytics)
+      (google-analytics-sulo-master))))
 
 (defn budget-js-path []
   (versionize "/js/out/budget.js"))

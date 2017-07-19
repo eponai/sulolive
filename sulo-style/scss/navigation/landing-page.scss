@@ -99,7 +99,7 @@
 				padding-top: 50%;
 			}
 			@include breakpoint(xlarge) {
-				padding-top: 35%;
+				padding-top: 30%;
 			}
 		}
 		h1 {
@@ -123,7 +123,8 @@
 	}
 
 	.top-features {
-		padding: 0.5rem;
+		// background: $dashboard-background;
+		padding: $global-padding 0.5rem;
 		margin-top: 2rem;
 		// background: $sulo-color;
 		// margin-top: 5%;
@@ -352,6 +353,36 @@
 	}
 
 	.sell-on-sulo {
+		// background: $dashboard-background;
 		// margin-bottom: 1rem;
+	}
+
+	.featured {
+		padding: $global-padding 0;
+		background: $dashboard-background;
+		.column {
+			h2 {
+				color: $sulo-dark-color;
+			}
+			position: relative;
+			.photo-container {
+				position: absolute;
+				bottom: 0;
+				right: $global-padding;
+				border: none;
+				max-width: 4rem;
+				min-width: 4rem;
+			}
+			.photo {
+				padding-top: 100%;
+			}
+		}
+		.button {
+			margin-top: 0.5rem;
+		}
+	}
+
+	#sulo-video-container {
+
 	}
 }

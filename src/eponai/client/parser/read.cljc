@@ -116,6 +116,13 @@
        (map #(nth % 0))
        (db/pull-many db query)))
 
+(defmethod client-read :query/top-streams
+  [{:keys [db query]} _ _]
+  {:remote true
+   :value (pull-featured db query {:find  '[?e ?featured]
+                            :where '[[?e :stream/featured ?featured]
+                                     [?e :stream/store ?s]]})})
+
 (defmethod client-read :query/featured-streams
   [{:keys [db query]} _ _]
   {:remote true

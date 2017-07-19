@@ -20,7 +20,8 @@
     [eponai.common.browse :as browse]
     [eponai.common.database :as db]
     [eponai.web.ui.pagination :as pagination]
-    [eponai.web.ui.content-item :as ci]))
+    [eponai.web.ui.content-item :as ci]
+    [eponai.common.analytics.google :as ga]))
 
 ;(def sorting-vals
 ;  {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
@@ -124,6 +125,9 @@
     (when-let [top-cat (get navigation top-idx)]
       (reductions get-in top-cat (partition 2 paths)))))
 
+(defn send-product-analytics [products]
+  (ga/send-product-list-impressions "Browse goods" products))
+
 (defui Goods
   static om/IQuery
   (query [_]
@@ -142,6 +146,17 @@
                       (dissoc query-params :ship_to)
                       (assoc query-params :ship_to country-code))]
       (routes/set-url! this route route-params new-query)))
+  (componentDidMount [this]
+    (let [{:query/keys [browse-products-2]} (om/props this)
+          products (:browse-result/items browse-products-2)]
+      (send-product-analytics products)))
+  (componentDidUpdate [this prev-props prev-state]
+    (let [old-products (:browse-result/items (:query/browse-products-2 prev-props))
+          new-products (:browse-result/items (:query/browse-products-2 (om/props this)))]
+      (debug "component did update: " prev-props)
+      (when-not (= old-products new-products)
+        (send-product-analytics new-products))))
+
   (initLocalState [_]
     {:filters-open? false})
   (render [this]
@@ -162,6 +177,7 @@
           page-range (browse/query-params->page-range query-params)
           pages (browse/pages browse-result)
           searching? (contains? query-params :search)]
+      (debug "BAM")
 
       (dom/div
         {:id "sulo-items" :classes ["sulo-browse"]}

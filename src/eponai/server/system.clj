@@ -74,6 +74,8 @@
                                                             :stripe-publishable-key
                                                             ;; Auth0
                                                             :auth0-client-id :auth0-domain
+                                                            ;; Wowza
+                                                            :wowza-publisher-url :wowza-subscriber-url
                                                             ;; Firebase
                                                             ;; We're now using server side rendering instead of client side initialization
                                                             ;:firebase-api-key :firebase-auth-domain :firebase-database-url
