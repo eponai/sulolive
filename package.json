@@ -11,6 +11,6 @@
   },
   "devDependencies": {
     "source-map-support": "0.3.2",
-    "phantomjs": "1.9.19"
+    "phantomjs-prebuilt": "2.1.14"
   }
 }
