@@ -161,25 +161,28 @@
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
   {:value (when-not db-history
-            (->> (query/all db db-history query {:where   '[[?st :status/type :status.type/open]
-                                                            [?s :store/status ?st]
-                                                            [?e :stream/store ?s]
-                                                            [?e :stream/state :stream.state/live]
-                                                            ;[?s :store/profile ?p]
-                                                            ;[?p :store.profile/photo _]
-                                                            ]})
-                 (feature-all db :stream)))})
+            (let [sulo-store (db/lookup-entity db [:store/username "sulolive"])]
+              (->> (query/all db db-history query {:where   '[[?e :stream/state :stream.state/live]
+                                                              [?e :stream/store ?s]
+                                                              [(not= ?s ?sulo-store)]
+                                                              [?s :store/status ?st]
+                                                              [?st :status/type :status.type/open]
+                                                              ;[?s :store/profile ?p]
+                                                              ;[?p :store.profile/photo _]
+                                                              ]
+                                                   :symbols {'?sulo-store (:db/id sulo-store)}})
+                   (feature-all db :stream))))})
 
 (defread query/featured-streams
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
   {:value (when (some? (:db/id locations))
             (when-not db-history
-              (->> (query/all db db-history query {:where   '[[?s :store/locality ?l]
-                                                              [?st :status/type :status.type/open]
-                                                              [?s :store/status ?st]
+              (->> (query/all db db-history query {:where   '[[?e :stream/state :stream.state/live]
                                                               [?e :stream/store ?s]
-                                                              [?e :stream/state :stream.state/live]
+                                                              [?s :store/locality ?l]
+                                                              [?s :store/status ?st]
+                                                              [?st :status/type :status.type/open]
                                                               ;[?s :store/profile ?p]
                                                               ;[?p :store.profile/photo _]
                                                               ]
