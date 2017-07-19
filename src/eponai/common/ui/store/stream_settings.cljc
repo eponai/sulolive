@@ -14,7 +14,8 @@
     [eponai.client.routes :as routes]
     [eponai.common.ui.elements.grid :as grid]
     [eponai.web.ui.button :as button]
-    [eponai.common.mixpanel :as mixpanel]))
+    [eponai.common.mixpanel :as mixpanel]
+    [eponai.common.database :as db]))
 
 (defn- get-store [component-or-props]
   (get-in (om/get-computed component-or-props) [:store]))
@@ -27,10 +28,11 @@
   static om/IQuery
   (query [_]
     [:query/messages
-     {:proxy/stream (om/get-query stream/Stream)}
+     ;{:proxy/stream (om/get-query stream/Stream)}
      {:query/stream [:stream/state
+                     :stream/store
                      :stream/token]}
-     {:query/stream-config [:ui.singleton.stream-config/publisher-url]}
+     ;{:query/stream-config [:ui.singleton.stream-config/publisher-url]}
      {:proxy/chat (om/get-query chat/StreamChat)}
      {:query/auth [:db/id :user/email]}
      :query/current-route])
@@ -38,11 +40,12 @@
   Object
   (render [this]
     (let [{:keys [store]} (om/get-computed this)
-          {:query/keys [stream stream-config current-route]
+          {:query/keys [stream current-route]
            :as         props
            :proxy/keys [chat]} (om/props this)
           stream-state (:stream/state stream)
           stream-token (:stream/token stream)
+          stream-config (db/singleton-value (db/to-db this) :ui.singleton.client-env/env-map)
           chat-message (:chat-message (om/get-state this))
           message (msg/last-message this 'stream-token/generate)]
       (dom/div
@@ -112,7 +115,7 @@
                 nil
                 (stream/->Stream
                   (om/computed
-                    (:proxy/stream props)
+                    {:stream stream}
                     {:hide-chat?            true
                      :store                 store
                      ;; TODO: Implement this in the new video player if we want to.
@@ -175,7 +178,7 @@
                     (dom/label nil "Server URL")
                     (dom/input {:type  "text"
                                 :id    "input.stream-url"
-                                :value (or (:ui.singleton.stream-config/publisher-url stream-config) "")})))
+                                :value (or (:wowza-publisher-url stream-config) "")})))
                 (grid/row
                   (css/align :bottom)
                   (grid/column

@@ -157,6 +157,19 @@
                                   (+ basis-t idx))))
           (reverse coll))))
 
+(defread query/top-streams
+  [{:keys [db db-history query locations]} _ _]
+  {:auth ::auth/public}
+  {:value (when-not db-history
+            (->> (query/all db db-history query {:where   '[[?st :status/type :status.type/open]
+                                                            [?s :store/status ?st]
+                                                            [?e :stream/store ?s]
+                                                            [?e :stream/state :stream.state/live]
+                                                            ;[?s :store/profile ?p]
+                                                            ;[?p :store.profile/photo _]
+                                                            ]})
+                 (feature-all db :stream)))})
+
 (defread query/featured-streams
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}

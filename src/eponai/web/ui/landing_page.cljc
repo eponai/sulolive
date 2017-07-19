@@ -19,7 +19,9 @@
     [eponai.client.utils :as client-utils]
     [eponai.client.parser.message :as msg]
     [medley.core :as medley]
-    [eponai.web.ui.button :as button]))
+    [eponai.web.ui.button :as button]
+    [eponai.web.ui.content-item :as ci]
+    [eponai.common.ui.stream :as stream]))
 
 (def form-inputs
   {:field/email    "field.email"
@@ -51,6 +53,7 @@
      {:query/sulo-localities [:sulo-locality/title
                               :sulo-locality/path
                               {:sulo-locality/photo [:photo/id]}]}
+     {:query/top-streams (om/get-query ci/OnlineChannel)}
      :query/messages])
   Object
   (select-locality [this locality]
@@ -89,10 +92,13 @@
         ;       (set! (.-value (web-utils/element-by-id (:field/location form-inputs))) ""))))
         (om/update-state! this assoc :user-message (msg/message last-message)))))
   (render [this]
-    (let [{:query/keys [auth sulo-localities]} (om/props this)
+    (let [{:query/keys [auth sulo-localities top-streams]} (om/props this)
           {:keys [input-validation user-message]} (om/get-state this)
-          last-message (msg/last-message this 'location/suggest)]
+          last-message (msg/last-message this 'location/suggest)
+          featured-live (first (sort-by #(get-in % [:stream/store :store/visitor-count]) top-streams))]
+      (debug "Featured streams: " top-streams)
       (debug "Localitites: " sulo-localities)
+      (debug "Featured stream: " featured-live)
       (dom/div
         {:id "sulo-landing"}
         (photo/cover
@@ -107,6 +113,28 @@
               (button/button {:onClick #(.select-locality this loc-vancouver)
                                       :classes [:hollow :white :large]}
                                      (dom/span nil (str "Shop in " (:sulo-locality/title loc-vancouver)))))))
+        (when featured-live
+          (dom/div
+            (css/add-class :featured)
+            (grid/row
+              (->> (css/align :center)
+                   (css/text-align :center))
+              (grid/column
+                (grid/column-size {:small 12 :medium 8})
+                (dom/h2 nil "Live right now")
+                (dom/a
+                  (->> {:href (routes/store-url (:stream/store featured-live) :store)}
+                       (css/add-class :live-container))
+                  (stream/->Stream (om/computed {:stream featured-live}
+                                                {:store (:stream/store featured-live)}))
+                  (photo/store-photo (:stream/store featured-live) nil))))
+            (grid/row
+              (->> (css/align :center)
+                   (css/text-align :center))
+              (grid/column
+                (grid/column-size {:small 12 :medium 8})
+                (button/store-navigation-default {:href (routes/store-url (:stream/store featured-live) :store)} (dom/span nil "Visit store"))))))
+
         (dom/div
           {:classes ["top-features"]}
           (grid/row
