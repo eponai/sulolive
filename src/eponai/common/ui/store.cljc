@@ -114,6 +114,7 @@
   (query [_]
     [
      ;{:proxy/stream (om/get-query stream/Stream)}
+     ;{:query/stream [:stream/state]}
      {:proxy/chat (om/get-query chat/StreamChat)}
      {:query/store [:db/id
                     {:store/locality [:sulo-locality/path]}
@@ -214,7 +215,7 @@
                           (css/add-class :fullscreen))
                  (cond
                    is-live?
-                   (stream/->Stream (om/computed (:proxy/stream props)
+                   (stream/->Stream (om/computed {:stream stream}
                                                  {:stream-title         (:stream/title stream)
                                                   :widescreen?          true
                                                   :store                store

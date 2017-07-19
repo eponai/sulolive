@@ -122,9 +122,8 @@
               (grid/column
                 (grid/column-size {:small 12 :medium 8})
                 (dom/h2 nil "Live right now")
-                (dom/a
-                  (->> {:href (routes/store-url (:stream/store featured-live) :store)}
-                       (css/add-class :live-container))
+                (dom/div
+                  (css/add-class :live-container)
                   (stream/->Stream (om/computed {:stream featured-live}
                                                 {:store (:stream/store featured-live)}))
                   (photo/store-photo (:stream/store featured-live) nil))))
