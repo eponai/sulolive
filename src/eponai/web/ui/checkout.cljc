@@ -387,7 +387,6 @@
                        (css/add-class :section-list-item)
                        (dom/a
                          {:onClick #(do
-                                     (ga/checkout-shipping-option checkout total)
                                      (om/update-state! component assoc :shipping/selected-rate r))}
                          (dom/div
                            (css/add-class :shipping-info)
@@ -544,11 +543,12 @@
   Object
   (change-country [this country-code]
     (let [{:keys [autocomplete]} (om/get-state this)
-          {:query/keys [countries]} (om/props this)
+          {:query/keys [countries checkout]} (om/props this)
           country (some #(when (= (:country/code %) country-code) %) countries)]
       #?(:cljs
          (when autocomplete
            (places/set-country-restrictions autocomplete country-code)))
+      (ga/checkout-shipping-option country-code)
       (om/update-state! this update
                         :shipping/edit-shipping (fn [s]
                                                   (cond-> (assoc-in s [:shipping/address :shipping.address/country] (or country {:country/code country-code}))
@@ -729,6 +729,8 @@
                                            (om/update-state! this assoc-in [:shipping/edit-shipping :shipping/address] address))})]
          (debug "ga: Send ga events : " checkout)
          (ga/checkout-shipping-address checkout country)
+         (when (:checkout/shipping init-state)
+           (ga/checkout-shipping-option (get-in init-state [:checkout/shipping :shipping/address :shipping.address/country :country/code])))
          (when (nil? auth)
            (routes/set-url! this :login))
          (when-not (= :status.type/open (-> (first checkout) :store.item/_skus :store/_items :store/status :status/type))

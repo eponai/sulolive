@@ -119,7 +119,7 @@
   (set-action ::checkout {:step 1 :option country})
   (send-pageview))
 
-(defn checkout-shipping-option [skus option]
+(defn checkout-shipping-option [option]
   (debug "Send shipping option: " option)
   ;(checkout-skus skus)
   (set-action ::checkout-option {:step 1 :option option})
