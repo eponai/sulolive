@@ -11,7 +11,8 @@
     [cljs.core.async :as async]
     [eponai.common :as c]
     [clojure.set :as set]
-    [eponai.client.auth :as client.auth]))
+    [eponai.client.auth :as client.auth]
+    [clojure.data :as data]))
 
 (def path common.firebase/path)
 
@@ -247,10 +248,16 @@
                                   [id (assoc m :listener (listen-to database event-chan m))]))
                            (select-keys new-listeners keys-to-start))))
             ;; Leave store
+            (when (or (= :store (:route prev-route-map))
+                      (= :store (:route route-map)))
+              (debug "Entering, leaving or staying in a store!")
+              (debug "Route-map diff: " (data/diff prev-route-map route-map)))
+
             (when (= :store (:route prev-route-map))
               (when (or (not= :store (:route route-map))
                         (not= (:store-id (:route-params route-map))
                               (:store-id (:route-params prev-route-map))))
+                (debug "Will unregister store visit for store-id: " (:store-id (:route-params prev-route-map)))
                 (unregister-store-visit this
                                         (:store-id (:route-params prev-route-map)))))
             ;; Enter store
@@ -258,11 +265,12 @@
               (when (or (not= :store (:route prev-route-map))
                         (not= (:store-id (:route-params route-map))
                               (:store-id (:route-params prev-route-map))))
-                (let [store-id (:store-id (:route-params route-map))]
-                  (register-store-visit this
-                                        store-id
-                                        (-> (db/entity (db/to-db reconciler) store-id)
-                                            (get-in [:store/locality :sulo-locality/path])))))))))
+                (let [store-id (:store-id (:route-params route-map))
+                      locality (-> (db/entity (db/to-db reconciler) store-id)
+                                   (get-in [:store/locality :sulo-locality/path]))]
+                  (debug "Registering store-visit for store-id: " store-id
+                         " locality: " locality)
+                  (register-store-visit this store-id locality)))))))
 
       shared/IStoppableComponent
       (stop [this]
