@@ -293,8 +293,8 @@
                 (.ref database (path :store/visitors {:store-id store-id}))
                 visitor-ref (.push store-visitors)]
             (swap! state assoc-in [:visitor-refs store-id] visitor-ref)
-            (.set visitor-ref locality)
-            (.remove (.onDisconnect visitor-ref)))
+            (.remove (.onDisconnect visitor-ref))
+            (.set visitor-ref locality))
 
           (debug "No locality path for raw-locality: " raw-locality
                  " store-id: " store-id
