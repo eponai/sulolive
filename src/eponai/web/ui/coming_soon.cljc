@@ -52,8 +52,8 @@
               (css/add-class :section-footer)
               (button/store-navigation-default
                 {:onClick #(.set-locality this yvr-location)}
-                (dom/span nil "Shop LIVE in Vancouver, BC"))))
+                (dom/span nil "Shop LIVE in Vancouver, BC")))))
 
-          (common/sell-on-sulo this))))))
+        (common/sell-on-sulo this)))))
 
 (def ->ComingSoon (om/factory ComingSoon))

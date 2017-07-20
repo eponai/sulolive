@@ -12,6 +12,9 @@
 	#sulo-city-banner .input-container {
 		display: none;
 	}
+	// .page-content {
+	// 	padding-bottom: 0;
+	// }
 	.graphics .photo-container {
 		max-width: 30rem;
 		margin: 0 auto;
@@ -27,92 +30,60 @@
 		padding-top: 2rem;
 		margin-bottom: 4rem;
 		margin-top: 0;
+		&.sell-on-sulo {
+			margin-bottom: 0;
+		}
 	}
 }
-#sulo-landing {
+#sulo-landing-page {
 	$sulo-color: rgba(map-get($foundation-palette, sulo), 0.8);
 	.section {
 		margin-top: 1%;
 		.section-title {
 			margin-bottom: 2rem;
 		}
-		.section-footer {
-			// margin-top: 0;
-		}
 	}
-	.is-invalid-input {
-		background: #FFFBFB;
+
+	.page-content-container, .page-content {
+		padding: 0;
 	}
-	.instagram-feed {
-		.section-footer {
-			margin-top: 0;
-		}
-		// margin-bottom: 1%;
+	#sulo-navbar, .footer {
+		display: none;
 	}
-	.section {
-		// padding-bottom: 3rem;
-	}
-	.powr-instagram-feed {
-		// i {
-		// 	transition: opacity
-		// }
-		&.powrLoaded {
-			i {
-				opacity: 0;
-			}
-		}
-	}
-	.page-content {
-		padding-bottom: 6rem;
-	}
-	#sulo-navbar {
-		// .menu {
-		// 	.shopping-bag, .search-input {
-		// 		display: none;
-		// 	}
-		// }
-	}
-	
-	// strong {
-		// font-family: $header-font-family-sans-serif;
-		// font-weight: bold;
-	// }
+
 	.cover {
 		text-align: center;
-		color: $white;
+		color: darken($sulo-dark-color, 10%);
+		height: 100vh;
 		.overlay {
-			$background: map-get($foundation-palette, primary);
-			background: rgba($black, 0.5);
+			// $background: map-get($foundation-palette, primary);
+			background: rgba($white, 0.5);//rgba($sulo-color, 0.25);
+			display: flex;
+			justify-content: stretch;
 			.content {
+				flex: 1;
 				display: flex;
 				flex-direction: column;
-				align-items: center;
+				// align-items: center;
+				// .banner {
+					// flex: 1;
+					background: rgba($sulo-color, 0.5);
+				// }
+			}
+			img {
+				object-fit: contain;
 			}
 		}
-		.photo {
-			padding-top: 100%;
-			// filter: blur(3px);
-			@include breakpoint(medium-small) {
-				padding-top: 80%;
-			}
-			@include breakpoint(medium) {
-				padding-top: 50%;
-			}
-			@include breakpoint(xlarge) {
-				padding-top: 30%;
-			}
-		}
+
 		h1 {
-			// font-weight: bold;
-			text-shadow: 1px 1px 1px rgba($black, 0.5);
+			color: $primary-color;
+			text-shadow: 1px 1px 0 rgba($white, 0.2);
 		}
 		p {
-			// margin: 0 auto;
-			text-shadow: 1px 1px 1px rgba($black, 0.5);
-			// font-family: $header-font-family-sans-serif;
-			// font-size: 110%;
+			// text-shadow: 1px 1px 0 rgba($black, 0.1);
+			margin-left: auto;
+			margin-right: auto;
 			font-weight: $global-weight-bold;
-			// color: map-get($foundation-palette, sulo-dark);
 			@include breakpoint(medium) {
 				font-size: 130%;
 			}
@@ -160,123 +131,6 @@
 				.column:last-child {
 					margin: 0;
 				}
-			}
-		}
-	}
-
-	.column {
-		// margin-top: $global-margin;
-		.photo-container {
-			.photo {
-				padding-top: 75%;
-				// @include breakpoint(medium-small) {
-				// 	padding-top: 75%;
-				// }
-				@include breakpoint(medium) {
-					padding-top: 50%;
-				}
-				@include breakpoint(large) {
-					padding-top: 35%;
-				}
-			}
-		}
-		a.city-anchor {
-			display: block;
-			color: $white;
-			img {
-				// background-size: 100%;
-				transition: transform .25s ease-in-out;
-			}
-			overflow: hidden;
-
-			.photo-container {
-				.photo {
-					transition: filter .25s ease-in-out;
-				}
-				.overlay {
-					background: rgba($black, 0.5);
-					transition: background .25s ease-in-out;
-					.content {
-						flex: 1;
-						display: flex;
-						flex-direction: column;
-						align-items: center;
-						> div {
-							display: flex;
-							flex-direction: column;
-							align-items: center;
-							@include breakpoint(medium) {
-								transform: translateY(25%); 
-							}
-							.button {
-								margin-top: 0.5rem;
-								opacity: 0.9;
-								flex: 0 0 auto;
-								font-weight: bold;
-								border-width: 2px;
-								color: $white;
-								border-color: $white;
-								transition: all .25s ease-in-out;
-								// padding: 0.5rem 1.5rem;
-							}
-						}
-					}
-					
-					p {
-						transition: color .25s ease-in-out, text-shadow .25s ease-in-out;
-						position: absolute;
-						vertical-align: middle;
-						bottom: 0;
-						width: 100%;
-						font-family: $header-font-family-sans-serif;
-					}
-					strong, p {
-						transition: color .25s ease-in-out, text-shadow .25s ease-in-out;
-						font-weight: $global-weight-bold;
-						font-size: 120%;
-						@include breakpoint(medium) {
-							font-size: 180%;
-						}
-					}
-					strong {
-						text-transform: uppercase;
-						// text-shadow: 1px 1px 1px rgba($white, 0.5);
-						font-weight: bold;
-						letter-spacing: 1px;
-					}
-				}
-			}
-			&:hover, &.inactive {
-				color: $black;
-				.photo-container {
-					.photo {
-						// filter: blur(2px);
-					}
-					img {
-						transform: scale(1.02);
-					}
-					.overlay {
-						background: rgba($white, 0.75);
-						.content {
-							background: transparent;
-							.button {
-								color: $black;
-								border-color: $black;
-							}
-						}
-					}
-				}				
-			}
-			&.inactive {
-				pointer-events: none;
-				cursor: default;
-				.photo-container .overlay {
-					background: rgba($white, 0.75);
-				}
-				.button {
-					display: none;
-				}
-				color: rgba($black, 0.75);
 			}
 		}
 	}

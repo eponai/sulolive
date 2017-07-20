@@ -39,7 +39,7 @@
                  (photo/overlay
                    nil (dom/div
                          (->> (css/text-align :center))
-                         (dom/h3 nil title))))))
+                         (dom/h4 nil title))))))
 
 (defui Index
   static om/IQuery
@@ -247,7 +247,9 @@
                                  (ci/->ProductItem (om/computed p
                                                                 {:open-url?     true
                                                                  :current-route current-route}))))
-                             (take 10 featured-art))))
+                             (if (<= 10 (count featured-art))
+                               (take 10 featured-art)
+                               (take 5 featured-art)))))
                        "Browse art"))
 
 
