@@ -208,6 +208,7 @@
                        (r/charset "UTF-8"))
               new-local (auth/requested-location request)
               old-local (auth/cookie-locality request)]
+          (debug "Route params: " (:route-params request))
 
           (if (not= (:sulo-locality/path new-local)
                     (:sulo-locality/path old-local))
@@ -216,7 +217,7 @@
                           (c/write-transit new-local)
                           {:path "/"})
             resp)))
-      (auth/restrict (auth/bidi-location-redirect route))
+      ;(auth/restrict (auth/bidi-location-redirect route))
       (auth/restrict (auth/bidi-route-restrictions route))))
 
 (defroutes

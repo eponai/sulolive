@@ -161,7 +161,7 @@
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
   {:value (when-not db-history
-            (let [sulo-store (db/lookup-entity db [:store/username "sulolive"])]
+            (if-let [sulo-store (db/lookup-entity db [:store/username "sulolive"])]
               (->> (query/all db db-history query {:where   '[[?e :stream/state :stream.state/live]
                                                               [?e :stream/store ?s]
                                                               [(not= ?s ?sulo-store)]
@@ -171,6 +171,14 @@
                                                               ;[?p :store.profile/photo _]
                                                               ]
                                                    :symbols {'?sulo-store (:db/id sulo-store)}})
+                   (feature-all db :stream))
+              (->> (query/all db db-history query {:where   '[[?e :stream/state :stream.state/live]
+                                                              [?e :stream/store ?s]
+                                                              [?s :store/status ?st]
+                                                              [?st :status/type :status.type/open]
+                                                              ;[?s :store/profile ?p]
+                                                              ;[?p :store.profile/photo _]
+                                                              ]})
                    (feature-all db :stream))))})
 
 (defread query/featured-streams

@@ -14,27 +14,25 @@
     [eponai.web.ui.notifications :as note]
     [taoensso.timbre :refer [debug]]))
 
-(defn navbar-route [component href]
-  (let [{:query/keys [auth locations]} (om/props component)]
-    (if (nil? href)
-      (routes/url :landing-page/locality)
-      href)))
+(defn navbar-route [route route-params locality]
+  (let [loc (or locality "yvr")]
+    (routes/url route (assoc route-params :locality loc))))
 
 (defn collection-links [component source]
   (let [{:query/keys [auth locations navigation]} (om/props component)]
     (debug "Locations: " locations)
     (map
       (fn [{:category/keys [route-map name path] :as a}]
-        (let [opts {:href    (navbar-route
-                               component
-                               (when-let [loc (:sulo-locality/path locations)]
-                                 (routes/map->url (assoc-in route-map [:route-params :locality] loc))))
+        (debug "Route map: " route-map)
+        (let [{:keys [route route-params]} route-map
+              opts {:href    (navbar-route route route-params (:sulo-locality/path locations))
                     :onClick #(do (mixpanel/track-key ::mixpanel/shop-by-category {:source   source
                                                                                    :category path})
-                                  (when (empty? locations)
-                                    #?(:cljs
-                                       (when-let [locs (web-utils/element-by-id "sulo-locations")]
-                                         (web-utils/scroll-to locs 250)))))}]
+                                  ;(when (empty? locations)
+                                  ;  #?(:cljs
+                                  ;     (when-let [locs (web-utils/element-by-id "sulo-locations")]
+                                  ;       (web-utils/scroll-to locs 250))))
+                                  )}]
           (menu/item-link
             (cond->> (css/add-class :category opts)
                      (= source "navbar")
@@ -45,14 +43,14 @@
 (defn live-link [component source]
   (let [{:query/keys [auth locations]} (om/props component)]
     (menu/item-link
-      (->> {:href    (navbar-route component (when locations
-                                               (routes/url :live {:locality (:sulo-locality/path locations)})))
+      (->> {:href    (navbar-route :live {} (:sulo-locality/path locations))
             :onClick #(do
                        (mixpanel/track-key ::mixpanel/shop-live {:source source})
-                       (when (empty? locations)
-                         #?(:cljs
-                            (when-let [locs (web-utils/element-by-id "sulo-locations")]
-                              (web-utils/scroll-to locs 250)))))}
+                       ;(when (empty? locations)
+                       ;  #?(:cljs
+                       ;     (when-let [locs (web-utils/element-by-id "sulo-locations")]
+                       ;       (web-utils/scroll-to locs 250))))
+                       )}
            (css/add-class :navbar-live)
            (css/show-for :large))
       (dom/span

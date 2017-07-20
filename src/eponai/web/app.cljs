@@ -41,21 +41,33 @@
   (binding [parser/*parser-allow-remote* false]
     (om/add-root! reconciler router/Router (gdom/getElement router/dom-app-id))))
 
-(defn validate-location [{:keys [handler route-params]}]
+(defn validate-location [reconciler {:keys [handler route-params]}]
   (when (and (some? handler)
              (not (common.routes/location-independent-route? handler))
              (nil? (web.utils/get-locality)))
-    (throw (ex-info (str "Unable to set route: " handler
-                         " route-params: " route-params
-                         " because we didn't have location set.")
-                    {:route        handler
-                     :route-params route-params
-                     :type         ::location-not-set}))))
+    (let [loc (:locality route-params)
+          loc-entity (db/lookup-entity (db/to-db reconciler) [:sulo-locality/path loc])]
+      (debug "Location was not set, setting new url with pushy: " loc " entity " loc-entity)
+      (debug "Route params: " route-params)
+      (web.utils/set-locality loc-entity)
+      (om/transact! reconciler [(list 'client/set-locality {:locality loc-entity})
+                                      :query/locations])
+
+      ;(-> (shared/by-key reconcilerz :shared/browser-history)
+      ;    (pushy/set-token! (routes/url )))
+      )
+    ;(throw (ex-info (str "Unable to set route: " handler
+    ;                     " route-params: " route-params
+    ;                     " because we didn't have location set.")
+    ;                {:route        handler
+    ;                 :route-params route-params
+    ;                 :type         ::location-not-set}))
+    ))
 
 (defn update-route-fn [reconciler-atom]
   (fn [{:keys [handler route-params] :as match}]
     (try
-      (validate-location match)
+      (validate-location @reconciler-atom match)
       (let [reconciler @reconciler-atom
             modules (shared/by-key reconciler :shared/modules)
             loaded-route? (modules/loaded-route? modules handler)
@@ -107,10 +119,17 @@
       (catch :default e
         (let [data (ex-data e)]
           (if (= ::location-not-set (:type data))
-            (do
-              (debug "Location was not set, setting new url with pushy.")
+            (let [loc (:locality route-params)
+                  loc-entity (db/lookup-entity (db/to-db @reconciler-atom) [:sulo-locality/path loc])]
+              (debug "Location was not set, setting new url with pushy: " loc " entity " loc-entity)
+              (debug "Route params: " route-params)
+              (web.utils/set-locality loc-entity)
+              (om/transact! @reconciler-atom [(list 'client/set-locality {:locality loc-entity})
+                                  :query/locations])
+
               (-> (shared/by-key @reconciler-atom :shared/browser-history)
-                  (pushy/set-token! (routes/url :landing-page/locality))))
+                  (pushy/set-token! (routes/url )))
+              )
             (error "Error when transacting route: " e)))))))
 
 (defn fetch-index-route-data!

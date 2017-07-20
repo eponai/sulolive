@@ -170,7 +170,7 @@
                    (menu/item
                      (css/add-class :category)
                      (dom/a
-                       (->> {:href    (nav.common/navbar-route this (when locations (routes/url :live {:locality (:sulo-locality/path locations)})))
+                       (->> {:href    (nav.common/navbar-route :live {} (:sulo-locality/path locations))
                              :onClick #(when (empty? locations)
                                         #?(:cljs
                                            (when-let [locs (web.utils/element-by-id "sulo-locations")]
