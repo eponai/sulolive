@@ -1,5 +1,6 @@
 (ns eponai.mobile.ios.core
-  (:require [eponai.mobile.react-helper]                       ;; require this first!
+  (:require [eponai.mobile.react-helper]
+            [cljsjs.firebase]
             [eponai.client.devtools :as utils]
             [eponai.mobile.ios.app :as app]))
 

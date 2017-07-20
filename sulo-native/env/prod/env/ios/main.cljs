@@ -1,4 +1,4 @@
 (ns env.ios.main
-  (:require [sulo-native.ios.core :as core]))
+  (:require [eponai.mobile.ios.core :as core]))
 
-(core/init)
+(core/init {:server-address "https://www.sulo.live"})
