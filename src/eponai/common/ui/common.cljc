@@ -115,15 +115,15 @@
            (css/text-align :center))
       (dom/h2 (css/add-class :header) header))
 
-    content
     (when (not-empty footer)
       (grid/row-column
-        (->> (css/add-class :section-footer)
-             (css/text-align :center))
-        (button/button
+        (css/text-align :right)
+        (button/store-setting-default
           (css/add-classes [:hollow :sulo-dark] (cond-> {:href href}
                                                         (some? target)
-                                                        (assoc :target target))) footer)))))
+                                                        (assoc :target target))) footer)))
+    content
+    ))
 
 (defn city-banner [component locations]
   (let [{:sulo-locality/keys [title photo]} locations]
@@ -185,19 +185,28 @@
     ;           (dom/span nil "Are you selling products locally? Start a store to tell your story and interact LIVE with your customers. ")))
     ;
     ;  "Contact us")
-    (content-section
-      {:href  (routes/url :sell)
-       :class "sell-on-sulo"}
-      "Start your SULO store"
-      (grid/row
-        (css/align :center)
-        (grid/column
-          (grid/column-size {:small 12 :medium 8 :large 8})
-          (dom/p nil
-                 (if locations
-                   (dom/span nil (str "Are you a local business in " (:sulo-locality/title locations) "? Start your own store and explore new ways of connecting LIVE with your customers on the SULO marketplace."))
-                   (dom/span nil (str "Are you a local business? Start your own store and explore new ways of connecting LIVE with your customers on the SULO marketplace."))))))
-      "Contact us")))
+    (dom/div
+      (->>
+           (css/add-classes [:sell-on-sulo :section])
+           (css/text-align :center))
+      (dom/div
+        (->> (css/add-class :section-title)
+             (css/text-align :center))
+        (dom/h2 (css/add-class :header) "Start your SULO store"))
+      (dom/div
+        (css/text-align :center)
+        (photo/square {:photo-id "static/sulo-cat-live"
+                       :ext "png"})
+        (dom/p nil
+               (if locations
+                 (dom/span nil (str "Are you a local business in " (:sulo-locality/title locations) "? Start your own store and explore new ways of connecting LIVE with your customers on the SULO marketplace."))
+                 (dom/span nil (str "Are you a local business? Start your own store and explore new ways of connecting LIVE with your customers on the SULO marketplace.")))))
+      (grid/row-column
+        (->> (css/add-class :section-footer)
+             (css/text-align :center))
+        (button/store-navigation-default
+          (css/add-classes [:hollow :sulo-dark] {:href (routes/url :sell)}) "Contact us"))
+      )))
 
 
 (defn is-new-order? [component]

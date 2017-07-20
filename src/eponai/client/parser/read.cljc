@@ -142,6 +142,36 @@
                                                  [?s :store/items ?e]
                                                  [?e :store.item/featured ?featured]]
                                       :symbols {'?l (:db/id loc)}}))})
+(defmethod client-read :query/featured-women
+  [{:keys [db query]} _ _]
+  {:remote true
+   :value  (when-let [loc (client.auth/current-locality db)]
+             (pull-featured db query (-> (products/find-with-category-names loc {:sub-category "women"})
+                                         (db/merge-query {:find '[?e ?featured]
+                                                          :where '[[?e :store.item/featured ?featured]]}))))})
+
+(defmethod client-read :query/featured-men
+  [{:keys [db query]} _ _]
+  {:remote true
+   :value  (when-let [loc (client.auth/current-locality db)]
+             (pull-featured db query (-> (products/find-with-category-names loc {:sub-category "men"})
+                                         (db/merge-query {:find '[?e ?featured]
+                                                          :where '[[?e :store.item/featured ?featured]]}))))})
+
+(defmethod client-read :query/featured-home
+  [{:keys [db query]} _ _]
+  {:remote true
+   :value  (when-let [loc (client.auth/current-locality db)]
+             (pull-featured db query (-> (products/find-with-category-names loc {:top-category "home"})
+                                         (db/merge-query {:find '[?e ?featured]
+                                                          :where '[[?e :store.item/featured ?featured]]}))))})
+(defmethod client-read :query/featured-art
+  [{:keys [db query]} _ _]
+  {:remote true
+   :value  (when-let [loc (client.auth/current-locality db)]
+             (pull-featured db query (-> (products/find-with-category-names loc {:top-category "art"})
+                                         (db/merge-query {:find '[?e ?featured]
+                                                          :where '[[?e :store.item/featured ?featured]]}))))})
 
 (defmethod client-read :query/featured-stores
   [{:keys [db query]} _ _]

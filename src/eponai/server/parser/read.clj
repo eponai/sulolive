@@ -218,6 +218,59 @@
                  (db/pull-many db query)
                  (feature-all db :store.item)))})
 
+(defread query/featured-women
+  [{:keys [db db-history query locations]} _ _]
+  {:auth ::auth/public}
+  {:value (when (some? (:db/id locations))
+            (->> (db/all-with db (products/find-with-category-names locations {:sub-category "women"}))
+                 (take 10)
+                 (db/pull-many db query)
+                 (feature-all db :store.item))
+            ;(->> (db/find-with db {:find    '[?e ?created-at]
+            ;                       :where   '[[?s :store/locality ?l]
+            ;                                  [?st :status/type :status.type/open]
+            ;                                  [?s :store/status ?st]
+            ;                                  [?s :store/items ?e]
+            ;                                  [?s :store/profile ?profile]
+            ;                                  [?profile :store.profile/photo _]
+            ;                                  [?e :store.item/photos ?p]
+            ;                                  [?p :store.item.photo/photo _]
+            ;                                  [?e :store.item/created-at ?created-at]]
+            ;                       :symbols {'?l (:db/id locations)}})
+            ;     (sort-by #(nth % 1) #(compare %2 %1))
+            ;     (take 6)
+            ;     (map #(nth % 0))
+            ;     (db/pull-many db query)
+            ;     (feature-all db :store.item))
+            )})
+
+(defread query/featured-men
+  [{:keys [db db-history query locations]} _ _]
+  {:auth ::auth/public}
+  {:value (when (some? (:db/id locations))
+            (->> (db/all-with db (products/find-with-category-names locations {:sub-category "men"}))
+                 (take 10)
+                 (db/pull-many db query)
+                 (feature-all db :store.item)))})
+
+(defread query/featured-home
+  [{:keys [db db-history query locations]} _ _]
+  {:auth ::auth/public}
+  {:value (when (some? (:db/id locations))
+            (->> (db/all-with db (products/find-with-category-names locations {:top-category "home"}))
+                 (take 10)
+                 (db/pull-many db query)
+                 (feature-all db :store.item)))})
+
+(defread query/featured-art
+  [{:keys [db db-history query locations]} _ _]
+  {:auth ::auth/public}
+  {:value (when (some? (:db/id locations))
+            (->> (db/all-with db (products/find-with-category-names locations {:top-category "art"}))
+                 (take 10)
+                 (db/pull-many db query)
+                 (feature-all db :store.item)))})
+
 (defread query/featured-stores
   [{:keys [db db-history query locations]} _ _]
   {:auth ::auth/public}
