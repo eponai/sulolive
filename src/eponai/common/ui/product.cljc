@@ -227,8 +227,8 @@
                                (let [is-disabled (= :out-of-stock (-> sku :store.item.sku/inventory :store.item.sku.inventory/value))]
                                  (dom/option
                                    (cond-> {:value (:db/id sku)}
-                                            is-disabled
-                                            (assoc :disabled true))
+                                           is-disabled
+                                           (assoc :disabled true))
                                    (str (:store.item.sku/variation sku) (when is-disabled " - out of stock")))))
                              variations))))
               (let [out-of-stock? (every? #(= :out-of-stock (-> % :store.item.sku/inventory :store.item.sku.inventory/value)) skus)]
@@ -266,7 +266,9 @@
                         "Out of stock"
                         "Your shopping bag was updated")))
 
-                  (let [item-url (product-url item)]
+                  (let [#?@(:cljs [item-url (str js/window.location.origin (product-url item))]
+                            :clj  [item-url nil])]
+                    (debug "Share url: " item-url)
                     (menu/horizontal
                       (->> (css/align :right)
                            (css/add-class :share-menu))
