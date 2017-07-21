@@ -85,7 +85,7 @@
         image (photos/transform "static/products-social" :transformation/preview)
         server-host (host/webserver-url (:system/server-address system))]
     {:facebook {:fb:app_id      "936364773079066"
-                :og:title       (str title " - SULO Live")
+                :og:title       title
                 ;:og:type                "product"
                 :og:description description
                 :og:image       image
