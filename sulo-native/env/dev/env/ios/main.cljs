@@ -1,10 +1,11 @@
 (ns ^:figwheel-no-load env.ios.main
   ;; (:require-macros [env.client.utils :as utils])
-  (:require [eponai.mobile.ios.core :as core]
+  (:require [eponai.client.devtools :as devtools]
+            [eponai.mobile.ios.core :as core]
             [eponai.mobile.ios.app :as app]
             [figwheel.client :as figwheel :include-macros true]))
 
-(enable-console-print!)
+(devtools/install-app)
 
 ;; (def ip (utils/dev-machine-ip))
 (def ip "localhost")

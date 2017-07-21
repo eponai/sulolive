@@ -138,7 +138,7 @@ function importJs(src, success, error) {
         error = function () {
         };
     }
-    console.log("src: " + src);
+
     var file = fileBasePath + '/' + src;
 
     logDebug('(importJs) Importing: ' + file);

@@ -43,10 +43,16 @@
                            [org.martinklepsch/s3-beam "0.6.0-alpha1"]
                            ]
             :plugins [[lein-cljsbuild "1.1.5"]
+                      [lein-shell "0.5.0"]
                       [lein-figwheel "0.5.10"]]
-            :clean-targets ["target/" "index.ios.js" "index.android.js" #_($PLATFORM_CLEAN$)]
+            :clean-targets ["target/" 
+                            ;; don't clean these, because figwheel will remove them.
+                            ;; "index.ios.js" "index.android.js" 
+                            #_($PLATFORM_CLEAN$)]
             :aliases {"prod-build" ^{:doc "Recompile code with prod profile."}
-                                   ["do" "clean"
+                                   ["do"
+                                    "clean"
+                                    ["shell" "bash" "-c" "cd .. && lein install"]
                                     ["with-profile" "prod" "cljsbuild" "once"]]}
 
             :repositories {"my.datomic.com" {:url      "https://my.datomic.com/repo"
@@ -59,46 +65,55 @@
                        ;;       :reload-clj-files {:clj true :cljc true}
                        }
 
-            :profiles {:dev {:dependencies [[figwheel-sidecar "0.5.10"]
-                                            [com.cemerick/piggieback "0.2.1"]
-                                            [binaryage/devtools "0.9.4"]]
-                             :source-paths ["src" "env/dev" "../src"]
-                             :cljsbuild    {:builds [
-                                                     {:id           "ios"
-                                                      :source-paths ["src" "env/dev" "../src"]
-                                                      :figwheel     true
-                                                      :compiler     {:output-to     "target/ios/not-used.js"
-                                                                     :main          "env.ios.main"
-                                                                     :output-dir    "target/ios"
-                                                                     :optimizations :none}}
-                                                     {:id           "android"
-                                                      :source-paths ["src" "env/dev" "../src"]
-                                                      :figwheel     true
-                                                      :compiler     {:output-to     "target/android/not-used.js"
-                                                                     :main          "env.android.main"
-                                                                     :output-dir    "target/android"
-                                                                     :optimizations :none}}
-#_($DEV_PROFILES$)]}
-                             :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}
-                       :prod {:cljsbuild {:builds [
-                                                   {:id           "ios"
-                                                    :source-paths ["src" "env/prod" "../src"]
-                                                    :compiler     {:output-to     "index.ios.js"
-                                                                   :main          "env.ios.main"
-                                                                   :output-dir    "target/ios"
-                                                                   :static-fns    true
-                                                                   :optimize-constants true
-                                                                   :optimizations :simple
-                                                                   :closure-defines {"goog.DEBUG" false}}}
-                                                   {:id           "android"
-                                                    :source-paths ["src" "env/prod" "../src"]
-                                                    :compiler     {:output-to     "index.android.js"
-                                                                   :main          "env.android.main"
-                                                                   :output-dir    "target/android"
-                                                                   :static-fns    true
-                                                                   :optimize-constants true
-                                                                   :optimizations :simple
-                                                                   :closure-defines {"goog.DEBUG" false}}}
-#_($PROD_PROFILES$)]}}})
+            :profiles {:dev  {:dependencies [[figwheel-sidecar "0.5.10"]
+                                             [com.cemerick/piggieback "0.2.1"]
+                                             [binaryage/devtools "0.9.4"]]
+                              :source-paths ["src" "env/dev" "../src"]
+                              :cljsbuild    {:builds [
+                                                      {:id           "ios"
+                                                       :source-paths ["src" "env/dev" "../src"]
+                                                       :figwheel     true
+                                                       :compiler     {:output-to      "target/ios/not-used.js"
+                                                                      :main           "env.ios.main"
+                                                                      :output-dir     "target/ios"
+                                                                      :parallel-build true
+                                                                      :optimizations  :none}}
+                                                      {:id           "android"
+                                                       :source-paths ["src" "env/dev" "../src"]
+                                                       :figwheel     true
+                                                       :compiler     {:output-to      "target/android/not-used.js"
+                                                                      :main           "env.android.main"
+                                                                      :output-dir     "target/android"
+                                                                      :parallel-build true
+                                                                      :optimizations  :none}}
+                                                      #_($DEV_PROFILES$)]}
+                              :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}
+                       ;; Depends on the sulo project's jar.
+                       :prod {:dependencies [[budget "0.1.0-SNAPSHOT"]
+                                             [react-native-externs "0.0.3"]]
+                              :cljsbuild    {:builds [{:id           "ios"
+                                                       :source-paths ["src" "env/prod"]
+                                                       :compiler     {:output-to          "index.ios.js"
+                                                                      :main               "env.ios.main"
+                                                                      :output-dir         "target/ios"
+                                                                      :static-fns         true
+                                                                      :optimize-constants true
+                                                                      :optimizations      :advanced
+                                                                      :parallel-build     true
+                                                                      :verbose            true
+                                                                      :language-in        :ecmascript5
+                                                                      :closure-defines    {"goog.DEBUG" false}}}
+                                                      #_({:id           "android"
+                                                          :source-paths ["src" "env/prod"]
+                                                          :compiler     {:output-to          "index.android.js"
+                                                                         :main               "env.android.main"
+                                                                         :output-dir         "target/android"
+                                                                         :static-fns         true
+                                                                         :optimize-constants true
+                                                                         :optimizations      :advanced
+                                                                         :parallel-build     true
+                                                                         :language-in        :ecmascript5
+                                                                         :closure-defines    {"goog.DEBUG" false}}})
+                                                      #_($PROD_PROFILES$)]}}})
                                                   
                       
