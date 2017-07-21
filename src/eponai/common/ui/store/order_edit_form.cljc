@@ -108,7 +108,7 @@
         order-status (:order/status order)
         delivery (some #(when (= (:order.item/type %) :order.item.type/shipping) %) (:order/items order))
         tax-item (some #(when (= (:order.item/type %) :order.item.type/tax) %) (:order/items order))
-        sulo-fee (some #(when (= (:order.item/type %) :order.item.type/sulo-fee) %) (:order/items order))]
+        sulo-fees (filter #(= (:order.item/type %) :order.item.type/fee) (:order/items order))]
     (dom/div
       nil
       (order-status-modal component)
@@ -272,16 +272,18 @@
                   (->> (grid/column-size {:small 4 :medium 3})
                        (css/text-align :right))
                   (dom/p nil (ui-utils/two-decimal-price (:order.item/amount tax-item)))))
-              (grid/row
-                nil
-                (grid/column (grid/column-size {:small 4 :medium 6}))
-                (grid/column
-                  (grid/column-size {:small 4 :medium 3})
-                  (dom/p nil (:order.item/description sulo-fee)))
-                (grid/column
-                  (->> (grid/column-size {:small 4 :medium 3})
-                       (css/text-align :right))
-                  (dom/p nil (str "-" (ui-utils/two-decimal-price (:order.item/amount sulo-fee))))))))
+              (map (fn [fee]
+                     (grid/row
+                       nil
+                       (grid/column (grid/column-size {:small 4 :medium 6}))
+                       (grid/column
+                         (grid/column-size {:small 4 :medium 3})
+                         (dom/p nil (:order.item/description fee)))
+                       (grid/column
+                         (->> (grid/column-size {:small 4 :medium 3})
+                              (css/text-align :right))
+                         (dom/p nil (str "-" (ui-utils/two-decimal-price (:order.item/amount fee)))))))
+                   sulo-fees)))
           (grid/row
             (css/add-class :total-price)
             (grid/column (grid/column-size {:small 4 :medium 6}))
@@ -290,7 +292,7 @@
             (grid/column
               (->> (grid/column-size {:small 4 :medium 3})
                    (css/text-align :right))
-              (dom/strong nil (ui-utils/two-decimal-price (- (:order/amount order) (:order.item/amount sulo-fee))))))))
+              (dom/strong nil (ui-utils/two-decimal-price (apply - (:order/amount order) (map :order.item/amount sulo-fees))))))))
 
       (grid/row-column
         (css/add-class :go-back)

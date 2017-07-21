@@ -684,4 +684,7 @@
           :error   (or (ex-data exception)
                        {:message "Couldn't apply coupon"})}}
   {:action (fn []
-             (stripe/get-coupon (:system/stripe system) code))})
+             (let [coupon (stripe/get-coupon (:system/stripe system) code)]
+               (if (:valid coupon)
+                 coupon
+                 (throw (ex-info "Coupon is invalid" {:message "Coupon is invalid"})))))})

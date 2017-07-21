@@ -9,7 +9,8 @@
     [eponai.server.external.cloudinary :as cloudinary]
     [eponai.common.format.date :as date]
     [eponai.server.log :as log]
-    [eponai.client.cart :as cart]))
+    [eponai.client.cart :as cart]
+    [eponai.common.checkout-utils :as checkout-utils]))
 
 
 (defn create [{:keys [state auth system]} {:keys [country name locality]}]
@@ -220,53 +221,76 @@
   (let [store (db/lookup-entity (db/db state) store-id)]
     (assoc o :order/store store :order/user user-id)))
 
-(defn create-order [{:keys [state system auth]} store-id {:keys [items shipping source subtotal grandtotal tax-amount shipping-rate]}]
+(defn create-order [{:keys [state system auth]} store-id {:keys [skus shipping source taxes shipping-rate coupon]}]
   (let [
         {:keys [stripe/id]} (stripe/pull-stripe (db/db state) store-id)
         user-stripe (stripe/pull-user-stripe (db/db state) (:user-id auth))
-        _ (debug  "Create order for auth: " auth)
+        _ (debug "Create order for auth: " auth)
         c (cart/find-user-cart (db/db state) (:user-id auth))
         _ (debug "Found cart: " c)
         {:keys [user/cart] :as user} (db/lookup-entity (db/db state) (:user-id auth))
         _ (debug "Got user cart: " cart)
         _ (debug "Got user: " (into {} user))
+        stripe-coupon (when coupon
+                        (try
+                          (stripe/get-coupon (:system/stripe system) coupon)
+                          (catch Exception e
+                            nil)))
+        _ (debug "Got coupon: " stripe-coupon)
         {:keys [shipping/address]} shipping
-        shipping-fee (:amount shipping-rate 0)
 
-        total-amount (+ subtotal shipping-fee tax-amount)
-        application-fee (* 0.2 subtotal)                    ;Convert to cents for Stripe
-        transaction-fee (+ 0.3 (* 0.029 total-amount))
-        sulo-fee (+ application-fee transaction-fee)
-        destination-amount (- grandtotal sulo-fee)
+        sulo-fee-rate (max 0 (- 20 (:percent_off coupon 0)))
+        shipping-fee (:shipping.rate/total shipping-rate 0)
+
+        {:keys [tax-amount discount sulo-fee grandtotal subtotal]} (checkout-utils/compute-checkout {:skus skus :taxes taxes :shipping-rate shipping-rate :coupon stripe-coupon})
+        ;discount (* 0.01 (:percent_off stripe-coupon) subtotal)
+        ;total-amount (- (+ subtotal shipping-fee tax-amount) discount)
+        ;application-fee (* 0.01 sulo-fee-rate subtotal)       ;Convert to cents for Stripe
+        transaction-fee (+ 0.3 (* 0.029 grandtotal))
+        ;sulo-fee (+ application-fee transaction-fee)
+        destination-amount (- grandtotal sulo-fee transaction-fee)
+
+        _ (debug "Paramerers: " {:discount discount :percent-iff (:percent_off stripe-coupon) :application-fee sulo-fee})
 
         shipping-item (cf/remove-nil-keys {:order.item/type        :order.item.type/shipping
                                            :order.item/amount      (bigdec shipping-fee)
-                                           :order.item/title       (:title shipping-rate)
-                                           :order.item/description (:description shipping-rate)})
+                                           :order.item/title       (:shipping.rate/title shipping-rate)
+                                           :order.item/description (:shipping.rate/info shipping-rate)})
         tax-item (cf/remove-nil-keys {:order.item/type   :order.item.type/tax
                                       :order.item/amount (bigdec tax-amount)
                                       ;:order.item/title       "Tax"
                                       ;:order.item/description (:description shipping-rate)
                                       })
-        sulo-fee-item (cf/remove-nil-keys {:order.item/type        :order.item.type/sulo-fee
+        sulo-fee-item (cf/remove-nil-keys {:order.item/type        :order.item.type/fee
                                            :order.item/amount      (bigdec sulo-fee)
-                                           ;:order.item/title       "SULO Live fee"
+                                           :order.item/title       "Service fee"
                                            :order.item/description "Service fee"})
-        order (-> (f/order {:order/items      items
+        discount-item (cf/remove-nil-keys {:order.item/type        :order.item.type/discount
+                                           :order.item/amount      (bigdec discount)
+                                           :order.item/title       "Discount"
+                                           :order.item/description (:id stripe-coupon)})
+        transaction-fee (cf/remove-nil-keys {:order.item/type        :order.item.type/fee
+                                             :order.item/amount      (bigdec transaction-fee)
+                                             :order.item/title       "Transaction fee"
+                                             :order.item/description "Transaction fee"})
+        order (-> (f/order {:order/items      skus
                             :order/uuid       (db/squuid)
                             :order/shipping   shipping
                             :order/user       (:user-id auth)
                             :order/store      store-id
-                            :order/amount     (bigdec total-amount)
+                            :order/amount     (bigdec grandtotal)
                             :order/created-at (date/current-millis)})
-                  (update :order/items conj shipping-item sulo-fee-item tax-item))]
+                  (update :order/items conj shipping-item sulo-fee-item tax-item transaction-fee discount-item))]
     (when (some? user-stripe)
-      (let [charge (stripe/create-charge (:system/stripe system) {:amount      (int (* 100 total-amount)) ;Convert to cents for Stripe
+      (let [charge (stripe/create-charge (:system/stripe system) {:amount      (int (* 100 grandtotal)) ;Convert to cents for Stripe
                                                                   ;:application_fee (int (+ application-fee transaction-fee))
                                                                   :currency    "cad"
                                                                   :customer    (:stripe/id user-stripe)
                                                                   :source      source
-                                                                  :metadata    {:order_uuid (:order/uuid order)}
+                                                                  :metadata    {:order_uuid (:order/uuid order)
+                                                                                :subtotal   subtotal
+                                                                                :coupon     (:id stripe-coupon)
+                                                                                :discount   discount}
                                                                   :shipping    {:name    (:shipping/name shipping)
                                                                                 :address {:line1       (:shipping.address/street address)
                                                                                           :line2       (:shipping.address/street2 address)
@@ -277,6 +301,9 @@
                                                                   :destination {:account id
                                                                                 :amount  (int (* 100 destination-amount))}}) ;Convert to cents for Stripe
 
+            redeem-code (when stripe-coupon
+                          (stripe/update-customer (:system/stripe system) (:stripe/id user-stripe) {:coupon (:id stripe-coupon)}))
+            _ (debug "REdem code: " redeem-code)
 
             charge-entity {:db/id     (db/tempid :db.part/user)
                            :charge/id (:charge/id charge)}
@@ -285,7 +312,7 @@
             charged-order (assoc order :order/status order-status :order/charge (:db/id charge-entity))
             retract-from-cart-txs (map (fn [sku]
                                          [:db/retract (:db/id cart) :user.cart/items (:db/id sku)])
-                                       items)
+                                       skus)
 
             result-db (:db-after (db/transact state (into [charge-entity
                                                            charged-order]

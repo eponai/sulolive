@@ -23,6 +23,7 @@
     [eponai.client.parser.message :as msg]
     [eponai.client.routes :as routes]
     [eponai.common.analytics.google :as ga]
+    [eponai.common.checkout-utils :as checkout-utils]
     [eponai.common.mixpanel :as mixpanel]))
 
 (def form-inputs
@@ -36,35 +37,10 @@
 
    :payment.stripe/card       "sulo-card-element"})
 
-(defn compute-subtotal [skus]
-  (or (reduce + (map #(get-in % [:store.item/_skus :store.item/price]) skus)) 0))
 
-(defn compute-shipping-fee [rate items]
-  (let [{:shipping.rate/keys [additional free-above]
-         first-rate          :shipping.rate/first} rate
-        subtotal (compute-subtotal items)
-        item-count (count items)]
-    (cond (and (some? free-above)
-               (> subtotal free-above))
-          0
-          (<= 1 item-count)
-          (apply + (or first-rate 0) (repeat (dec item-count) (or additional 0)))
-          :else
-          (or first-rate 0))))
-(defn compute-taxes [taxes subtotal shipping-fee]
-  (let [{tax-rate    :taxes/rate
-         :taxes/keys [freight-taxable?]} taxes
-        tax-rate (or tax-rate 0)]
 
-    (if freight-taxable?
-      (* tax-rate (+ subtotal shipping-fee))
-      (* tax-rate subtotal))))
 
-(defn compute-discount [price coupon]
-  (if (:valid coupon)
-    (let [percent-off (:percent_off coupon)]
-      (* 0.01 percent-off price))
-    0))
+
 
 (defn checkout-store [skus]
   (-> skus first :store.item/_skus :store/_items))
@@ -77,11 +53,15 @@
 
         {:shipping/keys [selected-rate]
          :coupon/keys   [apply-code input-code applied-coupon]} (om/get-state component)
-        subtotal (compute-subtotal checkout)
-        shipping (compute-shipping-fee selected-rate checkout)
-        discount (compute-discount subtotal applied-coupon)
-        tax-amount (compute-taxes taxes (- subtotal discount) shipping)
-        grandtotal (- (+ subtotal shipping tax-amount) discount)]
+        {:keys [subtotal shipping-amount
+                tax-amount discount grandtotal]} (checkout-utils/compute-checkout
+                                                   {:skus checkout :shipping-rate selected-rate :coupon applied-coupon :taxes taxes})
+        ;subtotal (compute-subtotal checkout)
+        ;shipping (compute-shipping-fee selected-rate checkout)
+        ;discount (compute-discount subtotal applied-coupon)
+        ;tax-amount (compute-taxes taxes (- subtotal discount) shipping)
+        ;grandtotal (- (+ subtotal shipping tax-amount) discount)
+        ]
 
     (callout/callout
       (css/add-classes [:section :section--item-list])
@@ -128,7 +108,7 @@
                                         (utils/two-decimal-price value))))))
                  [{:title "Subtotal" :value subtotal}
                   {:title "Discount" :value discount :neg? true}
-                  {:title "Shipping" :value shipping}
+                  {:title "Shipping" :value shipping-amount}
                   {:title "Tax" :value tax-amount}])
             (dom/div
               (css/add-class :total)
@@ -150,17 +130,24 @@
                  (dom/a {:onClick #(om/update-state! component dissoc :coupon/applied-coupon)} (dom/small nil "Remove"))))
         (if apply-code
           (let [apply-coupon-msg (msg/last-message component 'checkout/apply-coupon)]
-            (dom/form
-              (css/add-class :promo-code-form)
-              (dom/input {:type     "text"
-                          :onChange #(om/update-state! component assoc :coupon/input-code (.-value (.-target %)))})
-              (if (msg/pending? apply-coupon-msg)
-                (button/submit-button-small
-                  (dom/i {:classes ["fa fa-spinner fa-pulse"]}))
-                (button/submit-button-small
-                  {:onClick #(.apply-coupon component input-code)} "Apply code"))))
+            (dom/div
+              (css/add-class :promo-code-container)
+              (dom/form
+                (css/add-class :promo-code-form)
+                (dom/input {:type     "text"
+                            :onChange #(om/update-state! component assoc :coupon/input-code (.-value (.-target %)))})
+                (if (msg/pending? apply-coupon-msg)
+                  (button/submit-button-small
+                    nil
+                    (dom/i {:classes ["fa fa-spinner fa-pulse"]}))
+                  (button/submit-button-small
+                    {:onClick #(.apply-coupon component input-code)} "Apply code")))
+              (when-let [error-message (:coupon/error-message (om/get-state component))]
+                (dom/p (->> (css/text-align :right)
+                            (css/add-class :text-alert)) (dom/small nil (str (:message error-message)))))))
           (dom/div
-            (css/text-align :right)
+            (->> (css/text-align :right)
+                 (css/add-class :promo-code-container))
             (button/store-setting-default
               {:onClick #(om/update-state! component assoc :coupon/apply-code true)}
               (dom/span nil "Have a promo code?"))))))))
@@ -379,11 +366,11 @@
         {:shipping/keys   [edit-shipping selected-rate]
          current-shipping :checkout/shipping} (om/get-state component)
 
-        subtotal (compute-subtotal checkout)
+        subtotal (checkout-utils/compute-subtotal checkout)
         shipping-rules (available-rules (om/props component) (or edit-shipping current-shipping))
         shipping-rates (reduce (fn [all-rates rule]
                                  (let [rates (:shipping.rule/rates rule)
-                                       calc-rates (mapv #(assoc % :shipping.rate/total (compute-shipping-fee % checkout)) rates)]
+                                       calc-rates (mapv #(assoc % :shipping.rate/total (checkout-utils/compute-shipping-fee % checkout)) rates)]
                                    (if (:shipping.rule/pickup? rule)
                                      (into calc-rates all-rates)
                                      (into all-rates calc-rates)))) [] shipping-rules)]
@@ -454,11 +441,14 @@
         {:payment/keys [payment-error card add-new-card? selected-card]} state
         ;{:keys [error amount sources]} props
 
-        subtotal (compute-subtotal checkout)
-        shipping (compute-shipping-fee selected-rate checkout)
-        discount (compute-discount subtotal applied-coupon)
-        tax-amount (compute-taxes taxes (- subtotal discount) shipping)
-        grandtotal (- (+ subtotal shipping tax-amount) discount)
+        {:keys [subtotal shipping-amount
+                tax-amount discount grandtotal]} (checkout-utils/compute-checkout
+                                                   {:skus checkout :shipping-rate selected-rate :coupon applied-coupon :taxes taxes})
+        ;subtotal (compute-subtotal checkout)
+        ;shipping (compute-shipping-fee selected-rate checkout)
+        ;discount (compute-discount subtotal applied-coupon)
+        ;tax-amount (compute-taxes taxes (- subtotal discount) shipping)
+        ;grandtotal (- (+ subtotal shipping tax-amount) discount)
         ]
 
     (callout/callout
@@ -599,7 +589,7 @@
 
           validation (validate/validate ::ship/shipping shipping form-inputs)
           shipping-rules (available-rules (om/props this) shipping)
-          subtotal (compute-subtotal checkout)]
+          subtotal (checkout-utils/compute-subtotal checkout)]
 
       (debug "validation: " validation)
       (when (shipping-available? shipping-rules)
@@ -658,27 +648,28 @@
              {:checkout/keys [shipping]
               :shipping/keys [selected-rate]
               :coupon/keys   [applied-coupon]} (om/get-state this)
-             subtotal (compute-subtotal checkout)
-             shipping-fee (compute-shipping-fee selected-rate checkout)
-             discount (compute-discount subtotal applied-coupon)
-             tax-amount (compute-taxes taxes (- subtotal discount) shipping-fee)
-             grandtotal (- (+ subtotal shipping-fee tax-amount) discount)
+             ;subtotal (compute-subtotal checkout)
+             ;shipping-fee (compute-shipping-fee selected-rate checkout)
+             ;discount (compute-discount subtotal applied-coupon)
+             ;tax-amount (compute-taxes taxes (- subtotal discount) shipping-fee)
+             ;grandtotal (- (+ subtotal shipping-fee tax-amount) discount)
+             {:keys [subtotal shipping-amount
+                     tax-amount discount grandtotal]} (checkout-utils/compute-checkout
+                                                        {:skus checkout :shipping-rate selected-rate :coupon applied-coupon :taxes taxes})
              {:keys [source]} payment]
 
          (debug "Place order with payment: " payment)
-         (let [items checkout]
-           (msg/om-transact! this [(list 'store/create-order {:order    {:source        source
-                                                                         :shipping      shipping
-                                                                         :items         items
-                                                                         :tax-amount    tax-amount
-                                                                         :grandtotal    grandtotal
-                                                                         :coupon        applied-coupon
-                                                                         :discount      discount
-                                                                         :shipping-rate {:amount      shipping-fee
-                                                                                         :title       (:shipping.rate/title selected-rate)
-                                                                                         :description (:shipping.rate/info selected-rate)}
-                                                                         :subtotal      subtotal}
-                                                              :store-id (:db/id store)})]))
+         ;(let [items checkout])
+         (msg/om-transact! this [(list 'store/create-order {:order    {:source        source
+                                                                       :shipping      shipping
+                                                                       :skus          checkout
+                                                                       ;:tax-amount    tax-amount
+                                                                       :taxes         taxes
+                                                                       :coupon        (:id applied-coupon)
+                                                                       :shipping-rate (assoc selected-rate :shipping.rate/total shipping-amount)
+                                                                       ;:subtotal      subtotal
+                                                                       }
+                                                            :store-id (:db/id store)})])
          (om/update-state! this assoc :loading/message "Placing your order..."))))
 
   (default-shipping [this]
@@ -711,11 +702,14 @@
           {:shipping/keys [selected-rate edit-shipping]
            :keys          [error-message]
            :coupon/keys   [applied-coupon]} (om/get-state this)
-          subtotal (compute-subtotal checkout)
-          shipping-fee (compute-shipping-fee selected-rate checkout)
-          discount (compute-discount subtotal applied-coupon)
-          tax-amount (compute-taxes taxes (- subtotal discount) shipping-fee)
-          grandtotal (- (+ subtotal shipping-fee tax-amount) discount)]
+          ;subtotal (compute-subtotal checkout)
+          ;shipping-fee (compute-shipping-fee selected-rate checkout)
+          ;discount (compute-discount subtotal applied-coupon)
+          ;tax-amount (compute-taxes taxes (- subtotal discount) shipping-fee)
+          ;grandtotal (- (+ subtotal shipping-fee tax-amount) discount)
+          {:keys [subtotal shipping-amount
+                  tax-amount discount grandtotal]} (checkout-utils/compute-checkout
+                                                     {:skus checkout :shipping-rate selected-rate :coupon applied-coupon :taxes taxes})]
 
       ;; Check response for creating a new card on the customer
       ;; (this will only happen if the user added a new card when checking out)
@@ -751,7 +745,7 @@
               ;; Successful order will re-route to user's orders.
               (let [{:query/keys [auth]} (om/props this)]
                 ;; Successful order, send to Google analytics
-                (ga/send-transaction checkout {:revenue grandtotal :tax tax-amount :shipping shipping-fee :id (:db/id message)})
+                (ga/send-transaction checkout {:revenue grandtotal :tax tax-amount :shipping shipping-amount :id (:db/id message)})
                 (routes/set-url! this :user/order {:order-id (:db/id message) :user-id (:db/id auth)}))
               ;; If order was unsuccessful, let's get the pending payment we added above and remove it from the customer.
               (let [{:checkout/keys [pending-payment]} (om/get-state this)]
@@ -795,7 +789,7 @@
 
          (when (some? (-> stripe-customer :stripe/shipping :shipping/address :shipping.address/country :country/code))
 
-           (read-taxes this (:checkout/shipping init-state) (compute-subtotal checkout))))))
+           (read-taxes this (:checkout/shipping init-state) (checkout-utils/compute-subtotal checkout))))))
 
   (initLocalState [this]
     (.initial-state this (om/props this)))
@@ -804,12 +798,15 @@
     (let [{:query/keys [checkout taxes]} (om/props this)
           {:shipping/keys [selected-rate edit-shipping]
            :keys          [error-message]
-           :coupon/keys [applied-coupon]} (om/get-state this)
-          subtotal (compute-subtotal checkout)
-          shipping-fee (compute-shipping-fee selected-rate checkout)
-          discount (compute-discount subtotal applied-coupon)
-          tax-amount (compute-taxes taxes (- subtotal discount) shipping-fee)
-          grandtotal (- (+ subtotal shipping-fee tax-amount) discount)]
+           :coupon/keys   [applied-coupon]} (om/get-state this)
+          ;subtotal (compute-subtotal checkout)
+          ;shipping-fee (compute-shipping-fee selected-rate checkout)
+          ;discount (compute-discount subtotal applied-coupon)
+          ;tax-amount (compute-taxes taxes (- subtotal discount) shipping-fee)
+          ;grandtotal (- (+ subtotal shipping-fee tax-amount) discount)
+          {:keys [subtotal shipping-amount
+                  tax-amount discount grandtotal]} (checkout-utils/compute-checkout
+                                                     {:skus checkout :shipping-rate selected-rate :coupon applied-coupon :taxes taxes})]
 
 
       (dom/div

@@ -127,6 +127,7 @@
           {:store.profile/keys [tagline]
            store-name          :store.profile/name} (:store/profile store)
           delivery (some #(when (= (:order.item/type %) :order.item.type/shipping) %) (:order/items order))
+          discount (some #(when (= (:order.item/type %) :order.item.type/discount) %) (:order/items order))
           tax-item (some #(when (= (:order.item/type %) :order.item.type/tax) %) (:order/items order))
           skus (filter #(= (:order.item/type %) :order.item.type/sku) (:order/items order))]
       (debug "Order receipt:  " order)
@@ -230,19 +231,23 @@
                      skus)
 
                 (menu/item nil
-                           (map (fn [{:keys [title value]}]
+                           (map (fn [{:keys [title value neg? description]}]
                                   (grid/row
                                     nil
-                                    (grid/column (grid/column-size {:small 4 :medium 6}))
+                                    (grid/column (grid/column-size {:small 4 :medium 6})
+                                                 (dom/small nil (str description)))
                                     (grid/column
                                       (grid/column-size {:small 4 :medium 3})
                                       (dom/p nil (dom/small nil title)))
                                     (grid/column
                                       (->> (grid/column-size {:small 4 :medium 3})
                                            (css/text-align :right))
-                                      (dom/p nil (dom/small nil (ui-utils/two-decimal-price value))))))
+                                      (dom/p nil (dom/small nil (if neg?
+                                                                  (str "-" (ui-utils/two-decimal-price value))
+                                                                  (ui-utils/two-decimal-price value)))))))
                                 [{:title "Subtotal" :value (apply + (map :order.item/amount skus))}
-                                 {:title "Shipping" :value (:order.item/amount delivery)}
+                                 {:title "Discount" :value (:order.item/amount discount) :neg? true :description (:order.item/description discount)}
+                                 {:title "Shipping" :value (:order.item/amount delivery) :description (:order.item/title delivery)}
                                  {:title "Tax" :value (:order.item/amount tax-item)}])))
               (grid/row
                 (css/add-class :total-price)

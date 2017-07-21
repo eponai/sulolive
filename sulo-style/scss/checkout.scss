@@ -171,10 +171,16 @@
 		}
 	}
 
+	.promo-code-container {
+		.button, input, p {
+			margin-bottom: 0;
+		}
+	}
 	.promo-code-form {
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
+
 		.button {
 			flex: 0 0 auto;
 		}
