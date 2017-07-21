@@ -15,8 +15,8 @@ jobs:
   deps:
     <<: *defaults
     steps:
-     - checkout
-     - restore_cache:
+      - checkout
+      - restore_cache:
           key: cci-demo-clojure-{{ checksum "project.clj" }}
       - run: |
           lein deps
@@ -48,7 +48,7 @@ jobs:
       - run: ./scripts/run-cljs-tests.sh
 
   build_clj:
-    <<: *default
+    <<: *defaults
     steps:
       - checkout
       - restore_cache:
