@@ -375,6 +375,11 @@
   (if target
     {:remote true}))
 
+(defmethod client-mutate 'checkout/apply-coupon
+  [{:keys [target]} k p]
+  (if target
+    {:remote true}))
+
 (defmethod client-mutate 'user/request-store-access
   [{:keys [state target]} _ _]
   (when target

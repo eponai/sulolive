@@ -171,6 +171,19 @@
 		}
 	}
 
+	.promo-code-form {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		.button {
+			flex: 0 0 auto;
+		}
+		input {
+			max-width: 10rem;
+			margin-right: $global-margin;
+		}
+	}
+
 	// Hide footer in checkout to disable navigations for the user
 	.footer {
 		background: transparent;
@@ -183,131 +196,6 @@
 	}
 }
 
-// #sulo-checkout {
-// 	$primary-color: map-get($foundation-palette, action);
-// 	$border-color: rgba($light-gray, 0.75);
-// 	$border: 1px solid $border-color;
-// 	.page-container {
-// 		$color: map-get($foundation-palette, primary);
-// 		background: rgba($color, 0.03);
-// 		.page-content .callout {
-// 			border: $global-border-secondary;
-// 			// box-shadow: 0 1px 3px 0 rgba($black, 0.1);
-// 		}
-// 		.page-content {
-// 			padding-top: 2rem;
-// 		}
-// 	}
-// 	.row.expanded {
-// 		// max-width: $global-width;
-// 	}
-
-// 	.checkout-review {
-// 		// width: 30rem;
-// 		@include breakpoint(medium) {
-// 			position: fixed;
-// 		// width: 25rem;
-// 			z-index: 1;
-// 		}
-// 	}
-
-// 	.subsection {
-// 		margin-bottom: 3rem;
-// 		&:last-child {
-// 			margin-bottom: 0;
-// 		}
-// 	}
-// 	.subsection-title {
-// 		margin-bottom: 0.5rem;
-// 		// margin-top: 4rem;
-// 		letter-spacing: 1px;
-// 	}
-
-// 	.callout {
-// 		&.small.warning {
-// 			box-shadow: none;
-// 			border: none;
-// 		}
-// 		.sl-CheckoutItemlist {
-// 			padding: 1rem 0;
-// 			border-top: $border;
-// 			border-bottom: $border;
-// 			margin-bottom: 0.5rem;
-// 			p {
-// 				margin: 0;
-// 			}
-// 			display: table;
-// 			width: 100%;
-// 			.sl-CheckoutItemlist-row {
-// 				display: table-row;
-// 				input {
-// 					max-width: 4rem;
-// 					// float: right;
-// 				}
-// 				.sl-CheckoutItemlist-cell {
-// 					display: table-cell;
-// 					vertical-align: top;
-// 					padding: 0.5rem;
-// 					font-size: 90%;
-// 					&.sl-CheckoutItemlist-cell--photo {
-// 						width: 3rem;
-// 						padding: 0.5rem 0;
-// 					}
-// 				}
-// 			}
-// 		}
-// 		.receipt {
-// 			.row {
-// 				padding-bottom: 0.5rem;
-// 			}
-// 			a {
-// 				color: $primary-color;
-// 				font-weight: $global-weight-bold;
-// 			}
-// 			font-size: 0.9rem;
-// 			color: $dark-gray;
-// 			.total {
-// 				padding-top: 0.5rem;
-// 				border-top: $border;
-// 				font-size: 1rem;
-// 				color: $black;
-// 			}
-// 		}
-// 	}
-// 	.action-buttons {
-// 		.button {
-// 			margin-left: 0.5rem;
-// 		}
-// 	}
-
-// 	.checkout-payment {
-// 		.button {
-// 			margin: 0.5rem 0 0.5rem 1rem;
-// 		}
-// 	}
-// 	.section-list {
-// 		margin-bottom: 0.5rem;
-// 		border-radius: $global-radius;
-// 		border: $global-border;
-// 	}
-
-// 	.footer {
-// 		background: transparent;
-// 		.row {
-// 			display: none;
-// 		}
-// 		.copyright {
-// 			color: $dark-gray;
-// 		}
-// 	}
-
-// 	.section-list--cards {
-// 		.section-list-item--card, .section-list-item--new-card {
-// 			padding: 0.25rem 0;
-// 		}
-// 	}
-
-// }
 
 /**
  * The CSS shown here will not be introduced in the Quickstart guide, but shows

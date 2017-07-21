@@ -56,10 +56,15 @@
          :taxes/keys [freight-taxable?]} taxes
         tax-rate (or tax-rate 0)]
 
-    (debug "Compute taxes: " taxes subtotal shipping-fee)
     (if freight-taxable?
       (* tax-rate (+ subtotal shipping-fee))
       (* tax-rate subtotal))))
+
+(defn compute-discount [price coupon]
+  (if (:valid coupon)
+    (let [percent-off (:percent_off coupon)]
+      (* 0.01 percent-off price))
+    0))
 
 (defn checkout-store [skus]
   (-> skus first :store.item/_skus :store/_items))
@@ -70,11 +75,13 @@
         store (checkout-store checkout)
         store-profile (:store/profile store)
 
-        {:shipping/keys [selected-rate]} (om/get-state component)
+        {:shipping/keys [selected-rate]
+         :coupon/keys   [apply-code input-code applied-coupon]} (om/get-state component)
         subtotal (compute-subtotal checkout)
         shipping (compute-shipping-fee selected-rate checkout)
-        tax-amount (compute-taxes taxes subtotal shipping)
-        grandtotal (+ subtotal shipping tax-amount)]
+        discount (compute-discount subtotal applied-coupon)
+        tax-amount (compute-taxes taxes (- subtotal discount) shipping)
+        grandtotal (- (+ subtotal shipping tax-amount) discount)]
 
     (callout/callout
       (css/add-classes [:section :section--item-list])
@@ -108,7 +115,7 @@
           (css/add-class :additional-items)
           (dom/div
             (css/add-class :receipt)
-            (map (fn [{:keys [title value]}]
+            (map (fn [{:keys [title value neg?]}]
                    (grid/row
                      (css/text-align :right)
                      (grid/column
@@ -116,8 +123,11 @@
                        (dom/small nil (str title)))
                      (grid/column
                        nil
-                       (dom/small nil (utils/two-decimal-price value)))))
+                       (dom/small nil (if neg?
+                                        (str "-" (utils/two-decimal-price value))
+                                        (utils/two-decimal-price value))))))
                  [{:title "Subtotal" :value subtotal}
+                  {:title "Discount" :value discount :neg? true}
                   {:title "Shipping" :value shipping}
                   {:title "Tax" :value tax-amount}])
             (dom/div
@@ -129,7 +139,31 @@
                   (dom/strong nil "Total"))
                 (grid/column
                   nil
-                  (dom/strong nil (utils/two-decimal-price grandtotal)))))))))))
+                  (dom/strong nil (utils/two-decimal-price grandtotal))))))))
+      (if applied-coupon
+        (dom/div
+          (css/text-align :right)
+          (dom/p nil
+                 (dom/strong nil (dom/small nil "Promo code: "))
+                 (dom/small nil (str (:id applied-coupon)))
+                 (dom/br nil)
+                 (dom/a {:onClick #(om/update-state! component dissoc :coupon/applied-coupon)} (dom/small nil "Remove"))))
+        (if apply-code
+          (let [apply-coupon-msg (msg/last-message component 'checkout/apply-coupon)]
+            (dom/form
+              (css/add-class :promo-code-form)
+              (dom/input {:type     "text"
+                          :onChange #(om/update-state! component assoc :coupon/input-code (.-value (.-target %)))})
+              (if (msg/pending? apply-coupon-msg)
+                (button/submit-button-small
+                  (dom/i {:classes ["fa fa-spinner fa-pulse"]}))
+                (button/submit-button-small
+                  {:onClick #(.apply-coupon component input-code)} "Apply code"))))
+          (dom/div
+            (css/text-align :right)
+            (button/store-setting-default
+              {:onClick #(om/update-state! component assoc :coupon/apply-code true)}
+              (dom/span nil "Have a promo code?"))))))))
 
 (defn available-rules [props shipping]
   (let [{:query/keys [checkout]} props
@@ -155,7 +189,7 @@
 
         has-provided-address? (not-empty (filter #(not-empty (val %)) (dissoc (:shipping/address edit-shipping) :shipping.address/country :shipping.address/region)))]
 
-    (debug "Edit address: " edit-shipping)
+
     ;(debug "All shipping rules: " (get-in store [:store/shipping :shipping/rules]))
     ;(debug "Shipping rules: " shipping-rules)
     ;(if (nil? stripe-customer))
@@ -353,7 +387,6 @@
                                    (if (:shipping.rule/pickup? rule)
                                      (into calc-rates all-rates)
                                      (into all-rates calc-rates)))) [] shipping-rules)]
-    (debug "Shipping rules: " shipping-rules)
 
     (callout/callout
       (css/add-classes [:section :section--shipping])
@@ -416,15 +449,16 @@
   (let [{:query/keys [stripe-customer checkout taxes]} (om/props component)
         {:stripe/keys [sources]} stripe-customer
         {:shipping/keys [edit-shipping selected-rate] :as state
-         :keys          [error-message]} (om/get-state component)
+         :keys          [error-message]
+         :coupon/keys   [applied-coupon]} (om/get-state component)
         {:payment/keys [payment-error card add-new-card? selected-card]} state
         ;{:keys [error amount sources]} props
 
         subtotal (compute-subtotal checkout)
         shipping (compute-shipping-fee selected-rate checkout)
-        tax-amount (compute-taxes taxes subtotal shipping)
-
-        grandtotal (+ subtotal shipping tax-amount)
+        discount (compute-discount subtotal applied-coupon)
+        tax-amount (compute-taxes taxes (- subtotal discount) shipping)
+        grandtotal (- (+ subtotal shipping tax-amount) discount)
         ]
 
     (callout/callout
@@ -541,6 +575,10 @@
      :query/locations])
 
   Object
+  (apply-coupon [this input-code]
+    (msg/om-transact! this [(list 'checkout/apply-coupon {:code input-code})])
+    (debug "Apply code: " input-code))
+
   (change-country [this country-code]
     (let [{:keys [autocomplete]} (om/get-state this)
           {:query/keys [countries checkout]} (om/props this)
@@ -618,11 +656,13 @@
        (let [{:query/keys [taxes current-route checkout]} (om/props this)
              store (checkout-store checkout)
              {:checkout/keys [shipping]
-              :shipping/keys [selected-rate]} (om/get-state this)
+              :shipping/keys [selected-rate]
+              :coupon/keys   [applied-coupon]} (om/get-state this)
              subtotal (compute-subtotal checkout)
              shipping-fee (compute-shipping-fee selected-rate checkout)
-             tax-amount (compute-taxes taxes subtotal shipping-fee)
-             grandtotal (+ subtotal shipping-fee tax-amount)
+             discount (compute-discount subtotal applied-coupon)
+             tax-amount (compute-taxes taxes (- subtotal discount) shipping-fee)
+             grandtotal (- (+ subtotal shipping-fee tax-amount) discount)
              {:keys [source]} payment]
 
          (debug "Place order with payment: " payment)
@@ -632,6 +672,8 @@
                                                                          :items         items
                                                                          :tax-amount    tax-amount
                                                                          :grandtotal    grandtotal
+                                                                         :coupon        applied-coupon
+                                                                         :discount      discount
                                                                          :shipping-rate {:amount      shipping-fee
                                                                                          :title       (:shipping.rate/title selected-rate)
                                                                                          :description (:shipping.rate/info selected-rate)}
@@ -667,11 +709,13 @@
   (componentDidUpdate [this _ _]
     (let [{:query/keys [checkout taxes]} (om/props this)
           {:shipping/keys [selected-rate edit-shipping]
-           :keys          [error-message]} (om/get-state this)
+           :keys          [error-message]
+           :coupon/keys   [applied-coupon]} (om/get-state this)
           subtotal (compute-subtotal checkout)
           shipping-fee (compute-shipping-fee selected-rate checkout)
-          tax-amount (compute-taxes taxes subtotal shipping-fee)
-          grandtotal (+ subtotal shipping-fee tax-amount)]
+          discount (compute-discount subtotal applied-coupon)
+          tax-amount (compute-taxes taxes (- subtotal discount) shipping-fee)
+          grandtotal (- (+ subtotal shipping-fee tax-amount) discount)]
 
       ;; Check response for creating a new card on the customer
       ;; (this will only happen if the user added a new card when checking out)
@@ -713,7 +757,14 @@
               (let [{:checkout/keys [pending-payment]} (om/get-state this)]
                 (when pending-payment
                   (msg/om-transact! this [(list 'stripe/update-customer {:remove-source (:source pending-payment)})]))
-                (om/update-state! this assoc :error-message message :loading/message nil))))))))
+                (om/update-state! this assoc :error-message message :loading/message nil)))))))
+
+    (let [coupon-msg (msg/last-message this 'checkout/apply-coupon)]
+      (when (msg/final? coupon-msg)
+        (msg/clear-messages! this 'checkout/apply-coupon)
+        (if (msg/success? coupon-msg)
+          (om/update-state! this assoc :coupon/applied-coupon (msg/message coupon-msg))
+          (om/update-state! this assoc :coupon/error-message (msg/message coupon-msg))))))
 
   (componentDidMount [this]
     #?(:cljs
@@ -727,7 +778,7 @@
                              :on-change  (fn [address]
                                            (debug "Autocomplete address: " address)
                                            (om/update-state! this assoc-in [:shipping/edit-shipping :shipping/address] address))})]
-         (debug "ga: Send ga events : " checkout)
+
          (ga/checkout-shipping-address checkout country)
          (when (:checkout/shipping init-state)
            (ga/checkout-shipping-option (get-in init-state [:checkout/shipping :shipping/address :shipping.address/country :country/code])))
@@ -735,15 +786,15 @@
            (routes/set-url! this :login))
          (when-not (= :status.type/open (-> (first checkout) :store.item/_skus :store/_items :store/status :status/type))
            (routes/set-url! this :shopping-bag))
-         (debug "Setting GOogle country: " country)
+
          (places/set-country-restrictions autocomplete country)
          (om/update-state! this merge
                            init-state
                            {:card         card
                             :autocomplete autocomplete})
-         (debug "Got stripe customer: " stripe-customer)
+
          (when (some? (-> stripe-customer :stripe/shipping :shipping/address :shipping.address/country :country/code))
-           (debug "Will calculate taxes")
+
            (read-taxes this (:checkout/shipping init-state) (compute-subtotal checkout))))))
 
   (initLocalState [this]
@@ -752,13 +803,14 @@
   (render [this]
     (let [{:query/keys [checkout taxes]} (om/props this)
           {:shipping/keys [selected-rate edit-shipping]
-           :keys          [error-message]} (om/get-state this)
+           :keys          [error-message]
+           :coupon/keys [applied-coupon]} (om/get-state this)
           subtotal (compute-subtotal checkout)
           shipping-fee (compute-shipping-fee selected-rate checkout)
-          tax-amount (compute-taxes taxes subtotal shipping-fee)
-          grandtotal (+ subtotal shipping-fee tax-amount)
-          ]
-      (debug "Checkout state: " (om/get-state this))
+          discount (compute-discount subtotal applied-coupon)
+          tax-amount (compute-taxes taxes (- subtotal discount) shipping-fee)
+          grandtotal (- (+ subtotal shipping-fee tax-amount) discount)]
+
 
       (dom/div
         nil

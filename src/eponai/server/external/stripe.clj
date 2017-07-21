@@ -47,6 +47,8 @@
 
   (-update-account [this account-id params])
 
+  (-get-coupon [this coupon-code])
+
   (-file-upload [this params]
     "Uploads a file using the FileUpload api: https://stripe.com/docs/file-upload")
 
@@ -112,6 +114,9 @@
   (if (not-empty account-id)
     (-get-payouts stripe account-id)
     (throw (ex-info "Cannot fetch balance for nil account" {}))))
+
+(defn get-coupon [stripe coupon-code]
+  (-get-coupon stripe coupon-code))
 
 (defn create-charge [stripe params]
   (debug "Create charge: " params)
@@ -224,6 +229,14 @@
               {:keys [error]} (json/read-str body :key-fn keyword)]
           (debug "Error uploading file: " file " error: " (:message error))
           (throw (ex-info (:message error) error))))))
+
+  (-get-coupon [this coupon-code]
+    (try+
+      (let [coupon (-get this ["coupons" coupon-code] nil)]
+        (debug "Coupon " coupon)
+        coupon)
+      (catch [:status 404] r
+        (throw (ex-info "No such coupon" {:message "Coupon not found"})))))
 
   (-get-balance [this account-id secret]
     (let [balance (-get this ["balance"] {:connected-account account-id})]

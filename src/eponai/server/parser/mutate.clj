@@ -148,7 +148,7 @@
   {:auth ::auth/any-user
    :log  [:user/name]
    :resp {:success "Your info was successfully updated."
-          :error (:message (ex-data exception) "Sorry, your info could not be updated. Try again later.")}}
+          :error   (:message (ex-data exception) "Sorry, your info could not be updated. Try again later.")}}
   {:action (fn []
              (user/update-profile env profile))})
 
@@ -674,3 +674,14 @@
              (debug "FIREBASE ROKEN FOR AUTH: " auth)
              (firebase/-register-device-token (:system/firebase system) (:user-id auth) token)
              nil)})
+
+
+(defmutation checkout/apply-coupon
+  [{:keys [system auth state ::parser/exception ::parser/return] :as env} _ {:keys [code]}]
+  {:auth ::auth/any-user
+   :log  [:code code]
+   :resp {:success return
+          :error   (or (ex-data exception)
+                       {:message "Couldn't apply coupon"})}}
+  {:action (fn []
+             (stripe/get-coupon (:system/stripe system) code))})
