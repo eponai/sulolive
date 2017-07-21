@@ -212,17 +212,8 @@
             "npm-deps"               ["do"
                                       ["shell" "npm" "install"]
                                       ["shell" "bower" "install"]]
-            "pod-deps"               ["shell" "pod" "install" "--project-directory=./ios"]
             "css"                    ["shell" "./scripts/compile-css.sh"]
             "css-watch"              ["shell" "./scripts/compile-css.sh" "watch"]
-            "prod-build-ios-local"   ^{:doc "Recompile mobile code with production profile.
-                                           The build runs against a local/laptop server."}
-                                     ["do"
-                                      ["with-profile" "mob-prod" "cljsbuild" "once" "ios-local"]]
-            "prod-build-ios-release" ^{:doc "Recompile mobile code with production profile.
-                                           The build runs against production servers."}
-                                     ["do"
-                                      ["with-profile" "mob-prod" "cljsbuild" "once" "ios-release"]]
             "prod-build-web"         ^{:doc "Recompile web code with release build."}
                                      ["do"
                                       ["with-profile" "web-prod" "cljsbuild" "once" "release"]]
@@ -234,9 +225,6 @@
             "simple-build-web-auto"  ^{:doc "Recompile web code with release build."}
                                      ["do"
                                       ["with-profile" "+web" "cljsbuild" "auto" "simple"]]
-            "dev-build-ios"          ^{:doc "Compile mobile code in development mode."}
-                                     ["do"
-                                      ["with-profile" "+mobile" "cljsbuild" "once" "ios"]]
             "dev-build-web"          ^{:doc "Compile web code in development mode."}
                                      ["do"
                                       ["with-profile" "+web" "cljsbuild" "once" "dev"]]
@@ -248,16 +236,6 @@
                                       ["with-profile" "+web" "cljsbuild" "once" "doo-test"]
                                       ;;["with-profile" "+web" "doo" "phantom" "doo-test" "once"]
                                       ]
-            "figwheel-ios"           ^{:doc "Start figwheel for ios"}
-                                     ["do"
-                                      ;; Exporting an environment variable for figwheel port
-                                      ;; as it's only configurable globally (per project.clj file).
-                                      ;; This port should differ from the one running figwheel-web,
-                                      ;; because they need to be running lein with different profiles
-                                      ;; and different dependencies.
-                                      ["shell" "bash" "-c"
-                                       "export FIGWHEEL_PORT=3450; lein with-profile +mobile figwheel ios"]
-                                      ["with-profile" "+mobile" "figwheel" "ios"]]
             "figwheel-web"           ^{:doc "Start figwheel for web"}
                                      ["do"
                                       ["with-profile" "+web" "figwheel" "dev"]
@@ -316,51 +294,6 @@
                         :aot            :all
                         :resource-paths ^:replace ["resources"]
                         :prep-tasks     ["compile" "prod-build-web" "css"]}
-
-             :mobile   {:dependencies [[org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"
-                                        :exclusions [cljsjs/react cljsjs/react-dom]]
-                                       ]
-                        :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
-                        :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
-                        :cljsbuild    {:builds [{:id           "ios"
-                                                 :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
-                                                 :figwheel     true
-                                                 :compiler     {:output-to     "target/ios/not-used.js"
-                                                                :main          "env.ios.main"
-                                                                :output-dir    "target/ios"
-                                                                :optimizations :none}}
-                                                {:id           "android"
-                                                 :source-paths ["src" "src-hacks/react-native" "env/client/dev"]
-                                                 :figwheel     true
-                                                 :compiler     {:output-to     "target/android/not-used.js"
-                                                                :main          "env.android.main"
-                                                                :output-dir    "target/android"
-                                                                :optimizations :none}}]}}
-
-             :mob-prod {:dependencies
-                                   [[org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"
-                                     :exclusions [cljsjs/react cljsjs/react-dom]]]
-                        ;; [[org.omcljs/om "1.0.0-alpha46"
-                        ;;   :exclusions [cljsjs/react cljsjs/react-dom]]]
-                        :cljsbuild {:builds [{:id           "ios-release"
-                                              :source-paths ["src" "src-hacks/react-native" "env/client/prod"]
-                                              :compiler     {:output-to     "index.ios.js"
-                                                             :main          "env.ios.main"
-                                                             :output-dir    "target/ios"
-                                                             :optimizations :simple}}
-                                             {:id           "ios-local"
-                                              ;; A production build, run against a local/laptop server.
-                                              :source-paths ["src" "src-hacks/react-native" "env/client/prod"]
-                                              :compiler     {:output-to     "index.ios.js"
-                                                             :main          "env.ios.local-main"
-                                                             :output-dir    "target/ios-local"
-                                                             :optimizations :simple}}
-                                             {:id           "android"
-                                              :source-paths ["src" "src-hacks/react-native" "env/client/prod"]
-                                              :compiler     {:output-to     "index.android.js"
-                                                             :main          "env.android.main"
-                                                             :output-dir    "target/android"
-                                                             :optimizations :simple}}]}}
 
              :web-prod {:dependencies [[amazonica "0.3.85"
                                         :exclusions [com.taoensso/encore

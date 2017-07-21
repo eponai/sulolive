@@ -2,12 +2,7 @@
   "name": "SuloLiveApp",
   "version": "0.0.1",
   "private": true,
-  "scripts": {
-    "start": "node_modules/react-native/packager/packager.sh --nonPersistent"
-  },
   "dependencies": {
-    "react": "^16.0.0-alpha.6",
-    "react-native": "^0.43.1"
   },
   "devDependencies": {
     "source-map-support": "0.3.2",
