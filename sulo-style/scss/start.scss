@@ -221,5 +221,35 @@ $section-footer-color: $primary-color;
 				}
 			}
 		}
+
+		&.featured {
+			padding-bottom: $global-padding;
+			// background: $dashboard-background;
+			.live-container {
+				// padding-bottom: 2rem;
+			}
+			.column {
+				h2 {
+					color: $sulo-dark-color;
+				}
+				position: relative;
+				.photo-container {
+					// position: absolute;
+					// bottom: 0;
+					// right: $global-padding;
+					// border: none;
+					max-width: 4rem;
+					min-width: 4rem;
+				}
+				.photo {
+					padding-top: 100%;
+				}
+			}
+			.button {
+				margin-top: 0.5rem;
+			}
+		}
+
 	}
+
 }

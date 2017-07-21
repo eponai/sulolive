@@ -12,7 +12,8 @@
     [eponai.common.ui.router :as router]
     [eponai.common.ui.product :as product]
     [eponai.common.format.date :as date]
-    [eponai.web.ui.button :as button]))
+    [eponai.web.ui.button :as button]
+    [eponai.common.ui.stream :as stream]))
 
 ;(defn banner [{:keys [color align] :as opts} primary secondary]
 ;  (let [align (or align :left)
@@ -53,6 +54,7 @@
      {:query/featured-art (om/get-query ci/ProductItem)}
      {:query/featured-stores (om/get-query ci/StoreItem)}
      {:query/featured-streams (om/get-query ci/OnlineChannel)}
+     {:query/top-streams (om/get-query ci/OnlineChannel)}
      {:query/auth [:db/id :user/email]}
      {:query/owned-store [:db/id
                           {:store/locality [:sulo-locality/path]}
@@ -64,7 +66,7 @@
   Object
   (render [this]
     (let [{:proxy/keys [navbar footer]
-           :query/keys [locations featured-items featured-streams featured-stores current-route online-stores featured-women featured-home featured-men featured-art]} (om/props this)
+           :query/keys [locations top-streams featured-streams featured-stores current-route online-stores featured-women featured-home featured-men featured-art]} (om/props this)
           {:keys [route-params]} current-route
           streaming-stores (set (map #(get-in % [:stream/store :db/id]) featured-streams))
           online-not-live (remove #(contains? streaming-stores (:db/id %)) online-stores)
@@ -84,7 +86,9 @@
                                          online-not-live)))
           online-items (if (<= 8 (count online-items))
                          (take 8 online-items)
-                         (take 4 online-items))]
+                         (take 4 online-items))
+
+          featured-live (first (sort-by #(get-in % [:stream/store :store/visitor-count]) top-streams))]
       (debug "Featured women products: " featured-women)
 
 
@@ -96,6 +100,35 @@
 
                  (dom/div
                    (css/add-class :sections)
+
+                   (when featured-live
+                     (common/content-section
+                       {:href  (routes/store-url (:stream/store featured-live) :store)
+                        :class "featured"}
+                       "Live right now"
+                       (dom/div
+                         nil
+                         (grid/row
+                           (css/align :center)
+                           (grid/column
+                             (grid/column-size {:small 6 :medium 4})
+                             (photo/store-photo (:stream/store featured-live) nil))
+                           (grid/column
+                             (->> (grid/column-size {:small 6 :medium 4})
+                                  (css/text-align :right))
+                             (button/store-navigation-default {:href (routes/store-url (:stream/store featured-live) :store)} (dom/span nil "Visit store"))))
+                         (grid/row
+                           (->> (css/align :center)
+                                (css/text-align :center))
+                           (grid/column
+                             (grid/column-size {:small 12 :medium 8})
+                             (dom/div
+                               (css/add-class :live-container)
+                               (stream/->Stream (om/computed {:stream featured-live}
+                                                             {:store (:stream/store featured-live)}))))))
+                       "")
+
+                     )
 
                    (dom/div
                      (->> (css/add-classes [:collections :section])
