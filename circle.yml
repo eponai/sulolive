@@ -1,62 +1,209 @@
-machine:
-  node:
-    version: 6.9.5
-  java:
-    version: openjdk8
-  services:
-    - docker
+defaults: &defaults
+  working_directory: ~/sulo
+  docker:
+    - image: circleci/clojure:lein-2.7.1
   environment:
-    _JAVA_OPTIONS: "-Xms1g -Xmx3g"
-    CLJ_TEST_REPORT_FILE: $CIRCLE_TEST_REPORTS/lein-test/budget-clj-tests.xml
+    JVM_OPTS: -Xmx3200m
+    LEIN_FAST_TRAMPOLINE: yes
     CLJS_BUILD_ID: release
     AWS_DEFAULT_REGION: us-east-1
-    DOCKER_IMAGE: sulolive/sulo:$CIRCLE_SHA1
-    TIMBRE_LEVEL: :info
-    PORT: 8080
 
-dependencies:
-  cache_directories:
-    - "~/.cache/pip"
-    - node_modules
-    - bower_components
-    - sulo-style/node_modules
-    - sulo-style/bower_components
-    - /opt/circleci/nodejs/v6.9.5/bin
-    - /opt/circleci/nodejs/v6.9.5/lib
-    - /opt/circleci/nodejs/v6.9.5/lib/node_modules
-  pre:
-    - pip install -r requirements.txt
-    - npm install -g npm
-    - npm install -g bower
-    - npm install -g foundation-cli
-  override:
-    - lein all-deps
-    - lein with-profile web deps
-    - lein with-profile mobile deps
-    - lein with-profile tester deps
 
-test:
-  override:
-    - ./scripts/run-cljs-tests.sh
-    - lein test
-  post:
-    - lein clean
-    - lein uberjar
-    - docker build -t $DOCKER_IMAGE .
-    - docker run -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT $DOCKER_IMAGE; sleep 15
-    - docker ps -l
-    - docker ps -l -q | xargs docker logs
-    - ./scripts/run-docker-img-test.sh localhost $PORT
-    - docker ps -l -q | xargs docker logs
-    
-deployment:
-  staging:
-    branch: master
-    heroku:
-      appname: sulo-master
-  elasticbeanstalk:
-    branch: production
-    commands:
-      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
-      - ./scripts/deploy.sh "$CIRCLE_SHA1" "$DOCKER_IMAGE"
 
+version: 2
+jobs:
+  deps:
+    <<: *defaults
+    steps:
+     - checkout
+     - restore_cache:
+          key: cci-demo-clojure-{{ checksum "project.clj" }}
+      - run: |
+          lein deps
+          lein npm-deps
+          lein with-profile web deps
+          lein with-profile mobile deps
+          lein with-profile tester deps
+      - save_cache:
+          paths:
+            - ~/.m2
+            - ~/.lein
+            - ~/sulo/node_modules
+          key: cci-demo-clojure-{{ checksum "project.clj" }}
+
+  test_clj:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          key: cci-demo-clojure-{{ checksum "project.clj" }}
+      - run: lein test
+
+  test_cljs:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          key: cci-demo-clojure-{{ checksum "project.clj" }}
+      - run: ./scripts/run-cljs-tests.sh
+
+  build_clj:
+    <<: *default
+    steps:
+      - checkout
+      - restore_cache:
+          key: cci-demo-clojure-{{ checksum "project.clj" }}
+      - attach_workspace:
+          at: ~/sulo
+      - run: lein do css, uberjar
+      - run: mv target/uberjar/budget-*-standalone.jar budget-uberjar.jar
+      - persist_to_workspace:
+          root: .
+          paths: target/uberjar/budget-uberjar.jar
+
+  build_cljs:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          key: cci-demo-clojure-{{ checksum "project.clj" }}
+      - attach_workspace:
+          at: ~/sulo
+      - run: lein prod-build-web
+      - persist_to_workspace:
+          root: .
+          paths: resources/public/release/js/out/budget.js
+
+  create_final_jar:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/sulo
+      - run: jar uf target/uberjar/budget-uberjar.jar resources/public/release/js/out/budget.js
+      - persist_to_workspace:
+          root: .
+          paths: target/uberjar/budget-uberjar.jar
+
+  docker_build:
+    docker:
+      - image: docker:17.05.0-ce-git
+    environment:
+      TIMBRE_LEVEL: :info
+      PORT: 8080
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/sulo
+      - setup_remote_docker
+      - run: echo $CIRCLE_SHA1 > .circle-sha
+      - restore_cache:
+          keys:
+            - docker-{{ .circle-sha }}
+          paths:
+            - /caches/app.tar
+      - run:
+          name: Load Docker image layer cache
+          command: |
+            set +o pipefail
+            docker load -i /caches/app.tar | true
+      - run:
+          name: Build application Docker image
+          command: |
+            docker build --cache-from=app -t app .
+      - run:
+          name: Save Docker image layer cache
+          command: |
+            mkdir -p /caches
+            docker save -o /caches/app.tar app
+      - save_cache:
+          key: v1-{{ .circle-sha }}
+          paths:
+            - /caches/app.tar
+      - persist_to_workspace:
+          root: .
+          paths: /caches/app.tar
+
+  docker_test:
+    docker:
+      - image: docker:17.05.0-ce-git
+    environment:
+      TIMBRE_LEVEL: :info
+      PORT: 8080
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/sulo
+      - setup_remote_docker
+      - run:
+          name: Load Docker image layer cache
+          command: |
+            set +o pipefail
+            docker load -i /caches/app.tar | true
+      - run:
+          name: Build application Docker image
+          command: |
+            docker build --cache-from=app -t app .
+      - run: |
+          docker run -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT app; sleep 15
+          docker ps -l
+          docker ps -l -q | xargs docker logs
+          ./scripts/run-docker-img-test.sh localhost $PORT
+          docker ps -l -q | xargs docker logs
+
+  docker_push:
+    docker:
+      - image: docker:17.05.0-ce-git
+    environment:
+      DOCKER_IMAGE: sulolive/sulo:$CIRCLE_SHA1
+    steps:
+      - attach_workspace:
+          at: ~/sulo
+      - setup_remote_docker
+      - run:
+          name: Load Docker image layer cache
+          command: |
+            set +o pipefail
+            docker load -i /caches/app.tar | true
+      - run:
+          name: Build application Docker image
+          command: |
+            docker build --cache-from=app -t app .
+      - run: |
+          docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+          docker push $DOCKER_IMAGE
+
+
+
+workflows:
+  version: 2
+  doit:
+    jobs:
+      - deps
+      - test_clj:
+          requires:
+            - deps
+      - test_cljs:
+          requires:
+            - deps
+      - build_clj:
+          requires:
+            - deps
+      - build_cljs:
+          requires:
+            - deps
+      - create_final_jar:
+          requires:
+            - build_clj
+            - build_cljs
+      - docker_build:
+          requires:
+            - create_final_jar
+      - docker_test:
+          requires:
+            - docker_build
+      - docker_push:
+          requires:
+            - docker_test
+          filters:
+            branches:
+              only: master

@@ -292,8 +292,7 @@
              :uberjar  {:jvm-opts       ^:replace ["-Dclojure.compiler.direct-linking=true"
                                                    "-Xmx1g" "-server"]
                         :aot            :all
-                        :resource-paths ^:replace ["resources"]
-                        :prep-tasks     ["compile" "prod-build-web" "css"]}
+                        :resource-paths ^:replace ["resources"]}
 
              :web-prod {:dependencies [[amazonica "0.3.85"
                                         :exclusions [com.taoensso/encore

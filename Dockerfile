@@ -1,6 +1,6 @@
 FROM openjdk:8-jdk
 
-ADD target/uberjar/budget-0.1.0-SNAPSHOT-standalone.jar /srv/production.jar
+ADD target/uberjar/budget-uberjar.jar /srv/production.jar
 
 EXPOSE 8080
 
