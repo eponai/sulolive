@@ -105,7 +105,7 @@
                      (common/content-section
                        {:href  (routes/store-url (:stream/store featured-live) :store)
                         :class "featured"}
-                       "Live right now"
+                       (dom/a {:href (routes/store-url (:stream/store featured-live) :store)} (dom/span nil "Live right now"))
                        (dom/div
                          nil
                          (grid/row
@@ -182,7 +182,9 @@
                        {:href  (routes/url :browse/gender (merge route-params
                                                                  {:sub-category "women"}))
                         :class "products"}
-                       "Women"
+                       (dom/a {:href (routes/url :browse/gender (merge route-params
+                                                                       {:sub-category "women"}))}
+                              (dom/span nil "Women"))
                        (dom/div
                          nil
                          (grid/row
@@ -208,7 +210,9 @@
                        {:href  (routes/url :browse/gender (merge route-params
                                                                  {:sub-category "men"}))
                         :class "products"}
-                       "Men"
+                       (dom/a {:href (routes/url :browse/gender (merge route-params
+                                                                       {:sub-category "men"}))}
+                              (dom/span nil "Men"))
                        (dom/div
                          nil
                          (grid/row
@@ -235,7 +239,9 @@
                        {:href  (routes/url :browse/category (merge route-params
                                                                    {:top-category "home"}))
                         :class "products"}
-                       "Home"
+                       (dom/a {:href (routes/url :browse/category (merge route-params
+                                                                         {:top-category "home"}))}
+                              (dom/span nil "Home"))
                        (dom/div
                          nil
                          (grid/row
@@ -261,7 +267,8 @@
                        {:href  (routes/url :browse/category (merge route-params
                                                                    {:top-category "art"}))
                         :class "products"}
-                       "Art"
+                       (dom/a {:href (routes/url :browse/category (merge route-params
+                                                                         {:top-category "art"}))} "Art")
                        (dom/div
                          nil
                          (grid/row
@@ -289,7 +296,9 @@
                    (cond (not-empty featured-streams)
                          (common/content-section {:href  (routes/url :live route-params)
                                                   :class "online-channels"}
-                                                 "Online right now"
+                                                 (dom/a {:href (routes/url :live route-params)}
+                                                        (dom/span nil "Online right now"))
+
                                                  (grid/row
                                                    (->>
                                                      (grid/columns-in-row {:small 2 :medium 4}))
@@ -300,7 +309,9 @@
                          (not-empty online-right-now)
                          (common/content-section {:href  (routes/url :live route-params)
                                                   :class "online-channels"}
-                                                 "Online right now"
+                                                 (dom/a {:href (routes/url :live route-params)}
+                                                        (dom/span nil "Online right now"))
+
                                                  (grid/row
                                                    (->>
                                                      (grid/columns-in-row {:small 2 :medium 4}))
@@ -317,7 +328,7 @@
                    (common/content-section
                      {:href  (routes/url :stores route-params)
                       :class "new-brands"}
-                     "New stores"
+                     (dom/a {:href (routes/url :stores route-params)} (dom/span nil "New stores"))
                      ;(grid/row-column
                      ;  (css/text-align :center))
                      ;(dom/div

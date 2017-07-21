@@ -82,6 +82,12 @@ $section-footer-color: $primary-color;
 			h2, h3 {
 				margin: 0;
 				color: darken($sulo-dark-color, 10%);
+				a {
+					color: darken($sulo-dark-color, 10%);
+					&:hover {
+						text-decoration: underline;
+					}
+				}
 			}
 		}
 		// border-top: $global-border-secondary;
@@ -89,8 +95,11 @@ $section-footer-color: $primary-color;
 			.section-title {
 				background: rgba($success-color, 0.25);
 				// background: transparent;
-				h2 {
+				h2, a {
 					color: darken($success-color, 10%);
+					&:hover {
+						text-decoration: underline;
+					}
 				}
 			}
 			.row:last-child {
@@ -210,11 +219,13 @@ $section-footer-color: $primary-color;
 				padding-bottom: 2rem;
 			}
 			.column {
-				padding: 0 0.5rem;
+				padding: 0.5rem;
+				padding-top: 0;
 				&:nth-child(4+n) {
 					display: none;
 				}
 				.content-item {
+					// padding-bottom: $global-
 					.text:last-child {
 						display: none;
 					}
