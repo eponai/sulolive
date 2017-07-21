@@ -32,8 +32,34 @@
 		margin-top: 0;
 		&.sell-on-sulo {
 			margin-bottom: 0;
+			.photo-container {
+				background: transparent;
+				max-width: 6rem;
+				width: 6rem;
+				margin: 0 auto;
+				img {
+					object-fit: contain;
+					&.small {
+						opacity: 0;
+					}
+				}
+			}
+			p {
+				max-width: 40rem;
+				margin: 0 auto;
+				letter-spacing: 1px; 
+				font-weight: $global-weight-bold;
+				color: $primary-color;
+			}
+			.section-title {
+				background: none;
+			}
+			// background: rgba($sulo-color, 0.5);
+			background: $dashboard-background;
+			padding: $global-padding;
 		}
 	}
+
 }
 #sulo-landing-page {
 	$sulo-color: rgba(map-get($foundation-palette, sulo), 0.8);
@@ -211,30 +237,7 @@
 		// margin-bottom: 1rem;
 	}
 
-	.featured {
-		padding: $global-padding 0;
-		background: $dashboard-background;
-		.column {
-			h2 {
-				color: $sulo-dark-color;
-			}
-			position: relative;
-			.photo-container {
-				position: absolute;
-				bottom: 0;
-				right: $global-padding;
-				border: none;
-				max-width: 4rem;
-				min-width: 4rem;
-			}
-			.photo {
-				padding-top: 100%;
-			}
-		}
-		.button {
-			margin-top: 0.5rem;
-		}
-	}
+	
 
 	#sulo-video-container {
 
