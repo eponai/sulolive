@@ -16,10 +16,9 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: cci-demo-clojure-{{ checksum "project.clj" }}
+          key: clojure-deps-{{ checksum "project.clj" }}
       - run: |
           lein deps
-          lein npm-deps
           lein with-profile web deps
           lein with-profile mobile deps
           lein with-profile tester deps
@@ -27,15 +26,26 @@ jobs:
           paths:
             - ~/.m2
             - ~/.lein
-            - ~/sulo/node_modules
-          key: cci-demo-clojure-{{ checksum "project.clj" }}
+          key: clojure-deps-{{ checksum "project.clj" }}
+      - run:
+          name: update-npm
+          command: 'sudo npm install -g npm@latest'
+      - restore_cache:
+          key: npm-deps-{{ checksum "package.json" }}
+      - run:
+          name: install-npm
+          command: npm install
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - ./node_modules
 
   test_clj:
     <<: *defaults
     steps:
       - checkout
       - restore_cache:
-          key: cci-demo-clojure-{{ checksum "project.clj" }}
+          key: clojure-deps-{{ checksum "project.clj" }}
       - run: lein test
 
   test_cljs:
@@ -43,7 +53,9 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: cci-demo-clojure-{{ checksum "project.clj" }}
+          key: clojure-deps-{{ checksum "project.clj" }}
+      - restore_cache:
+          key: npm-deps-{{ checksum "package.json" }}
       - run: ./scripts/run-cljs-tests.sh
 
   build_clj:
@@ -51,7 +63,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: cci-demo-clojure-{{ checksum "project.clj" }}
+          key: clojure-deps-{{ checksum "project.clj" }}
       - attach_workspace:
           at: ~/sulo
       - run: lein do css, uberjar
@@ -65,7 +77,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: cci-demo-clojure-{{ checksum "project.clj" }}
+          key: clojure-deps-{{ checksum "project.clj" }}
       - attach_workspace:
           at: ~/sulo
       - run: lein prod-build-web
