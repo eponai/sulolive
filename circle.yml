@@ -27,6 +27,7 @@ jobs:
           key: clojure-deps-{{ checksum "project.clj" }}
 
   npm_deps:
+    working_directory: ~/sulo
     docker:
       - image: circleci/node:4.8.2
     steps:
@@ -99,6 +100,7 @@ jobs:
           paths: target/uberjar/budget-uberjar.jar
 
   docker_build:
+    working_directory: ~/sulo
     docker:
       - image: docker:17.05.0-ce-git
     environment:
@@ -138,6 +140,7 @@ jobs:
           paths: /caches/app.tar
 
   docker_test:
+    working_directory: ~/sulo
     docker:
       - image: docker:17.05.0-ce-git
     environment:
@@ -165,6 +168,7 @@ jobs:
           docker ps -l -q | xargs docker logs
 
   docker_push:
+    working_directory: ~/sulo
     docker:
       - image: docker:17.05.0-ce-git
     environment:
