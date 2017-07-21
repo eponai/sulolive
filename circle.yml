@@ -2,7 +2,6 @@ defaults: &defaults
   working_directory: ~/sulo
   docker:
     - image: circleci/clojure:lein-2.7.1
-    - image: circleci/node:6.11.1
   environment:
     JVM_OPTS: -Xmx3200m
     LEIN_FAST_TRAMPOLINE: yes
@@ -11,7 +10,7 @@ defaults: &defaults
 
 version: 2
 jobs:
-  deps:
+  clojure_deps:
     <<: *defaults
     steps:
       - checkout
@@ -20,13 +19,17 @@ jobs:
       - run: |
           lein deps
           lein with-profile web deps
-          lein with-profile mobile deps
           lein with-profile tester deps
       - save_cache:
           paths:
             - ~/.m2
             - ~/.lein
           key: clojure-deps-{{ checksum "project.clj" }}
+
+  npm_deps:
+    docker:
+      - image: circleci/node:4.8.2
+    steps:
       - run:
           name: update-npm
           command: 'sudo npm install -g npm@latest'
@@ -189,19 +192,21 @@ workflows:
   version: 2
   doit:
     jobs:
-      - deps
+      - clojure_deps
+      - npm_deps
       - test_clj:
           requires:
-            - deps
+            - clojure_deps
       - test_cljs:
           requires:
-            - deps
+            - npm_deps
+            - clojure_deps
       - build_clj:
           requires:
-            - deps
+            - clojure_deps
       - build_cljs:
           requires:
-            - deps
+            - clojure_deps
       - create_final_jar:
           requires:
             - build_clj
