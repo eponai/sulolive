@@ -116,7 +116,7 @@
               (let [loc-vancouver (medley/find-first #(= "yvr" (:sulo-locality/path %)) sulo-localities)]
                 (button/button {:onClick #(.select-locality this loc-vancouver)
                                 :classes [:sulo-dark :large]}
-                               (dom/span nil (str "Shop in " (:sulo-locality/title loc-vancouver))))))))
+                               (dom/span nil (str "Shop from " (:sulo-locality/title loc-vancouver))))))))
         ;(when featured-live
         ;  (dom/div
         ;    (css/add-class :featured)

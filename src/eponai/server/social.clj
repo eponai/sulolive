@@ -80,9 +80,9 @@
                     }}))))
 
 (defn- default [{:keys [state system]}]
-  (let [title "Your local marketplace online - SULO Live"
-        description " Global change starts local. Shop and hangout LIVE with your favourite local brands and people from your city!"
-        image (photos/transform "static/landing-social" :transformation/preview)
+  (let [title "Shop local live - SULO Live"
+        description "Global change starts local. Shop and hangout LIVE with your favourite local brands and people from your city!"
+        image (photos/transform "static/products-social" :transformation/preview)
         server-host (host/webserver-url (:system/server-address system))]
     {:facebook {:fb:app_id      "936364773079066"
                 :og:title       (str title " - SULO Live")
