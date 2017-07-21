@@ -49,7 +49,8 @@
                             ;; don't clean these, because figwheel will remove them.
                             ;; "index.ios.js" "index.android.js" 
                             #_($PLATFORM_CLEAN$)]
-            :aliases {"prod-build" ^{:doc "Recompile code with prod profile."}
+            :aliases {"pod-deps"   ["shell" "pod" "install" "--project-directory=./ios"]
+                      "prod-build" ^{:doc "Recompile code with prod profile."}
                                    ["do"
                                     "clean"
                                     ["shell" "bash" "-c" "cd .. && lein install"]
@@ -95,6 +96,18 @@
                                                        :source-paths ["src" "env/prod"]
                                                        :compiler     {:output-to          "index.ios.js"
                                                                       :main               "env.ios.main"
+                                                                      :output-dir         "target/ios"
+                                                                      :static-fns         true
+                                                                      :optimize-constants true
+                                                                      :optimizations      :advanced
+                                                                      :parallel-build     true
+                                                                      :verbose            true
+                                                                      :language-in        :ecmascript5
+                                                                      :closure-defines    {"goog.DEBUG" false}}}
+                                                      {:id           "ios-local"
+                                                       :source-paths ["src" "env/prod"]
+                                                       :compiler     {:output-to          "index.ios.js"
+                                                                      :main               "env.ios.local-main"
                                                                       :output-dir         "target/ios"
                                                                       :static-fns         true
                                                                       :optimize-constants true
