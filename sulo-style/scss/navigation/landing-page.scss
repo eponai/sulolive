@@ -79,11 +79,11 @@
 
 	.cover {
 		text-align: center;
-		color: darken($sulo-dark-color, 10%);
+		color: $white;
 		height: 100vh;
 		.overlay {
 			// $background: map-get($foundation-palette, primary);
-			background: rgba($white, 0.5);//rgba($sulo-color, 0.25);
+			background: rgba($black, 0.5);//rgba($sulo-color, 0.25);
 			display: flex;
 			justify-content: stretch;
 			.content {
@@ -93,7 +93,7 @@
 				// align-items: center;
 				// .banner {
 					// flex: 1;
-					background: rgba($sulo-color, 0.5);
+					// background: rgba($sulo-color, 0.5);
 				// }
 			}
 			img {
@@ -102,8 +102,8 @@
 		}
 
 		h1 {
-			color: $primary-color;
-			text-shadow: 1px 1px 0 rgba($white, 0.2);
+			// color: $white;
+			text-shadow: 1px 1px 0 rgba($black, 0.2);
 		}
 		p {
 			// text-shadow: 1px 1px 0 rgba($black, 0.1);
