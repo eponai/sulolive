@@ -1,15 +1,22 @@
 {
   "name": "SuloLiveApp",
   "interface": "om-next",
-  "androidHost": "localhost",
-  "iosHost": "localhost",
-  "modules": [
-  ],
+  "modules": [],
   "imageDirs": [
     "images"
   ],
   "envRoots": {
     "dev": "env/client/dev",
     "prod": "env/client/prod"
+  },
+  "platforms": {
+    "ios": {
+      "host": "localhost",
+      "modules": []
+    },
+    "android": {
+      "host": "localhost",
+      "modules": []
+    }
   }
 }
