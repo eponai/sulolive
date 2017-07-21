@@ -2,13 +2,12 @@ defaults: &defaults
   working_directory: ~/sulo
   docker:
     - image: circleci/clojure:lein-2.7.1
+    - image: circleci/node:6.11.1
   environment:
     JVM_OPTS: -Xmx3200m
     LEIN_FAST_TRAMPOLINE: yes
     CLJS_BUILD_ID: release
     AWS_DEFAULT_REGION: us-east-1
-
-
 
 version: 2
 jobs:
