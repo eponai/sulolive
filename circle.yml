@@ -158,7 +158,7 @@ jobs:
       - run: echo $CIRCLE_SHA1 > .circle-sha
       - restore_cache:
           keys:
-            - docker-build-{{ checksum .circle-sha }}
+            - docker-build-{{ checksum ".circle-sha" }}
           paths:
             - ./caches/app.tar
       - run:
@@ -176,7 +176,7 @@ jobs:
             mkdir -p /caches
             docker save -o ./caches/app.tar app
       - save_cache:
-          key: docker-build-{{ checksum .circle-sha }}
+          key: docker-build-{{ checksum ".circle-sha" }}
           paths:
             - ./caches/app.tar
       - persist_to_workspace:
