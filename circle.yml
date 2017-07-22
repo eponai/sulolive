@@ -130,19 +130,6 @@ jobs:
           root: .
           paths: resources/public/release/js/out/budget.js
 
-  create_final_jar:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: ~/sulo
-      - run: jar uf target/uberjar/budget-uberjar.jar resources/public/release/js/out/budget.js resources/public/assets/css
-      - persist_to_workspace:
-          root: .
-          paths: target/uberjar/budget-uberjar.jar
-      - store_artifacts:
-          path: target/uberjar/budget-uberjar.jar
-          destination: uberjar
-
   docker_build:
     working_directory: ~/sulo
     docker:
@@ -154,6 +141,9 @@ jobs:
       - checkout
       - attach_workspace:
           at: ~/sulo
+      - run:
+          name: Adding javascript and css to jar
+          command: jar uf target/uberjar/budget-uberjar.jar resources/public/release/js/out/budget.js resources/public/assets/css
       - setup_remote_docker
       - run: echo $CIRCLE_SHA1 > .circle-sha
       - restore_cache:
@@ -171,13 +161,12 @@ jobs:
           command: |
             docker build --cache-from=app -t app .
       - run:
-          name: "Test docker image"
-          command: |
-            docker run -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT app; sleep 15
-            docker ps -l
-            docker ps -l -q | xargs docker logs
-            ./scripts/run-docker-img-test.sh localhost $PORT
-            docker ps -l -q | xargs docker logs
+          name: Start docker image
+          command: docker run -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT app; sleep 15
+      - run: docker ps -l
+      - run: docker ps -l -q | xargs docker logs
+      - run: ./scripts/run-docker-img-test.sh localhost $PORT
+      - run: docker ps -l -q | xargs docker logs
       - run:
           name: Save Docker image layer cache
           command: |
@@ -238,14 +227,11 @@ workflows:
       - build_cljs:
           requires:
             - clojure_deps
-      - create_final_jar:
+      - docker_build:
           requires:
             - build_clj
             - build_cljs
             - build_css
-      - docker_build:
-          requires:
-            - create_final_jar
       - docker_push:
           requires:
             - docker_build
