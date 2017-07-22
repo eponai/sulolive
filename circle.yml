@@ -30,8 +30,9 @@ jobs:
       - image: circleci/node:latest
     steps:
       - checkout
+      - run: cp package.json package.bak
       - restore_cache:
-          key: node6-deps-{{ checksum "package-lock.json" }}
+          key: node6-deps-{{ checksum "package.bak" }}
       - run:
           name: update-npm
           command: |
@@ -41,12 +42,13 @@ jobs:
           name: install-npm
           command: npm install
       - save_cache:
-          key: node6-deps-{{ checksum "package-lock.json" }}
+          key: node6-deps-{{ checksum "package.bak" }}
           paths:
             - ./node_modules
 
+      - run: cp sulo-style/package.json sulo-style/package.bak
       - restore_cache:
-          key: foundation6-deps-{{ checksum "sulo-style/package-lock.json" }}-{{ checksum "sulo-style/bower.json" }}
+          key: foundation6-deps-{{ checksum "sulo-style/package.bak" }}-{{ checksum "sulo-style/bower.json" }}
       - run:
           name: install-foundation-deps
           command: |
@@ -54,7 +56,7 @@ jobs:
             npm install
             ../node_modules/bower/bin/bower install
       - save_cache:
-          key: foundation6-deps-{{ checksum "sulo-style/package-lock.json" }}-{{ checksum "sulo-style/bower.json" }}
+          key: foundation6-deps-{{ checksum "sulo-style/package.bak" }}-{{ checksum "sulo-style/bower.json" }}
           paths:
             - ./sulo-style/node_modules
             - ./sulo-style/bower_components
@@ -74,7 +76,7 @@ jobs:
       - restore_cache:
           key: clojure-deps-{{ checksum "project.clj" }}
       - restore_cache:
-          key: node6-deps-{{ checksum "package-lock.json" }}
+          key: node6-deps-{{ checksum "package.json" }}
       - run: ./scripts/run-cljs-tests.sh
 
   build_css:
@@ -84,9 +86,9 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: node6-deps-{{ checksum "package-lock.json" }}
+          key: node6-deps-{{ checksum "package.json" }}
       - restore_cache:
-          key: foundation6-deps-{{ checksum "sulo-style/package-lock.json" }}-{{ checksum "sulo-style/bower.json" }}
+          key: foundation6-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
       - attach_workspace:
           at: ~/sulo
       - run: |
