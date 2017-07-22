@@ -133,7 +133,8 @@ jobs:
   docker_build:
     working_directory: ~/sulo
     docker:
-      - image: docker:17.05.0-ce-git
+    # Image openjdk:8-jdk for the jar command
+      - image: openjdk:8-jdk
     environment:
       TIMBRE_LEVEL: :info
       PORT: 8080
