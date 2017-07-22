@@ -1,11 +1,11 @@
-#!/bin/bash -u
+#!/bin/bash -ux
 
 HOST=$1
 PORT=$2
 ENDPOINT=/enter
 
 echo "Test with forwarding (which in production is done by load balancer)"
-wget -O- --header "x-forwarded-proto: https" --max-redirect 0 --retry-connrefused -t 30 http://$HOST:$PORT$ENDPOINT
+docker run --network container:contacts appropriate/wget -O- --header 'x-forwarded-proto: https' --max-redirect 0 --retry-connrefused -t 30 http://$HOST:$PORT$ENDPOINT
 
 exit_code=$?
 if [ "$exit_code" = "0" ]; then
@@ -16,7 +16,7 @@ else
 fi
 
 echo "Test with redirect"
-wget -O- --max-redirect 0 --retry-connrefused -t 10 http://$HOST:$PORT$ENDPOINT
+docker run --network container:contacts appropriate/wget -O- --max-redirect 0 --retry-connrefused -t 10 http://$HOST:$PORT$ENDPOINT
 exit_code=$?
 
 if [ "$exit_code" = "8" ]; then
