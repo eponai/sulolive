@@ -1,29 +1,9 @@
-#!/bin/bash -ux
+#!/bin/bash -eux
 
 HOST=$1
 PORT=$2
-ENDPOINT=/enter
+ENDPOINT=/
 
 echo "Test with forwarding (which in production is done by load balancer)"
-docker run --network container:contacts appropriate/wget -O- --header 'x-forwarded-proto: https' --max-redirect 0 --retry-connrefused -t 30 http://$HOST:$PORT$ENDPOINT
-
-exit_code=$?
-if [ "$exit_code" = "0" ]; then
-  echo "PASS: We were not redirected"
-else
-  echo "FAIL: Not exit code 0. Was: $exit_code"
-  exit $exit_code
-fi
-
-echo "Test with redirect"
-docker run --network container:contacts appropriate/wget -O- --max-redirect 0 --retry-connrefused -t 10 http://$HOST:$PORT$ENDPOINT
-exit_code=$?
-
-if [ "$exit_code" = "8" ]; then
-  echo "PASS: We got redirected and it's fine!"
-  exit 0
-else
-  echo "FAIL: Exit code other than 8, it's not fine. Was: $exit_code"
-  exit $exit_code
-fi
+docker run --network container:contacts appropriate/curl -H 'x-forwarded-proto: https' --retry 30 --retry-delay 1 --retry-connrefused http://$HOST:$PORT$ENDPOINT
 
