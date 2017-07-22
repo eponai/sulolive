@@ -33,14 +33,14 @@ jobs:
       - run:
           name: update-npm
           command: 'sudo npm install -g npm@latest'
-
+      - run: cp package.json backup-package.json
       - restore_cache:
-          key: node-deps-{{ checksum "package.json" }}
+          key: node-deps-{{ checksum "backup-package.json" }}
       - run:
           name: install-npm
           command: npm install
       - save_cache:
-          key: node-deps-{{ checksum "package.json" }}
+          key: node-deps-{{ checksum "backup-package.json" }}
           paths:
             - ./node_modules
 
