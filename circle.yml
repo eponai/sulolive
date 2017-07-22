@@ -239,22 +239,28 @@ workflows:
     jobs:
       - clojure_deps
       - npm_deps
+      - build_css:
+          requires:
+            - npm_deps
       - test_clj:
           requires:
+            - build_css
             - clojure_deps
       - test_cljs:
           requires:
+            - build_css
             - npm_deps
             - clojure_deps
       - build_clj:
           requires:
+            - test_clj
+            - test_cljs
             - clojure_deps
       - build_cljs:
           requires:
+            - test_clj
+            - test_cljs
             - clojure_deps
-      - build_css:
-          requires:
-            - npm_deps
       - create_final_jar:
           requires:
             - build_clj
