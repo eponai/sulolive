@@ -32,7 +32,9 @@ jobs:
       - checkout
       - run:
           name: update-npm
-          command: 'sudo npm install -g npm@5.0.3'
+          command: |
+              'sudo yarn add global npm'
+              npm --version
       - restore_cache:
           key: node6-deps-{{ checksum "package-lock.json" }}
       - run:
