@@ -35,15 +35,28 @@ jobs:
       - run:
           name: update-npm
           command: 'sudo npm install -g npm@latest'
+      - run:
+          name: install-foundation
+          command: 'sudo npm install -g foundation-cli'
+      - run:
+          name: install-bower
+          command: 'sudo npm install -g bower'
       - restore_cache:
           key: npm-deps-{{ checksum "package.json" }}
       - run:
           name: install-npm
           command: npm install
+      - run:
+          name: install-foundation-deps
+          command: |
+            cd sulo-style
+            npm install
+            bower install
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
             - ./node_modules
+            - ./sulo-style/node_modules
 
   test_clj:
     <<: *defaults
@@ -63,6 +76,22 @@ jobs:
           key: npm-deps-{{ checksum "package.json" }}
       - run: ./scripts/run-cljs-tests.sh
 
+  build_css:
+    working_directory: ~/sulo
+    docker:
+      - image: circleci/node:4.8.2
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/sulo
+      - run: |
+          cd sulo-style
+          foundation build
+      - persist_to_workspace:
+          root: .
+          paths: ./resources/public/assets/css
+
+
   build_clj:
     <<: *defaults
     steps:
@@ -71,7 +100,7 @@ jobs:
           key: clojure-deps-{{ checksum "project.clj" }}
       - attach_workspace:
           at: ~/sulo
-      - run: lein do css, uberjar
+      - run: lein uberjar
       - run: mv target/uberjar/budget-*-standalone.jar budget-uberjar.jar
       - persist_to_workspace:
           root: .
@@ -95,10 +124,13 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/sulo
-      - run: jar uf target/uberjar/budget-uberjar.jar resources/public/release/js/out/budget.js
+      - run: jar uf target/uberjar/budget-uberjar.jar resources/public/release/js/out/budget.js resources/public/assets/css
       - persist_to_workspace:
           root: .
           paths: target/uberjar/budget-uberjar.jar
+      - store_artifacts:
+          path: target/uberjar/budget-uberjar.jar
+          destination: uberjar
 
   docker_build:
     working_directory: ~/sulo
@@ -212,10 +244,14 @@ workflows:
       - build_cljs:
           requires:
             - clojure_deps
+      - build_css:
+          requires:
+            - npm_deps
       - create_final_jar:
           requires:
             - build_clj
             - build_cljs
+            - build_css
       - docker_build:
           requires:
             - create_final_jar
