@@ -44,8 +44,9 @@ jobs:
           paths:
             - ./node_modules
 
+      - run: cp sulo-style/package.json sulo-style/backup-package.json
       - restore_cache:
-          key: css-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
+          key: css-deps-{{ checksum "sulo-style/backup-package.json" }}-{{ checksum "sulo-style/bower.json" }}
       - run:
           name: install-foundation-deps
           command: |
@@ -53,7 +54,7 @@ jobs:
             npm install
             ../node_modules/bower/bin/bower install
       - save_cache:
-          key: css-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
+          key: css-deps-{{ checksum "sulo-style/backup-package.json" }}-{{ checksum "sulo-style/bower.json" }}
           paths:
             - ./sulo-style/node_modules
             - ./sulo-style/bower_components
