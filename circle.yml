@@ -27,12 +27,12 @@ jobs:
   npm_deps:
     working_directory: ~/sulo
     docker:
-      - image: circleci/node:8.1
+      - image: circleci/node:latest
     steps:
       - checkout
       - run:
           name: update-npm
-          command: 'sudo npm install -g npm@latest'
+          command: 'sudo npm install -g npm@5.0.3'
       - restore_cache:
           key: node6-deps-{{ checksum "package-lock.json" }}
       - run:
@@ -78,7 +78,7 @@ jobs:
   build_css:
     working_directory: ~/sulo
     docker:
-      - image: circleci/node:8.1
+      - image: circleci/node:latest
     steps:
       - checkout
       - restore_cache:
