@@ -152,8 +152,7 @@ jobs:
       - setup_remote_docker
       - run: echo $CIRCLE_SHA1 > .circle-sha
       - restore_cache:
-          keys:
-            - docker-build-{{ checksum ".circle-sha" }}
+          key: docker-build-{{ checksum ".circle-sha" }}
       - run:
           name: Load Docker image layer cache
           command: |
