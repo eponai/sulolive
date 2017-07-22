@@ -165,12 +165,10 @@ jobs:
             docker build --cache-from=app -t app .
       - run:
           name: Start docker image
-          command: docker run -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT app; sleep 15
+          command: docker run --name "runningapp" -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT app; sleep 15
       - run: docker ps -l
       - run: docker ps -l -q | xargs docker logs
-      - run:
-          name: "Docker test"
-          command: /bin/sh scripts/run-docker-img-test.sh localhost $PORT
+      - run: docker run --network container:runningapp appropriate/curl -H 'x-forwarded-proto: https' --retry 30 --retry-delay 1 --retry-connrefused http://localhost:$PORT
       - run: docker ps -l -q | xargs docker logs
       - run:
           name: Save Docker image layer cache
