@@ -33,7 +33,7 @@ jobs:
       - run:
           name: update-npm
           command: |
-              'sudo yarn add global npm'
+              sudo yarn add global npm
               npm --version
       - restore_cache:
           key: node6-deps-{{ checksum "package-lock.json" }}
