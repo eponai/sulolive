@@ -32,6 +32,8 @@ jobs:
       - image: circleci/node:4.8.2
     steps:
       - checkout
+      - restore_cache:
+          key: npm-global-cache
       - run:
           name: update-npm
           command: 'sudo npm install -g npm@latest'
@@ -41,11 +43,23 @@ jobs:
       - run:
           name: install-bower
           command: 'sudo npm install -g bower'
+      - save_cache:
+          key: npm-global-cache
+          paths:
+            - /usr/local/lib/node_modules
+
       - restore_cache:
           key: npm-deps-{{ checksum "package.json" }}
       - run:
           name: install-npm
           command: npm install
+      - save_cache:
+          key: npm-deps-{{ checksum "package.json" }}
+          paths:
+            - ./node_modules
+
+      - restore_cache:
+          key: css-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
       - run:
           name: install-foundation-deps
           command: |
@@ -53,10 +67,11 @@ jobs:
             npm install
             bower install
       - save_cache:
-          key: dependency-cache-{{ checksum "package.json" }}
+          key: css-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
           paths:
-            - ./node_modules
             - ./sulo-style/node_modules
+
+
 
   test_clj:
     <<: *defaults
@@ -82,6 +97,8 @@ jobs:
       - image: circleci/node:4.8.2
     steps:
       - checkout
+      - restore_cache:
+          key: css-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
       - attach_workspace:
           at: ~/sulo
       - run: |
