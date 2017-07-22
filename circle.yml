@@ -35,12 +35,12 @@ jobs:
           command: 'sudo npm install -g npm@latest'
 
       - restore_cache:
-          key: npm-deps-{{ checksum "package.json" }}
+          key: node-deps-{{ checksum "package.json" }}
       - run:
           name: install-npm
           command: npm install
       - save_cache:
-          key: npm-deps-{{ checksum "package.json" }}
+          key: node-deps-{{ checksum "package.json" }}
           paths:
             - ./node_modules
 
@@ -73,7 +73,7 @@ jobs:
       - restore_cache:
           key: clojure-deps-{{ checksum "project.clj" }}
       - restore_cache:
-          key: npm-deps-{{ checksum "package.json" }}
+          key: node-deps-{{ checksum "package.json" }}
       - run: ./scripts/run-cljs-tests.sh
 
   build_css:
@@ -83,7 +83,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: npm-deps-{{ checksum "package.json" }}
+          key: node-deps-{{ checksum "package.json" }}
       - restore_cache:
           key: css-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
       - attach_workspace:
