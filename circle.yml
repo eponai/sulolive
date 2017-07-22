@@ -21,10 +21,10 @@ jobs:
           lein with-profile web deps
           lein with-profile tester deps
       - save_cache:
+          key: clojure-deps-{{ checksum "project.clj" }}
           paths:
             - ~/.m2
             - ~/.lein
-          key: clojure-deps-{{ checksum "project.clj" }}
 
   npm_deps:
     working_directory: ~/sulo
@@ -132,6 +132,10 @@ jobs:
       - attach_workspace:
           at: ~/sulo
       - run: lein prod-build-web
+      - save_cache:
+          key: clojure-deps-{{ checksum "project.clj" }}
+          paths:
+            - ~/.m2
       - persist_to_workspace:
           root: .
           paths: resources/public/release/js/out/budget.js
