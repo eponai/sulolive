@@ -89,8 +89,6 @@ jobs:
           key: node01-deps-{{ checksum "package.json" }}
       - restore_cache:
           key: foundation01-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
-      - attach_workspace:
-          at: ~/sulo
       - run: |
           cd sulo-style
           node ../node_modules/foundation-cli/bin/foundation.js build
@@ -105,8 +103,6 @@ jobs:
       - checkout
       - restore_cache:
           key: clojure-deps-{{ checksum "project.clj" }}
-      - attach_workspace:
-          at: ~/sulo
       - run: lein uberjar
       - run: mv target/uberjar/budget-*-standalone.jar target/uberjar/budget-uberjar.jar
       - persist_to_workspace:
@@ -119,8 +115,6 @@ jobs:
       - checkout
       - restore_cache:
           key: clojure-deps-{{ checksum "project.clj" }}
-      - attach_workspace:
-          at: ~/sulo
       - run: lein prod-build-web
       - save_cache:
           key: clojure-deps-{{ checksum "project.clj" }}
