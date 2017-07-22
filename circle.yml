@@ -27,6 +27,7 @@ jobs:
   npm_deps:
     working_directory: ~/sulo
     docker:
+    # Using the node 4.8.2 image because it has npm.
       - image: circleci/node:4.8.2
     steps:
       - checkout
@@ -80,7 +81,7 @@ jobs:
   build_css:
     working_directory: ~/sulo
     docker:
-      - image: circleci/node:4.8.2
+      - image: circleci/node:6.11.1
     steps:
       - checkout
       - restore_cache:
