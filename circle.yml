@@ -118,7 +118,7 @@ jobs:
       - attach_workspace:
           at: ~/sulo
       - run: lein uberjar
-      - run: mv target/uberjar/budget-*-standalone.jar budget-uberjar.jar
+      - run: mv target/uberjar/budget-*-standalone.jar target/uberjar/budget-uberjar.jar
       - persist_to_workspace:
           root: .
           paths: target/uberjar/budget-uberjar.jar
