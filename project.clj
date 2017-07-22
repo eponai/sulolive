@@ -371,7 +371,7 @@
                                               :compiler     {:output-to        "resources/public/doo-test/js/out/budget.js"
                                                              :output-dir       "resources/public/doo-test/js/out"
                                                              :main             "eponai.client.tests"
-                                                             :parallel-build   true
+                                                             :parallel-build   false
                                                              :optimizations    :none
                                                              :source-map       true
                                                              :closure-warnings ~closure-warns
