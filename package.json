@@ -6,6 +6,8 @@
   },
   "devDependencies": {
     "source-map-support": "0.3.2",
-    "phantomjs": "1.9.19"
+    "phantomjs": "1.9.19",
+    "foundation-cli": "2.2.3",
+    "bower": "1.8.0"
   }
 }

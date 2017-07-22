@@ -17,9 +17,7 @@ jobs:
       - restore_cache:
           key: clojure-deps-{{ checksum "project.clj" }}
       - run: |
-          lein deps
-          lein with-profile web deps
-          lein with-profile tester deps
+          lein do deps, with-profile web deps, with-profile tester deps
       - save_cache:
           key: clojure-deps-{{ checksum "project.clj" }}
           paths:
@@ -32,21 +30,9 @@ jobs:
       - image: circleci/node:4.8.2
     steps:
       - checkout
-      - restore_cache:
-          key: npm-global-cache
       - run:
           name: update-npm
           command: 'sudo npm install -g npm@latest'
-      - run:
-          name: install-foundation
-          command: 'sudo npm install -g foundation-cli'
-      - run:
-          name: install-bower
-          command: 'sudo npm install -g bower'
-      - save_cache:
-          key: npm-global-cache
-          paths:
-            - /usr/local/lib/node_modules
 
       - restore_cache:
           key: npm-deps-{{ checksum "package.json" }}
@@ -65,13 +51,12 @@ jobs:
           command: |
             cd sulo-style
             npm install
-            bower install
+            ../node_modules/bower/bin/bower install
       - save_cache:
           key: css-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
           paths:
             - ./sulo-style/node_modules
-
-
+            - ./sulo-style/bower_components
 
   test_clj:
     <<: *defaults
@@ -98,12 +83,14 @@ jobs:
     steps:
       - checkout
       - restore_cache:
+          key: npm-deps-{{ checksum "package.json" }}
+      - restore_cache:
           key: css-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
       - attach_workspace:
           at: ~/sulo
       - run: |
           cd sulo-style
-          foundation build
+          node ../node_modules/foundation-cli/bin/foundation.js build
       - persist_to_workspace:
           root: .
           paths: ./resources/public/assets/css
