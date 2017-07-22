@@ -150,9 +150,8 @@ jobs:
       - attach_workspace:
           at: ~/sulo
       - setup_remote_docker
-      - run: echo $CIRCLE_SHA1 > .circle-sha
       - restore_cache:
-          key: docker-build-{{ checksum ".circle-sha" }}
+          key: docker-build-{{ checksum "Dockerfile" }}
       - run:
           name: Load Docker image layer cache
           command: |
@@ -177,7 +176,7 @@ jobs:
             mkdir -p ./caches
             docker save -o ./caches/app.tar app
       - save_cache:
-          key: docker-build-{{ checksum ".circle-sha" }}
+          key: docker-build-{{ checksum "Dockerfile" }}
           paths:
             - ./caches/app.tar
 
