@@ -151,7 +151,7 @@ jobs:
           at: ~/sulo
       - setup_remote_docker
       - restore_cache:
-          key: docker-build-{{ checksum "Dockerfile" }}
+          key: docker-build-01-{{ checksum "Dockerfile" }}
       - run:
           name: Load Docker image layer cache
           command: |
@@ -176,7 +176,7 @@ jobs:
             mkdir -p ~/caches
             docker save -o ~/caches/app.tar app
       - save_cache:
-          key: docker-build-{{ checksum "Dockerfile" }}
+          key: docker-build-01-{{ checksum "Dockerfile" }}
           paths:
             - ~/caches/app.tar
 
@@ -188,10 +188,9 @@ jobs:
       DOCKER_IMAGE: sulolive/sulo:$CIRCLE_SHA1
     steps:
       - setup_remote_docker
-      - run: echo $CIRCLE_SHA1 > .circle-sha
       - restore_cache:
           keys:
-            - docker-build-{{ checksum ".circle-sha" }}
+            - docker-build-01-{{ checksum "Dockerfile" }}
       - run:
           name: Load Docker image layer cache
           command: |
