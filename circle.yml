@@ -156,7 +156,7 @@ jobs:
           name: Load Docker image layer cache
           command: |
             set +o pipefail
-            docker load -i ./caches/app.tar | true
+            docker load -i ~/caches/app.tar | true
       - run:
           name: Build application Docker image
           command: |
@@ -173,12 +173,12 @@ jobs:
       - run:
           name: Save Docker image layer cache
           command: |
-            mkdir -p ./caches
-            docker save -o ./caches/app.tar app
+            mkdir -p ~/caches
+            docker save -o ~/caches/app.tar app
       - save_cache:
           key: docker-build-{{ checksum "Dockerfile" }}
           paths:
-            - ./caches/app.tar
+            - ~/caches/app.tar
 
   docker_push:
     working_directory: ~/sulo
@@ -196,7 +196,7 @@ jobs:
           name: Load Docker image layer cache
           command: |
             set +o pipefail
-            docker load -i ./caches/app.tar | true
+            docker load -i ~/caches/app.tar | true
       - run:
           name: Build application Docker image
           command: |
