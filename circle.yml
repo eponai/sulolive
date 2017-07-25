@@ -154,7 +154,11 @@ jobs:
       - run:
           name: Log in to dockerhub
           command: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
-      - run: docker pull sulolive/sulo:latest
+      - run:
+          name: Pull latest sulo for cache
+          command: |
+            set +o pipefail
+            docker pull sulolive/sulo:latest
       - run:
           name: Build application Docker image
           command: |
@@ -185,7 +189,11 @@ jobs:
       - run:
           name: Log in to dockerhub
           command: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
-      - run: docker pull sulolive/sulo:latest
+      - run:
+          name: Pull latest sulo for cache
+          command: |
+            set +o pipefail
+            docker pull sulolive/sulo:latest
       - run:
           name: Build application Docker image
           command: |
