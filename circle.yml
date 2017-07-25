@@ -206,11 +206,11 @@ jobs:
 workflows:
   version: 2
   build_and_test:
-    filters:
-      branches:
-        ignore:
-          - production
     jobs:
+      filters:
+        branches:
+          ignore:
+            - production
       - npm_deps
       - clojure_deps
       - test_clj:
