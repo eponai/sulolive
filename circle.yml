@@ -158,7 +158,7 @@ jobs:
           name: Pull latest sulo for cache
           command: |
             set +o pipefail
-            docker pull sulolive/sulo:latest
+            docker pull sulolive/sulo:latest | true
       - run:
           name: Build application Docker image
           command: |
@@ -193,7 +193,7 @@ jobs:
           name: Pull latest sulo for cache
           command: |
             set +o pipefail
-            docker pull sulolive/sulo:latest
+            docker pull sulolive/sulo:latest | true
       - run:
           name: Build application Docker image
           command: |
