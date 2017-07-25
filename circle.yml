@@ -207,12 +207,17 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      filters:
-        branches:
-          ignore:
-            - production
       - npm_deps
+          # Is there a better way of ignoring production branch for these jobs?
+          filters:
+            branches:
+              ignore:
+                - production
       - clojure_deps
+          filters:
+            branches:
+              ignore:
+                - production
       - test_clj:
           requires:
             - clojure_deps
