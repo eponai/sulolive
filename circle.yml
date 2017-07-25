@@ -138,11 +138,12 @@ jobs:
           root: .
           paths: target/uberjar/budget-uberjar.jar
 
-  docker_build:
+  docker_build_test:
     working_directory: ~/sulo
     docker:
       - image: docker:17.05.0-ce-git
     environment:
+      DOCKER_IMAGE: sulolive/sulo:$CIRCLE_SHA1
       TIMBRE_LEVEL: :info
       PORT: 8080
     steps:
@@ -150,63 +151,65 @@ jobs:
       - attach_workspace:
           at: ~/sulo
       - setup_remote_docker
-      - restore_cache:
-          key: docker-build-01-{{ checksum "Dockerfile" }}
       - run:
-          name: Load Docker image layer cache
-          command: |
-            set +o pipefail
-            docker load -i ~/caches/app.tar | true
+          name: Log in to dockerhub
+          command: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - run: docker pull sulolive/sulo:latest
       - run:
           name: Build application Docker image
           command: |
-            docker build --cache-from=app -t app .
+            docker build --cache-from sulolive/sulo:latest --tag $DOCKER_IMAGE .
       - run:
           name: Start docker image
-          command: docker run --name "runningapp" -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT app; sleep 4
+          command: docker run --name "runningapp" -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT $DOCKER_IMAGE; sleep 4
       - run: docker ps -l
       - run: docker ps -l -q | xargs docker logs
       - run:
           name: Test docker image
           command: "docker run --network container:runningapp appropriate/curl -H 'x-forwarded-proto: https' --retry 30 --retry-delay 1 --retry-connrefused http://localhost:$PORT"
       - run: docker ps -l -q | xargs docker logs
-      - run:
-          name: Save Docker image layer cache
-          command: |
-            mkdir -p ~/caches
-            docker save -o ~/caches/app.tar app
-      - save_cache:
-          key: docker-build-01-{{ checksum "Dockerfile" }}
-          paths:
-            - ~/caches/app.tar
 
-  docker_push:
+  docker_build_test_push:
     working_directory: ~/sulo
     docker:
       - image: docker:17.05.0-ce-git
     environment:
       DOCKER_IMAGE: sulolive/sulo:$CIRCLE_SHA1
+      TIMBRE_LEVEL: :info
+      PORT: 8080
     steps:
+      - checkout
+      - attach_workspace:
+          at: ~/sulo
       - setup_remote_docker
-      - restore_cache:
-          keys:
-            - docker-build-01-{{ checksum "Dockerfile" }}
       - run:
-          name: Load Docker image layer cache
-          command: |
-            set +o pipefail
-            docker load -i ~/caches/app.tar | true
+          name: Log in to dockerhub
+          command: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - run: docker pull sulolive/sulo:latest
       - run:
           name: Build application Docker image
           command: |
-            docker build --cache-from=app -t app .
+            docker build --cache-from sulolive/sulo:latest --tag $DOCKER_IMAGE --tag sulolive/sulo:latest .
+      - run:
+          name: Start docker image
+          command: docker run --name "runningapp" -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT $DOCKER_IMAGE; sleep 4
+      - run: docker ps -l
+      - run: docker ps -l -q | xargs docker logs
+      - run:
+          name: Test docker image
+          command: "docker run --network container:runningapp appropriate/curl -H 'x-forwarded-proto: https' --retry 30 --retry-delay 1 --retry-connrefused http://localhost:$PORT"
+      - run: docker ps -l -q | xargs docker logs
       - run: |
-          docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
           docker push $DOCKER_IMAGE
+          docker push sulolive/sulo:latest
 
 workflows:
   version: 2
   build_and_test:
+    filters:
+      branches:
+        ignore:
+          - production
     jobs:
       - npm_deps
       - clojure_deps
@@ -231,14 +234,19 @@ workflows:
             - build_clj
             - build_cljs
             - build_css
-      - docker_build:
+      - docker_build_test:
           requires:
             - finalize_jar
-      - docker_push:
+          filters:
+            branches:
+              ignore:
+                - master
+      - docker_build_test_push:
           requires:
             - test_clj
             - test_cljs
-            - docker_build
+            - finalize_jar
           filters:
             branches:
-              only: master
+              only:
+                - master
