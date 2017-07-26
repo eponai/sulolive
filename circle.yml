@@ -149,8 +149,7 @@ jobs:
       - checkout
       - attach_workspace:
           at: ~/sulo
-      # Don't need it?
-      # - setup_remote_docker
+      - setup_remote_docker
       - run:
           name: Log in to dockerhub
           command: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
@@ -184,8 +183,7 @@ jobs:
       - checkout
       - attach_workspace:
           at: ~/sulo
-      # Don't we need remote docker when we're in a docker image?
-      # - setup_remote_docker
+      - setup_remote_docker
       - run:
           name: Log in to dockerhub
           command: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
