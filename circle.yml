@@ -143,7 +143,6 @@ jobs:
     docker:
       - image: docker:17.05.0-ce-git
     environment:
-      DOCKER_IMAGE: sulolive/sulo:$CIRCLE_SHA1
       TIMBRE_LEVEL: :info
       PORT: 8080
     steps:
@@ -162,10 +161,10 @@ jobs:
       - run:
           name: Build application Docker image
           command: |
-            docker build --cache-from sulolive/sulo:latest --tag $DOCKER_IMAGE .
+            docker build --cache-from sulolive/sulo:latest --tag sulolive/sulo:{{ .Environment.CIRCLE_SHA1 }} .
       - run:
           name: Start docker image
-          command: docker run --name "runningapp" -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT $DOCKER_IMAGE; sleep 4
+          command: docker run --name "runningapp" -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT sulolive/sulo:{{ .Environment.CIRCLE_SHA1 }}; sleep 4
       - run: docker ps -l
       - run: docker ps -l -q | xargs docker logs
       - run:
@@ -178,7 +177,6 @@ jobs:
     docker:
       - image: docker:17.05.0-ce-git
     environment:
-      DOCKER_IMAGE: sulolive/sulo:$CIRCLE_SHA1
       TIMBRE_LEVEL: :info
       PORT: 8080
     steps:
@@ -197,10 +195,10 @@ jobs:
       - run:
           name: Build application Docker image
           command: |
-            docker build --cache-from sulolive/sulo:latest --tag $DOCKER_IMAGE --tag sulolive/sulo:latest .
+            docker build --cache-from sulolive/sulo:latest --tag sulolive/sulo:{{ .Environment.CIRCLE_SHA1 }} --tag sulolive/sulo:latest .
       - run:
           name: Start docker image
-          command: docker run --name "runningapp" -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT $DOCKER_IMAGE; sleep 4
+          command: docker run --name "runningapp" -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT sulolive/sulo:{{ .Environment.CIRCLE_SHA1 }}; sleep 4
       - run: docker ps -l
       - run: docker ps -l -q | xargs docker logs
       - run:
@@ -208,7 +206,7 @@ jobs:
           command: "docker run --network container:runningapp appropriate/curl -H 'x-forwarded-proto: https' --retry 30 --retry-delay 1 --retry-connrefused http://localhost:$PORT"
       - run: docker ps -l -q | xargs docker logs
       - run: |
-          docker push $DOCKER_IMAGE
+          docker push sulolive/sulo:{{ .Environment.CIRCLE_SHA1 }}
           docker push sulolive/sulo:latest
 
 workflows:
