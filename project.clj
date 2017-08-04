@@ -294,7 +294,11 @@
                         :aot            :all
                         :resource-paths ^:replace ["resources"]}
 
-             :web-prod {:dependencies [[amazonica "0.3.85"
+             :web-prod {:dependencies [[org.clojure/clojure "1.9.0-alpha17"]
+                                       [org.clojure/clojurescript "1.9.660"
+                                        ;;  :classifier "aot"
+                                        :exclusion [org.clojure/data.json]]
+                                       [amazonica "0.3.85"
                                         :exclusions [com.taoensso/encore
                                                      com.google.protobuf/protobuf-java]]
                                        ;; [binaryage/devtools "0.9.4"]
