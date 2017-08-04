@@ -287,6 +287,7 @@
                                        :init    (eponai.repl/init)}
                         :test-paths   ["test" "env/server/dev"]}
              :tester   {:dependencies [[lein-cljsbuild "1.1.5"]
+                                       [org.clojure/clojurescript "0.0-3211"]
                                        [lein-doo "0.1.7"
                                         :exclusions [org.clojure/clojure]]]}
              :uberjar  {:jvm-opts       ^:replace ["-Dclojure.compiler.direct-linking=true"
