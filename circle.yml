@@ -52,7 +52,7 @@ jobs:
           command: |
             cd sulo-style
             npm install
-            ../node_modules/bower/bin/bower install
+            ../node_modules/bower/bin/bower install --allow-root
       - save_cache:
           key: foundation02-deps-{{ checksum "sulo-style/package-lock.json" }}-{{ checksum "sulo-style/bower.json" }}
           paths:
