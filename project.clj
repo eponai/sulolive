@@ -188,7 +188,7 @@
             ;; [lein-npm "0.6.1"]
             [lein-shell "0.5.0"]
             [lein-doo "0.1.7" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
-            [lein-cljsbuild "1.1.5" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
+            [lein-cljsbuild "1.1.7" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
             [lein-figwheel "0.5.10" :exclusions [org.clojure/clojure]]
             [lein-environ "1.1.0"]]
 
@@ -286,8 +286,8 @@
                                        :init-ns eponai.repl
                                        :init    (eponai.repl/init)}
                         :test-paths   ["test" "env/server/dev"]}
-             :tester   {:dependencies [[lein-cljsbuild "1.1.5"]
-                                       [cljsbuild "1.1.5"]
+             :tester   {:dependencies [[lein-cljsbuild "1.1.7"]
+                                       [cljsbuild "1.1.7"]
                                        [lein-doo "0.1.7"
                                         :exclusions [org.clojure/clojure]]]}
              :uberjar  {:jvm-opts       ^:replace ["-Dclojure.compiler.direct-linking=true"
