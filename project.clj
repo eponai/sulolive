@@ -288,6 +288,7 @@
                         :test-paths   ["test" "env/server/dev"]}
              :tester   {:dependencies [[lein-cljsbuild "1.1.7"]
                                        [cljsbuild "1.1.7"]
+                                       [clj-stacktrace "0.2.5"]
                                        [lein-doo "0.1.7"
                                         :exclusions [org.clojure/clojure]]]}
              :uberjar  {:jvm-opts       ^:replace ["-Dclojure.compiler.direct-linking=true"
