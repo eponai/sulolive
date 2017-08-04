@@ -15,14 +15,14 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: clojure03-deps-{{ checksum "project.clj" }}
+          key: clojure04-deps-{{ checksum "project.clj" }}
       - run:
           name: "Download clojure dependencies"
           command: |
             set +o pipefail
             lein do deps, with-profile web deps, with-profile tester deps, cljsbuild | true
       - save_cache:
-          key: clojure03-deps-{{ checksum "project.clj" }}
+          key: clojure04-deps-{{ checksum "project.clj" }}
           paths:
             - ~/.m2
             - ~/.lein
@@ -40,18 +40,18 @@ jobs:
             npm --version
       - run: cp package.json package.bak
       - restore_cache:
-          key: node03-deps-{{ checksum "package.bak" }}
+          key: node04-deps-{{ checksum "package.bak" }}
       - run:
           name: "install npm deps"
           command: npm install
       - save_cache:
-          key: node03-deps-{{ checksum "package.bak" }}
+          key: node04-deps-{{ checksum "package.bak" }}
           paths:
             - ./node_modules
 
       - run: cp sulo-style/package.json sulo-style/package.bak
       - restore_cache:
-          key: foundation03-deps-{{ checksum "sulo-style/package.bak" }}-{{ checksum "sulo-style/bower.json" }}
+          key: foundation04-deps-{{ checksum "sulo-style/package.bak" }}-{{ checksum "sulo-style/bower.json" }}
       - run:
           name: "install foundation deps"
           command: |
@@ -59,7 +59,7 @@ jobs:
             npm install
             ../node_modules/bower/bin/bower install --allow-root
       - save_cache:
-          key: foundation03-deps-{{ checksum "sulo-style/package.bak" }}-{{ checksum "sulo-style/bower.json" }}
+          key: foundation04-deps-{{ checksum "sulo-style/package.bak" }}-{{ checksum "sulo-style/bower.json" }}
           paths:
             - ./sulo-style/node_modules
             - ./sulo-style/bower_components
@@ -69,7 +69,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: clojure03-deps-{{ checksum "project.clj" }}
+          key: clojure04-deps-{{ checksum "project.clj" }}
       - run: lein test
 
   test_cljs:
@@ -77,9 +77,9 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: clojure03-deps-{{ checksum "project.clj" }}
+          key: clojure04-deps-{{ checksum "project.clj" }}
       - restore_cache:
-          key: node03-deps-{{ checksum "package.json" }}
+          key: node04-deps-{{ checksum "package.json" }}
       - run: ./scripts/run-cljs-tests.sh
 
   build_css:
@@ -89,9 +89,9 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: node03-deps-{{ checksum "package.json" }}
+          key: node04-deps-{{ checksum "package.json" }}
       - restore_cache:
-          key: foundation03-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
+          key: foundation04-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
       - run: |
           cd sulo-style
           node ../node_modules/foundation-cli/bin/foundation.js build
@@ -105,7 +105,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: clojure03-deps-{{ checksum "project.clj" }}
+          key: clojure04-deps-{{ checksum "project.clj" }}
       - run: lein uberjar
       - run: mv target/uberjar/budget-*-standalone.jar target/uberjar/budget-uberjar.jar
       - persist_to_workspace:
@@ -117,7 +117,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: clojure03-deps-{{ checksum "project.clj" }}
+          key: clojure04-deps-{{ checksum "project.clj" }}
       - run: lein prod-build-web
       - persist_to_workspace:
           root: .

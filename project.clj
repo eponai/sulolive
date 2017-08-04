@@ -216,7 +216,7 @@
             "css-watch"              ["shell" "./scripts/compile-css.sh" "watch"]
             "prod-build-web"         ^{:doc "Recompile web code with release build."}
                                      ["do"
-                                      ["with-profile" "web-prod" "cljsbuild" "once" "release"]]
+                                      ["with-profile" "+web-prod" "cljsbuild" "once" "release"]]
             "prod-build-server"      ^{:doc "Recompile server code with release build."}
                                      ["do" "uberjar"]
             "simple-build-web"       ^{:doc "Recompile web code with release build."}
