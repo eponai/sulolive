@@ -27,36 +27,34 @@ jobs:
   npm_deps:
     working_directory: ~/sulo
     docker:
-      - image: circleci/node:6.11.1
+      - image: node:8.0
     steps:
       - checkout
-      - run: cp package.json package.bak
-      - restore_cache:
-          key: node01-deps-{{ checksum "package.bak" }}
       - run:
-          name: update-npm
+          name: "Checking Versions"
           command: |
-              yarn add global npm
-              npm --version
+            node --version
+            npm --version
+      - restore_cache:
+          key: node02-deps-{{ checksum "package-lock.json" }}
       - run:
-          name: install-npm
+          name: "install npm deps"
           command: npm install
       - save_cache:
-          key: node01-deps-{{ checksum "package.bak" }}
+          key: node02-deps-{{ checksum "package-lock.json" }}
           paths:
             - ./node_modules
 
-      - run: cp sulo-style/package.json sulo-style/package.bak
       - restore_cache:
-          key: foundation01-deps-{{ checksum "sulo-style/package.bak" }}-{{ checksum "sulo-style/bower.json" }}
+          key: foundation02-deps-{{ checksum "sulo-style/package-lock.json" }}-{{ checksum "sulo-style/bower.json" }}
       - run:
-          name: install-foundation-deps
+          name: "install foundation deps"
           command: |
             cd sulo-style
             npm install
             ../node_modules/bower/bin/bower install
       - save_cache:
-          key: foundation01-deps-{{ checksum "sulo-style/package.bak" }}-{{ checksum "sulo-style/bower.json" }}
+          key: foundation02-deps-{{ checksum "sulo-style/package-lock.json" }}-{{ checksum "sulo-style/bower.json" }}
           paths:
             - ./sulo-style/node_modules
             - ./sulo-style/bower_components
@@ -76,19 +74,19 @@ jobs:
       - restore_cache:
           key: clojure-deps-{{ checksum "project.clj" }}
       - restore_cache:
-          key: node01-deps-{{ checksum "package.json" }}
+          key: node02-deps-{{ checksum "package-lock.json" }}
       - run: ./scripts/run-cljs-tests.sh
 
   build_css:
     working_directory: ~/sulo
     docker:
-      - image: circleci/node:6.11.1
+      - image: node:8.0
     steps:
       - checkout
       - restore_cache:
-          key: node01-deps-{{ checksum "package.json" }}
+          key: node02-deps-{{ checksum "package-lock.json" }}
       - restore_cache:
-          key: foundation01-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
+          key: foundation02-deps-{{ checksum "sulo-style/package-lock.json" }}-{{ checksum "sulo-style/bower.json" }}
       - run: |
           cd sulo-style
           node ../node_modules/foundation-cli/bin/foundation.js build
