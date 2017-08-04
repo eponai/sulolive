@@ -15,11 +15,11 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: clojure-deps-{{ checksum "project.clj" }}
+          key: clojure03-deps-{{ checksum "project.clj" }}
       - run: |
-          lein do deps, with-profile web deps, with-profile tester deps
+          lein do deps, cljsbuild, with-profile web deps, with-profile tester deps
       - save_cache:
-          key: clojure-deps-{{ checksum "project.clj" }}
+          key: clojure03-deps-{{ checksum "project.clj" }}
           paths:
             - ~/.m2
             - ~/.lein
@@ -66,7 +66,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: clojure-deps-{{ checksum "project.clj" }}
+          key: clojure03-deps-{{ checksum "project.clj" }}
       - run: lein test
 
   test_cljs:
@@ -74,7 +74,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: clojure-deps-{{ checksum "project.clj" }}
+          key: clojure03-deps-{{ checksum "project.clj" }}
       - restore_cache:
           key: node03-deps-{{ checksum "package.json" }}
       - run: ./scripts/run-cljs-tests.sh
@@ -102,7 +102,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: clojure-deps-{{ checksum "project.clj" }}
+          key: clojure03-deps-{{ checksum "project.clj" }}
       - run: lein uberjar
       - run: mv target/uberjar/budget-*-standalone.jar target/uberjar/budget-uberjar.jar
       - persist_to_workspace:
@@ -114,12 +114,8 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: clojure-deps-{{ checksum "project.clj" }}
+          key: clojure03-deps-{{ checksum "project.clj" }}
       - run: lein prod-build-web
-      - save_cache:
-          key: clojure-deps-{{ checksum "project.clj" }}
-          paths:
-            - ~/.m2
       - persist_to_workspace:
           root: .
           paths: resources/public/release/js/out/budget.js
