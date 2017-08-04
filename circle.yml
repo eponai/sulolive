@@ -35,18 +35,20 @@ jobs:
           command: |
             node --version
             npm --version
+      - run: cp package.json package.bak
       - restore_cache:
-          key: node02-deps-{{ checksum "package-lock.json" }}
+          key: node02-deps-{{ checksum "package.bak" }}
       - run:
           name: "install npm deps"
           command: npm install
       - save_cache:
-          key: node02-deps-{{ checksum "package-lock.json" }}
+          key: node02-deps-{{ checksum "package.bak" }}
           paths:
             - ./node_modules
 
+      - run: cp sulo-style/package.json sulo-style/package.bak
       - restore_cache:
-          key: foundation02-deps-{{ checksum "sulo-style/package-lock.json" }}-{{ checksum "sulo-style/bower.json" }}
+          key: foundation02-deps-{{ checksum "sulo-style/package.bak" }}-{{ checksum "sulo-style/bower.json" }}
       - run:
           name: "install foundation deps"
           command: |
@@ -54,7 +56,7 @@ jobs:
             npm install
             ../node_modules/bower/bin/bower install --allow-root
       - save_cache:
-          key: foundation02-deps-{{ checksum "sulo-style/package-lock.json" }}-{{ checksum "sulo-style/bower.json" }}
+          key: foundation02-deps-{{ checksum "sulo-style/package.bak" }}-{{ checksum "sulo-style/bower.json" }}
           paths:
             - ./sulo-style/node_modules
             - ./sulo-style/bower_components
@@ -74,7 +76,7 @@ jobs:
       - restore_cache:
           key: clojure-deps-{{ checksum "project.clj" }}
       - restore_cache:
-          key: node02-deps-{{ checksum "package-lock.json" }}
+          key: node02-deps-{{ checksum "package.json" }}
       - run: ./scripts/run-cljs-tests.sh
 
   build_css:
@@ -84,9 +86,9 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: node02-deps-{{ checksum "package-lock.json" }}
+          key: node02-deps-{{ checksum "package.json" }}
       - restore_cache:
-          key: foundation02-deps-{{ checksum "sulo-style/package-lock.json" }}-{{ checksum "sulo-style/bower.json" }}
+          key: foundation02-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
       - run: |
           cd sulo-style
           node ../node_modules/foundation-cli/bin/foundation.js build
