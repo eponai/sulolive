@@ -27,7 +27,7 @@ jobs:
   npm_deps:
     working_directory: ~/sulo
     docker:
-      - image: node:8.0
+      - image: node:8.2
     steps:
       - checkout
       - run:
@@ -80,7 +80,7 @@ jobs:
   build_css:
     working_directory: ~/sulo
     docker:
-      - image: node:8.0
+      - image: node:8.2
     steps:
       - checkout
       - restore_cache:
