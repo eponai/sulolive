@@ -16,8 +16,11 @@ jobs:
       - checkout
       - restore_cache:
           key: clojure03-deps-{{ checksum "project.clj" }}
-      - run: |
-          lein do deps, cljsbuild, with-profile web deps, with-profile tester deps
+      - run:
+          name: "Download clojure dependencies"
+          command: |
+            set +o pipefail
+            lein do deps, with-profile web deps, with-profile tester deps, cljsbuild | true
       - save_cache:
           key: clojure03-deps-{{ checksum "project.clj" }}
           paths:
@@ -27,7 +30,7 @@ jobs:
   npm_deps:
     working_directory: ~/sulo
     docker:
-      - image: circleci/node:8.2
+      - image: circleci/node:8.1
     steps:
       - checkout
       - run:
@@ -82,7 +85,7 @@ jobs:
   build_css:
     working_directory: ~/sulo
     docker:
-      - image: circleci/node:8.2
+      - image: circleci/node:8.1
     steps:
       - checkout
       - restore_cache:
