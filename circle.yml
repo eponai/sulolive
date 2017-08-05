@@ -99,7 +99,6 @@ jobs:
           root: .
           paths: ./resources/public/assets/css
 
-
   build_clj:
     <<: *defaults
     steps:
