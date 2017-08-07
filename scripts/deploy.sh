@@ -22,9 +22,6 @@ fi
 
 echo "Will deploy to environment: $EB_ENV_NAME"
 
-# Deploy image to Docker Hub
-docker push $DOCKER_IMAGE 
-
 # Elastic Beanstalk vars
 EB_BUCKET=sulo-elb
 EB_APP_NAME=sulo-live
