@@ -207,6 +207,16 @@ jobs:
           docker push sulolive/sulo:${CIRCLE_SHA1}
           docker push sulolive/sulo:latest
 
+  deploy:
+    working_directory: ~/sulo
+    docker:
+      - image: circleci/build-image
+    steps:
+      - checkout
+      - deploy:
+          command: |
+            scripts/deploy.sh "${CIRCLE_SHA1}" "sulolive/sulo:${CIRCLE_SHA1}"
+
 workflows:
   version: 2
   build_and_test:
@@ -249,6 +259,8 @@ workflows:
           filters:
             branches:
               ignore:
+              # Adding petter/WEB-233-circle-ci-2 branch to simulate what will happen on master.
+                - petter/WEB-233-circle-ci-2
                 - master
       - docker_build_test_push:
           requires:
@@ -258,4 +270,14 @@ workflows:
           filters:
             branches:
               only:
+                - petter/WEB-233-circle-ci-2
                 - master
+      - deploy:
+          filters:
+            branches:
+              only:
+                - petter/WEB-233-circle-ci-2
+                - master
+          requires:
+            - docker_build_test_push
+
