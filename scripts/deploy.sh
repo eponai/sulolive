@@ -29,7 +29,7 @@ REGION=us-east-1
 
 # Create new Elastic Beanstalk version
 DOCKERRUN_FILE="$SHA1-Dockerrun.aws.json"
-DOCKERRUN_S3_FILE="$CIRCLE_BRANCH/docker/$EB_APP_NAME/$EB_ENV_NAME/$DOCKERRUN_FILE"
+DOCKERRUN_S3_FILE="docker/$EB_APP_NAME/$EB_ENV_NAME/$DOCKERRUN_FILE"
 
 # Create dockerrun file for elastic beanstalk
 # Using comma (,) instead of slash (/) in sed because DOCKER_IMAGE contains slashes
