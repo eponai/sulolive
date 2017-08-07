@@ -106,6 +106,7 @@
         order-email (get-in order [:order/user :user/email])
         total-amount (reduce + 0 (map :order.item/amount items))
         order-status (:order/status order)
+        discount-item (some #(when (= (:order.item/type %) :order.item.type/discount) %) (:order/items order))
         delivery (some #(when (= (:order.item/type %) :order.item.type/shipping) %) (:order/items order))
         tax-item (some #(when (= (:order.item/type %) :order.item.type/tax) %) (:order/items order))
         sulo-fees (filter #(= (:order.item/type %) :order.item.type/fee) (:order/items order))]
@@ -292,7 +293,7 @@
             (grid/column
               (->> (grid/column-size {:small 4 :medium 3})
                    (css/text-align :right))
-              (dom/strong nil (ui-utils/two-decimal-price (apply - (:order/amount order) (map :order.item/amount sulo-fees))))))))
+              (dom/strong nil (ui-utils/two-decimal-price (- (+ (:order.item/amount discount-item 0) (:order/amount order)) (apply + (map :order.item/amount sulo-fees)))))))))
 
       (grid/row-column
         (css/add-class :go-back)

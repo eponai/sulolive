@@ -96,8 +96,11 @@
                   (->> (css/add-classes [:sl-orderlist :section-list])
                        (css/hide-for :medium))
                   (map (fn [o]
-                         (let [sulo-fee (some #(when (= (:order.item/type %) :order.item.type/sulo-fee) %) (:order/items o))
-                               destination-amount (- (:order/amount o) (:order.item/amount sulo-fee))
+                         (let [sulo-fees (filter #(= (:order.item/type %) :order.item.type/fee) (:order/items o))
+                               discount-item (some #(when (= (:order.item/type %) :order.item.type/discount) %) (:order/items o))
+                               _ (debug "fees: " (apply + (map :order.item/amount sulo-fees)))
+                               _ (debug "Order amout: " (:order/amount o))
+                               destination-amount (+ (:order.item/amount discount-item 0) (- (:order/amount o) (apply + (map :order.item/amount sulo-fees))))
                                product-link (routes/url :store-dashboard/order
                                                         {:store-id (:db/id store)
                                                          :order-id (:db/id o)})
@@ -150,8 +153,11 @@
                     nil
                     (map
                       (fn [o]
-                        (let [sulo-fee (some #(when (= (:order.item/type %) :order.item.type/sulo-fee) %) (:order/items o))
-                              destination-amount (- (:order/amount o) (:order.item/amount sulo-fee))
+                        (let [sulo-fees (filter #(= (:order.item/type %) :order.item.type/fee) (:order/items o))
+                              discount-item (some #(when (= (:order.item/type %) :order.item.type/discount) %) (:order/items o))
+                              _ (debug "TOTAL: " (+ (:order.item/amount discount-item 0) (:order/amount o)))
+                              _ (debug "FEES: " (apply + (map :order.item/amount sulo-fees)))
+                              destination-amount (- (+ (:order.item/amount discount-item 0) (:order/amount o)) (apply + (map :order.item/amount sulo-fees)))
                               product-link (routes/url :store-dashboard/order
                                                        {:store-id (:db/id store)
                                                         :order-id (:db/id o)})

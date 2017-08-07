@@ -248,6 +248,7 @@
         ;application-fee (* 0.01 sulo-fee-rate subtotal)       ;Convert to cents for Stripe
         transaction-fee (+ 0.3 (* 0.029 grandtotal))
         ;sulo-fee (+ application-fee transaction-fee)
+        sulo-full-fee (* 0.2 subtotal)
         destination-amount (- grandtotal sulo-fee transaction-fee)
 
         _ (debug "Paramerers: " {:discount discount :percent-iff (:percent_off stripe-coupon) :application-fee sulo-fee})
@@ -262,7 +263,7 @@
                                       ;:order.item/description (:description shipping-rate)
                                       })
         sulo-fee-item (cf/remove-nil-keys {:order.item/type        :order.item.type/fee
-                                           :order.item/amount      (bigdec sulo-fee)
+                                           :order.item/amount      (bigdec sulo-full-fee)
                                            :order.item/title       "Service fee"
                                            :order.item/description "Service fee"})
         discount-item (cf/remove-nil-keys {:order.item/type        :order.item.type/discount

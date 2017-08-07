@@ -46,14 +46,15 @@
         sulo-fee (* 0.01 (- sulo-fee-percent (coupon-percent-off coupon)) subtotal)]
 
     (debug "Computed checkout: " {:subtotal        subtotal
-                           :shipping-amount shipping-amount
-                           :tax-amount      tax-amount
-                           :discount        discount
-                           :grandtotal      (- (+ subtotal tax-amount shipping-amount) discount)
-                           :sulo-fee        sulo-fee})
+                                  :shipping-amount shipping-amount
+                                  :tax-amount      tax-amount
+                                  :discount        discount
+                                  :grandtotal      (- (+ subtotal tax-amount shipping-amount) discount)
+                                  :sulo-fee        sulo-fee})
     {:subtotal        subtotal
      :shipping-amount shipping-amount
      :tax-amount      tax-amount
      :discount        discount
      :grandtotal      (- (+ subtotal tax-amount shipping-amount) discount)
+     :total           (+ subtotal tax-amount shipping-amount)
      :sulo-fee        sulo-fee}))
