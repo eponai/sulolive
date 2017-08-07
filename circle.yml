@@ -132,6 +132,9 @@ jobs:
       - run:
           name: Adding javascript and css to jar
           command: jar uf target/uberjar/budget-uberjar.jar resources/public/release/js/out/budget.js resources/public/assets/css
+      - store_artifacts:
+          path: target/uberjar/budget-uberjar.jar
+          destination: uberjar
       - persist_to_workspace:
           root: .
           paths: target/uberjar/budget-uberjar.jar
