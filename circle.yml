@@ -210,7 +210,7 @@ jobs:
   deploy:
     working_directory: ~/sulo
     docker:
-      - image: circleci/build-image
+      - image: sulolive/awscli:0.0.2
     steps:
       - checkout
       - deploy:
