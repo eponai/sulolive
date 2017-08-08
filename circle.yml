@@ -99,18 +99,6 @@ jobs:
           root: .
           paths: ./resources/public/assets/css
 
-  build_clj:
-    <<: *defaults
-    steps:
-      - checkout
-      - restore_cache:
-          key: clojure09-deps-{{ checksum "project.clj" }}
-      - run: lein uberjar
-      - run: mv target/uberjar/budget-*-standalone.jar target/uberjar/budget-uberjar.jar
-      - persist_to_workspace:
-          root: .
-          paths: target/uberjar/budget-uberjar.jar
-
   build_cljs:
     <<: *defaults
     steps:
@@ -122,18 +110,18 @@ jobs:
           root: .
           paths: resources/public/release/js/out/budget.js
 
-  finalize_jar:
-    working_directory: ~/sulo
-    docker:
-      - image: openjdk:8-jdk
+  build_clj:
+    <<: *defaults
     steps:
+      - checkout
+      - restore_cache:
+          key: clojure09-deps-{{ checksum "project.clj" }}
+      # By having build_clj depend on build_cljs and build_css, we can attach the workspace
+      # and get the css and js into the uberjar
       - attach_workspace:
           at: ~/sulo
-      - run:
-          name: Adding javascript and css to jar
-          command: |
-            cd resources
-            jar uf ../target/uberjar/budget-uberjar.jar public/release/js/out/budget.js public/assets/css
+      - run: lein uberjar
+      - run: mv target/uberjar/budget-*-standalone.jar target/uberjar/budget-uberjar.jar
       - store_artifacts:
           path: target/uberjar/budget-uberjar.jar
           destination: uberjar
@@ -219,20 +207,17 @@ workflows:
       - build_css:
           requires:
             - npm_deps
-      - build_clj:
-          requires:
-            - clojure_deps
       - build_cljs:
           requires:
             - clojure_deps
-      - finalize_jar:
+      - build_clj:
           requires:
-            - build_clj
+            - clojure_deps
             - build_cljs
             - build_css
       - docker_build_test:
           requires:
-            - finalize_jar
+            - build_clj
       - deploy:
           filters:
             branches:
