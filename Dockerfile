@@ -1,9 +1,9 @@
 FROM openjdk:8-jdk
 
 ADD target/uberjar/budget-uberjar.jar /srv/production.jar
-RUN cd resources && jar cf /srv/assets.jar \
-    public/assets/css/app.css \
-    public/release/js/out/budget.js
+RUN jar cf /srv/assets.jar \
+    -C resources public/assets/css/app.css \
+    -C resources public/release/js/out/budget.js
 
 EXPOSE 8080
 
