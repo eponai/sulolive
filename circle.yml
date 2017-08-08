@@ -206,18 +206,14 @@ workflows:
       - test_clj:
           requires:
             - clojure_deps
-             # Attempts to start build_clj as fast as possible by depending on the same stuff,
-             # as it has to run docker_build_test afterwards as well.
-            - build_cljs
+            # Micro-optimization: Will hopefully make build_cljs start before this one.
             - build_css
       - test_cljs:
           requires:
             - npm_deps
             - clojure_deps
-             # Attempts to start build_clj as fast as possible by depending on the same stuff,
-             # as it has to run docker_build_test afterwards as well.
-            - build_cljs
-            - build_css
+             # Micro-optimization: Run this after test_clj and leave the other container for build_clj.
+            - test_clj
       - build_clj:
           requires:
             - clojure_deps
