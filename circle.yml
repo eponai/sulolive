@@ -228,5 +228,6 @@ workflows:
               only:
                 - master
           requires:
+            - test_cljs
             - docker_build_test
 
