@@ -125,7 +125,7 @@ jobs:
   docker_build_test:
     working_directory: ~/sulo
     docker:
-      - image: sulolive:docker-with-java
+      - image: sulolive/docker-with-java:0.0.1
     environment:
       TIMBRE_LEVEL: :info
       PORT: 8080
@@ -212,8 +212,6 @@ workflows:
       - test_clj:
           requires:
             - clojure_deps
-            # Micro-optimization: Will hopefully make build_cljs start before this one.
-            - build_css
       - test_cljs:
           requires:
             - npm_deps
