@@ -211,15 +211,20 @@
     (update env :stripe-publishable-key
             (fnil identity "pk_test_VhkTdX6J9LXMyp5nqIqUTemM"))))
 
+(def env-without-empty-vals (into {}
+                                  (remove (comp #(when (string? %) (empty? %)) val))
+                                  environ/env))
+
 (defn prod-system [config]
   {:post [(= (set (keys %)) system-keys)]}
-  (let [config (assoc config :env (-> environ/env (with-stripe-publishable-key))
+  (let [env env-without-empty-vals
+        config (assoc config :env (-> env (with-stripe-publishable-key))
                              :in-prod? true
-                             :in-aws? (aws-env? environ/env))]
+                             :in-aws? (aws-env? env))]
     (real-system config)))
 
 (defn- dev-config
-  ([config] (dev-config config environ/env))
+  ([config] (dev-config config env-without-empty-vals))
   ([config env]
    (assoc config :env (-> env (with-stripe-publishable-key))
                  :in-prod? false

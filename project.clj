@@ -188,14 +188,17 @@
             ;; [lein-npm "0.6.1"]
             [lein-shell "0.5.0"]
             [lein-doo "0.1.7" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
-            [lein-cljsbuild "1.1.5" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
+            [lein-cljsbuild "1.1.7" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
             [lein-figwheel "0.5.10" :exclusions [org.clojure/clojure]]
             [lein-environ "1.1.0"]]
 
   :min-lein-version "2.0.0"
   :clean-targets ^{:protect false} ["resources/public/dev/js/out"
                                     "resources/public/devcards/js/out"
-                                    "resources/public/release/js/out"
+                                    ;; Don't clean release, as we don't want "lein clean" to
+                                    ;; remove our build javascript from the release dir.
+                                    ;; See circle.yml (CircleCi)
+                                    ;; "resources/public/release/js/out"
                                     "resources/public/doo-test/js/out"
                                     "resources/public/test/js/out"
                                     "target/"
@@ -216,7 +219,7 @@
             "css-watch"              ["shell" "./scripts/compile-css.sh" "watch"]
             "prod-build-web"         ^{:doc "Recompile web code with release build."}
                                      ["do"
-                                      ["with-profile" "web-prod" "cljsbuild" "once" "release"]]
+                                      ["with-profile" "+web-prod" "cljsbuild" "once" "release"]]
             "prod-build-server"      ^{:doc "Recompile server code with release build."}
                                      ["do" "uberjar"]
             "simple-build-web"       ^{:doc "Recompile web code with release build."}
@@ -286,14 +289,15 @@
                                        :init-ns eponai.repl
                                        :init    (eponai.repl/init)}
                         :test-paths   ["test" "env/server/dev"]}
-             :tester   {:dependencies [[lein-cljsbuild "1.1.5"]
+             :tester   {:dependencies [[lein-cljsbuild "1.1.7"]
+                                       [cljsbuild "1.1.7"]
+                                       [clj-stacktrace "0.2.5"]
                                        [lein-doo "0.1.7"
                                         :exclusions [org.clojure/clojure]]]}
              :uberjar  {:jvm-opts       ^:replace ["-Dclojure.compiler.direct-linking=true"
                                                    "-Xmx1g" "-server"]
                         :aot            :all
-                        :resource-paths ^:replace ["resources"]
-                        :prep-tasks     ["compile" "prod-build-web" "css"]}
+                        :resource-paths ^:replace ["resources"]}
 
              :web-prod {:dependencies [[amazonica "0.3.85"
                                         :exclusions [com.taoensso/encore
@@ -372,7 +376,7 @@
                                               :compiler     {:output-to        "resources/public/doo-test/js/out/budget.js"
                                                              :output-dir       "resources/public/doo-test/js/out"
                                                              :main             "eponai.client.tests"
-                                                             :parallel-build   true
+                                                             :parallel-build   false
                                                              :optimizations    :none
                                                              :source-map       true
                                                              :closure-warnings ~closure-warns

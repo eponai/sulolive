@@ -1,62 +1,232 @@
-machine:
-  node:
-    version: 6.9.5
-  java:
-    version: openjdk8
-  services:
-    - docker
+defaults: &defaults
+  working_directory: ~/sulo
+  docker:
+    - image: circleci/clojure:lein-2.7.1
   environment:
-    _JAVA_OPTIONS: "-Xms1g -Xmx3g"
-    CLJ_TEST_REPORT_FILE: $CIRCLE_TEST_REPORTS/lein-test/budget-clj-tests.xml
+    JVM_OPTS: -Xmx3200m
+    LEIN_FAST_TRAMPOLINE: yes
     CLJS_BUILD_ID: release
     AWS_DEFAULT_REGION: us-east-1
-    DOCKER_IMAGE: sulolive/sulo:$CIRCLE_SHA1
-    TIMBRE_LEVEL: :info
-    PORT: 8080
 
-dependencies:
-  cache_directories:
-    - "~/.cache/pip"
-    - node_modules
-    - bower_components
-    - sulo-style/node_modules
-    - sulo-style/bower_components
-    - /opt/circleci/nodejs/v6.9.5/bin
-    - /opt/circleci/nodejs/v6.9.5/lib
-    - /opt/circleci/nodejs/v6.9.5/lib/node_modules
-  pre:
-    - pip install -r requirements.txt
-    - npm install -g npm
-    - npm install -g bower
-    - npm install -g foundation-cli
-  override:
-    - lein all-deps
-    - lein with-profile web deps
-    - lein with-profile mobile deps
-    - lein with-profile tester deps
+version: 2
+jobs:
+  clojure_deps:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          key: clojure09-deps-{{ checksum "project.clj" }}
+      - run:
+          name: "Download clojure dependencies"
+          command: |
+            set +o pipefail
+            lein do deps, with-profile web deps, with-profile tester deps, cljsbuild | true
+      - save_cache:
+          key: clojure09-deps-{{ checksum "project.clj" }}
+          paths:
+            - ~/.m2
+            - ~/.lein
 
-test:
-  override:
-    - ./scripts/run-cljs-tests.sh
-    - lein test
-  post:
-    - lein clean
-    - lein uberjar
-    - docker build -t $DOCKER_IMAGE .
-    - docker run -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT $DOCKER_IMAGE; sleep 15
-    - docker ps -l
-    - docker ps -l -q | xargs docker logs
-    - ./scripts/run-docker-img-test.sh localhost $PORT
-    - docker ps -l -q | xargs docker logs
-    
-deployment:
-  staging:
-    branch: master
-    heroku:
-      appname: sulo-master
-  elasticbeanstalk:
-    branch: production
-    commands:
-      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
-      - ./scripts/deploy.sh "$CIRCLE_SHA1" "$DOCKER_IMAGE"
+  npm_deps:
+    working_directory: ~/sulo
+    docker:
+      - image: circleci/node:8.1.4
+    steps:
+      - checkout
+      - run:
+          name: "Checking Versions"
+          command: |
+            node --version
+            npm --version
+      - run: cp package.json package.bak
+      - restore_cache:
+          key: node09-deps-{{ checksum "package.bak" }}
+      - run:
+          name: "install npm deps"
+          command: npm install
+      - save_cache:
+          key: node09-deps-{{ checksum "package.bak" }}
+          paths:
+            - ./node_modules
+
+      - run: cp sulo-style/package.json sulo-style/package.bak
+      - restore_cache:
+          key: foundation09-deps-{{ checksum "sulo-style/package.bak" }}-{{ checksum "sulo-style/bower.json" }}
+      - run:
+          name: "install foundation deps"
+          command: |
+            cd sulo-style
+            npm install
+            ../node_modules/bower/bin/bower install --allow-root
+      - save_cache:
+          key: foundation09-deps-{{ checksum "sulo-style/package.bak" }}-{{ checksum "sulo-style/bower.json" }}
+          paths:
+            - ./sulo-style/node_modules
+            - ./sulo-style/bower_components
+
+  test_clj:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          key: clojure09-deps-{{ checksum "project.clj" }}
+      - run: lein test
+
+  test_cljs:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          key: clojure09-deps-{{ checksum "project.clj" }}
+      - restore_cache:
+          key: node09-deps-{{ checksum "package.json" }}
+      - run: ./scripts/run-cljs-tests.sh
+
+  build_css:
+    working_directory: ~/sulo
+    docker:
+      - image: circleci/node:8.1.4
+    steps:
+      - checkout
+      - restore_cache:
+          key: node09-deps-{{ checksum "package.json" }}
+      - restore_cache:
+          key: foundation09-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
+      - run: |
+          cd sulo-style
+          node ../node_modules/foundation-cli/bin/foundation.js build
+      - persist_to_workspace:
+          root: .
+          paths: ./resources/public/assets/css
+
+  build_cljs:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          key: clojure09-deps-{{ checksum "project.clj" }}
+      - run: lein prod-build-web
+      - persist_to_workspace:
+          root: .
+          paths: resources/public/release/js/out/budget.js
+
+  build_clj:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          key: clojure09-deps-{{ checksum "project.clj" }}
+      # By having build_clj depend on build_cljs and build_css, we can attach the workspace
+      # and get the css and js into the uberjar
+      - attach_workspace:
+          at: ~/sulo
+      - run: lein uberjar
+      - run: mv target/uberjar/budget-*-standalone.jar target/uberjar/budget-uberjar.jar
+      - store_artifacts:
+          path: target/uberjar/budget-uberjar.jar
+          destination: uberjar
+      - persist_to_workspace:
+          root: .
+          paths: target/uberjar/budget-uberjar.jar
+
+  docker_build_test:
+    working_directory: ~/sulo
+    docker:
+      - image: docker:17.05.0-ce-git
+    environment:
+      TIMBRE_LEVEL: :info
+      PORT: 8080
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/sulo
+      - setup_remote_docker
+      - run:
+          name: Log in to dockerhub
+          command: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - run:
+          name: Build application Docker image
+          command: |
+            docker build --cache-from sulolive/sulo:latest --tag sulolive/sulo:${CIRCLE_SHA1} --tag sulolive/sulo:latest .
+      - run:
+          name: Start docker image
+          command: docker run --name "runningapp" -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT sulolive/sulo:${CIRCLE_SHA1}; sleep 4
+      - run: docker ps -l
+      - run: docker ps -l -q | xargs docker logs
+      - run:
+          name: Test docker image
+          command: "docker run --network container:runningapp appropriate/curl -H 'x-forwarded-proto: https' --retry 30 --retry-delay 1 --retry-connrefused http://localhost:$PORT"
+      - run: docker ps -l -q | xargs docker logs
+      - run:
+          name: "Push to dockerhub when on master"
+          command: |
+            if [ "${CIRCLE_BRANCH}" = "master" ]; then
+              docker push sulolive/sulo:${CIRCLE_SHA1}
+              docker push sulolive/sulo:latest
+            fi
+
+  deploy:
+    working_directory: ~/sulo
+    docker:
+      - image: sulolive/awscli:0.0.2
+    steps:
+      - checkout
+      - deploy:
+          command: |
+            scripts/deploy.sh "${CIRCLE_SHA1}" "sulolive/sulo:${CIRCLE_SHA1}"
+
+workflows:
+  version: 2
+  production_deploy:
+    jobs:
+      - deploy:
+          filters:
+            branches:
+              only:
+                - production
+  build_and_test:
+    jobs:
+      - npm_deps:
+          # Is there a better way of ignoring production branch for these jobs?
+          filters:
+            branches:
+              ignore:
+                - production
+      - clojure_deps:
+          filters:
+            branches:
+              ignore:
+                - production
+      - build_css:
+          requires:
+            - npm_deps
+      - build_cljs:
+          requires:
+            - clojure_deps
+      - test_clj:
+          requires:
+            - clojure_deps
+            # Micro-optimization: Will hopefully make build_cljs start before this one.
+            - build_css
+      - test_cljs:
+          requires:
+            - npm_deps
+            - clojure_deps
+             # Micro-optimization: Run this after test_clj and leave the other container for build_clj.
+            - test_clj
+      - build_clj:
+          requires:
+            - clojure_deps
+            - build_cljs
+            - build_css
+      - docker_build_test:
+          requires:
+            - build_clj
+      - deploy:
+          filters:
+            branches:
+              only:
+                - master
+          requires:
+            - docker_build_test
 
