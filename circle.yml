@@ -116,15 +116,8 @@ jobs:
       - checkout
       - restore_cache:
           key: clojure09-deps-{{ checksum "project.clj" }}
-      # By having build_clj depend on build_cljs and build_css, we can attach the workspace
-      # and get the css and js into the uberjar
-      - attach_workspace:
-          at: ~/sulo
       - run: lein uberjar
       - run: mv target/uberjar/budget-*-standalone.jar target/uberjar/budget-uberjar.jar
-      - store_artifacts:
-          path: target/uberjar/budget-uberjar.jar
-          destination: uberjar
       - persist_to_workspace:
           root: .
           paths: target/uberjar/budget-uberjar.jar
@@ -132,22 +125,33 @@ jobs:
   docker_build_test:
     working_directory: ~/sulo
     docker:
-      - image: docker:17.05.0-ce-git
+      - image: sulolive/docker-with-java:0.0.2
     environment:
       TIMBRE_LEVEL: :info
       PORT: 8080
     steps:
       - checkout
+      - setup_remote_docker
+
       - attach_workspace:
           at: ~/sulo
-      - setup_remote_docker
+      - run:
+          name: "Create final uberjar"
+          command: |
+            cd resources
+            jar uf ../target/uberjar/budget-uberjar.jar public/release/js/out/budget.js public/assets/css
+      - store_artifacts:
+          path: target/uberjar/budget-uberjar.jar
+          destination: uberjar
+
       - run:
           name: Log in to dockerhub
           command: docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
       - run:
           name: Build application Docker image
           command: |
-            docker build --cache-from sulolive/sulo:latest --tag sulolive/sulo:${CIRCLE_SHA1} --tag sulolive/sulo:latest .
+            cp Dockerfile target/uberjar/Dockerfile
+            docker build --tag sulolive/sulo:${CIRCLE_SHA1} --tag sulolive/sulo:latest target/uberjar
       - run:
           name: Start docker image
           command: docker run --name "runningapp" -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT sulolive/sulo:${CIRCLE_SHA1}; sleep 4
@@ -203,25 +207,23 @@ workflows:
       - build_cljs:
           requires:
             - clojure_deps
+      - build_clj:
+          requires:
+            - clojure_deps
       - test_clj:
           requires:
             - clojure_deps
-            # Micro-optimization: Will hopefully make build_cljs start before this one.
-            - build_css
       - test_cljs:
           requires:
             - npm_deps
             - clojure_deps
              # Micro-optimization: Run this after test_clj and leave the other container for build_clj.
             - test_clj
-      - build_clj:
-          requires:
-            - clojure_deps
-            - build_cljs
-            - build_css
       - docker_build_test:
           requires:
             - build_clj
+            - build_cljs
+            - build_css
       - deploy:
           filters:
             branches:
