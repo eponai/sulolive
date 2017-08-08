@@ -23,8 +23,7 @@
     [eponai.server.external.client-env :as client-env]
     [eponai.server.external.stripe.webhooks :as stripe-webhooks]
     [eponai.server.external.firebase :as firebase]
-    [eponai.server.external.request-handler :as request-handler]
-    [eponai.common.format :as f]))
+    [eponai.server.external.request-handler :as request-handler]))
 
 (def system-keys #{:system/aleph
                    :system/auth0
