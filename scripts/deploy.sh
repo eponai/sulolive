@@ -8,10 +8,15 @@ DOCKER_IMAGE="$2"
 # Take the first 10 chars of the sha1. It should be enough
 ASSET_VERSION=$(echo "$SHA1" | cut -c1-10)
 
+# Elastic Beanstalk vars
+EB_BUCKET=sulo-elb
+EB_APP_NAME=sulo-live
+REGION=us-east-1
+
 # Set branch specific variables
 if [ "${CIRCLE_BRANCH}" = "production" ]; then
   WEBSERVER_MEMORY=1500
-  EB_ENV_NAME="$(scripts/_env-name-of-current-staging.sh)"
+  EB_ENV_NAME="$(scripts/_env-name-of-current-staging.sh $REGION)"
   FIREBASE_SERVICE_ACCOUNT="$FIREBASE_SERVICE_ACCOUNT_PRODUCTION"
 elif [ "${CIRCLE_BRANCH}" = "master" ]; then
   WEBSERVER_MEMORY=700
@@ -23,11 +28,6 @@ else
 fi
 
 echo "Will deploy to environment: $EB_ENV_NAME"
-
-# Elastic Beanstalk vars
-EB_BUCKET=sulo-elb
-EB_APP_NAME=sulo-live
-REGION=us-east-1
 
 # Create new Elastic Beanstalk version
 DOCKERRUN_FILE="$SHA1-Dockerrun.aws.json"
