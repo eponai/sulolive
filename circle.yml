@@ -168,7 +168,7 @@ jobs:
   deploy:
     working_directory: ~/sulo
     docker:
-      - image: sulolive/awscli:0.0.2
+      - image: sulolive/awscli:0.0.3
     steps:
       - checkout
       - deploy:
