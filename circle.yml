@@ -125,7 +125,7 @@ jobs:
   docker_build_test:
     working_directory: ~/sulo
     docker:
-      - image: sulolive/docker-with-java:0.0.1
+      - image: sulolive/docker-with-java:0.0.2
     environment:
       TIMBRE_LEVEL: :info
       PORT: 8080
@@ -150,6 +150,7 @@ jobs:
       - run:
           name: Build application Docker image
           command: |
+            cp Dockerfile target/uberjar/Dockerfile
             docker build --tag sulolive/sulo:${CIRCLE_SHA1} --tag sulolive/sulo:latest target/uberjar
       - run:
           name: Start docker image
