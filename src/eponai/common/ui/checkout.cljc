@@ -42,7 +42,8 @@
                        :store.item.sku/inventory
                        {:store.item/_skus [:store.item/price
                                            {:store.item/photos [:store.item.photo/index
-                                                                {:store.item.photo/photo [:photo/id]}]}
+                                                                {:store.item.photo/photo [:photo/id
+                                                                                          :db/id]}]}
                                            :store.item/name
                                            {:store/_items [:db/id
                                                            {:store/shipping [{:shipping/rules [:shipping.rule/rates

@@ -64,7 +64,10 @@
                                                                                          {:store.item/photos [{:store.item.photo/photo [:photo/id]}]}]}
                                                                      :store.item.sku/variation]}
                                                 :order.item/type
-                                                :order.item/amount]}
+                                                :order.item/amount
+                                                {:order.item/photo [:photo/id]}
+                                                :order.item/title
+                                                :order.item/description]}
                                  {:order/shipping [:shipping/name
                                                    {:shipping/address [{:shipping.address/country [:country/name]}
                                                                        :shipping.address/region

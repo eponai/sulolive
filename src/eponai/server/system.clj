@@ -111,11 +111,7 @@
                                     {:firebase     :system/firebase
                                      :sulo-datomic :system/datomic})
    :system/chat-datomic    {}
-   :system/email           (email/email {:host (:smtp-host env)
-                                         ;:port (Long/parseLong (:smtp-port env))
-                                         :ssl  true
-                                         :user (:smtp-user env)
-                                         :pass (:smtp-password env)})
+   :system/email           (email/email (:mandrill-api-key env))
    :system/elastic-cloud   (c/using (elastic-cloud/map->ElasticCloud
                                       {:cluster-hostname (:elastic-cloud-host env)
                                        ;; xpack-user format: "username:password"
@@ -241,7 +237,7 @@
                ;:system/chat
                ;:system/auth0
                ;:system/auth0management
-               ;:system/email
+               :system/email
                ;:system/mailchimp
                ;:system/taxjar
                ;:system/aws-s3
