@@ -237,7 +237,7 @@
                ;:system/chat
                ;:system/auth0
                ;:system/auth0management
-               :system/email
+               ;:system/email
                ;:system/mailchimp
                ;:system/taxjar
                ;:system/aws-s3

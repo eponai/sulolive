@@ -62,46 +62,93 @@
                             {:body (json/write-str {:key              api-key
                                                     :template_name    "sulolive-receipt"
                                                     :template_content []
-                                                    :message          {:global_merge_vars (mandrill-params {:companyName (str store-name " via SULO Live <hello@sulo.live>")
-                                                                                                            :subject     (str "Your SULO Live receipt from " store-name " #" (:db/id order))})
-                                                                       :to                [{:email (:user/email user)}]
-                                                                       :subject           (str "Your SULO Live receipt from " store-name " #" (:db/id order))
-                                                                       :from_name         (str store-name " via SULO Live")
-                                                                       :merge_vars        [{:rcpt (:user/email user)
-                                                                                            :vars (mandrill-params opts)}]}})})]
+                                                    :message          {:to         [{:email (:user/email user)}]
+                                                                       :subject    (str "Your SULO Live receipt from " store-name " #" (:db/id order))
+                                                                       :from_name  (str store-name " via SULO Live")
+                                                                       :merge_vars [{:rcpt (:user/email user)
+                                                                                     :vars (mandrill-params opts)}]
+                                                                       :tags       ["purchase-notifications" "customer-receipt"]}})})]
         (debug "EMAIL - Send order receipt to customer" (into {} resp)))
       (catch Object _
         (debug "Caught error: " (:throwable &throw-context)))))
 
   (-send-order-notification [this {:keys [charge order] :as params}]
-    (let [{:keys [source created amount]} charge
-          {:keys [last4 brand]} source
-          {:order/keys [store shipping]} order
-          {store-name :store.profile/name} (:store/profile store)
-          store-owner (get-in store [:store/owners :store.owner/user])
-          ;sent-email (postal/send-message smtp
-          ;                                {:from    "SULO Live <hello@sulo.live>"
-          ;                                 :to      (:user/email store-owner)
-          ;                                 :subject (str "You received a SULO Live order from " (:shipping/name shipping) " #" (:db/id order))
-          ;                                 :body    [{:type    "text/html"
-          ;                                            :content (templates/order-notification params)}]})
-          ]
+    (try+
+      (let [{:keys [source created amount]} charge
+            {:keys [last4 brand]} source
+            {:order/keys [store shipping]} order
+            shipping-address (:shipping/address shipping)
+            {store-name :store.profile/name} (:store/profile store)
+            store-owner (get-in store [:store/owners :store.owner/user])
+            opts {:order-number             (:db/id order)
+                  :card-brand               (str brand)
+                  :card-last4               (str last4)
+                  :order-total              (ui-utils/two-decimal-price (/ amount 100))
+                  :created-date             (date/date->string (* created 1000) "MMM dd YYYY")
+                  :order-url                (str sulo-host (client.routes/store-url store :store-dashboard/order {:order-id (:db/id order)}))
+                  :store-url                (str sulo-host (client.routes/store-url store :store))
+                  :products                 (mapv (fn [oi]
+                                                    (debug "Order item: " oi)
+                                                    {:product-name      (:order.item/title oi)
+                                                     :product-variation (:order.item/description oi)
+                                                     :product-photo     (photos/transform (get-in oi [:order.item/photo :photo/id]) :transformation/thumbnail)
+                                                     :product-price     (ui-utils/two-decimal-price (:order.item/amount oi))})
+                                                  (filter #(= (:order.item/type %) :order.item.type/sku) (:order/items order)))
+                  :shipping-name            (:shipping/name shipping)
+                  :shipping-address-street  (:shipping.address/street shipping-address)
+                  :shipping-address-info    (string/join ", " (remove nil? [(:shipping.address/locality shipping-address)
+                                                                            (:shipping.address/postal shipping-address)
+                                                                            (:shipping.address/region shipping-address)]))
+                  :shipping-address-country (str (-> shipping-address :shipping.address/country :country/name))}
 
-      ;(info "EMAIL - Send order notification to store " sent-email)
-      ))
+            resp (http/post (str mandrill-host "/messages/send-template.json")
+                            {:body (json/write-str {:key              api-key
+                                                    :template_name    "store-order-notification"
+                                                    :template_content []
+                                                    :message          {:to         [{:email (:user/email store-owner)}]
+                                                                       :subject    (str "You received a SULO Live order from " (:shipping/name shipping) " #" (:db/id order))
+                                                                       :from_name  "SULO Live"
+                                                                       :merge_vars [{:rcpt (:user/email store-owner)
+                                                                                     :vars (mandrill-params opts)}]
+                                                                       :tags       ["purchase-notifications" "store-order-notification"]}})})]
 
-  (-send-store-access-request [_ {:field/keys [brand email website locality]
+        (info "EMAIL - Send order notification to store " (into {} resp)))
+      (catch Object _
+        (debug "Caught error sending store notification: " (:throwable &throw-context)))))
+
+  (-send-store-access-request [_ {:field/keys [brand email website locality message]
                                   user-id     :user-id :as params}]
-    (let [
-          ;sent-email (postal/send-message smtp
-          ;                                {:from    (str (if (some? user-id) "SULO Live User" "SULO Live Visitor") " <hello@sulo.live>")
-          ;                                 :to      "hello@sulo.live"
-          ;                                 :subject (str "Request start store access - " brand)
-          ;                                 :body    [{:type    "text/html"
-          ;                                            :content (templates/open-store-request params)}]})
-          ]
-      ;(debug sent-email)
-      )))
+    (try+
+      (let [
+            opts (cond-> {:brand    brand
+                          :email    email
+                          :website  website
+                          :location locality
+                          :message  message}
+                         (some? user-id)
+                         (assoc :user-id user-id))
+            resp (http/post (str mandrill-host "/messages/send-template.json")
+                            {:body (json/write-str {:key              api-key
+                                                    :template_name    "request-start-store"
+                                                    :template_content []
+                                                    :message          {:to         [{:email "hello@sulo.live"}]
+                                                                       :subject    (str "Request start store access - " brand)
+                                                                       :from_name  (if (some? user-id) "SULO Live User" "SULO Live Visitor")
+                                                                       :merge_vars [{:rcpt "hello@sulo.live"
+                                                                                     :vars (mandrill-params opts)}]
+                                                                       :tags       ["internal-notifications" "request-store"]}})})
+            ;sent-email (postal/send-message smtp
+            ;                                {:from    (str (if (some? user-id) "SULO Live User" "SULO Live Visitor") " <hello@sulo.live>")
+            ;                                 :to      "hello@sulo.live"
+            ;                                 :subject (str "Request start store access - " brand)
+            ;                                 :body    [{:type    "text/html"
+            ;                                            :content (templates/open-store-request params)}]})
+            ]
+        ;(debug sent-email)
+        (info "EMAIL - Send order notification to store " (into {} resp))
+        )
+      (catch Object _
+        (debug "Caught error sending store notification: " (:throwable &throw-context))))))
 
 (defn email [api-key]
   (->SendEmail api-key))
