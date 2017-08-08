@@ -195,7 +195,10 @@
   :min-lein-version "2.0.0"
   :clean-targets ^{:protect false} ["resources/public/dev/js/out"
                                     "resources/public/devcards/js/out"
-                                    "resources/public/release/js/out"
+                                    ;; Don't clean release, as we don't want "lein clean" to
+                                    ;; remove our build javascript from the release dir.
+                                    ;; See circle.yml (CircleCi)
+                                    ;; "resources/public/release/js/out"
                                     "resources/public/doo-test/js/out"
                                     "resources/public/test/js/out"
                                     "target/"
