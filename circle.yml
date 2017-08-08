@@ -125,7 +125,7 @@ jobs:
   docker_build_test:
     working_directory: ~/sulo
     docker:
-      - image: sulolive/docker-with-java:0.0.2
+      - image: docker:17.05.0-ce-git
     environment:
       TIMBRE_LEVEL: :info
       PORT: 8080
@@ -135,14 +135,6 @@ jobs:
 
       - attach_workspace:
           at: ~/sulo
-      - run:
-          name: "Create final uberjar"
-          command: |
-            cd resources
-            jar uf ../target/uberjar/budget-uberjar.jar public/release/js/out/budget.js public/assets/css
-      - store_artifacts:
-          path: target/uberjar/budget-uberjar.jar
-          destination: uberjar
 
       - run:
           name: Log in to dockerhub
@@ -150,8 +142,7 @@ jobs:
       - run:
           name: Build application Docker image
           command: |
-            cp Dockerfile target/uberjar/Dockerfile
-            docker build --tag sulolive/sulo:${CIRCLE_SHA1} --tag sulolive/sulo:latest target/uberjar
+            docker build --tag sulolive/sulo:${CIRCLE_SHA1} --tag sulolive/sulo:latest .
       - run:
           name: Start docker image
           command: docker run --name "runningapp" -d -e "PORT=$PORT" -e "CLJS_BUILD_ID=$CLJS_BUILD_ID" -e "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" -e "FIREBASE_SERVICE_ACCOUNT=$FIREBASE_SERVICE_ACCOUNT" -e "FIREBASE_DATABASE_URL=$FIREBASE_DATABASE_URL" -p $PORT:$PORT sulolive/sulo:${CIRCLE_SHA1}; sleep 4
