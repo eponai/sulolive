@@ -177,7 +177,7 @@ jobs:
       - run:
           name: "Push to dockerhub when on master"
           command: |
-            if [ "${CIRCLE_BRANCH}" = "master" ] || [ "${CIRCLE_BRANCH}" = "petter/WEB-233-circle-ci-2" ]; then
+            if [ "${CIRCLE_BRANCH}" = "master" ]; then
               docker push sulolive/sulo:${CIRCLE_SHA1}
               docker push sulolive/sulo:latest
             fi
@@ -194,6 +194,13 @@ jobs:
 
 workflows:
   version: 2
+  production_deploy:
+    jobs:
+      - deploy:
+          filters:
+            branches:
+              only:
+                - production
   build_and_test:
     jobs:
       - npm_deps:
@@ -235,8 +242,6 @@ workflows:
           filters:
             branches:
               only:
-                # Adding petter/WEB-233-circle-ci-2 branch to simulate what will happen on master.
-                - petter/WEB-233-circle-ci-2
                 - master
           requires:
             - docker_build_test

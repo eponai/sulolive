@@ -1,4 +1,4 @@
-#!/bin/bash -eux
+#!/bin/bash -eu
 
 script_dir="$(dirname $0)"
 cd "$script_dir/.."
@@ -13,7 +13,7 @@ if [ "${CIRCLE_BRANCH}" = "production" ]; then
   WEBSERVER_MEMORY=1500
   EB_ENV_NAME="$(scripts/_env-name-of-current-staging.sh)"
   FIREBASE_SERVICE_ACCOUNT="$FIREBASE_SERVICE_ACCOUNT_PRODUCTION"
-elif [ "${CIRCLE_BRANCH}" = "petter/WEB-233-circle-ci-2" ]; then
+elif [ "${CIRCLE_BRANCH}" = "master" ]; then
   WEBSERVER_MEMORY=700
   EB_ENV_NAME="sulo-master"
   FIREBASE_SERVICE_ACCOUNT="$FIREBASE_SERVICE_ACCOUNT_MASTER"
