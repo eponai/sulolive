@@ -1,6 +1,6 @@
 FROM openjdk:8-jdk
 
-ADD budget-uberjar.jar /srv/production.jar
+ADD target/uberjar/budget-uberjar.jar /srv/production.jar
 RUN cd resources && jar cf /srv/assets.jar \
     public/assets/css/app.css \
     public/release/js/out/budget.js
