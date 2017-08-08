@@ -43,13 +43,13 @@ cat Dockerrun2.aws.json.template \
     | sed "s,<FIREBASE_SERVICE_ACCOUNT>,$FIREBASE_SERVICE_ACCOUNT," \
     > $DOCKERRUN_FILE
 
-VERSION="$CIRCLE_BRANCH_$SHA1"
+VERSION="$CIRCLE_BRANCH-$ASSET_VERSION"
 
 aws --region=$REGION s3 cp "$DOCKERRUN_FILE" "s3://$EB_BUCKET/$DOCKERRUN_S3_FILE"
 aws --region=$REGION elasticbeanstalk create-application-version --application-name "$EB_APP_NAME" \
-  --version-label $VERSION --source-bundle S3Bucket="$EB_BUCKET",S3Key="$DOCKERRUN_S3_FILE"
+  --version-label "$VERSION" --source-bundle S3Bucket="$EB_BUCKET",S3Key="$DOCKERRUN_S3_FILE"
 
 # Update Elastic Beanstalk environment to new version
 aws --region=$REGION elasticbeanstalk update-environment --environment-name "$EB_ENV_NAME" \
-    --version-label $VERSION
+    --version-label "$VERSION"
 
