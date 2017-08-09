@@ -108,7 +108,7 @@
                        :store.profile/cover (photo "mocked/isbl_3360x840.20468865_f7kumdbt")}
     :store/username   "ikcha"
     :store/status     {:status/type :status.type/open}
-    ;:store/locality   [:sulo-locality/path "yvr"]
+    :store/locality   [:sulo-locality/path "yvr"]
     :store/created-at 1
     :store/stripe     (stripe-account)
     :store/sections   [{:db/id               (db/tempid :db.part/user -1000)
@@ -148,11 +148,11 @@
                         :store.item/price    211.00M
                         :store.item/photos   [(item-photo "mocked/il_570xN.883902058_swjc")]
                         :store.item/category [:category/path (category-path "jewelry" "women")]}]
-    :store/owners     {:store.owner/user {:db/id        (db/tempid :db.part/user)
-                                          :user/email   test-user-email
+    :store/owners     {:store.owner/user {:db/id         (db/tempid :db.part/user)
+                                          :user/email    test-user-email
                                           :user/verified true
-                                          :user/profile {:user.profile/name "dev"}
-                                          :user/stripe  {:stripe/id "cus_A9paOisnJJQ0wS"}}
+                                          :user/profile  {:user.profile/name "dev"}
+                                          :user/stripe   {:stripe/id "cus_A9paOisnJJQ0wS"}}
                        :store.owner/role :store.owner.role/admin}}
    ;; MagicLinen
    {:db/id            (db/tempid :db.part/user)
@@ -166,7 +166,7 @@
                        :store.owner/role :store.owner.role/admin}
     :store/stripe     (no-details-account)
     :store/created-at 2
-    :store/status {:status/type :status.type/open}
+    :store/status     {:status/type :status.type/open}
     ;:store/locality   [:sulo-locality/path "yvr"]
 
     :store/items      [{:store.item/name     "Linen duvet cover - Woodrose"
@@ -224,7 +224,7 @@
    {:db/id            (db/tempid :db.part/user)
     :store/created-at 4
     :store/profile    {:store.profile/name "Nafsika"
-                       ;:store.profile/photo (photo "mocked/isla_500x500.22177516_ath1ugrh")
+                       :store.profile/photo (photo "mocked/isla_500x500.22177516_ath1ugrh")
                        }
     :store/status     {:status/type :status.type/open}
     :store/locality   [:sulo-locality/path "yvr"]
@@ -251,108 +251,115 @@
                         :store.item/skus     [(sku)]}]}
 
    ;; FlowerRainbowNJ
-   {:db/id         (db/tempid :db.part/user)
-    :store/profile {:store.profile/name    "FlowerRainbowNJ"
-                    :store.profile/tagline "Keep calm and wear pretty jewelry."
-                    :store.profile/cover   (photo "mocked/449892-2b1249e4cb424d5a937a0f67fb22ccc0")
-                    :store.profile/photo   (photo "mocked/449892-2b1249e4cb424d5a937a0f67fb22ccc0")}
-    :store/items   [{:store.item/name     "Nose Stud"
-                     :store.item/photos   [(item-photo "mocked/449892-c7eed40ca74a4ed7abc555640c0936ad")]
-                     :store.item/price    24.74M
-                     :store.item/category [:category/path (category-path "jewelry" "women")]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Tragus Earring"
-                     :store.item/photos   [(item-photo "mocked/449892-7340ea71653e4b53a9057de4f64c1018")]
-                     :store.item/price    4.49M
-                     :store.item/category [:category/path (category-path "jewelry" "women")]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Nose Ring"
-                     :store.item/photos   [(item-photo "mocked/449892-4603b04cdd4e4a41b281a4aff4a39fe0")]
-                     :store.item/price    6.37M
-                     :store.item/category [:category/path (category-path "jewelry" "women")]
-                     :store.item/skus     [(sku)]}
-                    {:store.item/name     "Nose Ring"
-                     :store.item/photos   [(item-photo "mocked/449892-18406d9dfa7e449e8d36627c088c92c1")]
-                     :store.item/price    6.74M
-                     :store.item/category [:category/path (category-path "jewelry" "women")]
-                     :store.item/skus     [(sku)]}]}
+   {:db/id            (db/tempid :db.part/user)
+    :store/profile    {:store.profile/name    "FlowerRainbowNJ"
+                       :store.profile/tagline "Keep calm and wear pretty jewelry."
+                       :store.profile/cover   (photo "mocked/449892-2b1249e4cb424d5a937a0f67fb22ccc0")
+                       :store.profile/photo   (photo "mocked/449892-2b1249e4cb424d5a937a0f67fb22ccc0")}
+    :store/status     {:status/type :status.type/open}
+    :store/items      [{:store.item/name     "Nose Stud"
+                        :store.item/photos   [(item-photo "mocked/449892-c7eed40ca74a4ed7abc555640c0936ad")]
+                        :store.item/price    24.74M
+                        :store.item/category [:category/path (category-path "jewelry" "women")]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Tragus Earring"
+                        :store.item/photos   [(item-photo "mocked/449892-7340ea71653e4b53a9057de4f64c1018")]
+                        :store.item/price    4.49M
+                        :store.item/category [:category/path (category-path "jewelry" "women")]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Nose Ring"
+                        :store.item/photos   [(item-photo "mocked/449892-4603b04cdd4e4a41b281a4aff4a39fe0")]
+                        :store.item/price    6.37M
+                        :store.item/category [:category/path (category-path "jewelry" "women")]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Nose Ring"
+                        :store.item/photos   [(item-photo "mocked/449892-18406d9dfa7e449e8d36627c088c92c1")]
+                        :store.item/price    6.74M
+                        :store.item/category [:category/path (category-path "jewelry" "women")]
+                        :store.item/skus     [(sku)]}]
+    :store/created-at 5}
 
    ;; BangiShop
 
-   {:db/id          (db/tempid :db.part/user)
-    :store/profile  {:store.profile/name  "BangiShop"
-                     :store.profile/cover (photo "mocked/isbl_3360x840.24031443_roffucs6")
-                     :store.profile/photo (photo "mocked/isla_500x500.18128391_dro0qzqd")}
-    :store/locality [:sulo-locality/path "yvr"]
-    :store/stripe   {:stripe/id "acct_19jze1BbOp8CGZPS"}
-    :store/status   {:status/type :status.type/open}
-    :store/items    [{:store.item/name     "Leather Shoes (silver)"
-                      :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1040522475_mbon"
-                                                                             "mocked/il_570xN.993989824_3pdl"])
-                      :store.item/price    24.74M
-                      :store.item/category [:category/path (category-path "clothing" "women")]
-                      :store.item/skus     [(sku)]}
-                     {:store.item/name     "Leather Shoes (yellow)"
-                      :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.988317879_5pik"
-                                                                             "mocked/il_570xN.988317889_kzc9"])
-                      :store.item/price    4.49M
-                      :store.item/category [:category/path (category-path "clothing" "women")]
-                      :store.item/skus     [(sku)]}
-                     {:store.item/name     "Leather Boots"
-                      :store.item/photos   [(item-photo "mocked/il_570xN.1104988862_cb12")]
-                      :store.item/price    6.37M
-                      :store.item/category [:category/path (category-path "clothing" "women")]
-                      :store.item/skus     [(sku)]}]}
+   {:db/id            (db/tempid :db.part/user)
+    :store/profile    {:store.profile/name  "BangiShop"
+                       :store.profile/cover (photo "mocked/isbl_3360x840.24031443_roffucs6")
+                       :store.profile/photo (photo "mocked/isla_500x500.18128391_dro0qzqd")}
+    :store/locality   [:sulo-locality/path "yvr"]
+    :store/stripe     {:stripe/id "acct_19jze1BbOp8CGZPS"}
+    :store/status     {:status/type :status.type/open}
+    :store/items      [{:store.item/name     "Leather Shoes (silver)"
+                        :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1040522475_mbon"
+                                                                               "mocked/il_570xN.993989824_3pdl"])
+                        :store.item/price    24.74M
+                        :store.item/category [:category/path (category-path "clothing" "women")]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Leather Shoes (yellow)"
+                        :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.988317879_5pik"
+                                                                               "mocked/il_570xN.988317889_kzc9"])
+                        :store.item/price    4.49M
+                        :store.item/category [:category/path (category-path "clothing" "women")]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Leather Boots"
+                        :store.item/photos   [(item-photo "mocked/il_570xN.1104988862_cb12")]
+                        :store.item/price    6.37M
+                        :store.item/category [:category/path (category-path "clothing" "women")]
+                        :store.item/skus     [(sku)]}]
+    :store/created-at 6}
 
    ;; MIRIMIRIFASHION
-   {:db/id          (db/tempid :db.part/user)
-    :store/profile  {:store.profile/name    "MIRIMIRIFASHION"
-                     :store.profile/tagline "Handmade exclusive fashion designer shop."
-                     ;:store/cover #db/id[:db.part/user -51]
-                     :store.profile/photo   (photo "mocked/isla_500x500.17344782_h4dngp5g")}
-    :store/username "mirimirifashion"
-    :store/locality [:sulo-locality/path "yvr"]
-    :store/items    [{:store.item/name     "Hoodie Dress"
-                      :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1088263217_thkk"
-                                                                             "mocked/il_570xN.1041709156_noxy"
-                                                                             "mocked/il_570xN.1041709214_ae4i"])
-                      :store.item/price    24.74M
-                      :store.item/category [:category/path (category-path "clothing" "women")]
-                      :store.item/skus     [(sku)]}
-                     {:store.item/name     "Maxi skirt"
-                      :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.272372530"
-                                                                             "mocked/il_570xN.272372548"])
-                      :store.item/price    4.49M
-                      :store.item/category [:category/path (category-path "clothing" "women")]
-                      :store.item/skus     [(sku)]}
-                     {:store.item/name     "Leather Boots"
-                      :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1087733031_du1y"
-                                                                             "mocked/il_570xN.1087733249_hz9c"])
-                      :store.item/price    6.37M
-                      :store.item/category [:category/path (category-path "clothing" "women")]
-                      :store.item/skus     [(sku)]}]}
+   {:db/id            (db/tempid :db.part/user)
+    :store/profile    {:store.profile/name    "MIRIMIRIFASHION"
+                       :store.profile/tagline "Handmade exclusive fashion designer shop."
+                       ;:store/cover #db/id[:db.part/user -51]
+                       :store.profile/photo   (photo "mocked/isla_500x500.17344782_h4dngp5g")}
+    :store/status     {:status/type :status.type/open}
+    :store/username   "mirimirifashion"
+    :store/created-at 7
+    :store/locality   [:sulo-locality/path "yvr"]
+    :store/items      [{:store.item/name     "Hoodie Dress"
+                        :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1088263217_thkk"
+                                                                               "mocked/il_570xN.1041709156_noxy"
+                                                                               "mocked/il_570xN.1041709214_ae4i"])
+                        :store.item/price    24.74M
+                        :store.item/category [:category/path (category-path "clothing" "women")]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Maxi skirt"
+                        :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.272372530"
+                                                                               "mocked/il_570xN.272372548"])
+                        :store.item/price    4.49M
+                        :store.item/category [:category/path (category-path "clothing" "women")]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Leather Boots"
+                        :store.item/photos   (map-indexed #(item-photo %2 %1) ["mocked/il_570xN.1087733031_du1y"
+                                                                               "mocked/il_570xN.1087733249_hz9c"])
+                        :store.item/price    6.37M
+                        :store.item/category [:category/path (category-path "clothing" "women")]
+                        :store.item/skus     [(sku)]}]}
 
    ;; RecycledBeautifully
-   {:db/id          (db/tempid :db.part/user)
-    :store/profile  {:store.profile/name  "RecycledBeautifully"
-                     :store.profile/cover (photo "mocked/isbl_3360x840.18460378_4d4b1gyn")
-                     :store.profile/photo (photo "mocked/isla_500x500.23870003_5l3vsjlx")}
-    :store/locality [:sulo-locality/path "yvr"]
-    :store/items    [{:store.item/name     "Tree of Life wire"
-                      :store.item/photos   [(item-photo "mocked/il_570xN.728670429_e1dd")]
-                      :store.item/price    24.74M
-                      :store.item/category [:category/path (category-path "jewelry" "women")]
-                      :store.item/skus     [(sku)]}
-                     {:store.item/name     "Tree of Life copper"
-                      :store.item/photos   [(item-photo "mocked/il_570xN.1094904882_t58t")]
-                      :store.item/price    42.49M
-                      :store.item/category [:category/path (category-path "jewelry" "women")]
-                      :store.item/skus     [(sku)]}
-                     {:store.item/name     "Tree of Life wire"
-                      :store.item/photos   [(item-photo "mocked/il_570xN.1074937810_dh62")]
-                      :store.item/price    64.37M
-                      :store.item/category [:category/path (category-path "jewelry" "women")]
-                      :store.item/skus     [(sku)]}]}
+   {:db/id            (db/tempid :db.part/user)
+    :store/created-at 8
+    :store/profile    {:store.profile/name  "RecycledBeautifully"
+                       :store.profile/cover (photo "mocked/isbl_3360x840.18460378_4d4b1gyn")
+                       :store.profile/photo (photo "mocked/isla_500x500.23870003_5l3vsjlx")}
+    :store/status     {:status/type :status.type/open}
+    :store/locality   [:sulo-locality/path "yvr"]
+    :store/items      [{:store.item/name     "Tree of Life wire"
+                        :store.item/photos   [(item-photo "mocked/il_570xN.728670429_e1dd")]
+                        :store.item/price    24.74M
+                        :store.item/category [:category/path (category-path "jewelry" "women")]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Tree of Life copper"
+                        :store.item/photos   [(item-photo "mocked/il_570xN.1094904882_t58t")]
+                        :store.item/price    42.49M
+                        :store.item/category [:category/path (category-path "jewelry" "women")]
+                        :store.item/skus     [(sku)]}
+                       {:store.item/name     "Tree of Life wire"
+                        :store.item/photos   [(item-photo "mocked/il_570xN.1074937810_dh62")]
+                        :store.item/price    64.37M
+                        :store.item/category [:category/path (category-path "jewelry" "women")]
+                        :store.item/skus     [(sku)]}]}
    ])
 
 (defn stores-with-item-created-at [stores]
@@ -415,8 +422,8 @@
   (let [categories (mock-categories3)
         stores (mock-stores)
         chats (mock-chats stores)
-        live-streams (mock-streams (take 1 stores) :stream.state/live)
-        streams (mock-streams (drop 1 stores) :stream.state/offline)
+        live-streams (mock-streams (take 6 stores) :stream.state/live)
+        streams (mock-streams (drop 6 stores) :stream.state/offline)
         countries (countries)
         ;storeless-user (user-no-store)
         stores-with-localities (map (fn [s]

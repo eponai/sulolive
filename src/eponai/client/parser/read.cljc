@@ -58,19 +58,16 @@
   [{:keys [db query target]} _ {:keys [states]}]
   (if target
     {:remote true}
-    {:value (when-let [loc (client.auth/current-locality db)]
-              (if (some? states)
-                (db/pull-all-with db query {:where   '[[?e :store/locality ?l]
-                                                       [?st :status/type :status.type/open]
-                                                       [?e :store/status ?st]
-                                                       [?s :stream/state ?states]
-                                                       [?s :stream/store ?e]]
-                                            :symbols {'?l            (:db/id loc)
-                                                      '[?states ...] states}})
-                (db/pull-all-with db query {:where   '[[?e :store/locality ?l]
-                                                       [?st :status/type :status.type/open]
-                                                       [?e :store/status ?st]]
-                                            :symbols {'?l (:db/id loc)}})))}))
+    {:value (if (some? states)
+              (db/pull-all-with db query {:where   '[
+                                                     [?st :status/type :status.type/open]
+                                                     [?e :store/status ?st]
+                                                     [?s :stream/state ?states]
+                                                     [?s :stream/store ?e]]
+                                          :symbols {'[?states ...] states}})
+              (db/pull-all-with db query {:where   '[
+                                                     [?st :status/type :status.type/open]
+                                                     [?e :store/status ?st]]}))}))
 
 (defmethod client-read :query/store-has-streamed
   [{:keys [db query target]} _ {:keys [states]}]
@@ -83,27 +80,24 @@
   ;(debug "Read query/auth: ")
   (if target
     {:remote true}
-    {:value (when-let [loc (client.auth/current-locality db)]
-              (db/pull-all-with db query {:where   '[[?s :store/locality ?l]
-                                                     [?st :status/type :status.type/open]
-                                                     [?s :store/status ?st]
-                                                     [?e :stream/store ?s]
-                                                     [?e :stream/state :stream.state/live]]
-                                          :symbols {'?l (:db/id loc)}}))}))
+    {:value (db/pull-all-with db query {:where   '[
+                                                   [?st :status/type :status.type/open]
+                                                   [?s :store/status ?st]
+                                                   [?e :stream/store ?s]
+                                                   [?e :stream/state :stream.state/live]]})}))
 
 (defmethod client-read :query/browse-items
   [{:keys [db target query route-params query-params]} _ _]
   (if target
     {:remote true}
-    {:value (when-let [loc (client.auth/current-locality db)]
-              (let [{:keys [top-category sub-category]} route-params]
-                (db/pull-all-with db query (cond
-                                             (seq (:search query-params))
-                                             (products/find-with-search loc (:search query-params))
-                                             (or (some? sub-category) (some? top-category))
-                                             (products/find-with-category-names loc route-params)
-                                             :else
-                                             (products/find-all loc)))))}))
+    {:value (let [{:keys [top-category sub-category]} route-params]
+              (db/pull-all-with db query (cond
+                                           (seq (:search query-params))
+                                           (products/find-with-search (:search query-params))
+                                           (or (some? sub-category) (some? top-category))
+                                           (products/find-with-category-names route-params)
+                                           :else
+                                           (products/find-all))))}))
 
 ;; ----- Featured
 
@@ -126,63 +120,51 @@
 (defmethod client-read :query/featured-streams
   [{:keys [db query]} _ _]
   {:remote true
-   :value  (when-let [loc (client.auth/current-locality db)]
-             (pull-featured db query {:find    '[?e ?featured]
-                                      :where   '[[?e :stream/featured ?featured]
-                                                 [?e :stream/store ?s]
-                                                 [?s :store/locality ?l]]
-                                      :symbols {'?l (:db/id loc)}}))})
+   :value  (pull-featured db query {:find    '[?e ?featured]
+                                    :where   '[[?e :stream/featured ?featured]
+                                               [?e :stream/store ?s]]})})
 
 (defmethod client-read :query/featured-items
   [{:keys [db query]} _ _]
   {:remote true
-   :value  (when-let [loc (client.auth/current-locality db)]
-             (pull-featured db query {:find    '[?e ?featured]
-                                      :where   '[[?s :store/locality ?l]
-                                                 [?s :store/items ?e]
-                                                 [?e :store.item/featured ?featured]]
-                                      :symbols {'?l (:db/id loc)}}))})
+   :value  (pull-featured db query {:find    '[?e ?featured]
+                                    :where   '[
+                                               [?s :store/items ?e]
+                                               [?e :store.item/featured ?featured]]})})
 (defmethod client-read :query/featured-women
   [{:keys [db query]} _ _]
   {:remote true
-   :value  (when-let [loc (client.auth/current-locality db)]
-             (pull-featured db query (-> (products/find-with-category-names loc {:sub-category "women"})
-                                         (db/merge-query {:find '[?e ?featured]
-                                                          :where '[[?e :store.item/featured ?featured]]}))))})
+   :value  (pull-featured db query (-> (products/find-with-category-names {:sub-category "women"})
+                                       (db/merge-query {:find '[?e ?featured]
+                                                        :where '[[?e :store.item/featured ?featured]]})))})
 
 (defmethod client-read :query/featured-men
   [{:keys [db query]} _ _]
   {:remote true
-   :value  (when-let [loc (client.auth/current-locality db)]
-             (pull-featured db query (-> (products/find-with-category-names loc {:sub-category "men"})
-                                         (db/merge-query {:find '[?e ?featured]
-                                                          :where '[[?e :store.item/featured ?featured]]}))))})
+   :value  (pull-featured db query (-> (products/find-with-category-names {:sub-category "men"})
+                                       (db/merge-query {:find '[?e ?featured]
+                                                        :where '[[?e :store.item/featured ?featured]]})))})
 
 (defmethod client-read :query/featured-home
   [{:keys [db query]} _ _]
   {:remote true
-   :value  (when-let [loc (client.auth/current-locality db)]
-             (pull-featured db query (-> (products/find-with-category-names loc {:top-category "home"})
-                                         (db/merge-query {:find '[?e ?featured]
-                                                          :where '[[?e :store.item/featured ?featured]]}))))})
+   :value  (pull-featured db query (-> (products/find-with-category-names {:top-category "home"})
+                                       (db/merge-query {:find '[?e ?featured]
+                                                        :where '[[?e :store.item/featured ?featured]]})))})
 (defmethod client-read :query/featured-art
   [{:keys [db query]} _ _]
   {:remote true
-   :value  (when-let [loc (client.auth/current-locality db)]
-             (pull-featured db query (-> (products/find-with-category-names loc {:top-category "art"})
-                                         (db/merge-query {:find '[?e ?featured]
-                                                          :where '[[?e :store.item/featured ?featured]]}))))})
+   :value  (pull-featured db query (-> (products/find-with-category-names {:top-category "art"})
+                                       (db/merge-query {:find '[?e ?featured]
+                                                        :where '[[?e :store.item/featured ?featured]]})))})
 
 (defmethod client-read :query/featured-stores
   [{:keys [db query]} _ _]
   ;; Only fetch featured-stores initially? i.e. (when (nil? db-history) ...)
   ;; TODO: Come up with a way to feature stores. DB SHUFFLE
   {:remote true
-   :value  (when-let [loc (client.auth/current-locality db)]
-             (pull-featured db query {:find    '[?e ?featured]
-                                      :where   '[[?e :store/featured ?featured]
-                                                 [?e :store/locality ?l]]
-                                      :symbols {'?l (:db/id loc)}}))})
+   :value  (pull-featured db query {:find    '[?e ?featured]
+                                    :where   '[[?e :store/featured ?featured]]})})
 
 ;################
 
@@ -193,16 +175,13 @@
       {:remote true}
       {:value (db/pull db query store-id)})))
 
-(defmethod client-read :query/online-stores
-  [{:keys [db query target route-params] :as env} _ _]
-  (if target
-    {:remote true}
-    {:value (when-let [loc (client.auth/current-locality db)]
-              (db/pull-all-with db query {:where   '[[?e :store/owners ?owner]
-                                                     [?owner :store.owner/user ?user]
-                                                     [?user :user/online? true]
-                                                     [?e :store/locality ?l]]
-                                          :symbols {'?l (:db/id loc)}}))}))
+;(defmethod client-read :query/online-stores
+;  [{:keys [db query target route-params] :as env} _ _]
+;  (if target
+;    {:remote true}
+;    {:value (db/pull-all-with db query {:where   '[[?e :store/owners ?owner]
+;                                                   [?owner :store.owner/user ?user]
+;                                                   [?user :user/online? true]]})}))
 
 (defmethod client-read :query/store-items
   [{:keys [db query target route-params]} _ _]
@@ -495,11 +474,11 @@
     {:remote true}
     {:value (db/singleton-value db :ui.singleton.firebase/token)}))
 
-(defmethod client-read :query/locations
-  [{:keys [target db query]} _ _]
-  (if target
-    {:remote true}
-    {:value (client.auth/current-locality db)}))
+;(defmethod client-read :query/locations
+;  [{:keys [target db query]} _ _]
+;  (if target
+;    {:remote true}
+;    {:value (client.auth/current-locality db)}))
 
 (defmethod client-read :query/stream
   [{:keys [db query target route-params]} _ _]
@@ -617,8 +596,7 @@
   (let [query (extract-items-query query)]
     (if target
       {:remote (assoc ast :query query)}
-      (let [locality (client.auth/current-locality db)
-            browse-params (browse/make-browse-params locality route-params query-params)
+      (let [browse-params (browse/make-browse-params route-params query-params)
             browse-result (some->> (browse/find-result db browse-params)
                                    (db/entity db))]
         (when (some? browse-result)

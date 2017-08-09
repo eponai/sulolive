@@ -141,7 +141,6 @@
                                                                           {:store/profile [:store.profile/name
                                                                                            {:store.profile/photo [:photo/id]}]}]}]}]}]}
      {:query/featured-items (om/get-query ci/ProductItem)}
-     :query/locations
      {:query/auth [:db/id :user/email {:user/profile [:user.profile/name]}]}
      :query/current-route])
   Object

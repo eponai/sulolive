@@ -20,11 +20,10 @@
     [
      {:query/streams (om/get-query ci/OnlineChannel)}
      {:query/stores (om/get-query ci/StoreItem)}
-     {:query/online-stores (om/get-query ci/StoreItem)}
-     :query/locations])
+     {:query/online-stores (om/get-query ci/StoreItem)}])
   Object
   (render [this]
-    (let [{:query/keys [locations streams stores online-stores]} (om/props this)
+    (let [{:query/keys [streams stores online-stores]} (om/props this)
           streaming-stores (set (map #(get-in % [:stream/store :db/id]) streams))
           online-not-live (remove #(contains? streaming-stores (:db/id %)) online-stores)
           offline-stores (remove #(contains? (set (map :db/id online-not-live)) (:db/id %)) stores)
@@ -35,7 +34,7 @@
       (debug "Live props: " (om/props this))
       (dom/div
         {:classes ["sulo-browse"]}
-        (common/city-banner this locations)
+        ;(common/city-banner this locations)
         ;(grid/row
         ;  nil
         ;  (grid/column
@@ -93,7 +92,7 @@
               {:classes ["sulo-items-container section"]}
               (my-dom/div
                 (css/add-class :section-title)
-                (my-dom/h3 nil (str "All SULO " (:sulo-locality/path locations) " stores"))
+                (my-dom/h3 nil "All SULO shops")
                 )
               (grid/row
                 (grid/columns-in-row {:small 2 :medium 3 :large 4})

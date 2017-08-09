@@ -79,11 +79,11 @@
           (not-empty val)
           (db-with [[:db/add [:ui/singleton :ui.singleton/auth] :ui.singleton.auth/auth0 val]])))
 
-(defmethod client-merge :query/locations
-  [db k val]
-  (if (not-empty val)
-    (db-with db [[:db/add [:ui/singleton :ui.singleton/auth] :ui.singleton.auth/locations val]])
-    db))
+;(defmethod client-merge :query/locations
+;  [db k val]
+;  (if (not-empty val)
+;    (db-with db [[:db/add [:ui/singleton :ui.singleton/auth] :ui.singleton.auth/locations val]])
+;    db))
 
 (defmethod client-merge :query/store-has-streamed
   [db k val]

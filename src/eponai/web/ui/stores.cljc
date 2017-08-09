@@ -15,15 +15,14 @@
 
   static om/IQuery
   (query [_]
-    [{:query/stores (om/get-query ci/StoreItem)}
-     :query/locations])
+    [{:query/stores (om/get-query ci/StoreItem)}])
   Object
   (render [this]
-    (let [{:query/keys [locations stores]} (om/props this)]
+    (let [{:query/keys [stores]} (om/props this)]
 
       (dom/div
         {:classes ["sulo-browse"]}
-        (common/city-banner this locations)
+        ;(common/city-banner this locations)
         ;(grid/row
         ;  nil
         ;  (grid/column
@@ -34,7 +33,7 @@
           (css/add-classes [:section :text-center])
           (dom/div
             {:classes ["sulo-items-container"]}
-            (dom/h2 nil (str "SULO Stores " (:sulo-locality/path locations)))
+            (dom/h2 nil "SULO shops")
             (grid/row
               (grid/columns-in-row {:small 2 :medium 3 :large 4})
               (map (fn [store]

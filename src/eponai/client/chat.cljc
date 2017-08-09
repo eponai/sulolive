@@ -37,8 +37,7 @@
 (defn chat-basis-t [db store-id]
   (try
     (some-> (read-basis-t-graph db)
-            (parser.util/get-basis-t :query/chat {:locations (:sulo-locality/path (client.auth/current-locality db))
-                                                  :store-id  store-id})
+            (parser.util/get-basis-t :query/chat {:store-id  store-id})
             ;; query/chat has a map of last reads because of legacy reasons. (datomic-chat).
             (:last-read-chat-db))
     (catch #?@(:clj [Exception e] :cljs [:default e])

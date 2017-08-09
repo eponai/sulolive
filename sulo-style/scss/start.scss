@@ -15,13 +15,14 @@ $section-footer-color: $primary-color;
 		padding-bottom: 0;
 	}
 	h3, h3 a {
+
 		// color: $sulo-dark-color;
 	}
 	.hero {
 		height: 20rem;
 
 		@include breakpoint(medium) {
-			height: 600px;
+			height: 500px;
 		}
 		// @include breakpoint(medium) {}
 		// max-height: 600px;
@@ -43,16 +44,18 @@ $section-footer-color: $primary-color;
 				// height: 100%;
 				min-width: 1076px;
 				background: $black;
+				// filter: blur(5px);
 			}
 		}
 		.hero-content {
 			@include breakpoint(medium) {
-				padding: 0 1rem 8rem 1rem;
+				padding: 0 1rem 10rem 1rem;
 			}
 			position: relative;
 			z-index: 2;
 			flex: 1;
 			display: flex;
+			flex-direction: column;
 			background: radial-gradient(rgba($black, 0.1), rgba($black, 0.2), rgba($black, 0.5) );
 			.va-container {
 				flex: 1;
@@ -61,19 +64,50 @@ $section-footer-color: $primary-color;
 				flex-direction: column;
 				align-items: center;
 			}
+			.va-footer {
+				h3 {
+					color: $white;
+					text-align: center;
+					margin-top: 0;
+					// margin-bottom: 0;
+				}
+				.content-item {
+					padding-top: 0;
+				}
+				.content-item-text {
+					color: $white;
+				}
+				position: absolute;
+				background: rgba($black, 0.5);
+				left: 0;
+				bottom: 0;
+				right: 0;
+				height: 15rem;
+				.row {
+					max-width: $global-width;
+				}
+			}
+		}
+	}
+
+	.section {
+		
+		.row .column {
+			padding: 5px;
 		}
 	}
 
 	.section.content {
-		margin-bottom: 4rem;
 		.row {
+			padding: 0 1rem;
+			@include breakpoint(medium) {
+				padding: 0 2rem;
+			}
 			flex-wrap: nowrap;
 			overflow-x: scroll;
 			overflow-y: hidden;
-			padding-left: 1rem;
-			.column {
-				margin-right: 1rem;
-			}
+			// padding-left: 1rem;
+			
 			&::-webkit-scrollbar {
 				height: 0;
 					// background: $black;
@@ -90,6 +124,7 @@ $section-footer-color: $primary-color;
 	.sell-on-sulo {
 		background: rgba($sulo-color, 0.3);
 		padding: 4rem 1rem 4rem 1rem;
+		margin-bottom: 0;
 		.lead {
 			margin-left: auto;
 			margin-right: auto;
@@ -107,6 +142,14 @@ $section-footer-color: $primary-color;
 			background: none;
 			max-width: 30rem;
 			margin: 0 auto;
+		}
+	}
+	.sulo-instagram {
+		background: rgba($sulo-color, 1);
+		margin-bottom: 0;
+		padding: 4rem 0;
+		h3 a {
+			color: $white;
 		}
 	}
 }

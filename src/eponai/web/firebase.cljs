@@ -226,9 +226,7 @@
               new-listeners (into {}
                                   (map (juxt #(listener-id-fn %) identity))
                                   (all-listeners (assoc-in route-map [::special-params]
-                                                           {:user-id  user-id
-                                                            :locality (:sulo-locality/path
-                                                                        (client.auth/current-locality reconciler))})))
+                                                           {:user-id  user-id})))
 
               old-keys (set (keys old-listeners))
               new-keys (set (keys new-listeners))]

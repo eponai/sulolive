@@ -6,10 +6,15 @@
 	}
 	a {
 		color: $footer-font-color;
-		font-weight: 500;
+		font-weight: $global-weight-normal;
+		font-size: 85%;
+		letter-spacing: 0.5px;
+	}
+	.menu li a, .menu .menu-text {
+		padding: 0.5rem 0.75rem;
 	}
 	footer {
-		max-width: $global-width;
+		max-width: $dashboard-content-width;
 		margin: auto auto;
 		height: 100%;
 	}

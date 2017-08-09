@@ -17,7 +17,8 @@
     [eponai.common.ui.icons :as icons]
     [eponai.web.ui.nav.common :as nav.common]
     [eponai.web.ui.login :as login]
-    [eponai.web.ui.notifications :as note]))
+    [eponai.web.ui.notifications :as note]
+    [eponai.web.ui.button :as button]))
 
 (def dropdown-elements
   {:dropdown/user       "sl-user-dropdown"
@@ -109,11 +110,12 @@
          (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
        (menu/item
          nil
-         (dom/a
-           {:onClick #(do
-                       (debug "Click login: " (shared/by-key component :shared/login))
-                       (auth/show-login (shared/by-key component :shared/login)))}
-           (dom/strong nil (dom/small nil "Sign up / Sign in")))))]))
+         (button/button
+           (->> {:onClick #(do
+                            (debug "Click login: " (shared/by-key component :shared/login))
+                            (auth/show-login (shared/by-key component :shared/login)))}
+                (css/add-classes [:sulo-dark :small :hollow]))
+           (dom/strong nil "Sign up / Sign in"))))]))
 
 (defn help-navbar [component]
   (let [{:query/keys [auth owned-store]} (om/props component)]
@@ -146,7 +148,7 @@
 
 (defn manage-store-navbar [component]
   (let [{:proxy/keys [notification]
-         :query/keys [auth owned-store current-route locations]} (om/props component)
+         :query/keys [auth owned-store current-route]} (om/props component)
         {:keys [inline-sidebar-hidden?]} (om/get-state component)
         toggle-inline-sidebar (fn []
                                 #?(:cljs
@@ -176,9 +178,7 @@
 
           (menu/item
             (css/show-for :medium)
-            (dom/a {:href    (if locations
-                               (routes/url :index {:locality (:sulo-locality/path locations)})
-                               (routes/url :landing-page))
+            (dom/a {:href    (routes/url :index)
                     :onClick #(mixpanel/track "Store: Go back to marketplace" {:source "navbar"})}
                    (dom/strong nil (dom/small nil "Back to marketplace"))))
 
@@ -198,7 +198,7 @@
 
 (defn standard-navbar [component]
   (let [{:proxy/keys [notification]
-         :query/keys [owned-store cart loading-bar current-route locations auth]} (om/props component)]
+         :query/keys [owned-store cart loading-bar current-route auth]} (om/props component)]
 
     [(navbar-content
        nil
@@ -211,12 +211,15 @@
              (dom/a
                (css/hide-for :large {:onClick #(.open-sidebar component)})
                (dom/i {:classes ["fa fa-bars fa-fw"]})))
-           (navbar-brand (if (not-empty locations)
-                           (routes/url :index {:locality (:sulo-locality/path locations)})
-                           (routes/url :landing-page)))
+           (navbar-brand (routes/url :index))
            (nav.common/live-link component "navbar")
+           (menu/item-link
+             (->> (css/add-class :category)
+                  (css/show-for :large))
+             (dom/span nil "Shop"))
 
-           (nav.common/collection-links component "navbar")))
+           ;(nav.common/collection-links component "navbar")
+           ))
 
        (dom/div
          {:classes ["top-bar-right"]}
@@ -228,14 +231,18 @@
            (when (some? owned-store)
              (note/->Notifications (om/computed notification {:type :notification.type/chat
                                                               :href (routes/store-url owned-store :store)})))
+
+
+           (user-menu-item component)
            (when (nil? auth)
              (menu/item
                nil
-               (dom/a
-                 (->> {:href (routes/url :about)}
+               (button/button
+                 (->> {:href (routes/url :sell)}
+                      (css/add-classes [:small :sulo-dark])
                       (css/show-for :medium))
-                 (dom/strong nil (dom/small nil "About us")))))
-           (user-menu-item component)
+                 (dom/strong nil "Open your LIVE shop"))))
+
            (menu/item
              (css/add-class :shopping-bag)
              (dom/a {:classes ["shopping-bag-icon"]

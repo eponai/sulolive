@@ -56,13 +56,13 @@
      {:query/top-streams (om/get-query ci/OnlineChannel)}
      :query/messages])
   Object
-  (select-locality [this locality]
-    #?(:cljs
-       (do
-         (web-utils/set-locality locality)
-         (om/transact! this [(list 'client/set-locality {:locality locality})
-                             :query/locations])
-         (routes/set-url! this :index {:locality (:sulo-locality/path locality)}))))
+  ;(select-locality [this locality]
+  ;  #?(:cljs
+  ;     (do
+  ;       (web-utils/set-locality locality)
+  ;       (om/transact! this [(list 'client/set-locality {:locality locality})
+  ;                           :query/locations])
+  ;       (routes/set-url! this :index {:locality (:sulo-locality/path locality)}))))
   (submit-new-location [this]
     #?(:cljs
        (let [email (web-utils/input-value-by-id (:field/email form-inputs))

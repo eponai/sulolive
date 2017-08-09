@@ -65,7 +65,7 @@
           (css/add-classes [:text :is-live])
 
           (dom/a {:href store-link}
-                 (dom/strong nil store-name))
+                 (dom/span (css/add-class :content-item-text) store-name))
           )))))
 
 (def ->OnlineChannel (om/factory OnlineChannel))

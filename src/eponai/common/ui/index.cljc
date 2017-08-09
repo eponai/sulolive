@@ -45,7 +45,7 @@
 (defui Index
   static om/IQuery
   (query [_]
-    [:query/locations
+    [
      :query/current-route
      {:query/featured-items (om/get-query ci/ProductItem)}
      ;{:query/featured-women (om/get-query ci/ProductItem)}
@@ -65,30 +65,8 @@
      {:query/online-stores (om/get-query ci/StoreItem)}])
   Object
   (render [this]
-    (let [{:proxy/keys [navbar footer]
-           :query/keys [locations top-streams featured-streams featured-stores current-route online-stores featured-items featured-home featured-men featured-art]} (om/props this)
-          {:keys [route-params]} current-route
-          streaming-stores (set (map #(get-in % [:stream/store :db/id]) featured-streams))
-          online-not-live (remove #(contains? streaming-stores (:db/id %)) online-stores)
-          online-right-now (filter #(let [online (-> % :store/owners :store.owner/user :user/online?)]
-                                     (or (= true online)
-                                         (> 60000 (- (date/current-millis) online))))
-                                   online-not-live)
-          online-items (vec (concat (map (fn [c]
-                                           (grid/column
-                                             (css/add-class :online-stream)
-                                             (ci/->OnlineChannel c)))
-                                         featured-streams)
-                                    (map (fn [c]
-                                           (grid/column
-                                             nil
-                                             (ci/->StoreItem c)))
-                                         online-not-live)))
-          online-items (if (<= 8 (count online-items))
-                         (take 8 online-items)
-                         (take 4 online-items))
-
-          featured-live (first (sort-by #(get-in % [:stream/store :store/visitor-count]) top-streams))]
+    (let [{:query/keys [top-streams featured-streams featured-stores current-route online-stores featured-items featured-home featured-men featured-art]} (om/props this)
+          {:keys [route-params]} current-route]
       ;(debug "Featured women products: " featured-women)
 
 
@@ -110,12 +88,49 @@
                             (css/text-align :center))
                        (dom/h1 (css/show-for-sr) "SULO Live")
                        (dom/h2 (css/add-class :jumbo-header) "Know their story")
-                       (dom/p (css/add-classes [:jumbo-lead :lead]) "Shop from brands you get to know by engaging on their LIVE streams.")))
+                       (dom/p (css/add-classes [:jumbo-lead :lead]) "Shop from brands you get to know by engaging on their LIVE streams."))
+
+                     ;(dom/div
+                     ;  (->> (css/add-class :va-footer))
+                     ;  (dom/h3 nil "Live right now")
+                     ;  (grid/row
+                     ;    (->>
+                     ;      (grid/columns-in-row {:small 2 :medium 4 }))
+                     ;    ;(grid/column
+                     ;    ;  (css/add-class :online-streams))
+                     ;    (map (fn [c]
+                     ;           (grid/column
+                     ;             (css/add-class :online-stream)
+                     ;             (ci/->OnlineChannel c)))
+                     ;         featured-streams)))
+                     ;(when (not-empty featured-streams)
+                     ;  (dom/div
+                     ;    (->> (css/add-class :va-footer)
+                     ;         (css/show-for :large))
+                     ;
+                     ;    (dom/div
+                     ;      (css/add-classes [:content :section :online-channels])
+                     ;      (grid/row-column
+                     ;        nil
+                     ;        (dom/h3 (css/add-class :section-header) "Live right now"))
+                     ;      (grid/row
+                     ;        (cond->>
+                     ;          (grid/columns-in-row {:small 2 :medium 4})
+                     ;          (> 4 (count featured-streams))
+                     ;          (css/align :center))
+                     ;        ;(grid/column
+                     ;        ;  (css/add-class :online-streams))
+                     ;        (map (fn [c]
+                     ;               (grid/column
+                     ;                 (css/add-class :online-stream)
+                     ;                 (ci/->OnlineChannel c)))
+                     ;             featured-streams)))
+                     ;    ))
+                     )
                    )
 
                  (dom/div
                    (css/add-class :sections)
-
                    (when (not-empty featured-streams)
                      (common/content-section {:href  (routes/url :live route-params)
                                               :class "online-channels"}
@@ -124,7 +139,7 @@
 
                                              (grid/row
                                                (->>
-                                                 (grid/columns-in-row {:small 2 :medium 4 :large 5}))
+                                                 (grid/columns-in-row {:small 2 :medium 3 :large 5}))
                                                ;(grid/column
                                                ;  (css/add-class :online-streams))
                                                (map (fn [c]
@@ -134,7 +149,8 @@
                                                     featured-streams))
                                              ""))
 
-                   (when (not-empty featured-streams)
+
+                   (when (<= 5 (count featured-streams))
                      (common/content-section {:href  (routes/url :live route-params)
                                               :class "online-channels"}
                                              (dom/a {:href (routes/url :live route-params)}
@@ -142,7 +158,7 @@
 
                                              (grid/row
                                                (->>
-                                                 (grid/columns-in-row {:small 2 :medium 4 :large 5}))
+                                                 (grid/columns-in-row {:small 2 :medium 3 :large 5}))
                                                ;(grid/column
                                                ;  (css/add-class :online-streams))
                                                (map (fn [c]
@@ -152,24 +168,28 @@
                                                     featured-streams))
                                              ""))
 
-                   (when (not-empty featured-streams)
-                     (common/content-section {:href  (routes/url :live route-params)
-                                              :class "online-channels"}
-                                             (dom/a {:href (routes/url :live route-params)}
-                                                    (dom/span nil "Popular"))
-
-                                             (grid/row
-                                               (->>
-                                                 (grid/columns-in-row {:small 2 :medium 4 :large 5}))
-                                               ;(grid/column
-                                               ;  (css/add-class :online-streams))
-                                               (map (fn [c]
-                                                      (grid/column
-                                                        (css/add-class :online-stream)
-                                                        (ci/->OnlineChannel c)))
-                                                    featured-streams))
-                                             ""))
+                   ;(when (<= 5 (count featured-streams))
+                   ;  (common/content-section {:href  (routes/url :live route-params)
+                   ;                           :class "online-channels"}
+                   ;                          (dom/a {:href (routes/url :live route-params)}
+                   ;                                 (dom/span nil "Popular"))
+                   ;
+                   ;                          (grid/row
+                   ;                            (->>
+                   ;                              (grid/columns-in-row {:small 2 :medium 4 :large 5}))
+                   ;                            ;(grid/column
+                   ;                            ;  (css/add-class :online-streams))
+                   ;                            (map (fn [c]
+                   ;                                   (grid/column
+                   ;                                     (css/add-class :online-stream)
+                   ;                                     (ci/->OnlineChannel c)))
+                   ;                                 featured-streams))
+                   ;                          ""))
                    (common/mobile-app-banner this)
+                   ;<!-- LightWidget WIDGET --><script src="//lightwidget.com/widgets/lightwidget.js"></script><iframe src="//lightwidget.com/widgets/518cc674e6265d0fa7aae74a603e7c25.html" scrolling="no" allowtransparency="true" class="lightwidget-widget" style="width: 100%; border: 0; overflow: hidden;"></iframe>
+
+
+
                    ;(when featured-live
                    ;  (common/content-section
                    ;    {:href  (routes/store-url (:stream/store featured-live) :store)
@@ -297,68 +317,16 @@
 
 
 
-
-                   (common/content-section
-                     {:href  (routes/url :stores route-params)
-                      :class "new-brands"}
-                     (dom/a {:href (routes/url :stores route-params)} (dom/span nil "Brands"))
-                     ;(grid/row-column
-                     ;  (css/text-align :center))
-                     ;(dom/div
-                     ;  (css/add-class :section-title)
-                     ;  (dom/h2 nil "New brands"))
-                     (dom/div
-                       {:classes ["sulo-items-container"]}
-                       (grid/row
-                         (grid/columns-in-row {:small 2 :medium 4 :large 6})
-                         (map (fn [store]
-                                (let [store-name (get-in store [:store/profile :store.profile/name])]
-                                  (grid/column
-                                    nil
-                                    (ci/->StoreItem store))))
-                              (take 4 featured-stores))))
-                     "")
-
-                   (when (not-empty featured-items)
-                     (common/content-section
-                       {:href  (routes/url :browse/gender (merge route-params
-                                                                 {:sub-category "women"}))
-                        :class "products"}
-                       (dom/a {:href (routes/url :browse/gender (merge route-params
-                                                                       {:sub-category "women"}))}
-                              (dom/span nil "Products"))
-                       (dom/div
-                         nil
-                         (grid/row
-                           (->> (css/add-class :collapse)
-                             (grid/columns-in-row {:small 2 :medium 4 :large 6}))
-                           ;(grid/column
-                           ;  (css/add-class :online-streams))
-                           (map-indexed
-                             (fn [i p]
-                               (grid/column
-                                 (cond
-                                   (< 7 i)
-                                   (css/show-for :large)
-                                   (< 3 i)
-                                   (css/show-for :medium))
-                                 (ci/->ProductItem (om/computed p
-                                                                {:open-url?     true
-                                                                 :current-route current-route}))))
-                             (take 10 featured-items))))
-                       ""))
-
-                   (common/sell-on-sulo this)
                    (dom/div
                      (->> (css/add-classes [:collections :section])
                           (css/text-align :center))
-                     
+
                      (dom/h3 (css/add-class :section-header) "Shop by collection")
 
 
 
                      (grid/row
-                       (->> (grid/columns-in-row {:small 2 :medium 4})
+                       (->> (grid/columns-in-row {:small 2 :large 4})
                             )
                        (grid/column
                          (->> (css/add-class :content-item)
@@ -389,6 +357,74 @@
                                                                                           {:sub-category "men"}))
                                               :photo-id "static/men-3"
                                               :title    "Men"}))))
+
+                   (common/content-section
+                     {:href  (routes/url :stores route-params)
+                      :class "new-brands"}
+                     (dom/a {:href (routes/url :stores route-params)} (dom/span nil "Brands"))
+                     ;(grid/row-column
+                     ;  (css/text-align :center))
+                     ;(dom/div
+                     ;  (css/add-class :section-title)
+                     ;  (dom/h2 nil "New brands"))
+                     (dom/div
+                       {:classes ["sulo-items-container"]}
+                       (grid/row
+                         (grid/columns-in-row {:small 2 :medium 4 :large 7})
+                         (map (fn [store]
+                                (let [store-name (get-in store [:store/profile :store.profile/name])]
+                                  (grid/column
+                                    nil
+                                    (ci/->StoreItem store))))
+                              (take 12 featured-stores))))
+                     "")
+
+                   (when (not-empty featured-items)
+                     (common/content-section
+                       {:href  (routes/url :browse/gender (merge route-params
+                                                                 {:sub-category "women"}))
+                        :class "products"}
+                       (dom/a {:href (routes/url :browse/gender (merge route-params
+                                                                       {:sub-category "women"}))}
+                              (dom/span nil "Products"))
+                       (dom/div
+                         nil
+                         (grid/row
+                           (->>
+                             (grid/columns-in-row {:small 2 :medium 4 :large 6}))
+                           ;(grid/column
+                           ;  (css/add-class :online-streams))
+                           (map-indexed
+                             (fn [i p]
+                               (grid/column
+                                 (cond
+                                   (< 7 i)
+                                   (css/show-for :large)
+                                   (< 3 i)
+                                   (css/show-for :medium))
+                                 (ci/->ProductItem (om/computed p
+                                                                {:open-url?     true
+                                                                 :current-route current-route}))))
+                             (take 10 featured-items))))
+                       ""))
+
+
+
+
+                   (common/sell-on-sulo this)
+
+
+                   (common/content-section
+                     {:class "sulo-instagram"}
+                     (dom/a {:href "https://www.instagram.com/sulolive/"} "@sulolive on Instagram")
+                     (dom/iframe {:src "//lightwidget.com/widgets/ffa8e755bbbb550d9072499fadcd6083.html"
+                                  :scrolling "no"
+                                  :allowTransparency true
+                                  :className "lightwidget-widget"
+                                  :style {:width "100%"
+                                          :border "0"
+                                          :overflow "hidden"}})
+                     "")
 
 
 

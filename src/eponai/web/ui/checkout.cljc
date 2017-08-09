@@ -561,8 +561,7 @@
      {:query/taxes [:taxes/id
                     :taxes/rate
                     :taxes/freight-taxable?]}
-     :query/messages
-     :query/locations])
+     :query/messages])
 
   Object
   (apply-coupon [this input-code]
@@ -763,7 +762,7 @@
   (componentDidMount [this]
     #?(:cljs
        (let [init-state (.initial-state this (om/props this))
-             {:query/keys [checkout stripe-customer locations auth]} (om/props this)
+             {:query/keys [checkout stripe-customer auth]} (om/props this)
              country (or (get-in init-state [:checkout/shipping :shipping/address :shipping.address/country :country/code])
                          (get-in init-state [:shipping/edit-shipping :shipping/address :shipping.address/country :country/code]))
              card (stripe/card-element (shared/by-key this :shared/stripe) (str "#" (:payment.stripe/card form-inputs)))
