@@ -59,6 +59,7 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 	}
 
 	&.product-item {
+		padding: 0.5rem;
 		.store-name {
 			position: relative;
 			display: flex;
@@ -143,10 +144,15 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 		.photo-container {
 			border-radius: $global-radius;
 			border: $global-border-secondary;
+			.photo {
+				padding-top: flex-video($flexvideo-ratio);
+			}
 			.overlay {
 				transition: background .25s ease-in-out;
 				.content {
 					padding: $global-padding;
+					// filter: blur(2px);
+					// filter: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' ><filter id='svgMask'><feGaussianBlur stdDeviation='10' /></filter></svg>#svgMask");
 					// align-items: center;
 					.video {
 						$color: $white;
@@ -248,16 +254,20 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 		a {
 			color: $body-font-color;
 		}
+		.photo {
+			padding-top: flex-video($flexvideo-ratio-widescreen);
+		}
 		.photo-container {
 			margin: 0;
 			.overlay {
 				display: flex;
 				justify-content: center;
-				h3 {
+				h4 {
 					transition: font-size .25s ease-in-out;
+					margin: 0;
 				}
 				> div {
-					padding: 0.2rem 1rem;
+					padding: 0.5rem 1rem;
 					transition: background .25s ease-in;
 					background: rgba($white, 0.75);
 					// box-shadow: $box-shadow;
@@ -271,7 +281,7 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 				transition: all .2s ease-in;
 				&:hover {
 					background: rgba($white, 0.75);
-					h3 {
+					h4 {
 						font-size: 160%;
 					}
 					> div {

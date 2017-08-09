@@ -8,259 +8,362 @@ $banner-background-color: map-get($foundation-palette, sulo);//rgba($primary-col
 $section-footer-color: $primary-color;
 
 #sulo-index {
-	#sulo-navbar {
-		.menu {
-			.search-input {
-				display: none;
-			}
-		}
-	}
 	.row {
-		// max-width: 80rem;
-	}
-	
-	h2 {
-		@include breakpoint(large) {
-			// font-size: rem-calc(28);
-		} 
+		max-width: 100%;
 	}
 	.page-content {
 		padding-bottom: 0;
 	}
-	.photo.cover {
-		@include breakpoint(large) {
-			padding-top: 25%;
-		}
+	h3, h3 a {
+		// color: $sulo-dark-color;
 	}
-	
-	.photo-container.cover {
-		.overlay {
-			background: rgba($primary-color, 0.7);
+	.hero {
+		height: 20rem;
+
+		@include breakpoint(medium) {
+			height: 600px;
 		}
-		.content {
+		// @include breakpoint(medium) {}
+		// max-height: 600px;
+		position: relative;
+		overflow-y: hidden;
+		display: flex;
+		.hero-background  {
+			position: absolute;
+			top: 0;
+			left: 0;
+			height: 100%;
+			width: 100%;
+			z-index: 1;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			video {
+				width: 100%;
+				// height: 100%;
+				min-width: 1076px;
+				background: $black;
+			}
+		}
+		.hero-content {
+			@include breakpoint(medium) {
+				padding: 0 1rem 8rem 1rem;
+			}
+			position: relative;
+			z-index: 2;
 			flex: 1;
+			display: flex;
+			background: radial-gradient(rgba($black, 0.1), rgba($black, 0.2), rgba($black, 0.5) );
+			.va-container {
+				flex: 1;
+				display: flex;
+				justify-content: center;
+				flex-direction: column;
+				align-items: center;
+			}
 		}
 	}
 
-	// .banner {
-	// 	padding: 2rem 0 1rem 0;
-	// 	@include breakpoint(medium) {
-	// 		padding-top: 3rem;
-	// 		padding-bottom: 2rem;
-	// 	}
-	// 	background: rgba($banner-background-color, 0.8);
-
-	// 	&.white {
-	// 		background: $white;
-	// 		border-bottom: 1px solid rgba($primary-color, 0.1);
-	// 	}
-	// 	.align-right {
-	// 		display: flex;
-	// 		justify-content: flex-end;
-	// 	}
-	// 	.icon {
-	// 		// display: none;
-	// 		padding: 0;
-	// 		max-width: 100%;
-	// 		svg {
-	// 			height: 100%;
-	// 			width: 100%;
-	// 		}
-	// 		@include breakpoint(medium) {
-	// 			max-width: 12rem;	
-	// 		}
-	// 	}	
-	// }
-
-	.section {
-		padding: 0;
-		.section-title {
-			padding: 0.5rem 0;
-			margin: 0;
-			margin-bottom: 0.5rem;
-			background: rgba($sulo-color, 0.25);
-			h2, h3 {
-				margin: 0;
-				color: darken($sulo-dark-color, 10%);
-				a {
-					color: darken($sulo-dark-color, 10%);
-					&:hover {
-						text-decoration: underline;
-					}
-				}
-			}
-		}
-		// border-top: $global-border-secondary;
-		&.online-channels {
-			.section-title {
-				background: rgba($success-color, 0.25);
-				// background: transparent;
-				h2, a {
-					color: darken($success-color, 10%);
-					&:hover {
-						text-decoration: underline;
-					}
-				}
-			}
-			.row:last-child {
-				padding-bottom: 2rem;
-			}
-
-			// background: $dashboard-background;
-		}
-
-		&.collections {
-			background: $dashboard-background;
-			// padding: 2rem 0;
-			// font-size: 1.7rem;
-			.row {
-				padding: $global-padding 0;
-			}
-			.section-title {
-				// background: transparent;
-				// margin: 0;
-			}
-			.section-footer {
-				visibility: hidden;
-			}
-			.collection-item {
-				padding: $global-padding;
-				h4 {
-					// font-size: 95%
-					margin: 0;
-					margin-bottom: 0;
-					text-transform: uppercase;
-					font-weight: bold;
-					margin-top: 0.25rem;
-					letter-spacing: 1px;
-				}
-				@include breakpoint(small only) {
-					padding: 0.5rem 0;
-					.photo {
-						padding-top: 50%;
-					}
-				}
-			}
-		}
-
-		&.new-brands {
-			// background: $dashboard-background;
-			// border-top: $global-border;
-			// border-bottom: $global-border;
-			.section-title {
-				// background: transparent;
-			}
-			padding-bottom: 2rem;
-		}
-
-		&.sell-on-sulo {
-			.photo-container {
-				background: transparent;
-				max-width: 6rem;
-				width: 6rem;
-				margin: 0 auto;
-				img {
-					object-fit: contain;
-					&.small {
-						opacity: 0;
-					}
-				}
-			}
-			p {
-				max-width: 40rem;
-				margin: 0 auto;
-				letter-spacing: 1px; 
-				font-weight: $global-weight-bold;
-				color: $primary-color;
-			}
-			.section-title {
-				background: none;
-			}
-			// background: rgba($sulo-color, 0.5);
-			background: $dashboard-background;
-			padding: $global-padding;
-		}
-
-		&.products {
-			.row {
-				.button {
-					margin-bottom: 1px;
-				}
-				// flex-wrap: nowrap;
-				overflow-y: hidden;
-				overflow-x: auto;
-				&::-webkit-scrollbar {
-				    height: 3px;
-				    background: $white;
-				}
-				 
-				&::-webkit-scrollbar-track {
-				    // -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
-				    // border-radius: 10px;
-				    // background: $sulo-color;
-				}
-				 
-				&::-webkit-scrollbar-thumb {
-					background: $sulo-color;
-				    // border-radius: 10px;
-				    // -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
-				}
-			}
-			// margin-top: $global-margin;
-			.section-title {
-				// background: $sulo-color;
-				margin-bottom: 0.5rem;
-				h2 {
-					margin: 0;
-					color: darken($sulo-dark-color, 10%);
-				}
-			}
-			.row {
-				padding-bottom: 2rem;
-			}
+	.section.content {
+		margin-bottom: 4rem;
+		.row {
+			flex-wrap: nowrap;
+			overflow-x: scroll;
+			overflow-y: hidden;
+			padding-left: 1rem;
 			.column {
-				padding: 0.5rem;
-				padding-top: 0;
-				&:nth-child(4+n) {
-					display: none;
-				}
-				.content-item {
-					// padding-bottom: $global-
-					.text:last-child {
-						display: none;
-					}
-				}
+				margin-right: 1rem;
+			}
+			&::-webkit-scrollbar {
+				height: 0;
+					// background: $black;
+			}
+			&::-webkit-scrollbar-track {
+					background: $white;
+			}
+			&::-webkit-scrollbar-thumb {
+					background: map-get($foundation-palette,primary);
 			}
 		}
-
-		&.featured {
-			padding-bottom: $global-padding;
-			// background: $dashboard-background;
-			.live-container {
-				// padding-bottom: 2rem;
-			}
-			.column {
-				h2 {
-					color: $sulo-dark-color;
-				}
-				position: relative;
-				.photo-container {
-					// position: absolute;
-					// bottom: 0;
-					// right: $global-padding;
-					// border: none;
-					max-width: 4rem;
-					min-width: 4rem;
-				}
-				.photo {
-					padding-top: 100%;
-				}
-			}
-			.button {
-				margin-top: 0.5rem;
-			}
-		}
-
 	}
 
+	.sell-on-sulo {
+		background: rgba($sulo-color, 0.3);
+		padding: 4rem 1rem 4rem 1rem;
+		.lead {
+			margin-left: auto;
+			margin-right: auto;
+			max-width: 30rem;
+		}
+	}
+	.mobile-app-banner {
+		background: rgba($light-gray, 0.3);
+		padding: 2rem 1rem 0 1rem;
+		.lead i {
+			color: $dark-gray;
+			max-width: 20rem;
+		}
+		.photo-container {
+			background: none;
+			max-width: 30rem;
+			margin: 0 auto;
+		}
+	}
 }
+// #sulo-index {
+// 	#sulo-navbar {
+// 		.menu {
+// 			.search-input {
+// 				display: none;
+// 			}
+// 		}
+// 	}
+// 	.row {
+// 		// max-width: 80rem;
+// 	}
+	
+// 	h2 {
+// 		@include breakpoint(large) {
+// 			// font-size: rem-calc(28);
+// 		} 
+// 	}
+// 	.page-content {
+// 		padding-bottom: 0;
+// 	}
+// 	.photo.cover {
+// 		@include breakpoint(large) {
+// 			padding-top: 25%;
+// 		}
+// 	}
+	
+// 	.photo-container.cover {
+// 		.overlay {
+// 			background: rgba($primary-color, 0.7);
+// 		}
+// 		.content {
+// 			flex: 1;
+// 		}
+// 	}
+
+// 	// .banner {
+// 	// 	padding: 2rem 0 1rem 0;
+// 	// 	@include breakpoint(medium) {
+// 	// 		padding-top: 3rem;
+// 	// 		padding-bottom: 2rem;
+// 	// 	}
+// 	// 	background: rgba($banner-background-color, 0.8);
+
+// 	// 	&.white {
+// 	// 		background: $white;
+// 	// 		border-bottom: 1px solid rgba($primary-color, 0.1);
+// 	// 	}
+// 	// 	.align-right {
+// 	// 		display: flex;
+// 	// 		justify-content: flex-end;
+// 	// 	}
+// 	// 	.icon {
+// 	// 		// display: none;
+// 	// 		padding: 0;
+// 	// 		max-width: 100%;
+// 	// 		svg {
+// 	// 			height: 100%;
+// 	// 			width: 100%;
+// 	// 		}
+// 	// 		@include breakpoint(medium) {
+// 	// 			max-width: 12rem;	
+// 	// 		}
+// 	// 	}	
+// 	// }
+
+// 	.section {
+// 		padding: 0;
+// 		.section-title {
+// 			padding: 0.5rem 0;
+// 			margin: 0;
+// 			margin-bottom: 0.5rem;
+// 			background: rgba($sulo-color, 0.25);
+// 			h2, h3 {
+// 				margin: 0;
+// 				color: darken($sulo-dark-color, 10%);
+// 				a {
+// 					color: darken($sulo-dark-color, 10%);
+// 					&:hover {
+// 						text-decoration: underline;
+// 					}
+// 				}
+// 			}
+// 		}
+// 		// border-top: $global-border-secondary;
+// 		&.online-channels {
+// 			.section-title {
+// 				background: rgba($success-color, 0.25);
+// 				// background: transparent;
+// 				h2, a {
+// 					color: darken($success-color, 10%);
+// 					&:hover {
+// 						text-decoration: underline;
+// 					}
+// 				}
+// 			}
+// 			.row:last-child {
+// 				padding-bottom: 2rem;
+// 			}
+
+// 			// background: $dashboard-background;
+// 		}
+
+// 		&.collections {
+// 			background: $dashboard-background;
+// 			// padding: 2rem 0;
+// 			// font-size: 1.7rem;
+// 			.row {
+// 				padding: $global-padding 0;
+// 			}
+// 			.section-title {
+// 				// background: transparent;
+// 				// margin: 0;
+// 			}
+// 			.section-footer {
+// 				visibility: hidden;
+// 			}
+// 			.collection-item {
+// 				padding: $global-padding;
+// 				h4 {
+// 					// font-size: 95%
+// 					margin: 0;
+// 					margin-bottom: 0;
+// 					text-transform: uppercase;
+// 					font-weight: bold;
+// 					margin-top: 0.25rem;
+// 					letter-spacing: 1px;
+// 				}
+// 				@include breakpoint(small only) {
+// 					padding: 0.5rem 0;
+// 					.photo {
+// 						padding-top: 50%;
+// 					}
+// 				}
+// 			}
+// 		}
+
+// 		&.new-brands {
+// 			// background: $dashboard-background;
+// 			// border-top: $global-border;
+// 			// border-bottom: $global-border;
+// 			.section-title {
+// 				// background: transparent;
+// 			}
+// 			padding-bottom: 2rem;
+// 		}
+
+// 		&.sell-on-sulo {
+// 			.photo-container {
+// 				background: transparent;
+// 				max-width: 6rem;
+// 				width: 6rem;
+// 				margin: 0 auto;
+// 				img {
+// 					object-fit: contain;
+// 					&.small {
+// 						opacity: 0;
+// 					}
+// 				}
+// 			}
+// 			p {
+// 				max-width: 40rem;
+// 				margin: 0 auto;
+// 				letter-spacing: 1px; 
+// 				font-weight: $global-weight-bold;
+// 				color: $primary-color;
+// 			}
+// 			.section-title {
+// 				background: none;
+// 			}
+// 			// background: rgba($sulo-color, 0.5);
+// 			background: $dashboard-background;
+// 			padding: $global-padding;
+// 		}
+
+// 		&.products {
+// 			.row {
+// 				.button {
+// 					margin-bottom: 1px;
+// 				}
+// 				// flex-wrap: nowrap;
+// 				overflow-y: hidden;
+// 				overflow-x: auto;
+// 				&::-webkit-scrollbar {
+// 				    height: 3px;
+// 				    background: $white;
+// 				}
+				 
+// 				&::-webkit-scrollbar-track {
+// 				    // -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
+// 				    // border-radius: 10px;
+// 				    // background: $sulo-color;
+// 				}
+				 
+// 				&::-webkit-scrollbar-thumb {
+// 					background: $sulo-color;
+// 				    // border-radius: 10px;
+// 				    // -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
+// 				}
+// 			}
+// 			// margin-top: $global-margin;
+// 			.section-title {
+// 				// background: $sulo-color;
+// 				margin-bottom: 0.5rem;
+// 				h2 {
+// 					margin: 0;
+// 					color: darken($sulo-dark-color, 10%);
+// 				}
+// 			}
+// 			.row {
+// 				padding-bottom: 2rem;
+// 			}
+// 			.column {
+// 				padding: 0.5rem;
+// 				padding-top: 0;
+// 				&:nth-child(4+n) {
+// 					display: none;
+// 				}
+// 				.content-item {
+// 					// padding-bottom: $global-
+// 					.text:last-child {
+// 						display: none;
+// 					}
+// 				}
+// 			}
+// 		}
+
+// 		&.featured {
+// 			padding-bottom: $global-padding;
+// 			// background: $dashboard-background;
+// 			.live-container {
+// 				// padding-bottom: 2rem;
+// 			}
+// 			.column {
+// 				h2 {
+// 					color: $sulo-dark-color;
+// 				}
+// 				position: relative;
+// 				.photo-container {
+// 					// position: absolute;
+// 					// bottom: 0;
+// 					// right: $global-padding;
+// 					// border: none;
+// 					max-width: 4rem;
+// 					min-width: 4rem;
+// 				}
+// 				.photo {
+// 					padding-top: 100%;
+// 				}
+// 			}
+// 			.button {
+// 				margin-top: 0.5rem;
+// 			}
+// 		}
+
+// 	}
+
+// }

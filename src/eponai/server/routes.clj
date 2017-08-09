@@ -217,7 +217,7 @@
                           (c/write-transit new-local)
                           {:path "/"})
             resp)))
-      (auth/restrict (auth/bidi-location-redirect route))
+      ;(auth/restrict (auth/bidi-location-redirect route))
       (auth/restrict (auth/bidi-route-restrictions route))))
 
 (defroutes

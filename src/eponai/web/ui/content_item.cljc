@@ -184,12 +184,12 @@
           (photo/product-preview product nil))
 
         (dom/div
-          (css/add-classes [:header :text])
+          (css/add-classes [:content-item-text])
           (dom/a {:onClick on-click
                   :href    goods-href}
                  (dom/span nil item-name)))
         (dom/a
-          (css/add-classes [:text :store-name :sl-tooltip] {:href (routes/store-url store :store)})
+          (css/add-classes [:content-item-text :store-name :sl-tooltip] {:href (routes/store-url store :store)})
 
           (dom/small
             nil

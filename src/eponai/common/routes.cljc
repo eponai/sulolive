@@ -80,13 +80,13 @@
                                     :sub-sub-category
                                     :browse/gender+top+sub-sub))]])
 
-(def locality-routes
-  [["" {
-        ;"/"         :index
-        "/shops"  :stores
-        "/browse" browse-categories
-        "/live"   :live}]
-   [true :index]])
+;(def locality-routes
+;  [["" {
+;        ;"/"         :index
+;        "/shops"  :stores
+;        "/browse" browse-categories
+;        "/live"   :live}]
+;   [true :index]])
 
 (defn normalize-browse-route [route]
   (letfn [(remove-from-char [s c]
@@ -97,10 +97,13 @@
              (remove-from-char (name route) "+"))))
 
 (def routes
-  ["" [["/" {
-             ""                                                           :landing-page
-             "l"                                                          :landing-page/locality
-             ["" [#"(yvr|yul)" :locality]]                                locality-routes
+  ["" [["/" {""                                                           :index
+             "shops"                                                      :stores
+             "browse"                                                     browse-categories
+             "live"                                                       :live
+             ;""                                                           :landing-page
+             ;"l"                                                          :landing-page/locality
+             ;["" [#"(yvr|yul)" :locality]]                                locality-routes
              "sell"                                                       :sell
              ["products/" [#"\d+" :product-id] "/" [#".*" :product-name]] :product
              ;"products"                    product-routes
