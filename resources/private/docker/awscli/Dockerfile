@@ -11,4 +11,5 @@ RUN ~/.local/bin/pip install awscli --upgrade --user
 
 ENV PATH="~/.local/bin:${PATH}"
 
-RUN apt-get -y -qq install jq
+RUN curl -L https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64 > "/usr/local/bin/jq"
+RUN chmod u+x "/usr/local/bin/jq"
