@@ -10,3 +10,5 @@ RUN python3.4 get-pip.py --user
 RUN ~/.local/bin/pip install awscli --upgrade --user
 
 ENV PATH="~/.local/bin:${PATH}"
+
+RUN apt-get -y -qq install jq
