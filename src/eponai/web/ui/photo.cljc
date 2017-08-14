@@ -163,7 +163,8 @@
 
 (defn product-preview [product opts & content]
   (let [params (assoc opts :background? false)]
-    (product-photo product (css/add-class :square params) content)))
+    (product-photo product (css/add-class :square params)
+                   content)))
 
 (defn product-thumbnail [product & [opts]]
   (product-preview product

@@ -279,13 +279,13 @@
                ;        (when (= stream-state :stream.state/offline)
                ;          (dom/span (css/add-class :sl-tooltip-text)
                ;                    "See the help checklist below to get started streaming")))
-               (dom/div
-                 (css/add-class :store-stats)
-                 (dom/div (css/add-class :sl-tooltip)
-                          (dom/h6 nil
-                                  (dom/small nil "Active visitors: ")
-                                  (dom/span nil (str visitor-count)))
-                          (dom/span (css/add-class :sl-tooltip-text) "Visitors in store right now")))
+               ;(dom/div
+               ;  (css/add-class :store-stats)
+               ;  (dom/div (css/add-class :sl-tooltip)
+               ;           (dom/h6 nil
+               ;                   (dom/small nil "Active visitors: ")
+               ;                   (dom/span nil (str visitor-count)))
+               ;           (dom/span (css/add-class :sl-tooltip-text) "Visitors in store right now")))
                (let [store-url (store-url (:store-id route-params))]
                  (menu/horizontal
                    (->> (css/align :right)

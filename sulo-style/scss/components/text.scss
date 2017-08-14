@@ -84,7 +84,7 @@ h1, h2, h3, h4, h5, h6 {
 		text-transform: none;
 		font-size: rem-calc(24px);
 		@include breakpoint(medium) {
-			font-size: rem-calc(36px);
+			font-size: rem-calc(32px);
 		}
 		&.sulo-dark {
 			color: $sulo-dark-color;
@@ -114,7 +114,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .content-item-text {
-	letter-spacing: 0.5px;
+	letter-spacing: 0.1px;
 }
 
 #sulo-store-dashboard {

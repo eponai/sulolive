@@ -7,13 +7,16 @@ $header-border-color: rgba($black, 0.1);
 $banner-background-color: map-get($foundation-palette, sulo);//rgba($primary-color, 0.15);
 $section-footer-color: $primary-color;
 
-#sulo-index {
-	.row {
-		max-width: 100%;
-	}
+#sulo-index, #sulo-sell {
 	.page-content {
 		padding-bottom: 0;
 	}
+}
+.landing-page {
+	.row {
+		max-width: 100%;
+	}
+	
 	h3, h3 a {
 
 		// color: $sulo-dark-color;
@@ -47,10 +50,9 @@ $section-footer-color: $primary-color;
 				// filter: blur(5px);
 			}
 		}
+		
 		.hero-content {
-			@include breakpoint(medium) {
-				padding: 0 1rem 10rem 1rem;
-			}
+			
 			position: relative;
 			z-index: 2;
 			flex: 1;
@@ -89,37 +91,15 @@ $section-footer-color: $primary-color;
 			}
 		}
 	}
-
-	.section {
-		
-		.row .column {
-			padding: 5px;
+	.section .content-item {
+		&:not(.collection-item) {
+			margin-bottom: 1.5rem;
 		}
 	}
 
-	.section.content {
-		.row {
-			padding: 0 1rem;
-			@include breakpoint(medium) {
-				padding: 0 2rem;
-			}
-			flex-wrap: nowrap;
-			overflow-x: scroll;
-			overflow-y: hidden;
-			// padding-left: 1rem;
-			
-			&::-webkit-scrollbar {
-				height: 0;
-					// background: $black;
-			}
-			&::-webkit-scrollbar-track {
-					background: $white;
-			}
-			&::-webkit-scrollbar-thumb {
-					background: map-get($foundation-palette,primary);
-			}
-		}
-	}
+	
+
+	
 
 	.sell-on-sulo {
 		background: rgba($sulo-color, 0.3);
@@ -131,19 +111,49 @@ $section-footer-color: $primary-color;
 			max-width: 30rem;
 		}
 	}
+
+
 	.mobile-app-banner {
 		background: rgba($light-gray, 0.3);
-		padding: 2rem 1rem 0 1rem;
+		padding: 2rem 3rem 0 3rem;
+		text-align: center;
+		@include breakpoint(medium) {
+			text-align: left;
+		}
 		.lead i {
 			color: $dark-gray;
 			max-width: 20rem;
+			// margin-bottom: 0;
 		}
 		.photo-container {
+			// margin-top: -1rem;
 			background: none;
 			max-width: 30rem;
 			margin: 0 auto;
 		}
+		.column {
+			padding-bottom: 0;
+			// @include breakpoint(small only) {
+			// 	&:last-child {
+			// 		margin-top: -2rem;
+			// 	}
+			// }
+		}
 	}
+
+	.promote-banner {
+		// padding: 4rem 0;
+		// background: rgba($light-gray, 0.3);
+		// ul {
+		// 	list-style-type: none;
+		// }
+		// a {
+		// 	text-decoration: none;
+		// }
+	}
+
+
+
 	.sulo-instagram {
 		background: rgba($sulo-color, 1);
 		margin-bottom: 0;
@@ -151,6 +161,82 @@ $section-footer-color: $primary-color;
 		h3 a {
 			color: $white;
 		}
+	}
+
+	.section.form {
+		padding-bottom: 0;
+	}
+
+
+	&#sulo-index-container {
+		.hero-content {
+			@include breakpoint(medium) {
+				padding: 0 1rem 10rem 1rem;
+			}
+		}
+	}
+	&#sulo-start-store {
+		h2 {
+			text-transform: none;
+		}
+		.row {
+			max-width: $global-width;
+		}
+		h6 {
+			margin-bottom: 0.5rem;
+			strong {
+				font-weight: bold;
+			}
+		}
+		h3, h6 {
+			text-transform: none;
+			font-weight: $global-weight-normal;
+		}
+
+		.sulo-banner {
+		// padding: 4rem 0;
+		// background: rgba($sulo-color, 0.3);
+		// overflow: hidden;
+			.column:first-child {
+				display: flex;
+				justify-content: center;
+				flex-direction: column;
+			}
+			img {
+				flex: 0 0 auto;
+				max-width: 20rem;
+				margin: 0 auto;
+				object-fit: contain;
+			}
+
+			h3 {
+				margin-top: 0;
+			}
+			h5 {
+				// color: $sulo-dark-color;
+				text-transform:  none;
+				font-weight: $global-weight-normal;
+				margin-bottom: 0.25rem;
+			}
+			.menu {
+				padding-bottom: 2rem;
+				p {
+					margin-bottom: 0.5rem;
+				}
+			}
+			
+		}
+	}
+
+	.success-message {
+		color: darken(map-get($foundation-palette, success), 10%);
+		// padding: 0.5rem;
+		// font-weight: $global-weight-bold;
+		// letter-spacing: 0.5px;
+		font-weight: $global-weight-bold;
+		font-size: 90%;
+		// color: $dark-gray;
+		text-align: center;
 	}
 }
 // #sulo-index {

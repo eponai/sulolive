@@ -2,10 +2,21 @@
 $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 .content-item {
 	padding-top: 1.5rem;
-
 	.photo-container {
 		margin-bottom: 0.5rem;
+		// box-shadow: 0 0 2px 0 rgba($light-gray, 1);
+		img {
+			transform: scale(1);
+			transition: transform .25s ease-in-out;
+		}
 	}
+
+	&:hover {
+		.photo-container img {
+			transform: scale(1.2);
+		}
+	}
+
 	.text {
 		a, small:not(.sl-tooltip-text), div {
 			@include wrap-text;
@@ -58,6 +69,7 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 		// }
 	}
 
+
 	&.product-item {
 		.store-name {
 			position: relative;
@@ -105,32 +117,48 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 		}
 		.photo-container {
 			position: relative;
-			.online-status {
-				$online-color: lighten($success-color, 10%);
-				position: absolute;
-				bottom: 0;
-				right: 0;
-				margin: 0;
-				padding: 0.25rem 0.5rem;
-				background: rgba($online-color, 0.7);
-				border-radius: $global-radius;
-				color: $white;
-				text-transform: uppercase;
-				font-size: 70%;
-				font-weight: $global-weight-bold;
-				letter-spacing: 0.5px;
-			}
-			.interactive.overlay {
+			.overlay {
 				transition: background .25s ease-in-out;
-				.button {
-					transition: opacity .25s ease-in-out;
+				.content {
 					opacity: 0;
+					color: $black;
+					transition: opacity .25s ease-in-out;
 				}
-				&:hover {
-					background: rgba($white, 0.75);
-					.button {
-						opacity: 1;
-					}
+			}
+			// .online-status {
+			// 	$online-color: lighten($success-color, 10%);
+			// 	position: absolute;
+			// 	bottom: 0;
+			// 	right: 0;
+			// 	margin: 0;
+			// 	padding: 0.25rem 0.5rem;
+			// 	background: rgba($online-color, 0.7);
+			// 	border-radius: $global-radius;
+			// 	color: $white;
+			// 	text-transform: uppercase;
+			// 	font-size: 70%;
+			// 	font-weight: $global-weight-bold;
+			// 	letter-spacing: 0.5px;
+			// }
+			// .interactive.overlay {
+			// 	transition: background .25s ease-in-out;
+			// 	.button {
+			// 		transition: opacity .25s ease-in-out;
+			// 		opacity: 0;
+			// 	}
+			// 	&:hover {
+			// 		background: rgba($white, 0.75);
+			// 		.button {
+			// 			opacity: 1;
+			// 		}
+			// 	}
+			// }
+		}
+		&:hover {
+			.photo-container .overlay {
+				background: rgba($white, 0.75);
+				.content {
+					opacity: 1;
 				}
 			}
 		}
@@ -143,7 +171,7 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 		}
 		.photo-container {
 			border-radius: $global-radius;
-			border: $global-border-secondary;
+			// border: $global-border-secondary;
 			.photo {
 				padding-top: flex-video($flexvideo-ratio);
 			}
@@ -197,40 +225,41 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 	}
 
 	&.store-item {
-		margin-bottom: $global-margin;
-		// display: flex;
-		.photo-container {
-			border-radius: 0;
-			background: transparent;
-			border: none;
-			.photo {
-				border: $global-border;
-				border-radius: 50%;
+		.photo-container .overlay {
+			transition: background .25s ease-in-out;
+			h6 {
+				// border: 1px solid $light-gray;
+				// background: $white;
+				color: $black;
+				opacity: 0;
+				transition: opacity .25s ease-in-out;
 			}
-			.overlay {
-				align-items: flex-end;
-				justify-content: center;
+		}
+		&:hover {
+			.photo-container .overlay {
+				background: rgba($white, 0.75);
+				h6 {
+					opacity: 1;
+				}
+			}
+		}
+		// margin-bottom: $global-margin;
+		// .photo-container {
+		// 	.overlay {
+		// 		align-items: flex-end;
+		// 		justify-content: center;
 
-			}
-			.content {
-				padding: 0;
-				flex: 0 0 auto;
-				justify-content: flex-end;
-				flex-direction: column;
-			}
-		}
-		.text {
-			&::after {
-				// margin-left: 0.5rem;
-				// margin-top: 0.2rem;
-			}
-			&::before {
-				// content: none;
-			}
-			// flex-direction: column;
-			// justify-content: center;
-			align-items: center;
-		}
+		// 	}
+		// 	.content {
+		// 		padding: 0;
+		// 		flex: 0 0 auto;
+		// 		justify-content: flex-end;
+		// 		flex-direction: column;
+		// 	}
+		// }
+		// .text {
+		// 	align-items: center;
+		// }
 		.visitor-count {
 			flex: 0 1 auto;
 			position: absolute;
@@ -251,6 +280,7 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 	}
 
 	&.collection-item {
+		margin-top: 10px;
 		a {
 			color: $body-font-color;
 		}

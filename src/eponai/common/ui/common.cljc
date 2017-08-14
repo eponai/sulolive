@@ -210,13 +210,12 @@
 (defn mobile-app-banner [component]
   (dom/div
     (->>
-      (css/add-classes [:mobile-app-banner :section])
-      (css/text-align :center))
+      (css/add-classes [:mobile-app-banner :section]))
     ;(dom/div
     ;  (->> (css/add-class :section-title)
     ;       (css/text-align :center)))
     (grid/row
-      (grid/columns-in-row {:small 1})
+      (grid/columns-in-row {:small 1 :medium 2})
       (grid/column
         nil
         (dom/p (css/add-classes [:lead :pre-header]) (dom/i nil "Coming soon"))

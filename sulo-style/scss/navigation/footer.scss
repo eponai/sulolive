@@ -1,6 +1,7 @@
 .footer {
 	background: $footer-background-color;
 	color: $footer-header-color;
+	padding: 2rem 0;
 	i {
 		font-size: 1.2rem;
 	}
@@ -20,7 +21,7 @@
 	}
 	width: 100%;
 	@include breakpoint(medium) {
-		padding-top: 0.75rem;
+		// padding-top: 0.75rem;
 	}
 
 	.social {
@@ -43,5 +44,8 @@
 		.menu-text {
 			padding: 0.7rem 0;
 		}
+	}
+	h5 {
+		font-size: 100%; 
 	}
 }
