@@ -135,7 +135,7 @@
                                 :browse-result/meta]}
      {:query/navigation [:db/id :category/name :category/label :category/path :category/route-map]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
-     {:query/countries [:country/code :country/name]}
+     ;{:query/countries [:country/code :country/name]}
      ;:query/locations
      :query/current-route])
   Object

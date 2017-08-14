@@ -213,12 +213,12 @@
                (dom/i {:classes ["fa fa-bars fa-fw"]})))
            (navbar-brand (routes/url :index))
            (nav.common/live-link component "navbar")
-           (menu/item-link
-             (->> (css/add-class :category)
-                  (css/show-for :large))
-             (dom/span nil "Shop"))
+           ;(menu/item-link
+           ;  (->> (css/add-class :category)
+           ;       (css/show-for :large))
+           ;  (dom/span nil "Shop"))
 
-           ;(nav.common/collection-links component "navbar")
+           (nav.common/collection-links component "navbar")
            ))
 
        (dom/div

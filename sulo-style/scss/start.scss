@@ -155,11 +155,11 @@ $section-footer-color: $primary-color;
 
 
 	.sulo-instagram {
-		background: rgba($sulo-color, 1);
+		background: rgba($light-gray, 0.3);
 		margin-bottom: 0;
 		padding: 4rem 0;
 		h3 a {
-			color: $white;
+			color: $sulo-dark-color;
 		}
 	}
 
@@ -171,7 +171,7 @@ $section-footer-color: $primary-color;
 	&#sulo-index-container {
 		.hero-content {
 			@include breakpoint(medium) {
-				padding: 0 1rem 10rem 1rem;
+				padding: 0 1rem 8rem 1rem;
 			}
 		}
 	}
