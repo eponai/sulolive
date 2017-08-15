@@ -135,8 +135,8 @@
                                 :browse-result/meta]}
      {:query/navigation [:db/id :category/name :category/label :category/path :category/route-map]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
-     {:query/countries [:country/code :country/name]}
-     :query/locations
+     ;{:query/countries [:country/code :country/name]}
+     ;:query/locations
      :query/current-route])
   Object
   (select-shipping-destination [this country-code]
@@ -161,7 +161,7 @@
     {:filters-open? false})
   (render [this]
     (let [{:proxy/keys [product-filters]
-           :query/keys [browse-products-2 navigation locations current-route countries]} (om/props this)
+           :query/keys [browse-products-2 navigation current-route countries]} (om/props this)
           {:keys [filters-open?]} (om/get-state this)
           [top-category sub-category :as categories] (category-seq this)
           {:keys [route route-params query-params]} current-route
@@ -181,7 +181,7 @@
 
       (dom/div
         {:id "sulo-items" :classes ["sulo-browse"]}
-        (common/city-banner this locations)
+        ;(common/city-banner this locations)
         (when filters-open?
           (dom/div
             {:id "sl-product-filters"}

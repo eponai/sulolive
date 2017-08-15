@@ -22,13 +22,9 @@
        (dom/h1 nil "Store not found")
        (dom/div (css/add-class :empty-container)
                 (dom/p (css/add-class :shoutout) "Oops, that store doesn't seem to exist."))
-       (if (:sulo-locality/path locations)
-         (button/store-navigation-default
-           {:href (routes/url :browse/all-items {:locality (:sulo-locality/path locations)})}
-           (dom/span nil "Browse products"))
-         (button/store-navigation-default
-           {:href (routes/url :landing-page)}
-           (dom/span nil "Choose location"))))]))
+       (button/store-navigation-default
+         {:href (routes/url :browse/all-items)}
+         (dom/span nil "Browse products")))]))
 
 (defui ProductPage
   static om/IQuery
@@ -41,8 +37,7 @@
                              {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                   :store.item.photo/index]}
                              {:store/_items [{:store/profile [:store.profile/name]}
-                                             :store/locality]}]}
-     :query/locations])
+                                             :store/locality]}]}])
   Object
   (render [this]
     (let [{:keys [query/item]} (om/props this)

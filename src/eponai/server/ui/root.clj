@@ -61,6 +61,8 @@
 
           ;<script src="//www.powr.io/powr.js" external-type="html"></script>
 
+          (dom/script {:src "//lightwidget.com/widgets/lightwidget.js"
+                       :type common/text-javascript})
           (dom/script {:src  (common/budget-js-path)
                        :type common/text-javascript})
 

@@ -241,8 +241,7 @@
                              :stripe/payouts-enabled?
                              :stripe/verification]}
      :query/current-route
-     :query/messages
-     :query/locations])
+     :query/messages])
   Object
   (open-store [this]
     (let [{:query/keys [store stripe-account current-route]} (om/props this)]
@@ -277,7 +276,7 @@
                               :query/store])))
 
   (componentDidUpdate [this _ _]
-    (let [{:query/keys [current-route locations]} (om/props this)
+    (let [{:query/keys [current-route]} (om/props this)
           username-msg (msg/last-message this 'store/update-username)
           delete-msg (msg/last-message this 'store/delete)]
       (when (msg/final? username-msg)
@@ -292,9 +291,7 @@
       (when (msg/final? delete-msg)
         (msg/clear-messages! this 'store/delete)
         (if (msg/success? delete-msg)
-          (if (some? locations)
-            (routes/set-url! this :index {:locality (:sulo-locality/path locations)})
-            (routes/set-url! this :landing-page))))))
+          (routes/set-url! this :index)))))
 
   (is-loading? [this]
     (let [username-msg (msg/last-message this 'store/update-username)

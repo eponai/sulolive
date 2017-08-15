@@ -26,11 +26,7 @@
         (let [route-map (-> route-map
                             (assoc :route :browse/all-items)
                             (update :route-params select-keys [:locality])
-                            (assoc-in [:query-params :search] input-search)
-                            ;; Add locality if it's not already in there
-                            (cond-> (nil? (get-in route-map [:route-params :locality]))
-                                    (assoc-in [:route-params :locality]
-                                              (:sulo-locality/path (client.auth/current-locality this)))))
+                            (assoc-in [:query-params :search] input-search))
               ;; Set the order to the default order for search, if there wasn't a search
               ;; there already
               route-map (cond-> route-map

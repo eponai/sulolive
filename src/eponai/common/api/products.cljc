@@ -18,20 +18,18 @@
     (str/capitalize (:category/name c))
     label))
 
-(defn find-all [locality]
-  {:where   '[(listed-store ?s ?l)
+(defn find-all []
+  {:where   '[(listed-store ?s)
               [?s :store/items ?e]
               ;[?e :store.item/uuid _]
               ]
-   :symbols {'?l (:db/id locality)}
    :rules   [db.rules/listed-store]})
 
 (defn find-with-search
-  [locality search]
+  [search]
   {:where    '[[?s :store/items ?e]
-               (listed-store ?s ?l)]
-   :symbols  {'?search search
-              '?l      (:db/id locality)}
+               (listed-store ?s)]
+   :symbols  {'?search search}
    :rules    [db.rules/listed-store]
    :fulltext [{:attr   :store.item/name
                :arg    '?search
@@ -66,10 +64,9 @@
       (when sub-category '?sub)
       (when top-category '?top)))
 
-(defn find-with-category-names [locality {:keys [top-category sub-category] :as category-names}]
-  (cond-> {:where   '[(listed-store ?s ?l)
+(defn find-with-category-names [{:keys [top-category sub-category] :as category-names}]
+  (cond-> {:where   '[(listed-store ?s)
                       [?s :store/items ?e]]
-           :symbols {'?l (:db/id locality)}
            :rules   [db.rules/listed-store]}
           (or (some? top-category) (some? sub-category))
           (db/merge-query (db/merge-query (category-names-query category-names)

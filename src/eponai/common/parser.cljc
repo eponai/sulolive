@@ -456,7 +456,6 @@
                                           [:query-params (:query-params env)]
                                           [:params p]]))
                read-basis-params (-> []
-                                     (conj [:locations (:sulo-locality/path locations)])
                                      (into route-basis-kvs)
                                      (conj [:query-hash (hash query)]))
                basis-t-for-this-key (util/get-basis-t @read-basis-t-graph k read-basis-params)

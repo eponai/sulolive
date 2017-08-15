@@ -14,10 +14,6 @@
     [eponai.web.ui.notifications :as note]
     [taoensso.timbre :refer [debug]]))
 
-(defn navbar-route [route route-params locality]
-  (let [loc (or locality "yvr")]
-    (routes/url route (assoc route-params :locality loc))))
-
 (defn collection-links [component source]
   (let [{:query/keys [auth locations navigation]} (om/props component)]
     (debug "Locations: " locations)
@@ -25,7 +21,7 @@
       (fn [{:category/keys [route-map name path] :as a}]
         (debug "Route map: " route-map)
         (let [{:keys [route route-params]} route-map
-              opts {:href    (navbar-route route route-params (:sulo-locality/path locations))
+              opts {:href    (routes/url route route-params)
                     :onClick #(do (mixpanel/track-key ::mixpanel/shop-by-category {:source   source
                                                                                    :category path})
                                   ;(when (empty? locations)
@@ -43,7 +39,7 @@
 (defn live-link [component source]
   (let [{:query/keys [auth locations]} (om/props component)]
     (menu/item-link
-      (->> {:href    (navbar-route :live {} (:sulo-locality/path locations))
+      (->> {:href    (routes/url :live)
             :onClick #(do
                        (mixpanel/track-key ::mixpanel/shop-live {:source source})
                        ;(when (empty? locations)
@@ -51,7 +47,7 @@
                        ;     (when-let [locs (web-utils/element-by-id "sulo-locations")]
                        ;       (web-utils/scroll-to locs 250))))
                        )}
-           (css/add-class :navbar-live)
+           (css/add-classes [:category :navbar-live])
            (css/show-for :large))
       (dom/span
         nil
@@ -68,7 +64,6 @@
                  {:user/stripe [:stripe/id]}
                  {:user/profile [:user.profile/name
                                  {:user.profile/photo [:photo/path :photo/id]}]}]}
-   :query/locations
    {:query/owned-store [:db/id
                         :store/username
                         {:store/locality [:sulo-locality/path]}

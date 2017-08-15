@@ -1,0 +1,61 @@
+
+.section {
+	padding: 2.5% 0;
+	.row .column {
+		padding:  0 5px;
+	}
+	&.gray {
+		background: rgba($light-gray, 0.3);
+	}
+
+	&.blue {
+		background: rgba($sulo-color, 0.3);
+		h6 {
+			color: $sulo-color;
+		}
+	}
+
+	&.banner {
+		margin: 0;
+		padding: 5% 0;
+
+		.row {
+			max-width: $global-width;
+		}
+		&.has-photo {
+			padding-bottom: 0;
+		}
+
+		a {
+			text-decoration: none;
+		}
+		em {
+			font-style: normal;
+			color: $sulo-dark-color;
+		}
+	}
+
+	&.content {
+		.row {
+			padding: 0 1rem;
+			@include breakpoint(medium) {
+				padding: 0 2rem;
+			}
+			flex-wrap: nowrap;
+			overflow-x: scroll;
+			overflow-y: hidden;
+			// padding-left: 1rem;
+			
+			&::-webkit-scrollbar {
+				height: 0;
+					// background: $black;
+			}
+			&::-webkit-scrollbar-track {
+					background: $white;
+			}
+			&::-webkit-scrollbar-thumb {
+					background: map-get($foundation-palette,primary);
+			}
+		}	
+	}
+}

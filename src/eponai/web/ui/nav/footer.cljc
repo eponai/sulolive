@@ -16,7 +16,7 @@
 (defui Footer
   static om/IQuery
   (query [_]
-    [:query/locations
+    [
      {:query/sulo-localities [:db/id
                               :sulo-locality/path
                               :sulo-locality/title
@@ -24,22 +24,22 @@
      {:query/auth [:db/id]}
      :query/current-route])
   Object
-  (change-location [this location-id]
-    (debug "Change location: " location-id)
-    (let [{:query/keys [current-route sulo-localities]} (om/props this)
-          {:keys [on-change-location]} (om/get-computed this)
-          {:keys [route route-params]} current-route
-          location (some #(when (= (:db/id %) (c/parse-long location-id)) %) sulo-localities)]
-      #?(:cljs
-         (do
-           (web-utils/set-locality location)
-           (om/transact! this [(list 'client/set-locality {:locality location})
-                               :query/locations])))
-      (when (some? on-change-location)
-        (on-change-location location))
-      (if (some? (:locality route-params))
-        (routes/set-url! this route (assoc route-params :locality (:sulo-locality/path location)))
-        (routes/set-url! this :index {:locality (:sulo-locality/path location)}))))
+  ;(change-location [this location-id]
+  ;  (debug "Change location: " location-id)
+  ;  (let [{:query/keys [current-route sulo-localities]} (om/props this)
+  ;        {:keys [on-change-location]} (om/get-computed this)
+  ;        {:keys [route route-params]} current-route
+  ;        location (some #(when (= (:db/id %) (c/parse-long location-id)) %) sulo-localities)]
+  ;    #?(:cljs
+  ;       (do
+  ;         (web-utils/set-locality location)
+  ;         (om/transact! this [(list 'client/set-locality {:locality location})
+  ;                             :query/locations])))
+  ;    (when (some? on-change-location)
+  ;      (on-change-location location))
+  ;    (if (some? (:locality route-params))
+  ;      (routes/set-url! this route (assoc route-params :locality (:sulo-locality/path location)))
+  ;      (routes/set-url! this :index {:locality (:sulo-locality/path location)}))))
 
   (render [this]
     (let [{:query/keys [sulo-localities locations auth]} (om/props this)]
@@ -53,22 +53,7 @@
               nil
               (menu/vertical
                 (css/add-class :location-menu)
-                (menu/item-text nil (dom/span nil "Change location"))
-                (menu/item
-                  nil
-                  (dom/select
-                    {:value    (or (:db/id locations) "")
-                     :onChange #(.change-location this (.-value (.-target %)))}
-                    (dom/option {:value    ""
-                                 :disabled true}
-                                "--- Select location ---")
-                    (map (fn [l]
-                           (dom/option
-                             {:value (:db/id l)} (:sulo-locality/title l)))
-                         sulo-localities))))
-              (menu/vertical
-                (css/add-class :location-menu)
-                (menu/item-text nil (dom/span nil "Currency"))
+                (menu/item-text nil (dom/h5 (css/add-class :footer-header) ))
                 (menu/item
                   nil
                   (dom/select
@@ -81,7 +66,7 @@
             (grid/column
               nil
               (menu/vertical {}
-                             (menu/item-text nil (dom/span nil "Learn more"))
+                             (menu/item-text nil (dom/h5 (css/add-class :footer-header) "Learn more"))
 
                              (menu/item-link {:href "mailto:hello@sulo.live"} (dom/span nil "Contact"))
                              ;(menu/item-link {:href (routes/url :help)} (dom/span nil "Help"))
@@ -94,7 +79,7 @@
             (grid/column
               nil
               (menu/vertical {}
-                             (menu/item-text nil (dom/span nil "SULO"))
+                             (menu/item-text nil (dom/h5 (css/add-class :footer-header) "SULO"))
                              ;(menu/item-link {:href (routes/url :sell)} (dom/span nil "Start a store"))
                              ;(menu/item-link nil (dom/span nil "Sign up/Sign in"))
                              ;(menu/item-link nil (dom/span nil "Press"))
@@ -108,7 +93,7 @@
               (->> (grid/column-size {:small 12 :medium 4})
                    (css/add-class :social))
               (menu/vertical {}
-                             (menu/item-text nil (dom/span nil "Follow us")))
+                             (menu/item-text nil (dom/h5 (css/add-class :footer-header) "Follow us")))
               (menu/horizontal
                 {:key "social"}
                 (menu/item nil (social/sulo-social-link :social/facebook))

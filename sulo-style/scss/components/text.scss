@@ -64,11 +64,59 @@ a.follow-button {
 
 h1, h2, h3, h4, h5, h6 {
 	text-transform: uppercase;
-	letter-spacing: 1px;
+	letter-spacing: -0.85px;
 	font-weight: bold;
 	margin-top: $global-margin;
 	// font-size: 100%;
 }
+
+.jumbo-header {
+	color: $white;
+	font-size: rem-calc(32);
+	// text-align: center;
+	@include breakpoint(medium) {
+		font-size: rem-calc(48);
+	}
+	// text-shadow: 1px 1px 0 rgba($black, 0.2);
+	line-height: 1.1;
+
+	&.banner {
+		text-transform: none;
+		font-size: rem-calc(24px);
+		@include breakpoint(medium) {
+			font-size: rem-calc(32px);
+		}
+		&.sulo-dark {
+			color: $sulo-dark-color;
+			text-shadow: none;
+		}
+	}
+}
+
+.jumbo-lead {
+	color: $white;
+	// text-align: center;
+	font-weight: $global-weight-bold;
+	letter-spacing: -0.4px;
+	&.banner {
+		font-size: 110%;
+		&.sulo-dark {
+			color: $sulo-dark-color;
+		}
+	}
+}
+
+.footer-header {
+	text-transform: none;
+	color: $white;
+	margin: 0;
+	font-weight: $global-weight-normal;
+}
+
+.content-item-text {
+	letter-spacing: 0.1px;
+}
+
 #sulo-store-dashboard {
 	// @include foundation-typography-base;
 		h1, h2, h3, h4, h5, h6 {

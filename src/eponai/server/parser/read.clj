@@ -93,39 +93,32 @@
 ;; ############ Browsing reads
 
 (defread query/stores
-  [{:keys [db db-history query locations]} _ _]
+  [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
   {:value (do
-            (debug "Read stores: " locations)
-            (when (some? (:db/id locations))
-              (query/all db db-history query {:where   '[[?e :store/locality ?l]
-                                                         [?e :store/status ?status]
-                                                         [?status :status/type :status.type/open]
-                                                         [?e :store/profile ?p]
-                                                         [?p :store.profile/photo _]
-                                                         [?s :stream/store ?e]
-                                                         [?s :stream/state _]]
-                                              :symbols {'?l (:db/id locations)}})))})
+            (query/all db db-history query {:where '[[?e :store/status ?status]
+                                                     [?status :status/type :status.type/open]
+                                                     [?e :store/profile ?p]
+                                                     [?p :store.profile/photo _]
+                                                     [?s :stream/store ?e]
+                                                     [?s :stream/state _]]}))})
 
 (defread query/streams
-  [{:keys [db db-history query locations]} _ _]
+  [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
-  {:value (when (some? (:db/id locations))
-            (query/all db db-history query {:where   '[[?s :store/locality ?l]
-                                                       [?st :status/type :status.type/open]
-                                                       [?s :store/status ?st]
-                                                       [?e :stream/store ?s]
-                                                       [?e :stream/state :stream.state/live]
-                                                       ;[?s :store/profile ?p]
-                                                       ;[?p :store.profile/photo _]
-                                                       ]
-                                            :symbols {'?l (:db/id locations)}}))})
+  {:value (query/all db db-history query {:where '[[?s :store/locality ?l]
+                                                   [?st :status/type :status.type/open]
+                                                   [?s :store/status ?st]
+                                                   [?e :stream/store ?s]
+                                                   [?e :stream/state :stream.state/live]
+                                                   ;[?s :store/profile ?p]
+                                                   ;[?p :store.profile/photo _]
+                                                   ]})})
 
 (defread query/browse-items
   [{db                                                 :db
     db-history                                         :db-history
     query                                              :query
-    locations                                          :location
     {:keys [top-category sub-category] :as categories} :route-params
     {:keys [search]}                                   :query-params} _ _]
   {:auth    ::auth/public
@@ -136,16 +129,15 @@
                                  [:tc top-category]
                                  (some? sub-category)
                                  [:sc sub-category])]]}}
-  {:value (when (some? (:db/id locations))
-            (query/all db db-history query (cond
-                                             (seq search)
-                                             (products/find-with-search locations search)
-                                             (some? top-category)
-                                             (products/find-with-category-names locations (select-keys categories [:top-category]))
-                                             (some? sub-category)
-                                             (products/find-with-category-names locations (select-keys categories [:sub-category]))
-                                             :else
-                                             (products/find-all locations))))})
+  {:value (query/all db db-history query (cond
+                                           (seq search)
+                                           (products/find-with-search search)
+                                           (some? top-category)
+                                           (products/find-with-category-names (select-keys categories [:top-category]))
+                                           (some? sub-category)
+                                           (products/find-with-category-names (select-keys categories [:sub-category]))
+                                           :else
+                                           (products/find-all)))})
 
 ;; ------ Featured
 
@@ -158,7 +150,7 @@
           (reverse coll))))
 
 (defread query/top-streams
-  [{:keys [db db-history query locations]} _ _]
+  [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
   {:value (when-not db-history
             (if-let [sulo-store (db/lookup-entity db [:store/username "sulolive"])]
@@ -172,120 +164,111 @@
                                                               ]
                                                    :symbols {'?sulo-store (:db/id sulo-store)}})
                    (feature-all db :stream))
-              (->> (query/all db db-history query {:where   '[[?e :stream/state :stream.state/live]
-                                                              [?e :stream/store ?s]
-                                                              [?s :store/status ?st]
-                                                              [?st :status/type :status.type/open]
-                                                              ;[?s :store/profile ?p]
-                                                              ;[?p :store.profile/photo _]
-                                                              ]})
+              (->> (query/all db db-history query {:where '[[?e :stream/state :stream.state/live]
+                                                            [?e :stream/store ?s]
+                                                            [?s :store/status ?st]
+                                                            [?st :status/type :status.type/open]
+                                                            ;[?s :store/profile ?p]
+                                                            ;[?p :store.profile/photo _]
+                                                            ]})
                    (feature-all db :stream))))})
 
 (defread query/featured-streams
-  [{:keys [db db-history query locations]} _ _]
+  [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
-  {:value (when (some? (:db/id locations))
-            (when-not db-history
-              (->> (query/all db db-history query {:where   '[[?e :stream/state :stream.state/live]
-                                                              [?e :stream/store ?s]
-                                                              [?s :store/locality ?l]
-                                                              [?s :store/status ?st]
-                                                              [?st :status/type :status.type/open]
-                                                              ;[?s :store/profile ?p]
-                                                              ;[?p :store.profile/photo _]
-                                                              ]
-                                                   :symbols {'?l (:db/id locations)}})
-                   (feature-all db :stream))))})
+  {:value (when-not db-history
+            (->> (query/all db db-history query {:where '[[?e :stream/state :stream.state/live]
+                                                          [?e :stream/store ?s]
+                                                          [?s :store/status ?st]
+                                                          [?st :status/type :status.type/open]
+                                                          ;[?s :store/profile ?p]
+                                                          ;[?p :store.profile/photo _]
+                                                          ]})
+                 (feature-all db :stream)))})
 
 (defread query/featured-items
-  [{:keys [db db-history query locations]} _ _]
+  [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
-  {:value (when (some? (:db/id locations))
-            (->> (db/find-with db {:find    '[?e ?created-at]
-                                   :where   '[[?s :store/locality ?l]
-                                              [?st :status/type :status.type/open]
-                                              [?s :store/status ?st]
-                                              [?s :store/items ?e]
-                                              [?s :store/profile ?profile]
-                                              [?profile :store.profile/photo _]
-                                              [?e :store.item/photos ?p]
-                                              [?p :store.item.photo/photo _]
-                                              [?e :store.item/created-at ?created-at]]
-                                   :symbols {'?l (:db/id locations)}})
-                 (sort-by #(nth % 1) #(compare %2 %1))
-                 (take 6)
-                 (map #(nth % 0))
-                 (db/pull-many db query)
-                 (feature-all db :store.item)))})
+  {:value (->> (db/find-with db {:find  '[?e ?created-at]
+                                 :where '[[?st :status/type :status.type/open]
+                                          [?s :store/status ?st]
+                                          [?s :store/items ?e]
+                                          [?s :store/profile ?profile]
+                                          [?profile :store.profile/photo _]
+                                          [?e :store.item/photos ?p]
+                                          [?p :store.item.photo/photo _]
+                                          [?e :store.item/created-at ?created-at]]})
+               (sort-by #(nth % 1) #(compare %2 %1))
+               (take 12)
+               (map #(nth % 0))
+               (db/pull-many db query)
+               (feature-all db :store.item))})
 
 (defread query/featured-women
-  [{:keys [db db-history query locations]} _ _]
+  [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
-  {:value (when (some? (:db/id locations))
-            (->> (db/all-with db (products/find-with-category-names locations {:sub-category "women"}))
-                 (take 10)
-                 (db/pull-many db query)
-                 (feature-all db :store.item))
-            ;(->> (db/find-with db {:find    '[?e ?created-at]
-            ;                       :where   '[[?s :store/locality ?l]
-            ;                                  [?st :status/type :status.type/open]
-            ;                                  [?s :store/status ?st]
-            ;                                  [?s :store/items ?e]
-            ;                                  [?s :store/profile ?profile]
-            ;                                  [?profile :store.profile/photo _]
-            ;                                  [?e :store.item/photos ?p]
-            ;                                  [?p :store.item.photo/photo _]
-            ;                                  [?e :store.item/created-at ?created-at]]
-            ;                       :symbols {'?l (:db/id locations)}})
-            ;     (sort-by #(nth % 1) #(compare %2 %1))
-            ;     (take 6)
-            ;     (map #(nth % 0))
-            ;     (db/pull-many db query)
-            ;     (feature-all db :store.item))
-            )})
+  {:value (->> (db/all-with db (products/find-with-category-names {:sub-category "women"}))
+               (take 10)
+               (db/pull-many db query)
+               (feature-all db :store.item))
+   ;(->> (db/find-with db {:find    '[?e ?created-at]
+   ;                       :where   '[[?s :store/locality ?l]
+   ;                                  [?st :status/type :status.type/open]
+   ;                                  [?s :store/status ?st]
+   ;                                  [?s :store/items ?e]
+   ;                                  [?s :store/profile ?profile]
+   ;                                  [?profile :store.profile/photo _]
+   ;                                  [?e :store.item/photos ?p]
+   ;                                  [?p :store.item.photo/photo _]
+   ;                                  [?e :store.item/created-at ?created-at]]
+   ;                       :symbols {'?l (:db/id locations)}})
+   ;     (sort-by #(nth % 1) #(compare %2 %1))
+   ;     (take 6)
+   ;     (map #(nth % 0))
+   ;     (db/pull-many db query)
+   ;     (feature-all db :store.item))
+   })
 
 (defread query/featured-men
-  [{:keys [db db-history query locations]} _ _]
+  [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
-  {:value (when (some? (:db/id locations))
-            (->> (db/all-with db (products/find-with-category-names locations {:sub-category "men"}))
-                 (take 10)
-                 (db/pull-many db query)
-                 (feature-all db :store.item)))})
+  {:value (->> (db/all-with db (products/find-with-category-names {:sub-category "men"}))
+               (take 10)
+               (db/pull-many db query)
+               (feature-all db :store.item))})
 
 (defread query/featured-home
-  [{:keys [db db-history query locations]} _ _]
+  [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
-  {:value (when (some? (:db/id locations))
-            (->> (db/all-with db (products/find-with-category-names locations {:top-category "home"}))
-                 (take 10)
-                 (db/pull-many db query)
-                 (feature-all db :store.item)))})
+  {:value (->> (db/all-with db (products/find-with-category-names {:top-category "home"}))
+               (take 10)
+               (db/pull-many db query)
+               (feature-all db :store.item))})
 
 (defread query/featured-art
-  [{:keys [db db-history query locations]} _ _]
+  [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
-  {:value (when (some? (:db/id locations))
-            (->> (db/all-with db (products/find-with-category-names locations {:top-category "art"}))
-                 (take 10)
-                 (db/pull-many db query)
-                 (feature-all db :store.item)))})
+  {:value (->> (db/all-with db (products/find-with-category-names {:top-category "art"}))
+               (take 10)
+               (db/pull-many db query)
+               (feature-all db :store.item))})
 
 (defread query/featured-stores
-  [{:keys [db db-history query locations]} _ _]
+  [{:keys [db db-history query]} _ _]
   {:auth ::auth/public}
   ;; TODO: Come up with a way to feature stores.
-  {:value (when (some? (:db/id locations))
-            (->> (db/find-with db {:find    '[?e ?created-at]
-                                   :where   '[[?e :store/locality ?l]
-                                              [?st :status/type :status.type/open]
-                                              [?e :store/status ?st]
-                                              [?e :store/profile ?p]
-                                              [?p :store.profile/photo _]
-                                              [?e :store/created-at ?created-at]]
-                                   :symbols {'?l (:db/id locations)}})
+  {:value (let [store-ids (db/find-with db {:find  '[?e ?created-at]
+                                            :where '[
+                                                     [?st :status/type :status.type/open]
+                                                     [?e :store/status ?st]
+                                                     [?e :store/profile ?p]
+                                                     [?p :store.profile/photo _]
+                                                     [?e :store/created-at ?created-at]
+                                                     ]})]
+            (debug "FOUND STORE IDS: " store-ids)
+            (->> store-ids
                  (sort-by #(nth % 1) #(compare %2 %1))
-                 (take 4)
+                 (take 12)
                  (map #(nth % 0))
                  (db/pull-many db query)
                  (feature-all db :store)))})
@@ -310,30 +293,28 @@
               {:db/id            store-id
                :store/not-found? true}))})
 
-(defread query/online-stores
-  [{:keys [db db-history query auth route-params system locations]} _ _]
-  {:auth    ::auth/public
-   :uniq-by {:route-params [:store-id]}}
-  {:value (let [presence (firebase/-presence (:system/firebase system)
-                                             (:sulo-locality/path locations))
-                ;; First convert from hashmap -> clojure mpa.
-                presence (->> (into {} presence)
-                              ;; Then parse the keys and values.
-                              (into {} (map (fn [[k v]]
-                                              [(c/parse-long-safe k) (if (true? v) v (c/parse-long-safe v))]))))
-                _ (debug "Got presence: " presence)
-                stores (if (not-empty presence)
-                         (db/pull-all-with db query {:where   '[[?e :store/locality ?l]
-                                                                [?o :store.owner/user ?user]
-                                                                [?e :store/owners ?o]
-                                                                [?e :store/status ?st]
-                                                                [?st :status/type :status.type/open]]
-                                                     :symbols {'[?user ...] (map key presence)
-                                                               '?l          (:db/id locations)}})
-                         [])]
-            (into stores
-                  (map (fn [[user-id v]] [:db/add user-id :user/online? v]))
-                  presence))})
+;(defread query/online-stores
+;  [{:keys [db db-history query auth route-params system]} _ _]
+;  {:auth    ::auth/public
+;   :uniq-by {:route-params [:store-id]}}
+;  {:value (let [presence (firebase/-presence (:system/firebase system))
+;                ;; First convert from hashmap -> clojure mpa.
+;                presence (->> (into {} presence)
+;                              ;; Then parse the keys and values.
+;                              (into {} (map (fn [[k v]]
+;                                              [(c/parse-long-safe k) (if (true? v) v (c/parse-long-safe v))]))))
+;                _ (debug "Got presence: " presence)
+;                stores (if (not-empty presence)
+;                         (db/pull-all-with db query {:where   '[[?e :store/locality ?l]
+;                                                                [?o :store.owner/user ?user]
+;                                                                [?e :store/owners ?o]
+;                                                                [?e :store/status ?st]
+;                                                                [?st :status/type :status.type/open]]
+;                                                     :symbols {'[?user ...] (map key presence)}})
+;                         [])]
+;            (into stores
+;                  (map (fn [[user-id v]] [:db/add user-id :user/online? v]))
+;                  presence))})
 
 (defread query/store-has-streamed
   [{:keys [db db-history query auth route-params]} _ _]
@@ -521,13 +502,13 @@
             (query/one db db-history query {:where   '[[?e :stream/store ?store-id]]
                                             :symbols {'?store-id store-id}}))})
 
-(defread query/locations
-  [{:keys [db db-history query locations]} _ _]
-  {:auth ::auth/public}
-  {:value (when (:sulo-locality/path locations)
-            (db/pull db [:db/id
-                         :sulo-locality/path
-                         :sulo-locality/title {:sulo-locality/photo [:photo/id]}] [:sulo-locality/path (:sulo-locality/path locations)]))})
+;(defread query/locations
+;  [{:keys [db db-history query locations]} _ _]
+;  {:auth ::auth/public}
+;  {:value (when (:sulo-locality/path locations)
+;            (db/pull db [:db/id
+;                         :sulo-locality/path
+;                         :sulo-locality/title {:sulo-locality/photo [:photo/id]}] [:sulo-locality/path (:sulo-locality/path locations)]))})
 
 
 (defread query/stream-config
@@ -619,11 +600,11 @@
       (conj v :categories))))
 
 (defread query/browse-products-2
-  [{:keys         [db locations query-params route-params query]
+  [{:keys         [db query-params route-params query]
     ::parser/keys [read-basis-t-for-this-key]} _ _]
   {:auth ::auth/public
-   :log  (f/remove-nil-keys (browse/make-browse-params locations route-params query-params))}
-  (let [browse-params (browse/make-browse-params locations route-params query-params)
+   :log  (f/remove-nil-keys (browse/make-browse-params route-params query-params))}
+  (let [browse-params (browse/make-browse-params route-params query-params)
         uniqueness (select-keys browse-params (browse-products-uniqueness query-params))]
     (if (= read-basis-t-for-this-key uniqueness)
       {:value (parser/value-with-basis-t {}

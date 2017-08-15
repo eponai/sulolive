@@ -65,7 +65,7 @@
           (css/add-classes [:text :is-live])
 
           (dom/a {:href store-link}
-                 (dom/strong nil store-name))
+                 (dom/span (css/add-class :content-item-text) store-name))
           )))))
 
 (def ->OnlineChannel (om/factory OnlineChannel))
@@ -100,13 +100,9 @@
         (dom/a
           {:href (routes/store-url store :store)}
           (photo/store-photo store {:transformation :transformation/thumbnail-large}
-                             (when (pos? (or visitor-count 0))
-                               (photo/overlay
-                                 nil
-                                 (dom/div
-                                   (css/add-class :visitor-count)
-                                   (dom/i {:classes ["fa fa-user"]})
-                                   (dom/span nil (str visitor-count)))))))
+                             (photo/overlay
+                               nil
+                               (dom/h6 nil "Visit shop"))))
         (dom/div
           (css/add-classes [:text :header online-status])
           (dom/a {:href (routes/store-url store :store)}
@@ -137,7 +133,7 @@
     #?(:cljs (.removeEventListener js/window "resize" (:resize-listener (om/get-state this)))))
   (render [this]
     (let [product (om/props this)
-          {:keys [current-route open-url?]} (om/get-computed this)
+          {:keys [current-route open-url? show-caption?]} (om/get-computed this)
           {:keys [show-item? breakpoint]} (om/get-state this)
           on-click #(om/update-state! this assoc :show-item? true)
           #?@(:cljs [open-url? (if (some? open-url?) open-url? (web.utils/bp-compare :large breakpoint >))]
@@ -164,43 +160,49 @@
         (when show-item?
           (common/modal
             {:on-close #(do
-                          (om/update-state! this assoc :show-item? false)
-                          #?(:cljs
-                             (.replaceState js/history nil nil (routes/url (:route current-route)
-                                                                           (:route-params current-route)
-                                                                           (:query-params current-route)))))
+                         (om/update-state! this assoc :show-item? false)
+                         #?(:cljs
+                            (.replaceState js/history nil nil (routes/url (:route current-route)
+                                                                          (:route-params current-route)
+                                                                          (:query-params current-route)))))
              :size     :large}
             (product/->Product product)))
 
         (dom/a
           (->> {:onClick #(when on-click
-                            (on-click)
-                            (debug "Chagne URL to: " goods-href)
-                            #?(:cljs
-                               (.replaceState js/history nil nil (product/product-url product))))
+                           (on-click)
+                           (debug "Chagne URL to: " goods-href)
+                           #?(:cljs
+                              (.replaceState js/history nil nil (product/product-url product))))
 
                 :href    goods-href}
                (css/add-class :primary-photo))
-          (photo/product-preview product nil))
+          (photo/product-preview product
+                                 nil
+                                 (photo/overlay
+                                   nil
+                                   ;(dom/p nil (dom/small nil (str "by " (:store.profile/name (:store/profile store)))))
+                                   (dom/h6 nil "View")
+                                   )))
 
         (dom/div
-          (css/add-classes [:header :text])
+          (css/add-classes [:content-item-text :text-center])
           (dom/a {:onClick on-click
                   :href    goods-href}
                  (dom/span nil item-name)))
+        ;(dom/div
+        ;  (css/add-class :text)
+        ;  (dom/strong nil (ui-utils/two-decimal-price price)))
         (dom/a
-          (css/add-classes [:text :store-name :sl-tooltip] {:href (routes/store-url store :store)})
+          (css/add-classes [:content-item-text :store-name :sl-tooltip] {:href (routes/store-url store :store)})
 
           (dom/small
             nil
-            (str "by " (:store.profile/name (:store/profile store))))
-          (when (#{:live :online} store-status)
-            (dom/small (css/add-class :sl-tooltip-text)
-                       (str (:store.profile/name (:store/profile store))
-                            " is " (name store-status) " right now, say hi in their store."))))
+            (str "by " (:store.profile/name (:store/profile store)))))
 
         (dom/div
           (css/add-class :text)
-          (dom/strong nil (ui-utils/two-decimal-price price)))))))
+          (dom/strong nil (ui-utils/two-decimal-price price)))
+        ))))
 
 (def ->ProductItem (om/factory ProductItem))

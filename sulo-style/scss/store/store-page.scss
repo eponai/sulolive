@@ -146,5 +146,14 @@
 				padding: 1rem 0;
 			}
 		}
+
+		.product-item {
+			img {
+				transform: scale(1);
+			}
+			.photo-container .overlay {
+				visibility: hidden;
+			}
+		}
 	}
 }

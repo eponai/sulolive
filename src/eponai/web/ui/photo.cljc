@@ -163,7 +163,8 @@
 
 (defn product-preview [product opts & content]
   (let [params (assoc opts :background? false)]
-    (product-photo product (css/add-class :square params) content)))
+    (product-photo product (css/add-class :square params)
+                   content)))
 
 (defn product-thumbnail [product & [opts]]
   (product-preview product
@@ -198,10 +199,12 @@
 (defn stream-photo [store opts & content]
   (let [photo (get-in store [:store/profile :store.profile/photo])
         photo-id (:photo/id photo "static/storefront-2")]
-    (square
-      {:photo-id photo-id}
-      (overlay
-        nil
-        (dom/div (css/add-class :video)
-                 (dom/i {:classes ["fa fa-play fa-fw"]}))
-        content))))
+    (dom/div
+      (css/add-class :stream-photo)
+      (cover
+        {:photo-id photo-id}
+        (overlay
+          nil
+          (dom/div (css/add-class :video)
+                   (dom/i {:classes ["fa fa-play fa-fw"]}))
+          content)))))

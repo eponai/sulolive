@@ -173,3 +173,6 @@
 
 (defn td [opts & content]
   (element dom/td opts content))
+
+(defn iframe [opts & content]
+  (element dom/iframe opts content) )

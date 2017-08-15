@@ -53,7 +53,7 @@
         (quill/->QuillRenderer {:html (f/bytes->str shipping-policy)})))))
 
 (defn store-not-found [component]
-  (let [{:query/keys [store featured-stores locations]} (om/props component)]
+  (let [{:query/keys [store featured-stores]} (om/props component)]
     [
      (grid/row-column
        (css/add-class :store-not-found (css/text-align :center))
@@ -63,7 +63,7 @@
        (dom/div (css/add-class :empty-container)
                 (dom/p (css/add-class :shoutout) "Oops, that store doesn't seem to exist."))
        (button/store-navigation-default
-         {:href (routes/url :live {:locality (:sulo-locality/path locations)})}
+         {:href (routes/url :live)}
          (dom/span nil "Browse stores")))
      (grid/row-column
        nil
@@ -148,7 +148,6 @@
                               {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                                          :store.item.photo/index]}]}]}
      {:query/store-items (om/get-query ci/ProductItem)}
-     :query/locations
      :query/current-route])
   Object
   (initLocalState [this]
@@ -280,13 +279,13 @@
                ;        (when (= stream-state :stream.state/offline)
                ;          (dom/span (css/add-class :sl-tooltip-text)
                ;                    "See the help checklist below to get started streaming")))
-               (dom/div
-                 (css/add-class :store-stats)
-                 (dom/div (css/add-class :sl-tooltip)
-                          (dom/h6 nil
-                                  (dom/small nil "Active visitors: ")
-                                  (dom/span nil (str visitor-count)))
-                          (dom/span (css/add-class :sl-tooltip-text) "Visitors in store right now")))
+               ;(dom/div
+               ;  (css/add-class :store-stats)
+               ;  (dom/div (css/add-class :sl-tooltip)
+               ;           (dom/h6 nil
+               ;                   (dom/small nil "Active visitors: ")
+               ;                   (dom/span nil (str visitor-count)))
+               ;           (dom/span (css/add-class :sl-tooltip-text) "Visitors in store right now")))
                (let [store-url (store-url (:store-id route-params))]
                  (menu/horizontal
                    (->> (css/align :right)
@@ -367,7 +366,8 @@
                      (grid/products products
                                     (fn [p]
                                       (ci/->ProductItem (om/computed p
-                                                                     {:current-route current-route})))))))])))))
+                                                                     {:current-route current-route
+                                                                      :show-caption? true})))))))])))))
 
 (def ->Store (om/factory Store))
 

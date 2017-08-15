@@ -99,11 +99,9 @@
   static om/IQuery
   (query [this]
     [:query/current-route
-     :query/locations
      {:proxy/navbar (om/get-query navbar/Navbar)}
      {:proxy/sidebar (om/get-query sidebar/Sidebar)}
      {:proxy/footer (om/get-query foot/Footer)}
-     {:proxy/coming-soon (om/get-query coming-soon/ComingSoon)}
      {:routing/app-root (into {}
                               (map (juxt identity #(or (some-> (route->component %) :component om/get-query)
                                                        [])))
@@ -123,8 +121,8 @@
                                                    (routes/with-normalized-route-params this (:query/current-route (om/props this)))
                                                    (routes/with-normalized-route-params this (:query/current-route prev-props))))))
   (render [this]
-    (let [{:keys       [routing/app-root query/current-route query/locations]
-           :proxy/keys [navbar sidebar footer coming-soon]} (om/props this)
+    (let [{:keys       [routing/app-root query/current-route]
+           :proxy/keys [navbar sidebar footer]} (om/props this)
           route (normalize-route (:route current-route))
           {:keys [factory component]} (route->component route)]
       (when (nil? component)
@@ -145,10 +143,7 @@
             (dom/div
               (css/add-class :page-content)
 
-              (let [current-loc-path (:locality (:route-params current-route))]
-                (if (contains? #{"yul"} current-loc-path)
-                  (coming-soon/->ComingSoon coming-soon)
-                  (factory app-root)))))
+              (factory app-root)))
           ;(when-not no-footer?)
           (foot/->Footer footer)
           )))))

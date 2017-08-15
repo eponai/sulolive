@@ -124,7 +124,7 @@
 
 .navbar {
 	flex: 1;
-	max-width: $global-width;
+	// max-width: $global-width;
 	margin: 0 auto;
 	padding: 0;
 	.button.tiny {
@@ -156,29 +156,20 @@
 	border-left: $global-border;
 	text-transform: uppercase;
 	font-weight: $global-weight-bold;
-	color: map-get($foundation-palette, sulo-dark);
-	&:hover {
-		color: map-get($foundation-palette, sulo);
-	}
+	// color: map-get($foundation-palette, sulo-dark);
+	// &:hover {
+	// 	color: map-get($foundation-palette, sulo);
+	// }
 	// letter-spacing: 1px;
 	// font-weight: $global-weight-bold;
 	// font-size: 80%;
 }
 #navbar-brand {
 	text-transform: uppercase;
-	font-weight: $global-weight-bold;
+	font-weight: bold;
 	font-size: 1rem;
-	color: $black;
-	display: flex;
-	flex-direction: column;
+	color: $sulo-dark-color;
 
-	small {
-		font-size: 50%;
-		margin-top: 0.1rem;
-		color: map-get($foundation-palette, primary);
-		// font-style: italic;
-		// text-transform: lowercase;
-	}
 	@include breakpoint(medium) {
 		font-size: 1.2rem;
 	}

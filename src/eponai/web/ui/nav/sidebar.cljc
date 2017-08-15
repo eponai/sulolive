@@ -29,7 +29,7 @@
     )
   Object
   (render [this]
-    (let [{:query/keys [auth owned-store navigation current-route locations]} (om/props this)
+    (let [{:query/keys [auth owned-store navigation current-route]} (om/props this)
           {:keys [route]} current-route
           track-event (fn [k & [p]] (mixpanel/track-key k (merge p {:source "sidebar"})))]
       (dom/div
@@ -51,9 +51,7 @@
                    nil
                    (menu/item
                      (css/add-class :back)
-                     (dom/a {:href    (if locations
-                                        (routes/url :index {:locality (:sulo-locality/path locations)})
-                                        (routes/url :landing-page))
+                     (dom/a {:href    (routes/url :index)
                              :onClick #(mixpanel/track "Store: Go back to marketplace" {:source "sidebar"})}
                             ;(dom/i {:classes ["fa fa-chevron-left fa-fw"]})
                             (dom/strong nil (dom/small nil "Back to marketplace")))
@@ -170,11 +168,7 @@
                    (menu/item
                      (css/add-class :category)
                      (dom/a
-                       (->> {:href    (nav.common/navbar-route :live {} (:sulo-locality/path locations))
-                             :onClick #(when (empty? locations)
-                                        #?(:cljs
-                                           (when-let [locs (web.utils/element-by-id "sulo-locations")]
-                                             (web.utils/scroll-to locs 250))))}
+                       (->> {:href    (routes/url :live)}
                             (css/add-class :navbar-live))
                        (dom/span nil "LIVE")))
                    (nav.common/collection-links this "sidebar")

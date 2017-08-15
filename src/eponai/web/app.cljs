@@ -41,21 +41,21 @@
   (binding [parser/*parser-allow-remote* false]
     (om/add-root! reconciler router/Router (gdom/getElement router/dom-app-id))))
 
-(defn validate-location [reconciler {:keys [handler route-params]}]
-  (when (and (some? handler)
-             (not (common.routes/location-independent-route? handler))
-             (nil? (web.utils/get-locality)))
-    (let [loc (:locality route-params)
-          loc-entity (db/lookup-entity (db/to-db reconciler) [:sulo-locality/path loc])]
-      (debug "Location was not set, setting new locality: " loc " entity " loc-entity)
-      (web.utils/set-locality loc-entity)
-      (om/transact! reconciler [(list 'client/set-locality {:locality loc-entity})
-                                      :query/locations]))))
+;(defn validate-location [reconciler {:keys [handler route-params]}]
+;  (when (and (some? handler)
+;             (not (common.routes/location-independent-route? handler))
+;             (nil? (web.utils/get-locality)))
+;    (let [loc (:locality route-params)
+;          loc-entity (db/lookup-entity (db/to-db reconciler) [:sulo-locality/path loc])]
+;      (debug "Location was not set, setting new locality: " loc " entity " loc-entity)
+;      (web.utils/set-locality loc-entity)
+;      (om/transact! reconciler [(list 'client/set-locality {:locality loc-entity})
+;                                      :query/locations]))))
 
 (defn update-route-fn [reconciler-atom]
   (fn [{:keys [handler route-params] :as match}]
     (try
-      (validate-location @reconciler-atom match)
+      ;(validate-location @reconciler-atom match)
       (let [reconciler @reconciler-atom
             modules (shared/by-key reconciler :shared/modules)
             loaded-route? (modules/loaded-route? modules handler)

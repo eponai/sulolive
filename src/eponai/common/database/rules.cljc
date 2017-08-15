@@ -12,8 +12,7 @@
      `(def ~name (memoize (fn [] ~@body)))))
 
 (defrule listed-store
-  '[[(listed-store ?store ?locality)
-     [?store :store/locality ?locality]
+  '[[(listed-store ?store)
      [?store :store/status ?status]
      [?status :status/type :status.type/open]
      [?store :store/profile ?profile]
