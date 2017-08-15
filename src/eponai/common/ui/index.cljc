@@ -66,7 +66,8 @@
   Object
   (render [this]
     (let [{:query/keys [top-streams featured-streams featured-stores current-route online-stores featured-items featured-home featured-men featured-art]} (om/props this)
-          {:keys [route-params]} current-route]
+          {:keys [route-params]} current-route
+          featured-streams [(first featured-streams)]]
       ;(debug "Featured women products: " featured-women)
 
 
@@ -90,10 +91,7 @@
                      (css/text-align :center))
                 (dom/h1 (css/show-for-sr) "SULO Live")
                 (dom/h2 (css/add-class :jumbo-header) "Know their story")
-                (dom/p (css/add-classes [:jumbo-lead :lead]) "Shop from brands you get to know by engaging on their LIVE streams."))
-
-              )
-            )
+                (dom/p (css/add-classes [:jumbo-lead :lead]) "Shop from brands you get to know by engaging on their LIVE streams."))))
 
           (dom/div
             (css/add-class :sections)
@@ -151,7 +149,7 @@
             ;                                     (ci/->OnlineChannel c)))
             ;                                 featured-streams))
             ;                          ""))
-            (when (<= 5 (count featured-streams))
+            (when (not-empty featured-streams)
               (common/mobile-app-banner this))
             ;<!-- LightWidget WIDGET --><script src="//lightwidget.com/widgets/lightwidget.js"></script><iframe src="//lightwidget.com/widgets/518cc674e6265d0fa7aae74a603e7c25.html" scrolling="no" allowtransparency="true" class="lightwidget-widget" style="width: 100%; border: 0; overflow: hidden;"></iframe>
 

@@ -53,7 +53,7 @@
               nil
               (menu/vertical
                 (css/add-class :location-menu)
-                (menu/item-text nil (dom/h5 (css/add-class :footer-header) "Currency"))
+                (menu/item-text nil (dom/h5 (css/add-class :footer-header) ))
                 (menu/item
                   nil
                   (dom/select

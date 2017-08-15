@@ -19,6 +19,9 @@
 		margin: 0;
 		padding: 5% 0;
 
+		.row {
+			max-width: $global-width;
+		}
 		&.has-photo {
 			padding-bottom: 0;
 		}

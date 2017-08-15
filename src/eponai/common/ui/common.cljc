@@ -184,14 +184,14 @@
     ;  "Contact us")
     (dom/div
       (->>
-           (css/add-classes [:sell-on-sulo :section])
+           (css/add-classes [:sell-on-sulo :banner :section])
            (css/text-align :center))
       ;(dom/div
       ;  (->> (css/add-class :section-title)
       ;       (css/text-align :center)))
       (dom/h2 (css/add-classes [:sulo-dark :jumbo-header :banner]) "Share your story")
       (dom/p (css/add-classes [:lead :jumbo-lead :banner :sulo-dark])
-             (dom/span nil "Give your fans the opportunity to connect and engage with your brand LIVE while discovering your products."))
+             (dom/span nil "Sell your products while connecting with your customers in new ways using LIVE streams. All in one place."))
       ;(dom/div
       ;  (css/text-align :center)
       ;  ;(photo/square {:photo-id "static/sulo-cat-live"
@@ -210,7 +210,7 @@
 (defn mobile-app-banner [component]
   (dom/div
     (->>
-      (css/add-classes [:mobile-app-banner :section]))
+      (css/add-classes [:mobile-app-banner :banner :section]))
     ;(dom/div
     ;  (->> (css/add-class :section-title)
     ;       (css/text-align :center)))

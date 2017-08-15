@@ -139,8 +139,10 @@
           (css/add-class :hero)
           (dom/div
             (css/add-class :hero-background)
-            (dom/video {:autoPlay true}
-                       (dom/source {:src "https://a0.muscache.com/airbnb/static/P1-background-vid-compressed-2.mp4"})))
+
+            ;(dom/video {:autoPlay true}
+            ;           (dom/source {:src "https://a0.muscache.com/airbnb/static/P1-background-vid-compressed-2.mp4"}))
+            )
           (dom/div
             (css/add-class :hero-content)
             (dom/div
@@ -162,16 +164,16 @@
             (css/text-align :center)
             (dom/li nil (dom/p nil
                                (dom/span nil "Retail sites with video ")
-                               (dom/a {:href "https://www.singlegrain.com/video-marketing/just-stats-science-video-engagement/"
+                               (dom/a {:href   "https://www.singlegrain.com/video-marketing/just-stats-science-video-engagement/"
                                        :target "_blank"} (dom/span nil "increase conversion by 30%"))
                                (dom/span nil ".")))
             (dom/li nil (dom/p nil
-                               (dom/a {:href "https://blog.hubspot.com/marketing/top-video-marketing-statistics#sm.0001agz8fnm7qcuby3m2fy7vd2qou"
+                               (dom/a {:href   "https://blog.hubspot.com/marketing/top-video-marketing-statistics#sm.0001agz8fnm7qcuby3m2fy7vd2qou"
                                        :target "_blank"} (dom/span nil "70% of marketers"))
                                (dom/span nil " claim video produces more conversions than any other content.")))
             (dom/li nil (dom/p nil
                                (dom/span nil "Viewers spend ")
-                               (dom/a {:href "http://tubularinsights.com/live-video-vod-per-play/#ixzz4JTvPtK7v"
+                               (dom/a {:href   "http://tubularinsights.com/live-video-vod-per-play/#ixzz4JTvPtK7v"
                                        :target "_blank"} (dom/span nil "8X longer with live video"))
                                (dom/span nil " than on-demand.")))))
 
@@ -193,15 +195,20 @@
               (menu/vertical
                 nil
                 (dom/li nil
+                        (dom/h5 nil "Show and tell")
                         (dom/p nil
-                               (dom/h5 nil "Show and tell")
+
                                (dom/span nil "Tell your story and demonstrate products via LIVE video on your shop. Unlimited time, unlimited viewers.")))
-                (dom/li nil (dom/p nil
-                                   (dom/h5 nil "Interact and connect")
-                                   (dom/span nil "Your viewers can ask questions and interact with you and each other via a LIVE chat room.")))
-                (dom/li nil (dom/p nil
-                                   (dom/h5 nil "Sell")
-                                   (dom/span nil "Your LIVE content and your products are in one place, so your viewers can easily make purchases while they watch your video.")))))
+                (dom/li nil
+                        (dom/h5 nil "Interact and connect")
+                        (dom/p nil
+
+                               (dom/span nil "Your viewers can ask questions and interact with you and each other via a LIVE chat room.")))
+                (dom/li nil
+                        (dom/h5 nil "Sell")
+                        (dom/p nil
+
+                               (dom/span nil "Your LIVE content and your products are in one place, so your viewers can easily make purchases while they watch your video.")))))
             ))
 
         (dom/div

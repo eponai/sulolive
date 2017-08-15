@@ -2,18 +2,20 @@
 $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 .content-item {
 	padding-top: 1.5rem;
+
 	.photo-container {
 		margin-bottom: 0.5rem;
 		// box-shadow: 0 0 2px 0 rgba($light-gray, 1);
 		img {
 			transform: scale(1);
-			transition: transform .25s ease-in-out;
+			transition: all .25s ease-in-out;
 		}
-	}
 
-	&:hover {
-		.photo-container img {
-			transform: scale(1.2);
+		&:hover {
+			img {
+				transform: scale(1.1);
+				filter: blur(3px);
+			}
 		}
 	}
 
@@ -117,12 +119,29 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 		}
 		.photo-container {
 			position: relative;
+			img {
+				transition: all .25s ease-in-out;
+			}
 			.overlay {
+				@include wrap-text;
 				transition: background .25s ease-in-out;
 				.content {
 					opacity: 0;
 					color: $black;
 					transition: opacity .25s ease-in-out;
+					// text-shadow: 1px 1px 0 $white;
+					font-weight: $global-weight-bold;
+				}
+			}
+			&:hover {
+				img {
+					// filter: blur(2px);
+				}
+				.overlay {
+					background: rgba($white, 0.75);
+					.content {
+						opacity: 1;
+					}
 				}
 			}
 			// .online-status {
@@ -154,14 +173,7 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 			// 	}
 			// }
 		}
-		&:hover {
-			.photo-container .overlay {
-				background: rgba($white, 0.75);
-				.content {
-					opacity: 1;
-				}
-			}
-		}
+		
 	
 	}
 
@@ -225,24 +237,27 @@ $box-shadow: 0 0 5px 0 rgba($black, 0.2);
 	}
 
 	&.store-item {
-		.photo-container .overlay {
-			transition: background .25s ease-in-out;
-			h6 {
-				// border: 1px solid $light-gray;
-				// background: $white;
-				color: $black;
-				opacity: 0;
-				transition: opacity .25s ease-in-out;
-			}
-		}
-		&:hover {
-			.photo-container .overlay {
-				background: rgba($white, 0.75);
+		.photo-container {
+			.overlay {
+				transition: background .25s ease-in-out;
 				h6 {
-					opacity: 1;
+					// border: 1px solid $light-gray;
+					// background: $white;
+					color: $black;
+					opacity: 0;
+					transition: opacity .25s ease-in-out;
+				}
+			}
+			&:hover {
+				 .overlay {
+					background: rgba($white, 0.75);
+					h6 {
+						opacity: 1;
+					}
 				}
 			}
 		}
+		
 		// margin-bottom: $global-margin;
 		// .photo-container {
 		// 	.overlay {

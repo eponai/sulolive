@@ -366,7 +366,8 @@
                      (grid/products products
                                     (fn [p]
                                       (ci/->ProductItem (om/computed p
-                                                                     {:current-route current-route})))))))])))))
+                                                                     {:current-route current-route
+                                                                      :show-caption? true})))))))])))))
 
 (def ->Store (om/factory Store))
 

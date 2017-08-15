@@ -33,6 +33,7 @@ $section-footer-color: $primary-color;
 		overflow-y: hidden;
 		display: flex;
 		.hero-background  {
+			background: $black;
 			position: absolute;
 			top: 0;
 			left: 0;
@@ -58,7 +59,7 @@ $section-footer-color: $primary-color;
 			flex: 1;
 			display: flex;
 			flex-direction: column;
-			background: radial-gradient(rgba($black, 0.1), rgba($black, 0.2), rgba($black, 0.5) );
+			background: radial-gradient(rgba($black, 0.1), rgba($black, 0.2), rgba($black, 0.4) );
 			.va-container {
 				flex: 1;
 				display: flex;
@@ -179,9 +180,7 @@ $section-footer-color: $primary-color;
 		h2 {
 			text-transform: none;
 		}
-		.row {
-			max-width: $global-width;
-		}
+		
 		h6 {
 			margin-bottom: 0.5rem;
 			strong {
@@ -191,6 +190,12 @@ $section-footer-color: $primary-color;
 		h3, h6 {
 			text-transform: none;
 			font-weight: $global-weight-normal;
+		}
+		.hero-background {
+			background: $sulo-color;
+		}
+		.hero-content {
+			background: transparent;
 		}
 
 		.sulo-banner {
