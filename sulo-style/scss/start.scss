@@ -25,7 +25,7 @@ $section-footer-color: $primary-color;
 		height: 20rem;
 
 		@include breakpoint(medium) {
-			height: 500px;
+			height: 35rem;
 		}
 		// @include breakpoint(medium) {}
 		// max-height: 600px;
@@ -59,13 +59,14 @@ $section-footer-color: $primary-color;
 			flex: 1;
 			display: flex;
 			flex-direction: column;
-			background: radial-gradient(rgba($black, 0.1), rgba($black, 0.2), rgba($black, 0.4) );
+			background: radial-gradient(rgba($black, 0.2), rgba($black, 0.2), rgba($black, 0.4) );
 			.va-container {
 				flex: 1;
 				display: flex;
 				justify-content: center;
 				flex-direction: column;
 				align-items: center;
+				// text-shadow: 1px 1px 2px rgba($black, 0.5);
 			}
 			.va-footer {
 				h3 {
@@ -210,7 +211,7 @@ $section-footer-color: $primary-color;
 			img {
 				flex: 0 0 auto;
 				max-width: 20rem;
-				margin: 0 auto;
+				// margin: 0 auto;
 				object-fit: contain;
 			}
 

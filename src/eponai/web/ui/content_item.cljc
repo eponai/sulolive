@@ -62,10 +62,10 @@
 
 
         (dom/div
-          (css/add-classes [:text :is-live])
+          (css/add-classes [:content-item-text :is-live])
 
           (dom/a {:href store-link}
-                 (dom/span (css/add-class :content-item-text) store-name))
+                 (dom/span nil store-name))
           )))))
 
 (def ->OnlineChannel (om/factory OnlineChannel))
@@ -104,7 +104,7 @@
                                nil
                                (dom/h6 nil "Visit shop"))))
         (dom/div
-          (css/add-classes [:text :header online-status])
+          (css/add-classes [:content-item-text :header online-status])
           (dom/a {:href (routes/store-url store :store)}
                  (dom/strong nil store-name)))))))
 
@@ -194,7 +194,9 @@
         ;  (css/add-class :text)
         ;  (dom/strong nil (ui-utils/two-decimal-price price)))
         (dom/a
-          (css/add-classes [:content-item-text :store-name :sl-tooltip] {:href (routes/store-url store :store)})
+          (cond->> (css/add-classes [:content-item-text :text :sl-tooltip] {:href (routes/store-url store :store)})
+                   store-live?
+                   (css/add-class :is-live))
 
           (dom/small
             nil

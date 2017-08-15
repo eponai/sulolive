@@ -196,12 +196,17 @@
         (merge props p)
         content))))
 
+(defn video-thumbnail [opts & content]
+  (photo
+    (css/add-class :video-thumbnail opts)
+    content))
+
 (defn stream-photo [store opts & content]
   (let [photo (get-in store [:store/profile :store.profile/photo])
         photo-id (:photo/id photo "static/storefront-2")]
     (dom/div
       (css/add-class :stream-photo)
-      (cover
+      (video-thumbnail
         {:photo-id photo-id}
         (overlay
           nil

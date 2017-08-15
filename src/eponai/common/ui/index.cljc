@@ -13,6 +13,8 @@
     [eponai.common.ui.product :as product]
     [eponai.common.format.date :as date]
     [eponai.web.ui.button :as button]
+    #?(:cljs
+       [eponai.web.utils :as web.utils])
     [eponai.common.ui.stream :as stream]))
 
 ;(defn banner [{:keys [color align] :as opts} primary secondary]
@@ -36,11 +38,12 @@
   (dom/a
     {:href    href
      :classes [:full :category-photo]}
-    (photo/photo {:photo-id photo-id}
-                 (photo/overlay
-                   nil (dom/div
-                         (->> (css/text-align :center))
-                         (dom/h4 nil title))))))
+    (photo/video-thumbnail
+      (css/add-class :widescreen {:photo-id photo-id})
+      (photo/overlay
+        nil (dom/div
+              (->> (css/text-align :center))
+              (dom/h4 nil title))))))
 
 (defui Index
   static om/IQuery
@@ -205,8 +208,27 @@
               ;  (dom/h2 nil "New brands"))
               (dom/div
                 {:classes ["sulo-items-container"]}
+                ;(letfn [(scroll-right [] #?(:cljs
+                ;                               (let [row (web.utils/element-by-id "content-row-products")
+                ;                                     cols (array-seq (.-children row))]
+                ;                                 (web.utils/scroll-horizontal-to row (second cols) 250)
+                ;                                 (debug "Scroll")
+                ;                                 )))
+                ;        (scroll-left [] #?(:cljs
+                ;                            (let [row (web.utils/element-by-id "content-row-products")
+                ;                                  columns (array-seq (.-children row))]
+                ;                              (debug "Scroll")
+                ;                              (web.utils/scroll-horizontal-to row (first columns) 250))))]
+                ;  [
+                ;   (dom/a {:onClick scroll-right}
+                ;          (dom/span nil "Next"))
+                ;   (dom/a {:onClick scroll-left}
+                ;          (dom/span nil "Previous"))])
+
                 (grid/row
-                  (grid/columns-in-row {:small 3 :medium 4 :large 7})
+                  (->> {:id "content-row-products"
+                        :style {:paddingLeft 20}}
+                       (grid/columns-in-row {:small 3 :medium 4 :large 7}))
                   (map (fn [store]
                          (let [store-name (get-in store [:store/profile :store.profile/name])]
                            (grid/column
@@ -215,34 +237,33 @@
                        (take 12 featured-stores))))
               "")
 
-            (when (not-empty featured-items)
-              (common/content-section
-                {:href  (routes/url :browse/gender (merge route-params
-                                                          {:sub-category "women"}))
-                 :class "products"}
-                (dom/a {:href (routes/url :browse/gender (merge route-params
-                                                                {:sub-category "women"}))}
-                       (dom/span nil "Products"))
-                (dom/div
-                  nil
-                  (grid/row
-                    (->>
-                      (grid/columns-in-row {:small 2 :medium 4 :large 6}))
-                    ;(grid/column
-                    ;  (css/add-class :online-streams))
-                    (map-indexed
-                      (fn [i p]
-                        (grid/column
-                          (cond
-                            (< 7 i)
-                            (css/show-for :large)
-                            (< 3 i)
-                            (css/show-for :medium))
-                          (ci/->ProductItem (om/computed p
-                                                         {:open-url?     true
-                                                          :current-route current-route}))))
-                      (take 10 featured-items))))
-                ""))
+            (common/content-section
+              {:href  (routes/url :browse/gender (merge route-params
+                                                        {:sub-category "women"}))
+               :class "products"}
+              (dom/a {:href (routes/url :browse/gender (merge route-params
+                                                              {:sub-category "women"}))}
+                     (dom/span nil "Products"))
+              (dom/div
+                nil
+                (grid/row
+                  (->>
+                    (grid/columns-in-row {:small 2 :medium 4 :large 6}))
+                  ;(grid/column
+                  ;  (css/add-class :online-streams))
+                  (map-indexed
+                    (fn [i p]
+                      (grid/column
+                        (cond
+                          (< 7 i)
+                          (css/show-for :large)
+                          (< 3 i)
+                          (css/show-for :medium))
+                        (ci/->ProductItem (om/computed p
+                                                       {:open-url?     true
+                                                        :current-route current-route}))))
+                    (take 10 featured-items))))
+              "")
 
 
 

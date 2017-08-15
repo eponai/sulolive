@@ -2,7 +2,10 @@
 .section {
 	padding: 2.5% 0;
 	.row .column {
-		padding:  0 5px;
+		padding:  0 2px;
+		@include breakpoint(medium) {
+			padding:  0 5px;
+		}
 	}
 	&.gray {
 		background: rgba($light-gray, 0.3);
@@ -37,7 +40,7 @@
 
 	&.content {
 		.row {
-			padding: 0 1rem;
+			padding: 0 0.5rem;
 			@include breakpoint(medium) {
 				padding: 0 2rem;
 			}
