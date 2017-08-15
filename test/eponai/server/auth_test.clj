@@ -35,18 +35,15 @@
 
 (deftest test-not-authed-http
   (let [red (:found response/redirect-status-codes)]
-    (test/are [status route route-params cookies]
+    (test/are [status route route-params]
       (let [endpoint (util/endpoint-url *system* route route-params)
-            response (http/get endpoint
-                               {:follow-redirects false
-                                :cookies          cookies})]
+            response (http/get endpoint {:follow-redirects false})]
         (= (:status response)
            status))
-      200 :index {:locality "yvr"} (location-cookie)
-      ;; Redirected to :index when going to landing page with :sulo-locality/path
-      red :landing-page nil (location-cookie)
-      red :user-settings nil (location-cookie)
-      red :store-dashboard {:store-id 123} (location-cookie))))
+      200 :index nil
+      200 :browse/all-items nil
+      red :user-settings nil
+      red :store-dashboard {:store-id 123})))
 
 (deftest test-authed-http
   (let [red (:found response/redirect-status-codes)
@@ -58,23 +55,19 @@
                                   :symbols {'?user user-id}})]
     (util/with-auth
       *system* user-email
-      (test/are [status route route-params cookies]
+      (test/are [status route route-params]
         (let [endpoint (util/endpoint-url *system* route route-params)
               response (http/get endpoint
-                                 {:follow-redirects false
-                                  :cookies          cookies})]
+                                 {:follow-redirects false})]
 
           (= status (:status response)))
 
-        ;; Redirect into location if one is selected
-        red :landing-page nil (location-cookie)
-        200 :landing-page nil nil
-        200 :index {:locality "yvr"} nil
-        200 :user-settings nil nil
-        200 :store-dashboard {:store-id store-id} nil
-        red :store-dashboard {:store-id (dec store-id)} nil))))
+        200 :index nil
+        200 :user-settings nil
+        200 :store-dashboard {:store-id store-id}
+        red :store-dashboard {:store-id (dec store-id)}))))
 
-(deftest test-authed-no-locality-should-set-cookie-http
+(deftest test-authed-no-locality-should-not-set-cookie-http
   (let [red (:found response/redirect-status-codes)
         db (util/system-db *system*)]
     (util/with-auth
@@ -83,7 +76,7 @@
         (let [endpoint (util/endpoint-url *system* route route-params)
               response (http/get endpoint {:follow-redirects false})
               cookie-locality (auth/cookie-locality response)]
-          (= (:sulo-locality/path cookie-locality) (:locality route-params)))
-        200 :index {:locality "yvr"}
-        200 :index {:locality "yul"}
+          (= nil (:sulo-locality/path cookie-locality)))
+        200 :index nil
+        200 :index nil
         200 :user-settings nil))))

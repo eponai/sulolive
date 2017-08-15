@@ -38,8 +38,8 @@
             store-name          :store.profile/name} :store/profile} store
           visitor-count (or (:store/visitor-count store) 0)
           store-link (routes/store-url store :store)]
-      (debug "Stream: " channel)
-      (debug "Stream store: " (:stream/state channel))
+      ;(debug "Stream: " channel)
+      ;(debug "Stream store: " (:stream/state channel))
       (dom/div
         (cond->> (css/add-classes [:content-item :stream-item])
                  (pos? visitor-count)

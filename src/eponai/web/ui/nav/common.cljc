@@ -16,10 +16,8 @@
 
 (defn collection-links [component source]
   (let [{:query/keys [auth locations navigation]} (om/props component)]
-    (debug "Locations: " locations)
     (map
       (fn [{:category/keys [route-map name path] :as a}]
-        (debug "Route map: " route-map)
         (let [{:keys [route route-params]} route-map
               opts {:href    (routes/url route route-params)
                     :onClick #(do (mixpanel/track-key ::mixpanel/shop-by-category {:source   source
