@@ -178,6 +178,7 @@ $section-footer-color: $primary-color;
 		}
 	}
 	&#sulo-start-store {
+		$color: black;//darken($sulo-dark-color, 30%);
 		h2 {
 			text-transform: none;
 		}
@@ -193,10 +194,68 @@ $section-footer-color: $primary-color;
 			font-weight: $global-weight-normal;
 		}
 		.hero-background {
-			background: $sulo-color;
+			.photo-container {
+				height: 100%;
+				.photo {
+					padding: 0;
+					height: 100%;
+				}
+			}
+			// background: $sulo-color;
+			// background: radial-gradient(rgba($black, 0.2), rgba($black, 0.2), rgba($black, 0.4) );
 		}
 		.hero-content {
-			background: transparent;
+			background: radial-gradient(rgba($color, 0.4), rgba($color, 0.5), rgba($color, 0.75) );
+			text-shadow: 1px 1px 0 rgba($black, 0.2);
+			padding: 8rem 0;
+			min-height: 60vh;
+			position:relative;
+			.button {
+				text-shadow: none;
+				margin: 0;
+			}
+			p {
+				color: $white;
+			}
+
+			.callout:not(.success) {
+				text-shadow: none;
+				background: rgba($color, 0.5);
+				// color: $white;
+				margin: 0;
+				a, label, small {
+					color: $white;
+					// font-weight: bold;
+				}
+				.is-invalid-input {
+					background-color: lighten($alert-color, 35%) !important;
+				}
+				// display: flex;
+				
+				.row {
+					max-width: $global-width;
+				}
+			}
+
+			.lead {
+				margin-bottom: 2rem;
+			}
+		}
+
+		// .hero:not(.hero-footer) {
+		// 		.callout {
+		// 			background: rgba($color, 0.25);
+		// 			position: absolute;
+		// 			left: 0;
+		// 			bottom: 0;
+		// 			right: 0;
+		// 		}
+		// 	}
+		.hero {
+			height: auto;
+			img {
+				filter: blur(2px);
+			}
 		}
 
 		.sulo-banner {

@@ -49,7 +49,7 @@
            per-tick (* 10 (/ diff d))]
        (js/setTimeout (fn []
                         (set! (.-scrollTop parent) (+ (.-scrollTop parent) per-tick))
-                        (scroll-to el (- d 10))))))))
+                        (scroll-to parent el (- d 10))))))))
 
 (defn scroll-horizontal-to
   ([el d]

@@ -49,26 +49,167 @@
 (s/def :field/brand (s/and string? #(not-empty %)))
 (s/def :field/locality (s/and string? #(not-empty %)))
 (s/def :field/email #(client-utils/valid-email? %))
-(s/def :field/request (s/keys :req [:field/brand
+(s/def :field/request (s/keys :req [
+                                    ;:field/brand
                                     :field/email
-                                    :field/locality
+                                    ;:field/locality
                                     :field/website]))
 
-(defn render-request-store-access [component]
-  (dom/div
-    (css/add-class :request-store-access)
-    (photo/cover
-      {:photo-id       "static/coming-soon-sell-bg"
-       :transformation :transformation/cover}
+(defn input-id [parent-id child-id]
+  (str parent-id "-" child-id))
+
+
+(defn render-start-store [component id]
+  (let [{:query/keys [auth sulo-localities]} (om/props component)
+        {:keys [input-validation]} (om/get-state component)]
+    (callout/callout
+      (css/add-class :start-store-form {:id id})
+      (grid/row
+        (css/align :middle)
+        (grid/column
+          nil
+          (dom/label nil "Name")
+          (v/input {:id          (:field.store/name form-inputs)
+                    :type        "text"
+                    :placeholder "Shop name"}
+                   input-validation))
+
+        (grid/column
+          nil
+          (dom/label nil "Location")
+          (v/select {:id           (:field.store/locality form-inputs)
+                     :defaultValue ""}
+                    input-validation
+                    (dom/option {:value    ""
+                                 :disabled true} "--- Select locality ---")
+                    (map (fn [l]
+                           (dom/option {:value (:db/id l)} (:sulo-locality/title l)))
+                         sulo-localities)))
+        (grid/column
+          (css/add-class :shrink)
+          (dom/div
+            (css/text-align :center)
+            (button/store-navigation-cta
+              {:onClick #(.start-store component id)}
+              (dom/span nil "Open my shop")))))
       (grid/row-column
         nil
-        (dom/h2 nil "Go LIVE with your brand")))))
+        (when (some? (:user/email auth))
+          (dom/p (css/text-align :center)
+                 (dom/small nil (str "Logged in as " (:user/email auth)))))))))
 
-(defn render-start-store [component]
-  )
+(defn render-has-store [component id]
+  (let [{:query/keys [auth]} (om/props component)
+        store (-> auth :store.owner/_user first :store/_owners)]
+    ;(callout/callout
+    ;  (css/text-align :center {:id id}))
+    (grid/row
+      (css/align :center)
+      (grid/column
+        (css/add-class :shrink)
 
-(defn render-has-store [component]
-  )
+        (button/store-navigation-cta
+          (css/add-class :expanded {:onClick #(do
+                                               ;#?(:cljs
+                                               ;   (when (nil? (utils/get-locality))
+                                               ;     (utils/set-locality)))
+                                               (routes/set-url! component :store-dashboard {:store-id (:db/id store)}))})
+          (dom/span nil (str "Continue to " (get-in store [:store/profile :store.profile/name]))))
+        (dom/p nil
+               (dom/small nil (str "Logged in as " (:user/email auth))))))))
+
+(defn render-access-form [component id]
+  (let [request-message (msg/last-message component 'user/request-store-access)
+        {:query/keys [auth sulo-localities]} (om/props component)
+        {:keys [input-validation]} (om/get-state component)]
+    (callout/callout
+      (css/add-class :request-access-form {:id id})
+      ;(dom/label nil "Name")
+      ;(v/input
+      ;  {:type "email" :placeholder "Your brand" :id (:field/brand form-inputs)}
+      ;  input-validation)
+      (dom/label nil "Email")
+      (v/input
+        {:type "email" :placeholder "youremail@example.com" :id (input-id id (:field/email form-inputs)) :defaultValue (:user/email auth)}
+        input-validation)
+
+      ;(dom/label nil "Location")
+      ;(v/input
+      ;  {:type "text" :placeholder "e.g. Vancouver" :id (:field/locality form-inputs)}
+      ;  input-validation)
+
+      (dom/label nil "Website/Social media")
+      (v/input {:type "text" :placeholder "yourwebsite.com, Facebook page, Instagram"
+                :id   (input-id id (:field/website form-inputs))}
+               input-validation)
+
+      (dom/label nil "Message")
+      (dom/textarea {:placeholder "Anything else you'd like us to know? (optional)"
+                     :id          (input-id id (:field/message form-inputs))})
+
+      (dom/div
+        (css/add-class :text-center)
+        (dom/p nil
+               (dom/small nil
+                          (dom/span nil "By submitting you accept our ")
+                          (dom/a {:href    "//www.iubenda.com/privacy-policy/8010910"
+                                  :classes ["iubenda-nostyle no-brand iubenda-embed"]
+                                  :title   "Privacy Policy"}
+                                 (dom/span nil "Privacy Policy"))))
+        (button/store-navigation-cta
+          {:onClick #(.request-access component id)}
+          (dom/span nil "I want to go LIVE"))
+        (cond (msg/pending? request-message)
+              (dom/p nil (dom/small nil (dom/i {:classes ["fa fa-spinner fa-spin"]})))
+              (msg/final? request-message)
+              (if (msg/success? request-message)
+                (dom/p nil (msg/message request-message))))))))
+
+(defn render-input-callout [component id]
+  (let [{:query/keys [auth]} (om/props component)
+        store  (-> auth :store.owner/_user first :store/_owners)
+
+        ;auth {:user/can-open-store? true
+        ;      :user/email "dev@sulo.live"}
+        ]
+    (cond (some? store)
+          (render-has-store component id)
+
+          (:user/can-open-store? auth)
+          (callout/callout
+            (css/add-class :start-store-form)
+            (when (some? (:user/email auth))
+              (dom/p (css/text-align :center)
+                     (dom/small nil (str "Logged in as " (:user/email auth)))))
+            (dom/div
+              (css/text-align :center)
+              (button/store-navigation-cta
+                (->> {:onClick (fn [] #?(:cljs (utils/scroll-to (utils/element-by-id "sulo-start-store") 250)))})
+                (dom/span nil "Open my LIVE shop"))))
+
+          ;(render-start-store component id)
+
+          :else
+          (render-access-form component id))))
+
+(defn render-header-input-callout [component]
+  (let [{:query/keys [auth]} (om/props component)
+        store (-> auth :store.owner/_user first :store/_owners)
+        id "sell-form-header"
+
+        ;auth {:user/can-open-store? true
+        ;      :user/email           "dev@sulo.live"}
+        ]
+    (cond (some? store)
+          (render-has-store component id)
+
+          (:user/can-open-store? auth)
+          (render-start-store component id)
+
+          :else
+          (button/store-navigation-cta
+            (->> {:onClick (fn [] #?(:cljs (utils/scroll-to (utils/element-by-id "request-form") 250)))})
+            (dom/span nil "Go LIVE with my brand")))))
 
 (defui StartStore
   static om/IQuery
@@ -81,35 +222,40 @@
                               :db/id]}
      :query/messages])
   Object
-  (start-store [this]
+  (start-store [this parent-id]
     #?(:cljs
-       (let [store-name (utils/input-value-by-id (:field.store/name form-inputs))
+       (let [store-name (utils/input-value-by-id (input-id parent-id (:field.store/name form-inputs)))
              store-country "ca"                             ;(utils/input-value-by-id (:field.store/country form-inputs))
 
-             locality (c/parse-long-safe (utils/input-value-by-id (:field.store/locality form-inputs)))
+             locality (c/parse-long-safe (utils/input-value-by-id (input-id parent-id (:field.store/locality form-inputs))))
              input-map {:field.store/name     store-name
                         :field.store/country  "CA"
-                        :field.store/locality locality}
-             validation (v/validate :field/store input-map form-inputs)]
+                        :field.store/locality locality
+                        }
+             validation (v/validate :field/store input-map form-inputs (str parent-id "-"))]
+         (debug "Validation: " validation)
          (when (nil? validation)
            (mixpanel/track "Start store")
            (msg/om-transact! this [(list 'store/create {:name store-name :country store-country :locality locality})]))
 
          (om/update-state! this assoc :input-validation validation))))
-  (request-access [this]
+  (request-access [this parent-id]
     #?(:cljs
-       (let [brand (utils/input-value-by-id (:field/brand form-inputs))
-             email (utils/input-value-by-id (:field/email form-inputs))
-             website (utils/input-value-by-id (:field/website form-inputs))
-             locality (utils/input-value-by-id (:field/locality form-inputs))
-             message (utils/input-value-by-id (:field/message form-inputs))
+       (let [
+             ;brand (utils/input-value-by-id (input-id parent-id (:field/brand form-inputs)))
+             email (utils/input-value-by-id (input-id parent-id (:field/email form-inputs)))
+             website (utils/input-value-by-id (input-id parent-id (:field/website form-inputs)))
+             ;locality (utils/input-value-by-id (input-id parent-id (:field/locality form-inputs)))
+             message (utils/input-value-by-id (input-id parent-id (:field/message form-inputs)))
 
-             input-map {:field/brand    brand
+             input-map {
+                        ;:field/brand    brand
                         :field/email    email
                         :field/website  website
-                        :field/locality locality
+                        ;:field/locality locality
                         :field/message  message}
-             validation (v/validate :field/request input-map form-inputs)]
+             validation (v/validate :field/request input-map form-inputs (str parent-id "-"))]
+         (debug "Validation: " validation)
          (when (nil? validation)
            (mixpanel/track "Request access to store")
            (msg/om-transact! this [(list 'user/request-store-access input-map)]))
@@ -127,8 +273,8 @@
     (let [{:query/keys [auth sulo-localities]} (om/props this)
           {:keys [input-validation]} (om/get-state this)
           message (msg/last-message this 'store/create)
-          request-message (msg/last-message this 'user/request-store-access)
-          store (-> auth :store.owner/_user first :store/_owners)]
+
+          ]
       (debug "Current auth: " auth)
       (dom/div
         (->> {:id "sulo-start-store"}
@@ -140,18 +286,39 @@
           (dom/div
             (css/add-class :hero-background)
 
+            (photo/cover {:photo-id "static/coming-soon-sell-bg"})
             ;(dom/video {:autoPlay true}
             ;           (dom/source {:src "https://a0.muscache.com/airbnb/static/P1-background-vid-compressed-2.mp4"}))
             )
+          ;(dom/div
+          ;  (css/add-class :hero-content)
+          ;  (dom/div
+          ;    (css/add-class :va-container {:style {:display "block"}})
+          ;    (dom/div
+          ;      nil
+          ;      (grid/row
+          ;        (->> (css/add-class :expanded)
+          ;             (css/align :center))
+          ;        (grid/column
+          ;          (grid/column-size {:small 12 :medium 6 :large 4})
+          ;          (dom/h1 (css/show-for-sr) "SULO Live")
+          ;          (dom/h2 (css/add-class :jumbo-header) "Your brand LIVE")
+          ;          (dom/p (css/add-classes [:jumbo-lead :lead]) "Tell the story of your brand and increase sales via LIVE streams"))
+          ;        (grid/column
+          ;          (grid/column-size {:small 12 :medium 6 :large 3})
+          ;          ;(render-access-form this)
+          ;          (render-input-callout this "sell-form-header")
+          ;          )))))
           (dom/div
-            (css/add-class :hero-content)
+            (css/add-class :hero-content {:style {:padding "8rem 0"}})
             (dom/div
-              (->> (css/add-class :va-container)
-                   (css/text-align :center))
+              (css/add-class :va-container)
               (dom/h1 (css/show-for-sr) "SULO Live")
               (dom/h2 (css/add-class :jumbo-header) "Your brand LIVE")
-              (dom/p (css/add-classes [:jumbo-lead :lead]) "Tell the story of your brand and increase sales via LIVE streams"))
-            )
+              (dom/p (css/add-classes [:jumbo-lead :lead]) "Tell the story of your brand and increase sales via LIVE streams")
+              (render-header-input-callout this)
+
+              ))
           )
 
         (dom/div
@@ -238,118 +405,48 @@
             ))
 
         (dom/div
-          (->> (css/add-classes [:section :banner :blue :form])
+          (->> (css/add-classes [:section :blue :banner])
                (css/text-align :center))
-          (if (or (:user/can-open-store? auth)
-                  (some? store))
+          (grid/row
+            nil
+            (grid/column
+              (css/add-class :section-title)
+              (dom/h3 (css/add-classes [:sulo-dark :jumbo-header :banner]) "Use any camera."))
+            (grid/column
+              nil)))
+
+
+        (dom/div
+          (css/add-classes [:hero :hero-footer])
+
+          (dom/div
+            (css/add-class :hero-background)
+            (photo/cover {:photo-id "static/products"}))
+          (dom/div
+            (css/add-class :hero-content)
             (dom/div
-              nil
-              (grid/row-column
-                (css/text-align :center)
-                (dom/div
-                  (css/add-class :section-title)
-                  (if (some? store)
-                    (dom/h2 nil (get-in store [:store/profile :store.profile/name]))
-                    (dom/h2 nil "Start your store"))))
+              (css/add-class :va-container {:style {:display "block"}})
+
+
+
+
               (grid/row
-                (css/align :center)
+                (->> {:id "request-form"}
+                     (css/add-class :expanded)
+                     (css/align :center)
+                     (css/align :middle))
                 (grid/column
-                  (grid/column-size {:small 12 :medium 8 :large 6})
-                  (if (some? store)
-                    (callout/callout
-                      (css/text-align :center)
-                      (button/store-navigation-cta
-                        (css/add-class :expanded {:onClick #(do
-                                                             ;#?(:cljs
-                                                             ;   (when (nil? (utils/get-locality))
-                                                             ;     (utils/set-locality)))
-                                                             (routes/set-url! this :store-dashboard {:store-id (:db/id store)}))})
-                        (dom/span nil (str "Continue to " (get-in store [:store/profile :store.profile/name]))))
-                      (dom/p nil
-                             (dom/small nil (str "Logged in as " (:user/email auth)))))
-                    (callout/callout
-                      (css/add-class :start-store-form)
-                      (dom/label nil "Store name")
-                      (v/input {:id          (:field.store/name form-inputs)
-                                :type        "text"
-                                :placeholder "My store"}
-                               input-validation)
-
-                      (dom/label nil "Local in")
-                      (v/select {:id           (:field.store/locality form-inputs)
-                                 :defaultValue ""}
-                                input-validation
-                                (dom/option {:value    ""
-                                             :disabled true} "--- Select locality ---")
-                                (map (fn [l]
-                                       (dom/option {:value (:db/id l)} (:sulo-locality/title l)))
-                                     sulo-localities))
-                      (when (some? (:user/email auth))
-                        (dom/p (css/text-align :center)
-                               (dom/small nil (str "Logged in as " (:user/email auth)))))
-                      (dom/div
-                        (css/text-align :center)
-                        (button/store-navigation-cta
-                          {:onClick #(.start-store this)}
-                          (dom/span nil "Start store"))))))))
-
-
-            (grid/row
-              (->> (grid/columns-in-row {:small 1 :medium 2}))
-              (grid/column
-                (css/text-align :left)
-                (dom/div
-                  (css/add-class :section-title)
-                  (dom/h6 nil (dom/strong nil "Get started today"))
-                  (dom/h3 (css/add-classes [:sulo-dark :jumbo-header :banner]) "Go LIVE with your brand"))
-                (dom/p (css/add-class :lead) "Are you ready to go LIVE? We're ready to have you onboard!")
-                (dom/p nil "Just send us a little information about your brand to get started with your LIVE shop on SULO."))
-
-
-              (grid/column
-                nil
-                (callout/callout
-                  (css/add-class :request-access-form)
-                  (dom/label nil "Name")
-                  (v/input
-                    {:type "email" :placeholder "Your brand" :id (:field/brand form-inputs)}
-                    input-validation)
-                  (dom/label nil "Email")
-                  (v/input
-                    {:type "email" :placeholder "youremail@example.com" :id (:field/email form-inputs) :defaultValue (:user/email auth)}
-                    input-validation)
-
-                  (dom/label nil "Location")
-                  (v/input
-                    {:type "text" :placeholder "e.g. Vancouver" :id (:field/locality form-inputs)}
-                    input-validation)
-
-                  (dom/label nil "Website/Social media")
-                  (v/input {:type "text" :placeholder "yourwebsite.com, Facebook page, Instagram" :id (:field/website form-inputs)}
-                           input-validation)
-
-                  (dom/label nil "Message")
-                  (dom/textarea {:placeholder "Anything else you'd like us to know? (optional)"
-                                 :id          (:field/message form-inputs)})
-
+                  (grid/column-size {:small 12 :medium 6 :large 4})
                   (dom/div
-                    (css/add-class :text-center)
-                    (dom/p nil
-                           (dom/small nil
-                                      (dom/span nil "By submitting you accept our ")
-                                      (dom/a {:href    "//www.iubenda.com/privacy-policy/8010910"
-                                              :classes ["iubenda-nostyle no-brand iubenda-embed"]
-                                              :title   "Privacy Policy"}
-                                             (dom/span nil "Privacy Policy"))))
-                    (button/store-navigation-cta
-                      {:onClick #(.request-access this)}
-                      (dom/span nil "Open my LIVE shop"))
-                    (cond (msg/pending? request-message)
-                          (dom/p nil (dom/small nil (dom/i {:classes ["fa fa-spinner fa-spin"]})))
-                          (msg/final? request-message)
-                          (if (msg/success? request-message)
-                            (callout/callout-small
-                              (css/add-class :success)
-                              (dom/p (css/add-class :success-message) (msg/message request-message)))))))))))))))
+                    (css/add-class :section-title)
+                    (dom/h2 (css/add-classes [:jumbo-header]) "Go LIVE with your brand"))
+                  (dom/p (css/add-classes [:jumbo-lead :lead]) "Are you ready to go LIVE? We're ready to have you onboard!"))
+
+
+                (grid/column
+                  (grid/column-size {:small 12 :medium 6 :large 3})
+                  (render-input-callout this "sell-form-footer")
+
+                  )))))))))
 
 (router/register-component :sell StartStore)
