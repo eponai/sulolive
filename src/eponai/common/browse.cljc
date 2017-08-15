@@ -139,9 +139,9 @@
 
 (defn search
   "Remember that we have ?score here."
-  [db {:keys [locations search price-range order] :as browse-params}]
+  [db {:keys [search price-range order] :as browse-params}]
   (debug "Browsing search: " browse-params)
-  (let [items-by-search (products/find-with-search locations search)
+  (let [items-by-search (products/find-with-search search)
         price-filter (price-where-clause price-range)
         item-query (cond->> items-by-search
                             (some? price-filter)
@@ -170,9 +170,9 @@
   Returns store.item ids in the order decided by :order.
   Returns additional metadata based on how the items were found."
   [db browse-params]
-  (if (some? (:search browse-params))
-    (search db browse-params)
-    (category db browse-params)))
+  (condp = (:browse-type browse-params)
+    ::search (search db browse-params)
+    ::category (category db browse-params)))
 
 (defn query-params->page-range [query-params]
   (let [page-range (select-keys query-params [:page-num :page-size])]
@@ -191,6 +191,7 @@
         {:keys [order search]} query-params]
     {:categories  categories
      :price-range price-range
+     :browse-type (if (some? search) ::search ::category)
      :search      search
      :order       (or order (default-order query-params))
      :page-range  page-range}))
@@ -209,14 +210,15 @@
    :browse-result/to-price         {:db/index true}
    :browse-result/order            {:db/index true}
    :browse-result/search           {:db/index true}
+   :browse-result/type             {:db/index true}
    :browse-result/items            {}})
 
 (defn find-result [db browse-params]
   (letfn [(attr-eq? [k v e]
             (= v (get e k)))]
-    (let [{:keys [locations categories price-range order search]} browse-params
+    (let [{:keys [browse-type categories price-range order search]} browse-params
           {:keys [top-category sub-category sub-sub-category]} categories]
-      (->> (db/datoms db :avet :browse-result/locations (:db/id locations))
+      (->> (db/datoms db :avet :browse-result/type browse-type)
            (sequence
              (-> (comp
                    (map :e)
