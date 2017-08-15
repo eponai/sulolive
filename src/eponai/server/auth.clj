@@ -208,10 +208,7 @@
   "Returns a logged in response if authenticate went well."
   [{:eponai.server.middleware/keys [system logger conn] :as request}
    token sulo-user]
-  (let [loc (requested-location request)
-        redirect-url (if (:sulo-locality/path loc)
-                       (routes/path :index {:locality (:sulo-locality/path loc)})
-                       (routes/path :landing-page))]
+  (let [redirect-url (routes/path :index)]
     (mixpanel/track "Sign in user" {:distinct_id (:db/id sulo-user)
                                     :ip          (:remote-addr request)})
     (r/set-cookie (r/redirect redirect-url) auth-token-cookie-name {:token token} {:path "/"})))

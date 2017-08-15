@@ -210,13 +210,17 @@
               old-local (auth/cookie-locality request)]
           (debug "Route params: " (:route-params request))
 
-          (if (not= (:sulo-locality/path new-local)
-                    (:sulo-locality/path old-local))
-            (r/set-cookie resp
-                          location/locality-cookie-name
-                          (c/write-transit new-local)
-                          {:path "/"})
-            resp)))
+          (comment
+            ;; TODO: Do we still need this?
+            (if (not= (:sulo-locality/path new-local)
+                      (:sulo-locality/path old-local))
+              (r/set-cookie resp
+                            location/locality-cookie-name
+                            (c/write-transit new-local)
+                            {:path "/"})
+              resp))
+          resp
+          ))
       ;(auth/restrict (auth/bidi-location-redirect route))
       (auth/restrict (auth/bidi-route-restrictions route))))
 
