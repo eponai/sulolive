@@ -135,7 +135,7 @@
     (dom/link {:href (versionize "/assets/css/app.css")
                :rel  "stylesheet"})
 
-    (dom/link {:href "/bower_components/flag-icon-css/css/flag-icon.min.css"
+    (dom/link {:href (versionize "/assets/css/flag-icon.min.css")
                :rel  "stylesheet"})
     ;; Custom fonts
     (dom/link {:href (if release?
