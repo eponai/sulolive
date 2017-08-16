@@ -134,6 +134,9 @@
 
     (dom/link {:href (versionize "/assets/css/app.css")
                :rel  "stylesheet"})
+
+    (dom/link {:href "/bower_components/flag-icon-css/css/flag-icon.min.css"
+               :rel  "stylesheet"})
     ;; Custom fonts
     (dom/link {:href (if release?
                        "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"

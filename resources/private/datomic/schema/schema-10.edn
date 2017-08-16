@@ -1,8 +1,15 @@
 [
+; {:db/id                 #db/id[:db.part/db]
+;:db/ident              :shipping.rule/pickup?
+;:db/valueType          :db.type/boolean
+;:db/cardinality        :db.cardinality/one
+;:db/doc                "Allow customer to pickup."
+;:db.install/_attribute :db.part/db}
+
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :shipping.rule/pickup?
-  :db/valueType          :db.type/boolean
+  :db/ident              :sulo-locality/lat-lng
+  :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one
-  :db/doc                "Allow customer to pickup."
+  :db/doc                "Latitude, lognitude of this location."
   :db.install/_attribute :db.part/db}
  ]

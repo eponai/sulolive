@@ -27,7 +27,8 @@
         [eponai.common.ui.elements.menu :as menu]
     #?(:cljs
        [eponai.common.ui.checkout.google-places :as places])
-        [eponai.common.ui.script-loader :as script-loader]))
+        [eponai.common.ui.script-loader :as script-loader]
+        [clojure.string :as string]))
 
 (def form-inputs
   {:field.store/name     "store.name"
@@ -64,11 +65,14 @@
 
 (defn render-start-store [component id]
   (let [{:query/keys [auth sulo-localities]} (om/props component)
-        {:keys [input-validation shop-location]} (om/get-state component)]
+        {:keys [input-validation shop-location error-message]} (om/get-state component)]
     (callout/callout
       (css/add-class :start-store-form {:id id})
       (dom/form
-        nil
+        {:onKeyPress (fn [e]
+                       #?(:cljs (let [k (or (.-charCode e) (.-keyCode e))]
+                                  (when (= 13 k)
+                                    (.preventDefault e)))))}
         (grid/row
           (->> (css/align :middle)
                (grid/columns-in-row {:small 1}))
@@ -97,20 +101,23 @@
             ;               sulo-localities))
             )
           (grid/column
-            (css/add-class :shrink)
-            (dom/label nil "Country:")
-            (if-let [country (get-in shop-location [:shipping-address :country])]
-              (dom/p (css/add-class :text-white) (dom/strong nil (:long country)))
-              (dom/p (css/add-class :text-secondary) (dom/i nil "Select location")))
-            (dom/div
-              (css/text-align :center)
-              (button/submit-button-cta
-                (cond-> {:onClick #(.start-store component id)}
-                        (nil? (get-in shop-location [:shipping-address :country]))
-                        (assoc :disabled true))
-                (dom/span nil "Open my shop")))))
+            nil
+            (dom/p nil
+                   (dom/label nil (dom/span nil "Country: "))
+                   (if-let [country (get-in shop-location [:shipping-address :country])]
+                     (dom/strong (css/add-class :text-white) (:long country))
+                     (dom/i (css/add-class :text-secondary) "Select location")))
+            ))
         (grid/row-column
           nil
+          (dom/p (css/add-class :text-alert) (dom/small nil (str error-message)))
+          (dom/div
+            (css/text-align :center)
+            (button/submit-button-cta
+              (cond-> {:onClick #(.start-store component id)}
+                      (nil? (get-in shop-location [:shipping-address :country]))
+                      (assoc :disabled true))
+              (dom/span nil "Open my shop")))
           (when (some? (:user/email auth))
             (dom/p (css/text-align :center)
                    (dom/small nil (str "Logged in as " (:user/email auth))))))))))
@@ -177,7 +184,7 @@
                                    (dom/span nil "Privacy Policy"))))
           (button/submit-button-cta
             {:onClick #(.request-access component id)}
-            (dom/span nil "I want to go LIVE"))
+            (dom/span nil "Submit"))
           (cond (msg/pending? request-message)
                 (dom/p nil (dom/small nil (dom/i {:classes ["fa fa-spinner fa-spin"]})))
                 (msg/final? request-message)
@@ -228,7 +235,7 @@
           :else
           (button/store-navigation-cta
             (->> {:onClick (fn [] #?(:cljs (utils/scroll-to (utils/element-by-id "request-form") 250)))})
-            (dom/span nil "Go LIVE with my brand")))))
+            (dom/span nil "Go LIVE today")))))
 
 (defui StartStore-no-loader
   static om/IQuery
@@ -245,18 +252,17 @@
     #?(:cljs
        (let [{:keys [shop-location]} (om/get-state this)
              store-name (utils/input-value-by-id (input-id parent-id (:field.store/name form-inputs)))
-             store-country "ca"                             ;(utils/input-value-by-id (:field.store/country form-inputs))
-
-             locality (c/parse-long-safe (utils/input-value-by-id (input-id parent-id (:field.store/locality form-inputs))))
+             store-country (get-in shop-location [:shipping-address :country :short])
+             place-id (:place_id shop-location)
              input-map {:field.store/name     store-name
-                        :field.store/country  (get-in shop-location [:shipping-address :country :short])
-                        :field.store/location (:place_id shop-location)
+                        :field.store/country  store-country
+                        :field.store/location place-id
                         }
              validation (v/validate :field/store input-map form-inputs (str parent-id "-"))]
          (debug "Validation: " validation)
          (when (nil? validation)
            (mixpanel/track "Start store")
-           (msg/om-transact! this [(list 'store/create {:name store-name :country store-country :locality locality})]))
+           (msg/om-transact! this [(list 'store/create {:name store-name :country store-country :place-id place-id})]))
 
          (om/update-state! this assoc :input-validation validation))))
   (request-access [this parent-id]
@@ -287,7 +293,9 @@
         (if (msg/success? message)
           (let [new-store (msg/message message)]
             (mixpanel/people-set {:store true})
-            (routes/set-url! this :store-dashboard {:store-id (:db/id new-store)}))))))
+            (routes/set-url! this :store-dashboard {:store-id (:db/id new-store)}))
+          (om/update-state! this assoc :error-message (msg/message message))))
+      ))
 
   (componentDidMount [this]
     #?(:cljs (let [autocomplete (places/mount-places-autocomplete
@@ -296,6 +304,7 @@
                                    :on-change  (fn [place]
                                                  (debug "Autocomplete address: " place)
                                                  (om/update-state! this assoc :shop-location place))})]
+               (places/set-country-restrictions autocomplete "ca")
                (om/update-state! this assoc :autocomplete autocomplete))))
 
   (render [this]
@@ -315,7 +324,7 @@
           (dom/div
             (css/add-class :hero-background)
 
-            (photo/cover {:src "/assets/img/maker.jpg"})
+            (photo/cover {:photo-id "static/business-landing"})
             ;(dom/video {:autoPlay true}
             ;           (dom/source {:src "https://a0.muscache.com/airbnb/static/P1-background-vid-compressed-2.mp4"}))
             )
@@ -343,8 +352,8 @@
             (dom/div
               (css/add-class :va-container)
               (dom/h1 (css/show-for-sr) "SULO Live")
-              (dom/h2 (css/add-class :jumbo-header) "Your brand LIVE")
-              (dom/p (css/add-classes [:jumbo-lead :lead]) "Tell the story of your brand and increase sales via LIVE streams")
+              (dom/h2 (css/add-class :jumbo-header) "Your creative work LIVE")
+              (dom/p (css/add-classes [:jumbo-lead :lead]) "Tell the story of your creations and increase sales via LIVE streams")
               (render-header-input-callout this)
 
               ))
@@ -355,7 +364,7 @@
                (css/text-align :center))
           (grid/row-column
             (css/add-class :section-title)
-            (dom/h3 (css/add-classes [:sulo-dark :jumbo-header :banner]) "Promote your brand with LIVE video"))
+            (dom/h3 (css/add-classes [:sulo-dark :jumbo-header :banner]) "Promote your work with LIVE video"))
           (menu/vertical
             (css/text-align :center)
             (dom/li nil (dom/p nil
@@ -380,13 +389,13 @@
             (->> (grid/columns-in-row {:small 1 :medium 2})
                  (css/align :bottom))
             (grid/column
-              (grid/column-order {:small 2 :medium 1})
+              (grid/column-order {:small 1 :medium 2})
               (dom/img {:src "/assets/img/storefront-ss.jpg"}))
             (grid/column
-              (grid/column-order {:small 1 :medium 2})
+              (grid/column-order {:small 2 :medium 1})
               (dom/div
                 (css/add-class :section-title)
-                (dom/h6 nil (dom/strong nil "Your brand on SULO Live"))
+                (dom/h6 nil (dom/strong nil "Your creations on SULO Live"))
                 (dom/h3 (css/add-classes [:sulo-dark :jumbo-header :banner]) "Show. Tell. Connect. Sell."))
               (menu/vertical
                 nil
@@ -414,7 +423,9 @@
           (grid/row
             (grid/columns-in-row {:small 1 :medium 2})
             (grid/column
-              nil
+              (grid/column-order {:small 2 :medium 1}))
+            (grid/column
+              (grid/column-order {:small 1 :medium 2})
               (dom/div
                 (css/add-class :section-title)
                 (dom/h6 nil (dom/strong nil "Show the real you"))
@@ -423,7 +434,7 @@
                 nil
 
                 (dom/li nil
-                        (dom/h5 nil "Spend no time editing")
+                        (dom/h5 nil "No editing time")
                         (dom/p nil
 
                                (dom/span nil "The best thing about LIVE is that it's not perfect and anything can happen. Just turn on the camera while doing your creative work and see where the stream takes you.")))
@@ -431,13 +442,12 @@
                         (dom/h5 nil "Use any camera")
                         (dom/p nil
 
-                               (dom/span nil "Setup your streams using any type of camera. Either go simple using only your iPhone, or more advanced with multiple digital cameras.")))
+                               (dom/span nil "Setup your streams using any type of camera. Either go simple using only your phone or tablet, or more advanced with multiple digital cameras.")))
                 (dom/li nil
-                        (dom/h5 nil "Save your streams")
+                        (dom/h5 nil "Watch again later")
                         (dom/p nil
-                               (dom/span nil "Your streams are saved on your shop, so your customers can watch them later in case they missed the action.")))))
-            (grid/column
-              nil)))
+                               (dom/span nil "Your streams are recorded and can be watched on demand by your fans in case they missed the action.")))))
+            ))
 
         (dom/div
           (->> (css/add-classes [:section :blue :banner])
@@ -465,6 +475,61 @@
 
             ))
 
+        (dom/div
+          (css/add-classes [:section :banner])
+          (grid/row
+            (grid/columns-in-row {:small 1})
+            ;(grid/column
+            ;  (grid/column-order {:small 2 :medium 2}))
+            (grid/column
+              (->> (grid/column-order {:small 1 :medium 2})
+                   (css/text-align :center))
+              (dom/div
+                (css/add-class :section-title)
+                (dom/h6 nil (dom/strong nil "Trusted payments with ") (dom/a {:href "https://stripe.com"
+                                                                              :target "_blank"} (dom/strong nil "Stripe")))
+                (dom/h3 (css/add-classes [:sulo-dark :jumbo-header :banner]) "Available to creatives in Canada")
+                (dom/h5 (css/add-class :lead) "Accept payments from anywhere in the world.")
+                (let [supported-countries ["CA"]]
+                  (grid/row
+                    (css/align :center)
+                    (map (fn [c]
+                           (grid/column
+                             (css/add-class :shrink)
+                             (dom/span {:classes ["flag-icon" (str "flag-icon-" (string/lower-case c))]
+                                        :title   c})))
+                         supported-countries))))
+
+              (dom/h6 nil "More countries coming soon")
+              (let [supported-countries ["AU" "AT" "BE" "DK" "FI" "FR" "ES" "DE" "HK" "IE" "JP" "NE" "NO" "CH" "US" "SE" "IT" "PT" "NZ" "LU" "SG" "GB"]
+                    coming-soon ["AU" "GB" "US"]]
+                (grid/row
+                  (css/align :center)
+                  (map (fn [c]
+                         (grid/column
+                           (css/add-class :shrink)
+                           (dom/span {:classes ["flag-icon" (str "flag-icon-" (string/lower-case c))]
+                                      :title   c})))
+                       coming-soon)))
+              ;(menu/vertical
+              ;  nil
+              ;
+              ;  (dom/li nil
+              ;          (dom/h5 nil "Spend no time editing")
+              ;          (dom/p nil
+              ;
+              ;                 (dom/span nil "The best thing about LIVE is that it's not perfect and anything can happen. Just turn on the camera while doing your creative work and see where the stream takes you.")))
+              ;  (dom/li nil
+              ;          (dom/h5 nil "Use any camera")
+              ;          (dom/p nil
+              ;
+              ;                 (dom/span nil "Setup your streams using any type of camera. Either go simple using only your iPhone, or more advanced with multiple digital cameras.")))
+              ;  (dom/li nil
+              ;          (dom/h5 nil "Save your streams")
+              ;          (dom/p nil
+              ;                 (dom/span nil "Your streams are saved on your shop, so your customers can watch them later in case they missed the action."))))
+              )
+            ))
 
         (dom/div
           (css/add-classes [:hero :hero-footer])
@@ -489,7 +554,7 @@
                   (grid/column-size {:small 12 :medium 6 :large 4})
                   (dom/div
                     (css/add-class :section-title)
-                    (dom/h2 (css/add-classes [:jumbo-header]) "Go LIVE with your brand"))
+                    (dom/h2 (css/add-classes [:jumbo-header]) "Go LIVE today"))
                   (dom/p (css/add-classes [:jumbo-lead :lead]) "Are you ready to go LIVE? We're ready to have you onboard!"))
 
 

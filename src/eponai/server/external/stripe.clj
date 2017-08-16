@@ -190,13 +190,18 @@
       (f/stripe->country-spec country-spec)))
 
   (-create-account [this {:keys [country]}]
-    (let [params {:country country :type "custom"}
-          account (-post this params ["accounts"] nil)
-          keys (:keys account)]
-      (debug "STRIPE - created account: " account)
-      {:id     (:id account)
-       :secret (:secret keys)
-       :publ   (:publishable keys)}))
+    (try+
+      (let [params {:country country :type "custom"}
+            account (-post this params ["accounts"] nil)
+            keys (:keys account)]
+        (debug "STRIPE - created account: " account)
+        {:id     (:id account)
+         :secret (:secret keys)
+         :publ   (:publishable keys)})
+      (catch [:status 400] r
+        (let [{:keys [body]} r
+              {:keys [error]} (json/read-str body :key-fn keyword)]
+          (throw (ex-info (:message error) error))))))
 
   (-delete-account [this account-id]
     (let [deleted (-delete this ["accounts" account-id] nil)]

@@ -263,7 +263,7 @@
   (GET "/logout" request
     (let [logger (context-logger request {:route :logout})
           redirect (or (get-in request [:params :redirect])
-                       (routes/path :landing-page))]
+                       (routes/path :index))]
       (log/info! logger ::user-logout {:redirect redirect})
       (-> (auth/redirect (assoc request ::m/logger logger) redirect)
           (auth/remove-auth-cookie))))

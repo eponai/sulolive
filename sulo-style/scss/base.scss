@@ -272,7 +272,7 @@ a {
 .page-content-container {
 	padding-top: $navbar-height;
 	// padding-bottom: $footer-height-small + 2rem;
-	min-height: 70vh;
+	min-height: 80vh;
 	@include breakpoint(medium) {
 		// padding-bottom: $footer-height;
 	}

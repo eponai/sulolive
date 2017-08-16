@@ -65,7 +65,7 @@ $section-footer-color: $primary-color;
 			flex: 1;
 			display: flex;
 			flex-direction: column;
-			background: radial-gradient(rgba($black, 0.2), rgba($black, 0.2), rgba($black, 0.4) );
+			background: radial-gradient(rgba($black, 0.3), rgba($black, 0.3), rgba($black, 0.4) );
 			.va-container {
 				flex: 1;
 				display: flex;
@@ -159,6 +159,19 @@ $section-footer-color: $primary-color;
 		// 	text-decoration: none;
 		// }
 	}
+	.banner {
+		.icon {
+			width: 50px;
+			height: 50px;
+			opacity: 1;
+		}
+	}
+
+	.features-banner {
+		.jumbo-lead {
+			margin-bottom: 0;
+		}
+	}
 
 
 
@@ -246,6 +259,10 @@ $section-footer-color: $primary-color;
 			.lead {
 				margin-bottom: 2rem;
 			}
+			form {
+				width: 100%;
+				max-width: 30rem;
+			}
 		}
 
 		// .hero:not(.hero-footer) {
@@ -259,6 +276,11 @@ $section-footer-color: $primary-color;
 		// 	}
 		.hero {
 			height: auto;
+			img {
+				// filter: blur(2px);
+			}
+		}
+		.hero-footer {
 			img {
 				filter: blur(2px);
 			}

@@ -20,6 +20,7 @@
     [eponai.server.external.taxjar :as taxjar]
     [eponai.server.external.aws-s3 :as s3]
     [eponai.server.external.email :as email]
+    [eponai.server.external.google :as google]
     [eponai.server.external.client-env :as client-env]
     [eponai.server.external.stripe.webhooks :as stripe-webhooks]
     [eponai.server.external.firebase :as firebase]
@@ -38,6 +39,7 @@
                    :system/datomic
                    :system/elastic-cloud
                    :system/firebase
+                   :system/google
                    :system/handler
                    :system/mailchimp
                    :system/server-address
@@ -85,6 +87,7 @@
                              {:db-url           (:db-url env)
                               :provided-conn    (::provided-conn config)
                               :add-mocked-data? true})
+   :system/google          (google/google (:google-api-key env))
    :system/product-search  (c/using (product-search/map->ProductSearch {})
                                     {:datomic :system/datomic})
    :system/server-address  (c/using (server-address/map->ServerAddress {:schema (:server-url-schema env)

@@ -69,8 +69,7 @@
   Object
   (render [this]
     (let [{:query/keys [top-streams featured-streams featured-stores current-route online-stores featured-items featured-home featured-men featured-art]} (om/props this)
-          {:keys [route-params]} current-route
-          featured-streams [(first featured-streams)]]
+          {:keys [route-params]} current-route]
       ;(debug "Featured women products: " featured-women)
 
 
@@ -94,7 +93,7 @@
                      (css/text-align :center))
                 (dom/h1 (css/show-for-sr) "SULO Live")
                 (dom/h2 (css/add-class :jumbo-header) "Know their story")
-                (dom/p (css/add-classes [:jumbo-lead :lead]) "Shop from brands you get to know by engaging on their LIVE streams."))))
+                (dom/p (css/add-classes [:jumbo-lead :lead]) "Shop from creatives you get to know through their LIVE streams."))))
 
           (dom/div
             (css/add-class :sections)
@@ -152,8 +151,34 @@
             ;                                     (ci/->OnlineChannel c)))
             ;                                 featured-streams))
             ;                          ""))
-            (when (not-empty featured-streams)
-              (common/mobile-app-banner this))
+            ;(when (not-empty featured-streams))
+            (dom/div
+              (->>
+                (css/add-classes [:gray :features-banner :banner :section]))
+              ;(dom/div
+              ;  (->> (css/add-class :section-title)
+              ;       (css/text-align :center)))
+              (grid/row
+                (->> (grid/columns-in-row {:small 1 :medium 3})
+                     (css/text-align :center))
+                (grid/column
+                  nil
+                  (dom/div (css/add-classes [:icon :icon-watch]))
+                  (dom/p (css/add-classes [:lead :jumbo-lead :banner :sulo-dark]) "Watch")
+                  (dom/p nil (dom/span nil "Watch your favorite creatives work and follow their creative process to finished product.")))
+                (grid/column
+                  nil
+                  (dom/div (css/add-classes [:icon :icon-community]))
+                  (dom/p (css/add-classes [:lead :jumbo-lead :banner :sulo-dark]) "Engage")
+                  (dom/p nil (dom/span nil "Ask questions or share thoughts via live chat rooms on their streams.")))
+                (grid/column
+                  nil
+                  (dom/div (css/add-classes [:icon :icon-shop]))
+                  (dom/p (css/add-classes [:lead :jumbo-lead :banner :sulo-dark]) "Shop")
+                  (dom/p nil (dom/span nil "Shop the products you've seen take shape, from creatives you know."))))
+              )
+            ;(common/mobile-app-banner this)
+
             ;<!-- LightWidget WIDGET --><script src="//lightwidget.com/widgets/lightwidget.js"></script><iframe src="//lightwidget.com/widgets/518cc674e6265d0fa7aae74a603e7c25.html" scrolling="no" allowtransparency="true" class="lightwidget-widget" style="width: 100%; border: 0; overflow: hidden;"></iframe>
 
             (dom/div
