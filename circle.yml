@@ -104,7 +104,7 @@ jobs:
           key: bower09-deps-{{ checksum "bower.json" }}
       - restore_cache:
           key: foundation09-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
-      - run: scripts/compile-css.sh
+      - run:
           name: "Compile css"
           command: SKIP_INSTALL=true scripts/compile-css.sh
       - persist_to_workspace:
