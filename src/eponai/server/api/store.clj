@@ -10,11 +10,19 @@
     [eponai.common.format.date :as date]
     [eponai.server.log :as log]
     [eponai.client.cart :as cart]
-    [eponai.common.checkout-utils :as checkout-utils]))
+    [eponai.common.checkout-utils :as checkout-utils]
+    [eponai.server.external.google :as google]))
 
 
-(defn create [{:keys [state auth system]} {:keys [country name locality]}]
+(defn create [{:keys [state auth system]} {:keys [country name place-id]}]
+
   (let [stripe-account (stripe/create-account (:system/stripe system) {:country country})
+        place (google/place-details (:system/google system) place-id)
+        _ (debug "Got place: " place)
+        sulo-locality {:sulo-locality/title (:formatted_address place)
+                       :sulo-locality/lat-lng (str (get-in place [:geometry :location :lat]) ", " (get-in place [:geometry :location :lng]))}
+
+        _ (debug "SULO LOCALITY: " sulo-locality)
         new-store {:db/id            (db/tempid :db.part/user)
                    :store/uuid       (db/squuid)
                    :store/profile    {:store.profile/name name}
@@ -24,14 +32,16 @@
                                       :stripe/publ   (:publ stripe-account)}
                    :store/owners     {:store.owner/role :store.owner.role/admin
                                       :store.owner/user (:user-id auth)}
-                   :store/locality   locality
+                   :store/locality   sulo-locality
                    :store/created-at (date/current-millis)}
         stream {:db/id        (db/tempid :db.part/user)
                 :stream/store (:db/id new-store)
                 :stream/state :stream.state/offline}]
     (db/transact state [new-store
                         stream])
-    (db/pull (db/db state) [:db/id] [:store/uuid (:store/uuid new-store)])))
+    (db/pull (db/db state) [:db/id] [:store/uuid (:store/uuid new-store)])
+    (throw (ex-info "Test error" {}))
+    ))
 
 (defn delete [{:keys [state system auth]} store-id]
   (let [stripe-account (stripe/pull-stripe (db/db state) store-id)

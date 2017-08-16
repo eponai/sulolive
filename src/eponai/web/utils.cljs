@@ -39,15 +39,33 @@
           new-classname (string/replace old-classname (str " " class) " ")]
       (set! (.-className el) (string/trim new-classname)))))
 
-(defn scroll-to [el d]
-  (when (< 0 d)
-    (let [el-top (.-top (.getBoundingClientRect el))
-          body (.-body js/document)
-          diff (- el-top (.-scrollTop el))
-          per-tick (* 10 (/ diff d))]
-      (js/setTimeout (fn []
-                       (set! (.-scrollTop body) (+ (.-scrollTop body) per-tick))
-                       (scroll-to el (- d 10)))))))
+(defn scroll-to
+  ([el d]
+    (scroll-to (.-body js/document) el d))
+  ([parent el d]
+   (when (< 0 d)
+     (let [el-top (.-top (.getBoundingClientRect el))
+           diff (- el-top (.-scrollTop el))
+           per-tick (* 10 (/ diff d))]
+       (js/setTimeout (fn []
+                        (set! (.-scrollTop parent) (+ (.-scrollTop parent) per-tick))
+                        (scroll-to parent el (- d 10))))))))
+
+(defn scroll-horizontal-to
+  ([el d]
+   (scroll-horizontal-to (.-body js/document) el d))
+  ([parent el d]
+   (when (< 0 d)
+     (let [el-left (.-left (.getBoundingClientRect el))
+           diff (- el-left (.-scrollLeft el))
+           per-tick (* 10 (/ diff d))]
+       (js/setTimeout (fn []
+                        (set! (.-scrollLeft parent) (+  (.-scrollLeft parent) per-tick))
+                        (scroll-horizontal-to parent el (- d 10))))))))
+;(defn scroll-position [el d]
+;  (debug "Set scroll: " (.-scrollLeft el) " to: " (+ (.-scrollLeft el) d))
+;  (when el
+;    (set! (.-scrollLeft el) (+ (.-scrollLeft el) d))))
 
 (defn get-cookie-val [cookie-key]
   {:pre [(string? cookie-key)]}

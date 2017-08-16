@@ -47,6 +47,13 @@
                                         (when onClick (onClick %))))]
     (dom/button (css/add-classes [:sulo-dark :hollow :button] new-opts) content)))
 
+(defn submit-button-cta [opts & content]
+  (let [{:keys [onClick]} opts
+        new-opts (assoc opts :onClick #(do
+                                        (.preventDefault %)
+                                        (when onClick (onClick %))))]
+    (dom/button (css/add-classes [:sulo-dark :button] new-opts) content)))
+
 (defn submit-cancel-button [opts & content]
   (let [{:keys [onClick]} opts
         new-opts (assoc opts :onClick #(do

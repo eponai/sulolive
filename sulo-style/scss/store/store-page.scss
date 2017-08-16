@@ -150,6 +150,7 @@
 		.product-item {
 			img {
 				transform: scale(1);
+				filter: none;
 			}
 			.photo-container .overlay {
 				visibility: hidden;

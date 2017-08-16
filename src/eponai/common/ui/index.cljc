@@ -13,6 +13,8 @@
     [eponai.common.ui.product :as product]
     [eponai.common.format.date :as date]
     [eponai.web.ui.button :as button]
+    #?(:cljs
+       [eponai.web.utils :as web.utils])
     [eponai.common.ui.stream :as stream]))
 
 ;(defn banner [{:keys [color align] :as opts} primary secondary]
@@ -36,11 +38,12 @@
   (dom/a
     {:href    href
      :classes [:full :category-photo]}
-    (photo/photo {:photo-id photo-id}
-                 (photo/overlay
-                   nil (dom/div
-                         (->> (css/text-align :center))
-                         (dom/h4 nil title))))))
+    (photo/video-thumbnail
+      (css/add-class :widescreen {:photo-id photo-id})
+      (photo/overlay
+        nil (dom/div
+              (->> (css/text-align :center))
+              (dom/h4 nil title))))))
 
 (defui Index
   static om/IQuery
@@ -66,8 +69,7 @@
   Object
   (render [this]
     (let [{:query/keys [top-streams featured-streams featured-stores current-route online-stores featured-items featured-home featured-men featured-art]} (om/props this)
-          {:keys [route-params]} current-route
-          featured-streams [(first featured-streams)]]
+          {:keys [route-params]} current-route]
       ;(debug "Featured women products: " featured-women)
 
 
@@ -91,7 +93,7 @@
                      (css/text-align :center))
                 (dom/h1 (css/show-for-sr) "SULO Live")
                 (dom/h2 (css/add-class :jumbo-header) "Know their story")
-                (dom/p (css/add-classes [:jumbo-lead :lead]) "Shop from brands you get to know by engaging on their LIVE streams."))))
+                (dom/p (css/add-classes [:jumbo-lead :lead]) "Shop from creatives you get to know through their LIVE streams."))))
 
           (dom/div
             (css/add-class :sections)
@@ -149,8 +151,34 @@
             ;                                     (ci/->OnlineChannel c)))
             ;                                 featured-streams))
             ;                          ""))
-            (when (not-empty featured-streams)
-              (common/mobile-app-banner this))
+            ;(when (not-empty featured-streams))
+            (dom/div
+              (->>
+                (css/add-classes [:gray :features-banner :banner :section]))
+              ;(dom/div
+              ;  (->> (css/add-class :section-title)
+              ;       (css/text-align :center)))
+              (grid/row
+                (->> (grid/columns-in-row {:small 1 :medium 3})
+                     (css/text-align :center))
+                (grid/column
+                  nil
+                  (dom/div (css/add-classes [:icon :icon-watch]))
+                  (dom/p (css/add-classes [:lead :jumbo-lead :banner :sulo-dark]) "Watch")
+                  (dom/p nil (dom/span nil "Watch your favorite creatives work and follow their creative process to finished product.")))
+                (grid/column
+                  nil
+                  (dom/div (css/add-classes [:icon :icon-community]))
+                  (dom/p (css/add-classes [:lead :jumbo-lead :banner :sulo-dark]) "Engage")
+                  (dom/p nil (dom/span nil "Ask questions or share thoughts via live chat rooms on their streams.")))
+                (grid/column
+                  nil
+                  (dom/div (css/add-classes [:icon :icon-shop]))
+                  (dom/p (css/add-classes [:lead :jumbo-lead :banner :sulo-dark]) "Shop")
+                  (dom/p nil (dom/span nil "Shop the products you've seen take shape, from creatives you know."))))
+              )
+            ;(common/mobile-app-banner this)
+
             ;<!-- LightWidget WIDGET --><script src="//lightwidget.com/widgets/lightwidget.js"></script><iframe src="//lightwidget.com/widgets/518cc674e6265d0fa7aae74a603e7c25.html" scrolling="no" allowtransparency="true" class="lightwidget-widget" style="width: 100%; border: 0; overflow: hidden;"></iframe>
 
             (dom/div
@@ -205,8 +233,27 @@
               ;  (dom/h2 nil "New brands"))
               (dom/div
                 {:classes ["sulo-items-container"]}
+                ;(letfn [(scroll-right [] #?(:cljs
+                ;                               (let [row (web.utils/element-by-id "content-row-products")
+                ;                                     cols (array-seq (.-children row))]
+                ;                                 (web.utils/scroll-horizontal-to row (second cols) 250)
+                ;                                 (debug "Scroll")
+                ;                                 )))
+                ;        (scroll-left [] #?(:cljs
+                ;                            (let [row (web.utils/element-by-id "content-row-products")
+                ;                                  columns (array-seq (.-children row))]
+                ;                              (debug "Scroll")
+                ;                              (web.utils/scroll-horizontal-to row (first columns) 250))))]
+                ;  [
+                ;   (dom/a {:onClick scroll-right}
+                ;          (dom/span nil "Next"))
+                ;   (dom/a {:onClick scroll-left}
+                ;          (dom/span nil "Previous"))])
+
                 (grid/row
-                  (grid/columns-in-row {:small 3 :medium 4 :large 7})
+                  (->> {:id "content-row-products"
+                        :style {:paddingLeft 20}}
+                       (grid/columns-in-row {:small 3 :medium 4 :large 7}))
                   (map (fn [store]
                          (let [store-name (get-in store [:store/profile :store.profile/name])]
                            (grid/column
@@ -215,34 +262,33 @@
                        (take 12 featured-stores))))
               "")
 
-            (when (not-empty featured-items)
-              (common/content-section
-                {:href  (routes/url :browse/gender (merge route-params
-                                                          {:sub-category "women"}))
-                 :class "products"}
-                (dom/a {:href (routes/url :browse/gender (merge route-params
-                                                                {:sub-category "women"}))}
-                       (dom/span nil "Products"))
-                (dom/div
-                  nil
-                  (grid/row
-                    (->>
-                      (grid/columns-in-row {:small 2 :medium 4 :large 6}))
-                    ;(grid/column
-                    ;  (css/add-class :online-streams))
-                    (map-indexed
-                      (fn [i p]
-                        (grid/column
-                          (cond
-                            (< 7 i)
-                            (css/show-for :large)
-                            (< 3 i)
-                            (css/show-for :medium))
-                          (ci/->ProductItem (om/computed p
-                                                         {:open-url?     true
-                                                          :current-route current-route}))))
-                      (take 10 featured-items))))
-                ""))
+            (common/content-section
+              {:href  (routes/url :browse/gender (merge route-params
+                                                        {:sub-category "women"}))
+               :class "products"}
+              (dom/a {:href (routes/url :browse/gender (merge route-params
+                                                              {:sub-category "women"}))}
+                     (dom/span nil "Products"))
+              (dom/div
+                nil
+                (grid/row
+                  (->>
+                    (grid/columns-in-row {:small 2 :medium 4 :large 6}))
+                  ;(grid/column
+                  ;  (css/add-class :online-streams))
+                  (map-indexed
+                    (fn [i p]
+                      (grid/column
+                        (cond
+                          (< 7 i)
+                          (css/show-for :large)
+                          (< 3 i)
+                          (css/show-for :medium))
+                        (ci/->ProductItem (om/computed p
+                                                       {:open-url?     true
+                                                        :current-route current-route}))))
+                    (take 10 featured-items))))
+              "")
 
 
 

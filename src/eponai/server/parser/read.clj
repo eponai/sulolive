@@ -198,7 +198,7 @@
                                           [?e :store.item/photos ?p]
                                           [?p :store.item.photo/photo _]
                                           [?e :store.item/created-at ?created-at]]})
-               (sort-by #(nth % 1) #(compare %2 %1))
+               (shuffle)
                (take 12)
                (map #(nth % 0))
                (db/pull-many db query)
@@ -267,7 +267,7 @@
                                                      ]})]
             (debug "FOUND STORE IDS: " store-ids)
             (->> store-ids
-                 (sort-by #(nth % 1) #(compare %2 %1))
+                 (shuffle)
                  (take 12)
                  (map #(nth % 0))
                  (db/pull-many db query)

@@ -3,22 +3,22 @@
     [eponai.web.utils :as web-utils]
     [taoensso.timbre :refer [debug]]))
 
-(defn- place->map [^js/google.maps.places.PlaceResult place]
+(defn- place->address-map [place]
   (when place
-    (let [address-comps (.-address_components place)
-          address-name (.-name place)
-          ret (reduce (fn [m ^js/google.maps.GeocoderAddressComponent c]
-                        (let [k (keyword (first (.-types c)))
-                              v {:short (.-short_name c)
-                                 :long  (.-long_name c)}]
+    (let [address-comps (:address_components place)
+          address-name (:name place)
+          ret (reduce (fn [m c]
+                        (let [k (keyword (first (:types c)))
+                              v {:short (:short_name c)
+                                 :long  (:long_name c)}]
                           (assoc m k v)))
                       {:address {:short address-name :long address-name}}
                       address-comps)]
-      (debug "Ret : " ret)
+      (debug "Ret : " (js->clj place :keywordize-keys true))
       ret)))
 
-(defn place->address [^js/google.maps.places.PlaceResult place]
-  (let [place (place->map place)
+(defn place->address [place-map]
+  (let [place (place->address-map place-map)
         long-val (fn [k & [d]] (get-in place [k :long] d))
         short-val (fn [k & [d]] (get-in place [k :short] d))
         country-code (short-val :country)
@@ -34,15 +34,18 @@
 (defn set-country-restrictions [^js/google.maps.places.Autocomplete autocomplete country-code]
   (.setComponentRestrictions autocomplete (clj->js {:country (or country-code [])})))
 
-(defn mount-places-address-autocomplete [{:keys [on-change element-id]}]
-  (let [^js/google.maps.Circle bounds-circle (js/google.maps.Circle. #js {:center #js {:lat 49.2827
-                                                                :lng 123.1207}
-                                                   :radius 5000})
+(defn mount-places-autocomplete [{:keys [on-change element-id types]}]
+  (let [types (or types ["adress"])
+        ^js/google.maps.Circle bounds-circle (js/google.maps.Circle. #js {:center #js {:lat 49.2827
+                                                                                       :lng 123.1207}
+                                                                          :radius 5000})
         ^js/google.maps.places.Autocomplete autocomplete (js/google.maps.places.Autocomplete. (web-utils/element-by-id element-id)
-                                                          #js {:types  #js ["address"]
-                                                               :bounds (.getBounds bounds-circle)})]
+                                                                                              (clj->js {:types  types
+                                                                                                        :bounds (.getBounds bounds-circle)}))]
     (.addListener autocomplete "place_changed" (fn []
                                                  (when on-change
-                                                   (debug "Place: " (.getPlace autocomplete))
-                                                   (on-change (place->address (.getPlace autocomplete))))))
+                                                   (let [p  (js->clj (.getPlace autocomplete) :keywordize-keys true)
+                                                         place (assoc p :shipping-address (place->address-map p))]
+                                                     (debug "Place: " place)
+                                                     (on-change place)))))
     autocomplete))
