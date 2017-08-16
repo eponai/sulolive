@@ -766,11 +766,12 @@
              country (or (get-in init-state [:checkout/shipping :shipping/address :shipping.address/country :country/code])
                          (get-in init-state [:shipping/edit-shipping :shipping/address :shipping.address/country :country/code]))
              card (stripe/card-element (shared/by-key this :shared/stripe) (str "#" (:payment.stripe/card form-inputs)))
-             autocomplete (places/mount-places-address-autocomplete
+             autocomplete (places/mount-places-autocomplete
                             {:element-id "sulo-auto-complete"
-                             :on-change  (fn [address]
-                                           (debug "Autocomplete address: " address)
-                                           (om/update-state! this assoc-in [:shipping/edit-shipping :shipping/address] address))})]
+                             :on-change  (fn [place]
+                                           (let [address (places/place->address place)]
+                                             (debug "Autocomplete address: " address)
+                                             (om/update-state! this assoc-in [:shipping/edit-shipping :shipping/address] address)))})]
 
          (ga/checkout-shipping-address checkout country)
          (when (:checkout/shipping init-state)

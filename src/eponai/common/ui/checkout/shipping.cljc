@@ -329,8 +329,8 @@
 
   (componentDidMount [this]
     #?(:cljs
-       (let [autocomplete (places/mount-places-address-autocomplete {:element-id "auto-complete"
-                                                                     :on-change  (fn [place]
+       (let [autocomplete (places/mount-places-autocomplete {:element-id        "auto-complete"
+                                                                     :on-change (fn [place]
                                                                                    )})]
          (om/update-state! this assoc :autocomplete autocomplete)
          (let [{:keys [shipping]} (om/props this)

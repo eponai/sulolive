@@ -24,7 +24,10 @@
         [eponai.common.mixpanel :as mixpanel]
         [eponai.web.ui.button :as button]
         [eponai.common :as c]
-        [eponai.common.ui.elements.menu :as menu]))
+        [eponai.common.ui.elements.menu :as menu]
+    #?(:cljs
+       [eponai.common.ui.checkout.google-places :as places])
+        [eponai.common.ui.script-loader :as script-loader]))
 
 (def form-inputs
   {:field.store/name     "store.name"
@@ -38,7 +41,7 @@
    :field/message        "request.message"})
 
 (s/def :field.store/name (s/and string? #(not-empty %)))
-(s/def :field.store/country (s/and #(re-matches #"\w{2}" %)))
+(s/def :field.store/country (s/and string? #(re-matches #"\w{2}" %)))
 (s/def :field.store/locality number?)
 
 (s/def :field/website (s/and string? #(not-empty %)))
@@ -61,42 +64,56 @@
 
 (defn render-start-store [component id]
   (let [{:query/keys [auth sulo-localities]} (om/props component)
-        {:keys [input-validation]} (om/get-state component)]
+        {:keys [input-validation shop-location]} (om/get-state component)]
     (callout/callout
       (css/add-class :start-store-form {:id id})
-      (grid/row
-        (css/align :middle)
-        (grid/column
-          nil
-          (dom/label nil "Name")
-          (v/input {:id          (:field.store/name form-inputs)
-                    :type        "text"
-                    :placeholder "Shop name"}
-                   input-validation))
-
-        (grid/column
-          nil
-          (dom/label nil "Location")
-          (v/select {:id           (:field.store/locality form-inputs)
-                     :defaultValue ""}
-                    input-validation
-                    (dom/option {:value    ""
-                                 :disabled true} "--- Select locality ---")
-                    (map (fn [l]
-                           (dom/option {:value (:db/id l)} (:sulo-locality/title l)))
-                         sulo-localities)))
-        (grid/column
-          (css/add-class :shrink)
-          (dom/div
-            (css/text-align :center)
-            (button/store-navigation-cta
-              {:onClick #(.start-store component id)}
-              (dom/span nil "Open my shop")))))
-      (grid/row-column
+      (dom/form
         nil
-        (when (some? (:user/email auth))
-          (dom/p (css/text-align :center)
-                 (dom/small nil (str "Logged in as " (:user/email auth)))))))))
+        (grid/row
+          (->> (css/align :middle)
+               (grid/columns-in-row {:small 1}))
+          (grid/column
+            nil
+            (dom/label nil "Name")
+            (v/input {:id          (input-id id (:field.store/name form-inputs))
+                      :type        "text"
+                      :placeholder "Shop name"}
+                     input-validation))
+
+          (grid/column
+            nil
+            (dom/label nil "Location")
+            (dom/input {:id           "sulo-auto-complete"
+                        :placeholder  "Enter location..."
+                        :type         "text"
+                        :defaultValue ""})
+            ;(v/select {:id           (:field.store/locality form-inputs)
+            ;           :defaultValue ""}
+            ;          input-validation
+            ;          (dom/option {:value    ""
+            ;                       :disabled true} "--- Select locality ---")
+            ;          (map (fn [l]
+            ;                 (dom/option {:value (:db/id l)} (:sulo-locality/title l)))
+            ;               sulo-localities))
+            )
+          (grid/column
+            (css/add-class :shrink)
+            (dom/label nil "Country:")
+            (if-let [country (get-in shop-location [:shipping-address :country])]
+              (dom/p (css/add-class :text-white) (dom/strong nil (:long country)))
+              (dom/p (css/add-class :text-secondary) (dom/i nil "Select location")))
+            (dom/div
+              (css/text-align :center)
+              (button/submit-button-cta
+                (cond-> {:onClick #(.start-store component id)}
+                        (nil? (get-in shop-location [:shipping-address :country]))
+                        (assoc :disabled true))
+                (dom/span nil "Open my shop")))))
+        (grid/row-column
+          nil
+          (when (some? (:user/email auth))
+            (dom/p (css/text-align :center)
+                   (dom/small nil (str "Logged in as " (:user/email auth))))))))))
 
 (defn render-has-store [component id]
   (let [{:query/keys [auth]} (om/props component)
@@ -128,46 +145,48 @@
       ;(v/input
       ;  {:type "email" :placeholder "Your brand" :id (:field/brand form-inputs)}
       ;  input-validation)
-      (dom/label nil "Email")
-      (v/input
-        {:type "email" :placeholder "youremail@example.com" :id (input-id id (:field/email form-inputs)) :defaultValue (:user/email auth)}
-        input-validation)
+      (dom/form
+        nil
+        (dom/label nil "Email")
+        (v/input
+          {:type "email" :placeholder "youremail@example.com" :id (input-id id (:field/email form-inputs)) :defaultValue (:user/email auth)}
+          input-validation)
 
-      ;(dom/label nil "Location")
-      ;(v/input
-      ;  {:type "text" :placeholder "e.g. Vancouver" :id (:field/locality form-inputs)}
-      ;  input-validation)
+        ;(dom/label nil "Location")
+        ;(v/input
+        ;  {:type "text" :placeholder "e.g. Vancouver" :id (:field/locality form-inputs)}
+        ;  input-validation)
 
-      (dom/label nil "Website/Social media")
-      (v/input {:type "text" :placeholder "yourwebsite.com, Facebook page, Instagram"
-                :id   (input-id id (:field/website form-inputs))}
-               input-validation)
+        (dom/label nil "Website/Social media")
+        (v/input {:type "text" :placeholder "yourwebsite.com, Facebook page, Instagram"
+                  :id   (input-id id (:field/website form-inputs))}
+                 input-validation)
 
-      (dom/label nil "Message")
-      (dom/textarea {:placeholder "Anything else you'd like us to know? (optional)"
-                     :id          (input-id id (:field/message form-inputs))})
+        (dom/label nil "Message")
+        (dom/textarea {:placeholder "Anything else you'd like us to know? (optional)"
+                       :id          (input-id id (:field/message form-inputs))})
 
-      (dom/div
-        (css/add-class :text-center)
-        (dom/p nil
-               (dom/small nil
-                          (dom/span nil "By submitting you accept our ")
-                          (dom/a {:href    "//www.iubenda.com/privacy-policy/8010910"
-                                  :classes ["iubenda-nostyle no-brand iubenda-embed"]
-                                  :title   "Privacy Policy"}
-                                 (dom/span nil "Privacy Policy"))))
-        (button/store-navigation-cta
-          {:onClick #(.request-access component id)}
-          (dom/span nil "I want to go LIVE"))
-        (cond (msg/pending? request-message)
-              (dom/p nil (dom/small nil (dom/i {:classes ["fa fa-spinner fa-spin"]})))
-              (msg/final? request-message)
-              (if (msg/success? request-message)
-                (dom/p nil (msg/message request-message))))))))
+        (dom/div
+          (css/add-class :text-center)
+          (dom/p nil
+                 (dom/small nil
+                            (dom/span nil "By submitting you accept our ")
+                            (dom/a {:href    "//www.iubenda.com/privacy-policy/8010910"
+                                    :classes ["iubenda-nostyle no-brand iubenda-embed"]
+                                    :title   "Privacy Policy"}
+                                   (dom/span nil "Privacy Policy"))))
+          (button/submit-button-cta
+            {:onClick #(.request-access component id)}
+            (dom/span nil "I want to go LIVE"))
+          (cond (msg/pending? request-message)
+                (dom/p nil (dom/small nil (dom/i {:classes ["fa fa-spinner fa-spin"]})))
+                (msg/final? request-message)
+                (if (msg/success? request-message)
+                  (dom/p nil (msg/message request-message)))))))))
 
 (defn render-input-callout [component id]
   (let [{:query/keys [auth]} (om/props component)
-        store  (-> auth :store.owner/_user first :store/_owners)
+        store (-> auth :store.owner/_user first :store/_owners)
 
         ;auth {:user/can-open-store? true
         ;      :user/email "dev@sulo.live"}
@@ -211,7 +230,7 @@
             (->> {:onClick (fn [] #?(:cljs (utils/scroll-to (utils/element-by-id "request-form") 250)))})
             (dom/span nil "Go LIVE with my brand")))))
 
-(defui StartStore
+(defui StartStore-no-loader
   static om/IQuery
   (query [_]
     [{:query/auth [:user/email
@@ -224,13 +243,14 @@
   Object
   (start-store [this parent-id]
     #?(:cljs
-       (let [store-name (utils/input-value-by-id (input-id parent-id (:field.store/name form-inputs)))
+       (let [{:keys [shop-location]} (om/get-state this)
+             store-name (utils/input-value-by-id (input-id parent-id (:field.store/name form-inputs)))
              store-country "ca"                             ;(utils/input-value-by-id (:field.store/country form-inputs))
 
              locality (c/parse-long-safe (utils/input-value-by-id (input-id parent-id (:field.store/locality form-inputs))))
              input-map {:field.store/name     store-name
-                        :field.store/country  "CA"
-                        :field.store/locality locality
+                        :field.store/country  (get-in shop-location [:shipping-address :country :short])
+                        :field.store/location (:place_id shop-location)
                         }
              validation (v/validate :field/store input-map form-inputs (str parent-id "-"))]
          (debug "Validation: " validation)
@@ -250,10 +270,10 @@
 
              input-map {
                         ;:field/brand    brand
-                        :field/email    email
-                        :field/website  website
+                        :field/email   email
+                        :field/website website
                         ;:field/locality locality
-                        :field/message  message}
+                        :field/message message}
              validation (v/validate :field/request input-map form-inputs (str parent-id "-"))]
          (debug "Validation: " validation)
          (when (nil? validation)
@@ -268,6 +288,15 @@
           (let [new-store (msg/message message)]
             (mixpanel/people-set {:store true})
             (routes/set-url! this :store-dashboard {:store-id (:db/id new-store)}))))))
+
+  (componentDidMount [this]
+    #?(:cljs (let [autocomplete (places/mount-places-autocomplete
+                                  {:element-id "sulo-auto-complete"
+                                   :types      ["(regions)"]
+                                   :on-change  (fn [place]
+                                                 (debug "Autocomplete address: " place)
+                                                 (om/update-state! this assoc :shop-location place))})]
+               (om/update-state! this assoc :autocomplete autocomplete))))
 
   (render [this]
     (let [{:query/keys [auth sulo-localities]} (om/props this)
@@ -286,7 +315,7 @@
           (dom/div
             (css/add-class :hero-background)
 
-            (photo/cover {:photo-id "static/coming-soon-sell-bg"})
+            (photo/cover {:src "/assets/img/maker.jpg"})
             ;(dom/video {:autoPlay true}
             ;           (dom/source {:src "https://a0.muscache.com/airbnb/static/P1-background-vid-compressed-2.mp4"}))
             )
@@ -322,7 +351,7 @@
           )
 
         (dom/div
-          (->> (css/add-classes [:section :banner :gray])
+          (->> (css/add-classes [:section :banner])
                (css/text-align :center))
           (grid/row-column
             (css/add-class :section-title)
@@ -351,10 +380,10 @@
             (->> (grid/columns-in-row {:small 1 :medium 2})
                  (css/align :bottom))
             (grid/column
-              nil
+              (grid/column-order {:small 2 :medium 1})
               (dom/img {:src "/assets/img/storefront-ss.jpg"}))
             (grid/column
-              nil
+              (grid/column-order {:small 1 :medium 2})
               (dom/div
                 (css/add-class :section-title)
                 (dom/h6 nil (dom/strong nil "Your brand on SULO Live"))
@@ -378,8 +407,40 @@
                                (dom/span nil "Your LIVE content and your products are in one place, so your viewers can easily make purchases while they watch your video.")))))
             ))
 
+
+
         (dom/div
-          (->> (css/add-classes [:section :banner])
+          (css/add-classes [:section :banner])
+          (grid/row
+            (grid/columns-in-row {:small 1 :medium 2})
+            (grid/column
+              nil
+              (dom/div
+                (css/add-class :section-title)
+                (dom/h6 nil (dom/strong nil "Show the real you"))
+                (dom/h3 (css/add-classes [:sulo-dark :jumbo-header :banner]) "LIVE video production"))
+              (menu/vertical
+                nil
+
+                (dom/li nil
+                        (dom/h5 nil "Spend no time editing")
+                        (dom/p nil
+
+                               (dom/span nil "The best thing about LIVE is that it's not perfect and anything can happen. Just turn on the camera while doing your creative work and see where the stream takes you.")))
+                (dom/li nil
+                        (dom/h5 nil "Use any camera")
+                        (dom/p nil
+
+                               (dom/span nil "Setup your streams using any type of camera. Either go simple using only your iPhone, or more advanced with multiple digital cameras.")))
+                (dom/li nil
+                        (dom/h5 nil "Save your streams")
+                        (dom/p nil
+                               (dom/span nil "Your streams are saved on your shop, so your customers can watch them later in case they missed the action.")))))
+            (grid/column
+              nil)))
+
+        (dom/div
+          (->> (css/add-classes [:section :blue :banner])
                (css/text-align :center))
           (grid/row-column
             (css/add-class :section-title)
@@ -403,17 +464,6 @@
             ;  (dom/li nil (dom/p nil "Unlimited chat messages")))
 
             ))
-
-        (dom/div
-          (->> (css/add-classes [:section :blue :banner])
-               (css/text-align :center))
-          (grid/row
-            nil
-            (grid/column
-              (css/add-class :section-title)
-              (dom/h3 (css/add-classes [:sulo-dark :jumbo-header :banner]) "Use any camera."))
-            (grid/column
-              nil)))
 
 
         (dom/div
@@ -448,5 +498,11 @@
                   (render-input-callout this "sell-form-footer")
 
                   )))))))))
+
+(def StartStore (script-loader/js-loader {:component StartStore-no-loader
+                                          #?@(:cljs [:scripts [[#(and (exists? js/google)
+                                                                      (exists? js/google.maps)
+                                                                      (exists? js/google.maps.Circle))
+                                                                "https://maps.googleapis.com/maps/api/js?key=AIzaSyB8bKA0NO74KlYr5dpoJgM_k6CvtjV8rFQ&libraries=places"]]])}))
 
 (router/register-component :sell StartStore)

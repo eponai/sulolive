@@ -12,6 +12,12 @@ $section-footer-color: $primary-color;
 		padding-bottom: 0;
 	}
 }
+
+#sulo-sell {
+	.footer {
+		// visibility: hidden;
+	}
+}
 .landing-page {
 	.row {
 		max-width: 100%;
@@ -178,7 +184,7 @@ $section-footer-color: $primary-color;
 		}
 	}
 	&#sulo-start-store {
-		$color: black;//darken($sulo-dark-color, 30%);
+		$color: $black;//darken($sulo-dark-color, 30%);
 		h2 {
 			text-transform: none;
 		}
@@ -189,9 +195,9 @@ $section-footer-color: $primary-color;
 				font-weight: bold;
 			}
 		}
-		h3, h6 {
+		h3, h5, h6 {
 			text-transform: none;
-			font-weight: $global-weight-normal;
+			font-weight: $global-weight-bold;
 		}
 		.hero-background {
 			.photo-container {
@@ -215,7 +221,7 @@ $section-footer-color: $primary-color;
 				margin: 0;
 			}
 			p {
-				color: $white;
+				// color: $white;
 			}
 
 			.callout:not(.success) {
@@ -270,7 +276,7 @@ $section-footer-color: $primary-color;
 			img {
 				flex: 0 0 auto;
 				max-width: 20rem;
-				// margin: 0 auto;
+				margin: 0 auto;
 				object-fit: contain;
 			}
 
