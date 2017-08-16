@@ -8,7 +8,7 @@ $subnav-background-color: $navbar-background-color;//map-get($foundation-palette
 $subnav-font-color: map-get($foundation-palette, primary);//rgba($black, 0.5);
 
 $footer-background-color: $primary-color;//map-get($foundation-palette, gray);
-$footer-header-color: map-get($foundation-palette, banner);
+$footer-header-color: $white;
 $footer-font-color: $medium-gray;
 $footer-height-small: 6rem;
 $footer-height: 4rem;
