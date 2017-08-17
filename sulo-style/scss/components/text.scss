@@ -112,7 +112,7 @@ h1, h2, h3, h4, h5, h6 {
 	// @include foundation-typography-base;
 		h1, h2, h3, h4, h5, h6 {
 		text-transform: none;
-		letter-spacing: 0.5px;
+		// letter-spacing: -1.5px;
 		font-weight: $global-weight-normal;
 	// font-size: 100%;
 	}

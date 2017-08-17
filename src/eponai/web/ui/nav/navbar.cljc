@@ -32,12 +32,12 @@
     content))
 
 
-(defn navbar-brand [& [href title]]
+(defn navbar-brand [opts]
   (menu/item-link
-    {:href (or href "/")
-     :id   "navbar-brand"}
-    (or title
-        (dom/span nil "Sulo Live"))))
+    (merge {:href "/"
+            :id   "navbar-brand"}
+           opts)
+    (dom/span nil "Sulo Live")))
 
 (defn user-dropdown [component user owned-store]
   (let [{:keys [dropdown-key]} (om/get-state component)
@@ -125,7 +125,7 @@
         {:classes ["top-bar-left"]}
         (menu/horizontal
           nil
-          (navbar-brand)
+          (navbar-brand nil)
           ;(nav.common/live-link component "navbar")
           (menu/item nil
                      (dom/input {:type        "text"
@@ -171,10 +171,11 @@
             (dom/a
               (css/show-for :large {:onClick toggle-inline-sidebar})
               (dom/i {:classes ["fa fa-bars fa-fw"]})))
-          (menu/item-link
-            (css/show-for :large {:href (routes/url :store-dashboard (:route-params current-route))
-                                  :id   "navbar-brand"})
-            (dom/span nil "SULO"))
+          ;(menu/item-link
+          ;  (css/show-for :large {:href (routes/url :store-dashboard (:route-params current-route))
+          ;                        :id   "navbar-brand"})
+          ;  (dom/span nil "SULO Live"))
+          (navbar-brand (css/show-for :large {:href (routes/url :store-dashboard (:route-params current-route))}))
 
           (menu/item
             (css/show-for :medium)
@@ -211,7 +212,7 @@
              (dom/a
                (css/hide-for :large {:onClick #(.open-sidebar component)})
                (dom/i {:classes ["fa fa-bars fa-fw"]})))
-           (navbar-brand (routes/url :index))
+           (navbar-brand nil)
            ;(nav.common/live-link component "navbar")
            ;(menu/item-link
            ;  (->> (css/add-class :category)
@@ -334,7 +335,7 @@
                     {:classes ["top-bar-left"]}
                     (menu/horizontal
                       nil
-                      (navbar-brand))))
+                      (navbar-brand nil))))
                 (and (some? route)
                      (or (= route :store-dashboard) (= (name :store-dashboard) (namespace route))))
                 (manage-store-navbar this)

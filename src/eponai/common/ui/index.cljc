@@ -177,7 +177,7 @@
                     (dom/p nil (dom/span nil "Ask questions or share thoughts via live chat rooms on their streams."))))
                 (grid/column
                   (css/add-classes [:content-item :feature-item])
-                  (dom/div (css/add-classes [:icon :icon-shop]))
+                  (dom/div (css/add-classes [:icon :icon-shop :blue]))
                   (dom/div
                     nil
                     (dom/p (css/add-classes [:lead :jumbo-lead :banner :sulo-dark]) "Shop")
