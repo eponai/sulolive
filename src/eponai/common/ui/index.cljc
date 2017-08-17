@@ -64,8 +64,7 @@
                           {:store/status [:status/type]}
                           {:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}
                           ;; to be able to query the store on the client side.
-                          {:store/owners [{:store.owner/user [:db/id]}]}]}
-     {:query/online-stores (om/get-query ci/StoreItem)}])
+                          {:store/owners [{:store.owner/user [:db/id]}]}]}])
   Object
   (render [this]
     (let [{:query/keys [top-streams featured-streams featured-stores current-route online-stores featured-items featured-home featured-men featured-art]} (om/props this)

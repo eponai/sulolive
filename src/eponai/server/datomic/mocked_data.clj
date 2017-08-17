@@ -419,11 +419,13 @@
    :user/stripe  {:stripe/id "cus_AT7bKjMaCIWpei"}})
 
 (defn add-data [conn]
-  (let [categories (mock-categories3)
+  (let [live-stores 0
+        
+        categories (mock-categories3)
         stores (mock-stores)
         chats (mock-chats stores)
-        live-streams (mock-streams (take 6 stores) :stream.state/live)
-        streams (mock-streams (drop 6 stores) :stream.state/offline)
+        live-streams (mock-streams (take live-stores stores) :stream.state/live)
+        streams (mock-streams (drop live-stores stores) :stream.state/offline)
         countries (countries)
         ;storeless-user (user-no-store)
         stores-with-localities (map (fn [s]

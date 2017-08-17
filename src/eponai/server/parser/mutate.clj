@@ -216,11 +216,12 @@
   (quiet-cas conn [[:db.fn/cas [:stream/store store-id] :stream/state :stream.state/offline :stream.state/online]]))
 
 (defmutation stream/go-online
-  [{:keys [state] :as env} k {:keys [stream/token]}]
+  [{:keys [state] ::parser/keys [exception] :as env} k {:keys [stream/token]}]
   ;; We do some custom authing with the stream token.
   {:auth ::auth/public
    :resp {:success "Stream went online"
-          :error   "Could not go online"}}
+          :error   (str "Could not go online: " (some-> exception (.getMessage))
+                        (some-> (.getCause exception) (.getMessage)))}}
   {:action (fn []
              (if-let [store-id (wowza-token-store-owner env token)]
                (do (debug "Was store owner of store-id: " store-id " setting stream to atleast online.")
