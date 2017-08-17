@@ -49,6 +49,16 @@ jobs:
           paths:
             - ./node_modules
 
+      - restore_cache:
+          key: bower09-deps-{{ checksum "bower.json" }}
+      - run:
+          name: "install bower deps"
+          command: node_modules/bower/bin/bower install --allow-root
+      - save_cache:
+          key: bower09-deps-{{ checksum "bower.json" }}
+          paths:
+            - ./bower_components
+
       - run: cp sulo-style/package.json sulo-style/package.bak
       - restore_cache:
           key: foundation09-deps-{{ checksum "sulo-style/package.bak" }}-{{ checksum "sulo-style/bower.json" }}
@@ -91,13 +101,17 @@ jobs:
       - restore_cache:
           key: node09-deps-{{ checksum "package.json" }}
       - restore_cache:
+          key: bower09-deps-{{ checksum "bower.json" }}
+      - restore_cache:
           key: foundation09-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
-      - run: |
-          cd sulo-style
-          node ../node_modules/foundation-cli/bin/foundation.js build
+      - run:
+          name: "Compile css"
+          command: SKIP_INSTALL=true scripts/compile-css.sh
       - persist_to_workspace:
           root: .
-          paths: ./resources/public/assets/css
+          paths:
+            - ./resources/public/assets/css
+            - ./resources/public/assets/flags
 
   build_cljs:
     <<: *defaults

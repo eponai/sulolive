@@ -92,6 +92,7 @@ local.properties
 
 # Generated css
 /resources/public/assets/css/
+/resources/public/assets/flags/
 
 # BUCK
 buck-out/
