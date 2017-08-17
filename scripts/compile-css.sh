@@ -21,8 +21,10 @@ set -u
 ## Put bower stuff in resources
 
 assets_dir="resources/public/assets"
+css_dir="$assets_dir/css"
 flags_dir="$assets_dir/flags"
-cp -r bower_components/flag-icon-css/css/flag-icon.min.css "$assets_dir/css/flag-icon.min.css"
+mkdir -p $css_dir
+cp -r bower_components/flag-icon-css/css/flag-icon.min.css "$css_dir/flag-icon.min.css"
 mkdir -p "$flags_dir"
 cp -r bower_components/flag-icon-css/flags/* "$flags_dir"
 
