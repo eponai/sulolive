@@ -28,8 +28,10 @@
     [eponai.common :as c]
     [eponai.common.database.rules :as db.rules]
     [medley.core :as medley]
-    [eponai.server.external.firebase :as firebase])
-  (:import (datomic.db Db)))
+    [eponai.server.external.firebase :as firebase]
+    [eponai.common.shared :as shared])
+  (:import (datomic.db Db)
+           (java.util Random Collections)))
 
 (defmacro defread
   ""
@@ -186,8 +188,13 @@
                                                           ]})
                  (feature-all db :stream)))})
 
+(defn shuffle-with-seed [seed coll]
+  (let [al (java.util.ArrayList. coll)]
+    (java.util.Collections/shuffle al (java.util.Random. seed))
+    (clojure.lang.RT/vector (.toArray al))))
+
 (defread query/featured-items
-  [{:keys [db db-history query]} _ _]
+  [{:keys [db db-history query random-seed]} _ _]
   {:auth ::auth/public}
   {:value (->> (db/find-with db {:find  '[?e ?created-at]
                                  :where '[[?st :status/type :status.type/open]
@@ -198,7 +205,7 @@
                                           [?e :store.item/photos ?p]
                                           [?p :store.item.photo/photo _]
                                           [?e :store.item/created-at ?created-at]]})
-               (shuffle)
+               (shuffle-with-seed random-seed)
                (take 12)
                (map #(nth % 0))
                (db/pull-many db query)
@@ -254,7 +261,7 @@
                (feature-all db :store.item))})
 
 (defread query/featured-stores
-  [{:keys [db db-history query]} _ _]
+  [{:keys [db db-history query random-seed]} _ _]
   {:auth ::auth/public}
   ;; TODO: Come up with a way to feature stores.
   {:value (let [store-ids (db/find-with db {:find  '[?e ?created-at]
@@ -267,7 +274,7 @@
                                                      ]})]
             (debug "FOUND STORE IDS: " store-ids)
             (->> store-ids
-                 (shuffle)
+                 (shuffle-with-seed random-seed)
                  (take 12)
                  (map #(nth % 0))
                  (db/pull-many db query)

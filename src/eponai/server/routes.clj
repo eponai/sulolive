@@ -118,7 +118,8 @@
                :locations           (auth/requested-location request)
                :social-sharing      sharing-objects
                :site-info           site-info
-               :client-ip           (client-ip request)}
+               :client-ip           (client-ip request)
+               :random-seed         (rand-int 1e6)}
         logger (context-logger request
                                (select-keys props [:route :route-params :query-params])
                                (get-in props [:auth :user-id]))]
@@ -137,6 +138,7 @@
   (debug "Handling parser request with cookies:" cookies)
   (let [{:keys [user-id] :as auth} (request->auth request)
         route-map (:route-map body)
+        random-seed (:random-seed body)
         logger (context-logger request route-map user-id)
         query (:query body)]
     (log/info! logger ::parser-call {:query2 (str query)})
@@ -147,6 +149,7 @@
        :state                       conn
        :auth                        auth
        :params                      (:params request)
+       :random-seed                 random-seed
        :system                      system
        :locations                   (auth/requested-location request)
        :logger                      logger

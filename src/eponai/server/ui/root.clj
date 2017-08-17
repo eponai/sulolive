@@ -6,7 +6,8 @@
     [eponai.server.ui.common :as common]
     [taoensso.timbre :refer [debug]]
     [clojure.data.json :as json]
-    [environ.core :as env]))
+    [environ.core :as env]
+    [eponai.common.shared :as shared]))
 
 (defn quote-string [s]
   (str "'" s "'"))
@@ -14,14 +15,15 @@
 (defui Root
   Object
   (render [this]
-    (let [{:keys [release? ::app-html route auth cljs-build-id social-sharing site-info]} (om/props this)]
+    (let [{:keys [release? ::app-html route auth cljs-build-id social-sharing site-info random-seed]} (om/props this)]
       (debug "app-html: " app-html)
       (dom/html
         {:lang "en"}
         (common/head {:release?       release?
                       :social-sharing social-sharing
                       :site-info      site-info
-                      :cljs-build-id  cljs-build-id})
+                      :cljs-build-id  cljs-build-id
+                      :random-seed    random-seed})
         (dom/body
           nil
           (dom/script {:src  "https://www.gstatic.com/firebasejs/4.1.3/firebase.js"

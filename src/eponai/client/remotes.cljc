@@ -7,7 +7,10 @@
             [om.next :as om]
             [taoensso.timbre #?(:clj :refer :cljs :refer-macros) [info debug]]
             [eponai.client.chat :as chat]
-            [eponai.client.routes :as routes]))
+            [eponai.client.routes :as routes]
+    ;; Hmm.. web.utils in an eponai.client namespace..
+            #?(:cljs [eponai.web.utils :as web.utils])
+            [eponai.common :as c]))
 
 
 #?(:cljs
@@ -52,6 +55,13 @@
     (-> (remote-fn query)
         (assoc-in [:opts :transit-params :route-map]
                   (routes/current-route (db/db conn))))))
+
+(defn with-random-seed [remote-fn]
+  #?(:clj  remote-fn
+     :cljs (fn [query]
+             (-> (remote-fn query)
+                 (assoc-in [:opts :transit-params :random-seed]
+                           (c/parse-long-safe (web.utils/meta-content-by-id "random-seed-meta")))))))
 
 (defn read-basis-t-remote-middleware
   "Given a remote-fn (that describes what, where and how to send a request to a server),

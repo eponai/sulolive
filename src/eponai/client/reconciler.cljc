@@ -19,63 +19,44 @@
    :remote      (-> (remotes/post-to-url "/api")
                     (remotes/read-basis-t-remote-middleware conn)
                     (remotes/with-auth conn)
-                    (remotes/with-route conn))
+                    (remotes/with-route conn)
+                    (remotes/with-random-seed))
    :remote/chat (-> (remotes/post-to-url "/api/chat")
                     (remotes/read-basis-t-remote-middleware conn)
                     (remotes/with-auth conn)
-                    (remotes/with-route conn))})
+                    (remotes/with-route conn)
+                    (remotes/with-random-seed))})
 
 ;; TODO: Use this from run.cljs and from fullstack tests.
 
-(defn create [{:keys        [parser
-                             ui->props
-                             send-fn
-                             ;; Optional
-                             history
-                             route
-                             route-params
-                             query-params
-                             instrument
-                             tx-listen
-                             ;; With defaults:
-                             conn
-                             remotes
-                             merge]
-               :shared/keys [scroll-helper
-                             loading-bar
-                             browser-history
-                             auth-lock
-                             local-storage
-                             store-chat-listener
-                             modules
-                             stripe
-                             auth0
-                             firebase
-                             login
-                             photos]
-               :or          {conn          (utils/create-conn)
-                             local-storage (local-storage/->local-storage)
-                             remotes       (remote-order)
-                             merge         (merge/merge!)}
-               :as          reconciler-config}]
-  (let [overwrites (select-keys reconciler-config [:ui->props :history :logger :root-render :root-unmount])
+(defn create [{:keys [parser
+                      send-fn
+                      ;; Optional
+                      route
+                      route-params
+                      query-params
+                      instrument
+                      tx-listen
+                      ;; With defaults:
+                      conn
+                      remotes
+                      merge]
+               :or   {conn    (utils/create-conn)
+                      remotes (remote-order)
+                      merge   (merge/merge!)}
+               :as   reconciler-config}]
+  (let [shared-defaults {:shared/local-storage (local-storage/->local-storage)}
+        shared-map (into shared-defaults
+                         (comp (filter (comp #{"shared"} namespace key)))
+                         reconciler-config)
+        overwrites (select-keys reconciler-config [:ui->props :history :logger :root-render :root-unmount])
         reconciler (om/reconciler (into overwrites
                                         {:state      conn
                                          :parser     parser
                                          :remotes    remotes
                                          :send       send-fn
                                          :merge      merge
-                                         :shared     {:shared/auth0               auth0
-                                                      :shared/browser-history     browser-history
-                                                      :shared/firebase            firebase
-                                                      :shared/loading-bar         loading-bar
-                                                      :shared/local-storage       local-storage
-                                                      :shared/login               login
-                                                      :shared/modules             modules
-                                                      :shared/photos              photos
-                                                      :shared/scroll-helper       scroll-helper
-                                                      :shared/store-chat-listener store-chat-listener
-                                                      :shared/stripe              stripe}
+                                         :shared     shared-map
                                          :tx-listen  tx-listen
                                          :migrate    nil
                                          :instrument instrument}))]

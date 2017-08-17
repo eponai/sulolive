@@ -38,16 +38,16 @@
   (let [reconciler-atom (atom nil)
         parser (parser/client-parser)
         send-fn (server-send request-env reconciler-atom)
-        reconciler (client.reconciler/create {:conn         (datascript/conn-from-db (:empty-datascript-db request-env))
-                                              :parser       parser
-                                              :send-fn      send-fn
+        reconciler (client.reconciler/create {:conn          (datascript/conn-from-db (:empty-datascript-db request-env))
+                                              :parser        parser
+                                              :send-fn       send-fn
                                               :shared/photos (if (:release? request-env)
                                                                :env/prod
                                                                :env/dev)
-                                              :history      2
-                                              :route        (:route request-env)
-                                              :route-params (:route-params request-env)
-                                              :query-params (:query-params request-env)})]
+                                              :history       2
+                                              :route         (:route request-env)
+                                              :route-params  (:route-params request-env)
+                                              :query-params  (:query-params request-env)})]
     (reset! reconciler-atom reconciler)
     reconciler))
 

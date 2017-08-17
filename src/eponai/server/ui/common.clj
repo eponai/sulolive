@@ -106,7 +106,7 @@
         twitter-tags (mapv tag-fn twitter)]
     (into facebook-tags twitter-tags)))
 
-(defn head [{:keys [release? exclude-icons? cljs-build-id social-sharing site-info]}]
+(defn head [{:keys [release? exclude-icons? cljs-build-id social-sharing site-info random-seed]}]
   (debug "SITE INFO: " site-info)
   (dom/head
     {:prefix "og: http://ogp.me/ns# fb: http://ogp.me/ns/fb#"}
@@ -123,6 +123,7 @@
     (dom/meta {:name "author" :content "SULO Live"})
     ;; Asset version is needed in our module urls.
     (dom/meta {:id "asset-version-meta" :name "asset-version" :content asset-version})
+    (dom/meta {:id "random-seed-meta" :name "random-seed" :content (str random-seed)})
     (dom/meta {:name    "description"
                :content (or (:description site-info) "Shop local goods and hangout LIVE with your local vendors.")})
     (comment (dom/meta {:http-equiv "Content-Type"
