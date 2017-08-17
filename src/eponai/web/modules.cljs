@@ -3,7 +3,8 @@
     [goog.module]
     [goog.module.ModuleManager :as module-manager]
     [goog.module.ModuleLoader]
-    [taoensso.timbre :refer [debug error warn]])
+    [taoensso.timbre :refer [debug error warn]]
+    [eponai.web.utils :as web.utils])
   (:import goog.module.ModuleManager))
 
 (def non-route-modules [:stream+chat])
@@ -25,8 +26,7 @@
 (defn- get-asset-version
   "Returns the version of our assets. One way to avoid browser cache issues between releases."
   []
-  (or (some-> (.getElementById js/document "asset-version-meta")
-              (.-content))
+  (or (web.utils/meta-content-by-id "asset-version-meta")
       "unset_asset_version"))
 
 (defn- route->module

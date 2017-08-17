@@ -67,6 +67,10 @@
 ;  (when el
 ;    (set! (.-scrollLeft el) (+ (.-scrollLeft el) d))))
 
+(defn meta-content-by-id [id]
+  (some-> (.getElementById js/document id)
+          (.-content)))
+
 (defn get-cookie-val [cookie-key]
   {:pre [(string? cookie-key)]}
   (let [cookie-string (js/decodeURIComponent (.-cookie js/document))
