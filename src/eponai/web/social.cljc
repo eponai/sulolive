@@ -79,18 +79,32 @@
 
 (def profiles
   {:social/instagram "https://www.instagram.com/sulolive/"
-   :social/facebook "https://www.facebook.com/live.sulo"})
+   :social/facebook "https://www.facebook.com/live.sulo"
+   :social/twitter "https://twitter.com/sulolive"
+   :social/pinterest "https://www.pinterest.com/sulolive/"})
 
 (defn sulo-social-link [platform]
   (condp = platform
     :social/instagram
     (dom/a {:href   (:social/instagram profiles)
             :target "_blank"}
-           (dom/span {:classes ["icon icon-instagram"]}))
+           (dom/span {:classes ["icon icon-instagram"]
+                      :title "Instagram"}))
     :social/facebook
     (dom/a {:href   (:social/facebook profiles)
             :target "_blank"}
-           (dom/span {:classes ["icon icon-facebook"]}))))
+           (dom/span {:classes ["icon icon-facebook"]
+                      :title "Facebook"}))
+    :social/twitter
+    (dom/a {:href   (:social/twitter profiles)
+            :target "_blank"}
+           (dom/span {:classes ["icon icon-twitter"]
+                      :title "Twitter"}))
+    :social/pinterest
+    (dom/a {:href   (:social/pinterest profiles)
+            :target "_blank"}
+           (dom/span {:classes ["icon icon-pinterest"]
+                      :title "Pinterest"}))))
 
 (defn sulo-icon-attribution []
   (dom/a {:href   "https://icons8.com"

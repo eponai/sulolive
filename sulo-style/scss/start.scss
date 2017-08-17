@@ -18,16 +18,8 @@ $section-footer-color: $primary-color;
 		// visibility: hidden;
 	}
 }
-.landing-page {
-	.row {
-		max-width: 100%;
-	}
-	
-	h3, h3 a {
 
-		// color: $sulo-dark-color;
-	}
-	.hero {
+.hero {
 		height: 20rem;
 
 		@include breakpoint(medium) {
@@ -99,6 +91,16 @@ $section-footer-color: $primary-color;
 			}
 		}
 	}
+.landing-page {
+	.row {
+		max-width: 100%;
+	}
+	
+	h3, h3 a {
+
+		// color: $sulo-dark-color;
+	}
+	
 	.section .content-item {
 		&:not(.collection-item) {
 			margin-bottom: 1.5rem;
@@ -183,7 +185,9 @@ $section-footer-color: $primary-color;
 			color: $sulo-dark-color;
 		}
 	}
-
+	.section {
+		padding: 4rem 0;
+	}
 	.section.form {
 		padding-bottom: 0;
 	}
@@ -289,18 +293,36 @@ $section-footer-color: $primary-color;
 		.sulo-banner {
 		// padding: 4rem 0;
 		// background: rgba($sulo-color, 0.3);
-		// overflow: hidden;
-			.column:first-child {
-				display: flex;
-				justify-content: center;
-				flex-direction: column;
-			}
+		overflow: hidden;
+			position: relative;
+			padding-bottom: 0;
 			img {
 				flex: 0 0 auto;
 				max-width: 20rem;
 				margin: 0 auto;
 				object-fit: contain;
 			}
+			@include breakpoint(medium) {
+				padding-bottom: 4rem;
+				img {
+					position: absolute;
+					height: 100%;
+					top: 0;
+					// left: 50%;
+					max-width: none;
+					margin: 0 auto;
+				}
+			}
+			.column:first-child {
+				display: flex;
+				justify-content: center;
+				flex-direction: column;
+			}
+			.column:last-child {
+				padding: 0 2%;
+			}
+
+			
 
 			h3 {
 				margin-top: 0;
@@ -319,6 +341,35 @@ $section-footer-color: $primary-color;
 			}
 			
 		}
+
+		.video-production-banner {
+			position: relative;
+			overflow: hidden;
+			padding-bottom: 0;
+			.column:last-child {
+				padding: 0 2%;
+			}
+			@include breakpoint(medium) {
+				padding-bottom: 4rem;
+				img {
+					// z-index: 0;
+					position: absolute;
+					right: 50%;
+					top: 0;
+					width: auto;
+					// bottom: 0;
+
+				}
+			}
+			@include breakpoint(large) {
+				img {
+					height: 100%;
+				}
+			}
+			// .menu, .section-title {
+			// 	z-index: 1;
+			// }
+		}
 	}
 
 	.success-message {
@@ -332,260 +383,3 @@ $section-footer-color: $primary-color;
 		text-align: center;
 	}
 }
-// #sulo-index {
-// 	#sulo-navbar {
-// 		.menu {
-// 			.search-input {
-// 				display: none;
-// 			}
-// 		}
-// 	}
-// 	.row {
-// 		// max-width: 80rem;
-// 	}
-	
-// 	h2 {
-// 		@include breakpoint(large) {
-// 			// font-size: rem-calc(28);
-// 		} 
-// 	}
-// 	.page-content {
-// 		padding-bottom: 0;
-// 	}
-// 	.photo.cover {
-// 		@include breakpoint(large) {
-// 			padding-top: 25%;
-// 		}
-// 	}
-	
-// 	.photo-container.cover {
-// 		.overlay {
-// 			background: rgba($primary-color, 0.7);
-// 		}
-// 		.content {
-// 			flex: 1;
-// 		}
-// 	}
-
-// 	// .banner {
-// 	// 	padding: 2rem 0 1rem 0;
-// 	// 	@include breakpoint(medium) {
-// 	// 		padding-top: 3rem;
-// 	// 		padding-bottom: 2rem;
-// 	// 	}
-// 	// 	background: rgba($banner-background-color, 0.8);
-
-// 	// 	&.white {
-// 	// 		background: $white;
-// 	// 		border-bottom: 1px solid rgba($primary-color, 0.1);
-// 	// 	}
-// 	// 	.align-right {
-// 	// 		display: flex;
-// 	// 		justify-content: flex-end;
-// 	// 	}
-// 	// 	.icon {
-// 	// 		// display: none;
-// 	// 		padding: 0;
-// 	// 		max-width: 100%;
-// 	// 		svg {
-// 	// 			height: 100%;
-// 	// 			width: 100%;
-// 	// 		}
-// 	// 		@include breakpoint(medium) {
-// 	// 			max-width: 12rem;	
-// 	// 		}
-// 	// 	}	
-// 	// }
-
-// 	.section {
-// 		padding: 0;
-// 		.section-title {
-// 			padding: 0.5rem 0;
-// 			margin: 0;
-// 			margin-bottom: 0.5rem;
-// 			background: rgba($sulo-color, 0.25);
-// 			h2, h3 {
-// 				margin: 0;
-// 				color: darken($sulo-dark-color, 10%);
-// 				a {
-// 					color: darken($sulo-dark-color, 10%);
-// 					&:hover {
-// 						text-decoration: underline;
-// 					}
-// 				}
-// 			}
-// 		}
-// 		// border-top: $global-border-secondary;
-// 		&.online-channels {
-// 			.section-title {
-// 				background: rgba($success-color, 0.25);
-// 				// background: transparent;
-// 				h2, a {
-// 					color: darken($success-color, 10%);
-// 					&:hover {
-// 						text-decoration: underline;
-// 					}
-// 				}
-// 			}
-// 			.row:last-child {
-// 				padding-bottom: 2rem;
-// 			}
-
-// 			// background: $dashboard-background;
-// 		}
-
-// 		&.collections {
-// 			background: $dashboard-background;
-// 			// padding: 2rem 0;
-// 			// font-size: 1.7rem;
-// 			.row {
-// 				padding: $global-padding 0;
-// 			}
-// 			.section-title {
-// 				// background: transparent;
-// 				// margin: 0;
-// 			}
-// 			.section-footer {
-// 				visibility: hidden;
-// 			}
-// 			.collection-item {
-// 				padding: $global-padding;
-// 				h4 {
-// 					// font-size: 95%
-// 					margin: 0;
-// 					margin-bottom: 0;
-// 					text-transform: uppercase;
-// 					font-weight: bold;
-// 					margin-top: 0.25rem;
-// 					letter-spacing: 1px;
-// 				}
-// 				@include breakpoint(small only) {
-// 					padding: 0.5rem 0;
-// 					.photo {
-// 						padding-top: 50%;
-// 					}
-// 				}
-// 			}
-// 		}
-
-// 		&.new-brands {
-// 			// background: $dashboard-background;
-// 			// border-top: $global-border;
-// 			// border-bottom: $global-border;
-// 			.section-title {
-// 				// background: transparent;
-// 			}
-// 			padding-bottom: 2rem;
-// 		}
-
-// 		&.sell-on-sulo {
-// 			.photo-container {
-// 				background: transparent;
-// 				max-width: 6rem;
-// 				width: 6rem;
-// 				margin: 0 auto;
-// 				img {
-// 					object-fit: contain;
-// 					&.small {
-// 						opacity: 0;
-// 					}
-// 				}
-// 			}
-// 			p {
-// 				max-width: 40rem;
-// 				margin: 0 auto;
-// 				letter-spacing: 1px; 
-// 				font-weight: $global-weight-bold;
-// 				color: $primary-color;
-// 			}
-// 			.section-title {
-// 				background: none;
-// 			}
-// 			// background: rgba($sulo-color, 0.5);
-// 			background: $dashboard-background;
-// 			padding: $global-padding;
-// 		}
-
-// 		&.products {
-// 			.row {
-// 				.button {
-// 					margin-bottom: 1px;
-// 				}
-// 				// flex-wrap: nowrap;
-// 				overflow-y: hidden;
-// 				overflow-x: auto;
-// 				&::-webkit-scrollbar {
-// 				    height: 3px;
-// 				    background: $white;
-// 				}
-				 
-// 				&::-webkit-scrollbar-track {
-// 				    // -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
-// 				    // border-radius: 10px;
-// 				    // background: $sulo-color;
-// 				}
-				 
-// 				&::-webkit-scrollbar-thumb {
-// 					background: $sulo-color;
-// 				    // border-radius: 10px;
-// 				    // -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
-// 				}
-// 			}
-// 			// margin-top: $global-margin;
-// 			.section-title {
-// 				// background: $sulo-color;
-// 				margin-bottom: 0.5rem;
-// 				h2 {
-// 					margin: 0;
-// 					color: darken($sulo-dark-color, 10%);
-// 				}
-// 			}
-// 			.row {
-// 				padding-bottom: 2rem;
-// 			}
-// 			.column {
-// 				padding: 0.5rem;
-// 				padding-top: 0;
-// 				&:nth-child(4+n) {
-// 					display: none;
-// 				}
-// 				.content-item {
-// 					// padding-bottom: $global-
-// 					.text:last-child {
-// 						display: none;
-// 					}
-// 				}
-// 			}
-// 		}
-
-// 		&.featured {
-// 			padding-bottom: $global-padding;
-// 			// background: $dashboard-background;
-// 			.live-container {
-// 				// padding-bottom: 2rem;
-// 			}
-// 			.column {
-// 				h2 {
-// 					color: $sulo-dark-color;
-// 				}
-// 				position: relative;
-// 				.photo-container {
-// 					// position: absolute;
-// 					// bottom: 0;
-// 					// right: $global-padding;
-// 					// border: none;
-// 					max-width: 4rem;
-// 					min-width: 4rem;
-// 				}
-// 				.photo {
-// 					padding-top: 100%;
-// 				}
-// 			}
-// 			.button {
-// 				margin-top: 0.5rem;
-// 			}
-// 		}
-
-// 	}
-
-// }

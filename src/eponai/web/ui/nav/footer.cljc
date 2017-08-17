@@ -90,17 +90,29 @@
                              (menu/item-link {:href   (routes/url :help)} (dom/span nil "Help center"))
                              ))
             (grid/column
-              (->> (grid/column-size {:small 12 :medium 4})
-                   (css/add-class :social))
+              nil
               (menu/vertical {}
-                             (menu/item-text nil (dom/h5 (css/add-class :footer-header) "Follow us")))
-              (menu/horizontal
-                {:key "social"}
-                (menu/item nil (social/sulo-social-link :social/facebook))
-                (menu/item nil (social/sulo-social-link :social/instagram))
+                             (menu/item-text nil (dom/h5 (css/add-class :footer-header) "Go LIVE"))
+                             ;(menu/item-link {:href (routes/url :sell)} (dom/span nil "Start a store"))
+                             ;(menu/item-link nil (dom/span nil "Sign up/Sign in"))
+                             ;(menu/item-link nil (dom/span nil "Press"))
+                             (menu/item-link {:href (routes/url :sell)} (dom/span nil "Open your shop"))
+                             )))
+          (grid/row-column
+            (css/add-class :social)
+            (menu/horizontal
+              (css/align :center)
+              (menu/item-text nil (dom/h5 (css/add-class :footer-header) "Follow us")))
+            (menu/horizontal
+              (->> {:key "social"}
+                   (css/align :center))
+              (menu/item nil (social/sulo-social-link :social/facebook))
+              (menu/item nil (social/sulo-social-link :social/twitter))
+              (menu/item nil (social/sulo-social-link :social/pinterest))
+              (menu/item nil (social/sulo-social-link :social/instagram))
 
-                ;(menu/item-link nil (dom/i {:classes ["fa fa-twitter fa-fw"]}))
-                )))
+              ;(menu/item-link nil (dom/i {:classes ["fa fa-twitter fa-fw"]}))
+              ))
           (menu/horizontal
             (->> {:key "legal"}
                  (css/align :right))

@@ -26,12 +26,16 @@
 
 	.social {
 		margin-top: $global-margin;
+		padding-top: $global-padding;
+		border-top: 1px dotted darken($primary-color, 10%);
 		@include breakpoint(medium) {
-			text-align: right;
-			margin-top: 0;
-			ul.menu:not(.vertical) {
-				justify-content: flex-end;
-			}
+			// text-align: right;
+			// margin-top: 0;
+		}
+		.icon {
+			opacity: 0.75;
+			height: 30px;
+			width: 30px;
 		}
 	}
 	.sub-item {
@@ -46,6 +50,14 @@
 		}
 	}
 	h5 {
-		font-size: 100%; 
+		font-size: 90%; 
+		// font-weight: $global-weight-normal;
+	}
+
+	.footer-header {
+		// text-transform: none;
+		// color: $white;
+		margin: 0;
+		// font-weight: $global-weight-normal;
 	}
 }

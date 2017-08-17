@@ -165,12 +165,12 @@
                  (dom/label nil "Explore")
                  (menu/vertical
                    nil
-                   (menu/item
-                     (css/add-class :category)
-                     (dom/a
-                       (->> {:href    (routes/url :live)}
-                            (css/add-class :navbar-live))
-                       (dom/span nil "LIVE")))
+                   ;(menu/item
+                   ;  (css/add-class :category)
+                   ;  (dom/a
+                   ;    (->> {:href    (routes/url :live)}
+                   ;         (css/add-class :navbar-live))
+                   ;    (dom/span nil "LIVE")))
                    (nav.common/collection-links this "sidebar")
                    ;(map
                    ;  (fn [{:category/keys [name path href]}]
@@ -273,9 +273,17 @@
                                   (menu/item
                                     (css/add-class :sign-in-item)
                                     (button/store-navigation-cta
-                                      {:onClick #(do
-                                                  (track-event ::mixpanel/open-signin)
-                                                  (auth/show-login (shared/by-key this :shared/login)))} (dom/span nil "Sign up / Sign in")))
+                                      {:href (routes/url :sell)}
+                                      (dom/span nil "Open your LIVE shop")
+
+                                      ;{:onClick #(do
+                                      ;            (track-event ::mixpanel/open-signin)
+                                      ;            (auth/show-login (shared/by-key this :shared/login)))}
+                                      ;(dom/span nil "Sign up / Sign in")
+                                      )
+                                    )
+
+
                                   ;(menu/item nil (dom/a (css/button {:onClick #(auth/show-lock (shared/by-key this :shared/auth-lock))})
                                   ;                      (dom/span nil "Sign in")))
                                   )))

@@ -116,23 +116,23 @@
                                       ""))
 
 
-            (when (<= 5 (count featured-streams))
-              (common/content-section {:href  (routes/url :live route-params)
-                                       :class "online-channels"}
-                                      (dom/a {:href (routes/url :live route-params)}
-                                             (dom/span nil "Recent Live streams"))
-
-                                      (grid/row
-                                        (->>
-                                          (grid/columns-in-row {:small 2 :medium 3 :large 5}))
-                                        ;(grid/column
-                                        ;  (css/add-class :online-streams))
-                                        (map (fn [c]
-                                               (grid/column
-                                                 (css/add-class :online-stream)
-                                                 (ci/->OnlineChannel c)))
-                                             featured-streams))
-                                      ""))
+            ;(when (<= 5 (count featured-streams))
+            ;  (common/content-section {:href  (routes/url :live route-params)
+            ;                           :class "online-channels"}
+            ;                          (dom/a {:href (routes/url :live route-params)}
+            ;                                 (dom/span nil "Recent Live streams"))
+            ;
+            ;                          (grid/row
+            ;                            (->>
+            ;                              (grid/columns-in-row {:small 2 :medium 3 :large 5}))
+            ;                            ;(grid/column
+            ;                            ;  (css/add-class :online-streams))
+            ;                            (map (fn [c]
+            ;                                   (grid/column
+            ;                                     (css/add-class :online-stream)
+            ;                                     (ci/->OnlineChannel c)))
+            ;                                 featured-streams))
+            ;                          ""))
 
             ;(when (<= 5 (count featured-streams))
             ;  (common/content-section {:href  (routes/url :live route-params)
@@ -162,20 +162,26 @@
                 (->> (grid/columns-in-row {:small 1 :medium 3})
                      (css/text-align :center))
                 (grid/column
-                  nil
+                  (css/add-classes [:content-item :feature-item])
                   (dom/div (css/add-classes [:icon :icon-watch]))
-                  (dom/p (css/add-classes [:lead :jumbo-lead :banner :sulo-dark]) "Watch")
-                  (dom/p nil (dom/span nil "Watch your favorite creatives work and follow their creative process to finished product.")))
+                  (dom/div
+                    nil
+                    (dom/p (css/add-classes [:lead :jumbo-lead :banner :sulo-dark]) "Watch")
+                    (dom/p nil (dom/span nil "Watch your favorite creatives work and follow their creative process to finished product."))))
                 (grid/column
-                  nil
+                  (css/add-classes [:content-item :feature-item])
                   (dom/div (css/add-classes [:icon :icon-community]))
-                  (dom/p (css/add-classes [:lead :jumbo-lead :banner :sulo-dark]) "Engage")
-                  (dom/p nil (dom/span nil "Ask questions or share thoughts via live chat rooms on their streams.")))
+                  (dom/div
+                    nil
+                    (dom/p (css/add-classes [:lead :jumbo-lead :banner :sulo-dark]) "Engage")
+                    (dom/p nil (dom/span nil "Ask questions or share thoughts via live chat rooms on their streams."))))
                 (grid/column
-                  nil
-                  (dom/div (css/add-classes [:icon :icon-shop]))
-                  (dom/p (css/add-classes [:lead :jumbo-lead :banner :sulo-dark]) "Shop")
-                  (dom/p nil (dom/span nil "Shop the products you've seen take shape, from creatives you know."))))
+                  (css/add-classes [:content-item :feature-item])
+                  (dom/div (css/add-classes [:icon :icon-shop :blue]))
+                  (dom/div
+                    nil
+                    (dom/p (css/add-classes [:lead :jumbo-lead :banner :sulo-dark]) "Shop")
+                    (dom/p nil (dom/span nil "Shop the products you've seen take shape, from creatives you know.")))))
               )
             ;(common/mobile-app-banner this)
 
@@ -225,7 +231,7 @@
             (common/content-section
               {:href  (routes/url :stores route-params)
                :class "new-brands"}
-              (dom/a {:href (routes/url :stores route-params)} (dom/span nil "Brands"))
+              (dom/a {:href (routes/url :stores route-params)} (dom/span nil "Creatives"))
               ;(grid/row-column
               ;  (css/text-align :center))
               ;(dom/div
