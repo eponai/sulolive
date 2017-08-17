@@ -54,8 +54,9 @@
       ;; Calls unlisten on all listeners
       (run! unlisten listeners))))
 
-(defn index-listeners [{:keys [route]}]
-  (when (= route :index)
+(defn store-status-listeners [{:keys [route]}]
+  (when (or (= route :index)
+            (= "browse" (namespace route)))
     [{:firebase-route    :visitor-counts
       :snapshot-keywords {:key :store-id
                           :val :count}}
@@ -95,7 +96,7 @@
   The functions return nil when they shouldn't be listened to."
   [route-map]
   (-> []
-      (into (index-listeners route-map))
+      (into (store-status-listeners route-map))
       (into (store-listeners route-map))
       (into (user-listeners route-map))))
 
