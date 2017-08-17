@@ -109,8 +109,9 @@ jobs:
           command: SKIP_INSTALL=true scripts/compile-css.sh
       - persist_to_workspace:
           root: .
-          paths: ./resources/public/assets/css
-          paths: ./resources/public/assets/flags
+          paths:
+            - ./resources/public/assets/css
+            - ./resources/public/assets/flags
 
   build_cljs:
     <<: *defaults
