@@ -37,7 +37,7 @@
     {:href (or href "/")
      :id   "navbar-brand"}
     (or title
-        (dom/span nil "Sulo"))))
+        (dom/span nil "Sulo Live"))))
 
 (defn user-dropdown [component user owned-store]
   (let [{:keys [dropdown-key]} (om/get-state component)
@@ -126,7 +126,7 @@
         (menu/horizontal
           nil
           (navbar-brand)
-          (nav.common/live-link component "navbar")
+          ;(nav.common/live-link component "navbar")
           (menu/item nil
                      (dom/input {:type        "text"
                                  :placeholder "Search on SULO Live Help..."}))))
@@ -212,7 +212,7 @@
                (css/hide-for :large {:onClick #(.open-sidebar component)})
                (dom/i {:classes ["fa fa-bars fa-fw"]})))
            (navbar-brand (routes/url :index))
-           (nav.common/live-link component "navbar")
+           ;(nav.common/live-link component "navbar")
            ;(menu/item-link
            ;  (->> (css/add-class :category)
            ;       (css/show-for :large))

@@ -1,20 +1,31 @@
 
-	#sulo-index #sulo-navbar, #sulo-navbar {
-		.icon {
-			padding: 0;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			svg {
-				height: 26px;
-				width: 26px;
-				viewBox: 0 0 26 26;
-				g {
-					stroke-width: 2;
-				}
+#sulo-index #sulo-navbar, #sulo-navbar {
+	.icon {
+		padding: 0;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		svg {
+			height: 26px;
+			width: 26px;
+			viewBox: 0 0 26 26;
+			g {
+				stroke-width: 2;
 			}
 		}
 	}
+}
+
+#sulo-navbar, #sulo-sidebar {
+	.category, .contact {
+		font-weight: bold;
+		text-transform: uppercase;
+		font-size: 90%;
+		span {
+			// vertical-align: middle;
+		}
+	}
+}
 #sulo-navbar {
 	.top-bar-right {
 		li {
@@ -26,6 +37,9 @@
 			li:last-child {
 				border-right: $global-border;
 			}
+			li:nth-child(3) {
+				border-left: $global-border;
+			}
 			align-items: flex-end;
 		}
 	}
@@ -36,14 +50,7 @@
 	width: 100%;
 	z-index: $navbar-zindex;
 
-	.category, .contact {
-		font-weight: bold;
-		text-transform: uppercase;
-		font-size: 80%;
-		span {
-			// vertical-align: middle;
-		}
-	}
+	
 	.contact {
 		display: flex;
 		align-items: center;
@@ -169,8 +176,11 @@
 	font-weight: bold;
 	font-size: 1rem;
 	color: $sulo-dark-color;
+	letter-spacing: -0.25px;
+	font-family: $header-font-family-sans-serif;
+	// border-right: $global-border;
 
 	@include breakpoint(medium) {
-		font-size: 1.2rem;
+		font-size: 1.1rem;
 	}
 }

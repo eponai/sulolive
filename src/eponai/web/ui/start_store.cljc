@@ -353,7 +353,7 @@
               (css/add-class :va-container)
               (dom/h1 (css/show-for-sr) "SULO Live")
               (dom/h2 (css/add-class :jumbo-header) "Your creative work LIVE")
-              (dom/p (css/add-classes [:jumbo-lead :lead]) "Tell the story of your creations and increase sales via LIVE streams")
+              (dom/p (css/add-classes [:jumbo-lead :lead]) "Tell the story of your creations via LIVE streams while you work")
               (render-header-input-callout this)
 
               ))
@@ -389,10 +389,10 @@
             (->> (grid/columns-in-row {:small 1 :medium 2})
                  (css/align :bottom))
             (grid/column
-              (grid/column-order {:small 1 :medium 2})
+              (grid/column-order {:small 2 :medium 2})
               (dom/img {:src "/assets/img/storefront-ss.jpg"}))
             (grid/column
-              (grid/column-order {:small 2 :medium 1})
+              (grid/column-order {:small 1 :medium 1})
               (dom/div
                 (css/add-class :section-title)
                 (dom/h6 nil (dom/strong nil "Your creations on SULO Live"))
@@ -434,19 +434,19 @@
                 nil
 
                 (dom/li nil
-                        (dom/h5 nil "No editing time")
+                        (dom/h5 nil "No editing")
                         (dom/p nil
 
-                               (dom/span nil "The best thing about LIVE is that it's not perfect and anything can happen. Just turn on the camera while doing your creative work and see where the stream takes you.")))
+                               (dom/span nil "The best thing about LIVE is that it's not perfect and anything can happen. Just turn on the camera while doing your creative work and see where the stream takes you. No editing needed.")))
                 (dom/li nil
                         (dom/h5 nil "Use any camera")
                         (dom/p nil
 
                                (dom/span nil "Setup your streams using any type of camera. Either go simple using only your phone or tablet, or more advanced with multiple digital cameras.")))
                 (dom/li nil
-                        (dom/h5 nil "Watch again later")
+                        (dom/h5 nil "Repurpose your content")
                         (dom/p nil
-                               (dom/span nil "Your streams are recorded and can be watched on demand by your fans in case they missed the action.")))))
+                               (dom/span nil "Your streams are recorded and available on your shop. Download a copy to use on your your site or social media channels.")))))
             ))
 
         (dom/div

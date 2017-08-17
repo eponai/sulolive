@@ -18,16 +18,8 @@ $section-footer-color: $primary-color;
 		// visibility: hidden;
 	}
 }
-.landing-page {
-	.row {
-		max-width: 100%;
-	}
-	
-	h3, h3 a {
 
-		// color: $sulo-dark-color;
-	}
-	.hero {
+.hero {
 		height: 20rem;
 
 		@include breakpoint(medium) {
@@ -99,6 +91,16 @@ $section-footer-color: $primary-color;
 			}
 		}
 	}
+.landing-page {
+	.row {
+		max-width: 100%;
+	}
+	
+	h3, h3 a {
+
+		// color: $sulo-dark-color;
+	}
+	
 	.section .content-item {
 		&:not(.collection-item) {
 			margin-bottom: 1.5rem;
@@ -183,7 +185,9 @@ $section-footer-color: $primary-color;
 			color: $sulo-dark-color;
 		}
 	}
-
+	.section {
+		padding: 4rem 1rem;
+	}
 	.section.form {
 		padding-bottom: 0;
 	}

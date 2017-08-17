@@ -14,9 +14,9 @@
 		// height: 1.2rem;
 	}
 	.page-content {
-		padding: $global-padding 0;
+		// padding-bottom: $global-padding;
 	}
-	.photo-container {
+	.photo-container.circle {
 		max-width: 15rem;
 		margin: $global-margin auto;
 		// .circle {
@@ -37,7 +37,7 @@
 		font-size: 90%;
 	}
 	.column {
-		padding: $global-padding;
-		margin-bottom: $global-margin;
+		// padding: $global-padding;
+		// margin-bottom: $global-margin;
 	}
 }
