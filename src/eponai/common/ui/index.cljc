@@ -84,7 +84,7 @@
             (css/add-class :hero)
             (dom/div
               (css/add-class :hero-background)
-              (dom/video {:autoPlay true :loop true}
+              (dom/video {:autoPlay true :loop true :muted true}
                          (dom/source {:src "https://d30slnyi7gxcwc.cloudfront.net/site/videos/sulo-landing-low-2.mp4"})))
             (dom/div
               (css/add-class :hero-content)

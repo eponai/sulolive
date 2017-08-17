@@ -20,9 +20,13 @@
         (css/add-class :hero)
         (dom/div
           (css/add-class :hero-background)
-          (photo/cover {:photo-id "static/about-all"}))
+          (dom/video {:autoPlay true :loop true :muted true}
+                     (dom/source {:src "https://d30slnyi7gxcwc.cloudfront.net/site/videos/about-us.mp4"})))
         (dom/div
-          (css/add-class :hero-content)))
+          (css/add-class :hero-content)
+          (dom/div
+            (css/add-class :va-container)
+            (dom/h2 (css/add-class :jumbo-header) "SULO Life"))))
       (grid/row-column
         nil
         (dom/div
