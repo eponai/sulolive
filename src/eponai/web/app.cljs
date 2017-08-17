@@ -162,9 +162,7 @@
       (when (some? owned-store)
         (firebase/register-store-owner-presence
           (shared/by-key reconciler :shared/firebase)
-          user-id
-          owned-store
-          (get-in (db/entity db owned-store) [:store/locality :sulo-locality/path]))))
+          user-id)))
     (-> (.auth js/firebase)
         (.signInAnonymously))))
 

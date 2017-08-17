@@ -112,6 +112,11 @@
        [this props state]
        (utils/should-update-when-route-is-loaded this props state)))
   #?(:cljs
+     (componentDidMount [this]
+                        (firebase/route-changed (shared/by-key this :shared/firebase)
+                                                (routes/with-normalized-route-params this (:query/current-route (om/props this)))
+                                                nil)))
+  #?(:cljs
      (componentDidUpdate [this prev-props _]
                          ;; TODO: Change this to shared/by-key when merged with other branch.
                          ;; (scroll-helper/scroll-on-did-render (shared/by-key this :shared/scroll-helper))

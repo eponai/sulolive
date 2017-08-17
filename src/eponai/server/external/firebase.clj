@@ -24,8 +24,8 @@
   (-generate-client-auth-token [this user-id claims]))
 
 (defprotocol IFirebaseChat
-  (-presence [this locality])
-  (-user-online [this locality user-id]))
+  (-presence [this])
+  (-user-online [this user-id]))
 
 (defn ref->snapshot
   "Takes a ref and returns the DataSnapshot for the ref.
@@ -81,15 +81,11 @@
   (route->ref database :user/unread-notifications {:user-id user-id}))
 
 (defn store-owner-presence
-  ([database locality]
-   (assert (string? locality)
-           (str "locality was not passed as a string. Should be the locality path, was: " locality))
-   (doto (route->ref database :user-presence/store-owners {:locality locality})
+  ([database]
+   (doto (route->ref database :user-presence/store-owners {})
      (.keepSynced true)))
-  ([database locality user-id]
-   (assert (string? locality)
-           (str "locality was not passed as a string. Should be the locality path, was: " locality))
-   (route->ref database :user-presence/store-owner {:locality locality :user-id user-id})))
+  ([database user-id]
+   (route->ref database :user-presence/store-owner {:user-id user-id})))
 
 (defrecord Firebase [server-key private-key private-key-id service-account database-url]
   component/Lifecycle
@@ -104,12 +100,12 @@
     (dissoc this :database :refs))
 
   IFirebaseChat
-  (-user-online [this locality user-id]
-    (debug "Check online status. locality: " locality " user-id: " user-id)
+  (-user-online [this user-id]
+    (debug "Check online status. user-id: " user-id)
     (when user-id
-      (ref->value (store-owner-presence (:database this) locality user-id))))
-  (-presence [this locality]
-    (ref->value (store-owner-presence (:database this) locality)))
+      (ref->value (store-owner-presence (:database this) user-id))))
+  (-presence [this]
+    (ref->value (store-owner-presence (:database this))))
 
   IFirebaseAuth
   (-generate-client-auth-token [this user-id claims]
@@ -171,8 +167,8 @@
 (defn firebase-stub []
   (reify
     IFirebaseChat
-    (-user-online [this locality user-id])
-    (-presence [this locality])
+    (-user-online [this user-id])
+    (-presence [this])
     IFirebaseAuth
     (-generate-client-auth-token [this user-id claims]
       "some-token")
