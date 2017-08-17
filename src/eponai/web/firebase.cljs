@@ -278,6 +278,7 @@
       (stop [this]
         (debug "Stopping firebase!")
         (run! unlisten (map :listener (vals (:listeners @state))))
+        (run! #(unregister-store-visit this %) (keys (:visitor-refs @state)))
         (async/close! close-chan))
 
       IFirebase2Actions
