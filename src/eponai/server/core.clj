@@ -27,7 +27,9 @@
 
 (defn -main [& _]
   (try
-    (let [system (component/start-system (make-system {::system-fn system/prod-system}))
+    (let [system (component/start-system (make-system (cond-> {::system-fn system/prod-system}
+                                                              (env/env :server-allow-http)
+                                                              (assoc ::system/disable-ssl true))))
           server (get-in system [:system/aleph :server])]
       (mixpanel/set-token ::mixpanel/token-release)
       (aleph.netty/wait-for-close server))
