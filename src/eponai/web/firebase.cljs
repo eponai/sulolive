@@ -54,23 +54,26 @@
       ;; Calls unlisten on all listeners
       (run! unlisten listeners))))
 
-(defn locality-listeners [{::keys [special-params]}]
-  (when-some [locality (:locality special-params)]
-    [{:firebase-route        :visitor-counts
-      :firebase-route-params {:locality locality}
-      :snapshot-keywords     {:key :store-id
-                              :val :count}}
-     {:firebase-route        :user-presence/store-owners
-      :firebase-route-params {:locality locality}
-      :snapshot-keywords     {:key :user-id
-                              :val :timestamp}}]))
+(defn index-listeners [{:keys [route]}]
+  (when (= route :index)
+    [{:firebase-route    :visitor-counts
+      :snapshot-keywords {:key :store-id
+                          :val :count}}
+     {:firebase-route    :user-presence/store-owners
+      :snapshot-keywords {:key :user-id
+                          :val :timestamp}}]))
 
-(defn store-listeners [{:keys [route-params]}]
-  (when-some [store-id (:store-id route-params)]
+(defn store-listeners [{:keys [route route-params]}]
+  (when (= route :store)
     [{:firebase-route        :store/owner-presences
-      :firebase-route-params {:store-id store-id}
+      :firebase-route-params {:store-id (:store-id route-params)}
       :snapshot-keywords     {:key :user-id
-                              :val :timestamp}}]))
+                              :val :timestamp}}
+     {:firebase-route        :visitor-count/store
+      :firebase-route-params {:store-id (:store-id route-params)}
+      :events                [:value]
+      :snapshot-keywords     {:key :store-id
+                              :val :count}}]))
 
 (defn user-listeners [{::keys [special-params]}]
   (when-some [user-id (:user-id special-params)]
@@ -92,7 +95,7 @@
   The functions return nil when they shouldn't be listened to."
   [route-map]
   (-> []
-      (into (locality-listeners route-map))
+      (into (index-listeners route-map))
       (into (store-listeners route-map))
       (into (user-listeners route-map))))
 
@@ -101,7 +104,11 @@
 (defmulti firebase-event->txs :firebase-route)
 (defmethod firebase-event->txs :default
   [e]
-  (debug "No firebase event-handler for event: " e))
+  (throw (ex-info "No firebase event-handler for event. "
+                  {:event        e
+                   :event-type   (:event-type e)
+                   :snapshot-key (.-key (:snapshot e))
+                   :snapshot-val (.val (:snapshot e))})))
 
 (defmethod firebase-event->txs :visitor-counts
   [{:keys [store-id count event-type]}]
@@ -110,14 +117,14 @@
       [[:db.fn/retractAttribute store-id :store/visitor-count]]
       [[:db/add store-id :store/visitor-count count]])))
 
-(defmethod firebase-event->txs :user-presence/store-owners
-  [{:keys [event-type user-id timestamp]}]
-  (when-let [user-id (c/parse-long-safe user-id)]
-    (if (= event-type :child_removed)
-      [[:db.fn/retractAttribute user-id :user/online?]]
-      [[:db/add user-id :user/online? timestamp]])))
+(defmethod firebase-event->txs :visitor-count/store
+  [{:keys [store-id count]}]
+  (when-let [store-id (c/parse-long-safe store-id)]
+    (if (nil? count)
+      [[:db.fn/retractAttribute store-id :store/visitor-count]]
+      [[:db/add store-id :store/visitor-count count]])))
 
-(defmethod firebase-event->txs :store/owner-presences
+(defmethod firebase-event->txs :user-presence/store-owners
   [{:keys [event-type user-id timestamp]}]
   (when-let [user-id (c/parse-long-safe user-id)]
     (if (= event-type :child_removed)
@@ -176,8 +183,8 @@
   (read-chat-notifications [this user-id])
   (read-notification [this user-id notification-id])
   ;; These actions can be called from (on-route-change [])..
-  (register-store-owner-presence [this user-id store-id locality])
-  (register-store-visit [this store-id locality])
+  (register-store-owner-presence [this user-id])
+  (register-store-visit [this store-id])
   (unregister-store-visit [this store-id])
   )
 
@@ -244,31 +251,28 @@
                                {})
                            (map (fn [[id m]]
                                   [id (assoc m :listener (listen-to database event-chan m))]))
-                           (select-keys new-listeners keys-to-start))))
-            ;; Leave store
-            (when (or (= :store (:route prev-route-map))
-                      (= :store (:route route-map)))
-              (debug "Entering, leaving or staying in a store!")
-              (debug "Route-map diff: " (data/diff prev-route-map route-map)))
+                           (select-keys new-listeners keys-to-start)))))
+          ;; Leave store
+          (when (or (= :store (:route prev-route-map))
+                    (= :store (:route route-map)))
+            (debug "Entering, leaving or staying in a store!")
+            (debug "Route-map diff: " (data/diff prev-route-map route-map)))
 
-            (when (= :store (:route prev-route-map))
-              (when (or (not= :store (:route route-map))
-                        (not= (:store-id (:route-params route-map))
-                              (:store-id (:route-params prev-route-map))))
-                (debug "Will unregister store visit for store-id: " (:store-id (:route-params prev-route-map)))
-                (unregister-store-visit this
-                                        (:store-id (:route-params prev-route-map)))))
-            ;; Enter store
-            (when (= :store (:route route-map))
-              (when (or (not= :store (:route prev-route-map))
-                        (not= (:store-id (:route-params route-map))
-                              (:store-id (:route-params prev-route-map))))
-                (let [store-id (:store-id (:route-params route-map))
-                      locality (-> (db/entity (db/to-db reconciler) store-id)
-                                   (get-in [:store/locality :sulo-locality/path]))]
-                  (debug "Registering store-visit for store-id: " store-id
-                         " locality: " locality)
-                  (register-store-visit this store-id locality)))))))
+          (when (= :store (:route prev-route-map))
+            (when (or (not= :store (:route route-map))
+                      (not= (:store-id (:route-params route-map))
+                            (:store-id (:route-params prev-route-map))))
+              (debug "Will unregister store visit for store-id: " (:store-id (:route-params prev-route-map)))
+              (unregister-store-visit this (:store-id (:route-params prev-route-map)))))
+
+          ;; Enter store
+          (when (= :store (:route route-map))
+            (when (or (not= :store (:route prev-route-map))
+                      (not= (:store-id (:route-params route-map))
+                            (:store-id (:route-params prev-route-map))))
+              (let [store-id (:store-id (:route-params route-map))]
+                (debug "Registering store-visit for store-id: " store-id)
+                (register-store-visit this store-id))))))
 
       shared/IStoppableComponent
       (stop [this]
@@ -277,34 +281,22 @@
         (async/close! close-chan))
 
       IFirebase2Actions
-      (register-store-owner-presence [this user-id store-id raw-locality]
-        (if-let [locality (cond-> raw-locality (map? raw-locality) :sulo-locality/path)]
-          (let [refs [(.ref database (path :user-presence/store-owner {:user-id  user-id
-                                                                       :locality locality}))
-                      (.ref database (path :store/owner-presence {:user-id  user-id
-                                                                  :store-id store-id}))]]
-            (let [am-online (.ref database ".info/connected")]
-              (.on am-online "value" (fn [snapshot]
-                                       (when (.val snapshot)
-                                         (run! (fn [ref]
-                                                 (.set (.onDisconnect ref) firebase-timestamp)
-                                                 (.set ref true))
-                                               refs))))))
-          (debug "No locality path for raw-locality: " raw-locality
-                 " store-id: " store-id
-                 " user-id: " user-id)))
-      (register-store-visit [this store-id raw-locality]
-        (if-let [locality (cond-> raw-locality (map? raw-locality) :sulo-locality/path)]
-          (let [^js/firebase.database.Reference store-visitors
-                (.ref database (path :store/visitors {:store-id store-id}))
-                visitor-ref (.push store-visitors)]
-            (swap! state assoc-in [:visitor-refs store-id] visitor-ref)
-            (.remove (.onDisconnect visitor-ref))
-            (.set visitor-ref locality))
-
-          (debug "No locality path for raw-locality: " raw-locality
-                 " store-id: " store-id
-                 " user-id: " user-id)))
+      (register-store-owner-presence [this user-id]
+        (let [refs [(.ref database (path :user-presence/store-owner {:user-id  user-id}))]]
+          (let [am-online (.ref database ".info/connected")]
+            (.on am-online "value" (fn [snapshot]
+                                     (when (.val snapshot)
+                                       (run! (fn [ref]
+                                               (.set (.onDisconnect ref) firebase-timestamp)
+                                               (.set ref true))
+                                             refs)))))))
+      (register-store-visit [this store-id]
+        (let [^js/firebase.database.Reference store-visitors
+              (.ref database (path :store/visitors {:store-id store-id}))
+              visitor-ref (.push store-visitors)]
+          (swap! state assoc-in [:visitor-refs store-id] visitor-ref)
+          (.remove (.onDisconnect visitor-ref))
+          (.set visitor-ref true)))
 
       (unregister-store-visit [this store-id]
         (debug "Unregistering, here's the key: " store-id " here's the state: " @state)
@@ -321,8 +313,6 @@
         (some->> (path :user/unread-notification {:user-id user-id :firebase-id notification-id})
                  (.ref database)
                  (.remove))))))
-
-;; store-owner-presences (.ref database (path :user-presence/store-owners {:locality locality}))
 
 (defn request-permission [messaging & [f-success f-error]]
   (-> (.requestPermission messaging)
@@ -396,6 +386,6 @@
 
     IFirebase2Actions
     (read-chat-notifications [this user-id])
-    (register-store-owner-presence [this user-id store-id locality])
-    (register-store-visit [this store-id locality])
+    (register-store-owner-presence [this user-id])
+    (register-store-visit [this store-id])
     (unregister-store-visit [this store-id])))

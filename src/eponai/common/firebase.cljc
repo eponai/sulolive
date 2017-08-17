@@ -27,11 +27,17 @@
            ["store/" :store-id "/"]    store-routes
            ["user/" :user-id "/"]      user-routes}])
 
+(def firebase-routes-v3
+  ;; Basically the same as v2, but locality routes are moved right under "/v3/"
+  ["/v3/" (merge {["store/" :store-id "/"] store-routes
+                  ["user/" :user-id "/"]   user-routes}
+                 locality-routes)])
+
 (defn path
   "Takes a route and its route-params and returns a firebase path"
   [route route-params]
   (try
-    (apply bidi/path-for firebase-routes-v2 route (some->> route-params (reduce into [])))
+    (apply bidi/path-for firebase-routes-v3 route (some->> route-params (reduce into [])))
     (catch #?@(:cljs [:default e]
                :clj  [Throwable e])
            (error "Error when trying to create firebase path from route: " route
