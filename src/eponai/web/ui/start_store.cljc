@@ -298,14 +298,15 @@
       ))
 
   (componentDidMount [this]
-    #?(:cljs (let [autocomplete (places/mount-places-autocomplete
-                                  {:element-id "sulo-auto-complete"
-                                   :types      ["(regions)"]
-                                   :on-change  (fn [place]
-                                                 (debug "Autocomplete address: " place)
-                                                 (om/update-state! this assoc :shop-location place))})]
-               (places/set-country-restrictions autocomplete "ca")
-               (om/update-state! this assoc :autocomplete autocomplete))))
+    #?(:cljs (when-some [input-element (utils/element-by-id "sulo-auto-complete")]
+               (let [autocomplete (places/mount-places-autocomplete
+                                    {:element-id "sulo-auto-complete"
+                                     :types      ["(regions)"]
+                                     :on-change  (fn [place]
+                                                   (debug "Autocomplete address: " place)
+                                                   (om/update-state! this assoc :shop-location place))})]
+                 (places/set-country-restrictions autocomplete "ca")
+                 (om/update-state! this assoc :autocomplete autocomplete)))))
 
   (render [this]
     (let [{:query/keys [auth sulo-localities]} (om/props this)
@@ -384,13 +385,13 @@
 
 
         (dom/div
-          (css/add-classes [:section :banner :blue :has-photo :sulo-banner])
+          (css/add-classes [:section :banner :blue :sulo-banner])
           (grid/row
             (->> (grid/columns-in-row {:small 1 :medium 2})
                  (css/align :bottom))
             (grid/column
               (grid/column-order {:small 2 :medium 2})
-              (dom/img {:src "/assets/img/storefront-ss.jpg"}))
+              (dom/img {:src "https://res.cloudinary.com/sulolive/image/upload/t_preview/static/storefront-ss-2.jpg"}))
             (grid/column
               (grid/column-order {:small 1 :medium 1})
               (dom/div
@@ -419,11 +420,12 @@
 
 
         (dom/div
-          (css/add-classes [:section :banner])
+          (css/add-classes [:section :banner :video-production-banner])
           (grid/row
             (grid/columns-in-row {:small 1 :medium 2})
             (grid/column
-              (grid/column-order {:small 2 :medium 1}))
+              (grid/column-order {:small 2 :medium 1})
+              (dom/img {:src "https://res.cloudinary.com/sulolive/image/upload/t_preview/static/video-photo.jpg"}))
             (grid/column
               (grid/column-order {:small 1 :medium 2})
               (dom/div

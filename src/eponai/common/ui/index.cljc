@@ -116,23 +116,23 @@
                                       ""))
 
 
-            (when (<= 5 (count featured-streams))
-              (common/content-section {:href  (routes/url :live route-params)
-                                       :class "online-channels"}
-                                      (dom/a {:href (routes/url :live route-params)}
-                                             (dom/span nil "Recent Live streams"))
-
-                                      (grid/row
-                                        (->>
-                                          (grid/columns-in-row {:small 2 :medium 3 :large 5}))
-                                        ;(grid/column
-                                        ;  (css/add-class :online-streams))
-                                        (map (fn [c]
-                                               (grid/column
-                                                 (css/add-class :online-stream)
-                                                 (ci/->OnlineChannel c)))
-                                             featured-streams))
-                                      ""))
+            ;(when (<= 5 (count featured-streams))
+            ;  (common/content-section {:href  (routes/url :live route-params)
+            ;                           :class "online-channels"}
+            ;                          (dom/a {:href (routes/url :live route-params)}
+            ;                                 (dom/span nil "Recent Live streams"))
+            ;
+            ;                          (grid/row
+            ;                            (->>
+            ;                              (grid/columns-in-row {:small 2 :medium 3 :large 5}))
+            ;                            ;(grid/column
+            ;                            ;  (css/add-class :online-streams))
+            ;                            (map (fn [c]
+            ;                                   (grid/column
+            ;                                     (css/add-class :online-stream)
+            ;                                     (ci/->OnlineChannel c)))
+            ;                                 featured-streams))
+            ;                          ""))
 
             ;(when (<= 5 (count featured-streams))
             ;  (common/content-section {:href  (routes/url :live route-params)
