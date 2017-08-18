@@ -1,8 +1,5 @@
 (ns eponai.devcards.account-verify
   (:require
-    [eponai.common.ui.checkout.shipping :as s]
-    [eponai.common.ui.checkout.payment :as p]
-    [eponai.common.ui.checkout.review :as r]
     [eponai.web.ui.store.business.verify :as v]
     [eponai.web.ui.store.business :as b]
 
