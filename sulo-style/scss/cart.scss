@@ -1,13 +1,19 @@
 
 #sulo-shopping-bag {
-	.row {
+	#sulo-shopping-bag-content > .row {
 		max-width: $dashboard-content-width;
 		margin: 0 auto;
 	}
 	.page-container {
 		background: $dashboard-background;
 		.page-content {
-			// padding-bottom: 0;
+			padding-bottom: 0;
+		}
+	}
+	.section.content {
+		.row {
+			padding: 0;
+			overflow: hidden;
 		}
 	}
 	h1 {

@@ -3,9 +3,15 @@
 		// background: $dashboard-background;
 	// }
 	padding-top: $global-padding;
-	.row {
+	> .row {
 		max-width: $dashboard-content-width;
 		margin: 0 auto;
+	}
+	.section.content {
+		.row {
+			overflow: hidden;
+			padding: 0;
+		}
 	}
 
 	.empty-container {

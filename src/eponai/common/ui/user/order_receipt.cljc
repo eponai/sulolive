@@ -146,7 +146,7 @@
           (common/order-not-found this (routes/url :user/order-list route-params))
           (grid/row-column
             nil
-            (when (pos? (:charge/amount-refunded order-payment))
+            (when (and (some? (:charge/amount-refunded order-payment)) (pos? (:charge/amount-refunded order-payment)))
               (dom/h3 (css/add-class :text-alert) (str (ui-utils/two-decimal-price (:charge/amount-refunded order-payment)) " refunded")))
 
             (callout/callout

@@ -157,22 +157,22 @@
 
 
         (callout/callout
-          (css/add-class :featured)
+          (css/add-classes [:section :content :featured])
           (grid/row-column
             nil
             (dom/div
               (css/add-class :section-title)
-              (dom/h3 nil "New arrivals")))
+              (dom/h3 nil "More  products")))
           (grid/row
             (->>
-              (grid/columns-in-row {:small 2 :medium 3 :large 5}))
+              (grid/columns-in-row {:small 3 :medium 4 :large 7}))
             (map
               (fn [p]
                 (grid/column
                   (css/add-class :new-arrival-item)
                   (ci/->ProductItem (om/computed p
                                                  {:current-route current-route}))))
-              (take 5 featured-items))))
+              (take 7 featured-items))))
         ))))
 
 (def ->OrderList (om/factory OrderList))

@@ -15,7 +15,7 @@
     [eponai.web.ui.button :as button]
     #?(:cljs [eponai.web.utils :as web-utils])
     #?(:cljs [eponai.web.ui.stripe :as stripe])
-    #?(:cljs [eponai.common.ui.checkout.google-places :as places])
+    #?(:cljs [eponai.web.google-places :as places])
     [eponai.common.ui.elements.input-validate :as validate]
     [eponai.common.shared :as shared]
     [eponai.web.ui.checkout.shipping :as ship]
@@ -768,6 +768,7 @@
              card (stripe/card-element (shared/by-key this :shared/stripe) (str "#" (:payment.stripe/card form-inputs)))
              autocomplete (places/mount-places-autocomplete
                             {:element-id "sulo-auto-complete"
+                             :types ["address"]
                              :on-change  (fn [place]
                                            (let [address (places/place->address place)]
                                              (debug "Autocomplete address: " address)

@@ -36,11 +36,8 @@
                           :depends-on [:stream+chat]}
         :stores          {:entries [eponai.web.ui.stores]}
         :tos             {:entries [eponai.web.ui.tos]}
-        :checkout        {:entries [eponai.common.ui.checkout
-                                    eponai.common.ui.checkout.shipping
-                                    eponai.common.ui.checkout.payment
-                                    eponai.common.ui.checkout.review
-                                    eponai.common.ui.checkout.google-places]}
+        :checkout        {:entries [eponai.web.ui.checkout
+                                    eponai.web.google-places]}
         :browse          {:entries [eponai.common.ui.goods
                                     eponai.common.ui.product-filters]}
         :shopping-bag    {:entries [eponai.common.ui.shopping-bag]}

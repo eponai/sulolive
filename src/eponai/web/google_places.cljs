@@ -1,4 +1,4 @@
-(ns eponai.common.ui.checkout.google-places
+(ns eponai.web.google-places
   (:require
     [eponai.web.utils :as web-utils]
     [taoensso.timbre :refer [debug]]))
@@ -35,7 +35,7 @@
   (.setComponentRestrictions autocomplete (clj->js {:country (or country-code [])})))
 
 (defn mount-places-autocomplete [{:keys [on-change element-id types]}]
-  (let [types (or types ["adress"])
+  (let [types (or types ["address"])
         ^js/google.maps.Circle bounds-circle (js/google.maps.Circle. #js {:center #js {:lat 49.2827
                                                                                        :lng 123.1207}
                                                                           :radius 5000})

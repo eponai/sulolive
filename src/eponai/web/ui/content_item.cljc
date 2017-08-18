@@ -203,7 +203,7 @@
             (str "by " (:store.profile/name (:store/profile store)))))
 
         (dom/div
-          (css/add-class :text)
+          (css/add-classes [:content-item-text :text])
           (dom/strong nil (ui-utils/two-decimal-price price)))
         ))))
 

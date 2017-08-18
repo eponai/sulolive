@@ -173,9 +173,9 @@
           {:keys [user.cart/items]} cart
           store-is-open? (fn [s] (= :status.type/open (-> s :store/status :status/type)))
           skus-by-store (filter #(store-is-open? (key %)) (items-by-store items))]
-      (debug "Shopping bag: " cart)
-      (debug "Items by store: " (items-by-store items))
-      (debug "SKUS by store: " skus-by-store)
+      ;(debug "Shopping bag: " cart)
+      ;(debug "Items by store: " (items-by-store items))
+      ;(debug "SKUS by store: " skus-by-store)
       (dom/div
         (cond->> {:id "sulo-shopping-bag-content"}
                  (empty? skus-by-store)
@@ -201,26 +201,26 @@
               (button/button
                 (button/sulo-dark (button/hollow {:href (routes/url :live {:locality (:sulo-locality/path locations)})}))
                 (dom/span nil "Go to the market - start shopping")))))
-        (when (some? (:sulo-locality/title locations))
-          [
-           (callout/callout
-             (css/add-class :featured)
-             (grid/row-column
-               nil
-               (dom/div
-                 (css/add-class :section-title)
-                 (dom/h3 nil (str "New arrivals in " (:sulo-locality/title locations)))))
-             (grid/row
-               (->>
-                 (grid/columns-in-row {:small 2 :medium 3 :large 5}))
-               (map
-                 (fn [p]
-                   (grid/column
-                     (css/add-class :new-arrival-item)
-                     (ci/->ProductItem (om/computed p
-                                                    {:current-route current-route
-                                                     :open-url?     true}))))
-                 (take 5 featured-items))))])))))
+
+
+        (callout/callout
+          (css/add-classes [:section :content :featured])
+          (grid/row-column
+            nil
+            (dom/div
+              (css/add-class :section-title)
+              (dom/h3 nil "Other gems")))
+          (grid/row
+            (->>
+              (grid/columns-in-row {:small 3 :medium 4 :large 7}))
+            (map
+              (fn [p]
+                (grid/column
+                  (css/add-class :new-arrival-item)
+                  (ci/->ProductItem (om/computed p
+                                                 {:current-route current-route
+                                                  :open-url?     true}))))
+              (take 7 featured-items))))))))
 
 (def ->ShoppingBag (om/factory ShoppingBag))
 

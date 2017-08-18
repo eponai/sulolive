@@ -26,7 +26,7 @@
         [eponai.common :as c]
         [eponai.common.ui.elements.menu :as menu]
     #?(:cljs
-       [eponai.common.ui.checkout.google-places :as places])
+       [eponai.web.google-places :as places])
         [eponai.common.ui.script-loader :as script-loader]
         [clojure.string :as string]))
 

@@ -1,21 +1,13 @@
 (ns eponai.web.ui.checkout.shipping
   (:require
-    [eponai.common.ui.dom :as dom]
-    [eponai.common.ui.elements.css :as css]
-    [eponai.common.ui.elements.input-validate :as validate]
-    [om.next :as om :refer [defui]]
     #?(:cljs [cljs.spec.alpha :as s]
        :clj
     [clojure.spec.alpha :as s])
     #?(:cljs
        [eponai.web.utils :as web-utils])
     #?(:cljs
-       [eponai.common.ui.checkout.google-places :as places])
-    [eponai.common.ui.script-loader :as script-loader]
-    [taoensso.timbre :refer [debug]]
-    [eponai.common.ui.elements.grid :as grid]
-    [eponai.common.ui.elements.callout :as callout]
-    [eponai.web.ui.button :as button]))
+       [eponai.web.google-places :as places])
+    [taoensso.timbre :refer [debug]]))
 
 (def form-inputs
   {:shipping/name             "sulo-shipping-full-name"
