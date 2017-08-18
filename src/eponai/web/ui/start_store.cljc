@@ -170,7 +170,7 @@
                  input-validation)
 
         (dom/label nil "Message")
-        (dom/textarea {:placeholder "Anything else you'd like us to know? (optional)"
+        (dom/textarea {:placeholder "(optional)"
                        :id          (input-id id (:field/message form-inputs))})
 
         (dom/div
@@ -536,7 +536,7 @@
             ))
 
         (dom/div
-          (css/add-classes [:hero :hero-footer])
+          (css/add-classes [:hero :hero-footer] {:id "request-form"})
 
           (dom/div
             (css/add-class :hero-background)
@@ -550,7 +550,7 @@
 
 
               (grid/row
-                (->> {:id "request-form"}
+                (->>
                      (css/add-class :expanded)
                      (css/align :center)
                      (css/align :middle))
