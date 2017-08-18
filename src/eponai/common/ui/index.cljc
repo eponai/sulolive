@@ -15,7 +15,8 @@
     [eponai.web.ui.button :as button]
     #?(:cljs
        [eponai.web.utils :as web.utils])
-    [eponai.common.ui.stream :as stream]))
+    [eponai.common.ui.stream :as stream]
+    [eponai.common.photos :as photos]))
 
 ;(defn banner [{:keys [color align] :as opts} primary secondary]
 ;  (let [align (or align :left)
@@ -83,8 +84,11 @@
             (css/add-class :hero)
             (dom/div
               (css/add-class :hero-background)
-              (dom/video {:autoPlay true :loop true :muted true}
-                         (dom/source {:src "https://d30slnyi7gxcwc.cloudfront.net/site/videos/sulo-landing-low-2.mp4"})))
+              #?(:cljs
+                 (dom/video {:autoPlay true :loop true :muted true :poster (photos/transform "static/sulo-landing-low-2-thumbnail" :transformation/cover)}
+                            (dom/source {:src "https://d30slnyi7gxcwc.cloudfront.net/site/videos/sulo-landing-low-2.mp4"}))
+                 :clj
+                 (photo/cover {:photo-id "static/sulo-landing-low-2-thumbnail"})))
             (dom/div
               (css/add-class :hero-content)
               (dom/div
