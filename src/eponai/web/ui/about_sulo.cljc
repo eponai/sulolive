@@ -21,7 +21,7 @@
         (dom/div
           (css/add-class :hero-background)
           (dom/video {:autoPlay true :loop true :muted true}
-                     (dom/source {:src "https://d30slnyi7gxcwc.cloudfront.net/site/videos/about-us.mp4"})))
+                     (dom/source {:src "https://d30slnyi7gxcwc.cloudfront.net/site/videos/about-us-2.mp4"})))
         (dom/div
           (css/add-class :hero-content)
           (dom/div
