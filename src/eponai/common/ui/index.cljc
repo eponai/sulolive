@@ -57,7 +57,7 @@
      ;{:query/featured-art (om/get-query ci/ProductItem)}
      {:query/featured-stores (om/get-query ci/StoreItem)}
      {:query/featured-streams (om/get-query ci/OnlineChannel)}
-     {:query/top-streams (om/get-query ci/OnlineChannel)}
+     ;; {:query/top-streams (om/get-query ci/OnlineChannel)}
      {:query/auth [:db/id :user/email]}
      {:query/owned-store [:db/id
                           {:store/locality [:sulo-locality/path]}
