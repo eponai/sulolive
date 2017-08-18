@@ -211,5 +211,44 @@ $contentitem-overlay-hover-bg: rgba($white, 0.75);
 			text-align: center;
 		}
 	}
+
+	&.see-more-item {
+		a .container {
+			width: 100%;
+			padding-top: 100%;
+			position: relative;
+
+			.content {
+				position: absolute;
+				top: 0; 
+				left: 0;
+				width: 100%;
+				height: 100%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+			h6 {
+				font-size: 1rem;
+			}
+			color: $black;
+		}
+		a:hover {
+			h6 {
+				// position: absolute;
+				text-decoration: underline;
+			}
+		}
+		.photo-container {
+			background: $white;
+		}
+		.overlay .content {
+			opacity: 1;
+		}
+		img {
+			display: none;
+		}
+
+	}
 }
 

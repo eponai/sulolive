@@ -103,8 +103,7 @@
             (when (not-empty featured-streams)
               (common/content-section {:href  (routes/url :live route-params)
                                        :class "online-channels"}
-                                      (dom/a {:href (routes/url :live route-params)}
-                                             (dom/span nil "LIVE right now"))
+                                      (dom/span nil "LIVE right now")
 
                                       (grid/row
                                         (->>
@@ -234,7 +233,7 @@
             (common/content-section
               {:href  (routes/url :stores route-params)
                :class "new-brands"}
-              (dom/a {:href (routes/url :stores route-params)} (dom/span nil "Creatives"))
+              (dom/span nil "Creatives")
               ;(grid/row-column
               ;  (css/text-align :center))
               ;(dom/div
@@ -260,7 +259,7 @@
                 ;          (dom/span nil "Previous"))])
 
                 (grid/row
-                  (->> {:id "content-row-products"
+                  (->> {:id    "content-row-products"
                         :style {:paddingLeft 20}}
                        (grid/columns-in-row {:small 2 :medium 4 :large 7}))
                   (map (fn [store]
@@ -268,16 +267,24 @@
                            (grid/column
                              nil
                              (ci/->StoreItem store))))
-                       (take 12 featured-stores))))
+                       (take 12 featured-stores))
+                  (grid/column
+                    nil
+                    (dom/div
+                      (css/add-classes [:content-item :see-more-item])
+                      (dom/a
+                        {:href (routes/url :stores route-params)}
+                        (dom/div (css/add-class :container)
+                                 (dom/div (css/add-class :content) (dom/h6 nil "See more")))
+
+                        )))))
               "")
 
             (common/content-section
               {:href  (routes/url :browse/gender (merge route-params
                                                         {:sub-category "women"}))
                :class "products"}
-              (dom/a {:href (routes/url :browse/gender (merge route-params
-                                                              {:sub-category "women"}))}
-                     (dom/span nil "Products"))
+              (dom/span nil "Products")
               (dom/div
                 nil
                 (grid/row
@@ -288,15 +295,21 @@
                   (map-indexed
                     (fn [i p]
                       (grid/column
-                        (cond
-                          (< 7 i)
-                          (css/show-for :large)
-                          (< 3 i)
-                          (css/show-for :medium))
+                        nil
                         (ci/->ProductItem (om/computed p
                                                        {:open-url?     true
                                                         :current-route current-route}))))
-                    (take 10 featured-items))))
+                    (take 10 featured-items))
+                  (grid/column
+                    nil
+                    (dom/div
+                      (css/add-classes [:content-item :see-more-item])
+                      (dom/a
+                        {:href (routes/url :browse/gender (merge route-params
+                                                                 {:sub-category "women"}))}
+                        (dom/div (css/add-class :container)
+                                 (dom/div (css/add-class :content) (dom/h6 nil "See more")))
+                        )))))
               "")
 
 
