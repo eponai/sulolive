@@ -446,7 +446,7 @@
                         (dom/h5 nil "Use any camera")
                         (dom/p nil
 
-                               (dom/span nil "Setup your streams using any type of camera. Either go simple using only your phone or tablet, or more advanced with multiple digital cameras.")))
+                               (dom/span nil "Setup your streams using any type of camera. Either go simple and use only your phone or tablet, or do a more advanced setup with multiple digital cameras.")))
                 (dom/li nil
                         (dom/h5 nil "Repurpose your content")
                         (dom/p nil
