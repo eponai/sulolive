@@ -121,6 +121,7 @@
                     {:store/sections [:store.section/label :store.section/path :db/id]}
                     :store/visitor-count
                     :store/username
+                    {:store/geolocation [:geolocation/title]}
                     ;{:store/items (om/get-query item/Product)}
                     :store/not-found?
                     {:store/status [:status/type]}
@@ -169,7 +170,7 @@
   (render [this]
     (let [{:keys [fullscreen? selected-navigation] :as st} (om/get-state this)
           {:query/keys [store store-items current-route] :as props} (om/props this)
-          {:store/keys [profile visitor-count owners]
+          {:store/keys [profile visitor-count owners geolocation]
            stream      :stream/_store} store
           {:store.profile/keys [photo cover tagline description]
            store-name          :store.profile/name} profile
@@ -248,9 +249,14 @@
 
                  (grid/column
                    (css/add-class :shrink)
-                   (dom/div (css/add-class :store-name) (dom/strong nil store-name))
-                   (dom/p (css/add-class :tagline)
-                          (dom/span nil tagline)))
+                   (dom/p nil
+                          (dom/strong nil store-name)
+                          (when (not-empty (:geolocation/title geolocation))
+                            [(dom/br nil)
+                             (dom/small nil (:geolocation/title geolocation))])
+                          (when (not-empty tagline)
+                            [(dom/br nil)
+                             (dom/i (css/add-class :tagline) tagline)])))
                  (grid/column
                    (->> (grid/column-size {:small 12 :medium 4 :large 3})
                         (css/text-align :center)

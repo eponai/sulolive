@@ -32,6 +32,7 @@
     (let [{:query/keys [auth owned-store navigation current-route]} (om/props this)
           {:keys [route]} current-route
           track-event (fn [k & [p]] (mixpanel/track-key k (merge p {:source "sidebar"})))]
+      ;(debug "Sidebar current route: " current-route)
       (dom/div
         (css/add-class :sidebar-container)
         (dom/div {:classes [:sidebar-overlay]})

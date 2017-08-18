@@ -11,7 +11,9 @@
     [eponai.server.log :as log]
     [eponai.client.cart :as cart]
     [eponai.common.checkout-utils :as checkout-utils]
-    [eponai.server.external.google :as google]))
+    [eponai.server.external.google :as google]
+    [clojure.string :as string])
+  (:import (clojure.lang ExceptionInfo)))
 
 
 (defn create [{:keys [state auth system]} {:keys [country name place-id]}]
@@ -19,29 +21,32 @@
   (let [stripe-account (stripe/create-account (:system/stripe system) {:country country})
         place (google/place-details (:system/google system) place-id)
         _ (debug "Got place: " place)
-        sulo-locality {:sulo-locality/title (:formatted_address place)
-                       :sulo-locality/lat-lng (str (get-in place [:geometry :location :lat]) ", " (get-in place [:geometry :location :lng]))}
+        geolocation {:geolocation/title     (:formatted_address place)
+                     :geolocation/google-id place-id
+                     :geolocation/country   [:country/code (string/upper-case country)]
+                     :geolocation/lat-lng   (str (get-in place [:geometry :location :lat]) ", " (get-in place [:geometry :location :lng]))}
 
-        _ (debug "SULO LOCALITY: " sulo-locality)
-        new-store {:db/id            (db/tempid :db.part/user)
-                   :store/uuid       (db/squuid)
-                   :store/profile    {:store.profile/name name}
-                   :store/stripe     {:db/id         (db/tempid :db.part/user)
-                                      :stripe/id     (:id stripe-account)
-                                      :stripe/secret (:secret stripe-account)
-                                      :stripe/publ   (:publ stripe-account)}
-                   :store/owners     {:store.owner/role :store.owner.role/admin
-                                      :store.owner/user (:user-id auth)}
-                   :store/locality   sulo-locality
-                   :store/created-at (date/current-millis)}
+        _ (debug "SULO LOCALITY: " geolocation)
+        new-store {:db/id             (db/tempid :db.part/user)
+                   :store/uuid        (db/squuid)
+                   :store/profile     {:store.profile/name name}
+                   :store/stripe      {:db/id         (db/tempid :db.part/user)
+                                       :stripe/id     (:id stripe-account)
+                                       :stripe/secret (:secret stripe-account)
+                                       :stripe/publ   (:publ stripe-account)}
+                   :store/owners      {:store.owner/role :store.owner.role/admin
+                                       :store.owner/user (:user-id auth)}
+                   :store/geolocation geolocation
+                   :store/created-at  (date/current-millis)}
         stream {:db/id        (db/tempid :db.part/user)
                 :stream/store (:db/id new-store)
                 :stream/state :stream.state/offline}]
-    (db/transact state [new-store
-                        stream])
-    (db/pull (db/db state) [:db/id] [:store/uuid (:store/uuid new-store)])
-    (throw (ex-info "Test error" {}))
-    ))
+    (try
+      (db/transact state [new-store
+                          stream])
+      (catch ExceptionInfo e
+        (throw (ex-info "Could not create shop" {:message "Could not create shop. Try again later."}))))
+    (db/pull (db/db state) [:db/id] [:store/uuid (:store/uuid new-store)])))
 
 (defn delete [{:keys [state system auth]} store-id]
   (let [stripe-account (stripe/pull-stripe (db/db state) store-id)

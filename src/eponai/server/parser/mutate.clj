@@ -526,7 +526,7 @@
   {:auth ::auth/any-user
    :log  [:country :name :locality]
    :resp {:success return
-          :error   (:message (ex-data exception) "Could not create Stripe account")}}
+          :error   (:message (ex-data exception) "Something went wrong when starting your shop, try again later.")}}
   {:action (fn []
              (let [{store-owner :store.owner/_user} (db/pull (db/db state) [:store.owner/_user] (:user-id auth))]
                (debug "Store owner: " store-owner)

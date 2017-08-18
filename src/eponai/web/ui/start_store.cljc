@@ -244,6 +244,7 @@
                    :user/can-open-store?
                    {:store.owner/_user [{:store/_owners [:db/id
                                                          {:store/profile [:store.profile/name]}]}]}]}
+     {:query/owned-store [:db/id]}
      {:query/sulo-localities [:sulo-locality/title
                               :db/id]}
      :query/messages])
@@ -262,7 +263,8 @@
          (debug "Validation: " validation)
          (when (nil? validation)
            (mixpanel/track "Start store")
-           (msg/om-transact! this [(list 'store/create {:name store-name :country store-country :place-id place-id})]))
+           (msg/om-transact! this [(list 'store/create {:name store-name :country store-country :place-id place-id})
+                                   :query/owned-store]))
 
          (om/update-state! this assoc :input-validation validation))))
   (request-access [this parent-id]

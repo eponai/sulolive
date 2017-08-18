@@ -132,6 +132,10 @@
      ;; TODO getting exception if :db/ident is not specified here, bug?
      :db/ident                       public-attr
 
+     :geolocation/lat-lng            public-attr
+     :geolocation/google-id         public-attr
+     :geolocation/country            public-attr
+     :geolocation/title              public-attr
      :user/email                     user-attribute-or-customer
      :user/verified                  user-attribute
      :user/stripe                    user-attribute
@@ -155,6 +159,7 @@
      :store/created-at               public-attr
      :store/owners                   public-attr
      :store/stripe                   store-attribute
+     :store/geolocation              public-attr
      :store/shipping                 public-attr
      :store/items                    public-attr
      :store/profile                  public-attr

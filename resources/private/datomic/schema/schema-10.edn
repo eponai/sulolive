@@ -1,15 +1,51 @@
 [
-; {:db/id                 #db/id[:db.part/db]
-;:db/ident              :shipping.rule/pickup?
-;:db/valueType          :db.type/boolean
-;:db/cardinality        :db.cardinality/one
-;:db/doc                "Allow customer to pickup."
-;:db.install/_attribute :db.part/db}
+ ; {:db/id                 #db/id[:db.part/db]
+ ;:db/ident              :shipping.rule/pickup?
+ ;:db/valueType          :db.type/boolean
+ ;:db/cardinality        :db.cardinality/one
+ ;:db/doc                "Allow customer to pickup."
+ ;:db.install/_attribute :db.part/db}
+
+ ;{:db/id                 #db/id[:db.part/db]
+ ; :db/ident              :sulo-locality/lat-lng
+ ; :db/valueType          :db.type/string
+ ; :db/cardinality        :db.cardinality/one
+ ; :db/doc                "Latitude, longitude of this location."
+ ; :db.install/_attribute :db.part/db}
 
  {:db/id                 #db/id[:db.part/db]
-  :db/ident              :sulo-locality/lat-lng
+  :db/ident              :store/geolocation
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Store geolocation."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :geolocation/google-id
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/unique             :db.unique/identity
+  :db/doc                "Google id of this location."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :geolocation/lat-lng
   :db/valueType          :db.type/string
   :db/cardinality        :db.cardinality/one
   :db/doc                "Latitude, lognitude of this location."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :geolocation/title
+  :db/valueType          :db.type/string
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Name of this location."
+  :db.install/_attribute :db.part/db}
+
+ {:db/id                 #db/id[:db.part/db]
+  :db/ident              :geolocation/country
+  :db/valueType          :db.type/ref
+  :db/cardinality        :db.cardinality/one
+  :db/doc                "Country."
   :db.install/_attribute :db.part/db}
  ]
