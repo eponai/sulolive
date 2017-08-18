@@ -9,7 +9,7 @@
 	}
 	
 	.section .content-item {
-		&:not(.collection-item) {
+		&:not(.collection-item):not(.feature-item) {
 			margin-bottom: 1.5rem;
 		}
 	}
@@ -77,11 +77,16 @@
 		}
 	}
 	.section {
-		padding: 4rem 0;
-		.row .column {
-			padding:  0 2px;
-			@include breakpoint(medium) {
-				padding:  0 5px;
+		padding: 2rem 0;
+		@include breakpoint(medium) {
+			padding: 4rem 0;
+		}
+		&.content, &.collections {
+			.row .column {
+				padding:  0 2px;
+				@include breakpoint(medium) {
+					padding:  0 5px;
+				}
 			}
 		}
 	}

@@ -258,7 +258,7 @@
                 (grid/row
                   (->> {:id "content-row-products"
                         :style {:paddingLeft 20}}
-                       (grid/columns-in-row {:small 3 :medium 4 :large 7}))
+                       (grid/columns-in-row {:small 2 :medium 4 :large 7}))
                   (map (fn [store]
                          (let [store-name (get-in store [:store/profile :store.profile/name])]
                            (grid/column
