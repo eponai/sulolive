@@ -6,7 +6,7 @@ $contentitem-overlay-hover-bg: rgba($white, 0.75);
 
 .content-item {
 	padding-top: 1.5rem;
-	.photo-container {
+	> a > .photo-container {
 		margin-bottom: 0.5rem;
 
 		.overlay {
