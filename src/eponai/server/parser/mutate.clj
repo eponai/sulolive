@@ -221,7 +221,7 @@
   {:auth ::auth/public
    :resp {:success "Stream went online"
           :error   (str "Could not go online: " (some-> exception (.getMessage))
-                        (some-> (.getCause exception) (.getMessage)))}}
+                        (some-> exception (.getCause) (.getMessage)))}}
   {:action (fn []
              (if-let [store-id (wowza-token-store-owner env token)]
                (do (debug "Was store owner of store-id: " store-id " setting stream to atleast online.")
