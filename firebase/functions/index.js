@@ -33,12 +33,16 @@ exports.countStoreVisitor = functions.database.ref('/v3/store/{storeId}/visitors
 exports.recountStoreVisitors = functions.database.ref('/v3/visitor-count/{storeId}').onWrite(event => {
   if (!event.data.exists()) {
     const counterRef = event.data.ref;
-    const collectionRef = admin.database().ref('/v3/store/' + event.params.storeId + '/visitors');
+    const storeId = event.params.storeId;
+    // !isNaN should be read as: isNumber
+    if (!isNaN(storeId)) {
+      const collectionRef = admin.database().ref('/v3/store/' + storeId + '/visitors');
     
-    // Return the promise from counterRef.set() so our function 
-    // waits for this async event to complete before it exits.
-    return collectionRef.once('value')
-        .then(visitors => counterRef.set(visitors.numChildren()));
+      // Return the promise from counterRef.set() so our function
+      // waits for this async event to complete before it exits.
+      return collectionRef.once('value')
+          .then(visitors => counterRef.set(visitors.numChildren()));
+    }
   }
 });
 
