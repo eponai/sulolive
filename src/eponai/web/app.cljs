@@ -168,9 +168,6 @@
 
 (defn initialize-firebase [reconciler]
   (firebase/initialize reconciler)
-  (firebase/route-changed (shared/by-key reconciler :shared/firebase)
-                          (client.routes/current-route reconciler)
-                          nil)
   (register-user-presence reconciler))
 
 (defn init-user-cart!
