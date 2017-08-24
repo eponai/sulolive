@@ -208,7 +208,8 @@
   (-> (fn [{:keys [route-params ::m/conn] :as request}]
         (let [resp (-> (r/response (server.ui/render-site (request->props (assoc request :handler route))))
                        (r/content-type "text/html")
-                       (r/charset "UTF-8"))
+                       (r/charset "UTF-8")
+                       (cond-> (= :not-found route) (assoc :status 404)))
               new-local (auth/requested-location request)
               old-local (auth/cookie-locality request)]
           (debug "Route params: " (:route-params request))
