@@ -196,7 +196,8 @@
         ;    ))
 
         (grid/row
-          (css/add-class :section)
+          (->> (css/add-class :section)
+               (css/align :center))
           (grid/column
             (->> (grid/column-size {:large 3})
                  (css/add-class :navigation)
@@ -318,10 +319,16 @@
                                        (browse/order-label k)))
                          (browse/order-values query-params)))))
 
-              (grid/products items
-                             (fn [p]
-                               (ci/->ProductItem (om/computed p
-                                                              {:current-route current-route}))))
+              (grid/row
+                (->> (grid/columns-in-row {:small 2 :medium 3 :large 3})
+                     (css/add-class :product-grid))
+                (map
+                  (fn [p]
+                    (grid/column
+                      nil
+                      (ci/->ProductItem (om/computed p
+                                                     {:current-route current-route}))))
+                  items))
               (when (< 1 (count pages))
                 (dom/div
                   (css/add-class :section-footer)

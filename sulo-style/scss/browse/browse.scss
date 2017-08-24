@@ -16,11 +16,14 @@
 
 #sulo-browse {
 	.page-content {
-		padding-bottom: 20%;
+		padding-bottom: 0;
 	}
 }
 
 .sulo-browse {
+	.row {
+		max-width: 100%;
+	}
 
 	.section {
 		padding-top: $global-padding;

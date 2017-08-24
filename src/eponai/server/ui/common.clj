@@ -76,6 +76,12 @@
        use-token
        "\");"])))
 
+(defn facebook-pixel []
+  [(inline-javascript ["!function(f,b,e,v,n,t,s)\n  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?\n  n.callMethod.apply(n,arguments):n.queue.push(arguments)};\n  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';\n  n.queue=[];t=b.createElement(e);t.async=!0;\n  t.src=v;s=b.getElementsByTagName(e)[0];\n  s.parentNode.insertBefore(t,s)}(window, document,'script',\n  'https://connect.facebook.net/en_US/fbevents.js');\n  fbq('init', '1966162850296774');\n  fbq('track', 'PageView');
+  "])
+   (dom/noscript {:src "https://www.facebook.com/tr?id=1966162850296774&ev=PageView&noscript=1"}
+                 (dom/img {:height "1" :width "1" :style {:display "none"}}))])
+
 (defn mailchimp []
   (inline-javascript
     ["!function(c,h,i,m,p){m=c.createElement(h),p=c.getElementsByTagName(h)[0],m.async=1,m.src=i,p.parentNode.insertBefore(m,p)}(document,\"script\",\"https://chimpstatic.com/mcjs-connected/js/users/b99ff2dd9a9433d58675f33ea/565ad9606bb5e7b721e413fef.js\");"]
@@ -165,7 +171,9 @@
       (mailchimp))
     (if release?
       (google-analytics)
-      (google-analytics-sulo-master))))
+      (google-analytics-sulo-master))
+    (if release?
+      (facebook-pixel))))
 
 (defn budget-js-path []
   (versionize "/js/out/budget.js"))

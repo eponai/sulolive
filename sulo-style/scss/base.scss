@@ -152,7 +152,7 @@ a.disabled {
 				padding-right: 0;
 			}
 		}
-		@include breakpoint(medium) {
+		@include breakpoint(medium only) {
 			padding: 0.5rem;
 			&:nth-child(3n+1) {
 				padding-left: 0;
@@ -166,17 +166,17 @@ a.disabled {
 			}
 		}
 		@include breakpoint(large) {
-			padding: 1.5rem;
-			&:nth-child(3n+1) {
-				padding-left: 0;
-			}
-			&:nth-child(3n+2) {
-				padding-right: 0.75rem;
-				padding-left: 0.75rem;
-			}
-			&:nth-child(3n) {
-				padding-right: 0;
-			}
+			// padding: 1rem;
+			// &:nth-child(4n+1) {
+			// 	padding-left: 0;
+			// }
+			// &:nth-child(4n+3) {
+			// 	padding-right: 0.5rem;
+			// 	padding-left: 0.5rem;
+			// }
+			// &:nth-child(4n) {
+			// 	padding-right: 0;
+			// }
 		}
 	}
 }

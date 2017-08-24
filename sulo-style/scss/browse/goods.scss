@@ -196,6 +196,9 @@
 	}
 	.sulo-items-container {
 		padding-bottom: 4rem;
+		.row {
+			margin: 0;
+		}
 		select {
 			font-size: 90%;
 			font-weight: $global-weight-bold;
@@ -238,11 +241,17 @@
 			// font-family: $header-font-family-sans-serif;
 			letter-spacing: -0.5px;
 		}
-		ul {
+		.menu.vertical.sl-navigation-parent {
+			// max-width: inherit;
+			// position: fixed;
+		}
+		ul {		
+			// position: fixed;
+
 			// border-top: $global-border;
 			border-bottom: $global-border;
 			margin-bottom: $global-margin;
-			padding: $global-padding 0;
+			padding: $global-padding;
 			.nested {
 				border: none;
 				display: none;
