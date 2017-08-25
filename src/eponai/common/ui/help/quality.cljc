@@ -62,13 +62,14 @@
                                 (dom/li nil
                                         (dom/p nil
                                                (dom/em nil "Keyframe Interval")
-                                               (dom/span nil (str ": 0 or 1. Enables us at SULO Live"
+                                               (dom/span nil (str ": 1. Enables us at SULO Live"
                                                                   " to reduce latency between streamer and"
                                                                   " viewer."))))
                                 (dom/li nil
                                         (dom/p nil
                                                (dom/em nil "Bitrate")
                                                (dom/span nil (str ": select a value between 1000 and 2000."
+                                                                  " Recommending 1500 if you can handle it."
                                                                   " This value what will impact the quality"
                                                                   " and buffering the most. If you set it"
                                                                   " too high, either your computer or network"
