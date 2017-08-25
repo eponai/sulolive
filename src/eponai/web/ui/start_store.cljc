@@ -361,7 +361,7 @@
               (css/add-classes [:text-center :va-container])
               (dom/h1 (css/show-for-sr) "A new type of Etsy shop.")
               (dom/h2 (css/add-class :jumbo-header) "Your handmade work LIVE")
-              (dom/p (css/add-classes [:jumbo-lead :lead]) "A new marketplace where you sell your handmade items and share their progress via LIVE streams.")
+              (dom/p (css/add-classes [:jumbo-lead :lead]) "A new marketplace where you sell your handmade items and LIVE stream your process.")
               (render-header-input-callout this)
 
               ))
