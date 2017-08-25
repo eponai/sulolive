@@ -358,9 +358,9 @@
           (dom/div
             (css/add-class :hero-content {:style {:padding "8rem 0"}})
             (dom/div
-              (css/add-class :va-container)
-              (dom/h1 (css/show-for-sr) "SULO Live")
-              (dom/h2 (css/add-class :jumbo-header) "Your creative work LIVE")
+              (css/add-classes [:text-center :va-container])
+              (dom/h1 (css/show-for-sr) "A new type of Etsy shop.")
+              (dom/h2 (css/add-class :jumbo-header) "Your handmade work LIVE")
               (dom/p (css/add-classes [:jumbo-lead :lead]) "A new marketplace where you sell your handmade items and share their progress via LIVE streams.")
               (render-header-input-callout this)
 
@@ -564,7 +564,7 @@
                   (dom/div
                     (css/add-class :section-title)
                     (dom/h2 (css/add-classes [:jumbo-header]) "Go LIVE today"))
-                  (dom/p (css/add-classes [:jumbo-lead :lead]) "Are you ready to go LIVE? We're ready to have you onboard!"))
+                  (dom/p (css/add-classes [:jumbo-lead :lead]) "Are you ready to bring your Etsy game LIVE? Or perhaps your just starting? We're ready to have you onboard!"))
 
 
                 (grid/column
