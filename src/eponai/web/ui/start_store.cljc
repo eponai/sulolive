@@ -377,16 +377,16 @@
             (css/text-align :center)
             (dom/li nil (dom/p nil
                                (dom/span nil "Retail sites with video ")
-                               (dom/a {:href   "https://www.singlegrain.com/video-marketing/just-stats-science-video-engagement/"
+                               (dom/a {:href   "//www.singlegrain.com/video-marketing/just-stats-science-video-engagement/"
                                        :target "_blank"} (dom/span nil "increase conversion by 30%"))
                                (dom/span nil ".")))
             (dom/li nil (dom/p nil
-                               (dom/a {:href   "https://blog.hubspot.com/marketing/top-video-marketing-statistics#sm.0001agz8fnm7qcuby3m2fy7vd2qou"
+                               (dom/a {:href   "//blog.hubspot.com/marketing/top-video-marketing-statistics#sm.0001agz8fnm7qcuby3m2fy7vd2qou"
                                        :target "_blank"} (dom/span nil "70% of marketers"))
                                (dom/span nil " claim video produces more conversions than any other content.")))
             (dom/li nil (dom/p nil
                                (dom/span nil "Viewers spend ")
-                               (dom/a {:href   "http://tubularinsights.com/live-video-vod-per-play/#ixzz4JTvPtK7v"
+                               (dom/a {:href   "//tubularinsights.com/live-video-vod-per-play/#ixzz4JTvPtK7v"
                                        :target "_blank"} (dom/span nil "8X longer with live video"))
                                (dom/span nil " than on-demand.")))))
 
@@ -398,7 +398,7 @@
                  (css/align :bottom))
             (grid/column
               (grid/column-order {:small 2 :medium 2})
-              (dom/img {:src "https://res.cloudinary.com/sulolive/image/upload/t_preview/static/storefront-ss-2.jpg"}))
+              (dom/img {:src "//res.cloudinary.com/sulolive/image/upload/t_preview/static/storefront-ss-2.jpg"}))
             (grid/column
               (grid/column-order {:small 1 :medium 1})
               (dom/div
