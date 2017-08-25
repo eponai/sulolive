@@ -233,9 +233,14 @@
           (render-start-store component id)
 
           :else
-          (button/store-navigation-cta
-            (->> {:onClick (fn [] #?(:cljs (utils/scroll-to (utils/element-by-id "request-form") 250)))})
-            (dom/span nil "Go LIVE today")))))
+          (dom/div (css/add-class :action-buttons)
+                   (button/button
+                     {:href (routes/url :index)
+                      :classes [:white :hollow]}
+                     (dom/span nil "Browse marketplace"))
+                   (button/store-navigation-cta
+                     (->> {:onClick (fn [] #?(:cljs (utils/scroll-to (utils/element-by-id "request-form") 250)))})
+                     (dom/span nil "Go LIVE today"))))))
 
 (defui StartStore-no-loader
   static om/IQuery
@@ -356,7 +361,7 @@
               (css/add-class :va-container)
               (dom/h1 (css/show-for-sr) "SULO Live")
               (dom/h2 (css/add-class :jumbo-header) "Your creative work LIVE")
-              (dom/p (css/add-classes [:jumbo-lead :lead]) "Tell the story of your creations via LIVE streams while you work")
+              (dom/p (css/add-classes [:jumbo-lead :lead]) "A new marketplace where you sell your handmade items and share their progress via LIVE streams.")
               (render-header-input-callout this)
 
               ))

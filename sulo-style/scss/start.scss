@@ -17,6 +17,22 @@ $section-footer-color: $primary-color;
 	.footer {
 		// visibility: hidden;
 	}
+
+	.hero {
+		.action-buttons {
+			display: flex;
+			flex-direction: column-reverse;
+			.button.hollow {
+				border: none;
+				text-decoration: underline;
+				margin-top: 1rem;
+				&::before {
+					// content: "<<";
+					// margin-right: 0.2rem;
+				}
+			}
+		}
+	}
 }
 
 .hero {
