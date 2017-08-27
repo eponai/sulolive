@@ -66,5 +66,3 @@
 ;                                                            "//player.wowza.com/player/1.0.10.4565/wowzaplayer.min.js"]]])}))
 (def ->Stream (om/factory Stream))
 
-#?(:cljs
-   (modules/set-loaded! :stream+chat))

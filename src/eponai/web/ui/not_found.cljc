@@ -49,4 +49,4 @@
                                                   {:current-route current-route}))))
                (take 6 featured-items)))])))))
 
-(router/register-component :not-found NotFound)
+(router/register-component :not-found NotFound false)

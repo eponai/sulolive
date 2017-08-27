@@ -1,13 +1,11 @@
 (ns env.web.main
   (:require-macros [eponai.common.macros :refer [when-not-timbre-level]])
   (:require [eponai.web.app :as app]
-    [eponai.common.ui-namespaces]
     ;;[eponai.client.devtools :as devtools]
             ))
 
 (defn ^:export runsulo []
       (app/run-prod))
-
 
 ;; Only leaving the run_fake_sulo method in when there's a timbre-level set.
 (when-not-timbre-level
@@ -16,3 +14,5 @@
         ;; For debugging:
         ;; (devtools/install-app)
         (app/run-simple)))
+
+(cljs.loader/set-loaded! :main)

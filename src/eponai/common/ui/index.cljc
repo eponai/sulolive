@@ -10,12 +10,6 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.web.ui.content-item :as ci]
     [eponai.common.ui.router :as router]
-    [eponai.common.ui.product :as product]
-    [eponai.common.format.date :as date]
-    [eponai.web.ui.button :as button]
-    #?(:cljs
-       [eponai.web.utils :as web.utils])
-    [eponai.common.ui.stream :as stream]
     [eponai.common.photos :as photos]))
 
 ;(defn banner [{:keys [color align] :as opts} primary secondary]

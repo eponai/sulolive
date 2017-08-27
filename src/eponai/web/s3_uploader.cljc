@@ -10,6 +10,7 @@
     [om.next :as om :refer [defui]]
     [eponai.common.ui.dom :as dom]
     [taoensso.timbre :refer [error debug]]
+    #?(:cljs [goog.crypt])
     #?(:cljs
        [cljs.reader :as reader])
     [eponai.common.format.date :as date])

@@ -78,8 +78,8 @@
                        {:handlers (merge
                                     {"u" (transit/read-handler #?(:clj  #(UUID/fromString %)
                                                                   :cljs uuid))
-                                     "n" (transit/read-handler reader/read-string)
-                                     "f" (transit/read-handler reader/read-string)}
+                                     "n" (transit/read-handler #(reader/read-string nil %))
+                                     "f" (transit/read-handler #(reader/read-string nil %))}
                                     datascript.transit/read-handlers)}}}
         ;; http-clj/cljs has different apis to their http.client/post method.
         #?@(:clj  [params (-> transit-opts

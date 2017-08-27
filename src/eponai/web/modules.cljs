@@ -4,13 +4,11 @@
     [goog.module.ModuleManager :as module-manager]
     [goog.module.ModuleLoader]
     [taoensso.timbre :refer [debug error warn]]
-    [eponai.web.utils :as web.utils])
+    [eponai.web.utils :as web.utils]
+    [cljs.loader])
   (:import goog.module.ModuleManager))
 
-(def non-route-modules [:stream+chat])
-(def dependencies {:login           [:index]
-                   :store           [:stream+chat]
-                   :store-dashboard [:stream+chat]})
+(def dependencies {:login           [:index]})
 
 (defprotocol IRouteModuleLoader
   (loaded-route? [this route] "Returns true if route has been loaded.")
@@ -19,9 +17,10 @@
   (prefetch-route [this route]
                   "Downloads the module but doesn't evaluate the javascript, thus not setting it to loaded."))
 
-(def loader (goog.module.ModuleLoader.))
-(def manager (doto (module-manager/getInstance)
-               (.setLoader loader)))
+(declare loader manager)
+;(def loader (goog.module.ModuleLoader.))
+;(def manager (doto (module-manager/getInstance)
+;               (.setLoader loader)))
 
 (defn- get-asset-version
   "Returns the version of our assets. One way to avoid browser cache issues between releases."
@@ -37,7 +36,7 @@
 
 (defn init-manager [routes]
   (let [asset-version (get-asset-version)
-        routes (into (set routes) non-route-modules)
+        routes (into (set routes))
         route->js-file (into {} (comp (map route->module)
                                       (map (juxt identity #(vector (str "/js/out/closure-modules/" % ".js?v=" asset-version)))))
                              routes)
@@ -59,15 +58,7 @@
 (defn set-loaded!
   "Mark a module as loaded"
   [route]
-  (let [manager (.getInstance goog.module.ModuleManager)
-        module (route->module route)
-        module-info (.getModuleInfo manager module)]
-    (if (= js/undefined module-info)
-      (swap! routes-loaded-pre-init conj route)
-      (try
-        (.setLoaded manager module)
-        (catch :default e
-          (error "Unable to mark module: " (route->module route) "as loaded: " e))))))
+  (cljs.loader/set-loaded! route))
 
 (defrecord ModuleLoader [manager]
   IRouteModuleLoader
@@ -93,6 +84,18 @@
         (.prefetchModule manager (route->module route))
         (catch :default e
           (error "Got error prefetching route: " route " error:" e))))))
+
+(defn cljs-loader-modules []
+  (debug "uris: " MODULE_URIS)
+  (let [route->cljs-module (fn [route]
+                             (keyword (or (namespace route) (name route))))]
+    (reify IRouteModuleLoader
+     (loaded-route? [this route]
+       (cljs.loader/loaded? (route->cljs-module route)))
+     (require-route! [this route callback]
+       (cljs.loader/load (route->cljs-module route) callback))
+     (prefetch-route [this route]
+       (cljs.loader/prefetch (route->cljs-module route))))))
 
 (defn advanced-compilation-modules
   "Module loader for advanced compilation.

@@ -223,15 +223,13 @@
 
 
 
-(defn- run [{:keys        [login modules loading-bar]
-             :shared/keys [login modules auth0 photos firebase]
-             :or          {loading-bar (loading-bar/loading-bar)}
+(defn- run [{:shared/keys [login modules auth0 photos firebase]
              :as          run-options}]
-  (let [modules (or modules (modules/advanced-compilation-modules router/routes))
-        init? (atom false)
+  (let [init? (atom false)
         _ (when-let [h @history-atom]
             (pushy/stop! h))
 
+        loading-bar (loading-bar/loading-bar)
         scroll-helper nil
         ;; (scroll-helper/init-scroll!)
         match-route (partial bidi/match-route common.routes/routes)
@@ -297,6 +295,7 @@
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
       (pushy/start! history))
+    (debug "Will require route: " (:route (routes/current-route reconciler)))
     (modules/require-route! modules
                             (:route (routes/current-route reconciler))
                             (fn [route]
@@ -340,25 +339,25 @@
         :shared/firebase :env/prod
         :shared/photos   :env/prod
         :shared/login    (auth/login reconciler-atom)
-        :shared/modules  (modules/dev-modules router/routes)}))
+        :shared/modules  (modules/cljs-loader-modules)}))
 
 (defn run-simple [& [deps]]
   (when-not-timbre-level
     (timbre/set-level! :debug))
-  (run (merge {:shared/auth0    :env/prod
+  (run (merge {:shared/auth0    :env/dev
                :shared/firebase :env/prod
-               :shared/photos   :env/prod
+               :shared/photos   :env/dev
                :shared/login    (auth/login reconciler-atom)
-               :shared/modules  (modules/dev-modules router/routes)}
+               :shared/modules  (modules/cljs-loader-modules)}
               deps)))
 
 (defn run-dev [& [deps]]
   (run (merge {
                :shared/auth0    :env/dev
                :shared/firebase :env/prod
-               :shared/photos   :env/prod
+               :shared/photos   :env/dev
                :shared/login    (auth/login reconciler-atom)
-               :shared/modules  (modules/dev-modules router/routes)
+               :shared/modules  (modules/cljs-loader-modules)
                }
               deps)))
 
@@ -372,10 +371,17 @@
                           (dom/div nil)))
                 (gdom/getElement router/dom-app-id)))
 
-(defn on-reload! []
-  (shared/clear-components!)
-  (if-let [reconciler @reconciler-atom]
-    (do
-      (add-fake-root! reconciler)
-      (js/setTimeout #(add-root! reconciler) 0))
-    (run-dev)))
+(defn reload! []
+  (let [on-reload! (fn []
+                     (shared/clear-components!)
+                     (if-let [reconciler @reconciler-atom]
+                       (do
+                         (add-fake-root! reconciler)
+                         (js/setTimeout #(add-root! reconciler) 0))
+                       (run-dev)))
+        url js/location.pathname]
+    (if-let [matched (bidi/match-route router/routes url)]
+      (do (debug "Matched url to route: " matched " running the app.")
+          (on-reload!))
+      (debug "Figwheel did not match the url: " url
+             " to any route. Will not run anything."))))

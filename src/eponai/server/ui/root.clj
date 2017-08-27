@@ -65,8 +65,16 @@
 
           (dom/script {:src "//lightwidget.com/widgets/lightwidget.js"
                        :type common/text-javascript})
-          (dom/script {:src  (common/budget-js-path)
+          (dom/script {:src "/js/out/cljs_base.js"
                        :type common/text-javascript})
+          (dom/script {:src "/js/out/closure-modules/main.js"
+                       :type common/text-javascript})
+          ;; Include figwheel
+          (when (or (nil? cljs-build-id)
+                    (= "dev" cljs-build-id))
+            (dom/script {:src  "/js/out/figwheel.js"
+                         :type common/text-javascript}))
+
 
           (when (some? (:user-id auth))
             (common/inline-javascript [(str "mixpanel.identify(\"" (:user-id auth) "\");")

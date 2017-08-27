@@ -5,72 +5,37 @@
 (defn modules [output-dir]
   (letfn [(path [route module?]
             (str output-dir "/" (when module? "closure-modules/") (name route) ".js"))
-          (module [[route {:keys [entries depends-on] :as m}]]
-            [route (cond-> (assoc m :output-to (path route true))
+          (module [[route {:keys [entries depends-on output-to] :as m}]]
+            [route (cond-> m
+                     (nil? output-to)
+                     (assoc :output-to (path route true))
                      (some? depends-on)
                      (update :depends-on set)
                      :always
                      (update :entries set))])]
-    (into `{:cljs-base {:entries   #{env.web.main}
-                        :output-to ~(path :budget false)}}
+    (into {}
       (map module)
       `{
-        ;; Extra groupings
-        :stream+chat     {:entries [eponai.common.ui.stream
-                                    eponai.common.stream
-                                    eponai.common.ui.chat
-                                    eponai.web.ui.stream.videoplayer
-                                    eponai.web.chat
-                                    eponai.web.sente
-                                    taoensso.sente
-                                    taoensso.sente.interfaces
-                                    taoensso.sente.packers.transit]}
-
         ;; Routes
+        :main            {:entries [env.web.main]}
         :index           {:entries [eponai.common.ui.index]}
         :unauthorized    {:entries [eponai.web.ui.unauthorized]}
-        :login           {:entries    [eponai.web.ui.login-page]}
+        :login           {:entries [eponai.web.ui.login-page]}
         :landing-page    {:entries [eponai.web.ui.landing-page]}
         :sell            {:entries [eponai.web.ui.start-store]}
-        :store           {:entries    [eponai.common.ui.store]
-                          :depends-on [:stream+chat]}
+        :store           {:entries [eponai.common.ui.store]}
         :stores          {:entries [eponai.web.ui.stores]}
         :tos             {:entries [eponai.web.ui.tos]}
-        :checkout        {:entries [eponai.web.ui.checkout
-                                    eponai.web.google-places]}
-        :browse          {:entries [eponai.common.ui.goods
-                                    eponai.common.ui.product-filters]}
+        :checkout        {:entries [eponai.web.ui.checkout]}
+        :browse          {:entries [eponai.common.ui.goods]}
         :shopping-bag    {:entries [eponai.common.ui.shopping-bag]}
         :product         {:entries [eponai.common.ui.product-page]}
         :live            {:entries [eponai.common.ui.streams]}
-        :help            {:entries [eponai.common.ui.help
-                                    eponai.common.ui.help.faq
-                                    eponai.common.ui.help.first-stream
-                                    eponai.common.ui.help.mobile-stream
-                                    eponai.common.ui.help.quality
-                                    eponai.web.ui.help.shipping-rules]}
-        :user            {:entries    [eponai.common.ui.user
-                                       eponai.common.ui.user.order-list
-                                       eponai.common.ui.user.order-receipt]}
+        :help            {:entries [eponai.common.ui.help]}
+        :user            {:entries [eponai.common.ui.user]}
         :about           {:entries [eponai.web.ui.about-sulo]}
-        :user-settings   {:entries    [eponai.web.ui.user.settings]}
-        :store-dashboard {:depends-on [:stream+chat]
-                          :entries    [eponai.common.ui.store.dashboard
-                                       eponai.common.ui.store.order-edit-form
-                                       eponai.common.ui.store.order-list
-                                       eponai.common.ui.store.product-edit-form
-                                       eponai.common.ui.store.product-list
-                                       eponai.common.ui.store.stream-settings
-                                       eponai.web.ui.store.edit-store
-                                       eponai.web.ui.store.business.verify
-                                       eponai.web.ui.store.business.specs
-                                       eponai.web.ui.store.finances.settings
-                                       eponai.web.ui.store.business
-                                       eponai.web.ui.store.edit-store
-                                       eponai.web.ui.store.finances
-                                       eponai.web.ui.store.home
-                                       eponai.web.ui.store.shipping
-                                       cljsjs.react-grid-layout]}})))
+        :user-settings   {:entries [eponai.web.ui.user.settings]}
+        :store-dashboard {:entries [eponai.common.ui.store.dashboard]}})))
 
 (defproject budget "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
@@ -136,8 +101,8 @@
                  [cljsjs/react "15.4.2-2"]
                  [cljsjs/react-dom "15.4.2-2"]
                  [com.cognitect/transit-cljs "0.8.239"]
-                 [org.clojure/clojurescript "1.9.660"
-                  ;;  :classifier "aot"
+                 [org.clojure/clojurescript "1.9.908"
+                  ;; :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]
                  [com.google.guava/guava "21.0"]
@@ -186,7 +151,7 @@
             [lein-shell "0.5.0"]
             [lein-doo "0.1.7" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
             [lein-cljsbuild "1.1.7" :exclusions [org.clojure/clojure org.clojure/clojurescript]]
-            [lein-figwheel "0.5.10" :exclusions [org.clojure/clojure]]
+            [lein-figwheel "0.5.13" :exclusions [org.clojure/clojure]]
             [lein-environ "1.1.0"]]
 
   :min-lein-version "2.0.0"
@@ -279,7 +244,7 @@
                                        [org.clojure/tools.namespace "0.2.11"]
                                        [aprint "0.1.3"]
                                        [cljsjs/nvd3 "1.8.2-1"]
-                                       [figwheel-sidecar "0.5.10"]
+                                       [figwheel-sidecar "0.5.13"]
                                        [com.cemerick/piggieback "0.2.1"]
                                        ]
                         :repl-options {:timeout 120000
@@ -323,15 +288,15 @@
                                                                 :verbose         true
                                                                 :compiler-stats  true
                                                                 :npm-deps        ~npm-deps
-                                                                ;; :modules         ~(modules "resources/public/release/js/out/")
+                                                                :modules         ~(modules "resources/public/release/js/out/")
                                                                 }}]}}
              :web      {:jvm-opts  ^:replace ["-Xmx3g" "-server"]
                         :cljsbuild {:builds [{:id           "dev"
-                                              :figwheel     {:on-jsload "eponai.web.figwheel/reload!"}
+                                              :figwheel     {:on-jsload "eponai.web.app/reload!"}
                                               :source-paths ["src/" "src-hacks/web/" "env/client/dev"]
-                                              :compiler     {:main                 "env.web.main"
+                                              :compiler     {;; :main                 "env.web.main"
                                                              :asset-path           "/dev/js/out"
-                                                             :output-to            "resources/public/dev/js/out/budget.js"
+                                                             :output-to            "resources/public/dev/js/out/figwheel.js"
                                                              ;; :modules ~(modules "/dev/js/out")
                                                              :output-dir           "resources/public/dev/js/out/"
                                                              :optimizations        :none
@@ -341,6 +306,7 @@
                                                              :closure-warnings     ~closure-warns
                                                              ;; Speeds up Figwheel cycle, at the risk of dependent namespaces getting out of sync.
                                                              :recompile-dependents false
+                                                             :modules              ~(modules "resources/public/dev/js/out/")
                                                              }}
                                              {:id           "devcards"
                                               :source-paths ["src/" "src-hacks/web/" "test/"]

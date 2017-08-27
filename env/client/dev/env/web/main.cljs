@@ -2,7 +2,8 @@
   (:require [eponai.web.app :as app]
             [eponai.client.devtools :as devtools]
             [plomber.core :as plomber]
-            [eponai.common.ui-namespaces]))
+            [eponai.common.ui-namespaces]
+            [cljs.loader]))
 
 ;(set! js/window.mixpanel #js {"track" (fn [& args] )})
 
@@ -11,3 +12,5 @@
   (app/run-dev {
                 ;;::plomber   (plomber/instrument)
                 }))
+
+(cljs.loader/set-loaded! :main)
