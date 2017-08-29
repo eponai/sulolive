@@ -4,7 +4,7 @@
     [eponai.common.ui.dom :as dom]
     [eponai.common.ui.elements.css :as css]
     #?(:cljs
-       [cljsjs.react-grid-layout])
+       [react-grid-layout])
     #?(:cljs
        [goog.crypt.base64 :as crypt])
     #?(:cljs
@@ -158,8 +158,9 @@
   (update-layout [this]
     #?(:cljs
        (let [{:keys [query/inventory]} (om/props this)
-             WidthProvider (.-WidthProvider (.-ReactGridLayout js/window))
-             grid-element (WidthProvider (.-Responsive (.-ReactGridLayout js/window)))
+             _ (debug "ReactGridLayout: " react-grid-layout)
+             WidthProvider (.-WidthProvider (.-ReactGridLayout react-grid-layout))
+             grid-element (WidthProvider (.-Responsive (.-ReactGridLayout react-grid-layout)))
              size js/window.innerWidth
              breakpoint (if (> 460 size) :tiny (web-utils/breakpoint size))
 

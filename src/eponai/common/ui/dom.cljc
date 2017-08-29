@@ -2,26 +2,26 @@
   (:require
     [eponai.common.ui.elements.css :as css]
     [om.dom :as dom]
+    #?(:cljs [react])
     [taoensso.timbre :refer [debug]]
     #?(:cljs [goog.object :as gobj])))
 
 (defn add-keys-to-content [content]
   (letfn [(get-key [x] #?(:cljs (gobj/get x "key")
                           :clj (:react-key x)))
-          (set-key [x v] #?(:cljs (.cloneElement js/React x #js {:key v})
+          (set-key [x v] #?(:cljs (react/cloneElement x #js {:key v})
                             :clj (assoc x :react-key v)))]
     (->> content
          (map-indexed (fn [i x]
-                        (when x
-                          (let [v (get-key x)]
-                            (cond-> x (nil? v) (set-key (str i))))))))))
+                        (let [v (get-key x)]
+                          (cond-> x (nil? v) (set-key (str i)))))))))
 
 (defn element [el-fn {:keys [classes] :as opts} content]
   (let [react-opts (-> opts
                        (dissoc :classes)
                        (update :className (fn [s] (clojure.string/join " " [s (css/keys->class-str classes)])))
                        #?(:cljs clj->js))
-        content (flatten content)]
+        content (into [] (filter some?) (flatten content))]
     (condp = (count content)
       0 (el-fn react-opts)
       1 (el-fn react-opts (first content))

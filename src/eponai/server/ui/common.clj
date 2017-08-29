@@ -138,6 +138,8 @@
     (when (= cljs-build-id "devcards")
       (dom/link {:href "/bower_components/nvd3/build/nv.d3.css"
                  :rel  "stylesheet"}))
+    (dom/link {:href "https://cdnjs.cloudflare.com/ajax/libs/react-select/1.0.0-rc.5/react-select.min.css"
+               :rel  "stylesheet"})
 
     (dom/link {:href (versionize "/assets/css/app.css")
                :rel  "stylesheet"})

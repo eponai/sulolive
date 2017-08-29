@@ -35,7 +35,8 @@
     [eponai.web.firebase :as firebase]
     [eponai.web.utils :as web.utils]
     [eponai.client.routes :as client.routes]
-    [clojure.data :as data]))
+    [clojure.data :as data]
+    [react-dom]))
 
 (defn add-root! [reconciler]
   (binding [parser/*parser-allow-remote* false]
@@ -290,7 +291,11 @@
                                        :shared/firebase            firebase
                                        :shared/login               login
                                        :shared/photos              photos
-                                       :instrument                 (::plomber run-options)})]
+                                       :instrument                 (::plomber run-options)
+                                       ;; Using react-dom/render because react-dom/hydrate
+                                       ;; doesn't yet work as expected..?
+                                       ;;:root-render                react-dom/render
+                                       })]
 
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
@@ -352,6 +357,7 @@
               deps)))
 
 (defn run-dev [& [deps]]
+  (debug "React-dom: " react-dom)
   (run (merge {
                :shared/auth0    :env/dev
                :shared/firebase :env/prod
@@ -380,7 +386,7 @@
                          (js/setTimeout #(add-root! reconciler) 0))
                        (run-dev)))
         url js/location.pathname]
-    (if-let [matched (bidi/match-route router/routes url)]
+    (if-let [matched (bidi/match-route common.routes/routes url)]
       (do (debug "Matched url to route: " matched " running the app.")
           (on-reload!))
       (debug "Figwheel did not match the url: " url

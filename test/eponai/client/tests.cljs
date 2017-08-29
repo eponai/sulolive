@@ -1,6 +1,5 @@
 (ns ^:figwheel-always eponai.client.tests
   (:require [cljs.test]
-            [cljsjs.react]
             [eponai.common.datascript_test]
             [eponai.common.diff-test]
             [eponai.common.format.date-test]

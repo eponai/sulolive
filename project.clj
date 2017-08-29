@@ -1,5 +1,8 @@
-(def npm-deps {
-               })
+(def npm-deps {:react-helmet "5.1.3"
+               :react "16.0.0-beta.5"
+               :react-dom "16.0.0-beta.5"
+               :create-react-class "15.6.0"
+               :react-grid-layout "0.15.0"})
 (def closure-warns {:non-standard-jsdoc :off})
 
 (defn modules [output-dir]
@@ -44,7 +47,7 @@
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [
                  [org.clojure/clojure "1.9.0-alpha17"]
-                 [org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"]
+                 [org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-5"]
                  ;;[org.omcljs/om "1.0.0-alpha46"]
                  [io.netty/netty-all "4.1.11.Final"]
                  [aleph "0.4.3" :exclusions [io.netty/netty-all]]
@@ -98,10 +101,10 @@
                  [com.google.firebase/firebase-admin "5.2.0"]
 
                  ;; CLJS
-                 [cljsjs/react "15.4.2-2"]
-                 [cljsjs/react-dom "15.4.2-2"]
+                 [cljsjs/react "16.0.0-beta.5-0"]
+                 [cljsjs/react-dom "16.0.0-beta.5-0"]
                  [com.cognitect/transit-cljs "0.8.239"]
-                 [org.clojure/clojurescript "1.9.908"
+                 [org.clojure/clojurescript "1.9.920"
                   ;; :classifier "aot"
                   :exclusion [org.clojure/data.json]
                   ]
@@ -116,7 +119,6 @@
                                com.cognitect/transit-cljs]]
                  [cljsjs/stripe "2.0-0"]
                  [cljsjs/quill "1.1.0-3"]
-                 [cljsjs/react-select "1.0.0-rc.1"]
                  [cljsjs/react-grid-layout "0.13.7-0"]
                  [cljsjs/firebase "4.0.0-0"]
                  [bidi "2.0.10"]
@@ -282,12 +284,13 @@
                                                                 ;; :preloads [env.web.preloads]
                                                                 :language-in     :ecmascript5
                                                                 :parallel-build  true
-                                                                ;; :pseudo-names true
-                                                                ;; :pretty-print true
+                                                                :pseudo-names true
+                                                                :pretty-print true
                                                                 :elide-asserts   true
                                                                 :verbose         true
                                                                 :compiler-stats  true
                                                                 :npm-deps        ~npm-deps
+                                                                ;;:install-deps    true
                                                                 :modules         ~(modules "resources/public/release/js/out/")
                                                                 }}]}}
              :web      {:jvm-opts  ^:replace ["-Xmx3g" "-server"]
@@ -302,7 +305,10 @@
                                                              :optimizations        :none
                                                              :parallel-build       true
                                                              :source-map           true
+                                                             :language-in          :ecmascript5
                                                              :npm-deps             ~npm-deps
+                                                             :verbose              true
+                                                             :install-deps         true
                                                              :closure-warnings     ~closure-warns
                                                              ;; Speeds up Figwheel cycle, at the risk of dependent namespaces getting out of sync.
                                                              :recompile-dependents false

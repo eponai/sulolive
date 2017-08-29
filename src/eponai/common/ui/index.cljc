@@ -3,6 +3,7 @@
     [eponai.common.ui.common :as common]
     [eponai.web.ui.photo :as photo]
     [om.next :as om :refer [defui]]
+    [om.dom]
     [taoensso.timbre :refer [debug error]]
     [eponai.common.ui.dom :as dom :refer [div a]]
     [eponai.common.ui.elements.css :as css]
@@ -10,7 +11,11 @@
     [eponai.common.ui.elements.grid :as grid]
     [eponai.web.ui.content-item :as ci]
     [eponai.common.ui.router :as router]
-    [eponai.common.photos :as photos]))
+    [eponai.common.photos :as photos]
+    #?(:cljs react-helmet)
+    #?(:cljs react)))
+
+
 
 ;(defn banner [{:keys [color align] :as opts} primary secondary]
 ;  (let [align (or align :left)
@@ -66,9 +71,14 @@
           {:keys [route-params]} current-route]
       ;(debug "Featured women products: " featured-women)
 
+      #?(:cljs (debug "react-helmet: " react-helmet))
 
       (dom/div
         nil
+        #?(:cljs
+           (om.dom/create-element (.-Helmet react-helmet)
+                                  #js {}
+                                  (om.dom/title #js {} "My TiTLE x")))
         (dom/div
           (->> {:id "sulo-index-container"}
                (css/add-class :landing-page))

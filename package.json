@@ -2,11 +2,14 @@
   "name": "SuloLiveApp",
   "version": "0.0.1",
   "private": true,
-  "dependencies": {},
-  "devDependencies": {
-    "source-map-support": "0.3.2",
-    "phantomjs": "1.9.19",
-    "foundation-cli": "2.2.3",
-    "bower": "1.8.0"
-  }
+  "dependencies": {
+    "@cljs-oss/module-deps": "^1.1.1",
+    "create-react-class": "^15.6.0",
+    "react": "^16.0.0-beta.5",
+    "react-dom": "^16.0.0-beta.5",
+    "react-grid-layout": "^0.15.0",
+    "react-helmet": "^5.1.3",
+    "react-select": "^1.0.0-rc.5"
+  },
+  "devDependencies": {}
 }
