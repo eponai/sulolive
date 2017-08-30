@@ -35,7 +35,8 @@
     [eponai.web.firebase :as firebase]
     [eponai.web.utils :as web.utils]
     [eponai.client.routes :as client.routes]
-    [clojure.data :as data]))
+    [clojure.data :as data]
+    [eponai.web.header :as header]))
 
 (defn add-root! [reconciler]
   (binding [parser/*parser-allow-remote* false]
@@ -103,8 +104,13 @@
                                                                   (binding [parser/*parser-allow-local-read* false]
                                                                     (queue-cb))
                                                                   (debug "called queue-cb!"))
-                                                              (debug "No root query, nothing to queue..")))))))})))
+                                                              (debug "No root query, nothing to queue..")))))))}))
+        (header/set-head! {:route-params route-params
+                           :query-params query-params
+                           :route        handler}
+                          (om/app-state reconciler)))
       (catch :default e
+        (error "Error: " e)
         (let [data (ex-data e)]
           ;(if (= ::location-not-set (:type data))
           ;  (let [loc (:locality route-params)
