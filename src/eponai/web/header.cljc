@@ -110,8 +110,6 @@
 
 (defmethod match-head-meta-to-nodes-by-tag :meta
   [_ metas nodes]
-  (debug "Metas: " metas)
-  (debug "nodes: " nodes)
   (let [spy (fn [label x] (debug label ": " x) x)
         nodes-by-keys (into {} (map (juxt identity #(group-by % nodes))) [:id :name :property])
         find-matching-node (fn [nodes-by-keys head-meta]
