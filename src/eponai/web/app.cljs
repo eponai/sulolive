@@ -104,13 +104,9 @@
                                                                   (binding [parser/*parser-allow-local-read* false]
                                                                     (queue-cb))
                                                                   (debug "called queue-cb!"))
-                                                              (debug "No root query, nothing to queue..")))))))}))
-        (header/set-head! {:route-params route-params
-                           :query-params query-params
-                           :route        handler}
-                          (om/app-state reconciler)))
+                                                              (debug "No root query, nothing to queue..")))))))})))
       (catch :default e
-        (error "Error: " e)
+        (error "Error when transacting route: " e)
         (let [data (ex-data e)]
           ;(if (= ::location-not-set (:type data))
           ;  (let [loc (:locality route-params)
@@ -263,12 +259,22 @@
                                ;; TODO: Make each remote's basis-t isolated from another
                                ;;       Maybe protocol it?
                                remote-config
-                               {:did-merge-fn (apply-once
-                                                (fn []
-                                                  (reset! init? true)
-                                                  (when-not @init?
-                                                    (debug "Initial merge happened."))
-                                                  (async/close! initial-merge-chan)))
+                               {:will-send-fn (fn [reconciler]
+                                                (header/update-header! (shared/by-key reconciler :shared/header)
+                                                                       (client.routes/current-route reconciler)
+                                                                       (om/app-state reconciler)
+                                                                       false))
+                                :did-merge-fn (juxt (apply-once
+                                                      (fn [reconciler]
+                                                        (reset! init? true)
+                                                        (when-not @init?
+                                                          (debug "Initial merge happened."))
+                                                        (async/close! initial-merge-chan)))
+                                                    (fn [reconciler]
+                                                      (header/update-header! (shared/by-key reconciler :shared/header)
+                                                                             (client.routes/current-route reconciler)
+                                                                             (om/app-state reconciler)
+                                                                             true)))
                                 :query-fn     (fn [query remote]
                                                 ;; The reads of the query have been deduped once, but multiple
                                                 ;; calls to om/transact! will queue more reads. These reads will
@@ -294,6 +300,7 @@
                                        :shared/browser-history     history
                                        :shared/store-chat-listener ::shared/prod
                                        :shared/stripe              ::shared/client-env
+                                       :shared/header              (header/header)
                                        :shared/auth0               auth0
                                        :shared/firebase            firebase
                                        :shared/login               login
