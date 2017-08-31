@@ -7,7 +7,9 @@
     [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]
     [eponai.common.mixpanel :as mixpanel]
     [taoensso.timbre :refer [debug]]
-    [eponai.web.header :as web.header]))
+    [eponai.web.header :as web.header]
+    [eponai.web.seo :as web.seo]
+    [eponai.common.database :as db]))
 
 ;; Utils
 
@@ -113,8 +115,7 @@
         twitter-tags (mapv tag-fn twitter)]
     (into facebook-tags twitter-tags)))
 
-(defn head* [{:keys [release? exclude-icons? cljs-build-id social-sharing site-info random-seed]}]
-  (debug "SITE INFO: " site-info)
+(defn head* [{:keys [release? exclude-icons? cljs-build-id random-seed]}]
   (dom/head
     {:prefix "og: http://ogp.me/ns# fb: http://ogp.me/ns/fb#"}
     (dom/meta {:name    "google-site-verification"
@@ -131,11 +132,11 @@
     ;; Asset version is needed in our module urls.
     (dom/meta {:id "asset-version-meta" :name "asset-version" :content asset-version})
     (dom/meta {:id "random-seed-meta" :name "random-seed" :content (str random-seed)})
-    (dom/meta {:name    "description"
-               :content (or (:description site-info) "Shop local goods and hangout LIVE with your local vendors.")})
+    ;(dom/meta {:name    "description"
+    ;           :content (or (:description site-info) "Shop local goods and hangout LIVE with your local vendors.")})
     (comment (dom/meta {:http-equiv "Content-Type"
                         :content    "text/html; charset=utf-8"}))
-    (dom/title nil (or (:title site-info) "Your local marketplace online, shop and hangout LIVE with your local vendors - SULO Live"))
+    ;(dom/title nil (or (:title site-info) "Your local marketplace online, shop and hangout LIVE with your local vendors - SULO Live"))
     (when (= cljs-build-id "devcards")
       (dom/link {:href "/bower_components/nvd3/build/nv.d3.css"
                  :rel  "stylesheet"}))
@@ -151,8 +152,6 @@
                        "/assets/font-awesome/css/font-awesome.min.css")
                :rel  "stylesheet"
                :type "text/css"})
-
-    (sharing-tags social-sharing)
 
     (mixpanel release?)
     (iubenda-code)
@@ -176,11 +175,12 @@
     (if release?
       (facebook-pixel))))
 
-(defn head [params]
+(defn head [{:keys [system reconciler route-map] :as params}]
   (let [dom-head (head* params)]
-    (web.header/update-header dom-head (web.header/route-meta {:route (:route params)}
-                                                              nil
-                                                              true))))
+    (web.header/update-dom-head dom-head (web.seo/head-meta-data
+                                         {:system    system
+                                          :db        (db/to-db reconciler)
+                                          :route-map route-map}))))
 
 (defn budget-js-path []
   (versionize "/js/out/budget.js"))

@@ -11,6 +11,7 @@
     [eponai.client.backend :as backend]
     [eponai.client.remotes :as remotes]
     [eponai.client.reconciler :as reconciler]
+    [eponai.client.client-env :as client-env]
     [goog.dom :as gdom]
     [om.next :as om :refer [defui ui]]
     [om.dom :as dom]
@@ -36,7 +37,8 @@
     [eponai.web.utils :as web.utils]
     [eponai.client.routes :as client.routes]
     [clojure.data :as data]
-    [eponai.web.header :as header]))
+    [eponai.web.header :as header]
+    [eponai.web.seo :as web.seo]))
 
 (defn add-root! [reconciler]
   (binding [parser/*parser-allow-remote* false]
@@ -260,10 +262,10 @@
                                ;;       Maybe protocol it?
                                remote-config
                                {:will-send-fn (fn [reconciler]
-                                                (header/update-header! (shared/by-key reconciler :shared/header)
-                                                                       (client.routes/current-route reconciler)
-                                                                       (om/app-state reconciler)
-                                                                       false))
+                                                ;(header/update-header! (shared/by-key reconciler :shared/header)
+                                                ;                       (client.routes/current-route reconciler)
+                                                ;                       (om/app-state reconciler))
+                                                )
                                 :did-merge-fn (juxt (apply-once
                                                       (fn [reconciler]
                                                         (reset! init? true)
@@ -273,8 +275,7 @@
                                                     (fn [reconciler]
                                                       (header/update-header! (shared/by-key reconciler :shared/header)
                                                                              (client.routes/current-route reconciler)
-                                                                             (om/app-state reconciler)
-                                                                             true)))
+                                                                             reconciler)))
                                 :query-fn     (fn [query remote]
                                                 ;; The reads of the query have been deduped once, but multiple
                                                 ;; calls to om/transact! will queue more reads. These reads will
@@ -300,11 +301,12 @@
                                        :shared/browser-history     history
                                        :shared/store-chat-listener ::shared/prod
                                        :shared/stripe              ::shared/client-env
-                                       :shared/header              (header/header)
+                                       :shared/header              (header/header web.seo/head-meta-data)
                                        :shared/auth0               auth0
                                        :shared/firebase            firebase
                                        :shared/login               login
                                        :shared/photos              photos
+                                       :shared/client-env          (client-env/cljs-client-env reconciler-atom)
                                        :instrument                 (::plomber run-options)})]
 
     (reset! reconciler-atom reconciler)

@@ -197,3 +197,6 @@
                    " route-params: " route-params
                    " error: " e)
        nil))))
+
+(defn map->url [{:keys [route route-params query-params]}]
+  (path route route-params query-params))

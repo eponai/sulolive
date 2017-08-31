@@ -12,7 +12,7 @@
     [eponai.server.external.wowza :as wowza]
     [eponai.server.external.chat :as chat]
     [eponai.server.external.product-search :as product-search]
-    [eponai.server.external.client-env :as client-env]
+    [eponai.client.client-env :as client-env]
     [eponai.server.api.store :as store]
     [eponai.common.api.products :as products]
     [eponai.server.api.user :as user]

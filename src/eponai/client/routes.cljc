@@ -16,8 +16,8 @@
   ([route route-params query-params]
    (routes/path route route-params query-params)))
 
-(defn map->url [{:keys [route route-params query-params]}]
-  (url route route-params query-params))
+(defn map->url [{:keys [route route-params query-params] :as route-map}]
+  (routes/map->url route-map))
 
 (defn store-url
   ([store route]
