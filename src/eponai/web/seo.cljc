@@ -23,7 +23,7 @@
 (defn- title-tag
   "Adds the :og:title property to the title for facebook."
   [title]
-  (header/title-tag title :property :og:title))
+  (header/title-tag title))
 
 (defn- description-tag
   "Adds the :og:description property to the title for facebook."
@@ -54,6 +54,7 @@
      (description-tag description)
      ;; Facebook
      (p-meta-tag :fb:app_id "936364773079066")
+     (p-meta-tag :og:title title)
      (p-meta-tag :og:image image)
      (p-meta-tag :og:url (str (server-url {:system system}) (routes/map->url route-map)))
      ;; Twitter
@@ -118,9 +119,9 @@
   "Takes db, route-map and system (for clj) or reconciler (for cljs).
   Returns head-meta-data to be processed by eponai.web.header"
   [{:keys [db route-map system reconciler] :as params}]
-  (->> (concat (default-data params)
-               (condp = (:route route-map)
+  (->> (concat (condp = (:route route-map)
                  :store (store params)
                  :product (product params)
-                 []))
+                 [])
+               (default-data params))
        (filter some?)))
