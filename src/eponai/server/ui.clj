@@ -65,7 +65,8 @@
         _ (client.utils/init-state! reconciler (get-in reconciler [:config :send]) router-query)
         ui-root (render-root! reconciler)
         html-string (dom/render-to-str ui-root)]
-    (html/raw-string html-string)))
+    {:html (html/raw-string html-string)
+     :reconciler reconciler}))
 
 (defn with-doctype [html-str]
   (str "<!DOCTYPE html>" html-str))
@@ -78,9 +79,11 @@
   (let [->component (om/factory component)]
     (fn [props]
       (let [start (System/currentTimeMillis)
+            page (render-page props)
             html (with-doctype
                    (html/render-html-without-reactid-tags
-                     (->component (assoc props ::root/app-html (render-page props)))))
+                     (->component (assoc props ::root/app-html (:html page)
+                                               ::root/reconciler (:reconciler page)))))
             end (System/currentTimeMillis)]
         (log/info! (:logger props) ::render-html {:event-time-ms (- end start)})
         html))))

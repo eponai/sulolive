@@ -4,6 +4,7 @@
     [taoensso.timbre :refer [debug]]
     [eponai.server.external.cloudinary :as cloudinary]
     [environ.core :as environ]
+    [eponai.client.client-env :as client-env]
     [eponai.server.external.aleph :as aleph]
     [eponai.server.external.aws-ec2 :as ec2]
     [eponai.server.external.aws-elb :as elb]
@@ -21,7 +22,6 @@
     [eponai.server.external.aws-s3 :as s3]
     [eponai.server.external.email :as email]
     [eponai.server.external.google :as google]
-    [eponai.server.external.client-env :as client-env]
     [eponai.server.external.stripe.webhooks :as stripe-webhooks]
     [eponai.server.external.firebase :as firebase]
     [eponai.server.external.request-handler :as request-handler]))
@@ -71,7 +71,7 @@
 
    :system/chat-websocket  (c/using (websocket/map->StoreChatWebsocket {})
                                     {:chat :system/chat})
-   :system/client-env      (client-env/map->ClientEnvironment
+   :system/client-env      (client-env/clj-client-env
                              {:client-env (select-keys env [;; Stripe
                                                             :stripe-publishable-key
                                                             ;; Auth0
