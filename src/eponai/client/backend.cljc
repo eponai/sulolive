@@ -532,7 +532,8 @@
         (let [r @reconciler-atom]
           (some-> (get-in r [:config :shared :shared/loading-bar])
                   (loading-bar/start-loading! r))
-          (will-send-fn r)))
+          (when (some? will-send-fn)
+            (will-send-fn r))))
      (run! (fn [[remote query]]
              (when (seq query)
                (async/put! query-chan {:remote->send remote-config
