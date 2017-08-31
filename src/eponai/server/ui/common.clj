@@ -6,7 +6,8 @@
     [environ.core :as env]
     [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]
     [eponai.common.mixpanel :as mixpanel]
-    [taoensso.timbre :refer [debug]]))
+    [taoensso.timbre :refer [debug]]
+    [eponai.web.header :as web.header]))
 
 ;; Utils
 
@@ -112,7 +113,7 @@
         twitter-tags (mapv tag-fn twitter)]
     (into facebook-tags twitter-tags)))
 
-(defn head [{:keys [release? exclude-icons? cljs-build-id social-sharing site-info random-seed]}]
+(defn head* [{:keys [release? exclude-icons? cljs-build-id social-sharing site-info random-seed]}]
   (debug "SITE INFO: " site-info)
   (dom/head
     {:prefix "og: http://ogp.me/ns# fb: http://ogp.me/ns/fb#"}
@@ -174,6 +175,12 @@
       (google-analytics-sulo-master))
     (if release?
       (facebook-pixel))))
+
+(defn head [params]
+  (let [dom-head (head* params)]
+    (web.header/update-header dom-head (web.header/route-meta {:route (:route params)}
+                                                              nil
+                                                              true))))
 
 (defn budget-js-path []
   (versionize "/js/out/budget.js"))
