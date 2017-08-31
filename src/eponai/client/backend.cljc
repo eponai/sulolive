@@ -521,7 +521,7 @@
             (did-merge-fn @reconciler-atom)))))))
 
 (defn send!
-  [reconciler-atom remote-config & [{:keys [did-merge-fn query-fn]}]]
+  [reconciler-atom remote-config & [{:keys [did-merge-fn query-fn will-send-fn]}]]
   {:pre [(map? remote-config)]}
   (let [query-chan (async/chan 10000)
         ;; Make leeb listen to the query-chan:
@@ -531,7 +531,8 @@
       (when (some (comp seq val) queries)
         (let [r @reconciler-atom]
           (some-> (get-in r [:config :shared :shared/loading-bar])
-                  (loading-bar/start-loading! r))))
+                  (loading-bar/start-loading! r))
+          (will-send-fn r)))
      (run! (fn [[remote query]]
              (when (seq query)
                (async/put! query-chan {:remote->send remote-config

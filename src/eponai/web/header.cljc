@@ -1,57 +1,54 @@
 (ns eponai.web.header
   (:require [medley.core :as medley]
-            [taoensso.timbre :refer [debug error]]))
-
-(defn remove-empty-vals [m]
-  (into {}
-        (filter (comp some? val))
-        m))
+            [taoensso.timbre :refer [debug error]]
+            [om.dom :as dom]))
 
 (defprotocol IHeadTag
   (tag-map [this]))
 
-(defprotocol IWriteDOMNodes
-  (tag-name [this])
-  (mutate-node! [this node]))
+(defprotocol IUpdateHeader
+  (update-header! [this route app-state after-merge?]))
+
+#?(:cljs
+   (extend-type js/HTMLElement
+     IHeadTag
+     (tag-map [this]
+       (let [inner-text (.-innerText this)
+             tag (-> (.-nodeName this) (clojure.string/lower-case) (keyword))]
+         (-> {:node this
+              :tag  tag}
+             (into (comp (map (juxt identity #(.getAttribute this (name %))))
+                         (filter (comp some? second)))
+                   [:id :name :property :content])
+             (cond-> (seq inner-text)
+                     (assoc :inner-text inner-text)))))))
 
 (defrecord TitleTag [content]
   IHeadTag
   (tag-map [this]
-    {:tag :title :content content})
-  IWriteDOMNodes
-  (tag-name [this] "title")
-  (mutate-node! [this node]
-    (when-not (= (.-innerText node) (str content))
-      (set! (.-innerText node) (str content)))))
+    {:tag :title :content content}))
 
 (defrecord DescriptionTag [content]
   IHeadTag
   (tag-map [this]
-    {:tag :description :content content})
-  IWriteDOMNodes
-  (tag-name [this] "description")
-  (mutate-node! [this node]
-    (when-not (= (.-innerText node) (str content))
-      (set! (.-innerText node) (str content)))))
-
-(defn- set-node-attributes!
-  "Takes an HTMLElement (node), a map and keys, and sets all keys as attributes
-  on the node with values from the map."
-  [node m attrs]
-  (->> attrs
-       (filter (comp some? #(get m %)))
-       (run! (fn [k]
-               (.setAttribute node (name k) (str (get m k)))))))
+    {:tag :description :content content}))
 
 (defrecord MetaTag [id name property content]
   IHeadTag
   (tag-map [this]
-    (remove-empty-vals
-      {:tag :meta :id id :name name :property property :content content}))
-  IWriteDOMNodes
-  (tag-name [this] "meta")
-  (mutate-node! [this node]
-    (set-node-attributes! node this [:id :name :property :content])))
+    (into {}
+          (filter (comp some? val))
+          {:tag      :meta
+           :id       id
+           :name     name
+           :property property
+           :content  content})))
+
+(defn title-tag [title]
+  (->TitleTag title))
+
+(defn description-tag [description]
+  (->DescriptionTag description))
 
 (defn meta-tag
   "Helper function for creating the meta tags.
@@ -62,68 +59,72 @@
   {:pre [(some #{:id :name :property} (keys kvs))]}
   (map->MetaTag kvs))
 
-(defn map->tag [head-meta]
-  (condp = (:tag head-meta)
-    :title (map->TitleTag head-meta)
-    :description (map->DescriptionTag head-meta)
-    :meta (map->MetaTag head-meta)))
+
+(defn- set-node-attributes!
+  "Takes an HTMLElement (node), a map and keys, and sets all keys as attributes
+  on the node with values from the map."
+  [node m attrs]
+  (debug "Will set attrs: " attrs " for head-meta: " m " selected-keys: " (select-keys m attrs))
+  (->> (select-keys m attrs)
+       (map (fn [[k v]] [(name k) (str v)]))
+       (run! (fn [[k v]]
+               ;; Don't mutate DOM if attribute is already equal.
+               (when-not (= v (.getAttribute node k))
+                 (debug "Setting meta attribute: " [k v])
+                 (.setAttribute node k v))))))
+
+(defn- set-node-inner-text [node text]
+  (set! (.-innerText node) (str text)))
+
+(defn mutate-node! [{:keys [tag content] :as head-meta} node]
+  (condp = tag
+    :title (set-node-inner-text node content)
+    :description (set-node-inner-text node content)
+    :meta (set-node-attributes! node
+                                head-meta
+                                [:id :name :property :content])))
+
+(defmulti match-head-meta-to-nodes-by-tag (fn [tag metas nodes] tag))
+
+(defn match-head-meta-to-dom-nodes
+  [head-meta dom-nodes]
+  {:pre [(every? #(satisfies? IHeadTag %) head-meta)
+         (every? #(satisfies? IHeadTag %) dom-nodes)]}
+  (let [meta-by-tag (group-by :tag (map tag-map head-meta))
+        nodes-by-tag (group-by :tag (map tag-map dom-nodes))]
+    (->> (keys meta-by-tag)
+         (into []
+               (mapcat (fn [tag]
+                         {:post [(every? vector? %)]}
+                         (match-head-meta-to-nodes-by-tag tag
+                                                          (get meta-by-tag tag)
+                                                          (get nodes-by-tag tag)))))
+         (rseq)
+         (medley/distinct-by (fn [[head-meta node]]
+                               ;; If there's no matching node, distinct by the head-meta
+                               ;; to avoid creating duplicates.
+                               (or node head-meta))))))
 
 #?(:cljs
-   (extend-type js/HTMLElement
-     IHeadTag
-     (tag-map [this]
-       (remove-empty-vals
-         {:node       this
-          :tag        (-> (.-nodeName this)
-                          (clojure.string/lower-case)
-                          (keyword))
-          :id         (.-id this)
-          :name       (.-name this)
-          :property   (.-property this)
-          :content    (.-content this)
-          :inner-text (.-innerText this)}))))
-
-(defmulti route-meta (fn [route-map app-state] (:route route-map)))
-(defmulti match-head-meta-to-nodes (fn [tag metas nodes] tag))
+   (defn dom-head []
+     (first (array-seq (.getElementsByTagName js/document "head")))))
 
 #?(:cljs
-   (defn set-head! [route app-state]
-     (let [head-meta (concat (route-meta :default app-state)
-                             (route-meta route app-state))
-           meta-by-tags (group-by :tag (map tag-map head-meta))
-
-           root-head-node (first (array-seq (.getElementsByTagName js/document "head")))
-           head-children-by-tag (->> root-head-node
-                                     (.-children)
-                                     (array-seq)
-                                     (map tag-map)
-                                     (group-by :tag))
-
-           matched (mapcat #(match-head-meta-to-nodes %
-                                                      (get meta-by-tags %)
-                                                      (get head-children-by-tag %))
-                           (keys meta-by-tags))]
-       (debug "Matched: " matched)
-       (->> matched
-            ;; Apply changes in reverse, distinct by the node that's mutated.
-            (reverse)
-            (medley/distinct-by (fn [[head-meta node]]
-                                  ;; If there's no matching node, distinct by the head-meta
-                                  ;; to avoid creating duplicates.
-                                  (or node head-meta)))
+   (defn mutate-dom-nodes [head-to-node-matches]
+     (let [head (dom-head)]
+       (->> head-to-node-matches
             (run! (fn [[head-meta node]]
-                    (let [x-tag (map->tag head-meta)]
-                      (if (some? node)
-                        (let [node (:node node)
-                              pre-mutate (tag-map node)]
-                          (mutate-node! x-tag node)
-                          (debug "Mutated node, before: " pre-mutate " after: " (tag-map node)))
-                        (let [node (.createElement js/document (tag-name x-tag))]
-                          (mutate-node! x-tag node)
-                          (debug "Created node: " (tag-map node))
-                          (.appendChild root-head-node node))))))))))
+                    (if (some? node)
+                      (let [node (:node node)
+                            pre-mutate (tag-map node)]
+                        (mutate-node! head-meta node)
+                        (debug "Mutated node, before: " pre-mutate " after: " (tag-map node)))
+                      (let [node (.createElement js/document (name (:tag head-meta)))]
+                        (mutate-node! head-meta node)
+                        (debug "Created node: " (tag-map node))
+                        (.appendChild head node)))))))))
 
-(defmethod match-head-meta-to-nodes :title
+(defmethod match-head-meta-to-nodes-by-tag :title
   [_ metas nodes]
   ;; Return the last head-meta with the first node.
   ;; There should only be one title
@@ -132,18 +133,19 @@
             (str "There were more than 1 title tag in <head>: " nodes)))
   [[(last metas) (first nodes)]])
 
-(defmethod match-head-meta-to-nodes :description
+(defmethod match-head-meta-to-nodes-by-tag :description
   [_ metas nodes]
   (when (seq nodes)
     (assert (= 1 (count nodes))
             (str "There were more than 1 description tag in <head>: " nodes)))
   [[(last metas) (first nodes)]])
 
-(defmethod match-head-meta-to-nodes :meta
+(defmethod match-head-meta-to-nodes-by-tag :meta
   [_ metas nodes]
   (debug "Metas: " metas)
   (debug "nodes: " nodes)
-  (let [nodes-by-keys (into {} (map (juxt identity #(group-by % nodes))) [:id :name :property])
+  (let [spy (fn [label x] (debug label ": " x) x)
+        nodes-by-keys (into {} (map (juxt identity #(group-by % nodes))) [:id :name :property])
         find-matching-node (fn [nodes-by-keys head-meta]
                              (let [matched (->> [:id :name :property]
                                                 (map (fn [k]
@@ -162,20 +164,47 @@
           (map #(find-matching-node nodes-by-keys %))
           metas)))
 
+(defmulti route-meta (fn [route-map app-state after-merge?]
+                       (when-let [r (:route route-map)]
+                         (or (namespace r)
+                             (name r)))))
+
+(def default-head-meta [(title-tag "your local marketplace online")
+                        (description-tag "it's the best place online.")
+                        (meta-tag :property "rawr" :content "bar")
+                        (meta-tag :name "some-name" :content "some content")])
+
 (defmethod route-meta :default
-  [_ state]
-  [(->TitleTag "your local marketplace online")
-   (->DescriptionTag "it's the best place online.")
-   (meta-tag :property "rawr" :content "bar")])
+  [_ state after-merge?]
+  default-head-meta)
 
-(defmethod route-meta :browse/all-items
-  [_ state]
-  [(->TitleTag "BROWSING ALL ITEMS :D")])
+(defmethod route-meta "browse"
+  [{:keys [route]} state after-merge?]
+  (into default-head-meta
+        [(title-tag (condp = route
+                       :browse/all-items "browse all items"
+                       :browse/gender "browse gender"
+                       :browse/category "browse cat "
+                       "BROWSING :D"))]))
 
-(defmethod route-meta :browse/gender
-  [_ state]
-  [(->TitleTag "BROWSING SOME GENDER :D")])
-
-(defmethod route-meta :browse/category
-  [_ state]
-  [(->TitleTag "BROWSING SOME CATEGORY :D")])
+#?(:cljs
+   (defn header
+     "header-meta-fn is a 1-arity function returning a sequence of <head> tag children."
+     ([] (header #(route-meta (:route-map %) (:app-state %) (:after-merge? %))))
+     ([header-meta-fn]
+      (let [cache (atom {})]
+        (reify IUpdateHeader
+          (update-header! [this route-map app-state after-merge?]
+            (let [head-meta (into []
+                                  (filter some?)
+                                  (header-meta-fn {:route-map    route-map
+                                                   :app-state    app-state
+                                                   :after-merge? after-merge?}))]
+              ;; Avoid updating the same header info again.
+              (if (= head-meta (:head-meta @cache))
+                (debug "Head-meta was equal to last time, won't run the update.")
+                (do
+                  (swap! cache assoc :head-meta head-meta)
+                  (let [dom-nodes (->> (dom-head) (.-children) (array-seq))
+                        matches (match-head-meta-to-dom-nodes head-meta dom-nodes)]
+                    (mutate-dom-nodes matches)))))))))))
