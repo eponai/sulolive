@@ -19,7 +19,8 @@
       (debug "app-html: " app-html)
       (dom/html
         {:lang "en"}
-        (common/head {:release?       release?
+        (common/head {:route          route
+                      :release?       release?
                       :social-sharing social-sharing
                       :site-info      site-info
                       :cljs-build-id  cljs-build-id
