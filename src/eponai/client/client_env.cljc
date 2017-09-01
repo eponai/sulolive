@@ -5,7 +5,7 @@
 (defprotocol IClientEnvironment
   (env-map [this]))
 
-(defn clj-client-env [client-env]
+(defn clj-client-env [{:keys [client-env]}]
   (reify IClientEnvironment
     (env-map [this]
       client-env)))
