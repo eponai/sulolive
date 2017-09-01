@@ -29,9 +29,12 @@
 
 (def firebase-routes-v3
   ;; Basically the same as v2, but locality routes are moved right under "/v3/"
-  ["/v3/" (merge {["store/" :store-id "/"] store-routes
-                  ["user/" :user-id "/"]   user-routes}
-                 locality-routes)])
+  ["" {"/v3/" (merge {["store/" :store-id "/"] store-routes
+                      ["user/" :user-id "/"]   user-routes}
+                     locality-routes)
+       "/user-flags/v1" {""           :user-flags
+                         ["/" :email] {""          :user-flags/email
+                                       ["/" :flag] :user-flags.email/flag}}}])
 
 (defn path
   "Takes a route and its route-params and returns a firebase path"
