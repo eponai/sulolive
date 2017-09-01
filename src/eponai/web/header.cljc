@@ -15,6 +15,7 @@
           :title tag in the header, so :title's implementation is [:tag].
           :meta is unique by a combination of attributes and it returns [:tag :id :name :property]."
           (fn [{:keys [tag]}] tag))
+(defmethod unique-attributes :default [_] [])
 
 (defmulti mutate-dom-node!
           "Mutate a JavaScript HTMLElement given a tag-map."
@@ -84,25 +85,11 @@
   (let [nodes-by-tags-by-keys
         (->> nodes
              (group-by :tag)
-             (into {}
-                   (map (fn [[tag nodes]]
-                          [tag (into {:tag {tag nodes}}
-                                     (map (juxt identity #(group-by % nodes)))
-                                     ;; Index by id, name and property
-                                     [:id :name :property])]))))]
+             (into {} (map (fn [[tag nodes]]
+                             [tag (clojure.set/index nodes (unique-attributes {:tag tag}))]))))]
     (map (fn [head-meta]
-           (let [nodes-by-keys (get nodes-by-tags-by-keys (:tag head-meta))
-                 matches-by-key (->> (unique-attributes head-meta)
-                                     (into []
-                                           (comp (map (fn [k]
-                                                        (when-some [v (get head-meta k)]
-                                                          (let [nodes-by-k-val (get nodes-by-keys k)]
-                                                            (get nodes-by-k-val v)))))
-                                                 (filter seq)
-                                                 (map set)))
-                                     not-empty)
-                 matched (when matches-by-key
-                           (apply clojure.set/intersection matches-by-key))]
+           (let [nodes-by-index (get nodes-by-tags-by-keys (:tag head-meta))
+                 matched (get nodes-by-index (select-keys head-meta (unique-attributes head-meta)))]
              (assert (or (empty? matched)
                          (= 1 (count matched)))
                      (str "Matched was more than 1, was: " matched
