@@ -190,7 +190,7 @@
 
 (defn shuffle-with-seed [seed coll]
   (let [al (java.util.ArrayList. coll)]
-    (java.util.Collections/shuffle al (java.util.Random. seed))
+    (java.util.Collections/shuffle al (java.util.Random. (or seed 4711)))
     (clojure.lang.RT/vector (.toArray al))))
 
 (defread query/featured-items
