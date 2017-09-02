@@ -5,7 +5,8 @@
     [eponai.common.shared :as shared]
     [eponai.client.routes :as routes]
     [cemerick.url :as url]
-    [eponai.common :as c]))
+    [eponai.common :as c]
+    [eponai.client.client-env :as client-env]))
 
 (defprotocol IAuth0Client
   (login-with-credentials [this email password f])
@@ -19,13 +20,12 @@
 
 (defmethod shared/shared-component [:shared/auth0 :env/prod]
   [reconciler _ _]
-  (let [{:keys [auth0-client-id auth0-domain]} (db/singleton-value (db/to-db reconciler)
-                                                                   :ui.singleton.client-env/env-map)
+  (let [{:keys [auth0-client-id auth0-domain] :as env-map} (client-env/env-map (shared/by-key reconciler :shared/client-env))
         ^js/auth0.WebAuth web-auth (new js/auth0.WebAuth #js {:domain       auth0-domain
-                                            :clientID     auth0-client-id
-                                            :redirectUri  (redirect-to (routes/url :auth))
-                                            :responseType "code"
-                                            :scope        "openid email verified"})]
+                                                              :clientID     auth0-client-id
+                                                              :redirectUri  (redirect-to (routes/url :auth))
+                                                              :responseType "code"
+                                                              :scope        "openid email verified"})]
     (reify IAuth0Client
       (login-with-credentials [_ email password f]
         (let [^js/auth0.WebAuth.Redirect redirect (.-redirect web-auth)]

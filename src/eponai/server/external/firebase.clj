@@ -8,7 +8,8 @@
     [eponai.common.firebase :as common.firebase]
     [eponai.common.format.date :as date]
     [buddy.core.codecs.base64 :as b64]
-    [com.stuartsierra.component :as component])
+    [com.stuartsierra.component :as component]
+    [clojure.string :as string])
   (:import (com.google.firebase FirebaseOptions$Builder FirebaseApp)
            (com.google.firebase.auth FirebaseAuth FirebaseCredentials)
            (com.google.firebase.database FirebaseDatabase DatabaseReference ValueEventListener DataSnapshot DatabaseError)
@@ -21,7 +22,11 @@
   (-get-device-token [this user-id]))
 
 (defprotocol IFirebaseAuth
-  (-generate-client-auth-token [this user-id claims]))
+  (-generate-client-auth-token [this user-id claims])
+  (-user-flags [this user-email]
+    "Get features enabled for a user with a certain email. Email is unique by account.
+    We don't use the user-id here because we want to allow accounts not created yet to
+    have certain features (e.g. start a store)"))
 
 (defprotocol IFirebaseChat
   (-presence [this])
@@ -80,6 +85,9 @@
 (defn notification-ref [database user-id]
   (route->ref database :user/unread-notifications {:user-id user-id}))
 
+(defn user-flags-ref [database user-email]
+  (route->ref database :user-flags/email {:email user-email}))
+
 (defn store-owner-presence
   ([database]
    (doto (route->ref database :user-presence/store-owners {})
@@ -118,6 +126,18 @@
                 (debug "FIREBASE GOT TOKEN: " customtoken)
                 (deliver p customtoken)))))
       (deref p 2000 :firebase/token-timeout)))
+
+  (-user-flags [this user-email]
+    (when (not-empty user-email)
+      (let [;; Firebase does not allow . in their keys, so we'll replace with ,
+            ;; This should be fine since , is not allowed in emails.
+            formatted-email (string/replace user-email "." ",")
+            entry-exists (-> (ref->snapshot (route->ref (:database this) :user-flags nil))
+                             (.hasChild formatted-email))]
+        (when entry-exists
+          (let [v (ref->value (user-flags-ref (:database this) formatted-email))]
+            ;; The value returned is a map object, so we'll simply convert into a clojure map.
+            (clojure.walk/keywordize-keys (into {} v)))))))
 
   IFirebaseNotifications
   (-send-notification [this user-id {:keys [title message type click-action] :as params}]
@@ -172,6 +192,8 @@
     IFirebaseAuth
     (-generate-client-auth-token [this user-id claims]
       "some-token")
+    (-user-flags [this user-email]
+      {:open-store true})
     IFirebaseNotifications
     (-send-chat-notification [this user-id data])
     (-send-notification [this user-id data])

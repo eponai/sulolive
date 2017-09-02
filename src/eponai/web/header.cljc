@@ -50,6 +50,17 @@
   [{:keys [tag content] :as head-meta}]
   (dom/meta (dissoc head-meta :tag)))
 
+;; <link>
+(defmethod unique-attributes :link [_] [:id])
+
+(defmethod mutate-dom-node! :link
+  [head-meta node]
+  (set-node-attributes! node head-meta))
+
+(defmethod create-om-element :link
+  [{:keys [tag rel] :as head-meta}]
+  (dom/link (dissoc head-meta :tag)))
+
 
 ;; Implementation
 
@@ -217,6 +228,13 @@
   (when (some? title)
     {:tag     :title
      :content title}))
+
+(defn link-tag [{:keys [id rel href]}]
+  (when (every? some? [id rel])
+    {:tag  :link
+     :id   id
+     :rel  rel
+     :href (str href)}))
 
 (defn meta-tag
   "Helper function for creating the meta tags.

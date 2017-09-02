@@ -129,7 +129,7 @@
 
               ;; Get the account with matching email again, just in case the search
               ;; query failed (and Auth0 returns all accounts)
-              (let [user (some #(when (= email (:email %)) %) accounts)]
+              (when-let [user (some #(when (= email (:email %)) %) accounts)]
                 (-get this (get-token this) ["users" (user-id user)] nil)))
             (when-not (= :continue (:code (ex-data e)))
               (throw e)))))))
