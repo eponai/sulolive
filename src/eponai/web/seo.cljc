@@ -54,7 +54,8 @@
 (defn- default-data
   "This data is ALWAYS included if not overwritten by other functions."
   [{:keys [db route-map system reconciler]}]
-  (let [title "SULO Live - Buy and sell handmade clothes, jewelry, art, fashion, bath and home decor products."
+  (let [{:keys [route route-params]} route-map
+        title "SULO Live - Buy and sell handmade clothes, jewelry, art, fashion, bath and home decor products."
         description "Buy and sell handmade men's or women's fashion, clothes, jewelry, handbags, shoes, and home decor, beauty, ceramics, art from a marketplace of independent and new brands from Canada."
         image (photos/transform "static/products" :transformation/preview)]
     [
@@ -69,7 +70,7 @@
      (p-meta-tag :fb:app_id "936364773079066")
      (p-meta-tag :og:title title)
      (p-meta-tag :og:image image)
-     (p-meta-tag :og:url (str (server-url {:system system}) (routes/map->url route-map)))
+     (p-meta-tag :og:url (str (server-url {:system system}) (routes/path route route-params)))
      ;(p-meta-tag :og:description description)
 
      ;; Twitter
