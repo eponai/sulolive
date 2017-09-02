@@ -129,13 +129,15 @@
 
   (-user-flags [this user-email]
     (when (not-empty user-email)
-      (let [
-            ;; Firebase does not allow . in their keys, so we'll replace with ,
+      (let [;; Firebase does not allow . in their keys, so we'll replace with ,
             ;; This should be fine since , is not allowed in emails.
             formatted-email (string/replace user-email "." ",")
-            v (ref->value (user-flags-ref (:database this) formatted-email))]
-        ;; The value returned is a map object, so we'll simply convert into a clojure map.
-        (clojure.walk/keywordize-keys (into {} v)))))
+            entry-exists (-> (ref->snapshot (route->ref (:database this) :user-flags nil))
+                             (.hasChild formatted-email))]
+        (when entry-exists
+          (let [v (ref->value (user-flags-ref (:database this) formatted-email))]
+            ;; The value returned is a map object, so we'll simply convert into a clojure map.
+            (clojure.walk/keywordize-keys (into {} v)))))))
 
   IFirebaseNotifications
   (-send-notification [this user-id {:keys [title message type click-action] :as params}]
