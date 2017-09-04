@@ -41,6 +41,11 @@ html, body {
 		font-size: $global-font-size;
 	}
 }
+.breadcrumbs {
+	a {
+		font-weight: $global-weight-bold;
+	}
+}
 .not-found-code {
 			// flex: 0 0 auto;
 			display: flex;

@@ -172,7 +172,7 @@
     :store/items      [{:store.item/name     "Linen duvet cover - Woodrose"
                         :store.item/price    34.00M
                         :store.item/photos   [(item-photo "mocked/il_570xN.1142044641_1j6c")]
-                        :store.item/category [:category/path "home"]
+                        :store.item/category [:category/path (category-path "home" "accessories")]
                         :store.item/skus     [(sku)]}
                        {:store.item/name     "Linen pillowcases with ribbons"
                         :store.item/price    52.00M
