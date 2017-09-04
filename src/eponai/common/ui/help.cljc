@@ -43,7 +43,7 @@
             (menu/item nil (dom/a {:href (routes/url :help)}
                                   (dom/span nil "SULO Live support")))
             (menu/item nil (dom/a {:href (routes/url :help/stores)}
-                                  (dom/span nil "Stores")))
+                                  (dom/span nil "Shops")))
             (menu/item nil (dom/span nil anchor-text)))))
       ;(menu/breadcrumbs
       ;  nil
@@ -114,7 +114,7 @@
                        (callout/callout-small
                          nil
                          (photo/square {:photo-id "static/help-store"})
-                         (dom/h3 nil "Stores")))))]
+                         (dom/h3 nil "Shops")))))]
                 (= route :help/welcome)
                 [(welcome/->Welcome)
                  (render-contact-us)]
