@@ -33,6 +33,27 @@ $section-footer-color: $primary-color;
 			}
 		}
 	}
+
+	// .feature-menu {
+
+	ul.feature-menu {
+		li {
+			display: flex;
+			justify-content: center;
+			letter-spacing: 0.5px;
+		}
+		li:before {
+  			content: '✓';
+  			margin-right: 0.5rem;
+  			color: $sulo-dark-color;
+		}
+		&:after {
+			content: "---";
+			color: $sulo-dark-color;
+			margin-bottom: 0.5rem;
+		}
+	}
+	// }
 }
 
 .hero {

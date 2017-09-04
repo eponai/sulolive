@@ -467,24 +467,23 @@
             (css/add-class :section-title)
             (dom/h3 (css/add-classes [:sulo-dark :jumbo-header :banner]) "You grow. We grow.")
 
-
-            (dom/p nil
+            (dom/p (css/add-class :lead)
                    (dom/span nil "We only charge a ")
-                   (dom/em nil "20% commission")
+                   (dom/em nil "commission")
                    (dom/span nil " on your listing price and ")
-                   (dom/em nil "$0.30 + 2.9% transaction fee")
+                   (dom/em nil "transaction fee")
                    (dom/span nil " on your sales.")
                    )
-            (dom/p nil "You pay nothing upfront and there's no hidden fees.")
-            ;(dom/h6 nil "On SULO you'll get:")
-            ;(menu/vertical
-            ;  nil
-            ;  (dom/li nil (dom/p nil "Unlimited streaming"))
-            ;  (dom/li nil (dom/p nil "Unlimited viewers"))
-            ;  (dom/li nil (dom/p nil "Unlimited products"))
-            ;  (dom/li nil (dom/p nil "Unlimited chat messages")))
+            (dom/h5 nil (dom/strong nil "You get:"))
+            (menu/vertical
+              (->> (css/align :center)
+                   (css/add-class :feature-menu))
+              (dom/li nil (dom/p nil "Unlimited streaming"))
+              (dom/li nil (dom/p nil "Unlimited viewers"))
+              (dom/li nil (dom/p nil "Unlimited products"))
+              (dom/li nil (dom/p nil "Unlimited chat messages")))
 
-            ))
+            (dom/p (css/add-class :lead) "You pay nothing upfront and there's no hidden fees.")))
 
         (dom/div
           (css/add-classes [:section :banner])
