@@ -34,13 +34,14 @@
 ;          (css/align :right)
 ;          secondary)))))
 
-(defn collection-element [{:keys [href url title full? url-small photo-id]}]
+(defn collection-element [{:keys [href url title full? url-small photo-id alt]}]
   ;; Use the whole thing as hover elem
   (dom/a
     {:href    href
      :classes [:full :category-photo]}
     (photo/video-thumbnail
-      (css/add-class :widescreen {:photo-id photo-id})
+      (css/add-class :widescreen {:photo-id photo-id
+                                  :alt alt})
       (photo/overlay
         nil (dom/div
               (->> (css/text-align :center))
@@ -206,6 +207,7 @@
                   (collection-element {:href     (routes/url :browse/category (merge route-params
                                                                                      {:top-category "home"}))
                                        :photo-id "static/home-4"
+                                       :alt "Shop home"
                                        :title    "Home"})
                   )
                 (grid/column
@@ -214,12 +216,14 @@
                   (collection-element {:href     (routes/url :browse/gender (merge route-params
                                                                                    {:sub-category "women"}))
                                        :photo-id "static/women-3"
+                                       :alt "Shop women"
                                        :title    "Women"}))
                 (grid/column
                   (->> (css/add-class :content-item)
                        (css/add-class :collection-item))
                   (collection-element {:href     (routes/url :browse/category (merge route-params
                                                                                      {:top-category "art"}))
+                                       :alt "Shop art"
                                        :photo-id "static/collection-art-5"
                                        :title    "Art"}))
                 (grid/column
@@ -227,6 +231,7 @@
                        (css/add-class :collection-item))
                   (collection-element {:href     (routes/url :browse/gender (merge route-params
                                                                                    {:sub-category "men"}))
+                                       :alt "Shop men"
                                        :photo-id "static/men-3"
                                        :title    "Men"}))))
 

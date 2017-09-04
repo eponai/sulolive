@@ -221,7 +221,7 @@
                                                   :store                store
                                                   :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
                    (some? cover)
-                   (photo/store-cover store nil))
+                   (photo/store-cover store {:alt (str store-name " cover photo")}))
 
                  (chat/->StreamChat (om/computed (:proxy/chat props)
                                                  {:on-toggle-chat      (fn [show?]

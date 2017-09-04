@@ -45,7 +45,7 @@
              (set! (.-src image-large) url))))))
 
   (render [this]
-    (let [{:keys [content src photo-id classes ext background? id onMouseMove onMouseOut]} (om/props this)]
+    (let [{:keys [content src photo-id classes ext alt background? id onMouseMove onMouseOut]} (om/props this)]
       (cond (some? photo-id)
             (let [{:keys [loaded-main?]} (om/get-state this)
                   url-small (photos/mini (shared/by-key this :shared/photos) photo-id {:ext ext})
@@ -71,6 +71,7 @@
                       {
                        ;:data-src url-small
                        :src     url-small
+                       :alt     (or alt "")
                        :classes ["small"]}))
                   (dom/img
                     (cond->> {
@@ -81,6 +82,7 @@
                               :classes     ["main"]
                               :onLoad      #(om/update-state! this assoc :loaded-main? true)
                               ;:itemProp    "image"
+                              :alt         (or alt "")
                               }
                              loaded-main?
                              (css/add-class :loaded))))))
@@ -93,6 +95,7 @@
               (dom/img
                 {
                  ;:data-src src
+                 :alt     (or alt "")
                  :src     src
                  :classes ["main loaded"]})
 
@@ -159,6 +162,7 @@
         {item-photo :store.item.photo/photo} (get (into [] (sort-by :store.item.photo/index photos)) (or index 0))
         photo-id (:photo/id item-photo "static/storefront")]
     (photo (merge opts {:photo-id    photo-id
+                        :alt         (str (:store.item/name product))
                         :classes     (conj classes :product-photo)
                         :background? (if (some? background?) background? true)})
            content)))
@@ -176,7 +180,8 @@
 (defn store-photo [store props & content]
   (let [photo (get-in store [:store/profile :store.profile/photo])
         photo-id (:photo/id photo "static/storefront-2")]
-    (circle (->> (assoc props :photo-id photo-id)
+    (circle (->> (merge props {:photo-id photo-id
+                               :alt      (str (-> store :store/profile :store.profile/name))})
                  (css/add-class :store-photo))
             content)))
 
@@ -189,9 +194,11 @@
 (defn user-photo [user props & content]
   (let [photo (get-in user [:user/profile :user.profile/photo])
         p (if (:photo/id photo)
-            {:photo-id (:photo/id photo)}
+            {:photo-id (:photo/id photo)
+             :alt      (-> user :user/profile :user.profile/name)}
             {:photo-id "static/cat-profile"
-             :ext      "png"})]
+             :ext      "png"
+             :alt      (-> user :user/profile :user.profile/name)})]
     (dom/div
       (css/add-class :user-profile-photo)
       (circle
@@ -209,7 +216,8 @@
     (dom/div
       (css/add-class :stream-photo)
       (video-thumbnail
-        {:photo-id photo-id}
+        {:photo-id photo-id
+         :alt (str (get-in store [:store/profile :store.profile/name]) " live stream")}
         (overlay
           nil
           (dom/div (css/add-class :video)

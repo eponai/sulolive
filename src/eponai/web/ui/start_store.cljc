@@ -398,7 +398,8 @@
                  (css/align :bottom))
             (grid/column
               (grid/column-order {:small 2 :medium 2})
-              (dom/img {:src "//res.cloudinary.com/sulolive/image/upload/t_preview/static/storefront-ss-2.jpg"}))
+              (dom/img {:src "//res.cloudinary.com/sulolive/image/upload/t_preview/static/storefront-ss-2.jpg"
+                        :alt "Shop screenshot"}))
             (grid/column
               (grid/column-order {:small 1 :medium 1})
               (dom/div
@@ -432,7 +433,8 @@
             (grid/columns-in-row {:small 1 :medium 2})
             (grid/column
               (grid/column-order {:small 2 :medium 1})
-              (dom/img {:src "https://res.cloudinary.com/sulolive/image/upload/t_preview/static/video-photo.jpg"}))
+              (dom/img {:src "https://res.cloudinary.com/sulolive/image/upload/t_preview/static/video-photo.jpg"
+                        :alt "Gopro camera"}))
             (grid/column
               (grid/column-order {:small 1 :medium 2})
               (dom/div
