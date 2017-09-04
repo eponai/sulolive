@@ -76,10 +76,10 @@
      (canonical-url-tag route-map)
 
      ;; Facebook
-     (p-meta-tag :fb:app_id "936364773079066")
+     (p-meta-tag :fb:app_id "1791653057760981")
      (p-meta-tag :og:title title)
      (p-meta-tag :og:image image)
-     (p-meta-tag :og:url (str (server-url {:system system}) (routes/path route route-params)))
+     (p-meta-tag :og:url (str (server-url {:system system}) (routes/path route route-params {})))
      ;(p-meta-tag :og:description description)
 
      ;; Twitter
@@ -122,8 +122,7 @@
          (description-tag description-text)
 
          ;; Facebook
-         (p-meta-tag :og:title (:store.profile/name profile))
-         (p-meta-tag :og:type "video.other")
+         (p-meta-tag :og:title (str (:store.profile/name profile) " | SULO Live"))
 
          ;; Twitter
          (p-meta-tag :og:image image)
@@ -132,10 +131,13 @@
         (not-empty stream-url)
         (conj
           ;; Facebook
+          (p-meta-tag :og:type "video.other")
           (p-meta-tag :og:video stream-url)
           (p-meta-tag :og:video:secure_url stream-url)
           ;; Twitter
-          (p-meta-tag :twitter:player:stream stream-url))))))
+          (p-meta-tag :twitter:player:stream stream-url))
+        (empty? stream-url)
+        (conj (p-meta-tag :og:type "profile"))))))
 
 (defmethod head-seo-tags-by-route :product
   [_ {:keys [route-map db]}]
