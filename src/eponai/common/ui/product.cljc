@@ -65,7 +65,8 @@
                           :category/path
                           :category/name]}
    {:store/_items [{:store/profile [{:store.profile/photo [:photo/path :photo/id]}
-                                    :store.profile/name]}
+                                    :store.profile/name
+                                    :store.profile/tagline]}
                    {:store/owners [{:store.owner/user [:user/online?]}]}
                    {:stream/_store [:stream/state]}
                    {:store/locality [:sulo-locality/path]}
@@ -160,6 +161,7 @@
           variations (filter #(some? (:store.item.sku/variation %)) skus)
           out-of-stock? (every? #(= :out-of-stock (-> % :store.item.sku/inventory :store.item.sku.inventory/value)) skus)
           description-html (f/bytes->str (:store.item/description item))]
+      (debug "Store: " store)
       (dom/div
         {:id "sulo-product"}
 
@@ -299,25 +301,17 @@
                                                                            :transformation/thumbnail)})))))))
 
           (grid/row-column
-            (css/add-class :product-details)
-            (dom/p nil (dom/strong nil "Product details"))
-            (quill/->QuillRenderer {:html description-html}))
-
-
-
-
-          (grid/row-column
             (css/add-class :store-info)
             (dom/hr nil)
             (grid/row
               (css/align :middle)
               (grid/column
-                (grid/column-size {:small 3 :medium 2})
+                (grid/column-size {:small 2 :medium 1})
                 (photo/store-photo store {:transformation :transformation/thumbnail})
                 )
 
               (grid/column
-                nil
+                (grid/column-size {:small 7 :medium 9})
                 (dom/div
                   (css/add-class :title) (dom/span nil "Sold By"))
                 (dom/div
@@ -326,10 +320,24 @@
                     {:href (routes/store-url store :store)}
                     (dom/span nil (:store.profile/name (:store/profile store)))))
                 (dom/div
-                  (css/add-class :store-tagline) (dom/p nil (:store.profile/description (:store/profile store))))
+                  (css/add-class :store-tagline)
+                  (dom/p nil (:store.profile/tagline (:store/profile store))))
+                )
+              (grid/column
+                (->> (css/text-align :right)
+                     (grid/column-size {:small 3 :medium 2}))
                 (dom/div nil
-                         (common/follow-button nil))
-                ))
-            (dom/hr nil)))))))
+                         (common/follow-button nil))))
+            (dom/hr nil))
+
+          (grid/row-column
+            (css/add-class :product-details)
+            (dom/p nil (dom/strong nil "Product details"))
+            (quill/->QuillRenderer {:html description-html}))
+
+
+
+
+          )))))
 
 (def ->Product (om/factory Product))

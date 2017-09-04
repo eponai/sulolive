@@ -21,7 +21,12 @@
 
 #sulo-product {
 	.page-content {
-		padding: 3% 0;
+		// padding: 3% 0;
+	}
+	ul.breadcrumbs {
+		border-bottom: $global-border-secondary;
+		padding: $global-padding 0;
+		margin: $global-margin 0;
 	}
 	.section {
 		.header {
@@ -120,20 +125,31 @@
 	}
 
 	.store-info {
+		.row {
+			padding: 0 0.5rem;
+		}
+		.column {
+			padding: 0 0.5rem;
+		}
 		.title {
 			text-transform: uppercase;
 			// font-weight: 200;
-			font-size: 90%;
+			font-size: 80%;
 		}
 		.store-name {
-			font-size: 1.5rem;
+			font-size: 1.1rem;
 		}
 		.store-tagline {
-			// font-style: italic;
+			font-style: italic;
 			color: $dark-gray; 
-			font-weight: 200;
+			// font-weight: 200;
+			font-size: 80%;
+			p {
+				margin: 0;
+			}
 		}
 		a {
+			margin: 0;
 			// font-size: 1.5rem;
 		}
 	}
