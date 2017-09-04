@@ -101,7 +101,7 @@
                             (db/entity db))]
     (let [{:keys [route  route-params]} route-map
           {:keys [store/profile]} store
-          image (photos/transform (get-in profile [:store.profile/photo :photo/id]) :transformation/thumbnail)
+          image (photos/transform (get-in profile [:store.profile/photo :photo/id]) :transformation/preview)
           stream-url (when (= :stream.state/live (get-in store [:stream/_store :stream/state]))
                        (stream/wowza-live-stream-url (wowza-url {:system system :reconciler reconciler})
                                                      (stream/stream-id store)))
