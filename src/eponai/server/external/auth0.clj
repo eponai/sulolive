@@ -216,22 +216,14 @@
            :token-type   token_type})
         {:redirect-url state})))
   (refresh [this token]
-    (letfn [(token->refreshed-token [token]
-              (let [response (http/post "https://sulo.auth0.com/delegation"
-                                        {:form-params {:client_id     client-id
-                                                       :client_secret client-secret
-                                                       :grant_type    "urn:ietf:params:oauth:grant-type:jwt-bearer"
-                                                       :scope         "openid email"
-                                                       :id_token      token}})]
-                (debug "Response after requesting a refreshed token: " response)
-                (-> response :body (read-json) :id_token)))]
-      (try
-        (token->refreshed-token token)
-        (catch Exception e
-          (error "Error refreshing token: " e)
-          nil))))
+    ;; The way we used to refresh tokens is now deprecated.
+    ;; Implement the new way when we're interested in it:
+    ;; https://auth0.com/docs/tokens/refresh-token/current
+    )
   (should-refresh-token? [this parsed-token]
-    (token-expiring-within? parsed-token (time/weeks 1))))
+    ;; Refreshing tokens is broken. Just log in every month instead.
+    false
+    ))
 
 (defrecord FakeAuth0 [datomic]
   IAuth0
