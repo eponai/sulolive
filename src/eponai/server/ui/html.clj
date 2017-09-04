@@ -36,7 +36,7 @@
     ;; Else:
     (om.protocols/-render-to-string x react-id sb)))
 
-(defn render-html-without-reactid-tags ^String [x]
+(defn render-html-without-reactid-tags ^StringBuilder [x]
   {:pre [(or (satisfies? om.protocols/IReactComponent x)
              (satisfies? om.protocols/IReactDOMElement x))]}
   (let [element (if-let [element (cond-> x (satisfies? om.protocols/IReactComponent x) (#'dom/render-component))]
@@ -44,4 +44,4 @@
                   (#'dom/react-empty-node))
         sb (StringBuilder.)]
     (render-html! element (volatile! 1) sb)
-    (str sb)))
+    sb))

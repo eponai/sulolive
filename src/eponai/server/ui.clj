@@ -68,25 +68,22 @@
     {:html (html/raw-string html-string)
      :reconciler reconciler}))
 
-(defn with-doctype [html-str]
-  (str "<!DOCTYPE html>" html-str))
+(defn with-doctype [^StringBuilder html-sb]
+  (doto html-sb
+    (.insert 0 "<!DOCTYPE html>")))
 
 (defn render-to-str [component props]
   {:pre [(some? (:release? props))]}
   (with-doctype (dom/render-to-str ((om/factory component) props))))
 
-(defn makesite [component]
-  (let [->component (om/factory component)]
-    (fn [props]
-      (let [start (System/currentTimeMillis)
-            page (render-page props)
-            html (with-doctype
-                   (html/render-html-without-reactid-tags
-                     (->component (assoc props ::root/app-html (:html page)
-                                               ::root/reconciler (:reconciler page)))))
-            end (System/currentTimeMillis)]
-        (log/info! (:logger props) ::render-html {:event-time-ms (- end start)})
-        html))))
-
-(def render-site (makesite root/Root))
+(defn render-site [props]
+  (let [start (System/currentTimeMillis)
+        page (render-page props)
+        html (with-doctype
+               (html/render-html-without-reactid-tags
+                 (root/->Root (assoc props ::root/app-html (:html page)
+                                           ::root/reconciler (:reconciler page)))))
+        end (System/currentTimeMillis)]
+    (log/info! (:logger props) ::render-html {:event-time-ms (- end start)})
+    (str html)))
 

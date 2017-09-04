@@ -97,3 +97,5 @@
             :else
             (common/inline-javascript ["env.web.main.runsulo()"]))))
       )))
+
+(def ->Root (om/factory Root))
