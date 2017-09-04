@@ -73,7 +73,7 @@
                        (on-click)))}
          (css/add-class :share-button)
          (css/add-class :sl-tooltip))
-    (dom/img {:src (get logos platform)})
+    (dom/img {:src (get logos platform) :alt (str "Share on " (string/capitalize (name platform)))})
     (dom/span (css/add-class :sl-tooltip-text)
               (str "Share on " (get socials platform)))))
 

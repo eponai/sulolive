@@ -6,6 +6,7 @@
     [eponai.common.routes :as routes]
     [eponai.common.format :as common.format]
     [eponai.client.routes :as client.routes]
+    [eponai.common.ui.dom :as dom]
     [eponai.web.header :as header]
     #?(:clj
     [eponai.server.external.host :as host])
@@ -15,7 +16,15 @@
     [eponai.client.client-env :as client-env]
     [clojure.string :as string]
     [taoensso.timbre :refer [debug]]
-    [eponai.common.api.products :as products]))
+    [eponai.common.api.products :as products]
+    [eponai.common.ui.product :as product]))
+
+(defn item-type
+  "Return URL for google schema markup type given a keyword.
+  The name of the keyword is used and capitalized, so make sure the keyword represents a valid item type in https://schema.org"
+  [t]
+  (let [schema-domain "https://schema.org/"]
+    (str schema-domain (string/capitalize (name t)))))
 
 (defn- server-url [{:keys [system]}]
   (str #?(:clj  (host/webserver-url (:system/server-address system))
@@ -83,6 +92,14 @@
   [_ _]
   [])
 
+(defmethod head-seo-tags-by-route :sell
+  [_ _]
+  (let [image (photos/transform "static/storefront-ss-2" :transformation/preview)]
+
+    [(title-tag "SULO Live | A new marketplace to sell your Canada handmade items and LIVE stream your process.")
+     (description-tag "Sell handmade men's or women's fashion, clothes, jewelry, handbags, shoes, and home decor, beauty, ceramics, art on a marketplace of independent and new brands from Canada.")
+     (p-meta-tag :og:image image)]))
+
 (defmethod head-seo-tags-by-route :store
   [_ {:keys [db route-map system reconciler]}]
   (when-let [store (some->> (get-in route-map [:route-params :store-id])
@@ -96,26 +113,29 @@
           description-html (common.format/bytes->str (:store.profile/description profile))
           description-text (if description-html
                              (or (not-empty (clojure.string/replace description-html #"<(?:.|\n)*?>" ""))
-                                 (:store.profile/name profile))
-                             (:store.profile/name profile))]
-      [
-       ;; Title
-       (title-tag (string/join " - " [(:store.profile/name profile) (:store.profile/tagline profile)]))
-       (description-tag description-text)
+                                 (:store.profile/tagline profile))
+                             (or (:store.profile/tagline profile) (:store.profile/name profile)))]
+      (cond->
+        [
+         ;; Title
+         (title-tag (string/join " - " [(:store.profile/name profile) (:store.profile/tagline profile)]))
+         (description-tag description-text)
 
+         ;; Facebook
+         (p-meta-tag :og:title (:store.profile/name profile))
+         (p-meta-tag :og:type "video.other")
 
-       ;; Facebook
-       (p-meta-tag :og:title (:store.profile/name profile))
-       (p-meta-tag :og:type "video.other")
-
-       ;; Twitter
-       (p-meta-tag :og:image image)
-       ;; When video
-       ;; Facebook
-       (p-meta-tag :og:video stream-url)
-       (p-meta-tag :og:video:secure_url stream-url)
-       ;; Twitter
-       (p-meta-tag :twitter:player:stream stream-url)])))
+         ;; Twitter
+         (p-meta-tag :og:image image)
+         ;; When video
+         ]
+        (not-empty stream-url)
+        (conj
+          ;; Facebook
+          (p-meta-tag :og:video stream-url)
+          (p-meta-tag :og:video:secure_url stream-url)
+          ;; Twitter
+          (p-meta-tag :twitter:player:stream stream-url))))))
 
 (defmethod head-seo-tags-by-route :product
   [_ {:keys [route-map db]}]
@@ -126,7 +146,9 @@
                               (db/entity db))]
     (let [product (db/pull db [{:store.item/photos [:store.item.photo/photo :store.item.photo/index]}
                                :store.item/name
+                               :db/id
                                :store.item/description
+                               {:store.item/category [:category/label]}
                                {:store/_items [{:store/profile [:store.profile/name]}]}]
                            (:db/id product))
           photo (first (sort-by :store.item.photo/index (:store.item/photos product)))
@@ -148,10 +170,15 @@
 
        ;; Facebook
        (when (some? product-name)
-         (p-meta-tag :og:title (str product-name " - SULO Live")))
+         (p-meta-tag :og:title (str product-name " | by " store-name " | SULO Live")))
        (p-meta-tag :og:type "product")
        ;(p-meta-tag :og:description description-text)
        (p-meta-tag :og:image image)
+       (p-meta-tag :og:url (str "https://sulo.live" (product/product-url product)))
+       (p-meta-tag :product:brand (str store-name))
+       (p-meta-tag :product:category (-> product :store.item/category :category/label))
+       (p-meta-tag :og:image:alt product-name)
+       (p-meta-tag :og:image:user_generated "true")
        ;; Twitter
        ])))
 
@@ -161,16 +188,46 @@
   (let [{:keys [route-params]} route-map
         gender (string/capitalize (:sub-category route-params))]
     [(title-tag (str gender "'s clothes, accessories, jewelry."))
-     (description-tag (str "Shop " gender "'s on SULO Live, a new marketplace that makes it easy to shop handmade from independant Canadian brands and follow their work process."))]))
+     (description-tag (str "Shop " gender "'s on SULO Live, a new marketplace that makes it easy to shop handmade from independant Canadian brands and follow their work process."))
+     (p-meta-tag :og:title (str gender "'s clothes, accessories, jewelry. | SULO Live"))]))
 
 (defmethod head-seo-tags-by-route :browse/gender+top
   [_ {:keys [route-map db]}]
   (debug "Route: " route-map)
   (let [{:keys [route-params]} route-map
         category (:top-category route-params)
-        gender (:sub-category route-params)]
-    [(title-tag (str (string/capitalize gender) "'s " category))
-     (description-tag (str "Shop " gender "'s " category " on SULO Live, a new marketplace that makes it easy to shop handmade from independant Canadian brands and follow their work process."))]))
+        gender (:sub-category route-params)
+        title (str (string/capitalize gender) "'s " category)]
+    [(title-tag title)
+     (description-tag (str "Shop " gender "'s " category " on SULO Live, a new marketplace that makes it easy to shop handmade from independant Canadian brands and follow their work process."))
+     (p-meta-tag :og:title (str title " | SULO Live"))]))
+
+(defmethod head-seo-tags-by-route :browse/category
+  [_ {:keys [route-map db]}]
+  (let [{:keys [route-params]} route-map
+        category (:top-category route-params)
+        gender (:sub-category route-params)
+        {:keys [title description-text]} (cond (= category "home")
+                                               {:title            (str "Home decor, accessories, furniture, bath & body.")
+                                                :description-text "home decor, accessories, furniture, bath & body"}
+                                               (= category "art")
+                                               {:title            (str "Art")
+                                                :description-text "art"})]
+    [
+     (title-tag title)
+     (description-tag (str "Shop " description-text " on SULO Live, a new marketplace that makes it easy to shop handmade from independant Canadian brands and follow their work process."))
+     (p-meta-tag :og:title (str title " | SULO Live"))]))
+
+(defmethod head-seo-tags-by-route :browse/category+sub
+  [_ {:keys [route-map db]}]
+  (let [{:keys [route-params]} route-map
+        category (:top-category route-params)
+        subcategory (string/replace (:sub-category route-params) "-" " ")
+        title (str (string/capitalize category) " - " (string/capitalize subcategory))]
+    [
+     (title-tag title)
+     (description-tag (str "Shop " category " - " subcategory " on SULO Live, a new marketplace that makes it easy to shop handmade from independant Canadian brands and follow their work process."))
+     (p-meta-tag :og:title (str title " | SULO Live"))]))
 
 (defn head-meta-data
   "Takes db, route-map and system (for clj) or reconciler (for cljs).

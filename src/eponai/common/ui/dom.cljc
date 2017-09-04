@@ -176,3 +176,6 @@
 
 (defn iframe [opts & content]
   (element dom/iframe opts content) )
+
+(defn meta [opts & content]
+  (element dom/meta opts content))

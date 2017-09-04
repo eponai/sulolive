@@ -117,7 +117,7 @@
 
 (defn head* [{:keys [release? exclude-icons? cljs-build-id random-seed]}]
   (dom/head
-    {:prefix "og: http://ogp.me/ns# fb: http://ogp.me/ns/fb#"}
+    {:prefix "og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# product: http://ogp.me/ns/product#"}
     (dom/meta {:name    "google-site-verification"
                :content "eWC2ZsxC6JcZzOWYczeVin6E0cvP4u6PE3insn9p76U"})
 
