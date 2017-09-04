@@ -6,6 +6,7 @@
     [eponai.common.routes :as routes]
     [eponai.common.format :as common.format]
     [eponai.client.routes :as client.routes]
+    [eponai.common.ui.dom :as dom]
     [eponai.web.header :as header]
     #?(:clj
     [eponai.server.external.host :as host])
@@ -16,6 +17,13 @@
     [clojure.string :as string]
     [taoensso.timbre :refer [debug]]
     [eponai.common.api.products :as products]))
+
+(defn item-type
+  "Return URL for google schema markup type given a keyword.
+  The name of the keyword is used and capitalized, so make sure the keyword represents a valid item type in https://schema.org"
+  [t]
+  (let [schema-domain "https://schema.org/"]
+    (str schema-domain (string/capitalize (name t)))))
 
 (defn- server-url [{:keys [system]}]
   (str #?(:clj  (host/webserver-url (:system/server-address system))

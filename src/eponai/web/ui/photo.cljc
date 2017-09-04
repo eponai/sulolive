@@ -29,7 +29,7 @@
   (large-image-url [this]
     (let [{:keys [photo-id transformation ext]} (om/props this)]
       (photos/main (shared/by-key this :shared/photos) photo-id {:transformation (or transformation :transformation/preview)
-                                                                 :ext ext})))
+                                                                 :ext            ext})))
   (initLocalState [this]
     {:loaded-main? #?(:clj  false
                       :cljs (when (string? (:photo-id (om/props this)))
@@ -76,10 +76,12 @@
                     (cond->> {
                               ;:data-src (when loaded-main? url)
                               :onMouseMove onMouseMove
-                              :onMouseOut onMouseOut
+                              :onMouseOut  onMouseOut
                               :src         url
                               :classes     ["main"]
-                              :onLoad      #(om/update-state! this assoc :loaded-main? true)}
+                              :onLoad      #(om/update-state! this assoc :loaded-main? true)
+                              ;:itemProp    "image"
+                              }
                              loaded-main?
                              (css/add-class :loaded))))))
 

@@ -18,7 +18,37 @@
     [eponai.common.mixpanel :as mixpanel]
     [clojure.string :as string]
     [cemerick.url :as url]
-    [eponai.common.analytics.google :as ga]))
+    [eponai.common.analytics.google :as ga]
+    [eponai.web.seo :as seo]))
+
+(defn product-url [product]
+  (if-let [product-id (:db/id product)]
+    (routes/url :product {:product-id   product-id
+                          :product-name (-> (:store.item/name product "")
+                                            (subs 0 (min (count (:store.item/name product)) 40))
+                                            (string/replace #" " "-"))})
+    (error "Trying to create URL for product with no :product-id, doing nothing. Make sure product has a :db/id")))
+
+(defn product-schema-markup [product & [{:keys [description availability]}]]
+  (let [{:store.item/keys [photos skus ]
+         store            :store/_items} product
+        out-of-stock? (every? #(= :out-of-stock (-> % :store.item.sku/inventory :store.item.sku.inventory/value)) skus)
+        ;description-html (f/bytes->str description)
+        description-text (when description (clojure.string/replace description #"<(?:.|\n)*?>" ""))]
+    (dom/div {:itemType  (seo/item-type :product)
+              :itemScope true}
+             (dom/meta {:itemProp "name" :content (:store.item/name product)})
+             (dom/meta {:itemProp "brand" :content (-> store :store/profile :store.profile/name)})
+             (dom/meta {:itemProp "description" :content description-text})
+             (dom/meta {:itemProp "image" :content (photos/transform (:photo/id (:store.item.photo/photo (first photos))) :transformation/thumbnail-large)})
+             (dom/meta {:itemProp "category" :content (-> product :store.item/category :category/label)})
+             (dom/meta {:itemProp "url" :content (str "https://sulo.live" (product-url product))})
+             (dom/div {:itemType  (seo/item-type :offer)
+                       :itemProp  "offers"
+                       :itemScope true}
+                      (dom/meta {:itemProp "availability" :itemType (seo/item-type :ItemAvailability) :content (str availability)})
+                      (dom/meta {:itemProp "price" :content (:store.item/price product)})
+                      (dom/meta {:itemProp "priceCurrency" :content "CAD"})))))
 
 (defn product-query []
   [:db/id
@@ -77,39 +107,9 @@
 (def form-elements
   {:selected-sku "selected-sku"})
 
-(defn product-url [product]
-  (if-let [product-id (:db/id product)]
-    (routes/url :product {:product-id   product-id
-                          :product-name (-> (:store.item/name product "")
-                                            (subs 0 (min (count (:store.item/name product)) 40))
-                                            (string/replace #" " "-"))})
-    (error "Trying to create URL for product with no :product-id, doing nothing. Make sure product has a :db/id")))
+
 
 (defui Product
-  ;static om/IQuery
-  ;(query [_]
-  ;  [:db/id
-  ;   :store.item/name
-  ;   :store.item/price
-  ;   :store.item/index
-  ;   :store.item/not-found?
-  ;   {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
-  ;                        :store.item.photo/index]}
-  ;   {:store.item/skus [:db/id :store.item.sku/variation :store.item.sku/inventory]}
-  ;   :store.item/description
-  ;   :store.item/section
-  ;   {:store.item/category [:category/label
-  ;                          :category/path
-  ;                          :category/name]}
-  ;   {:store/_items [{:store/profile [{:store.profile/photo [:photo/path :photo/id]}
-  ;                                    :store.profile/name]}
-  ;                   {:store/owners [:store.owner/user]}
-  ;                   {:stream/_store [:stream/state]}
-  ;                   {:store/locality [:sulo-locality/path]}
-  ;                   {:store/shipping [{:shipping/rules [{:shipping.rule/destinations [:country/code]}]}]}
-  ;                   {:store/status [:status/type]}
-  ;                   :store/username]}])
-
   Object
   (initLocalState [_]
     {:selected-tab       :rating
@@ -157,10 +157,15 @@
           {:store.item/keys [price photos details skus]
            item-name        :store.item/name :as item} (om/props this)
           store (:store/_items item)
-          photo-url (:photo/path (first photos))
-          variations (filter #(some? (:store.item.sku/variation %)) skus)]
+          photo-url (photos/transform (:photo/id (:store.item.photo/photo (first photos))) :transformation/thumbnail-large)
+          variations (filter #(some? (:store.item.sku/variation %)) skus)
+          out-of-stock? (every? #(= :out-of-stock (-> % :store.item.sku/inventory :store.item.sku.inventory/value)) skus)
+          description-html (f/bytes->str (:store.item/description item))]
       (dom/div
         {:id "sulo-product"}
+
+        (product-schema-markup item {:description description-html
+                                     :availability (if out-of-stock? "OutOfStock" "InStock")})
 
         (grid/row-column
           nil
@@ -231,74 +236,74 @@
                                            (assoc :disabled true))
                                    (str (:store.item.sku/variation sku) (when is-disabled " - out of stock")))))
                              variations))))
-              (let [out-of-stock? (every? #(= :out-of-stock (-> % :store.item.sku/inventory :store.item.sku.inventory/value)) skus)]
-                (dom/div
-                  (css/add-class :product-action-container)
-                  ;(my-dom/div (->> (css/grid-row))
-                  ;            (my-dom/div (->> (css/grid-column)
-                  ;                             (css/grid-column-size {:small 6 :medium 8}))
-                  ;                        (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
-                  ;                                :className "button expanded"} "Add to bag"))
-                  ;            (my-dom/div (css/grid-column)
-                  ;                        (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
-                  ;                                    :className "button expanded hollow"} "Save")))
-                  ;(dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
-                  ;            :className "button expanded hollow"} "Save")
+              (dom/div
+                (css/add-class :product-action-container)
+                ;(my-dom/div (->> (css/grid-row))
+                ;            (my-dom/div (->> (css/grid-column)
+                ;                             (css/grid-column-size {:small 6 :medium 8}))
+                ;                        (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
+                ;                                :className "button expanded"} "Add to bag"))
+                ;            (my-dom/div (css/grid-column)
+                ;                        (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
+                ;                                    :className "button expanded hollow"} "Save")))
+                ;(dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
+                ;            :className "button expanded hollow"} "Save")
 
-                  (dom/a
-                    (cond->> (->> {:onClick #(when-not out-of-stock?
-                                              (.add-to-bag this))}
-                                  (css/button)
-                                  (css/expanded))
-                             out-of-stock?
-                             (css/add-class :disabled))
-                    (dom/span nil "Add to bag"))
-                  (dom/p
-                    (when (or added-to-bag? out-of-stock?)
-                      (css/add-class :show))
-                    (dom/small
-                      (cond added-to-bag?
-                            (css/add-class :text-success)
-                            out-of-stock?
-                            (css/add-class :text-alert))
+                (dom/a
+                  (cond->> (->> {:onClick #(when-not out-of-stock?
+                                            (.add-to-bag this))}
+                                (css/button)
+                                (css/expanded))
+                           out-of-stock?
+                           (css/add-class :disabled))
+                  (dom/span nil "Add to bag"))
+                (dom/p
+                  (when (or added-to-bag? out-of-stock?)
+                    (css/add-class :show))
+                  (dom/small
+                    (cond added-to-bag?
+                          (css/add-class :text-success)
+                          out-of-stock?
+                          (css/add-class :text-alert))
 
-                      (if out-of-stock?
-                        "Out of stock"
-                        "Your shopping bag was updated")))
+                    (if out-of-stock?
+                      "Out of stock"
+                      "Your shopping bag was updated")))
 
-                  (let [#?@(:cljs [item-url (str js/window.location.origin (product-url item))]
-                            :clj  [item-url nil])]
-                    (debug "Share url: " item-url)
-                    (menu/horizontal
-                      (->> (css/align :right)
-                           (css/add-class :share-menu))
-                      (menu/item
-                        nil
-                        (social/share-button {:on-click #(mixpanel/track "Share on social media" {:platform "facebook"
-                                                                                                  :object   "product"})
-                                              :platform :social/facebook
-                                              :href     item-url}))
-                      (menu/item
-                        nil
-                        (social/share-button {:on-click    #(mixpanel/track "Share on social media" {:platform "twitter"
-                                                                                                     :object   "product"})
-                                              :platform    :social/twitter
-                                              :description item-name
-                                              :href        item-url}))
-                      (menu/item
-                        nil
-                        (social/share-button {:on-click    #(mixpanel/track "Share on social media" {:platform "pinterest"
-                                                                                                     :object   "product"})
-                                              :platform    :social/pinterest
-                                              :href        item-url
-                                              :description item-name
-                                              :media       (photos/transform (get-in (first photos) [:store.item.photo/photo :photo/id])
-                                                                             :transformation/thumbnail)}))))))))
+                (let [#?@(:cljs [item-url (str js/window.location.origin (product-url item))]
+                          :clj  [item-url nil])]
+                  (debug "Share url: " item-url)
+                  (menu/horizontal
+                    (->> (css/align :right)
+                         (css/add-class :share-menu))
+                    (menu/item
+                      nil
+                      (social/share-button {:on-click #(mixpanel/track "Share on social media" {:platform "facebook"
+                                                                                                :object   "product"})
+                                            :platform :social/facebook
+                                            :href     item-url}))
+                    (menu/item
+                      nil
+                      (social/share-button {:on-click    #(mixpanel/track "Share on social media" {:platform "twitter"
+                                                                                                   :object   "product"})
+                                            :platform    :social/twitter
+                                            :description item-name
+                                            :href        item-url}))
+                    (menu/item
+                      nil
+                      (social/share-button {:on-click    #(mixpanel/track "Share on social media" {:platform "pinterest"
+                                                                                                   :object   "product"})
+                                            :platform    :social/pinterest
+                                            :href        item-url
+                                            :description item-name
+                                            :media       (photos/transform (get-in (first photos) [:store.item.photo/photo :photo/id])
+                                                                           :transformation/thumbnail)})))))))
 
           (grid/row-column
             (css/add-class :product-details)
             (dom/p nil (dom/strong nil "Product details"))
-            (quill/->QuillRenderer {:html (f/bytes->str (:store.item/description item))}))
+            (quill/->QuillRenderer {:html description-html}))
+
 
 
 

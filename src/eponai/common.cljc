@@ -58,6 +58,9 @@
 (defn two-decimal-percent [rate]
   (str (format-str "%.2f" (* 100 (double (or rate 0)))) "%"))
 
+(defn two-decimal-number [n]
+  (format-str "%.2f" (double (or n 0))))
+
 
 ;; ########## TRANSIT ##############
 (defn read-transit [input & [format]]

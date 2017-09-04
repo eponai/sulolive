@@ -14,7 +14,11 @@
     #?(:cljs [eponai.web.utils :as web.utils])
     [eponai.common.ui.common :as common]
     [eponai.common.ui.utils :as ui-utils]
-    [eponai.web.ui.button :as button]))
+    [eponai.web.ui.button :as button]
+    [eponai.web.seo :as seo]
+    [eponai.common :as com]
+    [eponai.common.format :as common.format]
+    [eponai.common.photos :as photos]))
 
 (defui OnlineChannel
   static om/IQuery
@@ -65,8 +69,7 @@
           (css/add-classes [:content-item-text :is-live])
 
           (dom/a {:href store-link}
-                 (dom/span nil store-name))
-          )))))
+                 (dom/span nil store-name)))))))
 
 (def ->OnlineChannel (om/factory OnlineChannel))
 
@@ -75,6 +78,7 @@
   (query [this]
     [:db/id
      {:store/profile [:store.profile/name
+                      :store.profile/tagline
                       {:store.profile/photo [:photo/path :photo/id]}]}
      {:store/locality [:sulo-locality/path]}
      {:store/status [:status/type]}
@@ -88,6 +92,7 @@
   (render [this]
     (let [{:store/keys [visitor-count] :as store} (om/props this)
           store-name (-> store :store/profile :store.profile/name)
+          store-tagline (-> store :store/profile :store.profile/tagline)
           stream-state (-> store :stream/_store first :stream/state)
           store-owner-online? (true? (-> store :store/owners :store.owner/user :user/online?))
           online-status (cond
@@ -95,7 +100,9 @@
                           store-owner-online? :is-online
                           :else :is-offline)]
       (dom/div
-        (->> (css/add-class :content-item)
+        (->> {:itemType (seo/item-type :brand)
+              :itemScope true}
+             (css/add-class :content-item)
              (css/add-class :store-item))
         (dom/a
           {:href (routes/store-url store :store)}
@@ -106,7 +113,10 @@
         (dom/div
           (css/add-classes [:content-item-text :header online-status])
           (dom/a {:href (routes/store-url store :store)}
-                 (dom/strong nil store-name)))))))
+                 (dom/strong {:itemProp "name"} store-name)))
+        ;(dom/meta {:itemProp "url" :content (str "https://sulo.live" (routes/store-url store :store))})
+        ;(dom/meta {:itemProp "description" :content (str store-tagline)})
+        ))))
 
 (def ->StoreItem (om/factory StoreItem))
 
@@ -132,21 +142,21 @@
   (componentWillUnmount [this]
     #?(:cljs (.removeEventListener js/window "resize" (:resize-listener (om/get-state this)))))
   (render [this]
-    (let [product (om/props this)
+    (let [item (om/props this)
           {:keys [current-route open-url? show-caption?]} (om/get-computed this)
           {:keys [show-item? breakpoint]} (om/get-state this)
           on-click #(om/update-state! this assoc :show-item? true)
           #?@(:cljs [open-url? (if (some? open-url?) open-url? (web.utils/bp-compare :large breakpoint >))]
               :clj  [open-url? (if (some? open-url?) open-url? false)])
-          goods-href (when (or open-url? (nil? on-click)) (product/product-url product))
+          goods-href (when (or open-url? (nil? on-click)) (product/product-url item))
           on-click (when-not open-url? on-click)
           {:store.item/keys [photos price]
            item-name        :store.item/name
-           store            :store/_items} product
+           store            :store/_items} item
           {:store.item.photo/keys [photo]} (first (sort-by :store.item.photo/index photos))
 
-          store-live? (= :stream.state/live (-> product :store/_items :stream/_store first :stream/state))
-          store-online? (true? (-> product :store/_items :store/owners :store.owner/user :user/online?))
+          store-live? (= :stream.state/live (-> item :store/_items :stream/_store first :stream/state))
+          store-online? (true? (-> item :store/_items :store/owners :store.owner/user :user/online?))
           store-status (when (show-status current-route)
                          (cond store-live? :live
                                store-online? :online
@@ -157,6 +167,8 @@
                  (css/add-class :is-online)
                  (= store-status :live)
                  (css/add-class :is-live))
+
+        (product/product-schema-markup item)
         (when show-item?
           (common/modal
             {:on-close #(do
@@ -166,18 +178,18 @@
                                                                           (:route-params current-route)
                                                                           (:query-params current-route)))))
              :size     :large}
-            (product/->Product product)))
+            (product/->Product item)))
 
         (dom/a
           (->> {:onClick #(when on-click
                            (on-click)
                            (debug "Chagne URL to: " goods-href)
                            #?(:cljs
-                              (.replaceState js/history nil nil (product/product-url product))))
+                              (.replaceState js/history nil nil (product/product-url item))))
 
                 :href    goods-href}
                (css/add-class :primary-photo))
-          (photo/product-preview product
+          (photo/product-preview item
                                  nil
                                  (photo/overlay
                                    nil
@@ -197,14 +209,13 @@
           (cond->> (css/add-classes [:content-item-text :text :sl-tooltip] {:href (routes/store-url store :store)})
                    store-live?
                    (css/add-class :is-live))
-
           (dom/small
             nil
             (str "by " (:store.profile/name (:store/profile store)))))
 
         (dom/div
           (css/add-classes [:content-item-text :text])
-          (dom/strong nil (ui-utils/two-decimal-price price)))
-        ))))
+          (dom/strong nil "$")
+          (dom/strong nil (com/two-decimal-number price)))))))
 
 (def ->ProductItem (om/factory ProductItem))
