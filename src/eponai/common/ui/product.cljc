@@ -18,8 +18,7 @@
     [eponai.common.mixpanel :as mixpanel]
     [clojure.string :as string]
     [cemerick.url :as url]
-    [eponai.common.analytics.google :as ga]
-    [eponai.web.seo :as seo]))
+    [eponai.common.analytics.google :as ga]))
 
 (defn product-url [product]
   (if-let [product-id (:db/id product)]
@@ -35,7 +34,7 @@
         out-of-stock? (every? #(= :out-of-stock (-> % :store.item.sku/inventory :store.item.sku.inventory/value)) skus)
         ;description-html (f/bytes->str description)
         description-text (when description (clojure.string/replace description #"<(?:.|\n)*?>" ""))]
-    (dom/div {:itemType  (seo/item-type :product)
+    (dom/div {:itemType  "https://schema.org/Product"
               :itemScope true}
              (dom/meta {:itemProp "name" :content (:store.item/name product)})
              (dom/meta {:itemProp "brand" :content (-> store :store/profile :store.profile/name)})
@@ -43,10 +42,10 @@
              (dom/meta {:itemProp "image" :content (photos/transform (:photo/id (:store.item.photo/photo (first photos))) :transformation/thumbnail-large)})
              (dom/meta {:itemProp "category" :content (-> product :store.item/category :category/label)})
              (dom/meta {:itemProp "url" :content (str "https://sulo.live" (product-url product))})
-             (dom/div {:itemType  (seo/item-type :offer)
+             (dom/div {:itemType  "https://schema.org/Offer"
                        :itemProp  "offers"
                        :itemScope true}
-                      (dom/meta {:itemProp "availability" :itemType (seo/item-type :ItemAvailability) :content (str availability)})
+                      (dom/meta {:itemProp "availability" :itemType "https://schema.org/ItemAvailability" :content (str availability)})
                       (dom/meta {:itemProp "price" :content (:store.item/price product)})
                       (dom/meta {:itemProp "priceCurrency" :content "CAD"})))))
 
