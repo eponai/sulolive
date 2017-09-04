@@ -52,3 +52,9 @@
 		margin-top: 5%;
 	}
 }
+
+#sulo-stores {
+	.row {
+		max-width: $global-width;
+	}
+}

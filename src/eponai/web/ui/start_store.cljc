@@ -565,7 +565,7 @@
                   (dom/div
                     (css/add-class :section-title)
                     (dom/h2 (css/add-classes [:jumbo-header]) "Go LIVE today"))
-                  (dom/p (css/add-classes [:jumbo-lead :lead]) "Are you ready to bring your Etsy game LIVE? Or perhaps your just starting? We're ready to have you onboard!"))
+                  (dom/p (css/add-classes [:jumbo-lead :lead]) "Are you ready to bring your Etsy game LIVE? Perhaps you're just starting? We're ready to have you onboard!"))
 
 
                 (grid/column

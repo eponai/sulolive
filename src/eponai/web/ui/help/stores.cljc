@@ -53,10 +53,10 @@
               nil
               (menu/item nil (dom/a {:href (routes/url :help)}
                                     (dom/span nil "SULO Live support")))
-              (menu/item nil (dom/span nil "Stores")))))
+              (menu/item nil (dom/span nil "Shops")))))
         (grid/row-column
           nil
-          (dom/h1 nil (dom/span nil "Stores") (dom/br nil) (dom/small nil "Managing your SULO Live store"))
+          (dom/h1 nil (dom/span nil "Shops") (dom/br nil) (dom/small nil "Managing your SULO Live shop"))
 
           (callout/callout
             nil

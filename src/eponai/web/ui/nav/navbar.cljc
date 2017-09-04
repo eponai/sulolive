@@ -50,7 +50,7 @@
                (css/add-class :is-open))
       (menu/vertical
         (css/add-class :user-dropdown-menu)
-        (if owned-store
+        (when owned-store
           (menu/item
             (css/add-class :parent)
             (dom/label nil (dom/small nil "Manage Store"))
@@ -65,15 +65,16 @@
                                  ;           (utils/set-locality (:db/id (:store/locality owned-store)))))
                                  )}
                   (dom/span nil store-name)))))
-          (menu/item
-            (css/add-class :parent)
-            (dom/label nil (dom/small nil "Manage store"))
-            (menu/vertical
-              (css/add-class :nested)
-              (menu/item-link
-                {:href    (routes/url :sell)
-                 :onClick #(track-event ::mixpanel/go-to-start-store)}
-                (dom/small nil "Start a store")))))
+          ;(menu/item
+          ;  (css/add-class :parent)
+          ;  (dom/label nil (dom/small nil "Manage store"))
+          ;  (menu/vertical
+          ;    (css/add-class :nested)
+          ;    (menu/item-link
+          ;      {:href    (routes/url :sell)
+          ;       :onClick #(track-event ::mixpanel/go-to-start-store)}
+          ;      (dom/small nil "Start a store"))))
+          )
         (when user
           (menu/item
             (css/add-class :parent)
@@ -135,16 +136,15 @@
         {:classes ["top-bar-right"]}
         (menu/horizontal
           nil
-          (if (some? auth)
-            (menu/item-dropdown
-              {:dropdown (user-dropdown component auth owned-store)
-               :classes  [:user-photo-item]
-               :href     "#"
-               :onClick  #(.open-dropdown component :dropdown/user)}
-              (photo/user-photo auth {:transformation :transformation/thumbnail-tiny}))
-            (dom/a
-              {:onClick #(auth/show-login (shared/by-key component :shared/login))}
-              (dom/span nil "Sign up / Sign in"))))))))
+          (user-menu-item component)
+          (when (or (nil? auth) (nil? owned-store))
+            (menu/item
+              nil
+              (button/button
+                (->> {:href (routes/url :sell)}
+                     (css/add-classes [:small :sulo-dark])
+                     (css/show-for :medium))
+                (dom/strong nil "Open your LIVE shop")))))))))
 
 (defn manage-store-navbar [component]
   (let [{:proxy/keys [notification]
@@ -235,7 +235,7 @@
 
 
            (user-menu-item component)
-           (when (nil? auth)
+           (when (or (nil? auth) (nil? owned-store))
              (menu/item
                nil
                (button/button

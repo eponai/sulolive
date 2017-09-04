@@ -44,7 +44,7 @@
 (defn- description-tag
   "Adds the :og:description property to the title for facebook."
   [description]
-  (header/description-tag description :property "og:description"))
+  (header/description-tag description))
 
 (defn- canonical-url-tag [{:keys [route route-params]}]
   (let [href (str "https://sulo.live" (routes/path route route-params))
@@ -65,8 +65,7 @@
   [{:keys [db route-map system reconciler]}]
   (let [{:keys [route route-params]} route-map
         title "SULO Live - Buy and sell handmade clothes, jewelry, art, fashion, bath and home decor products."
-        description "Buy and sell handmade men's or women's fashion, clothes, jewelry, handbags, shoes, and home decor, beauty, ceramics, art from a marketplace of independent and new brands from Canada."
-        image (photos/transform "static/products" :transformation/preview)]
+        description "Buy and sell handmade men's or women's fashion, clothes, jewelry, handbags, shoes, and home decor, beauty, ceramics, art from a marketplace of independent and new brands from Canada."]
     [
      ;; Title
      (title-tag title)
@@ -74,23 +73,18 @@
 
      ;; Canonical link
      (canonical-url-tag route-map)
-
-     ;; Facebook
-     (p-meta-tag :fb:app_id "936364773079066")
-     (p-meta-tag :og:title title)
-     (p-meta-tag :og:image image)
-     (p-meta-tag :og:url (str (server-url {:system system}) (routes/path route route-params)))
-     ;(p-meta-tag :og:description description)
-
-     ;; Twitter
-     (p-meta-tag :twitter:card "summary_large_image")
-     (p-meta-tag :twitter:site "@sulolive")]))
+     (p-meta-tag :fb:app_id "1791653057760981")
+     (p-meta-tag :og:url (str (server-url {:system system}) (routes/path route route-params {})))]))
 
 (defmulti head-seo-tags-by-route (fn [k _] k))
 
 (defmethod head-seo-tags-by-route :default
   [_ _]
   [])
+
+(defmethod head-seo-tags-by-route :index
+  [_ _]
+  [(p-meta-tag :og:image (photos/transform "static/products" :transformation/preview))])
 
 (defmethod head-seo-tags-by-route :sell
   [_ _]
@@ -105,8 +99,9 @@
   (when-let [store (some->> (get-in route-map [:route-params :store-id])
                             (db/store-id->dbid db)
                             (db/entity db))]
-    (let [{:keys [store/profile]} store
-          image (photos/transform (get-in profile [:store.profile/photo :photo/id]) :transformation/thumbnail)
+    (let [{:keys [route  route-params]} route-map
+          {:keys [store/profile]} store
+          image (photos/transform (get-in profile [:store.profile/photo :photo/id]) :transformation/preview)
           stream-url (when (= :stream.state/live (get-in store [:stream/_store :stream/state]))
                        (stream/wowza-live-stream-url (wowza-url {:system system :reconciler reconciler})
                                                      (stream/stream-id store)))
@@ -122,20 +117,29 @@
          (description-tag description-text)
 
          ;; Facebook
-         (p-meta-tag :og:title (:store.profile/name profile))
-         (p-meta-tag :og:type "video.other")
+         (p-meta-tag :og:title (str (:store.profile/name profile) " | SULO Live"))
+         ;; Facebook
+         ;(p-meta-tag :og:url (str (server-url {:system system}) (routes/path route route-params {})))
+         (p-meta-tag :og:image image)
+         (p-meta-tag :og:description description-text)
 
          ;; Twitter
-         (p-meta-tag :og:image image)
+         (p-meta-tag :twitter:card "summary_large_image")
+         (p-meta-tag :twitter:site "@sulolive")
+
+         ;; Twitter
          ;; When video
          ]
         (not-empty stream-url)
         (conj
           ;; Facebook
+          (p-meta-tag :og:type "video.other")
           (p-meta-tag :og:video stream-url)
           (p-meta-tag :og:video:secure_url stream-url)
           ;; Twitter
-          (p-meta-tag :twitter:player:stream stream-url))))))
+          (p-meta-tag :twitter:player:stream stream-url))
+        (empty? stream-url)
+        (conj (p-meta-tag :og:type "profile"))))))
 
 (defmethod head-seo-tags-by-route :product
   [_ {:keys [route-map db]}]
@@ -172,7 +176,7 @@
        (when (some? product-name)
          (p-meta-tag :og:title (str product-name " | by " store-name " | SULO Live")))
        (p-meta-tag :og:type "product")
-       ;(p-meta-tag :og:description description-text)
+       (p-meta-tag :og:description description-text)
        (p-meta-tag :og:image image)
        (p-meta-tag :og:url (str "https://sulo.live" (product/product-url product)))
        (p-meta-tag :product:brand (str store-name))
@@ -228,6 +232,61 @@
      (title-tag title)
      (description-tag (str "Shop " category " - " subcategory " on SULO Live, a new marketplace that makes it easy to shop handmade from independant Canadian brands and follow their work process."))
      (p-meta-tag :og:title (str title " | SULO Live"))]))
+
+(defmethod head-seo-tags-by-route :about
+  [_ {:keys [route-map db]}]
+  [(title-tag "About us | SULO Live")
+   (description-tag " ")])
+
+(defmethod head-seo-tags-by-route :help
+  [_ {:keys [route-map db]}]
+  [(title-tag "SULO Live Help Center")
+   (description-tag " ")])
+
+(defmethod head-seo-tags-by-route :help/accounts
+  [_ {:keys [route-map db]}]
+  [(title-tag "Help with your account | SULO Live Help Center")
+   (description-tag " ")])
+
+(defmethod head-seo-tags-by-route :help/stores
+  [_ {:keys [route-map db]}]
+  [(title-tag "Help for shop owners | SULO Live Help Center")
+   (description-tag " ")])
+
+(defmethod head-seo-tags-by-route :help/welcome
+  [_ {:keys [route-map db]}]
+  [(title-tag "Welcome to SULO Live | SULO Live Help Center")
+   (description-tag " ")])
+
+(defmethod head-seo-tags-by-route :help/faq
+  [_ {:keys [route-map db]}]
+  [(title-tag "Frequently asked questions | SULO Live Help Center")
+   (description-tag " ")])
+
+(defmethod head-seo-tags-by-route :help/taxes
+  [_ {:keys [route-map db]}]
+  [(title-tag "Help with sales tax for shop owners | SULO Live Help Center")
+   (description-tag " ")])
+
+(defmethod head-seo-tags-by-route :help/shipping-rules
+  [_ {:keys [route-map db]}]
+  [(title-tag "Help with shipping for shop owners | SULO Live Help Center")
+   (description-tag " ")])
+
+(defmethod head-seo-tags-by-route :help/first-stream
+  [_ {:keys [route-map db]}]
+  [(title-tag "Get started with your first stream | SULO Live Help Center")
+   (description-tag " ")])
+
+(defmethod head-seo-tags-by-route :help/mobile-stream
+  [_ {:keys [route-map db]}]
+  [(title-tag "Setup a live stream with your mobile device | SULO Live Help Center")
+   (description-tag " ")])
+
+(defmethod head-seo-tags-by-route :help/quality
+  [_ {:keys [route-map db]}]
+  [(title-tag "Stream quality recommendations | SULO Live Help Center")
+   (description-tag " ")])
 
 (defn head-meta-data
   "Takes db, route-map and system (for clj) or reconciler (for cljs).
