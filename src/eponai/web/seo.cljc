@@ -100,7 +100,7 @@
   (when-let [store (some->> (get-in route-map [:route-params :store-id])
                             (db/store-id->dbid db)
                             (db/entity db))]
-    (let [{:keys [route  route-params]} route-map
+    (let [{:keys [route route-params]} route-map
           {:keys [store/profile]} store
           image (photos/transform (get-in profile [:store.profile/photo :photo/id]) :transformation/preview)
           stream-url (when (= :stream.state/live (get-in store [:stream/_store :stream/state]))
@@ -151,11 +151,13 @@
                               (db/entity db))]
     (let [product (db/pull db [{:store.item/photos [:store.item.photo/photo :store.item.photo/index]}
                                :store.item/name
+                               {:store.item/skus [{:store.item.sku/inventory [:store.item.sku.inventory/value]}]}
                                :db/id
                                :store.item/description
                                {:store.item/category [:category/label]}
                                {:store/_items [{:store/profile [:store.profile/name]}]}]
                            (:db/id product))
+          skus (:store.item/skus product)
           photo (first (sort-by :store.item.photo/index (:store.item/photos product)))
           image (photos/transform (get-in photo [:store.item.photo/photo :photo/id]) :transformation/preview)
           store-name (-> product :store/_items :store/profile :store.profile/name)
@@ -165,6 +167,7 @@
                              (or (not-empty (clojure.string/replace description-html #"<(?:.|\n)*?>" ""))
                                  product-name)
                              (str product-name " by " store-name))
+          out-of-stock? (every? #(= :out-of-stock (-> % :store.item.sku/inventory :store.item.sku.inventory/value)) skus)
           ]
       [
        ;; Title
@@ -182,7 +185,9 @@
        (p-meta-tag :og:url (str "https://sulo.live" (product/product-url product)))
        (p-meta-tag :product:brand (str store-name))
        (p-meta-tag :product:category (-> product :store.item/category :category/label))
+       (p-meta-tag :product:price (:store.item/price product))
        (p-meta-tag :product:price:amount (:store.item/price product))
+       (p-meta-tag :product:availability (if out-of-stock? "oos" "instock"))
        (p-meta-tag :product:price:currency "CAD")
        (p-meta-tag :og:brand store-name)
        (p-meta-tag :og:image:alt product-name)
