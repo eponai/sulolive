@@ -74,7 +74,8 @@
      ;; Canonical link
      (canonical-url-tag route-map)
      (p-meta-tag :fb:app_id "1791653057760981")
-     (p-meta-tag :og:url (str (server-url {:system system}) (routes/path route route-params {})))]))
+     (p-meta-tag :og:url (str (server-url {:system system}) (routes/path route route-params {})))
+     (p-meta-tag :og:site_name "SULO Live")]))
 
 (defmulti head-seo-tags-by-route (fn [k _] k))
 
@@ -181,6 +182,9 @@
        (p-meta-tag :og:url (str "https://sulo.live" (product/product-url product)))
        (p-meta-tag :product:brand (str store-name))
        (p-meta-tag :product:category (-> product :store.item/category :category/label))
+       (p-meta-tag :product:price:amount (:store.item/price product))
+       (p-meta-tag :product:price:currency "CAD")
+       (p-meta-tag :og:brand store-name)
        (p-meta-tag :og:image:alt product-name)
        (p-meta-tag :og:image:user_generated "true")
        ;; Twitter
