@@ -215,22 +215,22 @@
                           (css/add-class :fullscreen))
                  (cond
                    is-live?
-                   (stream/->Stream (om/computed {:stream stream}
-                                                 {:stream-title         (:stream/title stream)
-                                                  :widescreen?          true
-                                                  :store                store
-                                                  :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
+                   [
+                    (stream/->Stream (om/computed {:stream stream}
+                                                  {:stream-title         (:stream/title stream)
+                                                   :widescreen?          true
+                                                   :store                store
+                                                   :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
+                    (chat/->StreamChat (om/computed (:proxy/chat props)
+                                                    {:on-toggle-chat      (fn [show?]
+                                                                            (om/update-state! this assoc :show-chat? show?))
+                                                     :store               store
+                                                     :stream-overlay?     true
+                                                     :visitor-count       visitor-count
+                                                     :show?               show-chat?
+                                                     :store-online-status store-owner-online?}))]
                    (some? cover)
-                   (photo/store-cover store {:alt (str store-name " cover photo")}))
-
-                 (chat/->StreamChat (om/computed (:proxy/chat props)
-                                                 {:on-toggle-chat      (fn [show?]
-                                                                         (om/update-state! this assoc :show-chat? show?))
-                                                  :store               store
-                                                  :stream-overlay?     true
-                                                  :visitor-count       visitor-count
-                                                  :show?               show-chat?
-                                                  :store-online-status store-owner-online?}))))
+                   (photo/store-cover store {:alt (str store-name " cover photo")}))))
 
 
 

@@ -47,15 +47,17 @@
 		flex: 1 0 auto;
 		display: flex;
 		justify-content: flex-start;
+		align-items: flex-start;
 		list-style-type:  none;
 		.message-photo {
 			width: 2rem;
 			flex: 0 0 auto;
-			margin-right: 0.5rem;
+			margin-right: 0.25rem;
 		}
 	}
 	.message-input-container {
 		display: flex;
+		align-items: center;
 		.button {
 			flex: 0 0 auto;
 			margin-left: 0.5rem;
@@ -73,10 +75,11 @@
 		justify-content: space-between;
 		flex-direction: row;
 		// align-items: flex-start;
-		background: rgba(black, 0.2);
+		background: $white;
+		// border-bottom: $medium-gray;
 		color: $dark-gray;
 		&.is-online {
-			color: $white;
+			// color: $white;
 			.chat-status p {
 				position: relative;
 				&::before {
@@ -107,13 +110,13 @@
 		align-items: center;
 		.chat-visitors {
 			padding: 0 $global-padding;
-			color: $medium-gray;
+			// color: $medium-gray;
 		}
 	}
 	.title {
 		margin: 0;
 		font-size: 1.1rem;
-		color: $dark-gray;
+		// color: $dark-gray;
 		font-weight: $global-weight-bold;
 		font-size: 80%;
 		text-transform: uppercase;
@@ -141,7 +144,7 @@
 		padding: 0.1rem $global-padding;
 		display: flex;
 		align-items: center;
-		color: $white;
+		// color: $white;
 
 		p {
 			margin: 0;
@@ -170,8 +173,8 @@
 
 	position: relative;
 	z-index: $chat-zindex;
-	background: rgba($chat-container-bg-color, 0.6);//linear-gradient(to right, rgba($chat-container-bg-color, 0.6), rgba($chat-container-bg-color, 0.9));
-	box-shadow: -1px 0 10rem 0 rgba($chat-container-box-shadow-color, 0.35);
+	background: rgba($chat-container-bg-color, 0.25);//linear-gradient(to right, rgba($chat-container-bg-color, 0.6), rgba($chat-container-bg-color, 0.9));
+	// box-shadow: -1px 0 10rem 0 rgba($chat-container-box-shadow-color, 0.35);
 	padding: 0;
 	position: absolute;
 	top: 0;
@@ -244,6 +247,7 @@
 		padding-top: 0;
 	}
 	.message-container {
+		padding: 0.25rem 0.1rem;
 		.message-photo {
 			.photo-container {
 				border: none;
@@ -252,14 +256,14 @@
 		.message-text {
 			font-size: 90%;
 			span {
-				color: $white;
+				// color: $white;
 			}
 			strong {
-				color: darken($medium-gray, 5%);
+				color: $dark-gray;// darken($medium-gray, 5%);
 			}
 		}
 		.message-auto {
-			color: $medium-gray;
+			color: $dark-gray;//$medium-gray;
 			span {
 				font-style: italic;
 			}
@@ -292,7 +296,7 @@
 		}
 		.chat-menu {
 			// height: $navbar-height;
-			background: rgba(black, 0.7);
+			// background: rgba($chat-container-bg-color, 0.7);
 		}
 
 		// .show-small {

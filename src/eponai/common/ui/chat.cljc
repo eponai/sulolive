@@ -74,9 +74,9 @@
                        :maxLength   500
                        :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))})
         (dom/a
-          (->> (css/button-hollow {:onClick #(on-enter this)})
-               (css/add-class :secondary))
-          (dom/i {:classes ["fa fa-send-o fa-fw"]}))))))
+          (->> (css/button {:onClick #(on-enter this)})
+               (css/add-classes [:small :sulo-dark]))
+          (dom/span nil "Chat"))))))
 
 (def ->ChatInput (om/factory ChatInput))
 

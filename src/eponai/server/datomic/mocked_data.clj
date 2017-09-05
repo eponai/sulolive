@@ -419,7 +419,7 @@
    :user/stripe  {:stripe/id "cus_AT7bKjMaCIWpei"}})
 
 (defn add-data [conn]
-  (let [live-stores 0
+  (let [live-stores 4
         
         categories (mock-categories3)
         stores (mock-stores)
