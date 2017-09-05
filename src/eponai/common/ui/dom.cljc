@@ -177,5 +177,5 @@
 (defn iframe [opts & content]
   (element dom/iframe opts content) )
 
-(defn meta [opts & content]
+(defn meta-tag [opts & content]
   (element dom/meta opts content))

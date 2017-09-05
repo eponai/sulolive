@@ -36,18 +36,18 @@
         description-text (when description (clojure.string/replace description #"<(?:.|\n)*?>" ""))]
     (dom/div {:itemType  "https://schema.org/Product"
               :itemScope true}
-             (dom/meta {:itemProp "name" :content (:store.item/name product)})
-             (dom/meta {:itemProp "brand" :content (-> store :store/profile :store.profile/name)})
-             (dom/meta {:itemProp "description" :content description-text})
-             (dom/meta {:itemProp "image" :content (photos/transform (:photo/id (:store.item.photo/photo (first photos))) :transformation/thumbnail-large)})
-             (dom/meta {:itemProp "category" :content (-> product :store.item/category :category/label)})
-             (dom/meta {:itemProp "url" :content (str "https://sulo.live" (product-url product))})
+             (dom/meta-tag {:itemProp "name" :content (:store.item/name product)})
+             (dom/meta-tag {:itemProp "brand" :content (-> store :store/profile :store.profile/name)})
+             (dom/meta-tag {:itemProp "description" :content description-text})
+             (dom/meta-tag {:itemProp "image" :content (photos/transform (:photo/id (:store.item.photo/photo (first photos))) :transformation/thumbnail-large)})
+             (dom/meta-tag {:itemProp "category" :content (-> product :store.item/category :category/label)})
+             (dom/meta-tag {:itemProp "url" :content (str "https://sulo.live" (product-url product))})
              (dom/div {:itemType  "https://schema.org/Offer"
                        :itemProp  "offers"
                        :itemScope true}
-                      (dom/meta {:itemProp "availability" :itemType "https://schema.org/ItemAvailability" :content (str availability)})
-                      (dom/meta {:itemProp "price" :content (:store.item/price product)})
-                      (dom/meta {:itemProp "priceCurrency" :content "CAD"})))))
+                      (dom/meta-tag {:itemProp "availability" :itemType "https://schema.org/ItemAvailability" :content (str availability)})
+                      (dom/meta-tag {:itemProp "price" :content (:store.item/price product)})
+                      (dom/meta-tag {:itemProp "priceCurrency" :content "CAD"})))))
 
 (defn product-query []
   [:db/id
@@ -298,7 +298,7 @@
                                             :href        item-url
                                             :description item-name
                                             :media       (photos/transform (get-in (first photos) [:store.item.photo/photo :photo/id])
-                                                                           :transformation/thumbnail)})))))))
+                                                                           :transformation/preview)})))))))
 
           (grid/row-column
             (css/add-class :store-info)
