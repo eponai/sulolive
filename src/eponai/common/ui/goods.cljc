@@ -271,6 +271,11 @@
                               (some? top-category)
                               (string/join " - " (filter some? [(products/category-display-name top-category)
                                                                 (products/category-display-name sub-category)]))
+                              (some? (-> current-route :route-params :top-category))
+                              (string/replace (-> current-route :route-params :top-category) "-" " ")
+
+                              (some? (-> current-route :route-params :sub-category))
+                              (string/replace (-> current-route :route-params :sub-category) "-" " ")
                               :else
                               "All products"))))
 
