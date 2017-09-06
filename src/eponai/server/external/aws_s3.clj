@@ -18,7 +18,19 @@
     "Move object from temp folder to real folder.")
 
   (download-object [this params to-file]
-    "Downloads object to a file on the server"))
+    "Downloads object to a file on the server")
+
+  (list-objects [this params]
+    "Lists all objects. Required param keys [:bucket-name]. Optional [:prefix :max-keys :delimiter]"))
+
+(defn- list-all-objects
+  "Returns a lazy seq of responses from amazonica.aws.s3/list-objects-v2"
+  [request]
+  (let [response (aws-s3/list-objects-v2 request)]
+    (cons response (when (:truncated? response)
+                     (lazy-seq
+                       (list-all-objects
+                         (assoc request :continuation-token (:next-continuation-token response))))))))
 
 (defrecord AwsS3 [bucket access-key secret zone]
   IAWSS3
@@ -46,11 +58,15 @@
   (download-object [this {:keys [bucket key]} to-file]
     (with-open [in (:input-stream (aws-s3/get-object bucket key))
                 out (io/output-stream to-file)]
-      (io/copy in out))))
+      (io/copy in out)))
+
+  (list-objects [this params]
+    (mapcat :object-summaries (list-all-objects params))))
 
 (defn aws-s3-stub []
   (reify IAWSS3
     (sign [_])
     (convert-to-real-key [_ _])
     (upload-object [_ _])
-    (move-object [_ _ _ _])))
+    (move-object [_ _ _ _])
+    (list-objects [_ _])))

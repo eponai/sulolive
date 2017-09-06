@@ -178,6 +178,7 @@
                        "-server"
                        "-XX:+CMSClassUnloadingEnabled"
                        "-Djava.awt.headless=true"
+                       "-XX:-OmitStackTraceInFastThrow"
                        ]
   :resource-paths ["resources" "node_modules" "bower_components"]
 

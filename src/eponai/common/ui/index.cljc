@@ -57,6 +57,7 @@
      ;{:query/featured-home (om/get-query ci/ProductItem)}
      ;{:query/featured-men (om/get-query ci/ProductItem)}
      ;{:query/featured-art (om/get-query ci/ProductItem)}
+     {:query/featured-vods (om/get-query ci/StoreVod)}
      {:query/featured-stores (om/get-query ci/StoreItem)}
      {:query/featured-streams (om/get-query ci/OnlineChannel)}
      ;; {:query/top-streams (om/get-query ci/OnlineChannel)}
@@ -69,7 +70,7 @@
                           {:store/owners [{:store.owner/user [:db/id]}]}]}])
   Object
   (render [this]
-    (let [{:query/keys [top-streams featured-streams featured-stores current-route online-stores featured-items featured-home featured-men featured-art]} (om/props this)
+    (let [{:query/keys [top-streams featured-streams featured-stores current-route featured-vods featured-items featured-home featured-men featured-art]} (om/props this)
           {:keys [route-params]} current-route]
       ;(debug "Featured women products: " featured-women)
 
@@ -119,23 +120,22 @@
                                       ""))
 
 
-            ;(when (<= 5 (count featured-streams))
-            ;  (common/content-section {:href  (routes/url :live route-params)
-            ;                           :class "online-channels"}
-            ;                          (dom/a {:href (routes/url :live route-params)}
-            ;                                 (dom/span nil "Recent Live streams"))
-            ;
-            ;                          (grid/row
-            ;                            (->>
-            ;                              (grid/columns-in-row {:small 2 :medium 3 :large 5}))
-            ;                            ;(grid/column
-            ;                            ;  (css/add-class :online-streams))
-            ;                            (map (fn [c]
-            ;                                   (grid/column
-            ;                                     (css/add-class :online-stream)
-            ;                                     (ci/->OnlineChannel c)))
-            ;                                 featured-streams))
-            ;                          ""))
+            (when (seq featured-vods)
+              (common/content-section {:href  (routes/url :live route-params)
+                                       :class "online-channels"}
+                                      (dom/span nil "Recent Live streams")
+
+                                      (grid/row
+                                        (->>
+                                          (grid/columns-in-row {:small 2 :medium 3 :large 5}))
+                                        ;(grid/column
+                                        ;  (css/add-class :online-streams))
+                                        (map (fn [p]
+                                               (grid/column
+                                                 (css/add-class :online-stream)
+                                                 (ci/->StoreVod p)))
+                                             featured-vods))
+                                      ""))
 
             ;(when (<= 5 (count featured-streams))
             ;  (common/content-section {:href  (routes/url :live route-params)

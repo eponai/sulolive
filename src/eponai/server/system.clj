@@ -24,6 +24,7 @@
     [eponai.server.external.google :as google]
     [eponai.server.external.stripe.webhooks :as stripe-webhooks]
     [eponai.server.external.firebase :as firebase]
+    [eponai.server.external.vods :as vods]
     [eponai.server.external.request-handler :as request-handler]))
 
 (def system-keys #{:system/aleph
@@ -49,7 +50,8 @@
                    :system/wowza
                    :system/email
                    :system/auth0management
-                   :system/stripe-webhooks})
+                   :system/stripe-webhooks
+                   :system/vods})
 
 (defn test-env? [env]
   (true? (::is-test-env? env)))
@@ -128,6 +130,8 @@
    :system/mailchimp       (mailchimp/mail-chimp (:mailchimp-api-key env))
    :system/stripe          (stripe/stripe (:stripe-secret-key env))
    :system/taxjar          (taxjar/taxjar (:taxjar-api-key env))
+   :system/vods            (c/using (vods/map->VodStorage {})
+                                    {:aws-s3 :system/aws-s3})
    :system/wowza           (wowza/wowza {:secret         (:wowza-jwt-secret env)
                                          :subscriber-url (:wowza-subscriber-url env)
                                          :publisher-url  (:wowza-publisher-url env)})})
@@ -154,6 +158,7 @@
                                                  "no-stripe-keys-in-test-environment"
                                                  (:stripe-secret-key env)))
    :system/taxjar          (taxjar/taxjar-stub)
+   :system/vods            (vods/fake-vod-storage)
    :system/wowza           (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})})
 
 (defn with-request-handler [system {:keys [in-prod? env] :as config}]
@@ -243,8 +248,9 @@
                ;:system/email
                ;:system/mailchimp
                ;:system/taxjar
-               ;:system/aws-s3
                ;:system/elastic-cloud
+               ;:system/aws-s3
+               ;:system/vods
                ))
 
 (defn test-system [config]

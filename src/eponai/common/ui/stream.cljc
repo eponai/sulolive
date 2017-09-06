@@ -49,17 +49,21 @@
   (render [this]
     (let [{:keys [stream stream-config]} (om/props this)
           stream-config (db/singleton-value (db/to-db this) :ui.singleton.client-env/env-map)
-          {:keys [widescreen? store]} (om/get-computed this)
+          {:keys [widescreen? store vod-url]} (om/get-computed this)
           subscriber-url (:wowza-subscriber-url stream-config)
           stream-id (stream/stream-id store)
           stream-url (stream/wowza-live-stream-url subscriber-url stream-id)
+          vod-url (when (string? vod-url)
+                    (str "https://vods.sulo.live/" (cond-> vod-url
+                                                           (= \/ (first vod-url))
+                                                           (subs 1))))
           {:stream/keys [title]} stream]
       (dom/div
         {:id "sulo-video-container" :classes [(str "flex-video"
                                                    (when widescreen? " widescreen"))]}
         (dom/div {:classes ["sulo-spinner-container"]}
                  (dom/span {:classes ["sl-loading-signal"]}))
-        (video/->VideoPlayer {:source stream-url})))))
+        (video/->VideoPlayer {:source (or vod-url stream-url)})))))
 
 ;(def Stream (script-loader/js-loader {:component Stream-no-loader
 ;                                      #?@(:cljs [:scripts [[#(exists? js/WowzaPlayer)

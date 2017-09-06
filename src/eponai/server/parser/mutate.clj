@@ -12,6 +12,7 @@
     [eponai.server.external.stripe :as stripe]
     [eponai.server.external.wowza :as wowza]
     [eponai.server.external.chat :as chat]
+    [eponai.server.external.vods :as vods]
     [eponai.common :as c]
     [buddy.sign.jwt :as jwt]
     [eponai.server.api.store :as store]
@@ -229,12 +230,13 @@
                (throw (ex-info "User was was not a store owner" {:stream/token token}))))})
 
 (defmutation stream/ensure-online
-  [{:keys [state auth] :as env} k {:keys [store-id] :as p}]
+  [{:keys [state auth system] :as env} k {:keys [store-id] :as p}]
   {:auth {::auth/store-owner {:store-id store-id}}
    :log  [:store-id]
    :resp {:success "Stream is online"
           :error   "Could not ensure stream was online"}}
   {:action (fn []
+             (vods/update-store-vods! (:system/vods system) store-id)
              (ensure-stream-is-atleast-online state store-id))})
 
 (defmutation stream/go-live
@@ -248,34 +250,37 @@
                                   :stream/state :stream.state/live}]))})
 
 (defmutation stream/end-live
-  [{:keys [state auth] :as env} k {:keys [store-id] :as p}]
+  [{:keys [state auth system] :as env} k {:keys [store-id] :as p}]
   {:auth {::auth/store-owner {:store-id store-id}}
    :log  [:store-id]
    :resp {:success "Ended live stream!"
           :error   "Could not end live stream."}}
   {:action (fn []
+             (vods/update-store-vods! (:system/vods system) store-id)
              (quiet-cas state [[:db.fn/cas [:stream/store store-id] :stream/state :stream.state/live :stream.state/online]]))})
 
 (defmutation stream/go-offline
-  [{:keys [state auth] :as env} k {:keys [store-id] :as p}]
+  [{:keys [state auth system] :as env} k {:keys [store-id] :as p}]
   {:auth {::auth/store-owner {:store-id store-id}}
    :log  [:store-id]
    :resp {:success "Went offline!"
           :error   "Could not go offline"}}
   {:action (fn []
+             (vods/update-store-vods! (:system/vods system) store-id)
              (db/transact state [{:stream/store store-id
                                   :stream/state :stream.state/offline}]))})
 
 (defmutation stream/go-offline-with-token
-  [{:keys [state] :as env} k {:keys [stream/token] :as p}]
+  [{:keys [state system] :as env} k {:keys [stream/token] :as p}]
   ;; We do some custom authing with the stream token.
   {:auth ::auth/public
    :resp {:success "Went offline!"
           :error   "Could not go offline"}}
   {:action (fn []
              (if-let [store-id (wowza-token-store-owner env token)]
-               (db/transact state [{:stream/store store-id
-                                    :stream/state :stream.state/offline}])
+               (do (vods/update-store-vods! (:system/vods system) store-id)
+                 (db/transact state [{:stream/store store-id
+                                     :stream/state :stream.state/offline}]))
                (throw (ex-info "User in stream token was not a store owner" {:stream/token token}))))})
 
 ;########### STORE @############
