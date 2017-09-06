@@ -25,7 +25,8 @@
     [eponai.common.ui.product :as product]
     [eponai.common.database :as db]
     [eponai.client.auth :as client.auth]
-    [eponai.web.ui.content-item :as ci]))
+    [eponai.web.ui.content-item :as ci]
+    [eponai.common :as c]))
 
 
 (defn about-section [component]
@@ -177,9 +178,11 @@
           stream (first stream)
           is-live? (= :stream.state/live (:stream/state stream))
           show-chat? (:show-chat? st true)
-          {:keys [route route-params]} current-route
+          {:keys [route route-params query-params]} current-route
           store-status (get-in store [:store/status :status/type])
-          store-owner-online? (-> owners :store.owner/user :user/online?)]
+          store-owner-online? (-> owners :store.owner/user :user/online?)
+          {:keys [vod-url vod-timestamp]} query-params
+          is-vod? (some? vod-url)]
 
       (dom/div
         {:id "sulo-store"}
@@ -229,6 +232,13 @@
                                                      :visitor-count       visitor-count
                                                      :show?               show-chat?
                                                      :store-online-status store-owner-online?}))]
+                   is-vod?
+                   (stream/->Stream (om/computed {:stream stream}
+                                                 {:stream-title         vod-timestamp
+                                                  :widescreen?          true
+                                                  :store                store
+                                                  :vod-url              vod-url
+                                                  :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
                    (some? cover)
                    (photo/store-cover store {:alt (str store-name " cover photo")}))))
 

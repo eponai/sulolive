@@ -641,3 +641,10 @@
     {:value (some->> (client.auth/current-auth db)
                      (db/entity db)
                      (:user/notifications))}))
+
+(defmethod client-read :query/featured-vods
+  [{:keys [target db query]} _ _]
+  (if (some? target)
+    {:remote true}
+    {:value (->> (db/pull-all-with db query {:where '[[?e :vod/store]]})
+                 (sort-by :vod/featured))}))

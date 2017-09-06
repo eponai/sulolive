@@ -12,6 +12,7 @@
     [eponai.server.external.wowza :as wowza]
     [eponai.server.external.chat :as chat]
     [eponai.server.external.product-search :as product-search]
+    [eponai.server.external.vods :as vods]
     [eponai.client.client-env :as client-env]
     [eponai.server.api.store :as store]
     [eponai.common.api.products :as products]
@@ -205,6 +206,7 @@
                                           [?e :store.item/photos ?p]
                                           [?p :store.item.photo/photo _]
                                           [?e :store.item/created-at ?created-at]]})
+               ;; TODO: should only take 12 random things from the collection, not shuffle all of them.
                (shuffle-with-seed random-seed)
                (take 12)
                (map #(nth % 0))
@@ -235,6 +237,26 @@
    ;     (db/pull-many db query)
    ;     (feature-all db :store.item))
    })
+
+(defn- pull-vod-data [db query vods]
+  (let [store-query (->> query
+                         (filter map?)
+                         (mapcat seq)
+                         (filter (comp #{:vod/store} key))
+                         (map val)
+                         first
+                         (into [:db/id] (remove #{:db/id})))
+        store-ids (into #{} (map :vod/store) vods)]
+    (into (vec vods) (db/pull-many db store-query (seq store-ids)))))
+
+(defread query/featured-vods
+  [{:keys [db db-history query system]} _ _]
+  {:auth ::auth/public}
+  (when (nil? db-history)
+    {:value (->> (vods/all-vods (:system/vods system))
+                 (take 8)
+                 (feature-all db :vods)
+                 (pull-vod-data db query))}))
 
 (defread query/featured-men
   [{:keys [db db-history query]} _ _]
@@ -299,6 +321,13 @@
                                               :symbols {'?e store-id}})
               {:db/id            store-id
                :store/not-found? true}))})
+
+(defread query/store-vods
+  [{:keys [db query system route-params]} _ _]
+  {:auth    ::auth/public
+   :uniq-by {:route-params [:store-id]}}
+  {:value (->> (vods/vods-by-store (:system/vods system) (:store-id route-params))
+               (pull-vod-data db query))})
 
 ;(defread query/online-stores
 ;  [{:keys [db db-history query auth route-params system]} _ _]

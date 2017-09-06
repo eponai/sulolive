@@ -20,6 +20,53 @@
     [eponai.common.format :as common.format]
     [eponai.common.photos :as photos]))
 
+(defui StoreVod
+  static om/IQuery
+  (query [_]
+    [:vod/timestamp
+     :vod/playlist
+     {:vod/store [:db/id
+                  :store/username
+                  {:store/profile [:store.profile/name
+                                   {:store.profile/photo [:photo/path :photo/id]}]}]}
+     :vod/view-count])
+  Object
+  (render [this]
+    (let [{:vod/keys [store view-count playlist timestamp]
+           :or {view-count 0}
+           :as props} (om/props this)
+          store-link (routes/store-url store :store {} {:vod-url       playlist
+                                                        :vod-timestamp timestamp})]
+      (debug "VOD PROPS: " props)
+      (dom/div
+        (cond->> (css/add-classes [:content-item :stream-item])
+                 (pos? view-count)
+                 (css/add-class :show-visitor-count))
+        (dom/a
+          {:href store-link}
+          (photo/stream-photo store
+                              nil
+                              ;(when (pos? visitor-count))
+                              (dom/div
+                                (css/add-class :visitor-count)
+                                (dom/i {:classes ["fa fa-user"]})
+                                (dom/span nil (str (or view-count 0))))
+                              ))
+        ;(dom/div
+        ;  (->> (css/add-class :text)
+        ;       (css/add-class :header))
+        ;  (dom/a {:href store-link}
+        ;         (dom/span nil stream-name)))
+
+
+        (dom/div
+          (css/add-classes [:content-item-text :is-live])
+
+          (dom/a {:href store-link}
+                 (dom/span nil (get-in store [:store/profile :store.profile/name]))))))))
+
+(def ->StoreVod (om/factory StoreVod))
+
 (defui OnlineChannel
   static om/IQuery
   (query [_]

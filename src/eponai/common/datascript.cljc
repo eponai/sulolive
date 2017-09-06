@@ -41,7 +41,9 @@
          :user.chat-notification/id         {:db/unique :db.unique/identity}
          :user/notifications                {:db/cardinality :db.cardinality/many
                                              :db/valueType   :db.type/ref}
-         :user.notification/id              {:db/unique :db.unique/identity}}
+         :user.notification/id              {:db/unique :db.unique/identity}
+
+         :vod/store                         {:db/valueType :db.type/ref}}
         browse/browse-datascript-schema))
 
 (defn schema-datomic->datascript [datomic-schema]
