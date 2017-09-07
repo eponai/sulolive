@@ -189,10 +189,15 @@
                                                           ]})
                  (feature-all db :stream)))})
 
-(defn shuffle-with-seed [seed coll]
-  (let [al (java.util.ArrayList. coll)]
-    (java.util.Collections/shuffle al (java.util.Random. (or seed 4711)))
-    (clojure.lang.RT/vector (.toArray al))))
+(defn take-random [n seed coll]
+  (let [r (java.util.Random. (or seed 4711))
+        ll (java.util.LinkedList. coll)]
+    (persistent!
+      (loop [acc (transient []) n n]
+        (if (or (zero? n) (.isEmpty ll))
+          acc
+          (recur (conj! acc (.remove ll (.nextInt r (.size ll))))
+                 (dec n)))))))
 
 (defread query/featured-items
   [{:keys [db db-history query random-seed]} _ _]
@@ -206,9 +211,7 @@
                                           [?e :store.item/photos ?p]
                                           [?p :store.item.photo/photo _]
                                           [?e :store.item/created-at ?created-at]]})
-               ;; TODO: should only take 12 random things from the collection, not shuffle all of them.
-               (shuffle-with-seed random-seed)
-               (take 12)
+               (take-random 12 random-seed)
                (map #(nth % 0))
                (db/pull-many db query)
                (feature-all db :store.item))})
@@ -301,8 +304,7 @@
                                                      ]})]
             (debug "FOUND STORE IDS: " store-ids)
             (->> store-ids
-                 (shuffle-with-seed random-seed)
-                 (take 12)
+                 (take-random 12 random-seed)
                  (map #(nth % 0))
                  (db/pull-many db query)
                  (feature-all db :store)))})
