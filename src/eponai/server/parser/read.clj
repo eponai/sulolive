@@ -254,6 +254,11 @@
   {:auth ::auth/public}
   (when (nil? db-history)
     {:value (->> (vods/all-vods (:system/vods system))
+                 ;; Filter only by the stores that are in the database.
+                 ;; Note: Our s3 bucket with vods contain stuff from both dev and prod.
+                 ;; hence we filter out the ids that are in our db... ;D
+                 (filter (fn [{:vod/keys [store]}]
+                           (some? (:store/profile (db/entity db store)))))
                  (take 8)
                  (feature-all db :vods)
                  (pull-vod-data db query))}))
