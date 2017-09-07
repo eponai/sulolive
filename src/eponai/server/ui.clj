@@ -44,6 +44,9 @@
                                               :shared/photos (if (:release? request-env)
                                                                :env/prod
                                                                :env/dev)
+                                              :shared/vods   (if (:release? request-env)
+                                                               :env/prod
+                                                               :env/dev)
                                               :history       2
                                               :route         (:route request-env)
                                               :route-params  (:route-params request-env)

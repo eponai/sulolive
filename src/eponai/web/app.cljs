@@ -228,7 +228,7 @@
 
 
 (defn- run [{:keys        [login modules loading-bar]
-             :shared/keys [login modules auth0 photos firebase]
+             :shared/keys [login modules auth0 photos firebase vods]
              :or          {loading-bar (loading-bar/loading-bar)}
              :as          run-options}]
   (let [modules (or modules (modules/advanced-compilation-modules router/routes))
@@ -307,6 +307,7 @@
                                        :shared/login               login
                                        :shared/photos              photos
                                        :shared/client-env          (client-env/cljs-client-env reconciler-atom)
+                                       :shared/vods                vods
                                        :instrument                 (::plomber run-options)})]
 
     (reset! reconciler-atom reconciler)
@@ -354,15 +355,17 @@
   (run {:shared/auth0    :env/prod
         :shared/firebase :env/prod
         :shared/photos   :env/prod
+        :shared/vods     :env/prod
         :shared/login    (auth/login reconciler-atom)
         :shared/modules  (modules/dev-modules router/routes)}))
 
 (defn run-simple [& [deps]]
   (when-not-timbre-level
     (timbre/set-level! :debug))
-  (run (merge {:shared/auth0    :env/prod
+  (run (merge {:shared/auth0    :env/dev
                :shared/firebase :env/prod
-               :shared/photos   :env/prod
+               :shared/photos   :env/dev
+               :shared/vods     :env/dev
                :shared/login    (auth/login reconciler-atom)
                :shared/modules  (modules/dev-modules router/routes)}
               deps)))
@@ -371,7 +374,8 @@
   (run (merge {
                :shared/auth0    :env/dev
                :shared/firebase :env/prod
-               :shared/photos   :env/prod
+               :shared/photos   :env/dev
+               :shared/vods     :env/dev
                :shared/login    (auth/login reconciler-atom)
                :shared/modules  (modules/dev-modules router/routes)
                }

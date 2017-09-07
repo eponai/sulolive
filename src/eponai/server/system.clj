@@ -158,7 +158,8 @@
                                                  "no-stripe-keys-in-test-environment"
                                                  (:stripe-secret-key env)))
    :system/taxjar          (taxjar/taxjar-stub)
-   :system/vods            (vods/fake-vod-storage)
+   :system/vods            (c/using (vods/map->FakeVodStorage {})
+                                    {:datomic :system/datomic})
    :system/wowza           (wowza/wowza-stub {:secret (:wowza-jwt-secret env)})})
 
 (defn with-request-handler [system {:keys [in-prod? env] :as config}]
@@ -177,7 +178,8 @@
                                (when (not in-aws?)
                                  (select-keys (fake-components config) [:system/aws-elb
                                                                         :system/aws-ec2
-                                                                        :system/elastic-cloud])))
+                                                                        :system/elastic-cloud
+                                                                        :system/vods])))
                         (with-request-handler config))))
 
 (defn fake-system [config & real-component-keys]
