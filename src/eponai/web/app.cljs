@@ -227,8 +227,8 @@
 
 
 
-(defn- run [{:keys        [login modules loading-bar]
-             :shared/keys [login modules auth0 photos firebase vods]
+(defn- run [{:keys        [loading-bar]
+             :shared/keys [modules]
              :or          {loading-bar (loading-bar/loading-bar)}
              :as          run-options}]
   (let [modules (or modules (modules/advanced-compilation-modules router/routes))
@@ -290,25 +290,24 @@
                                                   (cond-> deduped-query
                                                           (= :remote remote)
                                                           (add-schema-to-query-once))))})
-        reconciler (reconciler/create {:conn                       conn
-                                       :parser                     parser
-                                       :ui->props                  (client.utils/cached-ui->props-fn parser)
-                                       :send-fn                    send-fn
-                                       :remotes                    (:order remote-config)
-                                       :shared/scroll-helper       scroll-helper
-                                       :shared/loading-bar         loading-bar
-                                       :shared/modules             modules
-                                       :shared/browser-history     history
-                                       :shared/store-chat-listener ::shared/prod
-                                       :shared/stripe              ::shared/client-env
-                                       :shared/header              (header/header web.seo/head-meta-data)
-                                       :shared/auth0               auth0
-                                       :shared/firebase            firebase
-                                       :shared/login               login
-                                       :shared/photos              photos
-                                       :shared/client-env          (client-env/cljs-client-env reconciler-atom)
-                                       :shared/vods                vods
-                                       :instrument                 (::plomber run-options)})]
+        reconciler (reconciler/create
+                     ;; By default, keep all the shared keys from run-options
+                     ;; i.e. what's passed from run-dev/prod/shared.
+                     (merge (into {} (filter (comp #{"shared"} namespace key)) run-options)
+                            {:conn                       conn
+                             :parser                     parser
+                             :ui->props                  (client.utils/cached-ui->props-fn parser)
+                             :send-fn                    send-fn
+                             :remotes                    (:order remote-config)
+                             :shared/scroll-helper       scroll-helper
+                             :shared/loading-bar         loading-bar
+                             :shared/modules             modules
+                             :shared/browser-history     history
+                             :shared/store-chat-listener ::shared/prod
+                             :shared/stripe              ::shared/client-env
+                             :shared/header              (header/header web.seo/head-meta-data)
+                             :shared/client-env          (client-env/cljs-client-env reconciler-atom)
+                             :instrument                 (::plomber run-options)}))]
 
     (reset! reconciler-atom reconciler)
     (binding [parser/*parser-allow-remote* false]
