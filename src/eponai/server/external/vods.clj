@@ -21,7 +21,9 @@
                        (let [[_ store-id timestamp] (str/split path #"/")]
                          {:vod/store     (eponai.common/parse-long-safe store-id)
                           :vod/timestamp (eponai.common/parse-long-safe timestamp)
-                          :vod/playlist  path})))))
+                          :vod/playlist  path})))
+                (filter #(and (:vod/store %)
+                              (:vod/timestamp %)))))
         (sort-by :vod/timestamp #(compare %2 %1)))))
 
 (defprotocol IVodStorage
