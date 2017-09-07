@@ -177,12 +177,12 @@
            store-name          :store.profile/name} profile
           stream (first stream)
           is-live? (= :stream.state/live (:stream/state stream))
-          show-chat? (:show-chat? st true)
           {:keys [route route-params query-params]} current-route
-          store-status (get-in store [:store/status :status/type])
-          store-owner-online? (-> owners :store.owner/user :user/online?)
           vod-timestamp (-> query-params :vod-timestamp c/parse-long-safe)
-          is-vod? (some? vod-timestamp)]
+          is-vod? (some? vod-timestamp)
+          show-chat? (when-not is-vod? (:show-chat? st true))
+          store-status (get-in store [:store/status :status/type])
+          store-owner-online? (-> owners :store.owner/user :user/online?)]
 
       (dom/div
         {:id "sulo-store"}
