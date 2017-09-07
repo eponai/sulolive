@@ -35,9 +35,7 @@
     (let [{:vod/keys [store view-count playlist timestamp]
            :or {view-count 0}
            :as props} (om/props this)
-          store-link (routes/store-url store :store {} {:vod-url       playlist
-                                                        :vod-timestamp timestamp})]
-      (debug "VOD PROPS: " props)
+          store-link (routes/store-url store :store {} {:vod-timestamp timestamp})]
       (dom/div
         (cond->> (css/add-classes [:content-item :stream-item])
                  (pos? view-count)

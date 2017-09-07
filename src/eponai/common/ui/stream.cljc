@@ -8,7 +8,8 @@
     [eponai.web.ui.stream.videoplayer :as video]
     #?(:cljs [eponai.web.modules :as modules])
     [eponai.common.ui.elements.css :as css]
-    [eponai.common.database :as db]))
+    [eponai.common.database :as db]
+    [eponai.client.vods :as vods]))
 
 (defn add-fullscreen-listener [f]
   #?(:cljs
@@ -49,15 +50,16 @@
   (render [this]
     (let [{:keys [stream stream-config]} (om/props this)
           stream-config (db/singleton-value (db/to-db this) :ui.singleton.client-env/env-map)
-          {:keys [widescreen? store vod-url]} (om/get-computed this)
+          {:keys [widescreen? store vod-timestamp]} (om/get-computed this)
           subscriber-url (:wowza-subscriber-url stream-config)
           stream-id (stream/stream-id store)
           stream-url (stream/wowza-live-stream-url subscriber-url stream-id)
-          vod-url (when (string? vod-url)
-                    (str "https://vods.sulo.live/" (cond-> vod-url
-                                                           (= \/ (first vod-url))
-                                                           (subs 1))))
+          vod-url (when (some? vod-timestamp)
+                    (vods/vod-url (shared/by-key this :shared/vods)
+                                  (:db/id store)
+                                  vod-timestamp))
           {:stream/keys [title]} stream]
+      (debug "VOD URL: " vod-url)
       (dom/div
         {:id "sulo-video-container" :classes [(str "flex-video"
                                                    (when widescreen? " widescreen"))]}

@@ -1,6 +1,7 @@
 (ns eponai.server.external.datomic
   (:require [com.stuartsierra.component :as component]
             [eponai.server.datomic-dev :as datomic-dev]
+            [eponai.common.database :as db]
             [datomic.api :as datomic]
             [suspendable.core :as suspendable]
             [clojure.core.async :as async]
@@ -24,6 +25,10 @@
   (remove-tx-listener [this listener-id]
     (when-let [listeners (:tx-listeners this)]
       (swap! listeners dissoc listener-id)))
+
+  db/ConnectionApi
+  (db* [this]
+    (db/db (:conn this)))
 
   component/Lifecycle
   (start [this]

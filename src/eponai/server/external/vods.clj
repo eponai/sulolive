@@ -4,7 +4,8 @@
     [clojure.string :as str]
     [eponai.common]
     [com.stuartsierra.component :as component]
-    [suspendable.core :as suspendable]))
+    [suspendable.core :as suspendable]
+    [eponai.common.database :as db]))
 
 (defn -list-vods
   ([s3] (-list-vods s3 nil))
@@ -54,8 +55,24 @@
     (future
       #(swap! (:state this) assoc store-id (-list-vods aws-s3 store-id)))))
 
-(defn fake-vod-storage []
-  (reify IVodStorage
-    (all-vods [this])
-    (vods-by-store [this store-id])
-    (update-store-vods! [this store-id])))
+(defrecord FakeVodStorage [datomic]
+  component/Lifecycle
+  (start [this]
+    (if (:started? this)
+      this
+      (assoc this
+        :started? true
+        :vods (->> (db/all-with (db/db datomic) {:where '[[?e :store/items]]})
+                   (map (fn [store-id]
+                          {:vod/store     store-id
+                           :vod/timestamp (- (System/currentTimeMillis) (rand-int (* 3600 24 60)))}))
+                   (group-by :vod/store)))))
+  (stop [this]
+    (dissoc this :started? :vods))
+
+  IVodStorage
+  (all-vods [this]
+    (sort-by :vod/timestamp (mapcat val (:vods this))))
+  (vods-by-store [this store-id]
+    (get (:vods this) store-id))
+  (update-store-vods! [this store-id]))

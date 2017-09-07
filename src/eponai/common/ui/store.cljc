@@ -181,8 +181,8 @@
           {:keys [route route-params query-params]} current-route
           store-status (get-in store [:store/status :status/type])
           store-owner-online? (-> owners :store.owner/user :user/online?)
-          {:keys [vod-url vod-timestamp]} query-params
-          is-vod? (some? vod-url)]
+          vod-timestamp (-> query-params :vod-timestamp c/parse-long-safe)
+          is-vod? (some? vod-timestamp)]
 
       (dom/div
         {:id "sulo-store"}
@@ -217,6 +217,13 @@
                           fullscreen?
                           (css/add-class :fullscreen))
                  (cond
+                   is-vod?
+                   (stream/->Stream (om/computed {:stream stream}
+                                                 {:stream-title         (str "Stream timestamp: " vod-timestamp)
+                                                  :widescreen?          true
+                                                  :store                store
+                                                  :vod-timestamp        vod-timestamp
+                                                  :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
                    is-live?
                    [
                     (stream/->Stream (om/computed {:stream stream}
@@ -232,13 +239,6 @@
                                                      :visitor-count       visitor-count
                                                      :show?               show-chat?
                                                      :store-online-status store-owner-online?}))]
-                   is-vod?
-                   (stream/->Stream (om/computed {:stream stream}
-                                                 {:stream-title         vod-timestamp
-                                                  :widescreen?          true
-                                                  :store                store
-                                                  :vod-url              vod-url
-                                                  :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
                    (some? cover)
                    (photo/store-cover store {:alt (str store-name " cover photo")}))))
 
