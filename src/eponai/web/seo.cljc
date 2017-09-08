@@ -2,10 +2,10 @@
   (:require
     [eponai.common.photos :as photos]
     [eponai.common.database :as db]
-    [eponai.common.stream :as stream]
     [eponai.common.routes :as routes]
     [eponai.common.format :as common.format]
     [eponai.client.routes :as client.routes]
+    [eponai.client.vods :as vods]
     [eponai.common.ui.dom :as dom]
     [eponai.web.header :as header]
     #?(:clj
@@ -96,7 +96,7 @@
      (p-meta-tag :og:image image)]))
 
 (defmethod head-seo-tags-by-route :store
-  [_ {:keys [db route-map system reconciler]}]
+  [_ {:keys [db route-map reconciler]}]
   (when-let [store (some->> (get-in route-map [:route-params :store-id])
                             (db/store-id->dbid db)
                             (db/entity db))]
@@ -104,8 +104,8 @@
           {:keys [store/profile]} store
           image (photos/transform (get-in profile [:store.profile/photo :photo/id]) :transformation/preview)
           stream-url (when (= :stream.state/live (get-in store [:stream/_store :stream/state]))
-                       (stream/wowza-live-stream-url (wowza-url {:system system :reconciler reconciler})
-                                                     (stream/stream-id store)))
+                       (some-> (shared/by-key reconciler :shared/live-stream)
+                               (vods/live-stream-url (:db/id store))))
           description-html (common.format/bytes->str (:store.profile/description profile))
           description-text (if description-html
                              (or (not-empty (clojure.string/replace description-html #"<(?:.|\n)*?>" ""))

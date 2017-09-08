@@ -2,7 +2,6 @@
   (:require
     [environ.core :as env]
     [eponai.common.database :as db]
-    [eponai.common.stream :as stream]
     [eponai.common.format :as format]
     [eponai.server.external.mailchimp :as mailchimp]
     [eponai.common.parser :as parser]
@@ -188,7 +187,7 @@
              (let [token (jwt/sign {:uuid              (str (db/squuid))
                                     :user-id           (:user-id auth)
                                     :store-id          store-id
-                                    :wowza/stream-name (stream/stream-id (db/entity db store-id))}
+                                    :wowza/stream-name (str (:db/id (db/entity db store-id)))}
                                    (wowza/jwt-secret (:system/wowza system)))]
                (db/transact state [{:stream/store store-id
                                     :stream/token token}])

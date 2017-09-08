@@ -178,9 +178,10 @@
 (defn head [{:keys [system reconciler route-map] :as params}]
   (let [dom-head (head* params)
         seo-data (web.seo/head-meta-data
-                   {:system    system
-                    :db        (db/to-db reconciler)
-                    :route-map route-map})]
+                   {:reconciler reconciler
+                    :system     system
+                    :db         (db/to-db reconciler)
+                    :route-map  route-map})]
     (-> dom-head
         (web.header/update-dom-head seo-data)
         ;; Uncomment to test if it's idempotent after one run. It should be.

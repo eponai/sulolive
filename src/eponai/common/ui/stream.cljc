@@ -1,6 +1,5 @@
 (ns eponai.common.ui.stream
   (:require
-    [eponai.common.stream :as stream]
     [eponai.common.ui.dom :as dom]
     [om.next :as om :refer [defui]]
     [eponai.common.shared :as shared]

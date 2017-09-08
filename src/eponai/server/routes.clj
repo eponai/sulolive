@@ -22,7 +22,6 @@
     [eponai.server.external.stripe.webhooks :as stripe-webhooks]
     [eponai.server.websocket :as websocket]
     [eponai.server.ui.root :as root]
-    [eponai.server.social :as social]
     [eponai.common.routes :as routes]
     [eponai.common.database :as db]
     [eponai.server.external.aws-s3 :as aws-s3]
@@ -93,14 +92,6 @@
         system (::m/system request)
         route-params (merge (:params request)
                             (:route-params request))
-        sharing-objects (social/share-objects {:route-params route-params
-                                               :state        state
-                                               :route        route
-                                               :system       system})
-        site-info (social/site-info {:route-params route-params
-                                     :state        state
-                                     :route        route
-                                     :system       system})
 
         props {:empty-datascript-db (::m/empty-datascript-db request)
                :state               state
@@ -116,8 +107,6 @@
                                           (dissoc (:params request) :*))
                :auth                (request->auth request)
                :locations           (auth/requested-location request)
-               :social-sharing      sharing-objects
-               :site-info           site-info
                :client-ip           (client-ip request)
                :random-seed         (rand-int 1e6)}
         logger (context-logger request
