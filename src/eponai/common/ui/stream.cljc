@@ -66,7 +66,9 @@
                                                    (when widescreen? " widescreen"))]}
         (dom/div {:classes ["sulo-spinner-container"]}
                  (dom/span {:classes ["sl-loading-signal"]}))
-        (video/->VideoPlayer (om/computed {:source (or vod-url stream-url)}
+        (video/->VideoPlayer (om/computed {:source (or vod-url stream-url)
+                                           :poster (when (not vod-url)
+                                                     (stream/wowza-live-thumbnail-large subscriber-url stream-id))}
                                           {:is-live? (not vod-url)}))))))
 
 ;(def Stream (script-loader/js-loader {:component Stream-no-loader
