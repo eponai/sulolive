@@ -1,4 +1,4 @@
-(ns eponai.client.vods
+(ns eponai.client.videos
   (:require
     [eponai.common.shared :as shared]
     [eponai.client.client-env :as client-env]

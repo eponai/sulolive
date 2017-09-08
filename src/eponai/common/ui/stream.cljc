@@ -8,7 +8,7 @@
     #?(:cljs [eponai.web.modules :as modules])
     [eponai.common.ui.elements.css :as css]
     [eponai.common.database :as db]
-    [eponai.client.vods :as vods]
+    [eponai.client.videos :as videos]
     [eponai.client.client-env :as client-env]))
 
 (defn add-fullscreen-listener [f]
@@ -52,14 +52,14 @@
           {:keys [widescreen? store vod-timestamp]} (om/get-computed this)
           live-stream (shared/by-key this :shared/live-stream)
           store-id (:db/id store)
-          stream-url (vods/live-stream-url live-stream store-id)
-          stream-thumbnail (vods/live-stream-thumbnail-url live-stream store-id ::vods/large)
+          stream-url (videos/live-stream-url live-stream store-id)
+          stream-thumbnail (videos/live-stream-thumbnail-url live-stream store-id ::videos/large)
 
           vods (shared/by-key this :shared/vods)
           vod-url (when (some? vod-timestamp)
-                    (vods/vod-url vods
-                                  store-id
-                                  vod-timestamp))
+                    (videos/vod-url vods
+                                    store-id
+                                    vod-timestamp))
           ;stream-url "http://wms.shared.streamshow.it/carinatv/carinatv/playlist.m3u8"
           {:stream/keys [title]} stream]
       (debug "VOD URL: " vod-url)
@@ -71,7 +71,7 @@
                  (dom/span {:classes ["sl-loading-signal"]}))
         (video/->VideoPlayer (om/computed {:source (or vod-url stream-url)
                                            :poster (if (some? vod-url)
-                                                     (vods/vod-thumbnail-url vods (:db/id store) vod-timestamp)
+                                                     (videos/vod-thumbnail-url vods (:db/id store) vod-timestamp)
                                                      stream-thumbnail)}
                                           {:is-live? (not vod-url)}))))))
 

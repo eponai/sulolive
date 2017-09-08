@@ -20,7 +20,7 @@
     [eponai.common.format :as common.format]
     [eponai.common.photos :as photos]
     [eponai.common.format.date :as date]
-    [eponai.client.vods :as vods]
+    [eponai.client.videos :as videos]
     [eponai.client.client-env :as client-env]))
 
 (defui StoreVod
@@ -45,9 +45,9 @@
         (css/add-classes [:content-item :stream-item])
         (dom/a
           {:href store-link}
-          (photo/vod-photo (vods/vod-thumbnail-url (shared/by-key this :shared/vods)
-                                                   (:db/id store)
-                                                   timestamp)
+          (photo/vod-photo (videos/vod-thumbnail-url (shared/by-key this :shared/vods)
+                                                     (:db/id store)
+                                                     timestamp)
                            store
                            nil
                            ;(when (pos? visitor-count))
@@ -108,9 +108,9 @@
         ;         (css/add-class :show-visitor-count))
         (dom/a
           {:href store-link}
-          (photo/stream-photo (vods/live-stream-thumbnail-url (shared/by-key this :shared/live-stream)
-                                                              (:db/id store)
-                                                              ::vods/small)
+          (photo/stream-photo (videos/live-stream-thumbnail-url (shared/by-key this :shared/live-stream)
+                                                                (:db/id store)
+                                                                ::videos/small)
                               store
                               nil
                               ;(when (pos? visitor-count))

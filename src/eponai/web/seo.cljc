@@ -5,7 +5,7 @@
     [eponai.common.routes :as routes]
     [eponai.common.format :as common.format]
     [eponai.client.routes :as client.routes]
-    [eponai.client.vods :as vods]
+    [eponai.client.videos :as videos]
     [eponai.common.ui.dom :as dom]
     [eponai.web.header :as header]
     #?(:clj
@@ -105,7 +105,7 @@
           image (photos/transform (get-in profile [:store.profile/photo :photo/id]) :transformation/preview)
           stream-url (when (= :stream.state/live (get-in store [:stream/_store :stream/state]))
                        (some-> (shared/by-key reconciler :shared/live-stream)
-                               (vods/live-stream-url (:db/id store))))
+                               (videos/live-stream-url (:db/id store))))
           description-html (common.format/bytes->str (:store.profile/description profile))
           description-text (if description-html
                              (or (not-empty (clojure.string/replace description-html #"<(?:.|\n)*?>" ""))
