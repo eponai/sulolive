@@ -256,15 +256,19 @@
   [{:keys [db db-history query system]} _ _]
   {:auth ::auth/public}
   (when (nil? db-history)
-    {:value (->> (vods/all-vods (:system/vods system))
-                 ;; Filter only by the stores that are in the database.
-                 ;; Note: Our s3 bucket with vods contain stuff from both dev and prod.
-                 ;; hence we filter out the ids that are in our db... ;D
-                 (filter (fn [{:vod/keys [store]}]
-                           (some? (:store/profile (db/entity db store)))))
-                 (take 8)
-                 (feature-all db :vods)
-                 (pull-vod-data db query))}))
+    (let [sulo-store-id (:db/id (db/lookup-entity db [:store/username "sulolive"]))]
+      {:value (->> (vods/all-vods (:system/vods system))
+                   ;; Filter only by the stores that are in the database.
+                   ;; Note: Our s3 bucket with vods contain stuff from both dev and prod.
+                   ;; hence we filter out the ids that are in our db... ;D
+                   (sequence
+                     (comp (filter (fn [{:vod/keys [store]}]
+                                     (some? (:store/profile (db/entity db store)))))
+                           ;; Remove the sulolive store if it exists.
+                           (remove (comp #(= % sulo-store-id) :vod/store))
+                           (take 8)))
+                   (feature-all db :vods)
+                   (pull-vod-data db query))})))
 
 (defread query/featured-men
   [{:keys [db db-history query]} _ _]
