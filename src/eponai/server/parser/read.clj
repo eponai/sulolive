@@ -267,7 +267,7 @@
                            ;; Remove the sulolive store if it exists.
                            (remove (comp #(= % sulo-store-id) :vod/store))
                            (take 8)))
-                   (feature-all db :vods)
+                   (feature-all db :vod)
                    (pull-vod-data db query))})))
 
 (defread query/featured-men
