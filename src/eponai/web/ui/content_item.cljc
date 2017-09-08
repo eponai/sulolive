@@ -18,7 +18,8 @@
     [eponai.web.seo :as seo]
     [eponai.common :as com]
     [eponai.common.format :as common.format]
-    [eponai.common.photos :as photos]))
+    [eponai.common.photos :as photos]
+    [eponai.common.format.date :as date]))
 
 (defui StoreVod
   static om/IQuery
@@ -35,7 +36,9 @@
     (let [{:vod/keys [store view-count playlist timestamp]
            :or {view-count 0}
            :as props} (om/props this)
-          store-link (routes/store-url store :store {} {:vod-timestamp timestamp})]
+          {:keys [href]} (om/get-computed this)
+          store-link (or href (routes/store-url store :store {} {:vod-timestamp timestamp}))]
+      ;(debug "VOD item: " props)
       (dom/div
         (css/add-classes [:content-item :stream-item])
         (dom/a
@@ -59,7 +62,11 @@
           (css/add-classes [:content-item-text :is-live])
 
           (dom/a {:href store-link}
-                 (dom/span nil (get-in store [:store/profile :store.profile/name]))))))))
+                 (dom/span nil (get-in store [:store/profile :store.profile/name]))))
+        (when timestamp
+          (dom/div
+            (css/add-classes [:content-item-text])
+            (dom/small nil (date/date->string timestamp))))))))
 
 (def ->StoreVod (om/factory StoreVod))
 

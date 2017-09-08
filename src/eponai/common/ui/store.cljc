@@ -54,13 +54,17 @@
         (quill/->QuillRenderer {:html (f/bytes->str shipping-policy)})))))
 
 (defn videos-section [component]
-  (let [{:query/keys [store-vods]} (om/props component)]
+  (let [{:query/keys [store-vods current-route store]} (om/props component)
+        {:keys [route route-params query-params]} current-route]
+    ;(debug "Got VODS: " store-vods)
     (grid/row
       (grid/columns-in-row {:small 2 :medium 3})
       (map (fn [vod]
+             ;(debug "Render vod: " vod)
              (grid/column
                nil
-               (ci/->StoreVod vod)))
+               (ci/->StoreVod (om/computed vod
+                                           {:href (routes/store-url store :store route-params (assoc query-params :vod-timestamp (:vod/timestamp vod)))}))))
            store-vods))))
 
 (defn store-not-found [component]
