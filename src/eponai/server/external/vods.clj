@@ -23,7 +23,9 @@
                           :vod/timestamp (eponai.common/parse-long-safe timestamp)
                           :vod/playlist  path})))
                 (filter #(and (:vod/store %)
-                              (:vod/timestamp %)))))
+                              (:vod/timestamp %)))
+                (map (fn [{:vod/keys [store timestamp] :as vod}]
+                       (assoc vod :vod/id (str store "-" timestamp))))))
         (sort-by :vod/timestamp #(compare %2 %1)))))
 
 (defprotocol IVodStorage
@@ -68,6 +70,8 @@
                    (map (fn [store-id]
                           {:vod/store     store-id
                            :vod/timestamp (- (System/currentTimeMillis) (rand-int (* 3600 24 60)))}))
+                   (map (fn [{:vod/keys [store timestamp] :as vod}]
+                          (assoc vod :vod/id (str store "-" timestamp))))
                    (group-by :vod/store)))))
   (stop [this]
     (dissoc this :started? :vods))

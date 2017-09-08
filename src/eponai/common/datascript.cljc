@@ -43,7 +43,8 @@
                                              :db/valueType   :db.type/ref}
          :user.notification/id              {:db/unique :db.unique/identity}
 
-         :vod/store                         {:db/valueType :db.type/ref}}
+         :vod/store                         {:db/valueType :db.type/ref}
+         :vod/id                            {:db/unique :db.unique/identity}}
         browse/browse-datascript-schema))
 
 (defn schema-datomic->datascript [datomic-schema]
