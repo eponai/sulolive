@@ -82,28 +82,6 @@
       (dom/img {:src "/assets/img/auth0-icon.png"}))
     content))
 
-(defn online-channel-element [channel]
-  (let [{:stream/keys [store]
-         stream-name  :stream/title} channel
-        {{:store.profile/keys [photo]
-          store-name          :store.profile/name} :store/profile} store
-        store-link (routes/store-url store :store)]
-    (dom/div
-      (->> (css/add-class :content-item)
-           (css/add-class :stream-item))
-      (dom/a
-        {:href store-link}
-        (photo/stream-photo store nil))
-      ;(dom/div
-      ;  (->> (css/add-class :text)
-      ;       (css/add-class :header))
-      ;  (dom/a {:href store-link}
-      ;         (dom/span nil stream-name)))
-
-      (dom/div
-        (css/add-class :text)
-        (dom/a {:href store-link}
-               (dom/strong nil store-name))))))
 
 (defn content-section [{:keys [href target class sizes]} header content footer]
   (dom/div

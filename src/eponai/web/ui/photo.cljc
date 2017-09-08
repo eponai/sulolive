@@ -223,3 +223,15 @@
           (dom/div (css/add-class :video)
                    (dom/i {:classes ["fa fa-play fa-fw"]}))
           content)))))
+
+(defn vod-photo [thumbnail-url store opts & content]
+  (dom/div
+    (css/add-class :stream-photo)
+    (video-thumbnail
+      {:src thumbnail-url
+       :alt (str (get-in store [:store/profile :store.profile/name]) " live stream")}
+      (overlay
+        nil
+        (dom/div (css/add-class :video)
+                 (dom/i {:classes ["fa fa-play fa-fw"]}))
+        content))))

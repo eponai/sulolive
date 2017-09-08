@@ -17,7 +17,8 @@
     [eponai.server.ui.root :as root]
     [taoensso.timbre :as timbre :refer [debug]]
     [eponai.common.ui.router :as router]
-    [eponai.server.log :as log]))
+    [eponai.server.log :as log]
+    [eponai.client.client-env :as client-env]))
 
 (defn server-send [server-env reconciler-atom]
   (fn [queries cb]
@@ -38,19 +39,20 @@
   (let [reconciler-atom (atom nil)
         parser (parser/client-parser)
         send-fn (server-send request-env reconciler-atom)
-        reconciler (client.reconciler/create {:conn          (datascript/conn-from-db (:empty-datascript-db request-env))
-                                              :parser        parser
-                                              :send-fn       send-fn
-                                              :shared/photos (if (:release? request-env)
-                                                               :env/prod
-                                                               :env/dev)
-                                              :shared/vods   (if (:release? request-env)
-                                                               :env/prod
-                                                               :env/dev)
-                                              :history       2
-                                              :route         (:route request-env)
-                                              :route-params  (:route-params request-env)
-                                              :query-params  (:query-params request-env)})]
+        reconciler (client.reconciler/create {:conn              (datascript/conn-from-db (:empty-datascript-db request-env))
+                                              :parser            parser
+                                              :send-fn           send-fn
+                                              :shared/photos     (if (:release? request-env)
+                                                                   :env/prod
+                                                                   :env/dev)
+                                              :shared/vods       (if (:release? request-env)
+                                                                   :env/prod
+                                                                   :env/dev)
+                                              :shared/client-env (:system/client-env (:system request-env))
+                                              :history           2
+                                              :route             (:route request-env)
+                                              :route-params      (:route-params request-env)
+                                              :query-params      (:query-params request-env)})]
     (reset! reconciler-atom reconciler)
     reconciler))
 

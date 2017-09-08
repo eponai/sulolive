@@ -19,7 +19,10 @@
     [eponai.common :as com]
     [eponai.common.format :as common.format]
     [eponai.common.photos :as photos]
-    [eponai.common.format.date :as date]))
+    [eponai.common.format.date :as date]
+    [eponai.client.vods :as vods]
+    [eponai.common.stream :as stream]
+    [eponai.client.client-env :as client-env]))
 
 (defui StoreVod
   static om/IQuery
@@ -43,14 +46,17 @@
         (css/add-classes [:content-item :stream-item])
         (dom/a
           {:href store-link}
-          (photo/stream-photo store
-                              nil
-                              ;(when (pos? visitor-count))
-                              ;(dom/div
-                              ;  nil
-                              ;  (dom/i {:classes ["fa fa-user"]})
-                              ;  (dom/span nil (str (or view-count 0))))
-                              ))
+          (photo/vod-photo (vods/thumbnail-url (shared/by-key this :shared/vods)
+                                               (:db/id store)
+                                               timestamp)
+                           store
+                           nil
+                           ;(when (pos? visitor-count))
+                           ;(dom/div
+                           ;  nil
+                           ;  (dom/i {:classes ["fa fa-user"]})
+                           ;  (dom/span nil (str (or view-count 0))))
+                           ))
         ;(dom/div
         ;  (->> (css/add-class :text)
         ;       (css/add-class :header))
@@ -91,7 +97,9 @@
           {{:store.profile/keys [photo]
             store-name          :store.profile/name} :store/profile} store
           visitor-count (or (:store/visitor-count store) 0)
-          store-link (routes/store-url store :store)]
+          store-link (routes/store-url store :store)
+          subscriber-url (client-env/get-key (shared/by-key this :shared/client-env)
+                                             :wowza-subscriber-url)]
       ;(debug "Stream: " channel)
       ;(debug "Stream store: " (:stream/state channel))
       (dom/div
