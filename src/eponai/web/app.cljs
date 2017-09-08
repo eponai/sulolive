@@ -351,32 +351,35 @@
           (error "Stack: " (.-stack e)))))))
 
 (defn run-prod []
-  (run {:shared/auth0    :env/prod
-        :shared/firebase :env/prod
-        :shared/photos   :env/prod
-        :shared/vods     :env/prod
-        :shared/login    (auth/login reconciler-atom)
-        :shared/modules  (modules/dev-modules router/routes)}))
+  (run {:shared/auth0       :env/prod
+        :shared/firebase    :env/prod
+        :shared/photos      :env/prod
+        :shared/vods        :env/prod
+        :shared/live-stream :env/prod
+        :shared/login       (auth/login reconciler-atom)
+        :shared/modules     (modules/dev-modules router/routes)}))
 
 (defn run-simple [& [deps]]
   (when-not-timbre-level
     (timbre/set-level! :debug))
-  (run (merge {:shared/auth0    :env/dev
-               :shared/firebase :env/prod
-               :shared/photos   :env/dev
-               :shared/vods     :env/dev
-               :shared/login    (auth/login reconciler-atom)
-               :shared/modules  (modules/dev-modules router/routes)}
+  (run (merge {:shared/auth0       :env/dev
+               :shared/firebase    :env/prod
+               :shared/photos      :env/dev
+               :shared/vods        :env/dev
+               :shared/live-stream :env/dev
+               :shared/login       (auth/login reconciler-atom)
+               :shared/modules     (modules/dev-modules router/routes)}
               deps)))
 
 (defn run-dev [& [deps]]
   (run (merge {
-               :shared/auth0    :env/dev
-               :shared/firebase :env/prod
-               :shared/photos   :env/dev
-               :shared/vods     :env/dev
-               :shared/login    (auth/login reconciler-atom)
-               :shared/modules  (modules/dev-modules router/routes)
+               :shared/auth0       :env/dev
+               :shared/firebase    :env/prod
+               :shared/photos      :env/dev
+               :shared/vods        :env/dev
+               :shared/live-stream :env/dev
+               :shared/login       (auth/login reconciler-atom)
+               :shared/modules     (modules/dev-modules router/routes)
                }
               deps)))
 

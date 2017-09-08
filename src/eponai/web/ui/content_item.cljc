@@ -46,9 +46,9 @@
         (css/add-classes [:content-item :stream-item])
         (dom/a
           {:href store-link}
-          (photo/vod-photo (vods/thumbnail-url (shared/by-key this :shared/vods)
-                                               (:db/id store)
-                                               timestamp)
+          (photo/vod-photo (vods/vod-thumbnail-url (shared/by-key this :shared/vods)
+                                                   (:db/id store)
+                                                   timestamp)
                            store
                            nil
                            ;(when (pos? visitor-count))
@@ -109,7 +109,9 @@
         ;         (css/add-class :show-visitor-count))
         (dom/a
           {:href store-link}
-          (photo/stream-photo (stream/wowza-live-thumbnail-small subscriber-url (:db/id store))
+          (photo/stream-photo (vods/live-stream-thumbnail-url (shared/by-key this :shared/live-stream)
+                                                              (:db/id store)
+                                                              ::vods/small)
                               store
                               nil
                               ;(when (pos? visitor-count))

@@ -51,19 +51,20 @@
   (render [this]
     (let [{:keys [stream stream-config]} (om/props this)
           {:keys [widescreen? store vod-timestamp]} (om/get-computed this)
-          subscriber-url (client-env/get-key (shared/by-key this :shared/client-env)
-                                             :wowza-subscriber-url)
-          stream-id (stream/stream-id store)
-          stream-url (stream/wowza-live-stream-url subscriber-url stream-id)
+          live-stream (shared/by-key this :shared/live-stream)
+          store-id (:db/id store)
+          stream-url (vods/live-stream-url live-stream store-id)
+          stream-thumbnail (vods/live-stream-thumbnail-url live-stream store-id ::vods/large)
+
           vods (shared/by-key this :shared/vods)
           vod-url (when (some? vod-timestamp)
                     (vods/vod-url vods
-                                  (:db/id store)
+                                  store-id
                                   vod-timestamp))
           ;stream-url "http://wms.shared.streamshow.it/carinatv/carinatv/playlist.m3u8"
           {:stream/keys [title]} stream]
       (debug "VOD URL: " vod-url)
-      (debug "large-live-thumbnail: " (stream/wowza-live-thumbnail-large subscriber-url stream-id))
+      (debug "large-live-thumbnail: " stream-thumbnail)
       (dom/div
         {:id "sulo-video-container" :classes [(str "flex-video"
                                                    (when widescreen? " widescreen"))]}
@@ -71,8 +72,8 @@
                  (dom/span {:classes ["sl-loading-signal"]}))
         (video/->VideoPlayer (om/computed {:source (or vod-url stream-url)
                                            :poster (if (some? vod-url)
-                                                     (vods/thumbnail-url vods (:db/id store) vod-timestamp)
-                                                     (stream/wowza-live-thumbnail-large subscriber-url stream-id))}
+                                                     (vods/vod-thumbnail-url vods (:db/id store) vod-timestamp)
+                                                     stream-thumbnail)}
                                           {:is-live? (not vod-url)}))))))
 
 ;(def Stream (script-loader/js-loader {:component Stream-no-loader
