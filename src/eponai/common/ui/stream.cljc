@@ -54,8 +54,9 @@
           subscriber-url (:wowza-subscriber-url stream-config)
           stream-id (stream/stream-id store)
           stream-url (stream/wowza-live-stream-url subscriber-url stream-id)
+          vods (shared/by-key this :shared/vods)
           vod-url (when (some? vod-timestamp)
-                    (vods/vod-url (shared/by-key this :shared/vods)
+                    (vods/vod-url vods
                                   (:db/id store)
                                   vod-timestamp))
           ;stream-url "http://wms.shared.streamshow.it/carinatv/carinatv/playlist.m3u8"
@@ -67,7 +68,8 @@
         (dom/div {:classes ["sulo-spinner-container"]}
                  (dom/span {:classes ["sl-loading-signal"]}))
         (video/->VideoPlayer (om/computed {:source (or vod-url stream-url)
-                                           :poster (when (not vod-url)
+                                           :poster (if (some? vod-url)
+                                                     (vods/thumbnail-url vods (:db/id store) vod-timestamp)
                                                      (stream/wowza-live-thumbnail-large subscriber-url stream-id))}
                                           {:is-live? (not vod-url)}))))))
 

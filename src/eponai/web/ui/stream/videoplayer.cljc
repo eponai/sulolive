@@ -187,7 +187,7 @@
   (initLocalState [this]
     {:controls/share-video-open? false})
   (render [this]
-    (let [{:keys [source]} (om/props this)
+    (let [{:keys [source poster]} (om/props this)
           {:controls/keys [share-video-open?]} (om/get-state this)
           {:keys [is-live?]} (om/get-computed this)]
       (dom/div
@@ -197,7 +197,7 @@
                  is-live?
                  (css/add-class :is-live))
         (dom/video
-          {:id video-element-id}
+          {:id video-element-id :poster poster}
           (dom/source
             (cond-> {:id source-element-id}
                     (and (not (script-loader/is-loading-scripts? this))
