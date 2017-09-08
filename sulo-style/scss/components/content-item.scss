@@ -82,6 +82,7 @@ $contentitem-overlay-hover-bg: rgba($white, 0.75);
 			// 	padding-top: flex-video($flexvideo-ratio);
 			// }
 			.overlay {
+				transition: background .25s ease-in-out;
 				.content {
 					opacity: 1;
 					padding: $global-padding;
@@ -98,11 +99,13 @@ $contentitem-overlay-hover-bg: rgba($white, 0.75);
 					}
 				}
 				&:hover {
+					background: rgba($white, 0.75);
 					.video {
 						background: transparent;
 						box-shadow: none;
 						height: 5rem;
 						width: 5rem;
+						color: $black;
 						// font-size: 3rem;
 					}
 				}

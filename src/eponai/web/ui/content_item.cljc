@@ -37,18 +37,16 @@
            :as props} (om/props this)
           store-link (routes/store-url store :store {} {:vod-timestamp timestamp})]
       (dom/div
-        (cond->> (css/add-classes [:content-item :stream-item])
-                 (pos? view-count)
-                 (css/add-class :show-visitor-count))
+        (css/add-classes [:content-item :stream-item])
         (dom/a
           {:href store-link}
           (photo/stream-photo store
                               nil
                               ;(when (pos? visitor-count))
-                              (dom/div
-                                (css/add-class :visitor-count)
-                                (dom/i {:classes ["fa fa-user"]})
-                                (dom/span nil (str (or view-count 0))))
+                              ;(dom/div
+                              ;  nil
+                              ;  (dom/i {:classes ["fa fa-user"]})
+                              ;  (dom/span nil (str (or view-count 0))))
                               ))
         ;(dom/div
         ;  (->> (css/add-class :text)
@@ -90,18 +88,19 @@
       ;(debug "Stream: " channel)
       ;(debug "Stream store: " (:stream/state channel))
       (dom/div
-        (cond->> (css/add-classes [:content-item :stream-item])
-                 (pos? visitor-count)
-                 (css/add-class :show-visitor-count))
+        (css/add-classes [:content-item :stream-item])
+        ;(cond->> (css/add-classes [:content-item :stream-item])
+        ;         (pos? visitor-count)
+        ;         (css/add-class :show-visitor-count))
         (dom/a
           {:href store-link}
           (photo/stream-photo store
                               nil
                               ;(when (pos? visitor-count))
-                              (dom/div
-                                (css/add-class :visitor-count)
-                                (dom/i {:classes ["fa fa-user"]})
-                                (dom/span nil (str visitor-count)))
+                              ;(dom/div
+                              ;  (css/add-class :visitor-count)
+                              ;  (dom/i {:classes ["fa fa-user"]})
+                              ;  (dom/span nil (str visitor-count)))
                               ))
         ;(dom/div
         ;  (->> (css/add-class :text)

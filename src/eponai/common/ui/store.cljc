@@ -53,6 +53,16 @@
         (dom/p nil (dom/strong nil "Shipping"))
         (quill/->QuillRenderer {:html (f/bytes->str shipping-policy)})))))
 
+(defn videos-section [component]
+  (let [{:query/keys [store-vods]} (om/props component)]
+    (grid/row
+      (grid/columns-in-row {:small 2 :medium 3})
+      (map (fn [vod]
+             (grid/column
+               nil
+               (ci/->StoreVod vod)))
+           store-vods))))
+
 (defn store-not-found [component]
   (let [{:query/keys [store featured-stores]} (om/props component)]
     [
@@ -149,6 +159,7 @@
                               :store/featured
                               {:store/items [:db/id {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
                                                                          :store.item.photo/index]}]}]}
+     {:query/store-vods (om/get-query ci/StoreVod)}
      {:query/store-items (om/get-query ci/ProductItem)}
      :query/current-route])
   Object
@@ -169,7 +180,7 @@
   ;                                        (:db/id store)
   ;                                        (client.auth/current-auth this)))))
   (render [this]
-    (let [{:keys [fullscreen? selected-navigation] :as st} (om/get-state this)
+    (let [{:keys [fullscreen? ] :as st} (om/get-state this)
           {:query/keys [store store-items current-route] :as props} (om/props this)
           {:store/keys [profile visitor-count owners geolocation]
            stream      :stream/_store} store
@@ -180,9 +191,11 @@
           {:keys [route route-params query-params]} current-route
           vod-timestamp (-> query-params :vod-timestamp c/parse-long-safe)
           is-vod? (some? vod-timestamp)
-          show-chat? (when-not is-vod? (:show-chat? st true))
+          show-chat? (:show-chat? st true)
           store-status (get-in store [:store/status :status/type])
-          store-owner-online? (-> owners :store.owner/user :user/online?)]
+          store-owner-online? (-> owners :store.owner/user :user/online?)
+          selected-navigation (:nav query-params)]
+      (debug "Store vods: " (:query/store-vods props))
 
       (dom/div
         {:id "sulo-store"}
@@ -217,23 +230,25 @@
                           fullscreen?
                           (css/add-class :fullscreen))
                  (cond
-                   is-vod?
-                   (stream/->Stream (om/computed {:stream stream}
-                                                 {:stream-title         (str "Stream timestamp: " vod-timestamp)
-                                                  :widescreen?          true
-                                                  :store                store
-                                                  :vod-timestamp        vod-timestamp
-                                                  :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
-                   is-live?
+                   ;is-vod?
+                   ;(stream/->Stream (om/computed {:stream stream}
+                   ;                              {:stream-title         (str "Stream timestamp: " vod-timestamp)
+                   ;                               :widescreen?          true
+                   ;                               :store                store
+                   ;                               :vod-timestamp        vod-timestamp
+                   ;                               :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
+                   (or is-live? is-vod?)
                    [
                     (stream/->Stream (om/computed {:stream stream}
                                                   {:stream-title         (:stream/title stream)
                                                    :widescreen?          true
                                                    :store                store
+                                                   :vod-timestamp        vod-timestamp
                                                    :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
                     (chat/->StreamChat (om/computed (:proxy/chat props)
                                                     {:on-toggle-chat      (fn [show?]
                                                                             (om/update-state! this assoc :show-chat? show?))
+                                                     :is-vod?             is-vod?
                                                      :store               store
                                                      :stream-overlay?     true
                                                      :visitor-count       visitor-count
@@ -344,40 +359,47 @@
                    (css/add-class :navigation)
 
                    (menu/item (cond->> (css/add-class :about)
-                                       (= selected-navigation :about)
+                                       (= selected-navigation "videos")
                                        (css/add-class ::css/is-active))
-                              (dom/a {:onClick #(om/update-state! this assoc :selected-navigation :about)}
+                              (dom/a {:href (routes/store-url store :store route-params (assoc query-params :nav "videos"))}
+                                     (dom/span nil "Videos")))
+                   (menu/item (cond->> (css/add-class :about)
+                                       (= selected-navigation "about")
+                                       (css/add-class ::css/is-active))
+                              (dom/a {:href (routes/store-url store :store route-params (assoc query-params :nav "about"))}
                                      (dom/span nil "About")))
                    (menu/item (cond->> (css/add-class :about)
-                                       (= selected-navigation :policies)
+                                       (= selected-navigation "policies")
                                        (css/add-class ::css/is-active))
-                              (dom/a {:onClick #(om/update-state! this assoc :selected-navigation :policies)}
+                              (dom/a {:href (routes/store-url store :store route-params (assoc query-params :nav "policies"))}
                                      (dom/span nil "Policies")))
-                   (menu/item (when (and (= route :store) (= selected-navigation :all-items))
+                   (menu/item (when (and (= route :store) (nil? selected-navigation))
                                 (css/add-class ::css/is-active))
-                              (dom/a {:onClick #(om/update-state! this assoc :selected-navigation :all-items)}
+                              (dom/a {:href (routes/store-url store :store route-params (dissoc query-params :nav))}
                                      (dom/span nil "All Items")))
                    (map-indexed
                      (fn [i s]
                        (let [{:store.section/keys [label]} s
-                             is-active? (and (= route :store) (= selected-navigation (:db/id s)))]
+                             is-active? (and (= route :store) (= selected-navigation (str (:db/id s))))]
                          (menu/item
                            (cond->> {:key (+ 10 i)}
                                     is-active?
                                     (css/add-class ::css/is-active))
                            (dom/a
-                             {:onClick #(om/update-state! this assoc :selected-navigation (:db/id s))
-                              :href    (routes/url :store route-params)}
+                             {:href (routes/store-url store :store route-params (assoc query-params :nav (:db/id s)))}
                              (dom/span nil label)))))
                      (:store/sections store)))))
-             (cond (= selected-navigation :about)
+             (cond (= selected-navigation "about")
                    (about-section this)
-                   (= selected-navigation :policies)
+                   (= selected-navigation "videos")
+                   (videos-section this)
+                   (= selected-navigation "policies")
                    (policies-section this)
                    :else
-                   (let [products (sort-by :store.item/index
-                                           (if (and (= route :store) (number? selected-navigation))
-                                             (filter #(= (get-in % [:store.item/section :db/id]) selected-navigation) store-items)
+                   (let [selected-section (c/parse-long-safe selected-navigation)
+                         products (sort-by :store.item/index
+                                           (if (and (= route :store) (number? selected-section))
+                                             (filter #(= (get-in % [:store.item/section :db/id]) selected-section) store-items)
                                              store-items))]
                      (grid/products products
                                     (fn [p]

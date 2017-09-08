@@ -3,6 +3,8 @@ $chat-zindex: 2;
 $chat-container-bg-color: $light-gray;
 $chat-container-box-shadow-color: $chat-container-bg-color;
 
+$chat-container-bg-color-fullscreen: $light-gray;
+
 $chat-available-breakpoint: medium;
 
 @import "chat";
@@ -71,10 +73,11 @@ $chat-available-breakpoint: medium;
 .fullscreen {
 	.stream-chat-container {
 		position: fixed;
+		border: none;
 		top:0;
 		z-index: 2147483647;
-		background: rgba($chat-container-bg-color, 0.6);
-		box-shadow: -1px 0 10rem 0 rgba($chat-container-box-shadow-color, 0.35);
+		background: rgba($chat-container-bg-color-fullscreen, 0.8);
+		box-shadow: -1px 0 10rem 0 rgba(black, 0.35);
 	}
 
 

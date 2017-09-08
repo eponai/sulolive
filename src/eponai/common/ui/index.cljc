@@ -71,6 +71,7 @@
   Object
   (render [this]
     (let [{:query/keys [top-streams featured-streams featured-stores current-route featured-vods featured-items featured-home featured-men featured-art]} (om/props this)
+          ;featured-streams []
           {:keys [route-params]} current-route]
       ;(debug "Featured women products: " featured-women)
 
@@ -102,11 +103,11 @@
 
           (dom/div
             (css/add-class :sections)
-            (when (not-empty featured-streams)
-              (common/content-section {:href  (routes/url :live route-params)
-                                       :class "online-channels"}
-                                      (dom/span nil "LIVE right now")
+            (common/content-section {:href  (routes/url :live route-params)
+                                     :class "online-channels"}
+                                    (dom/span nil "LIVE right now")
 
+                                    (if (not-empty featured-streams)
                                       (grid/row
                                         (->>
                                           (grid/columns-in-row {:small 2 :medium 3 :large 5}))
@@ -117,13 +118,15 @@
                                                  (css/add-class :online-stream)
                                                  (ci/->OnlineChannel c)))
                                              featured-streams))
-                                      ""))
+                                      (dom/div (css/add-class :empty-container)
+                                               (dom/p (css/add-class :shoutout) "No live sessions at the moment :'(")))
+                                    "")
 
 
             (when (seq featured-vods)
               (common/content-section {:href  (routes/url :live route-params)
                                        :class "online-channels"}
-                                      (dom/span nil "Recent Live streams")
+                                      (dom/span nil "Latest Live streams")
 
                                       (grid/row
                                         (->>

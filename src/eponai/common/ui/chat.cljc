@@ -61,21 +61,26 @@
   Object
   (render [this]
     (let [{:keys [chat-message]} (om/get-state this)
-          {:keys [on-enter]} (om/get-computed this)]
+          {:keys [on-enter disabled?]} (om/get-computed this)]
       (dom/div
         (css/add-class :message-input-container)
-        (dom/input {:className      ""
-                       :type        "text"
-                       :placeholder "Say something..."
-                       :value       (or chat-message "")
-                       :onKeyDown   #?(:cljs #(when (utils/enter-pressed? %)
-                                               (on-enter this))
-                                       :clj  identity)
-                       :maxLength   500
-                       :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))})
+        (dom/input
+          (cond-> {:className   ""
+                   :type        "text"
+                   :placeholder "Say something..."
+                   :value       (or chat-message "")
+                   :onKeyDown   #?(:cljs #(when (utils/enter-pressed? %)
+                                           (on-enter this))
+                                   :clj  identity)
+                   :maxLength   500
+                   :onChange    #(om/update-state! this assoc :chat-message (.-value (.-target %)))}
+                  disabled?
+                  (assoc :disabled true)))
         (dom/a
-          (->> (css/button {:onClick #(on-enter this)})
-               (css/add-classes [:small :sulo-dark]))
+          (cond->> (->> (css/button {:onClick #(on-enter this)})
+                        (css/add-classes [:small :sulo-dark]))
+                   disabled?
+                   (css/add-class :disabled))
           (dom/span nil "Chat"))))))
 
 (def ->ChatInput (om/factory ChatInput))
@@ -172,15 +177,17 @@
       {:show-chat? show?}))
   (render [this]
     (let [{:keys [show-chat? show-chat-small?]} (om/get-state this)
-          {:keys [stream-overlay? store store-online-status visitor-count current-route]} (om/get-computed this)
+          {:keys [stream-overlay? store store-online-status visitor-count current-route is-vod?]} (om/get-computed this)
           store-name (get-in store [:store/profile :store.profile/name])
-          welcome-msg (if (and (number? visitor-count) (< 1 visitor-count))
-                        (if (= (:route current-route) :store-dashboard/stream)
-                          (str "Welcome to your public chat room! You have visitors in your store right now, try and say hi")
-                          (str "Welcome to " store-name " public chatroom! Other users are in this store, try to say hi"))
-                        (if (= (:route current-route) :store-dashboard/stream)
-                          (str "Welcome to your public chat room! Your customers can use the chat to communicate with you")
-                          (str "Welcome to " store-name " public chatroom! Use the chat to hangout with " store-name " and other users")))
+          welcome-msg (if is-vod?
+                        (str "This is a replay of a live stream by " store-name ". Come back when they're live to interact in the chat.")
+                        (if (and (number? visitor-count) (< 1 visitor-count))
+                          (if (= (:route current-route) :store-dashboard/stream)
+                            (str "Welcome to your public chat room! You have visitors in your store right now, try and say hi")
+                            (str "Welcome to " store-name " public chatroom! Other users are in this store, try to say hi"))
+                          (if (= (:route current-route) :store-dashboard/stream)
+                            (str "Welcome to your public chat room! Your customers can use the chat to communicate with you")
+                            (str "Welcome to " store-name " public chatroom! Use the chat to hangout with " store-name " and other users"))))
           messages (or (not-empty (get-messages this)) [{:chat.message/user :automatic :chat.message/text welcome-msg}])
           status-msg (status-message store-online-status)]
       (debug "Chat messages: " messages)
@@ -208,21 +215,25 @@
             (toggle-button this)
             (dom/p (css/add-class :title) (dom/span nil "Public live chat")))
 
-          (dom/div
-            (css/add-class :chat-info)
+          (when-not is-vod?
             (dom/div
-              (css/add-classes [:sl-tooltip :chat-visitors])
-              (dom/i {:classes ["fa fa-user fa-fw"]})
-              (dom/span nil (str visitor-count))
-              (dom/span (css/add-class :sl-tooltip-text) (if (= 1 visitor-count)
-                                                              (str visitor-count " visitor is in this store right now")
-                                                              (str visitor-count " visitors are in this store right now"))))
-            (dom/div
-              (css/add-classes [:chat-status])
-              (dom/p (css/add-class :sl-tooltip) (dom/span nil status-msg)
-                     (dom/span (css/add-class :sl-tooltip-text)
-                               (str (get-in store [:store/profile :store.profile/name]) " is " (if (= true store-online-status) "online" "offline") " right now")))
-              (photo/store-photo store {:transformation :transformation/thumbnail-tiny})
+              (css/add-class :chat-info)
+              (dom/div
+                (css/add-classes [:sl-tooltip :chat-visitors])
+                (dom/i {:classes ["fa fa-user fa-fw"]})
+                (dom/span nil (str visitor-count))
+                (dom/span (css/add-class :sl-tooltip-text) (if (= 1 visitor-count)
+                                                             (str visitor-count " visitor is in this store right now")
+                                                             (str visitor-count " visitors are in this store right now"))))
+
+              (dom/div
+                (css/add-classes [:chat-status])
+                ;(dom/p (css/add-class :sl-tooltip) (dom/span nil status-msg)
+                ;       (dom/span (css/add-class :sl-tooltip-text)
+                ;                 (str (get-in store [:store/profile :store.profile/name]) " is " (if (= true store-online-status) "LIVE" "offline") " right now")))
+                (dom/p nil (dom/span nil store-name))
+                (photo/store-photo store {:transformation :transformation/thumbnail-tiny})
+                )
               )))
 
 
@@ -230,8 +241,9 @@
           (css/add-class :chat-content {:id "sl-chat-content"})
           (elements/message-list messages))
         (->ChatInput (om/computed {}
-                                  {:on-enter (fn [chat-input]
-                                               (send-message this chat-input))}))
+                                  {:disabled? is-vod?
+                                   :on-enter  (fn [chat-input]
+                                                (send-message this chat-input))}))
         ;(my-dom/div
         ;  (css/add-classes [ :visitor-count])
         ;  (my-dom/p (css/add-class :sl-tooltip)

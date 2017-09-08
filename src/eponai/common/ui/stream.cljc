@@ -35,8 +35,8 @@
          (remove-fullscreen-listener on-fullscreen-change))))
   (componentDidMount [this]
     #?(:cljs
-      (let [{:keys [on-fullscreen-change]} (om/get-state this)]
-        (add-fullscreen-listener on-fullscreen-change))))
+       (let [{:keys [on-fullscreen-change]} (om/get-state this)]
+         (add-fullscreen-listener on-fullscreen-change))))
 
   (initLocalState [this]
     (let [{:keys [on-fullscreen-change]} (om/get-computed this)]
@@ -58,6 +58,7 @@
                     (vods/vod-url (shared/by-key this :shared/vods)
                                   (:db/id store)
                                   vod-timestamp))
+          ;stream-url "http://wms.shared.streamshow.it/carinatv/carinatv/playlist.m3u8"
           {:stream/keys [title]} stream]
       (debug "VOD URL: " vod-url)
       (dom/div
@@ -65,7 +66,8 @@
                                                    (when widescreen? " widescreen"))]}
         (dom/div {:classes ["sulo-spinner-container"]}
                  (dom/span {:classes ["sl-loading-signal"]}))
-        (video/->VideoPlayer {:source (or vod-url stream-url)})))))
+        (video/->VideoPlayer (om/computed {:source (or vod-url stream-url)}
+                                          {:is-live? (not vod-url)}))))))
 
 ;(def Stream (script-loader/js-loader {:component Stream-no-loader
 ;                                      #?@(:cljs [:scripts [[#(exists? js/WowzaPlayer)

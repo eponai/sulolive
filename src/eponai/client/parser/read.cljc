@@ -175,6 +175,14 @@
       {:remote true}
       {:value (db/pull db query store-id)})))
 
+(defmethod client-read :query/store-vods
+  [{:keys [db query target route-params] :as env} _ _]
+  (when-let [store-id (:store-id route-params)]
+    (if target
+      {:remote true}
+      {:value (db/pull-one-with db query {:where '[[?e :vod/store ?store-id]]
+                                          :symbols {'?store-id store-id}})})))
+
 ;(defmethod client-read :query/online-stores
 ;  [{:keys [db query target route-params] :as env} _ _]
 ;  (if target

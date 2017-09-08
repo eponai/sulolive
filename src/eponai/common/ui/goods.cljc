@@ -325,7 +325,7 @@
                          (browse/order-values query-params)))))
 
               (grid/row
-                (->> (grid/columns-in-row {:small 2 :medium 3 :large 3})
+                (->> (grid/columns-in-row {:small 2 :medium 3 :large 4})
                      (css/add-class :product-grid))
                 (map
                   (fn [p]

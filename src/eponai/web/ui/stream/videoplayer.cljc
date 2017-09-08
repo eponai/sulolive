@@ -23,50 +23,64 @@
 ;         (cond (= (.-id button) share-button-id)
 ;               (om/update-state! component update :controls/share-video-open? not))))))
 
-;(defn controls []
-;  (string/join
-;    ["<div class='plyr__controls'>",
-;     "<button type='button' data-plyr='play'>",
-;     "<svg><use xlink:href='#plyr-play'></use></svg>",
-;     "<span class='plyr__sr-only'>Play</span>",
-;     "</button>",
-;
-;     "<button type='button' data-plyr='pause'>",
-;     "<svg><use xlink:href='#plyr-pause'></use></svg>",
-;     "<span class='plyr__sr-only'>Pause</span>",
-;     "</button>",
-;
-;     "<button type='button' data-plyr='mute'>",
-;     "<svg class='icon--muted'><use xlink:href='#plyr-muted'></use></svg>",
-;     "<svg><use xlink:href='#plyr-volume'></use></svg>",
-;     "<span class='plyr__sr-only'>Toggle Mute</span>",
-;     "</button>",
-;
-;     "<span class='plyr__volume'>",
-;     "<label for='volume{id}' class='plyr__sr-only'>Volume</label>",
-;     "<input id='volume{id}' class='plyr__volume--input' type='range' min='0' max='10' value='5' data-plyr='volume'>",
-;     "<progress class='plyr__volume--display' max='10' value='0' role='presentation'></progress>",
-;     "</span>",
-;
-;     "<button type='button' data-plyr='captions'>",
-;     "<svg class='icon--captions-on'><use xlink:href='#plyr-captions-on'></use></svg>",
-;     "<svg><use xlink:href='#plyr-captions-off'></use></svg>",
-;     "<span class='plyr__sr-only'>Toggle Captions</span>",
-;     "</button>",
-;
-;     "<button type='button' data-plyr='share' id=" share-button-id ">",
-;     "<i class='fa fa-share-alt fa-fw'></i>"
-;     "<span class='plyr__sr-only'>Share Video</span>",
-;     "</button>",
-;
-;     "<button type='button' data-plyr='fullscreen'>",
-;     "<svg class='icon--exit-fullscreen'><use xlink:href='#plyr-exit-fullscreen'></use></svg>",
-;     "<svg><use xlink:href='#plyr-enter-fullscreen'></use></svg>",
-;     "<span class='plyr__sr-only'>Toggle Fullscreen</span>",
-;     "</button>",
-;     "</div>"]
-;    )
-;  )
+(defn controls []
+  (string/join
+    [
+     ;"<div class='plyr__controls'>",
+     "<button type='button' data-plyr='play' class='plyr__play-large'>",
+     "<svg><use xlink:href='#plyr-play'></use></svg>",
+     "<span class='plyr__sr-only'>Play</span>",
+     "</button>",
+
+
+
+     "<div class='plyr__controls'>",
+     "<button type='button' data-plyr='play'>",
+     "<svg><use xlink:href='#plyr-play'></use></svg>",
+     "<span class='plyr__sr-only'>Play</span>",
+     "</button>",
+
+     "<button type='button' data-plyr='pause'>",
+     "<svg><use xlink:href='#plyr-pause'></use></svg>",
+     "<span class='plyr__sr-only'>Pause</span>",
+     "</button>",
+
+     "<button type='button' data-plyr='mute'>",
+     "<svg class='icon--muted'><use xlink:href='#plyr-muted'></use></svg>",
+     "<svg><use xlink:href='#plyr-volume'></use></svg>",
+     "<span class='plyr__sr-only'>Toggle Mute</span>",
+     "</button>",
+
+     "<span class='plyr__volume'>",
+     "<label for='volume{id}' class='plyr__sr-only'>Volume</label>",
+     "<input id='volume{id}' class='plyr__volume--input' type='range' min='0' max='10' value='5' data-plyr='volume'>",
+     "<progress class='plyr__volume--display' max='10' value='0' role='presentation'></progress>",
+     "</span>",
+
+     "<button type='button' data-plyr='captions'>",
+     "<svg class='icon--captions-on'><use xlink:href='#plyr-captions-on'></use></svg>",
+     "<svg><use xlink:href='#plyr-captions-off'></use></svg>",
+     "<span class='plyr__sr-only'>Toggle Captions</span>",
+     "</button>",
+
+     ;"<button type='button' data-plyr='share' id=" share-button-id ">",
+     ;"<i class='fa fa-share-alt fa-fw'></i>"
+     ;"<span class='plyr__sr-only'>Share Video</span>",
+     ;"</button>",
+
+     "<button type='button' data-plyr='fullscreen'>",
+     "<svg class='icon--exit-fullscreen'><use xlink:href='#plyr-exit-fullscreen'></use></svg>",
+     "<svg><use xlink:href='#plyr-enter-fullscreen'></use></svg>",
+     "<span class='plyr__sr-only'>Toggle Fullscreen</span>",
+     "</button>",
+     "</div>"
+
+     "<div class='plyr__live-indicator'>",
+     ;"LIVE",
+     "<span>Live</span>",
+     "</div>",]
+    )
+  )
 
 (defn video-is-playing? []
   #?(:cljs
@@ -81,7 +95,7 @@
 
 (defn hls-supported? []
   #?(:cljs (boolean (.isSupported js/Hls))
-     :clj false))
+     :clj  false))
 
 (defn subscribe-hls [component]
   #?(:cljs
@@ -124,14 +138,17 @@
        (when (hls-supported?)
          (subscribe-hls component))
 
-       (.setup js/plyr video-element #js {:controls #js ["play-large"
-                                                         "play"
-                                                         ;"progress"
-                                                         ;"current-time"
-                                                         "mute"
-                                                         "volume"
-                                                         ;"captions"
-                                                         "fullscreen"]})
+       (.setup js/plyr video-element #js {:html     (clj->js (controls))
+                                          ;:controls #js ["play-large"]
+                                          ;["play-large"
+                                          ;               "play"
+                                          ;               ;"progress"
+                                          ;               ;"current-time"
+                                          ;               "mute"
+                                          ;               "volume"
+                                          ;               ;"captions"
+                                          ;               "fullscreen"]
+                                          })
        ;(.addEventListener js/document "click" on-click-fn)
        )))
 
@@ -171,11 +188,14 @@
     {:controls/share-video-open? false})
   (render [this]
     (let [{:keys [source]} (om/props this)
-          {:controls/keys [share-video-open?]} (om/get-state this)]
+          {:controls/keys [share-video-open?]} (om/get-state this)
+          {:keys [is-live?]} (om/get-computed this)]
       (dom/div
         (cond->> (css/add-class :video-player-container)
                  share-video-open?
-                 (css/add-class :share-open))
+                 (css/add-class :share-open)
+                 is-live?
+                 (css/add-class :is-live))
         (dom/video
           {:id video-element-id}
           (dom/source
@@ -183,6 +203,10 @@
                     (and (not (script-loader/is-loading-scripts? this))
                          (not (hls-supported?)))
                     (assoc :src source))))
+        ;(when is-live?
+        ;  (dom/div (css/add-class :live-indicator)
+        ;           (dom/span nil "LIVE")))
+
         ;(dom/div
         ;  (css/add-class :sulo-share-video-overlay)
         ;

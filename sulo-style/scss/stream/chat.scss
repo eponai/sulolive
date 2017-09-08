@@ -110,6 +110,7 @@
 		align-items: center;
 		.chat-visitors {
 			padding: 0 $global-padding;
+			flex: 0 0 auto;
 			// color: $medium-gray;
 		}
 	}
@@ -173,7 +174,7 @@
 
 	position: relative;
 	z-index: $chat-zindex;
-	background: rgba($chat-container-bg-color, 0.25);//linear-gradient(to right, rgba($chat-container-bg-color, 0.6), rgba($chat-container-bg-color, 0.9));
+	background: rgba(lighten($chat-container-bg-color, 5%), 0.75);//linear-gradient(to right, rgba($chat-container-bg-color, 0.6), rgba($chat-container-bg-color, 0.9));
 	// box-shadow: -1px 0 10rem 0 rgba($chat-container-box-shadow-color, 0.35);
 	padding: 0;
 	position: absolute;
