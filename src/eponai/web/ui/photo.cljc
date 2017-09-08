@@ -210,26 +210,24 @@
     (css/add-class :video-thumbnail opts)
     content))
 
-(defn stream-photo [store opts & content]
-  (let [photo (get-in store [:store/profile :store.profile/photo])
-        photo-id (:photo/id photo "static/storefront-2")]
-    (dom/div
-      (css/add-class :stream-photo)
-      (video-thumbnail
-        {:photo-id photo-id
-         :alt (str (get-in store [:store/profile :store.profile/name]) " live stream")}
-        (overlay
-          nil
-          (dom/div (css/add-class :video)
-                   (dom/i {:classes ["fa fa-play fa-fw"]}))
-          content)))))
+(defn stream-photo [thumbnail-url store opts & content]
+  (dom/div
+    (css/add-class :stream-photo)
+    (video-thumbnail
+      {:src thumbnail-url
+       :alt (str (get-in store [:store/profile :store.profile/name]) " live stream")}
+      (overlay
+        nil
+        (dom/div (css/add-class :video)
+                 (dom/i {:classes ["fa fa-play fa-fw"]}))
+        content))))
 
 (defn vod-photo [thumbnail-url store opts & content]
   (dom/div
     (css/add-class :stream-photo)
     (video-thumbnail
       {:src thumbnail-url
-       :alt (str (get-in store [:store/profile :store.profile/name]) " live stream")}
+       :alt (str (get-in store [:store/profile :store.profile/name]) " recorded live stream")}
       (overlay
         nil
         (dom/div (css/add-class :video)

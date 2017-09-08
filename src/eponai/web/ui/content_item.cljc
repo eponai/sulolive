@@ -109,7 +109,8 @@
         ;         (css/add-class :show-visitor-count))
         (dom/a
           {:href store-link}
-          (photo/stream-photo store
+          (photo/stream-photo (stream/wowza-live-thumbnail-small subscriber-url (:db/id store))
+                              store
                               nil
                               ;(when (pos? visitor-count))
                               ;(dom/div

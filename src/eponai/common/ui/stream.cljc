@@ -9,7 +9,8 @@
     #?(:cljs [eponai.web.modules :as modules])
     [eponai.common.ui.elements.css :as css]
     [eponai.common.database :as db]
-    [eponai.client.vods :as vods]))
+    [eponai.client.vods :as vods]
+    [eponai.client.client-env :as client-env]))
 
 (defn add-fullscreen-listener [f]
   #?(:cljs
@@ -49,9 +50,9 @@
 
   (render [this]
     (let [{:keys [stream stream-config]} (om/props this)
-          stream-config (db/singleton-value (db/to-db this) :ui.singleton.client-env/env-map)
           {:keys [widescreen? store vod-timestamp]} (om/get-computed this)
-          subscriber-url (:wowza-subscriber-url stream-config)
+          subscriber-url (client-env/get-key (shared/by-key this :shared/client-env)
+                                             :wowza-subscriber-url)
           stream-id (stream/stream-id store)
           stream-url (stream/wowza-live-stream-url subscriber-url stream-id)
           vods (shared/by-key this :shared/vods)
@@ -62,6 +63,7 @@
           ;stream-url "http://wms.shared.streamshow.it/carinatv/carinatv/playlist.m3u8"
           {:stream/keys [title]} stream]
       (debug "VOD URL: " vod-url)
+      (debug "large-live-thumbnail: " (stream/wowza-live-thumbnail-large subscriber-url stream-id))
       (dom/div
         {:id "sulo-video-container" :classes [(str "flex-video"
                                                    (when widescreen? " widescreen"))]}
