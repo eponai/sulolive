@@ -86,6 +86,9 @@ body {
   @include breakpoint(large) {
     overflow-y: auto;
   }
+  &.scroll-disabled {
+  	overflow: hidden;
+  }
 }
 
 p a {

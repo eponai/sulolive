@@ -178,6 +178,25 @@
     #?(:cljs
        {:resize-listener #(.on-window-resize this)
         :breakpoint      (web.utils/breakpoint js/window.innerWidth)}))
+  (open-modal [this]
+    (om/update-state! this assoc :show-item? true)
+    #?(:cljs
+       (let [item (om/props this)]
+         (.replaceState js/history nil nil (product/product-url item))
+         (when-let [body (first (web.utils/elements-by-tagname "body"))]
+           (web.utils/add-class-to-element body "scroll-disabled")))))
+
+  (close-modal [this]
+    (om/update-state! this assoc :show-item? false)
+    #?(:cljs
+       (let [{:keys [current-route]} (om/get-computed this)]
+         (.replaceState js/history nil nil (routes/url (:route current-route)
+                                                       (:route-params current-route)
+                                                       (:query-params current-route)))
+         (when-let [body (first (web.utils/elements-by-tagname "body"))]
+           (web.utils/remove-class-to-element body "scroll-disabled")))))
+
+
   (on-window-resize [this]
     #?(:cljs (om/update-state! this assoc :breakpoint (web.utils/breakpoint js/window.innerWidth))))
   (componentDidMount [this]
@@ -189,11 +208,11 @@
     (let [item (om/props this)
           {:keys [current-route open-url? show-caption?]} (om/get-computed this)
           {:keys [show-item? breakpoint]} (om/get-state this)
-          on-click #(om/update-state! this assoc :show-item? true)
+          ;on-click #(.open-modal this)
           #?@(:cljs [open-url? (if (some? open-url?) open-url? (web.utils/bp-compare :large breakpoint >))]
               :clj  [open-url? (if (some? open-url?) open-url? false)])
-          goods-href (when (or open-url? (nil? on-click)) (product/product-url item))
-          on-click (when-not open-url? on-click)
+          on-click (when-not open-url? #(.open-modal this))
+          goods-href (when open-url? (product/product-url item))
           {:store.item/keys [photos price]
            item-name        :store.item/name
            store            :store/_items} item
@@ -215,21 +234,12 @@
         (product/product-schema-markup item)
         (when show-item?
           (common/modal
-            {:on-close #(do
-                         (om/update-state! this assoc :show-item? false)
-                         #?(:cljs
-                            (.replaceState js/history nil nil (routes/url (:route current-route)
-                                                                          (:route-params current-route)
-                                                                          (:query-params current-route)))))
+            {:on-close #(.close-modal this)
              :size     :large}
             (product/->Product item)))
 
         (dom/a
-          (->> {:onClick #(when on-click
-                           (on-click)
-                           (debug "Chagne URL to: " goods-href)
-                           #?(:cljs
-                              (.replaceState js/history nil nil (product/product-url item))))
+          (->> {:onClick on-click
 
                 :href    goods-href}
                (css/add-class :primary-photo))

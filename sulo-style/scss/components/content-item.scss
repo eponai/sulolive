@@ -74,6 +74,16 @@ $contentitem-overlay-hover-bg: rgba($white, 0.75);
 				@include wrap-text;
 			}
 		}
+		// .reveal-overlay {
+		// 	overflow: hidden;
+		// }
+		// .reveal {
+		// 	// top: 0;
+		// 	bottom: 0;
+		// 	overflow-y: auto;
+		// 	// height: 90vh;
+		// 	min-height: 50rem;
+		// }
 	}
 
 	&.stream-item {
