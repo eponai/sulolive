@@ -655,5 +655,5 @@
   [{:keys [target db query]} _ _]
   (if (some? target)
     {:remote true}
-    {:value (->> (db/pull-all-with db query {:where '[[?e :vod/featured]]})
-                 (sort-by :vod/featured #(compare %2 %1)))}))
+    {:value (->> (db/pull-all-with db query {:where '[[?e :vod/timestamp]]})
+                 (sort-by :vod/timestamp #(compare %2 %1)))}))
