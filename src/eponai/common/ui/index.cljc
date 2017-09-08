@@ -103,24 +103,25 @@
 
           (dom/div
             (css/add-class :sections)
-            (common/content-section {:href  (routes/url :live route-params)
-                                     :class "online-channels"}
-                                    (dom/span nil "LIVE right now")
+            (when (seq featured-streams)
+              (common/content-section {:href  (routes/url :live route-params)
+                                       :class "online-channels"}
+                                      (dom/span nil "LIVE right now")
 
-                                    (if (not-empty featured-streams)
-                                      (grid/row
-                                        (->>
-                                          (grid/columns-in-row {:small 2 :medium 3 :large 5}))
-                                        ;(grid/column
-                                        ;  (css/add-class :online-streams))
-                                        (map (fn [c]
-                                               (grid/column
-                                                 (css/add-class :online-stream)
-                                                 (ci/->OnlineChannel c)))
-                                             featured-streams))
-                                      (dom/div (css/add-class :empty-container)
-                                               (dom/p (css/add-class :shoutout) "No live sessions at the moment :'(")))
-                                    "")
+                                      (if (not-empty featured-streams)
+                                        (grid/row
+                                          (->>
+                                            (grid/columns-in-row {:small 2 :medium 3 :large 5}))
+                                          ;(grid/column
+                                          ;  (css/add-class :online-streams))
+                                          (map (fn [c]
+                                                 (grid/column
+                                                   (css/add-class :online-stream)
+                                                   (ci/->OnlineChannel c)))
+                                               featured-streams))
+                                        (dom/div (css/add-class :empty-container)
+                                                 (dom/p (css/add-class :shoutout) "No live sessions at the moment :'(")))
+                                      ""))
 
 
             (when (seq featured-vods)

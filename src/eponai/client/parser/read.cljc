@@ -180,8 +180,9 @@
   (when-let [store-id (:store-id route-params)]
     (if target
       {:remote true}
-      {:value (db/pull-all-with db query {:where '[[?e :vod/store ?store-id]]
-                                          :symbols {'?store-id store-id}})})))
+      {:value (->> (db/pull-all-with db query {:where   '[[?e :vod/store ?store-id]]
+                                               :symbols {'?store-id store-id}})
+                   (sort-by :vod/timestamp #(compare %2 %1)))})))
 
 ;(defmethod client-read :query/online-stores
 ;  [{:keys [db query target route-params] :as env} _ _]

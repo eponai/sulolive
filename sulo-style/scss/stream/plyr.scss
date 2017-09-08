@@ -131,6 +131,9 @@ $video-control-highlight-color: map-get($foundation-palette, highlight);
 			}
 
 			&.is-live {
+			  .plyr__progress, .plyr__time {
+			    visibility: hidden;
+			  }
 				.plyr__live-indicator {
 					transition: opacity .25s ease-in-out;
 					position: absolute;

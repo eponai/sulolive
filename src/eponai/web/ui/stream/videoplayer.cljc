@@ -45,17 +45,30 @@
      "<span class='plyr__sr-only'>Pause</span>",
      "</button>",
 
+     "<span class='plyr__volume'>",
+     "<label for='volume{id}' class='plyr__sr-only'>Volume</label>",
+     "<input id='volume{id}' class='plyr__volume--input' type='range' min='0' max='10' value='5' data-plyr='volume'>",
+     "<progress class='plyr__volume--display' max='10' value='0' role='presentation'></progress>",
+     "</span>",
+
      "<button type='button' data-plyr='mute'>",
      "<svg class='icon--muted'><use xlink:href='#plyr-muted'></use></svg>",
      "<svg><use xlink:href='#plyr-volume'></use></svg>",
      "<span class='plyr__sr-only'>Toggle Mute</span>",
      "</button>",
 
-     "<span class='plyr__volume'>",
-     "<label for='volume{id}' class='plyr__sr-only'>Volume</label>",
-     "<input id='volume{id}' class='plyr__volume--input' type='range' min='0' max='10' value='5' data-plyr='volume'>",
-     "<progress class='plyr__volume--display' max='10' value='0' role='presentation'></progress>",
-     "</span>",
+     "<span class=\"plyr__time\">"
+     "<span class=\"plyr__sr-only\">Current time</span>"
+     "<span class=\"plyr__time--current\">00:00</span>"
+     "</span>"
+
+     "<span class=\"plyr__progress\">"
+     "<label for=\"seek{id}\" class=\"plyr__sr-only\">Seek</label>"
+     "<input id=\"seek{id}\" class=\"plyr__progress--seek\" type=\"range\" min=\"0\" max=\"100\" step=\"0.1\" data-plyr=\"seek\">"
+     "<progress class=\"plyr__progress--played\" max=\"100\" role=\"presentation\"></progress>"
+     "<progress class=\"plyr__progress--buffer\" max=\"100\"><span></span>% buffered</progress>"
+     "<span class=\"plyr__tooltip\">00:00</span>"
+     "</span>"
 
      "<button type='button' data-plyr='captions'>",
      "<svg class='icon--captions-on'><use xlink:href='#plyr-captions-on'></use></svg>",
@@ -138,12 +151,13 @@
        (when (hls-supported?)
          (subscribe-hls component))
 
-       (.setup js/plyr video-element #js {:html     (clj->js (controls))
-                                          ;:controls #js ["play-large"]
-                                          ;["play-large"
+       (.setup js/plyr video-element #js {
+                                          :html     (clj->js (controls))
+
+                                          ;:controls #js ["play-large"
                                           ;               "play"
-                                          ;               ;"progress"
-                                          ;               ;"current-time"
+                                          ;               "progress"
+                                          ;               "current-time"
                                           ;               "mute"
                                           ;               "volume"
                                           ;               ;"captions"

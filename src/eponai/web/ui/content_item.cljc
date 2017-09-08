@@ -21,7 +21,8 @@
     [eponai.common.photos :as photos]
     [eponai.common.format.date :as date]
     [eponai.client.videos :as videos]
-    [eponai.client.client-env :as client-env]))
+    [eponai.client.client-env :as client-env]
+    [eponai.common :as c]))
 
 (defui StoreVod
   static om/IQuery
@@ -71,7 +72,7 @@
         (when timestamp
           (dom/div
             (css/add-classes [:content-item-text])
-            (dom/small nil (date/date->string timestamp))))))))
+            (dom/small nil (date/date->string (c/parse-long-safe timestamp)))))))))
 
 (def ->StoreVod (om/factory StoreVod))
 

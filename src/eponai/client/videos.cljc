@@ -26,7 +26,7 @@
   ;; For every store and timestamp, just return the same url to fake it.
   (reify IVodProvider
     (vod-url [_ _ _]
-      "https://vods.sulo.live/wowza/17592186045420/1504628739877/sulo_vod/playlist.m3u8")
+      "https://vods.sulo.live/wowza/17592186045420/1504901738750/sulo_vod/playlist.m3u8")
     (vod-thumbnail-url [_ _ _]
       "https://vods.sulo.live/wowza/17592186058863/1504224000/sulo_vod/playlist.jpg")))
 
