@@ -28,16 +28,13 @@
   static om/IQuery
   (query [_]
     [:vod/timestamp
-     :vod/playlist
      {:vod/store [:db/id
                   :store/username
                   {:store/profile [:store.profile/name
-                                   {:store.profile/photo [:photo/path :photo/id]}]}]}
-     :vod/view-count])
+                                   {:store.profile/photo [:photo/path :photo/id]}]}]}])
   Object
   (render [this]
-    (let [{:vod/keys [store view-count playlist timestamp]
-           :or {view-count 0}
+    (let [{:vod/keys [store timestamp]
            :as props} (om/props this)
           {:keys [href]} (om/get-computed this)
           store-link (or href (routes/store-url store :store {} {:vod-timestamp timestamp}))]
