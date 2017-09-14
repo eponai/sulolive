@@ -51,7 +51,7 @@
 
   IVodStorage
   (all-vods [this]
-    (sort-by :vod/timestamp (mapcat val @(:state this))))
+    (sort-by :vod/timestamp #(compare %2 %1) (mapcat val @(:state this))))
   (vods-by-store [this store-id]
     (get @(:state this) store-id))
   (update-store-vods! [this store-id]
