@@ -293,7 +293,7 @@
                                        [lein-doo "0.1.7"
                                         :exclusions [org.clojure/clojure]]]}
              :uberjar  {:jvm-opts       ^:replace ["-Dclojure.compiler.direct-linking=true"
-                                                   "-Xmx1g" "-server"]
+                                                   "-Xmx3g" "-server"]
                         :aot            :all
                         :resource-paths ^:replace ["resources"]}
 
