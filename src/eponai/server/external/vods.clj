@@ -55,7 +55,7 @@
   (vods-by-store [this store-id]
     (get @(:state this) store-id))
   (update-store-vods! [this store-id]
-    (future
+    (future-call
       #(swap! (:state this) assoc store-id (-list-vods aws-s3 store-id)))))
 
 (defrecord FakeVodStorage [datomic]
