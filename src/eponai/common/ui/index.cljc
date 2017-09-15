@@ -74,8 +74,6 @@
           ;featured-streams []
           {:keys [route-params]} current-route]
       ;(debug "Featured women products: " featured-women)
-
-
       (dom/div
         nil
         (dom/div
