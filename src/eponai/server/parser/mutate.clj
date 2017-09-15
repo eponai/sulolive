@@ -638,7 +638,7 @@
 (defmutation user/request-store-access
   [{:keys [system auth state]} _ params]
   {:auth ::auth/public
-   :log  nil
+   :log  (f/remove-nil-keys params)
    :resp {:success "Thank you! Your request has been sent to us and we'll get in touch shortly."
           :error   "Sorry, your request couldn't be sent. Try again later."}}
   {:action (fn []
@@ -651,7 +651,7 @@
 (defmutation user/create
   [{:keys [system auth state ::parser/exception ::parser/return query-params] :as env} _ params]
   {:auth ::auth/public
-   :log  nil
+   :log  (f/remove-nil-keys params)
    :resp {:success return
           :error   (:message (ex-data exception) "Something went wrong when creating your account.")}}
   {:action (fn []
@@ -660,7 +660,7 @@
 (defmutation user/unlink-account
   [{:keys [system auth state ::parser/exception ::parser/return] :as env} _ params]
   {:auth ::auth/public
-   :log  nil
+   :log  (f/remove-nil-keys params)
    :resp {:success "Some message"
           :error   (if exception
                      (ex-data exception)
