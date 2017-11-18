@@ -23,7 +23,13 @@ elif [ "${CIRCLE_BRANCH}" = "master" ]; then
   EB_ENV_NAME="sulo-master"
   FIREBASE_SERVICE_ACCOUNT="$FIREBASE_SERVICE_ACCOUNT_MASTER"
 else
-  echo "Was not on production or master branch. Was: $CIRCLE_BRANCH"
+elif [ "${CIRCLE_BRANCH}" = "demo" ]; then
+  WEBSERVER_MEMORY=700
+  EB_ENV_NAME="sulo-demo"
+  FIREBASE_SERVICE_ACCOUNT=""
+  DATADOG_API_KEY=""
+else
+  echo "Was not on production, master or demo branch. Was: $CIRCLE_BRANCH"
   exit 1;
 fi
 
