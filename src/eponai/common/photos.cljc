@@ -65,6 +65,7 @@
                  (let [static-key (last (string/split photo-id #"/"))
                        photo-key (or (some #{"storefront-cover-2" "storefront-2"} [static-key]) "cat-profile-3")]
                    (str "/assets/img/" photo-key ".jpg")))]
+
     (reify IPhotos
       (mini [this photo-id {:keys [ext]}] (url-fn photo-id))
       (main [this photo-id {:keys [ext transformation]}] (url-fn photo-id)))))
