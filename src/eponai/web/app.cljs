@@ -363,7 +363,7 @@
   (when-not-timbre-level
     (timbre/set-level! :debug))
   (run (merge {:shared/auth0       :env/dev
-               :shared/firebase    :env/prod
+               :shared/firebase    :env/dev
                :shared/photos      :env/dev
                :shared/vods        :env/dev
                :shared/live-stream :env/dev
@@ -374,7 +374,7 @@
 (defn run-dev [& [deps]]
   (run (merge {
                :shared/auth0       :env/dev
-               :shared/firebase    :env/prod
+               :shared/firebase    :env/dev
                :shared/photos      :env/dev
                :shared/vods        :env/dev
                :shared/live-stream :env/dev
