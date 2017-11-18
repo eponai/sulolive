@@ -86,10 +86,7 @@
                               (dom/small nil "Purchases"))
               (menu/item-link {:href    (routes/url :user-settings {:user-id (:db/id user)})
                                :onClick #(track-event ::mixpanel/go-to-settings)}
-                              (dom/small nil "Settings"))
-              (menu/item-link {:href    (routes/url :landing-page)
-                               :onClick #(track-event ::mixpanel/change-location)}
-                              (dom/small nil "Change location")))))
+                              (dom/small nil "Settings")))))
         (menu/item nil
                    (menu/vertical
                      (css/add-class :nested)

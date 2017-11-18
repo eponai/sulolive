@@ -18,14 +18,14 @@
 	// min-width: 22rem;
 	max-width: 25rem;
 	// h1
-	.photo-container {
-		max-width: 3rem;
+	.photo-container.circle {
+		max-width: 3rem !important;
 		width: 100%;
 		background: $white;
 		padding: 0.25rem;
 		margin: 0 auto;
 		margin-bottom: $global-margin;
-		// border: none;
+		border: $global-border !important;
 	}
 	.button {
 		margin-bottom: $global-margin !important;

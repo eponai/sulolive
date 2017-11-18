@@ -816,6 +816,12 @@
           (common/loading-spinner nil (dom/span nil loading-message)))
         (grid/row-column
           nil
+
+          (callout/callout
+            (css/add-classes [:warning :text-center :section :section--item-list])
+            (dom/p nil
+                   (dom/span nil (dom/strong nil "Note:"))
+                   (dom/span nil " the checkout flow will not work properly in this demo version of SULO Live.")))
           (render-store-items this)
 
           (render-shipping-details this)

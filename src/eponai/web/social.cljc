@@ -71,17 +71,16 @@
                      (share-social opts)
                      (when on-click
                        (on-click)))}
-         (css/add-class :share-button)
-         (css/add-class :sl-tooltip))
+         (css/add-classes [:sl-tooltip :disabled :share-button]))
     (dom/img {:src (get logos platform) :alt (str "Share on " (string/capitalize (name platform)))})
     (dom/span (css/add-class :sl-tooltip-text)
               (str "Share on " (get socials platform)))))
 
 (def profiles
-  {:social/instagram "https://www.instagram.com/sulolive/"
-   :social/facebook "https://www.facebook.com/live.sulo"
-   :social/twitter "https://twitter.com/sulolive"
-   :social/pinterest "https://www.pinterest.com/sulolive/"})
+  {:social/instagram ""
+   :social/facebook ""
+   :social/twitter ""
+   :social/pinterest ""})
 
 (defn sulo-social-link [platform]
   (condp = platform

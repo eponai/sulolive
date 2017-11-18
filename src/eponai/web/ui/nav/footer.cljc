@@ -68,36 +68,22 @@
               (menu/vertical {}
                              (menu/item-text nil (dom/h5 (css/add-class :footer-header) "Learn more"))
 
-                             (menu/item-link {:href "mailto:hello@sulo.live"} (dom/span nil "Contact"))
-                             ;(menu/item-link {:href (routes/url :help)} (dom/span nil "Help"))
-                             (menu/item-link {:href      "//www.iubenda.com/privacy-policy/8010910"
-                                              :className "iubenda-nostyle no-brand iubenda-embed"
-                                              :title     "Privacy Policy"} (dom/span nil "Privacy policy"))
-                             (menu/item-link {:href (routes/url :tos)} (dom/span nil "Terms of service"))
-                             ;(menu/item-link nil (dom/span nil "Shipping & Returns"))
-                             ))
+                             (menu/item-link nil (dom/span nil "Contact"))
+                             (menu/item-link nil (dom/span nil "Privacy policy"))
+                             (menu/item-link {:href (routes/url :tos)} (dom/span nil "Terms of service"))))
             (grid/column
               nil
               (menu/vertical {}
                              (menu/item-text nil (dom/h5 (css/add-class :footer-header) "SULO"))
-                             ;(menu/item-link {:href (routes/url :sell)} (dom/span nil "Start a store"))
-                             ;(menu/item-link nil (dom/span nil "Sign up/Sign in"))
-                             ;(menu/item-link nil (dom/span nil "Press"))
                              (menu/item-link {:href (routes/url :about) ;"https://blog.sulo.live/introducing-sulo-live-b3de8206a419"
                                               } (dom/span nil "About us"))
-                             (menu/item-link {:href   "https://blog.sulo.live"
-                                              :target "_blank"} (dom/span nil "Blog"))
-                             (menu/item-link {:href   (routes/url :help)} (dom/span nil "Help center"))
-                             ))
+                             (menu/item-link nil (dom/span nil "Blog"))
+                             (menu/item-link {:href   (routes/url :help)} (dom/span nil "Help center"))))
             (grid/column
               nil
               (menu/vertical {}
                              (menu/item-text nil (dom/h5 (css/add-class :footer-header) "Go LIVE"))
-                             ;(menu/item-link {:href (routes/url :sell)} (dom/span nil "Start a store"))
-                             ;(menu/item-link nil (dom/span nil "Sign up/Sign in"))
-                             ;(menu/item-link nil (dom/span nil "Press"))
-                             (menu/item-link {:href (routes/url :sell)} (dom/span nil "Open your shop"))
-                             )))
+                             (menu/item-link {:href (routes/url :sell)} (dom/span nil "Open your shop")))))
           (grid/row-column
             (css/add-class :social)
             (menu/horizontal
@@ -109,15 +95,10 @@
               (menu/item nil (social/sulo-social-link :social/facebook))
               (menu/item nil (social/sulo-social-link :social/twitter))
               (menu/item nil (social/sulo-social-link :social/pinterest))
-              (menu/item nil (social/sulo-social-link :social/instagram))
-
-              ;(menu/item-link nil (dom/i {:classes ["fa fa-twitter fa-fw"]}))
-              ))
+              (menu/item nil (social/sulo-social-link :social/instagram))))
           (menu/horizontal
             (->> {:key "legal"}
                  (css/align :right))
-            ;(menu/item-link nil (dom/small nil "Privacy Policy"))
-            ;(menu/item-link nil (dom/small nil "Terms & Conditions"))
             (menu/item (css/add-class :sub-item) (social/sulo-icon-attribution))
             (menu/item-text (css/add-class :sub-item) (social/sulo-copyright))))))))
 
