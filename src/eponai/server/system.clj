@@ -255,6 +255,11 @@
                ;:system/vods
                ))
 
+(def is-demo-env? (some? (environ/env :sulo-demo)))
+
+(defn demo-system [config]
+  (fake-system (dev-config config)))
+
 (defn test-system [config]
   {:post [(= (set (keys %)) system-keys)]}
   ;; Never uses a real implementation.

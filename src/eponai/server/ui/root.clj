@@ -86,6 +86,9 @@
                        :external-type "html"})
 
           (cond
+            (some? (env/env :sulo-demo))
+            (common/inline-javascript ["env.web.main.rundemo()"])
+
             (= cljs-build-id "release")
             (if release?
               (common/inline-javascript ["env.web.main.runsulo()"])

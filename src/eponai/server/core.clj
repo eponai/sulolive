@@ -27,11 +27,12 @@
 
 (defn -main [& _]
   (try
-    (let [system (component/start-system (make-system (cond-> {::system-fn system/prod-system}
+    (let [is-demo? (system/is-demo-env?)
+          system (component/start-system (make-system (cond-> {::system-fn (if is-demo? system/demo-system system/prod-system)}
                                                               (env/env :server-allow-http)
                                                               (assoc ::system/disable-ssl true))))
           server (get-in system [:system/aleph :server])]
-      (mixpanel/set-token ::mixpanel/token-release)
+      (mixpanel/set-token (if is-demo? ::mixpanel/token-dev ::mixpanel/token-release))
       (aleph.netty/wait-for-close server))
     (catch Throwable e
       (error "Error in -main: " e)

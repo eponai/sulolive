@@ -8,6 +8,8 @@
 (defn ^:export runsulo []
       (app/run-prod))
 
+(defn ^:export rundemo []
+      (app/run-demo))
 
 ;; Only leaving the run_fake_sulo method in when there's a timbre-level set.
 (when-not-timbre-level
