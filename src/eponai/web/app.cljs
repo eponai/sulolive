@@ -325,8 +325,9 @@
           (async/<! initial-merge-chan)
           (debug "init user cart...")
           (init-user-cart! reconciler)
-          (debug "init firebase...")
-          (initialize-firebase reconciler)
+          (when (= :env/prod (:shared/firebase run-options))
+            (debug "init firebase...")
+            (initialize-firebase reconciler))
           (debug "Adding reconciler to root!")
           (add-root! reconciler)
           ; Pre fetch data which makes the site less jumpy
