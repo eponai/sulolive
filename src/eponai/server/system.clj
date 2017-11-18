@@ -255,8 +255,6 @@
                ;:system/vods
                ))
 
-(def is-demo-env? (some? (environ/env :sulo-demo)))
-
 (defn demo-system [config]
   (fake-system (dev-config config)))
 

@@ -18,7 +18,8 @@
     [taoensso.timbre :as timbre :refer [debug]]
     [eponai.common.ui.router :as router]
     [eponai.server.log :as log]
-    [eponai.client.client-env :as client-env]))
+    [eponai.client.client-env :as client-env]
+    [environ.core :as env]))
 
 (defn server-send [server-env reconciler-atom]
   (fn [queries cb]
@@ -39,13 +40,21 @@
   (let [reconciler-atom (atom nil)
         parser (parser/client-parser)
         send-fn (server-send request-env reconciler-atom)
-        prod-or-dev (if (:release? request-env) :env/prod :env/dev)
+        shared-config (cond
+                        (some? (env/env :sulo-demo))
+                        {:shared/photos      :env/prod
+                         :shared/vods        :env/dev
+                         :shared/live-stream :env/dev}
+                        (:release? request-env)
+                        (constantly :env/prod)
+                        :else
+                        (constantly :env/dev))
         reconciler (client.reconciler/create {:conn               (datascript/conn-from-db (:empty-datascript-db request-env))
                                               :parser             parser
                                               :send-fn            send-fn
-                                              :shared/photos      prod-or-dev
-                                              :shared/vods        prod-or-dev
-                                              :shared/live-stream prod-or-dev
+                                              :shared/photos      (shared-config :shared/photos)
+                                              :shared/vods        (shared-config :shared/vods)
+                                              :shared/live-stream (shared-config :shared/live-stream)
                                               :shared/client-env  (:system/client-env (:system request-env))
                                               :history            2
                                               :route              (:route request-env)

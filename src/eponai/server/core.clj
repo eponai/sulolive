@@ -27,7 +27,7 @@
 
 (defn -main [& _]
   (try
-    (let [is-demo? (system/is-demo-env?)
+    (let [is-demo? (some? (env/env :sulo-demo))
           system (component/start-system (make-system (cond-> {::system-fn (if is-demo? system/demo-system system/prod-system)}
                                                               (env/env :server-allow-http)
                                                               (assoc ::system/disable-ssl true))))

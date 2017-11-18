@@ -362,7 +362,7 @@
 (defn run-demo []
   (run {:shared/auth0       :env/dev
         :shared/firebase    :env/dev
-        :shared/photos      :env/dev
+        :shared/photos      :env/prod
         :shared/vods        :env/dev
         :shared/live-stream :env/dev
         :shared/login       (auth/login reconciler-atom)
