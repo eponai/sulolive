@@ -133,6 +133,9 @@ a.disabled {
 			// transform: translateX(-0.75rem);
 			margin-top: -0.5rem;
 		}
+		&.disabled {
+			opacity: 0.25;
+		}
 	}
 	:last-child {
 		.share-button {

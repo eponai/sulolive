@@ -659,16 +659,8 @@
         chats (mock-chats stores)
         live-streams (mock-streams (take live-stores stores) :stream.state/live)
         streams (mock-streams (drop live-stores stores) :stream.state/offline)
-        countries (countries)
-        ;storeless-user (user-no-store)
-        stores-with-localities (map (fn [s]
-                                      (if (nil? (:store/locality s))
-                                        (assoc s :store/locality [:sulo-locality/path "yvr"])
-                                        s))
-                                    stores)
-        ]
+        countries (countries)]
     (db/transact conn (concat categories (sulo-localities)))
-    ;(db/transact-one conn storeless-user)
     (debug "Categories added")
-    (db/transact conn (concat stores-with-localities live-streams streams chats countries))
+    (db/transact conn (concat stores live-streams streams chats countries))
     (debug "Stores with items, chats and streams added")))
