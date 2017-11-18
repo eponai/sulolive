@@ -51,35 +51,6 @@
        }
      ],
      "essential": true
-   },
-   {
-     "name": "dd-agent",
-     "image": "datadog/docker-dd-agent:latest",
-     "environment": [
-       {
-         "name": "API_KEY",
-         "value": "<DATADOG_API_KEY>"
-       }
-     ],
-     "memory": 200,
-     "mountPoints": [
-       {
-         "sourceVolume": "docker_sock",
-         "containerPath": "/var/run/docker.sock",
-         "readOnly": false
-       },
-       {
-         "sourceVolume": "proc",
-         "containerPath": "/host/proc",
-         "readOnly": true
-       },
-       {
-         "sourceVolume": "cgroup",
-         "containerPath": "/host/sys/fs/cgroup",
-         "readOnly": true
-       }
-     ],
-     "essential": true
    }
  ]
 }
