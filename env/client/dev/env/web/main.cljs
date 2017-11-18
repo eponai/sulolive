@@ -11,3 +11,7 @@
   (app/run-dev {
                 ;;::plomber   (plomber/instrument)
                 }))
+
+(defn ^:export rundemo []
+      (devtools/install-app)
+      (app/run-demo))

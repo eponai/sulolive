@@ -35,20 +35,19 @@
                                                          :query-params])})
         (dom/body
           nil
-
+          (dom/script {:src  "https://www.gstatic.com/firebasejs/4.1.3/firebase.js"
+                       :type common/text-javascript})
           (when (seq (env/env :firebase-api-key))
-            [(dom/script {:src  "https://www.gstatic.com/firebasejs/4.1.3/firebase.js"
-                          :type common/text-javascript})
-             (common/inline-javascript
-               ["var config = {"
-                " apiKey: " (quote-string (env/env :firebase-api-key))
-                ", authDomain: " (quote-string (env/env :firebase-auth-domain))
-                ", projectId: " (quote-string (env/env :firebase-project-id))
-                ", databaseURL: " (quote-string (env/env :firebase-database-url))
-                ", storageBucket: " (quote-string (env/env :firebase-storage-bucket))
-                ", messagingSenderId: " (quote-string (env/env :firebase-messaging-sender-id))
-                "};"
-                "firebase.initializeApp(config);"])])
+            (common/inline-javascript
+              ["var config = {"
+               " apiKey: " (quote-string (env/env :firebase-api-key))
+               ", authDomain: " (quote-string (env/env :firebase-auth-domain))
+               ", projectId: " (quote-string (env/env :firebase-project-id))
+               ", databaseURL: " (quote-string (env/env :firebase-database-url))
+               ", storageBucket: " (quote-string (env/env :firebase-storage-bucket))
+               ", messagingSenderId: " (quote-string (env/env :firebase-messaging-sender-id))
+               "};"
+               "firebase.initializeApp(config);"]))
 
           ;(dom/script {:src "/lib/firebase/firebase-app.js"
           ;             :type common/text-javascript})
@@ -79,7 +78,7 @@
 
           (cond
             (some? (env/env :sulo-demo))
-            (common/inline-javascript ["env.web.main.rundemo()"])
+            (common/inline-javascript ["env.web.main.runsulo()"])
 
             (= cljs-build-id "release")
             (if release?
