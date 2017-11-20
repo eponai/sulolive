@@ -10,19 +10,12 @@
     [clojure.java.io :as io]
     [clojure.data.json :as json]))
 
-(defn missing-personal-id-account []
-  {:stripe/id   "acct_19k3ozC0YaFL9qxh"
+(defn stripe-account []
+  {:db/id       (db/tempid :db.part/user)
+   :stripe/id   "acct_19k3ozC0YaFL9qxh"
    :stripe/publ "pk_test_zkG9ip9pZ984hIVoNN1dApoi"})
 
-(defn no-details-account []
-  {:stripe/id   "acct_1A9udfFhS10xugIf"
-   :stripe/publ "pk_test_c5VS6ZK5mHacWIylwV9HpNwh"})
-
-(defn stripe-account []
-  (missing-personal-id-account))
-
 (def test-user-email "me@email.com")
-;(def test-user-2-email "you@email.com")
 
 (defn test-user []
   {:db/id        (db/tempid :db.part/user -1)
@@ -32,24 +25,23 @@
 (defn photo [id]
   {:db/id    (db/tempid :db.part/user)
    :photo/id id})
-(defn sku [& [v]]
-  (cond-> {:store.item.sku/inventory {:store.item.sku.inventory/type  :store.item.inventory.type/bucket
-                                      :store.item.sku.inventory/value :store.item.inventory.value/in-stock}}
-          (some? v)
-          (assoc :store.item.sku/variation v)))
-
-(defn item-photo [id & [i]]
-  {:db/id                  (db/tempid :db.part/user)
-   :store.item.photo/photo (photo id)
-   :store.item.photo/index (or i 0)})
 
 (defn item-photos [& ids]
-  (map-indexed (fn [i p] (item-photo p i)) ids))
+  (letfn [(item-photo [id & [i]]
+            {:db/id                  (db/tempid :db.part/user)
+             :store.item.photo/photo (photo id)
+             :store.item.photo/index (or i 0)})]
+    (map-indexed (fn [i p] (item-photo p i)) ids)))
 
 (defn item-skus [& skus]
-  (if (empty? skus)
-    [(sku)]
-    (map sku skus)))
+  (letfn [(sku [& [v]]
+            (cond-> {:store.item.sku/inventory {:store.item.sku.inventory/type  :store.item.inventory.type/bucket
+                                                :store.item.sku.inventory/value :store.item.inventory.value/in-stock}}
+                    (some? v)
+                    (assoc :store.item.sku/variation v)))]
+    (if (empty? skus)
+      [(sku)]
+      (map sku skus))))
 
 (defn adult-category [label]
   [#:category {:name  "unisex-adult"
@@ -115,6 +107,7 @@
    ;; Simply Swedish ------------------------------------
    {:db/id             (db/tempid :db.part/user)
     :store/owners      {:store.owner/user (test-user)}
+    :store/stripe      (stripe-account)
     :store/profile     {:store.profile/name          "Simply Swedish"
                         :store.profile/photo         (photo "dynamic/real/nbatx9gxdmi4fxffqg0w")
                         :store.profile/cover         (photo "dynamic/real/bybk5ta1yst20bd2lpmg")
