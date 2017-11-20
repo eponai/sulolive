@@ -366,7 +366,7 @@
         :shared/photos      :env/prod
         :shared/vods        :env/dev
         :shared/live-stream :env/dev
-        :shared/login       (auth/login reconciler-atom)
+        :shared/login       (auth/demo-login reconciler-atom)
         :shared/modules     (modules/dev-modules router/routes)
         }))
 
