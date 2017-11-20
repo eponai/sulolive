@@ -22,7 +22,12 @@
   (missing-personal-id-account))
 
 (def test-user-email "me@email.com")
-(def test-user-2-email "you@email.com")
+;(def test-user-2-email "you@email.com")
+
+(defn test-user []
+  {:db/id        (db/tempid :db.part/user -1)
+   :user/email   test-user-email
+   :user/profile {:user.profile/name "testuser"}})
 
 (defn photo [id]
   {:db/id    (db/tempid :db.part/user)
@@ -109,6 +114,7 @@
   [
    ;; Simply Swedish ------------------------------------
    {:db/id             (db/tempid :db.part/user)
+    :store/owners      {:store.owner/user (test-user)}
     :store/profile     {:store.profile/name          "Simply Swedish"
                         :store.profile/photo         (photo "dynamic/real/nbatx9gxdmi4fxffqg0w")
                         :store.profile/cover         (photo "dynamic/real/bybk5ta1yst20bd2lpmg")
@@ -652,7 +658,6 @@
 
 (defn add-data [conn]
   (let [live-stores 0
-
         categories (mock-categories3)
         stores (->> (mock-stores)
                     (map-indexed #(assoc %2 :store/created-at %1)))
