@@ -26,9 +26,9 @@
   ;; For every store and timestamp, just return the same url to fake it.
   (reify IVodProvider
     (vod-url [_ _ _]
-      "https://vods.sulo.live/wowza/17592186045420/1504901738750/sulo_vod/playlist.m3u8")
+      "https://video-dev.github.io/streams/x36xhzz/x36xhzz.m3u8")
     (vod-thumbnail-url [_ _ _]
-      "https://vods.sulo.live/wowza/17592186058863/1504224000/sulo_vod/playlist.jpg")))
+      nil)))
 
 
 (defmethod shared/shared-component [:shared/live-stream :env/prod]

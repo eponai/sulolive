@@ -43,17 +43,8 @@
         (css/add-classes [:content-item :stream-item])
         (dom/a
           {:href store-link}
-          (photo/vod-photo (videos/vod-thumbnail-url (shared/by-key this :shared/vods)
-                                                     (:db/id store)
-                                                     timestamp)
-                           store
-                           nil
-                           ;(when (pos? visitor-count))
-                           ;(dom/div
-                           ;  nil
-                           ;  (dom/i {:classes ["fa fa-user"]})
-                           ;  (dom/span nil (str (or view-count 0))))
-                           ))
+          (photo/vod-photo nil store nil)
+          )
         ;(dom/div
         ;  (->> (css/add-class :text)
         ;       (css/add-class :header))
@@ -106,17 +97,7 @@
         ;         (css/add-class :show-visitor-count))
         (dom/a
           {:href store-link}
-          (photo/stream-photo (videos/live-stream-thumbnail-url (shared/by-key this :shared/live-stream)
-                                                                (:db/id store)
-                                                                ::videos/small)
-                              store
-                              nil
-                              ;(when (pos? visitor-count))
-                              ;(dom/div
-                              ;  (css/add-class :visitor-count)
-                              ;  (dom/i {:classes ["fa fa-user"]})
-                              ;  (dom/span nil (str visitor-count)))
-                              ))
+          (photo/stream-photo nil store nil))
         ;(dom/div
         ;  (->> (css/add-class :text)
         ;       (css/add-class :header))
