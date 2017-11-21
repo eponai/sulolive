@@ -13,6 +13,7 @@
 (defn stripe-account []
   {:db/id         (db/tempid :db.part/user)
    :stripe/id     "acct_0000000000000000"
+   :stripe/publ   "stripe-account-publ"
    :stripe/status {:db/id       (db/tempid :db.part/user)
                    :status/type :status.type/active}})
 

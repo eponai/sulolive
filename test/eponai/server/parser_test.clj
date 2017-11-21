@@ -35,15 +35,15 @@
                            query))))
 
         [store-id owner-email stripe-publ stripe-id]
-        (first (db/find-with (db/db (:conn datomic))
-                             {:find  '[?store ?email ?publ ?id]
-                              :where '[[?store :store/profile _]
-                                       [?store :store/owners ?owners]
-                                       [?owners :store.owner/user ?user]
-                                       [?user :user/email ?email]
-                                       [?store :store/stripe ?stripe]
-                                       [?stripe :stripe/publ ?publ]
-                                       [?stripe :stripe/id ?id]]}))
+        (db/find-with (db/db (:conn datomic))
+                      {:find  '[[?store ?email ?publ ?id]]
+                       :where '[[?store :store/profile _]
+                                [?store :store/owners ?owners]
+                                [?owners :store.owner/user ?user]
+                                [?user :user/email ?email]
+                                [?store :store/stripe ?stripe]
+                                [?stripe :stripe/publ ?publ]
+                                [?stripe :stripe/id ?id]]})
         store-query `[({:read/with-state
                         [{:query/store [{:store/stripe [:stripe/id :stripe/publ]}
                                         {:stream/_store [:stream/token]}
