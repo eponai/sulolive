@@ -207,7 +207,7 @@ a.disabled {
 	}
 }
     .is-invalid-input {
-      @include form-input-error($background-alpha: 1);
+      // @include form-input-error($background-alpha: 1);
     }
 
 .tabs-title {

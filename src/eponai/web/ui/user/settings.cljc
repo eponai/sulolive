@@ -148,8 +148,14 @@
        :size     :full}
       (grid/row-column
         (css/text-align :center)
+        (callout/callout
+          (css/add-class :warning)
+          (dom/strong nil "Note: ")
+          (dom/span nil "Shipping address can't be saved in this demo version of SULO Live"))
         (dom/h2 nil "Shipping address")
-        (dom/p nil (dom/small nil "Shipping address to use at checkout."))
+        (dom/p nil
+               (dom/small nil "Shipping address to use at checkout."))
+
         (dom/form
           (css/add-classes [:section-form :section-form--address])
           (dom/div
@@ -250,6 +256,7 @@
         ;  (css/add-class :warning))
         ;(dom/p nil (dom/small nil "Shipping address cannot be saved yet. We're working on this."))
         (dom/p (css/add-class :text-alert) (dom/small nil (str error-message)))
+
         (dom/div
           (css/add-class :action-buttons)
           (button/user-setting-default {:onClick on-close} (dom/span nil "Close"))

@@ -435,6 +435,7 @@
                                  (dom/span nil (str last-name ", " first-name))
                                  (dom/br nil)
                                  (let [{:stripe.legal-entity.dob/keys [year month day]} dob]
+                                   (debug "Date: " (str year "-" month "-" day))
                                    (dom/small nil (dom/strong nil "DOB: ")
                                               (dom/span nil (date/date->string (str year "-" month "-" day))))))
                           (dom/p nil (dom/small nil (dom/i nil "No saved info"))))

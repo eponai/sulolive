@@ -11,9 +11,10 @@
     [clojure.data.json :as json]))
 
 (defn stripe-account []
-  {:db/id       (db/tempid :db.part/user)
-   :stripe/id   "acct_19k3ozC0YaFL9qxh"
-   :stripe/publ "pk_test_zkG9ip9pZ984hIVoNN1dApoi"})
+  {:db/id         (db/tempid :db.part/user)
+   :stripe/id     "acct_0000000000000000"
+   :stripe/status {:db/id       (db/tempid :db.part/user)
+                   :status/type :status.type/active}})
 
 (def test-user-email "me@email.com")
 
@@ -115,7 +116,11 @@
                         :store.profile/description   (f/str->bytes "<p>Simply Swedish is hand made reindeer jewelry made by artist Anna Lengstrand. \"I'm a Swede that found my ways, very spontaneously, to Whistler in 2010. Today I live on our own horse ranch in Pemberton, being inspired by the power of Mt Currie and nature every single day. I design Swedish reindeer and silver jewelry that are traditional Sami (Nordic indigenous) handiwork. My grandfather is Sami from the old reindeer herding Sami family Pokka, and the handcraft has been showed to me since a very young age from older family members. My Simply Swedish jewelry is made by reindeer leather and spun sterling silver-pewter thread woven on a band of reindeer leather, into patterns that bring to mind ancient Celts and Norse Warriors. The buttons are carved from shed reindeer antlers. The reindeer shed their antlers naturally in May every year. The leather was originally stitched together with reindeer ligaments, but I'm using a modern thread alternative. The craft is infused with the no trace, zero waste ethos of the Sami. It's their statement piece of jewelry. Pewter jewelry has been made by the reindeer herding Sami people of northern Scandinavia since at least the 1600s, and I'm working with both traditional braids and patterns as well as new versions that I design. I also always infuse my jewelry with good wishes and intentions. I believe in energies and vibrations... I would say that indigenous Sami handcraft meets timeless contemporary design in my jewelry, and I'm very honoured to be able to work with this ancient handcraft that means so much to me</p>")
                         :store.profile/return-policy (f/str->bytes "<p>Received the wrong size? Send the item back to me within 7 days from date of receiving. I’ll make a new bracelet for no extra charge. If the loop or button comes off within 45 days. Send it back to me and I’ll repair this for no extra cost. You must present a receipt or order confirmation. Customers will be responsible for all shipping &amp; re-shipping charges. Please e-mail if you're not happy with your piece of jewelry</p><p><br></p><p>Please be aware that a new Simply Swedish bracelet can feel a little stiff, but it quickly softens as you wear it. Same thing with the loop; it is made a little snug as the leather softens and the loop gets softer and slightly bigger after a few days of you wearing it. You can also rub a tiny bit of oil, like coconut oil, on it to make it soften faster. The reason why I make the loop snug is because I do not want you to loose your bracelet, so you can enjoy it for many years to come :)&nbsp;</p>")}
     :store/shipping    {:db/id           (db/tempid :db.part/user)
-                        :shipping/policy (f/str->bytes "<p>Please allow 2-3 weeks for shipment. Estimated shipping costs for a bracelet: within Canada $5, US $10, everywhere else $20</p>")}
+                        :shipping/policy (f/str->bytes "<p>Please allow 2-3 weeks for shipment. Estimated shipping costs for a bracelet: within Canada $5, US $10, everywhere else $20</p>")
+                        :shipping/rules  {:shipping.rule/destinations [[:country/code "CA"]]
+                                          :shipping.rule/rates        [{:shipping.rate/first      0.00M
+                                                                        :shipping.rate/additional 0.00M
+                                                                        :shipping.rate/title       "Canada Post Free"}]}}
     :store/geolocation {:db/id             (db/tempid :db.part/user)
                         :geolocation/title "Vancouver, BC"}
     :store/status      {:status/type :status.type/open}
@@ -658,7 +663,7 @@
         live-streams (mock-streams (take live-stores stores) :stream.state/live)
         streams (mock-streams (drop live-stores stores) :stream.state/offline)
         countries (countries)]
-    (db/transact conn (concat categories (sulo-localities)))
+    (db/transact conn (concat categories countries))
     (debug "Categories added")
-    (db/transact conn (concat stores live-streams streams chats countries))
+    (db/transact conn (concat stores live-streams streams chats))
     (debug "Stores with items, chats and streams added")))

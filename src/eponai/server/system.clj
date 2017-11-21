@@ -214,8 +214,10 @@
     ;; Don't require that we're using real keys in the test environemnt.
     env
     :else
-    (update env :stripe-publishable-key
-            (fnil identity "pk_test_VhkTdX6J9LXMyp5nqIqUTemM"))))
+    env
+    ;(update env :stripe-publishable-key
+    ;        (fnil identity "pk_test_VhkTdX6J9LXMyp5nqIqUTemM"))
+    ))
 
 (def env-without-empty-vals (into {}
                                   (remove (comp #(when (string? %) (empty? %)) val))

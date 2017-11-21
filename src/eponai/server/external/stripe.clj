@@ -325,7 +325,8 @@
 
 
 (defn stripe-stub [api-key]
-  (let [state (atom {:accounts  {"acct_19k3ozC0YaFL9qxh" (stub/default-account "acct_19k3ozC0YaFL9qxh")}
+  (let [account-id "acct_0000000000000000"
+        state (atom {:accounts  {account-id (stub/default-account account-id)}
                      :charges   {}
                      :customers {"0" {:id      "0"
                                       :sources {:data [{:brand "Visa", :last4 1234, :exp_year 2018, :exp_month 4}
@@ -378,12 +379,7 @@
               account (get accounts account-id)
               new-account (cond-> (merge account (dissoc params :external_account :payout_schedule))
                                   (some? (:external_account params))
-                                  (assoc :external_accounts {:data [{:id                   account-id
-                                                                     :currency             "CAD"
-                                                                     :default_for_currency true
-                                                                     :bank_name            "Wells Fargo"
-                                                                     :last4                "1234"
-                                                                     :country              "CA"}]})
+                                  (assoc :external_accounts {:data [(stub/default-bank-account account-id)]})
                                   :always
                                   (update :legal_entity merge (:legal_entity account)))
               stripe-account (stub/add-account-verifications new-account)]
