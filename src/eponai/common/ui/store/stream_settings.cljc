@@ -28,11 +28,9 @@
   static om/IQuery
   (query [_]
     [:query/messages
-     ;{:proxy/stream (om/get-query stream/Stream)}
      {:query/stream [:stream/state
                      :stream/store
                      :stream/token]}
-     ;{:query/stream-config [:ui.singleton.stream-config/publisher-url]}
      {:proxy/chat (om/get-query chat/StreamChat)}
      {:query/auth [:db/id :user/email]}
      :query/current-route])
@@ -110,12 +108,6 @@
                                                    (om/transact! this [(list 'stream/end-live {:store-id (:db/id store)}) :query/stream]))})
                     (dom/strong nil "End live")))
 
-                ;(dom/a
-                ;  (css/button-hollow {:onClick #(binding [parser/*parser-allow-local-read* false]
-                ;                                  (om/transact! this [:query/stream]))})
-                ;  (dom/i {:classes ["fa fa-refresh fa-fw"]})
-                ;  (when (or (nil? stream-state) (= stream-state :stream.state/offline))
-                ;    (dom/strong nil "Refresh")))
                 )
               (callout/callout-small
                 nil
@@ -192,9 +184,6 @@
                     (dom/label nil "Stream Key")
                     (dom/input {:type        "text"
                                 :value       (or stream-token "")
-                                ;:defaultValue (if (msg/final? message)
-                                ;                (:token (msg/message message))
-                                ;                "")
                                 :placeholder "Create a stream key..."}))
                   (grid/column
                     nil

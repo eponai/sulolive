@@ -259,7 +259,6 @@
       (debug "Category id to select: " {:id         category-id
                                         :category   category
                                         :old-seq    old-seq
-                                        ;:parent     parent
                                         :categories (if parent (:category/children parent) categories)})
       (debug "Select category: " category)
 
@@ -294,7 +293,6 @@
     (let [{:keys [uploaded-photos queue-photo did-mount? sku-count selected-section store-sections selected-category-seq input-validation create-another?]} (om/get-state this)
           {:query/keys [navigation current-route categories item]} (om/props this)
           {:keys [product-id store-id]} (get-route-params this)
-          ;{:keys [product]} (om/get-computed this)
           product item
           {:store.item/keys [price photos skus description category]
            item-name        :store.item/name} product
@@ -306,23 +304,11 @@
           [top-category sub-category subsub-category] selected-category-seq
           ]
 
-      ;(debug "Categories: " categories)
-      ;(debug "Selected category: " category)
-      ;(debug "Selected category seq: " selected-category-seq)
       (debug "Selected " {:top top-category :sub sub-category :subsub subsub-category})
-      ;(debug "Messages: " {:update update-resp
-      ;                     :create create-resp
-      ;                     :delete delete-resp})
       (dom/div
         {:id "sulo-edit-product"}
         (when (or (not did-mount?) is-loading?)
           (common/loading-spinner nil))
-        ;(menu/breadcrumbs
-        ;  nil
-        ;  (menu/item nil (dom/a {:href (routes/url :store-dashboard/product-list (get-route-params this))}
-        ;                        "Products"))
-        ;  (menu/item nil (dom/span nil
-        ;                           (if (is-new-product? this) "New" "Edit"))))
 
         (grid/row-column
           (css/add-class :go-back)
@@ -382,16 +368,6 @@
           (dom/div
             (css/add-class :section-title)
             (dom/h2 nil "Details"))
-          ;(grid/row
-          ;  (->> (css/align :bottom)
-          ;       (css/add-class :page-header))
-          ;  (grid/column
-          ;    (grid/column-size {:small 12 :medium 8})
-          ;    (if (is-new-product? this)
-          ;      (dom/h3 nil "New product")
-          ;      (dom/div
-          ;        nil
-          ;        (dom/h3 nil (dom/span nil "Edit product - ") (dom/small nil item-name))))))
           (callout/callout
             nil
             (grid/row
@@ -457,7 +433,6 @@
                                            #?(:cljs
                                               (do
                                                 (set! (.-value (utils/element-by-id (::select-sub-category form-elements))) "")
-                                                ;(set! (.-value (utils/element-by-id (:select-subsub-category form-elements))) "")
                                                 )))})
                   input-validation
                   (dom/option {:value "" :disabled true} "--- Select category ---")
@@ -466,9 +441,6 @@
                        categories))
 
 
-                ;(callout/callout-small
-                ;  (css/add-class :warning)
-                ;  (dom/small nil "Categories are disabled while the feature is receiving more love from us to work perfectly for the public launch. Thank you for waiting!"))
                 )
               (grid/column
                 (grid/column-size {:small 12 :medium 3})
@@ -485,19 +457,6 @@
                          (dom/option {:value (:db/id c)} (:category/label c)))
                        (:category/children top-category))))
 
-              ;(grid/column
-              ;  (grid/column-size {:small 12 :medium 3})
-              ;  (dom/select
-              ;    (cond->>
-              ;      {:defaultValue (:db/id subsub-category "")
-              ;       :id           (:select-subsub-category form-elements)
-              ;       :onChange     #(.select-category this (.-value (.-target %)) [top-category sub-category])}
-              ;      (or (nil? sub-category) (empty? (:category/children sub-category)))
-              ;      (css/add-class :hide))
-              ;    (dom/option {:value "" :disabled true} "--- Select category ---")
-              ;    (map (fn [c]
-              ;           (dom/option {:value (:db/id c)} (:category/label c)))
-              ;         (:category/children sub-category))))
               )
             (grid/row
               nil
@@ -537,10 +496,6 @@
                                 :max          "99999999.99"
                                 :defaultValue (or price "0.00")}))
 
-                  ;(grid/column
-                  ;  nil
-                  ;  (dom/select {:defaultValue "usd"}
-                  ;              (dom/option {:value "usd"} "USD")))
                   )))
             (if (< 1 sku-count)
               (dom/div

@@ -45,20 +45,8 @@
             (menu/item nil (dom/a {:href (routes/url :help/stores)}
                                   (dom/span nil "Shops")))
             (menu/item nil (dom/span nil anchor-text)))))
-      ;(menu/breadcrumbs
-      ;  nil
-      ;  (menu/item nil (dom/a {:href (routes/url :help)}
-      ;                        "SULO Live Help"))
-      ;  (menu/item nil (dom/a {:href (routes/url :help)}
-      ;                        (dom/span nil (condp = guide
-      ;                                        ::live-stream "Live streaming guide"
-      ;                                        ::general "General"))))
-      ;  (menu/item nil (dom/span nil anchor-text)))
       (grid/row-column
         nil
-        ;(dom/h1 nil (str anchor-text))
-        ;(callout/callout
-        ;  nil)
         (factory)
 
         (render-contact-us)))))
@@ -95,7 +83,6 @@
                        {:href (routes/url :help/welcome)}
                        (callout/callout-small
                          nil
-                         ;(dom/i {:classes [:fa :fa-user]})
                          (photo/square {:photo-id "static/welcome"})
                          (dom/h3 nil "Welcome"))))
                    (grid/column
@@ -104,7 +91,6 @@
                        {:href (routes/url :help/accounts)}
                        (callout/callout-small
                          nil
-                         ;(dom/i {:classes [:fa :fa-user :fa-4x]})
                          (photo/square {:photo-id "static/help-profile"})
                          (dom/h3 nil "Accounts"))))
                    (grid/column

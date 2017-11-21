@@ -22,11 +22,6 @@
        (.removeEventListener js/document (str prefix "fullscreenchange") f))))
 
 (defui Stream
-  ;static om/IQuery
-  ;(query [this]
-  ;  [{:query/stream [:stream/store :stream/state]}
-  ;   {:query/stream-config [:ui.singleton.stream-config/subscriber-url]}])
-
   Object
   (componentWillUnmount [this]
     #?(:cljs
@@ -60,7 +55,6 @@
                     (videos/vod-url vods
                                     store-id
                                     vod-timestamp))
-          ;stream-url "http://wms.shared.streamshow.it/carinatv/carinatv/playlist.m3u8"
           {:stream/keys [title]} stream]
       (debug "VOD URL: " vod-url)
       (debug "large-live-thumbnail: " stream-thumbnail)
@@ -72,9 +66,6 @@
         (video/->VideoPlayer (om/computed {:source (or vod-url stream-url)}
                                           {:is-live? (not vod-url)}))))))
 
-;(def Stream (script-loader/js-loader {:component Stream-no-loader
-;                                      #?@(:cljs [:scripts [[#(exists? js/WowzaPlayer)
-;                                                            "//player.wowza.com/player/1.0.10.4565/wowzaplayer.min.js"]]])}))
 (def ->Stream (om/factory Stream))
 
 #?(:cljs

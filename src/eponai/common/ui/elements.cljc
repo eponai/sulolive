@@ -41,14 +41,6 @@
                                     ": "))
             (my-dom/strong nil (my-dom/i nil "anonymous: ")))
           (my-dom/span nil (:chat.message/text msg))))
-      ;(my-dom/div
-      ;  (->> (css/grid-row)
-      ;       (css/align :top))
-      ;  (my-dom/div
-      ;    (->> (css/grid-column)
-      ;         (css/grid-column-size {:small 2 :large 2}))
-      ;    (photo/circle {:src (get-in msg [:chat.message/user :user/profile :user.profile/photo :photo/path])}))
-      ;  ())
       )))
 
 (defn message-list [messages & [opts]]

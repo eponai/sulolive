@@ -12,7 +12,6 @@
      (fn [sel]
        (let [selected (js->clj sel :keywordize-keys true)
              {:keys [on-change]} (om/get-computed component)]
-         ;(om/update-state! component assoc :selected selected)
          (when on-change
            (on-change selected))))))
 

@@ -90,13 +90,6 @@
          (css/text-align :center))
     (dom/h3 (css/add-class :section-header) header)
 
-    ;(when (not-empty footer)
-    ;  (grid/row-column
-    ;    (css/text-align :right)
-    ;    (button/store-setting-default
-    ;      (css/add-classes [:hollow :sulo-dark] (cond-> {:href href}
-    ;                                                    (some? target)
-    ;                                                    (assoc :target target))) footer)))
     content
     ))
 
@@ -132,52 +125,15 @@
                      (css/add-classes [:drop-shadow]))
                 (dom/span nil "Search")))))))))
 
-;(defn page-container [{:keys [navbar id class-name no-footer? footer]} & content]
-;  (dom/div
-;    (css/add-class (str "sulo-page " class-name) {:id id})
-;    (dom/div
-;      (css/add-class :page-container)
-;      ;(nav/navbar navbar)
-;      (dom/div
-;        (css/add-class :page-content-container {:key "content-container"})
-;        (nav/->Sidebar navbar)
-;        (dom/div
-;          (css/add-class :page-content)
-;          content))
-;      (when-not no-footer?
-;        (foot/->Footer footer)))))
-
-
-
 (defn sell-on-sulo [component]
   (let [{:query/keys [locations]} (om/props component)]
-    ;(content-section
-    ;  {:href    (routes/url :coming-soon/sell)}
-    ;  "Sell on SULO"
-    ;  (grid/row-column
-    ;    (css/text-align :center)
-    ;    (dom/p (css/add-class :sell-on-sulo)
-    ;           (dom/span nil "Are you selling products locally? Start a store to tell your story and interact LIVE with your customers. ")))
-    ;
-    ;  "Contact us")
     (dom/div
       (->>
            (css/add-classes [:sell-on-sulo :banner :section])
            (css/text-align :center))
-      ;(dom/div
-      ;  (->> (css/add-class :section-title)
-      ;       (css/text-align :center)))
       (dom/h2 (css/add-classes [:sulo-dark :jumbo-header :banner]) "Share your story")
       (dom/p (css/add-classes [:lead :jumbo-lead :banner :sulo-dark])
              (dom/span nil "Sell your products while connecting with your customers in new ways using LIVE streams. All in one place."))
-      ;(dom/div
-      ;  (css/text-align :center)
-      ;  ;(photo/square {:photo-id "static/sulo-cat-live"
-      ;  ;               :ext "png"})
-      ;  (dom/p nil
-      ;         (if locations
-      ;           (dom/span nil (str "Are you a local business in " (:sulo-locality/title locations) "? Start your own store and explore new ways of connecting LIVE with your customers on the SULO marketplace."))
-      ;           (dom/span nil (str "Are you a local business? Start your own store and explore new ways of connecting LIVE with your customers on the SULO marketplace.")))))
       (grid/row-column
         (->> (css/add-class :section-footer)
              (css/text-align :center))
@@ -189,9 +145,6 @@
   (dom/div
     (->>
       (css/add-classes [:mobile-app-banner :banner :section]))
-    ;(dom/div
-    ;  (->> (css/add-class :section-title)
-    ;       (css/text-align :center)))
     (grid/row
       (grid/columns-in-row {:small 1 :medium 2})
       (grid/column
@@ -202,14 +155,6 @@
                (dom/span nil "Watch your favorite brands on your phone from anywhere.")))
       (grid/column
         nil
-        ;(dom/div
-        ;  (css/text-align :center)
-        ;  ;(photo/square {:photo-id "static/sulo-cat-live"
-        ;  ;               :ext "png"})
-        ;  (dom/p nil
-        ;         (if locations
-        ;           (dom/span nil (str "Are you a local business in " (:sulo-locality/title locations) "? Start your own store and explore new ways of connecting LIVE with your customers on the SULO marketplace."))
-        ;           (dom/span nil (str "Are you a local business? Start your own store and explore new ways of connecting LIVE with your customers on the SULO marketplace.")))))
         (photo/photo {:src "/assets/img/placeit.png"})))
     ))
 
@@ -228,7 +173,6 @@
         {:keys [order-id store-id]} (:route-params current-route)]
     (grid/row-column
       nil
-      ;(dom/h1 nil "No such order")
       (callout/callout
         (->> (css/text-align :center)
              (css/add-class :not-found))

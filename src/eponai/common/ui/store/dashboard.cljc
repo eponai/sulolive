@@ -67,10 +67,6 @@
                                                        :computed-fn (fn [{:keys [route-params]}]
                                                                       {:route-params route-params})}})
 
-;(defn str->json [s]
-;  #?(:cljs (cljs.reader/read-string s)
-;     :clj  (clojure.data.json/read-str s :key-fn keyword)))
-
 (defn get-route-params [component]
   (get-in (om/props component) [:query/current-route :route-params]))
 
@@ -89,7 +85,6 @@
                                      :store.profile/name
                                      :store.profile/tagline
                                      :store.profile/return-policy
-                                     ;:store.profile/shipping-fee
                                      {:store.profile/cover [:photo/id]}
                                      {:store.profile/photo [:photo/path :photo/id]}]}
                     {:store/owners [{:store.owner/user [:user/email]}]}

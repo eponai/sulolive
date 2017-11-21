@@ -77,7 +77,6 @@
 
 (defmethod client-read :query/streams
   [{:keys [db query target]} _ _]
-  ;(debug "Read query/auth: ")
   (if target
     {:remote true}
     {:value (db/pull-all-with db query {:where   '[
@@ -183,14 +182,6 @@
       {:value (->> (db/pull-all-with db query {:where   '[[?e :vod/store ?store-id]]
                                                :symbols {'?store-id store-id}})
                    (sort-by :vod/timestamp #(compare %2 %1)))})))
-
-;(defmethod client-read :query/online-stores
-;  [{:keys [db query target route-params] :as env} _ _]
-;  (if target
-;    {:remote true}
-;    {:value (db/pull-all-with db query {:where   '[[?e :store/owners ?owner]
-;                                                   [?owner :store.owner/user ?user]
-;                                                   [?user :user/online? true]]})}))
 
 (defmethod client-read :query/store-items
   [{:keys [db query target route-params]} _ _]
@@ -445,7 +436,6 @@
   (if target
     {:remote true}
     {:value (nav-categories db query)
-     ;(memoized-nav-categories db query)
      }))
 
 (defmethod client-read :query/categories
@@ -482,12 +472,6 @@
   (if target
     {:remote true}
     {:value (db/singleton-value db :ui.singleton.firebase/token)}))
-
-;(defmethod client-read :query/locations
-;  [{:keys [target db query]} _ _]
-;  (if target
-;    {:remote true}
-;    {:value (client.auth/current-locality db)}))
 
 (defmethod client-read :query/stream
   [{:keys [db query target route-params]} _ _]

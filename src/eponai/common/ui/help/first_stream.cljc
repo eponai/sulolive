@@ -92,13 +92,6 @@
                         (dom/input {:value    "<your Stream key>"
                                     :type     "text"
                                     :disabled true}))))
-                  ;(dom/ul nil
-                  ;        (dom/li nil
-                  ;                (dom/span nil "Stream Type: Custom Streaming Server"))
-                  ;        (dom/li nil
-                  ;                (dom/span nil "URL: <your Server URL>"))
-                  ;        (dom/li nil
-                  ;                (dom/span nil "Stream key: <your Stream key>")))
                   ))
 
         (dom/h2 nil "Organize your window")
@@ -155,10 +148,6 @@
                                (dom/strong nil "OK")
                                (dom/span nil " when you're ready."))))
         (dom/p nil (dom/span nil "We now have video being captured from our web camera. You should be able to see your video in the scene preview."))
-        ;(callout/callout-small
-        ;  (css/add-class :action))
-        ;(dom/h4 nil (dom/div {:classes ["icon icon-idea"]})
-        ;        (dom/span nil "Tip"))
         (callout/callout-small
           (css/add-class :sulo)
           (dom/p nil

@@ -33,7 +33,6 @@
         {store-name :store.profile/name} (:store/profile store)]
     (dom/div
       (css/add-class :sl-order-card)
-      ;(photo/store-cover store nil)
       (dom/div
         (css/add-classes [:section-title :sl-order-card-title])
         (dom/a
@@ -74,7 +73,6 @@
         (dom/div
           (css/add-class :sl-order-card-subtitle)
           (dom/p (css/text-align :right) (dom/strong nil (str "Total: " (ui-utils/two-decimal-price amount)))))
-        ;(dom/p nil (dom/span nil (str (count (filter #(= (:order.item/type %) :order.item.type/sku) (:order/items o))) " items")))
         (dom/div
           (css/add-class :sl-order-card-content--status)
           (dom/div
@@ -134,7 +132,6 @@
       (debug "Order charge:  " order-payment)
       (dom/div
         {:id "sulo-order-receipt"}
-        ;(dom/h1 (css/show-for-sr) "Order receipt")
 
         (grid/row-column
           (css/add-class :go-back)
@@ -160,7 +157,6 @@
                           (dom/br nil)
                           (dom/span nil tagline)])))
               (dom/h1 nil "Order receipt")
-              ;(dom/h1 nil (str "Order from " store-name))
               (grid/row
                 (grid/columns-in-row {:small 1 :medium 2})
                 (grid/column
@@ -221,7 +217,6 @@
                                       (dom/span nil (:order.item/title oi))
                                       (dom/br nil)
                                       (dom/small nil (:order.item/description oi))))
-                             ;(grid/column (grid/column-size {:small 4 :medium 3}))
                              (grid/column
                                (->> (grid/column-size {:small 4 :medium 6})
                                     (css/text-align :right)

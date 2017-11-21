@@ -149,7 +149,6 @@
               (css/add-class :page-content)
 
               (factory app-root)))
-          ;(when-not no-footer?)
           (foot/->Footer footer)
           )))))
 

@@ -16,13 +16,6 @@
     [:query/current-route
      {:query/sulo-localities [:db/id :sulo-locality/path :sulo-locality/title]}])
   Object
-  ;(set-locality [this location]
-  ;  #?(:cljs
-  ;     (do
-  ;       (web.utils/set-locality location)
-  ;       (om/transact! this [(list 'client/set-locality {:locality location})
-  ;                           :query/locations])
-  ;       (routes/set-url! this :index {:locality (:sulo-locality/path location)}))))
   (render [this]
     (let [{:query/keys [locations sulo-localities]} (om/props this)
           yvr-location (some #(when (= (:sulo-locality/path %) "yvr") %) sulo-localities)]
@@ -36,8 +29,6 @@
 
           (dom/div
             (css/add-class :section)
-            ;(dom/div
-            ;  (css/add-class :section-title))
             (dom/h1 nil "Fall 2017")
             (dom/h2 nil "Live in Montréal, QC")
 

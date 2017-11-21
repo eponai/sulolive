@@ -37,7 +37,6 @@
                                                                              {:store.item/photos [{:store.item.photo/photo [:photo/id]}
                                                                                                   :store.item.photo/index]}]}]}]}
                      {:order/shipping [:shipping/name
-                                       ;{:shipping/address  [:shipping.address/street]}
                                        {:shipping/address [:shipping.address/street
                                                            :shipping.address/postal
                                                            :shipping.address/locality
@@ -77,7 +76,6 @@
                                shipping (some #(when (= (:order.item/type %) :order.item.type/shipping) %) (:order/items o))]
                            (callout/callout
                              (css/add-class :sl-order-card)
-                             ;(photo/store-cover store nil)
                              (dom/div
                                (css/add-classes [:section-title :sl-order-card-title])
 
@@ -101,9 +99,6 @@
                                         (let [sku (:order.item/parent oi)
                                               product (:store.item/_skus sku)]
 
-                                          ;(dom/a
-                                          ;  nil)
-
                                           (grid/column
                                             nil
                                             (dom/div
@@ -113,9 +108,6 @@
                                                      (dom/br nil)
                                                      (dom/small nil (:order.item/description oi)))
                                               ))
-                                          ;(dom/div
-                                          ;  (css/add-classes [:shrink :sl-order-items-list-item--price])
-                                          ;  (dom/small nil (ui-utils/two-decimal-price (:order.item/amount oi))))
                                           ))
                                       (take 4 skus)))
 
@@ -133,25 +125,13 @@
                                                   (dom/span nil (name status))))
                                      ))
                                  (dom/p (css/text-align :right)
-                                        ;(dom/small nil (str "Shipping: " (ui-utils/two-decimal-price (:order.item/amount shipping))))
-                                        ;(dom/br nil)
                                         (dom/strong nil (str "Total: " (ui-utils/two-decimal-price (:order/amount o))))))
-                               ;(dom/p nil (dom/span nil (str (count (filter #(= (:order.item/type %) :order.item.type/sku) (:order/items o))) " items")))
-                               ;(dom/div
-                               ;  (css/add-class :sl-order-card-content--status)
-                               ;  (dom/div
-                               ;    nil
-                               ;    (dom/label nil "Status: ") (dom/span nil (str (string/capitalize (name (:order/status o))))))
-                               ;  (dom/div
-                               ;    (css/add-class :sl-order-card-title--number)
-                               ;    (button/user-setting-default {:href (routes/url :user/order {:order-id (:db/id o)})} "View receipt")))
                                ))))
                        (sort-by :order/created-at > os))))
                  orders-by-month))
           (grid/row-column
             (css/add-class :empty-container)
             (dom/p (css/add-class :shoutout) "You haven't made any purchases yet")
-            ;(dom/br nil)
             (button/button
               (button/sulo-dark (button/hollow {:href (routes/url :browse/all-items)})) (dom/span nil "Browse products"))))
 

@@ -205,7 +205,6 @@
        :size     "tiny"}
       (dom/p (css/add-class :header) "Change store URL")
       (dom/p nil (dom/small nil "Your store URL is the link to your SULO store."))
-      ;(dom/p nil )
       (dom/p nil
              (dom/span (css/add-class :host) "https://sulo.live/shop/")
              (dom/strong nil (or input-username (:store/username store ""))))
@@ -283,7 +282,6 @@
         (msg/clear-messages! this 'store/update-username)
         (if (msg/success? username-msg)
           (do
-            ;(debug "New store success: " (msg/message username-msg))
             (routes/set-url! this (:route current-route) (assoc (:route-params current-route) :store-id (:username (msg/message username-msg))))
             (om/update-state! this dissoc :modal :error-message))
           (om/update-state! this assoc :error-message (msg/message username-msg))))
@@ -338,8 +336,6 @@
                   (grid/column-size {:small 12 :medium 6})
                   (dom/label nil "Store URL")
                   (dom/p nil (dom/small nil "Your store URL is the link to your SULO store.")
-                         ;(dom/br nil)
-                         ;(dom/small nil (dom/strong nil input-username))
                          ))
                 (grid/column
                   (css/text-align :right)
@@ -363,29 +359,6 @@
               (render-store-open this)
               (render-store-closed this))))
 
-        ;(dom/div
-        ;  (css/add-class :section-title)
-        ;  (dom/h2 nil "Danger zone"))
-        ;(callout/callout
-        ;  nil
-        ;  (menu/vertical
-        ;    (css/add-class :section-list)
-        ;    (menu/item
-        ;      nil
-        ;      (grid/row
-        ;        (->> (css/add-class :collapse)
-        ;             (css/align :middle))
-        ;        (grid/column
-        ;          (grid/column-size {:small 12 :medium 8})
-        ;          (dom/label nil (str "Delete " (get-in store [:store/profile :store.profile/name])))
-        ;          (dom/p nil
-        ;                 (dom/small nil (dom/strong nil "IMPORTANT: "))
-        ;                 (dom/small nil "Deleting your store is a permanent action. Once confirmed, you will not be able to restore your settings in the future. Want to hit pause? Close your store temporarily instead.")))
-        ;        (grid/column
-        ;          (css/text-align :right)
-        ;          (button/default-hollow
-        ;            (css/add-classes [:alert :small] {:onClick #(om/update-state! this assoc :modal :modal/delete-store)})
-        ;            (dom/span nil "Delete store")))))))
         ))))
 
 (def ->StoreStatus (om/factory StoreStatus))

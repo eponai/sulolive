@@ -21,7 +21,6 @@
 (defn find-all []
   {:where   '[(listed-store ?s)
               [?s :store/items ?e]
-              ;[?e :store.item/uuid _]
               ]
    :rules   [db.rules/listed-store]})
 

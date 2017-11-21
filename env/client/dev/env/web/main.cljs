@@ -4,8 +4,6 @@
             [plomber.core :as plomber]
             [eponai.common.ui-namespaces]))
 
-;(set! js/window.mixpanel #js {"track" (fn [& args] )})
-
 (defn ^:export runsulo []
   (devtools/install-app)
   (app/run-dev {

@@ -96,7 +96,6 @@
 (defn stripe-loader
   ([component] (stripe-loader component nil))
   ([component scripts]
-    ;; {:pre [(satisfies? IRenderLoadingScripts component)]}
     (letfn [(loaded-stripe? []
               #?(:cljs (exists? js/Stripe)))]
       (js-loader {:component component

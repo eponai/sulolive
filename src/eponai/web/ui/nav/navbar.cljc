@@ -64,19 +64,8 @@
                   {:href    (routes/store-url owned-store :store-dashboard)
                    :onClick #(do (track-event ::mixpanel/go-to-manage-store {:store-id   (:db/id owned-store)
                                                                              :store-name store-name})
-                                 ;#?(:cljs (when (empty? locations)
-                                 ;           (utils/set-locality (:db/id (:store/locality owned-store)))))
                                  )}
                   (dom/span nil store-name)))))
-          ;(menu/item
-          ;  (css/add-class :parent)
-          ;  (dom/label nil (dom/small nil "Manage store"))
-          ;  (menu/vertical
-          ;    (css/add-class :nested)
-          ;    (menu/item-link
-          ;      {:href    (routes/url :sell)
-          ;       :onClick #(track-event ::mixpanel/go-to-start-store)}
-          ;      (dom/small nil "Start a store"))))
           )
         (when user
           (menu/item
@@ -127,7 +116,6 @@
         (menu/horizontal
           nil
           (navbar-brand nil)
-          ;(nav.common/live-link component "navbar")
           (menu/item nil
                      (dom/input {:type        "text"
                                  :placeholder "Search on SULO Live Help..."}))))
@@ -171,10 +159,6 @@
             (dom/a
               (css/show-for :large {:onClick toggle-inline-sidebar})
               (dom/i {:classes ["fa fa-bars fa-fw"]})))
-          ;(menu/item-link
-          ;  (css/show-for :large {:href (routes/url :store-dashboard (:route-params current-route))
-          ;                        :id   "navbar-brand"})
-          ;  (dom/span nil "SULO Live"))
           (navbar-brand (css/show-for :large {:href (routes/url :store-dashboard (:route-params current-route))}))
 
           (menu/item
@@ -213,12 +197,6 @@
                (css/hide-for :large {:onClick #(.open-sidebar component)})
                (dom/i {:classes ["fa fa-bars fa-fw"]})))
            (navbar-brand nil)
-           ;(nav.common/live-link component "navbar")
-           ;(menu/item-link
-           ;  (->> (css/add-class :category)
-           ;       (css/show-for :large))
-           ;  (dom/span nil "Shop"))
-
            (nav.common/collection-links component "navbar")
            ))
 
@@ -248,7 +226,6 @@
              (css/add-class :shopping-bag)
              (dom/a {:classes ["shopping-bag-icon"]
                      :href    (routes/url :shopping-bag)}
-                    ;(dom/span (css/add-class ["icon icon-shopping-bag"]))
                     (icons/shopping-bag)
                     (let [item-count (reduce (fn [sum sku]
                                                (let [store-is-open? (= :status.type/open
@@ -285,7 +262,6 @@
                (web.utils/add-class-to-element body "sidebar-open")
                (.addEventListener js/document "click" on-close-sidebar-fn)
                (.addEventListener js/document "touchend" on-close-sidebar-fn)
-               ;(.addEventListener js/document "touchstart" on-close-sidebar-fn)
                (om/update-state! this assoc :sidebar-open? true)
                )))
 
@@ -295,7 +271,6 @@
                (web.utils/remove-class-to-element body "sidebar-open")
                (.removeEventListener js/document "click" on-close-sidebar-fn)
                (.removeEventListener js/document "touchend" on-close-sidebar-fn)
-               ;(.removeEventListener js/document "touchstart" on-close-sidebar-fn)
                (om/update-state! this assoc :sidebar-open? false)
                )))
   #?(:cljs
@@ -339,9 +314,6 @@
                 (and (some? route)
                      (or (= route :store-dashboard) (= (name :store-dashboard) (namespace route))))
                 (manage-store-navbar this)
-
-                ;(or (= route :coming-soon) (= route :coming-soon/sell))
-                ;(landing-page-navbar this)
 
                 (and (some? route) (or (= route :help) (= (namespace route) "help")))
                 (help-navbar this)

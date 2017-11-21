@@ -104,10 +104,6 @@
                                product-link (routes/url :store-dashboard/order
                                                         {:store-id (:db/id store)
                                                          :order-id (:db/id o)})
-                               ;orderlist-cell (fn [opts & content]
-                               ;                 (table/td
-                               ;                   (css/add-class :sl-orderlist-cell opts)
-                               ;                   content))
                                {:order/keys [shipping]} o]
                            (menu/item
                              (css/add-class :sl-orderlist-row)
@@ -140,14 +136,11 @@
                     nil
                     (table/thead-row
                       nil
-                      ;(table/th (css/show-for :medium) "")
                       (table/th nil (dom/span nil "#"))
                       (table/th nil (dom/span nil "Date"))
                       (table/th nil (dom/span nil "Name"))
                       (table/th (css/text-align :right) (dom/span nil "Status"))
                       (table/th (css/text-align :right) (dom/span nil "Amount"))
-                      ;(table/th
-                      ;  (css/show-for :medium) "Last Updated")
                       ))
                   (table/tbody
                     nil
@@ -173,14 +166,8 @@
                             (orderlist-cell (css/add-class :sl-orderlist-cell--id) (dom/span nil (str "#" (:db/id o))))
                             (orderlist-cell (css/add-class :sl-orderlist-cell--date) (dom/span nil (date/date->string (:order/created-at o) "MM/dd/YYYY")))
                             (orderlist-cell (css/add-class :sl-orderlist-cell--name) (dom/span nil (:shipping/name shipping)))
-                            ;(orderlist-cell
-                            ;  (->> (css/add-class :sl-orderlist-cell--icon)
-                            ;       (css/show-for :medium)) (dom/i {:classes ["fa fa-opencart fa-fw"]}))
                             (orderlist-cell (css/add-class :sl-orderlist-cell--status) (common/order-status-element o))
                             (orderlist-cell (css/add-class :sl-orderlist-cell--price) (ui-utils/two-decimal-price destination-amount))
-                            ;(orderlist-cell
-                            ;  (->> (css/add-class :sl-orderlist-cell--updated)
-                            ;       (css/show-for :medium)) (date/date->string (* 1000 (:order/updated o 0))))
                             )))
                       filtered-orders)))))))))
 

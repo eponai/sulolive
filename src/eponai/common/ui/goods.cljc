@@ -23,18 +23,6 @@
     [eponai.web.ui.content-item :as ci]
     [eponai.common.analytics.google :as ga]))
 
-;(def sorting-vals
-;  {:sort/name-inc  {:key [:store.item/name :store.item/price] :reverse? false}
-;   :sort/name-dec  {:key [:store.item/name :store.item/price] :reverse? true}
-;   :sort/price-inc {:key [:store.item/price :store.item/name] :reverse? false}
-;   :sort/price-dec {:key [:store.item/price :store.item/name] :reverse? true}})
-
-;(def sorting-vals
-;  {:newest        {}
-;   :lowest-price  {:key [:store.item/price :store.item/name ] :comp #(compare %1 %2) :label "Price (low to high)"}
-;   :highest-price {:key [:store.item/price :store.item/name] :comp #(compare %2 %1) :label "Price (high to low)"}
-;   :relevance     {}})
-
 (defn fetch-item-data! [component browse-result page-range route-params]
   (om/transact!
     (om/get-reconciler component)
@@ -135,8 +123,6 @@
                                 :browse-result/meta]}
      {:query/navigation [:db/id :category/name :category/label :category/path :category/route-map]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
-     ;{:query/countries [:country/code :country/name]}
-     ;:query/locations
      :query/current-route])
   Object
   (select-shipping-destination [this country-code]
@@ -181,7 +167,6 @@
 
       (dom/div
         {:id "sulo-items" :classes ["sulo-browse"]}
-        ;(common/city-banner this locations)
         (when filters-open?
           (dom/div
             {:id "sl-product-filters"}
@@ -189,11 +174,6 @@
                            :size     "full"}
                           (pf/->ProductFilters (om/computed product-filters
                                                             {:on-click #(om/update-state! this assoc :filters-open? false)})))))
-        ;(grid/row
-        ;  nil
-        ;  (grid/column
-        ;    nil
-        ;    ))
 
         (grid/row
           (->> (css/add-class :section)
@@ -220,44 +200,7 @@
                                                       (last categories)
                                                       category-label-fn
                                                       (when searching? count-by-category))))))))
-            ;(dom/div
-            ;  nil
-            ;  (dom/label nil "Ship to")
-            ;  (dom/select {:defaultValue "anywhere"
-            ;               :onChange     #(.select-shipping-destination this (.-value (.-target %)))}
-            ;              (dom/option {:value "anywhere"} "Anywhere")
-            ;              (dom/optgroup
-            ;                {:label "---"}
-            ;                (map (fn [c]
-            ;                       (dom/option {:value (:country/code c)} (:country/name c)))
-            ;                     (sort-by :country/name countries)))))
-            ;(dom/h1 nil (.toUpperCase (or (get-in current-route [:query-params :category]) "")))
 
-            ;(if (nil? top-category)
-            ;(menu/vertical
-            ;  nil
-            ;  (->> navigation
-            ;       (sort-by :category/name)
-            ;       (map (fn [category]
-            ;              (menu/item
-            ;                nil
-            ;                (dom/a {:href (:category/href category)}
-            ;                       (dom/span nil (products/category-display-name category))))))))
-            ;  (menu/vertical
-            ;    nil
-            ;    (menu/item
-            ;      nil
-            ;      (dom/a {:href (:category/href top-category)}
-            ;             (dom/strong nil (products/category-display-name top-category)))
-            ;      (if (some? sub-category)
-            ;        (menu/vertical
-            ;          nil
-            ;          (menu/item
-            ;            nil
-            ;            (dom/a {:href (:category/href sub-category)}
-            ;                   (dom/strong nil (products/category-display-name sub-category)))
-            ;            (vertical-category-menu (:category/children sub-category) (last categories))))
-            ;        (vertical-category-menu (:category/children top-category) (last categories))))))
             )
           (grid/column
             (grid/column-size {:small 12 :large 9})

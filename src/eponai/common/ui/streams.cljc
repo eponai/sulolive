@@ -34,26 +34,8 @@
       (debug "Live props: " (om/props this))
       (dom/div
         {:classes ["sulo-browse"]}
-        ;(common/city-banner this locations)
-        ;(grid/row
-        ;  nil
-        ;  (grid/column
-        ;    nil
-        ;    ))
         (grid/row
           (css/add-class :section)
-          ;(grid/column
-          ;  (->> (css/add-class :navigation)
-          ;       (grid/column-size {:large 3})
-          ;       (css/show-for :large))
-          ;  (menu/vertical
-          ;    (css/add-class :sl-navigation-parent)
-          ;    (menu/item (css/add-class :is-active) (dom/a nil "Live now"))
-          ;    ;(menu/item-link nil "Scheduled streams")
-          ;    ;(menu/item-link nil "New arrivals")
-          ;    ;(menu/item-link nil "Popular")
-          ;    )
-          ;  )
           (grid/column
             nil
             (my-dom/div
@@ -61,7 +43,6 @@
               (my-dom/h2 nil "LIVE right now"))
             (if (not-empty streams)
               (my-dom/div {:classes ["sulo-items-container"]}
-                          ;(my-dom/h3 (css/add-class :header) "LIVE right now")
                           (grid/row
                             (grid/columns-in-row {:small 2 :medium 3 :large 4})
                             (map (fn [s]

@@ -29,11 +29,6 @@
           (callout/callout
             nil
             (dom/h2 nil "Basics")
-            ;(dom/div
-            ;  (css/add-class :navigation)
-            ;  (menu/vertical
-            ;    nil
-            ;    ))
             (dom/div
               (css/add-class :help-items)
               (dom/section

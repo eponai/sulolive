@@ -228,9 +228,6 @@
 
               (dom/div
                 (css/add-classes [:chat-status])
-                ;(dom/p (css/add-class :sl-tooltip) (dom/span nil status-msg)
-                ;       (dom/span (css/add-class :sl-tooltip-text)
-                ;                 (str (get-in store [:store/profile :store.profile/name]) " is " (if (= true store-online-status) "LIVE" "offline") " right now")))
                 (dom/p nil (dom/span nil store-name))
                 (photo/store-photo store {:transformation :transformation/thumbnail-tiny})
                 )
@@ -244,11 +241,6 @@
                                   {:disabled? is-vod?
                                    :on-enter  (fn [chat-input]
                                                 (send-message this chat-input))}))
-        ;(my-dom/div
-        ;  (css/add-classes [ :visitor-count])
-        ;  (my-dom/p (css/add-class :sl-tooltip)
-        ;            (my-dom/i {:classes ["fa fa-user fa-fw"]}) (my-dom/span nil (str visitor-count))
-        ;            (my-dom/span (css/add-classes [:top :sl-tooltip-text]) "Visitors in store right now")))
         ))))
 
 (def ->StreamChat (om/factory StreamChat))

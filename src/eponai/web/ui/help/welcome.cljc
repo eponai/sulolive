@@ -42,11 +42,5 @@
                 (dom/div
                   (css/add-class :help-item-content)
                   (dom/p nil "SULO Live is an e-commerce platform for people to start their own store and share their work and story via live stream to their customers. Anyone can visit SULO Live and view the stores' live streams and start an account to purchase their products. ")))
-              ;(dom/section
-              ;  nil
-              ;  (dom/a
-              ;    (->> {:href (routes/url :help/faq)}
-              ;         (css/add-class :header))
-              ;    (dom/h3 nil "SULO Live FAQ")))
               )))))))
 (def ->Welcome (om/factory Welcome))

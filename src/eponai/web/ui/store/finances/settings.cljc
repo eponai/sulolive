@@ -3,7 +3,6 @@
     [clojure.string :as string]
     [eponai.common.ui.common :as common]
     [eponai.common.ui.dom :as dom]
-    ;[eponai.common.ui.store.account.validate :as v]
     [eponai.web.ui.store.business.verify :as verify]
     [eponai.common.ui.elements.input-validate :as v]
     #?(:cljs
@@ -168,7 +167,6 @@
 
 (defn default-currency-modal [component]
   (let [{:keys [modal]} (om/get-state component)
-        ;{:keys [stripe-account]} (om/get-computed component)
         {:query/keys [stripe-country-spec stripe-account]} (om/props component)
         {:country-spec/keys [supported-bank-account-currencies]} stripe-country-spec
         {:stripe/keys [default-currency external-accounts]} stripe-account
@@ -340,33 +338,13 @@
                     (button/edit
                       {:onClick #(om/update-state! this assoc :modal :payout-schedule)}
                       (dom/span nil "Change schedule"))))))
-            ;(menu/item
-            ;  nil
-            ;  (grid/row
-            ;    (->> (css/add-class :collapse)
-            ;         (css/align :middle))
-            ;    (grid/column
-            ;      (grid/column-size {:small 12 :medium 6})
-            ;      (dom/label nil "Default currency")
-            ;      (dom/p nil (dom/small nil "Charges for a currency without a bank account will be converted to your default currency, ")))
-            ;    (grid/column
-            ;      (css/text-align :right)
-            ;      (dom/p nil (dom/strong nil (string/upper-case (or default-currency ""))))
-            ;      (button/user-setting-default
-            ;        {:onClick #(om/update-state! this assoc :modal :default-currency)}
-            ;        (dom/span nil "Change currency")))))
             ))
-        ;(callout/callout
-        ;  nil
-        ;  (default-currency-section this))
 
         (dom/div
           (css/add-class :section-title)
           (dom/h2 nil "Bank accounts"))
 
 
-        ;(menu/vertical
-        ;  (css/add-classes [:section-list :section-list--bank-accounts]))
         (if (not-empty external-accounts)
           [
            (callout/callout
@@ -381,7 +359,6 @@
                        (dom/div
                          nil
                          (dom/p (css/add-class :bank-detail--account)
-                                ;(dom/i {:classes ["fa fa-bank -fa-fw"]})
                                 (dom/span nil bank-name)
                                 (dom/small nil (str "•••• " last4)))
                          (dom/p (css/add-class :bank-detail--location)
@@ -390,12 +367,6 @@
 
                        (dom/div
                          (css/text-align :right)
-                         ;(when-not (and default-for-currency?
-                         ;               (= currency default-currency))
-                         ;  (button/button
-                         ;    (->> {:onClick #(om/update-state! this assoc :modal :delete-account)}
-                         ;         (css/add-classes [:small :alert :hollow]))
-                         ;    (dom/span nil "Delete")))
                          (button/delete
                            {:onClick #(om/update-state! this assoc :modal :modal/bank-account :modal-object bank-acc)}
                            (dom/span nil "Edit"))))))
@@ -409,18 +380,11 @@
                    (let [{:stripe.external-account/keys [bank-name currency last4 country default-for-currency?]} bank-acc]
                      (table/tbody-row
                        nil
-                       ;(table/td
-                       ;  (css/add-class :bank-detail--icon)
-                       ;  (dom/i {:classes ["fa fa-bank -fa-fw"]}))
                        (table/td
                          (css/add-class :bank-detail--location)
                          (dom/p nil
                                 (dom/strong (css/add-class :currency) currency)
                                 (dom/span (css/add-class :country) (str "(" country ")")))
-                         ;(dom/div {:classes ["bank-detail currency"]}
-                         ;         (dom/span nil currency))
-                         ;(dom/div {:classes ["bank-detail country"]}
-                         ;         (dom/span nil country))
                          )
                        (table/td
                          (css/add-class :bank-detail--account)
@@ -431,12 +395,6 @@
                                 (dom/small nil (str "•••• " last4))))
                        (table/td
                          (css/text-align :right)
-                         ;(when-not (and default-for-currency?
-                         ;               (= currency default-currency))
-                         ;  (button/button
-                         ;    (->> {:onClick #(om/update-state! this assoc :modal :delete-account)}
-                         ;         (css/add-classes [:small :alert :hollow]))
-                         ;    (dom/span nil "Delete")))
                          (button/delete
                            {:onClick #(om/update-state! this assoc :modal :modal/bank-account :modal-object bank-acc)}
                            (dom/span nil "Edit"))
@@ -450,10 +408,6 @@
               (button/store-navigation-cta
                 {:onClick #(om/update-state! this assoc :modal :modal/bank-account :modal-object nil)}
                 (dom/span nil "Add bank account")))))
-        ;(payout-schedule this)
-
-        ;(when (< 1 (count external-accounts)))
-
         ))))
 
 (def FinancesSettings (script-loader/stripe-loader Payouts-no-loader))

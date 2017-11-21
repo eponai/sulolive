@@ -54,9 +54,7 @@
 (s/def :field/locality (s/and string? #(not-empty %)))
 (s/def :field/email #(client-utils/valid-email? %))
 (s/def :field/request (s/keys :req [
-                                    ;:field/brand
                                     :field/email
-                                    ;:field/locality
                                     :field/website]))
 
 (defn input-id [parent-id child-id]
@@ -91,14 +89,6 @@
                         :placeholder  "Enter location..."
                         :type         "text"
                         :defaultValue ""})
-            ;(v/select {:id           (:field.store/locality form-inputs)
-            ;           :defaultValue ""}
-            ;          input-validation
-            ;          (dom/option {:value    ""
-            ;                       :disabled true} "--- Select locality ---")
-            ;          (map (fn [l]
-            ;                 (dom/option {:value (:db/id l)} (:sulo-locality/title l)))
-            ;               sulo-localities))
             )
           (grid/column
             nil
@@ -125,8 +115,6 @@
 (defn render-has-store [component id]
   (let [{:query/keys [auth]} (om/props component)
         store (-> auth :store.owner/_user first :store/_owners)]
-    ;(callout/callout
-    ;  (css/text-align :center {:id id}))
     (grid/row
       (css/align :center)
       (grid/column
@@ -134,9 +122,6 @@
 
         (button/store-navigation-cta
           (css/add-class :expanded {:onClick #(do
-                                               ;#?(:cljs
-                                               ;   (when (nil? (utils/get-locality))
-                                               ;     (utils/set-locality)))
                                                (routes/set-url! component :store-dashboard {:store-id (:db/id store)}))})
           (dom/span nil (str "Continue to " (get-in store [:store/profile :store.profile/name]))))
         (dom/p nil
@@ -148,21 +133,12 @@
         {:keys [input-validation]} (om/get-state component)]
     (callout/callout
       (css/add-class :request-access-form {:id id})
-      ;(dom/label nil "Name")
-      ;(v/input
-      ;  {:type "email" :placeholder "Your brand" :id (:field/brand form-inputs)}
-      ;  input-validation)
       (dom/form
         nil
         (dom/label nil "Email")
         (v/input
           {:type "email" :placeholder "youremail@example.com" :id (input-id id (:field/email form-inputs)) :defaultValue (:user/email auth)}
           input-validation)
-
-        ;(dom/label nil "Location")
-        ;(v/input
-        ;  {:type "text" :placeholder "e.g. Vancouver" :id (:field/locality form-inputs)}
-        ;  input-validation)
 
         (dom/label nil "Website/Social media")
         (v/input {:type "text" :placeholder "yourwebsite.com, Facebook page, Instagram"
@@ -195,8 +171,6 @@
   (let [{:query/keys [auth]} (om/props component)
         store (-> auth :store.owner/_user first :store/_owners)
 
-        ;auth {:user/can-open-store? true
-        ;      :user/email "dev@sulo.live"}
         ]
     (cond (some? store)
           (render-has-store component id)
@@ -213,8 +187,6 @@
                 (->> {:onClick (fn [] #?(:cljs (utils/scroll-to (utils/element-by-id "sulo-start-store") 250)))})
                 (dom/span nil "Open my LIVE shop"))))
 
-          ;(render-start-store component id)
-
           :else
           (render-access-form component id))))
 
@@ -223,8 +195,6 @@
         store (-> auth :store.owner/_user first :store/_owners)
         id "sell-form-header"
 
-        ;auth {:user/can-open-store? true
-        ;      :user/email           "dev@sulo.live"}
         ]
     (cond (some? store)
           (render-has-store component id)
@@ -275,17 +245,13 @@
   (request-access [this parent-id]
     #?(:cljs
        (let [
-             ;brand (utils/input-value-by-id (input-id parent-id (:field/brand form-inputs)))
              email (utils/input-value-by-id (input-id parent-id (:field/email form-inputs)))
              website (utils/input-value-by-id (input-id parent-id (:field/website form-inputs)))
-             ;locality (utils/input-value-by-id (input-id parent-id (:field/locality form-inputs)))
              message (utils/input-value-by-id (input-id parent-id (:field/message form-inputs)))
 
              input-map {
-                        ;:field/brand    brand
                         :field/email   email
                         :field/website website
-                        ;:field/locality locality
                         :field/message message}
              validation (v/validate :field/request input-map form-inputs (str parent-id "-"))]
          (debug "Validation: " validation)
@@ -333,28 +299,7 @@
             (css/add-class :hero-background)
 
             (photo/cover {:photo-id "static/business-landing"})
-            ;(dom/video {:autoPlay true}
-            ;           (dom/source {:src "https://a0.muscache.com/airbnb/static/P1-background-vid-compressed-2.mp4"}))
             )
-          ;(dom/div
-          ;  (css/add-class :hero-content)
-          ;  (dom/div
-          ;    (css/add-class :va-container {:style {:display "block"}})
-          ;    (dom/div
-          ;      nil
-          ;      (grid/row
-          ;        (->> (css/add-class :expanded)
-          ;             (css/align :center))
-          ;        (grid/column
-          ;          (grid/column-size {:small 12 :medium 6 :large 4})
-          ;          (dom/h1 (css/show-for-sr) "SULO Live")
-          ;          (dom/h2 (css/add-class :jumbo-header) "Your brand LIVE")
-          ;          (dom/p (css/add-classes [:jumbo-lead :lead]) "Tell the story of your brand and increase sales via LIVE streams"))
-          ;        (grid/column
-          ;          (grid/column-size {:small 12 :medium 6 :large 3})
-          ;          ;(render-access-form this)
-          ;          (render-input-callout this "sell-form-header")
-          ;          )))))
           (dom/div
             (css/add-class :hero-content {:style {:padding "8rem 0"}})
             (dom/div
@@ -489,8 +434,6 @@
           (css/add-classes [:section :banner])
           (grid/row
             (grid/columns-in-row {:small 1})
-            ;(grid/column
-            ;  (grid/column-order {:small 2 :medium 2}))
             (grid/column
               (->> (grid/column-order {:small 1 :medium 2})
                    (css/text-align :center))
@@ -521,23 +464,6 @@
                            (dom/span {:classes ["flag-icon" (str "flag-icon-" (string/lower-case c))]
                                       :title   c})))
                        coming-soon)))
-              ;(menu/vertical
-              ;  nil
-              ;
-              ;  (dom/li nil
-              ;          (dom/h5 nil "Spend no time editing")
-              ;          (dom/p nil
-              ;
-              ;                 (dom/span nil "The best thing about LIVE is that it's not perfect and anything can happen. Just turn on the camera while doing your creative work and see where the stream takes you.")))
-              ;  (dom/li nil
-              ;          (dom/h5 nil "Use any camera")
-              ;          (dom/p nil
-              ;
-              ;                 (dom/span nil "Setup your streams using any type of camera. Either go simple using only your iPhone, or more advanced with multiple digital cameras.")))
-              ;  (dom/li nil
-              ;          (dom/h5 nil "Save your streams")
-              ;          (dom/p nil
-              ;                 (dom/span nil "Your streams are saved on your shop, so your customers can watch them later in case they missed the action."))))
               )
             ))
 

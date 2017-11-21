@@ -67,9 +67,6 @@
 
 
 
-        ;(grid/column
-        ;  (css/text-align :right)
-        ;  (dom/i {:classes ["fa fa-trash-o"]}))
         (grid/column
           (->>
             (css/add-class :shrink)
@@ -78,11 +75,6 @@
           (button/default-hollow
             {:onClick #(.remove-item component sku)}
             (dom/span nil "Remove"))
-          ;(dom/input {:type             "number"
-          ;               ;; :defaultValue doesn't work for clj dom/input.
-          ;               ;; File om.next/dom bug?
-          ;                :defaultValue 1
-          ;                #?@(:clj [:value 1])})
           )
         (grid/column
           (->> (css/text-align :right)
@@ -173,9 +165,6 @@
           {:keys [user.cart/items]} cart
           store-is-open? (fn [s] (= :status.type/open (-> s :store/status :status/type)))
           skus-by-store (filter #(store-is-open? (key %)) (items-by-store items))]
-      ;(debug "Shopping bag: " cart)
-      ;(debug "Items by store: " (items-by-store items))
-      ;(debug "SKUS by store: " skus-by-store)
       (dom/div
         (cond->> {:id "sulo-shopping-bag-content"}
                  (empty? skus-by-store)
@@ -197,7 +186,6 @@
                 (css/add-class :empty-container)
                 (dom/p (css/add-class :shoutout) "Your shopping bag is empty"))
               (icons/empty-shopping-bag)
-              ;(dom/p (css/add-class :header))
               (button/button
                 (button/sulo-dark (button/hollow {:href (routes/url :live {:locality (:sulo-locality/path locations)})}))
                 (dom/span nil "Go to the market - start shopping")))))

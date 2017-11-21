@@ -22,7 +22,7 @@
     [eponai.common.routes :as common.routes]
     [eponai.common.ui.router :as router]
     [eponai.common.ui.loading-bar :as loading-bar]
-    ;; TODO: Fix the scroll bar FFFFS!
+    ;; TODO: Fix the scroll bar!
     ;; [eponai.web.scroll-helper :as scroll-helper]
     [cljs.core.async :as async]
     [eponai.common.shared :as shared]
@@ -44,21 +44,9 @@
   (binding [parser/*parser-allow-remote* false]
     (om/add-root! reconciler router/Router (gdom/getElement router/dom-app-id))))
 
-;(defn validate-location [reconciler {:keys [handler route-params]}]
-;  (when (and (some? handler)
-;             (not (common.routes/location-independent-route? handler))
-;             (nil? (web.utils/get-locality)))
-;    (let [loc (:locality route-params)
-;          loc-entity (db/lookup-entity (db/to-db reconciler) [:sulo-locality/path loc])]
-;      (debug "Location was not set, setting new locality: " loc " entity " loc-entity)
-;      (web.utils/set-locality loc-entity)
-;      (om/transact! reconciler [(list 'client/set-locality {:locality loc-entity})
-;                                      :query/locations]))))
-
 (defn update-route-fn [reconciler-atom]
   (fn [{:keys [handler route-params] :as match}]
     (try
-      ;(validate-location @reconciler-atom match)
       (let [reconciler @reconciler-atom
             modules (shared/by-key reconciler :shared/modules)
             loaded-route? (modules/loaded-route? modules handler)
@@ -108,22 +96,7 @@
                                                                   (debug "called queue-cb!"))
                                                               (debug "No root query, nothing to queue..")))))))})))
       (catch :default e
-        (error "Error when transacting route: " e)
-        (let [data (ex-data e)]
-          ;(if (= ::location-not-set (:type data))
-          ;  (let [loc (:locality route-params)
-          ;        loc-entity (db/lookup-entity (db/to-db @reconciler-atom) [:sulo-locality/path loc])]
-          ;    (debug "Location was not set, setting new url with pushy: " loc " entity " loc-entity)
-          ;    (debug "Route params: " route-params)
-          ;    (web.utils/set-locality loc-entity)
-          ;    (om/transact! @reconciler-atom [(list 'client/set-locality {:locality loc-entity})
-          ;                        :query/locations])
-          ;
-          ;    (-> (shared/by-key @reconciler-atom :shared/browser-history)
-          ;        (pushy/set-token! (routes/url )))
-          ;    )
-          ;  (error "Error when transacting route: " e))
-          )))))
+        (error "Error when transacting route: " e)))))
 
 (defn fetch-index-route-data!
   "Fetches and merges client data given a route-map with route, route-params and query-params."

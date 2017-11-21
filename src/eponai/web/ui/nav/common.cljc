@@ -22,10 +22,6 @@
               opts {:href    (routes/url route route-params)
                     :onClick #(do (mixpanel/track-key ::mixpanel/shop-by-category {:source   source
                                                                                    :category path})
-                                  ;(when (empty? locations)
-                                  ;  #?(:cljs
-                                  ;     (when-let [locs (web-utils/element-by-id "sulo-locations")]
-                                  ;       (web-utils/scroll-to locs 250))))
                                   )}]
           (menu/item-link
             (cond->> (css/add-class :category opts)
@@ -40,10 +36,6 @@
       (->> {:href    (routes/url :live)
             :onClick #(do
                        (mixpanel/track-key ::mixpanel/shop-live {:source source})
-                       ;(when (empty? locations)
-                       ;  #?(:cljs
-                       ;     (when-let [locs (web-utils/element-by-id "sulo-locations")]
-                       ;       (web-utils/scroll-to locs 250))))
                        )}
            (css/add-classes [:category :navbar-live])
            (css/show-for :large))

@@ -56,11 +56,9 @@
 (defn videos-section [component]
   (let [{:query/keys [store-vods current-route store]} (om/props component)
         {:keys [route route-params query-params]} current-route]
-    ;(debug "Got VODS: " store-vods)
     (grid/row
       (grid/columns-in-row {:small 2 :medium 3})
       (map (fn [vod]
-             ;(debug "Render vod: " vod)
              (grid/column
                nil
                (ci/->StoreVod (om/computed vod
@@ -104,21 +102,6 @@
                       (dom/a {:href (routes/url :store {:store-id (:db/id store)})}
                              (dom/strong nil store-name)))))))
             (take 5 featured-stores)))
-     ;(grid/row-column
-     ;     nil
-     ;     (dom/hr nil)
-     ;     (dom/div
-     ;       (css/add-class :section-title)
-     ;       (dom/h3 nil "New arrivals")))
-     ;(grid/row
-     ;  (->>
-     ;    (grid/columns-in-row {:small 2 :medium 3 :large 6}))
-     ;  (map
-     ;    (fn [p]
-     ;      (grid/column
-     ;        (css/add-class :new-arrival-item)
-     ;        (pi/product-element {:open-url? true} p)))
-     ;    (take 6 featured-items)))
      ]))
 
 (defn store-url [store-id]
@@ -128,8 +111,6 @@
   static om/IQuery
   (query [_]
     [
-     ;{:proxy/stream (om/get-query stream/Stream)}
-     ;{:query/stream [:stream/state]}
      {:proxy/chat (om/get-query chat/StreamChat)}
      {:query/store [:db/id
                     {:store/locality [:sulo-locality/path]}
@@ -137,7 +118,6 @@
                     :store/visitor-count
                     :store/username
                     {:store/geolocation [:geolocation/title]}
-                    ;{:store/items (om/get-query item/Product)}
                     :store/not-found?
                     {:store/status [:status/type]}
                     {:stream/_store [:stream/state :stream/title]}
@@ -169,20 +149,6 @@
   Object
   (initLocalState [this]
     {:selected-navigation :all-items})
-  ;(componentDidMount [this]
-  ;  #?(:cljs
-  ;     (let [{:query/keys [store]} (om/props this)]
-  ;       (firebase/register-store-visit
-  ;         (shared/by-key this :shared/firebase)
-  ;         (:db/id store)
-  ;         (client.auth/current-auth this)
-  ;         (get-in store [:store/locality :sulo-locality/path])))))
-  ;(componentWillUnmount [this]
-  ;  #?(:cljs
-  ;     (let [{:query/keys [store]} (om/props this)]
-  ;       (firebase/unregister-store-visit (shared/by-key this :shared/firebase)
-  ;                                        (:db/id store)
-  ;                                        (client.auth/current-auth this)))))
   (render [this]
     (let [{:keys [fullscreen? ] :as st} (om/get-state this)
           {:query/keys [store store-items current-route] :as props} (om/props this)
@@ -234,13 +200,6 @@
                           fullscreen?
                           (css/add-class :fullscreen))
                  (cond
-                   ;is-vod?
-                   ;(stream/->Stream (om/computed {:stream stream}
-                   ;                              {:stream-title         (str "Stream timestamp: " vod-timestamp)
-                   ;                               :widescreen?          true
-                   ;                               :store                store
-                   ;                               :vod-timestamp        vod-timestamp
-                   ;                               :on-fullscreen-change #(om/update-state! this assoc :fullscreen? %)}))
                    (or is-live? is-vod?)
                    [
                     (stream/->Stream (om/computed {:stream stream}
@@ -301,26 +260,6 @@
              (grid/column
                (css/add-class :store-submenu)
 
-               ;(dom/h3 (css/add-class :sl-tooltip)
-               ;        (dom/span
-               ;          (cond->> (css/add-classes [:label ])
-               ;                   (= stream-state :stream.state/offline)
-               ;                   (css/add-class :primary)
-               ;                   (= stream-state :stream.state/online)
-               ;                   (css/add-class :success)
-               ;                   (= stream-state :stream.state/live)
-               ;                   (css/add-class :highlight))
-               ;          (name stream-state))
-               ;        (when (= stream-state :stream.state/offline)
-               ;          (dom/span (css/add-class :sl-tooltip-text)
-               ;                    "See the help checklist below to get started streaming")))
-               ;(dom/div
-               ;  (css/add-class :store-stats)
-               ;  (dom/div (css/add-class :sl-tooltip)
-               ;           (dom/h6 nil
-               ;                   (dom/small nil "Active visitors: ")
-               ;                   (dom/span nil (str visitor-count)))
-               ;           (dom/span (css/add-class :sl-tooltip-text) "Visitors in store right now")))
                (let [store-url (store-url (:store-id route-params))]
                  (menu/horizontal
                    (->> (css/align :right)
@@ -347,9 +286,6 @@
                                            :description (:store.profile/name profile)
                                            :media       (photos/transform (:photo/id (:store.profile/photo profile))
                                                                           :transformation/thumbnail)}))
-                   ;(menu/item
-                   ;  {:title "Share on email"}
-                   ;  (social/share-button nil {:platform :social/email}))
                    ))))
 
            (dom/div

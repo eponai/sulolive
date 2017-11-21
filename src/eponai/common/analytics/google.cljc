@@ -108,11 +108,6 @@
   #?(:cljs
      (js/ga "send" "event" "Checkout" "Option")))
 
-;(defn checkout [skus country]
-;  (checkout-skus checkout)
-;  (set-action ::ga/checkout {:step 1 :option country})
-;  (send-pageview))
-
 (defn checkout-shipping-address [skus country]
   (debug "Send shipping address: " country)
   (checkout-skus skus)
@@ -127,7 +122,6 @@
 
 (defn checkout-payment-details [skus option]
   (debug "Send payment option: " option)
-  ;(checkout-skus skus)
   (set-action ::checkout {:step 2 :option option})
   (send-pageview))
 

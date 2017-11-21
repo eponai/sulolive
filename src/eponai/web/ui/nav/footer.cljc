@@ -24,23 +24,6 @@
      {:query/auth [:db/id]}
      :query/current-route])
   Object
-  ;(change-location [this location-id]
-  ;  (debug "Change location: " location-id)
-  ;  (let [{:query/keys [current-route sulo-localities]} (om/props this)
-  ;        {:keys [on-change-location]} (om/get-computed this)
-  ;        {:keys [route route-params]} current-route
-  ;        location (some #(when (= (:db/id %) (c/parse-long location-id)) %) sulo-localities)]
-  ;    #?(:cljs
-  ;       (do
-  ;         (web-utils/set-locality location)
-  ;         (om/transact! this [(list 'client/set-locality {:locality location})
-  ;                             :query/locations])))
-  ;    (when (some? on-change-location)
-  ;      (on-change-location location))
-  ;    (if (some? (:locality route-params))
-  ;      (routes/set-url! this route (assoc route-params :locality (:sulo-locality/path location)))
-  ;      (routes/set-url! this :index {:locality (:sulo-locality/path location)}))))
-
   (render [this]
     (let [{:query/keys [sulo-localities locations auth]} (om/props this)]
       (dom/div

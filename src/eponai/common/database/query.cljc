@@ -54,7 +54,6 @@
   {:pre [(delay? transaction-convs) (delay? user-convs)]}
   (let [approx-tx-conv (memoize
                          (fn [curr]
-                           ;; (debug "Approximating: " curr)
                            (or (some->> curr (get @transaction-convs) (first) (val))
                                (when curr
                                  (db/one-with db {:where [['?e :conversion/currency curr]]})))))
@@ -62,7 +61,6 @@
                            (fn []
                              (some-> @user-convs (first) (val))))]
     (fn [transaction]
-      ;;#?(:cljs (debug "executing transaction-with-conversion on tx: " (:db/id transaction)))
       (let [tx-date (get-in transaction [:transaction/date :db/id])
             curr->conv (fn [curr]
                          (or (get-in @transaction-convs [curr tx-date])

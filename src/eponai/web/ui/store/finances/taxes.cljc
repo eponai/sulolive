@@ -151,8 +151,6 @@
 
                   (dom/p nil (dom/span nil (c/two-decimal-percent (:tax.rule/rate tax-rule 0)))
                          (dom/br nil)
-                         ;(dom/small nil "Include international")
-                         ;(dom/br nil)
                          (if (:tax.rule/include-shipping? tax-rule)
                            (dom/small nil "Include shipping")
                            (dom/small nil "Exclude shipping")))

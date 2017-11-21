@@ -33,14 +33,6 @@
   static om/IQuery
   (query [_]
     [{:query/item (product/product-query)}
-     ;{:query/featured-items [:db/id
-     ;                        :store.item/name
-     ;                        :store.item/price
-     ;                        :store.item/created-at
-     ;                        {:store.item/photos [{:store.item.photo/photo [:photo/path :photo/id]}
-     ;                                             :store.item.photo/index]}
-     ;                        {:store/_items [{:store/profile [:store.profile/name]}
-     ;                                        :store/locality]}]}
      ])
   Object
   (render [this]
@@ -54,8 +46,6 @@
         (debug "Store: " store)
         (debug "IS gender category: " (products/gender-category? category))
 
-        ;(when-not (options/store-is-open? store)
-        ;  (dom/div nil "Closed"))
         (debug (:store.item/category item))
         (if (:store.item/not-found? item)
           (product-not-found this)

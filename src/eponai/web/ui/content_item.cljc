@@ -38,19 +38,12 @@
            :as props} (om/props this)
           {:keys [href]} (om/get-computed this)
           store-link (or href (routes/store-url store :store {} {:vod-timestamp timestamp}))]
-      ;(debug "VOD item: " props)
       (dom/div
         (css/add-classes [:content-item :stream-item])
         (dom/a
           {:href store-link}
           (photo/vod-photo nil store nil)
           )
-        ;(dom/div
-        ;  (->> (css/add-class :text)
-        ;       (css/add-class :header))
-        ;  (dom/a {:href store-link}
-        ;         (dom/span nil stream-name)))
-
 
         (dom/div
           (css/add-classes [:content-item-text :is-live])
@@ -88,22 +81,11 @@
           store-link (routes/store-url store :store)
           subscriber-url (client-env/get-key (shared/by-key this :shared/client-env)
                                              :wowza-subscriber-url)]
-      ;(debug "Stream: " channel)
-      ;(debug "Stream store: " (:stream/state channel))
       (dom/div
         (css/add-classes [:content-item :stream-item])
-        ;(cond->> (css/add-classes [:content-item :stream-item])
-        ;         (pos? visitor-count)
-        ;         (css/add-class :show-visitor-count))
         (dom/a
           {:href store-link}
           (photo/stream-photo nil store nil))
-        ;(dom/div
-        ;  (->> (css/add-class :text)
-        ;       (css/add-class :header))
-        ;  (dom/a {:href store-link}
-        ;         (dom/span nil stream-name)))
-
 
         (dom/div
           (css/add-classes [:content-item-text :is-live])
@@ -154,8 +136,6 @@
           (css/add-classes [:content-item-text :header online-status])
           (dom/a {:href (routes/store-url store :store)}
                  (dom/strong {:itemProp "name"} store-name)))
-        ;(dom/meta {:itemProp "url" :content (str "https://sulo.live" (routes/store-url store :store))})
-        ;(dom/meta {:itemProp "description" :content (str store-tagline)})
         ))))
 
 (def ->StoreItem (om/factory StoreItem))
@@ -204,7 +184,6 @@
     (let [item (om/props this)
           {:keys [current-route open-url? show-caption?]} (om/get-computed this)
           {:keys [show-item? breakpoint]} (om/get-state this)
-          ;on-click #(.open-modal this)
           #?@(:cljs [open-url? (if (some? open-url?) open-url? (web.utils/bp-compare :large breakpoint >))]
               :clj  [open-url? (if (some? open-url?) open-url? false)])
           on-click (when-not open-url? #(.open-modal this))
@@ -243,7 +222,6 @@
                                  nil
                                  (photo/overlay
                                    nil
-                                   ;(dom/p nil (dom/small nil (str "by " (:store.profile/name (:store/profile store)))))
                                    (dom/h6 nil "View")
                                    )))
 
@@ -252,9 +230,6 @@
           (dom/a {:onClick on-click
                   :href    goods-href}
                  (dom/span nil item-name)))
-        ;(dom/div
-        ;  (css/add-class :text)
-        ;  (dom/strong nil (ui-utils/two-decimal-price price)))
         (dom/a
           (cond->> (css/add-classes [:content-item-text :text :sl-tooltip] {:href (routes/store-url store :store)})
                    store-live?

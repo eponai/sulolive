@@ -32,7 +32,6 @@
   (let [{:store.item/keys [photos skus ]
          store            :store/_items} product
         out-of-stock? (every? #(= :out-of-stock (-> % :store.item.sku/inventory :store.item.sku.inventory/value)) skus)
-        ;description-html (f/bytes->str description)
         description-text (when description (clojure.string/replace description #"<(?:.|\n)*?>" ""))]
     (dom/div {:itemType  "https://schema.org/Product"
               :itemScope true}
@@ -178,14 +177,6 @@
                 (css/add-class :orbit)
                 (menu/horizontal
                   (css/add-class :orbit-container)
-                  ;(dom/button #js {:className "orbit-next"
-                  ;                 :onClick   #(when (> (dec (count photos)) active-photo-index)
-                  ;                              (om/update-state! this update :active-photo-index inc))}
-                  ;            (dom/i #js {:className "fa fa-caret-right fa-2x"}))
-                  ;(dom/button #js {:className "orbit-previous"
-                  ;                 :onClick #(when (< 0 active-photo-index)
-                  ;                            (om/update-state! this update :active-photo-index dec))}
-                  ;            (dom/i #js {:className "fa fa-caret-left fa-2x"}))
                   (map-indexed
                     (fn [i p]
                       (menu/item
@@ -239,16 +230,6 @@
                              variations))))
               (dom/div
                 (css/add-class :product-action-container)
-                ;(my-dom/div (->> (css/grid-row))
-                ;            (my-dom/div (->> (css/grid-column)
-                ;                             (css/grid-column-size {:small 6 :medium 8}))
-                ;                        (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
-                ;                                :className "button expanded"} "Add to bag"))
-                ;            (my-dom/div (css/grid-column)
-                ;                        (dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
-                ;                                    :className "button expanded hollow"} "Save")))
-                ;(dom/a #js {:onClick   #(do #?(:cljs (.add-to-bag this item)))
-                ;            :className "button expanded hollow"} "Save")
 
                 (dom/a
                   (cond->> (->> {:onClick #(when-not out-of-stock?

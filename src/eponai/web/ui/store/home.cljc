@@ -119,19 +119,6 @@
           (css/add-class :section-title)
           (dom/h1 nil "Home"))
 
-        ;(dom/div
-        ;  (->> {:id "store-navbar"}
-        ;       (css/add-class :navbar-container))
-        ;  (dom/nav
-        ;    (->> (css/add-class :navbar)
-        ;         (css/add-class :top-bar))
-        ;    (menu/horizontal
-        ;      nil
-        ;      (menu/item
-        ;        (when (= route :store-dashboard)
-        ;          (css/add-class :is-active))
-        ;        (dom/a {:href (routes/url :store-dashboard route-params)}
-        ;               (dom/span nil "Overview"))))))
         (callout/callout-small
           (css/add-class :section-info)
           (grid/row
@@ -157,7 +144,6 @@
                 (if (options/store-can-open? store)
                   (dom/p (css/add-class :text-sulo-dark) (dom/small nil (dom/strong nil "Your store can be opened!")))
                   (dom/p (css/add-class :text-warning) (dom/small nil (dom/strong nil "Action needed before store can open")))))
-              ;(dom/p nil (dom/span (css/add-class "icon icon-opened")))
               (when-not (options/store-is-open? store)
                 (button/store-navigation-default
                   {:href    (routes/store-url store :store-dashboard/profile#options)
@@ -197,22 +183,6 @@
                  :onClick #(mixpanel/track-key ::mixpanel/go-to-orders {:source "store-dashboard"})}
                 (dom/span nil "Orders")
                 (dom/i {:classes ["fa fa-chevron-right"]})))))
-        ;(callout/callout
-        ;  nil
-        ;  (grid/row
-        ;    (grid/columns-in-row {:small 3})
-        ;    (grid/column
-        ;      (css/text-align :center)
-        ;      (dom/h3 nil "Balance")
-        ;      (dom/p (css/add-class :stat) (two-decimal-price 0)))
-        ;    (grid/column
-        ;      (css/text-align :center)
-        ;      (dom/h3 nil "Customers")
-        ;      (dom/p (css/add-class :stat) 0))
-        ;    (grid/column
-        ;      (css/text-align :center)
-        ;      (dom/h3 nil "Payments")
-        ;      (dom/p (css/add-class :stat) 0))))
 
         (let [described-store? (some? (:store.profile/description (:store/profile store)))
               defined-shipping? (not-empty (get-in store [:store/shipping :shipping/rules]))
@@ -265,16 +235,6 @@
 
         (grid/row
           (css/add-class :collapse)
-          ;(grid/column
-          ;  nil
-          ;
-          ;  (dom/div
-          ;    (css/add-class :section-title)
-          ;    (dom/h2 nil "Getting started"))
-          ;
-          ;  (callout/callout
-          ;    nil
-          ;    ))
           (if (:stripe/details-submitted? stripe-account)
             (when-let [verification-el (verification-status-element this)]
               (grid/column
@@ -315,40 +275,4 @@
           nil
           (dom/p nil (dom/span nil "If you run into problems, checkout ")
                  (dom/a {:href (routes/url :help)} (dom/span nil "SULO Live help center"))))
-
-
-
-
-
-
-        ;(grid/row
-        ;  (->> (css/align :center)
-        ;       (css/add-class :expanded)
-        ;       (css/add-class :collapse)
-        ;       (grid/columns-in-row {:small 1 :medium 2}))
-        ;  (grid/column
-        ;    nil
-        ;    (store-info-element this))
-        ;  (grid/column
-        ;    nil
-        ;
-        ;    (if (:stripe/details-submitted? stripe-account)
-        ;      (verification-status-element this)
-        ;      (callout/callout
-        ;        (->> (css/add-class :notification)
-        ;             (css/add-class :action))
-        ;        (grid/row
-        ;          nil
-        ;          (grid/column
-        ;            (css/add-class :shrink)
-        ;            (dom/i {:classes ["fa fa-info fa-fw"]}))
-        ;          (grid/column
-        ;            nil
-        ;            (callout/header nil "Activate your account")))
-        ;        (dom/p nil
-        ;               (dom/span nil "Before ")
-        ;               (dom/a {:href (routes/url :store-dashboard/settings#activate {:store-id store-id})} (dom/span nil "activating your account"))
-        ;               (dom/span nil ", you can only use SULO Live in test mode. You can manage your store, but it'll not be visible to the public."))
-        ;        (dom/p nil
-        ;               "Once you've activated you'll immediately be able to use all features of SULO Live. Your account details are reviewed with Stripe to ensure they comply with our terms of service. If there is a problem, we'll get in touch right away to resolve it as quickly as possible.")))))
         ))))

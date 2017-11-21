@@ -99,7 +99,6 @@
                 (fn [i s]
                   (let [no-items (count (get items-by-section (:db/id s)))]
                     (menu/item (css/add-class :edit-sections-item)
-                               ;(dom/a nil (dom/i {:classes ["fa "]}))
                                (dom/input
                                  {:type        "text"
                                   :id          (str "input.section-" i)
@@ -204,7 +203,6 @@
        (let [size js/window.innerWidth
              breakpoint (if (> 460 size) :tiny (web-utils/breakpoint size))]
          (debug "Updating breakpoint: " breakpoint)
-         ;(om/update-state! this assoc :breakpoint bp-key)
          (when-not (= breakpoint (:breakpoint (om/get-state this)))
            (.update-layout this))
          )))
@@ -226,19 +224,7 @@
                               (not-empty search-input)
                               (filter #(clojure.string/includes? (.toLowerCase (:store.item/name %))
                                                                  (.toLowerCase search-input)))))
-          ;(sort-by :store.item/index
-          ;                  (if (not-empty search-input)
-          ;                    (filter #(clojure.string/includes? (.toLowerCase (:store.item/name %))
-          ;                                                       (.toLowerCase search-input)) inventory)
-          ;                    inventory)
-          ;                                                                                            )
           ]
-      ;(cond->> (sort-by :store.item/index items)
-      ;         (not= selected-section :all)
-      ;         (filter #(= selected-section (get-in % [:store.item/section :db/id])))
-      ;         (not-empty search-input)
-      ;         (filter #(clojure.string/includes? (.toLowerCase (:store.item/name %))
-      ;                                            (.toLowerCase search-input))))
       (dom/div
         {:id "sulo-product-list"}
 
@@ -432,10 +418,6 @@
                                  :isResizable        false
                                  :verticalCompact    true
                                  :onBreakpointChange #(.on-breakpoint-change this %)
-                                 ;:onResizeStart    #(.edit-start this)
-                                 ;:onResizeStop     #(.edit-stop this nil %)
-                                 ;:onDragStart        #(.edit-start this)
-                                 ;:onDrag           #(.on-item-drag this %)
                                  :onDragStop         #(.on-drag-stop this %)
                                  })
                        (into-array

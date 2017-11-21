@@ -18,22 +18,6 @@
     [eponai.common.ui.stream :as stream]
     [eponai.common.photos :as photos]))
 
-;(defn banner [{:keys [color align] :as opts} primary secondary]
-;  (let [align (or align :left)
-;        color (or color :default)]
-;    (dom/div #js {:className (str "banner " (name color))}
-;      (grid/row
-;        nil
-;        (grid/column
-;          (cond->> (->> (grid/column-size {:small 9 :medium 8})
-;                        (css/text-align align))
-;                   (= align :right)
-;                   (grid/column-offset {:small 3 :medium 4}))
-;          primary)
-;        (grid/column
-;          (css/align :right)
-;          secondary)))))
-
 (defn collection-element [{:keys [href url title full? url-small photo-id alt]}]
   ;; Use the whole thing as hover elem
   (dom/a
@@ -53,14 +37,9 @@
     [
      :query/current-route
      {:query/featured-items (om/get-query ci/ProductItem)}
-     ;{:query/featured-women (om/get-query ci/ProductItem)}
-     ;{:query/featured-home (om/get-query ci/ProductItem)}
-     ;{:query/featured-men (om/get-query ci/ProductItem)}
-     ;{:query/featured-art (om/get-query ci/ProductItem)}
      {:query/featured-vods (om/get-query ci/StoreVod)}
      {:query/featured-stores (om/get-query ci/StoreItem)}
      {:query/featured-streams (om/get-query ci/OnlineChannel)}
-     ;; {:query/top-streams (om/get-query ci/OnlineChannel)}
      {:query/auth [:db/id :user/email]}
      {:query/owned-store [:db/id
                           {:store/locality [:sulo-locality/path]}
@@ -71,16 +50,13 @@
   Object
   (render [this]
     (let [{:query/keys [top-streams featured-streams featured-stores current-route featured-vods featured-items featured-home featured-men featured-art]} (om/props this)
-          ;featured-streams []
           {:keys [route-params]} current-route]
-      ;(debug "Featured women products: " featured-women)
       (dom/div
         nil
         (dom/div
           (->> {:id "sulo-index-container"}
                (css/add-class :landing-page))
 
-          ;(common/city-banner this locations)
           (dom/div
             (css/add-class :hero)
             (dom/div
@@ -110,8 +86,6 @@
                                         (grid/row
                                           (->>
                                             (grid/columns-in-row {:small 2 :medium 3 :large 5}))
-                                          ;(grid/column
-                                          ;  (css/add-class :online-streams))
                                           (map (fn [c]
                                                  (grid/column
                                                    (css/add-class :online-stream)
@@ -130,8 +104,6 @@
                                       (grid/row
                                         (->>
                                           (grid/columns-in-row {:small 2 :medium 3 :large 5}))
-                                        ;(grid/column
-                                        ;  (css/add-class :online-streams))
                                         (map (fn [p]
                                                (grid/column
                                                  (css/add-class :online-stream)
@@ -139,30 +111,9 @@
                                              featured-vods))
                                       ""))
 
-            ;(when (<= 5 (count featured-streams))
-            ;  (common/content-section {:href  (routes/url :live route-params)
-            ;                           :class "online-channels"}
-            ;                          (dom/a {:href (routes/url :live route-params)}
-            ;                                 (dom/span nil "Popular"))
-            ;
-            ;                          (grid/row
-            ;                            (->>
-            ;                              (grid/columns-in-row {:small 2 :medium 4 :large 5}))
-            ;                            ;(grid/column
-            ;                            ;  (css/add-class :online-streams))
-            ;                            (map (fn [c]
-            ;                                   (grid/column
-            ;                                     (css/add-class :online-stream)
-            ;                                     (ci/->OnlineChannel c)))
-            ;                                 featured-streams))
-            ;                          ""))
-            ;(when (not-empty featured-streams))
             (dom/div
               (->>
                 (css/add-classes [:gray :features-banner :banner :section]))
-              ;(dom/div
-              ;  (->> (css/add-class :section-title)
-              ;       (css/text-align :center)))
               (grid/row
                 (->> (grid/columns-in-row {:small 1 :medium 3})
                      (css/text-align :center))
@@ -241,29 +192,8 @@
               {:href  (routes/url :stores route-params)
                :class "new-brands"}
               (dom/span nil "Creatives")
-              ;(grid/row-column
-              ;  (css/text-align :center))
-              ;(dom/div
-              ;  (css/add-class :section-title)
-              ;  (dom/h2 nil "New brands"))
               (dom/div
                 {:classes ["sulo-items-container"]}
-                ;(letfn [(scroll-right [] #?(:cljs
-                ;                               (let [row (web.utils/element-by-id "content-row-products")
-                ;                                     cols (array-seq (.-children row))]
-                ;                                 (web.utils/scroll-horizontal-to row (second cols) 250)
-                ;                                 (debug "Scroll")
-                ;                                 )))
-                ;        (scroll-left [] #?(:cljs
-                ;                            (let [row (web.utils/element-by-id "content-row-products")
-                ;                                  columns (array-seq (.-children row))]
-                ;                              (debug "Scroll")
-                ;                              (web.utils/scroll-horizontal-to row (first columns) 250))))]
-                ;  [
-                ;   (dom/a {:onClick scroll-right}
-                ;          (dom/span nil "Next"))
-                ;   (dom/a {:onClick scroll-left}
-                ;          (dom/span nil "Previous"))])
 
                 (grid/row
                   (->> {:id    "content-row-products"
@@ -297,8 +227,6 @@
                 (grid/row
                   (->>
                     (grid/columns-in-row {:small 2 :medium 4 :large 6}))
-                  ;(grid/column
-                  ;  (css/add-class :online-streams))
                   (map-indexed
                     (fn [i p]
                       (grid/column

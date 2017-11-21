@@ -354,12 +354,6 @@
                                                                                   :file          file
                                                                                   :response      response}))
                                                   :owner     store}))
-                 ;(dom/input
-                 ;  (css/show-for-sr {:type        "file"
-                 ;                    :placeholder "First"
-                 ;                    :accept      "image/png,image/jpeg"
-                 ;                    :onChange    #(.select-document component %)
-                 ;                    :id          (:field.legal-entity/document form-inputs)}))
                  (when (:error uploaded-document)
                    (dom/p (css/add-class :text-alert)
                           (dom/small nil "Something went wrong uploading your file to Stripe 🙁")))
@@ -380,7 +374,6 @@
 
 (defn external-account-required? [component]
   (let [{:keys [stripe-account]} (om/get-computed component)
-        ;all-required-fields (required-fields component)
         account-fields (get-in stripe-account [:stripe/verification :stripe.verification/fields-needed])]
     (some? (get (set account-fields) (:field/external-account form-inputs)))))
 
@@ -388,8 +381,6 @@
   (let [{:query/keys [stripe-country-spec]} (om/props component)
         {:keys [stripe-account]} (om/get-computed component)
         {:keys [input-validation]} (om/get-state component)
-        ;all-required-fields (set (required-fields component))
-        ;external-account-required? (get all-required-fields (get form-inputs :field/external-account))
 
         ]
     (when (external-account-required? component)

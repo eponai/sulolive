@@ -68,8 +68,6 @@
          :size     "tiny"}
         (dom/h4 (css/add-class :header) (get modal-message modal))
         (dom/p nil
-               ;(dom/span nil (get modal-message modal))
-               ;(dom/br nil)
                (dom/small nil (get modal-submessage modal)))
         (dom/div
           (css/add-class :action-buttons)
@@ -94,15 +92,11 @@
         {:order/keys [id amount currency items store]} order
         {store-name :store.profile/name} (:store/profile store)
 
-        ;skus (filter #(= :order.item.type/sku (:order.item/type %)) items)
-        ;tax (some #(when (= :tax (:order.item/type %)) %) items)
-        ;shipping (some #(when (= :shipping (:order.item/type %)) %) items)
         order-created (when-some [created (:order/created-at order)]
                         (date/date->string created "MMMM dd YYYY"))
         grouped-orders (group-by :order.item/type items)
         subtotal (reduce + 0 (map :order.item/amount (:order.item.type/sku grouped-orders)))
 
-        ;order (assoc order :order/status :order.status/returned)
         order-email (get-in order [:order/user :user/email])
         total-amount (reduce + 0 (map :order.item/amount items))
         order-status (:order/status order)
@@ -132,7 +126,6 @@
           (dom/h2 nil
                   (common/order-status-element order)
                   (dom/span nil (:shipping/name (:order/shipping order))))
-          ;(dom/p nil (dom/span nil order-email))
           (dom/a
             (->> (css/button-hollow {:href (str "mailto:" order-email "?subject=SULO Live order #" (:db/id order) " from " store-name)})
                  (css/add-class :small))
@@ -223,10 +216,7 @@
                            (dom/p nil (dom/span nil (:db/id product))
                                   (dom/br nil)
                                   (dom/small nil (:order.item/title oi))))
-                         ;(grid/column
-                         ;  (css/add-class :order-item-info)
 
-                         ;  (dom/p nil (dom/span nil (:order.item/title oi))))
                          (grid/column
                            (->> (grid/column-size {:small 12 :medium 3})
                                 (grid/column-order {:small 3 :medium 2}))
@@ -301,19 +291,6 @@
           {:href (routes/url :store-dashboard/order-list (:route-params current-route))}
           (dom/span nil "Back to order list")))
 
-      ;(grid/row
-      ;  (css/align :bottom)
-      ;  ;(grid/column
-      ;  ;  nil
-      ;  ;  ;(dom/h3 nil (dom/span nil "Edit product - ") (dom/small nil item-name))
-      ;  ;  (dom/h3 nil (dom/span nil "Order - ") (dom/small nil (str "#" (:db/id order)))))
-      ;  (grid/column
-      ;    nil
-      ;    (when (or (= order-status :order.status/created)
-      ;              (= order-status :order.status/paid))
-      ;      (dom/a
-      ;        (->> (css/button-hollow {:onClick #(om/update-state! component assoc :modal :modal/mark-as-canceled?)})
-      ;             (css/add-class :alert)) "Cancel Order"))))
       )))
 
 (defn create-order [component]
@@ -339,8 +316,6 @@
                                           {:on-change (fn [p]
                                                         (debug "P: " p)
                                                         (om/update-state! component update :items conj (:value p)))}))
-            ;(my-dom/select {:id           (get form-elements :input-product)}
-            ;               (my-dom/option {:value "test"} "Hej"))
             ))))))
 
 (defn order-not-found [component]
@@ -387,14 +362,6 @@
                     {:order/store [{:store/profile [:store.profile/name {:store.profile/photo [:photo/path]}]}]}]}
      :query/current-route])
 
-  ;static store-common/IDashboardNavbarContent
-  ;(render-subnav [_ current-route]
-  ;  (menu/breadcrumbs
-  ;    nil
-  ;    (menu/item nil (dom/a {:href (routes/url :store-dashboard/order-list (:route-params current-route))}
-  ;                          "Orders"))
-  ;    (menu/item nil (dom/span nil "Order details"))))
-
   Object
   #?(:cljs
      (open-dropdown
@@ -435,37 +402,13 @@
       (debug "CURRENT ORDER: " order)
       (dom/div
         {:id "sulo-edit-order"}
-        ;(when-not did-mount?
-        ;  (common/loading-spinner nil))
         (dom/h1 (css/show-for-sr) "Edit order")
-        ;(grid/row-column
-        ;  nil
-        ;  (menu/breadcrumbs
-        ;    nil
-        ;    (menu/item nil (dom/a {:href (routes/url :store-dashboard/order-list {:store-id store-id})}
-        ;                          "Orders"))
-        ;    (menu/item nil (dom/span nil "Order details"))))
         (if (common/is-order-not-found? this)
           (order-not-found this)
           (if (common/is-new-order? this)
             (create-order this)
             (edit-order this)))
 
-        ;(when-not order
-        ;  (my-dom/div
-        ;    (->> (css/grid-row)
-        ;         (css/grid-column))
-        ;    (my-dom/div nil
-        ;                (my-dom/a
-        ;                  (->> (css/button)
-        ;                       css/button-hollow)
-        ;                  (my-dom/span nil "Cancel"))
-        ;                (my-dom/a
-        ;                  (->> {:onClick #(when-not is-loading? (.create-order this))}
-        ;                       (css/button))
-        ;                  (if is-loading?
-        ;                    (my-dom/i {:className "fa fa-spinner fa-spin"})
-        ;                    (my-dom/span nil "Save"))))))
         ))))
 
 (def ->OrderEditForm (om/factory OrderEditForm))

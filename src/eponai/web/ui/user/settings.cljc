@@ -108,8 +108,6 @@
                                                                              (-> s
                                                                                  (assoc :photo-upload photo)
                                                                                  (dissoc :queue-photo))))
-                                               ;(msg/om-transact! this [(list 'photo/upload {:photo photo})
-                                               ;                        :query/user])
                                                )})))))
                 (v/input {:type         "text"
                           :placeholder  "Username"
@@ -127,14 +125,6 @@
             (if is-loading?
               (dom/i {:classes ["fa fa-spinner fa-spin"]})
               (dom/span nil "Save"))))))))
-
-;(def payment-logos {"Visa"             "icon-cc-visa"
-;                    "American Express" "icon-cc-amex"
-;                    "MasterCard"       "icon-cc-mastercard"
-;                    "Discover"         "icon-cc-discover"
-;                    "JCB"              "icon-cc-jcb"
-;                    "Diners Club"      "icon-cc-diners"
-;                    "Unknown"          "icon-cc-unknown"})
 
 (defn shipping-info-modal [component]
   (let [{:query/keys [stripe-customer countries]} (om/props component)
@@ -257,9 +247,6 @@
                      :autoComplete "shipping region"
                      :type         "text"
                      :placeholder  "Province/State (optional)"}))))))
-        ;(callout/callout-small
-        ;  (css/add-class :warning))
-        ;(dom/p nil (dom/small nil "Shipping address cannot be saved yet. We're working on this."))
         (dom/p (css/add-class :text-alert) (dom/small nil (str error-message)))
 
         (dom/div
@@ -392,7 +379,6 @@
   (save-payment-info [this selected-card]
     #?(:cljs
        (let [{:query/keys [stripe-customer]} (om/props this)
-             ;{:payment/keys [selected-card]} (om/get-state this)
              default-card (some #(when (= (:stripe.card/id %) (:stripe/default-source stripe-customer)) %) (:stripe/sources stripe-customer))]
 
          (mixpanel/track "Save payment info")
@@ -505,11 +491,6 @@
                     (dom/span nil (:user/email auth)))
                   (grid/column
                     (grid/column-size {:small 12 :medium 6})
-                    ;(dom/a
-                    ;  (->> (css/button-hollow)
-                    ;       (css/add-class :secondary)
-                    ;       (css/add-class :small))
-                    ;  (dom/span nil "Edit email"))
                     )
                   ))
               (cond (= modal :modal/edit-profile)
@@ -566,7 +547,6 @@
                       (let [{:stripe.card/keys [brand last4]} default-card]
                         (dom/div
                           (css/add-classes [:payment-card :default-card])
-                          ;(dom/div {:classes ["icon" (get payment-logos brand "icon-cc-unknown")]})
                           (dom/p nil
                                  (dom/span (css/add-class :payment-brand) brand)
                                  (dom/br nil)
@@ -596,14 +576,7 @@
                             {:shipping.address/keys [street street2 locality postal region country]} address]
                         (dom/div
                           (css/add-classes [:shipping :default-shipping])
-                          ;(dom/div {:classes ["icon" (get payment-logos brand "icon-cc-unknown")]})
                           (common/render-shipping shipping nil)
-                          ;(dom/p nil
-                          ;       (dom/span nil name)
-                          ;       (dom/br nil)
-                          ;       (dom/small nil (str street ", " locality " " postal))
-                          ;       (dom/br nil)
-                          ;       (dom/small nil (string/join ", " [region (:country/code country)])))
                           ))
                       (dom/p nil (dom/small nil (dom/i nil "No saved address")))
                       )
@@ -688,7 +661,5 @@
                         (css/add-classes [:twitter :disabled] {:onClick #(.authorize-social this :social/twitter)})
                         (dom/i {:classes ["fa fa-twitter fa-fw"]})
                         (dom/span nil "Connect to Twitter")))))))))))))
-
-;(def ->UserSettings (om/factory UserSettings))
 
 (router/register-component :user-settings UserSettings)
