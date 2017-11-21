@@ -338,8 +338,13 @@
           (dom/div
             (css/add-class :section-title)
             (dom/h2 nil "Photos"))
+
           (callout/callout
             nil
+            (dom/p
+              (css/add-class :text-alert)
+              (dom/strong nil "Note: ")
+              (dom/i nil "photo uploads do not work properly in this demo version of SULO Live."))
             (grid/row
               (->> (css/add-class :photo-section)
                    (grid/columns-in-row {:small 3 :medium 4 :large 5}))

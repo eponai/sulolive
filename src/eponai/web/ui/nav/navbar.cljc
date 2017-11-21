@@ -37,7 +37,10 @@
     (merge {:href "/"
             :id   "navbar-brand"}
            opts)
-    (dom/span nil "Sulo Live")))
+    (dom/span nil
+              (dom/span nil "Sulo Live")
+              (dom/br nil)
+              (dom/small (css/add-class :text-alert) "DEMO"))))
 
 (defn user-dropdown [component user owned-store]
   (let [{:keys [dropdown-key]} (om/get-state component)

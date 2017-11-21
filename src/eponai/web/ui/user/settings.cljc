@@ -71,6 +71,10 @@
       (grid/row-column
         (->> (css/text-align :center)
              (css/add-class :edit-profile-modal))
+        (dom/p
+          (css/add-class :text-alert)
+          (dom/strong nil "Note: ")
+          (dom/i nil "photo uploads do not work properly in this demo version of SULO Live."))
         (dom/h2 nil "Edit profile")
         (dom/p nil (dom/small nil "Update your information seen by other users on SULO Live."))
         (menu/vertical
@@ -148,10 +152,11 @@
        :size     :full}
       (grid/row-column
         (css/text-align :center)
-        (callout/callout
-          (css/add-class :warning)
+
+        (dom/p
+          (css/add-class :text-alert)
           (dom/strong nil "Note: ")
-          (dom/span nil "Shipping address can't be saved in this demo version of SULO Live"))
+          (dom/i nil "Shipping address cannot be saved in this demo version of SULO Live. "))
         (dom/h2 nil "Shipping address")
         (dom/p nil
                (dom/small nil "Shipping address to use at checkout."))
@@ -478,6 +483,10 @@
         (grid/row-column
           nil
           (dom/h1 nil "Settings")
+          (dom/p
+            (css/add-class :text-alert)
+            (dom/strong nil "Note: ")
+            (dom/i nil "some settings cannot be updated properly in this demo version of SULO Live."))
           (dom/div
             (css/add-class :section-title)
             (dom/span nil "Account"))

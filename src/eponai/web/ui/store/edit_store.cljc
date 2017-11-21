@@ -68,6 +68,10 @@
             {:onClick #(do
                         (mixpanel/track "Store: Edit about info")
                         (om/update-state! component assoc :edit/info true))})))
+      (dom/p
+        (css/add-class :text-alert)
+        (dom/strong nil "Note: ")
+        (dom/i nil "photo uploads do not work properly in this demo version of SULO Live."))
 
       (when (and (:edit/info state) (:error/about state))
         (dom/p (css/add-class :section-error) (dom/small (css/add-class :text-alert) (:error/about state))))

@@ -55,6 +55,12 @@
           (dom/div
             (css/add-class :section-title)
             (dom/h1 nil "Live stream")))
+        (grid/row-column
+          nil
+          (dom/p
+            (css/add-class :text-alert)
+            (dom/strong nil "Note: ")
+            (dom/i nil "Live video streaming will not work properly in this demo version of SULO Live")))
         (grid/row
           nil
           (grid/column
