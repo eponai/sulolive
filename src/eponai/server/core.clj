@@ -32,7 +32,7 @@
                                                               (env/env :server-allow-http)
                                                               (assoc ::system/disable-ssl true))))
           server (get-in system [:system/aleph :server])]
-      (mixpanel/set-token (if is-demo? ::mixpanel/token-dev ::mixpanel/token-release))
+      (mixpanel/set-token (if is-demo? ::mixpanel/token-tests ::mixpanel/token-release))
       (aleph.netty/wait-for-close server))
     (catch Throwable e
       (error "Error in -main: " e)

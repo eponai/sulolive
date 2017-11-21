@@ -24,19 +24,20 @@
        (reset! token-atom token))))
 
 (defn track [event & [properties]]
-  #?(:cljs (.track js/mixpanel event (clj->js properties))
-     :clj  (if-let [token @token-atom]
-             (if-not (= token (::token-tests tokens))
-               (let [params (json/write-str {:event      event
-                                             :properties (assoc properties
-                                                           :token token
-                                                           :time (date/current-secs))})]
-                 (http/get "https://api.mixpanel.com/track"
-                           {:query-params {:data (String. (base64/encode params true))}}))
-               (info "Mixpanel - fake track " {:event event :properties properties}))
-             (throw (ex-info "Mixpanel token is nil, make sure to set token before first call to track"
-                             {:event      event
-                              :properties properties})))))
+  (comment
+    #?(:cljs (.track js/mixpanel event (clj->js properties))
+       :clj  (if-let [token @token-atom]
+               (if-not (= token (::token-tests tokens))
+                 (let [params (json/write-str {:event      event
+                                               :properties (assoc properties
+                                                             :token token
+                                                             :time (date/current-secs))})]
+                   (http/get "https://api.mixpanel.com/track"
+                             {:query-params {:data (String. (base64/encode params true))}}))
+                 (info "Mixpanel - fake track " {:event event :properties properties}))
+               (throw (ex-info "Mixpanel token is nil, make sure to set token before first call to track"
+                               {:event      event
+                                :properties properties}))))))
 
 (defn set-alias [user-id]
   #?(:cljs (.alias js/mixpanel (str user-id))))
