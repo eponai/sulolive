@@ -2,13 +2,11 @@
 # Sulo
 The live marketplace online - A product built to make shopping online more interactive by combining live streaming with small business e-commerce.
 
-## Status
-
 ```
 Please excuse the mess. We're working here 👷‍♀️
 ```
 
-We've made the repository public, but we're still working on this README and the wiki
+We've made the repository public, but we're still working on this README and the wiki.
 
 ## Rationale - Why open source the whole product
 
