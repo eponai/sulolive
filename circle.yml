@@ -106,7 +106,7 @@ jobs:
           key: foundation09-deps-{{ checksum "sulo-style/package.json" }}-{{ checksum "sulo-style/bower.json" }}
       - run:
           name: "Compile css"
-          command: SKIP_INSTALL=true scripts/compile-css.sh
+          command: scripts/compile-css.sh
       - persist_to_workspace:
           root: .
           paths:
