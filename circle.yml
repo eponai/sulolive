@@ -1,5 +1,5 @@
 defaults: &defaults
-  working_directory: ~/sulo
+  working_directory: ~/sulolive
   docker:
     - image: circleci/clojure:lein-2.7.1
   environment:
@@ -28,7 +28,7 @@ jobs:
             - ~/.lein
 
   npm_deps:
-    working_directory: ~/sulo
+    working_directory: ~/sulolive
     docker:
       - image: circleci/node:8.1.4
     steps:
@@ -93,7 +93,7 @@ jobs:
       - run: ./scripts/run-cljs-tests.sh
 
   build_css:
-    working_directory: ~/sulo
+    working_directory: ~/sulolive
     docker:
       - image: circleci/node:8.1.4
     steps:
@@ -137,7 +137,7 @@ jobs:
           paths: target/uberjar/budget-uberjar.jar
 
   docker_build_test:
-    working_directory: ~/sulo
+    working_directory: ~/sulolive
     docker:
       - image: docker:17.05.0-ce-git
     environment:
@@ -148,7 +148,7 @@ jobs:
       - setup_remote_docker
 
       - attach_workspace:
-          at: ~/sulo
+          at: ~/sulolive
 
       - run:
           name: Log in to dockerhub
@@ -175,7 +175,7 @@ jobs:
             fi
 
   deploy:
-    working_directory: ~/sulo
+    working_directory: ~/sulolive
     docker:
       - image: sulolive/awscli:0.0.3
     steps:
