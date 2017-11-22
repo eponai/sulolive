@@ -10,6 +10,10 @@ We've made the repository public, but we're still working on this README and the
 
 CircleCI: [![CircleCI](https://circleci.com/gh/eponai/sulolive/tree/master.svg?style=svg&circle-token=d51f6b92f4dfb834f78b6550371a0588aa39d572)](https://circleci.com/gh/eponai/sulolive/tree/master)
 
+# Demo
+
+http://sulo-demo.us-east-1.elasticbeanstalk.com
+
 ## Rationale - Why open source the whole product
 
 When learning Clojure, it was useful to look at CircleCI's open sourced front end, just to see how a real project can be structured, which problems they need to solve and how they compose libraries as well as hacks to make things work. As our startup isn't running anymore, we hope that our code can be helpful to someone. The entire frontend and server is available, as well as a skeleton for a react-native app.
