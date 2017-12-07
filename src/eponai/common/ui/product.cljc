@@ -153,6 +153,7 @@
                  (js/setTimeout #(om/update-state! this assoc :added-to-bag? false) 2000)))))
   (render [this]
     (let [{:keys [selected-tab added-to-bag? active-photo-index img-dimensions]} (om/get-state this)
+          {:keys [on-leave]} (om/get-computed this)
           {:store.item/keys [price photos details skus]
            item-name        :store.item/name :as item} (om/props this)
           store (:store/_items item)
@@ -288,8 +289,7 @@
               (css/align :middle)
               (grid/column
                 (grid/column-size {:small 2 :medium 1})
-                (photo/store-photo store {:transformation :transformation/thumbnail})
-                )
+                (photo/store-photo store {:transformation :transformation/thumbnail}))
 
               (grid/column
                 (grid/column-size {:small 7 :medium 9})
@@ -298,12 +298,12 @@
                 (dom/div
                   (css/add-class :store-name)
                   (dom/a
-                    {:href (routes/store-url store :store)}
+                    {:href (routes/store-url store :store)
+                     :onClick on-leave}
                     (dom/span nil (:store.profile/name (:store/profile store)))))
                 (dom/div
                   (css/add-class :store-tagline)
-                  (dom/p nil (:store.profile/tagline (:store/profile store))))
-                )
+                  (dom/p nil (:store.profile/tagline (:store/profile store)))))
               (grid/column
                 (->> (css/text-align :right)
                      (grid/column-size {:small 3 :medium 2}))
@@ -314,11 +314,6 @@
           (grid/row-column
             (css/add-class :product-details)
             (dom/p nil (dom/strong nil "Product details"))
-            (quill/->QuillRenderer {:html description-html}))
-
-
-
-
-          )))))
+            (quill/->QuillRenderer {:html description-html})))))))
 
 (def ->Product (om/factory Product))

@@ -211,7 +211,8 @@
           (common/modal
             {:on-close #(.close-modal this)
              :size     :large}
-            (product/->Product item)))
+            (product/->Product (om/computed item
+                                            {:on-leave #(.close-modal this)}))))
 
         (dom/a
           (->> {:onClick on-click
