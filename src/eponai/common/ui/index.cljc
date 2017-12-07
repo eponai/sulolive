@@ -18,6 +18,12 @@
     [eponai.common.ui.stream :as stream]
     [eponai.common.photos :as photos]))
 
+(defn scroll-horizontal [el-id & [direction]]
+  #?(:cljs (let [element (web.utils/element-by-id el-id)]
+             (if (= direction :left)
+               (web.utils/scroll-horizontal-distance element (- 0 js/window.innerWidth) 500)
+               (web.utils/scroll-horizontal-distance element js/window.innerWidth 500)))))
+
 (defn collection-element [{:keys [href url title full? url-small photo-id alt]}]
   ;; Use the whole thing as hover elem
   (dom/a
@@ -101,14 +107,28 @@
                                        :class "online-channels"}
                                       (dom/span nil "Latest Live streams")
 
-                                      (grid/row
-                                        (->>
-                                          (grid/columns-in-row {:small 2 :medium 3 :large 5}))
-                                        (map (fn [p]
-                                               (grid/column
-                                                 (css/add-class :online-stream)
-                                                 (ci/->StoreVod p)))
-                                             featured-vods))
+                                      (dom/div
+                                        nil
+                                        (grid/row
+                                          (->> {:id "content-row-videos"}
+                                            (grid/columns-in-row {:small 2 :medium 3 :large 5}))
+                                          (map (fn [p]
+                                                 (grid/column
+                                                   (css/add-class :online-stream)
+                                                   (ci/->StoreVod p)))
+                                               featured-vods))
+                                        (dom/div
+                                          (css/add-classes [:scroll-button-container :right])
+                                          (dom/a
+                                            (->> {:onClick #(scroll-horizontal "content-row-videos")}
+                                                 (css/add-classes [:scroll-button :right]))
+                                            (dom/i (css/add-classes [:fa :fa-chevron-right]))))
+                                        (dom/div
+                                          (css/add-classes [:scroll-button-container :left])
+                                          (dom/a
+                                            (->> {:onClick #(scroll-horizontal "content-row-videos" :left)}
+                                                 (css/add-classes [:scroll-button :left]))
+                                            (dom/i (css/add-classes [:fa :fa-chevron-left])))))
                                       ""))
 
             (dom/div
@@ -196,7 +216,7 @@
                 {:classes ["sulo-items-container"]}
 
                 (grid/row
-                  (->> {:id    "content-row-products"
+                  (->> {:id    "content-row-brands"
                         :style {:paddingLeft 20}}
                        (grid/columns-in-row {:small 2 :medium 4 :large 7}))
                   (map (fn [store]
@@ -214,9 +234,20 @@
                         (dom/div (css/add-class :container)
                                  (dom/div (css/add-class :content) (dom/h6 nil "See more")))
 
-                        )))))
+                        ))))
+                (dom/div
+                  (css/add-classes [:scroll-button-container :right])
+                  (dom/a
+                    (->> {:onClick #(scroll-horizontal "content-row-brands")}
+                         (css/add-classes [:scroll-button :right]))
+                    (dom/i (css/add-classes [:fa :fa-chevron-right]))))
+                (dom/div
+                  (css/add-classes [:scroll-button-container :left])
+                  (dom/a
+                    (->> {:onClick #(scroll-horizontal "content-row-brands" :left)}
+                         (css/add-classes [:scroll-button :left]))
+                    (dom/i (css/add-classes [:fa :fa-chevron-left])))))
               "")
-
             (common/content-section
               {:href  (routes/url :browse/gender (merge route-params
                                                         {:sub-category "women"}))
@@ -225,8 +256,8 @@
               (dom/div
                 nil
                 (grid/row
-                  (->>
-                    (grid/columns-in-row {:small 2 :medium 4 :large 6}))
+                  (->> {:id "products-section"}
+                       (grid/columns-in-row {:small 2 :medium 4 :large 6}))
                   (map-indexed
                     (fn [i p]
                       (grid/column
@@ -244,7 +275,20 @@
                                                                  {:sub-category "women"}))}
                         (dom/div (css/add-class :container)
                                  (dom/div (css/add-class :content) (dom/h6 nil "See more")))
-                        )))))
+                        ))))
+
+                (dom/div
+                  (css/add-classes [:scroll-button-container :right])
+                  (dom/a
+                    (->> {:onClick #(scroll-horizontal "products-section")}
+                         (css/add-classes [:scroll-button :right]))
+                    (dom/i (css/add-classes [:fa :fa-chevron-right]))))
+                (dom/div
+                  (css/add-classes [:scroll-button-container :left])
+                  (dom/a
+                    (->> {:onClick #(scroll-horizontal "products-section" :left)}
+                         (css/add-classes [:scroll-button :left]))
+                    (dom/i (css/add-classes [:fa :fa-chevron-left])))))
               "")
 
 

@@ -38,6 +38,7 @@
 	}
 
 	&.content {
+		position: relative;
 		.row {
 			padding: 0 0.5rem;
 			@include breakpoint(medium) {
@@ -58,6 +59,33 @@
 			&::-webkit-scrollbar-thumb {
 					background: map-get($foundation-palette,primary);
 			}
+
+			
 		}	
+		// > div {
+		// 	position: relative;
+		// 	display: flex;
+		// 	align-items; center;
+		// }
+		.scroll-button-container {
+			position:absolute;
+			top: 0;
+			bottom: 0;
+			display: flex;
+			align-items: center;
+			&.left {
+				left: 0;
+			}
+			&.right {
+				right: 0;
+			}
+			a {
+				padding: 1.5rem 1rem;
+				background: rgba($white, 0.5);
+				font-size: 1.25rem;
+				color: $dark-gray;
+				box-shadow: 0 0 3px 0 rgba($black, 0.1);
+			}
+		}
 	}
 }

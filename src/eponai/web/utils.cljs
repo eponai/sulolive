@@ -40,6 +40,9 @@
       (set! (.-className el) (string/trim new-classname)))))
 
 (defn scroll-to
+  "Scroll a parent element vertically to the top position of a given child element 'el'.
+
+  If no parent is provided, will scroll document.body."
   ([el d]
     (scroll-to (.-body js/document) el d))
   ([parent el d]
@@ -52,6 +55,9 @@
                         (scroll-to parent el (- d 10))))))))
 
 (defn scroll-horizontal-to
+  "Scroll a parent element horizontally to the left position of a given child element 'el'.
+
+  If no parent is provided, will scroll document.body."
   ([el d]
    (scroll-horizontal-to (.-body js/document) el d))
   ([parent el d]
@@ -62,10 +68,14 @@
        (js/setTimeout (fn []
                         (set! (.-scrollLeft parent) (+  (.-scrollLeft parent) per-tick))
                         (scroll-horizontal-to parent el (- d 10))))))))
-;(defn scroll-position [el d]
-;  (debug "Set scroll: " (.-scrollLeft el) " to: " (+ (.-scrollLeft el) d))
-;  (when el
-;    (set! (.-scrollLeft el) (+ (.-scrollLeft el) d))))
+
+(defn scroll-horizontal-distance
+  [parent dist d]
+  (when (< 0 d)
+    (let [per-tick (* 10 (/ dist d))]
+      (js/setTimeout (fn []
+                       (set! (.-scrollLeft parent) (+ (.-scrollLeft parent) per-tick))
+                       (scroll-horizontal-distance parent (- dist per-tick) (- d 10)))))))
 
 (defn meta-content-by-id [id]
   (some-> (.getElementById js/document id)
