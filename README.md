@@ -10,11 +10,18 @@ We've made the repository public, but we're still working on this README and the
 
 CircleCI: [![CircleCI](https://circleci.com/gh/eponai/sulolive/tree/master.svg?style=svg&circle-token=d51f6b92f4dfb834f78b6550371a0588aa39d572)](https://circleci.com/gh/eponai/sulolive/tree/master)
 
-## Demo
+## Live demo
 
 http://sulo-demo.us-east-1.elasticbeanstalk.com
 
-**Insert section describing the demo?**
+The demo includes the full web application for both visitors and logged in users. We are using an in-memory database, so you are welcome to play around and make any changes you want. 
+
+#### A few things to consider:
+- **Database**: Since the demo can be used by anyone, expect changes you make to stick around for a while. We might reset the demo sometimes, but we don't have a schedule for that.
+- **Login**: In the code you'll see our implementation a passwordless login flow using Auth0. We're bypassing that flow in the demo to let anyone login and see the shop owner's UI.
+- **Payments**: Stripe was integrated as the payment service. We use our own fake version of Stripe in this demo, so any functionality involving payments might not behave as expected (you'll not be charged money at any point).
+- **Live streaming**: To save on costs, we had to shut down our streaming server. You'll see an animated example video in place of the streams.
+- **Photo uploads**: Again to save costs, we are on a free tier with our photo storage service and have a limit on uploading photos. Expect any photo uploads to not work properly.
 
 ## Rationale - Why open source the whole product
 
@@ -28,7 +35,7 @@ We'll highlight some of the problems we've had to solve, some that might be diff
 
 ## Installation
 
-* Clone this project ```git clone git@github.com:jourmoney/sulo.git```
+* Clone this project ```git clone git@github.com:eponai/sulo.git```
 * Navigate to the cloned sulo/ folder ```cd sulo```
 
 ## Usage
