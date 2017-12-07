@@ -164,7 +164,7 @@ jobs:
       - run: docker ps -l -q | xargs docker logs
       - run:
           name: Test docker image
-          command: "docker run --network container:runningapp appropriate/curl -H 'x-forwarded-proto: https' --retry 30 --retry-delay 1 --retry-connrefused http://localhost:$PORT"
+          command: "docker run --network container:runningapp mwendler/wget:latest --header 'x-forwarded-proto: https' --tries=30 --wait 1 --retry-connrefused http://localhost:$PORT"
       - run: docker ps -l -q | xargs docker logs
       - run:
           name: "Push to dockerhub when on the demo branch"
