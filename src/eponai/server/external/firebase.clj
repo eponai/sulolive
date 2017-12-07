@@ -201,18 +201,15 @@
     (-get-device-token [this user-id]
       "some token")))
 
-(defn firebase [{:keys [server-key private-key private-key-id service-account database-url in-prod?] :as conf}]
+(defn firebase [{:keys [server-key private-key private-key-id service-account database-url] :as conf}]
   (if (and (some? service-account) (some? database-url))
     (map->Firebase {:service-account service-account
                     :server-key      server-key
                     :private-key     private-key
                     :private-key-id  private-key-id
                     :database-url    database-url})
-    (do (if in-prod?
-          (let [missing-keys (into []
-                                   (filter (comp nil? #(get conf %)))
-                                   [:service-account :database-url])]
-            (throw (ex-info (str "Unable to create a real firebase component. Missing keys: " missing-keys)
-                            {:missing-keys missing-keys})))
-          (warn "Got nil for service account. Using firebase-stub."))
-        (firebase-stub))))
+    (let [missing-keys (into []
+                             (filter (comp nil? #(get conf %)))
+                             [:service-account :database-url])]
+      (warn (str "Unable to create a real firebase component. Missing keys: " missing-keys ". Using firebase-stub."))
+      (firebase-stub))))
