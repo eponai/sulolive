@@ -282,6 +282,7 @@
                                        [cljsjs/nvd3 "1.8.2-1"]
                                        [figwheel-sidecar "0.5.10"]
                                        [com.cemerick/piggieback "0.2.1"]
+                                       [criterium "0.4.4"]
                                        ]
                         :repl-options {:timeout 120000
                                        :init-ns eponai.repl

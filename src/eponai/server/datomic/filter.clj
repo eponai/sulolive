@@ -3,6 +3,7 @@
     [datomic.api :as datomic]
     [eponai.common.database :as db]
     [eponai.server.datomic.query :as query]
+    [datascript.core :as datascript]
     [taoensso.timbre :as timbre :refer [debug trace]]
     ))
 
