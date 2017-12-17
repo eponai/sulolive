@@ -27,21 +27,30 @@ The demo includes the full web application for both visitors and logged in users
 
 When learning Clojure, it was useful to look at CircleCI's open sourced frontend, just to see how a real project can be structured, which problems they need to solve and how they compose libraries as well as hacks to make things work. As our startup isn't running anymore, we hope that our code can be helpful to someone - just as CircleCI's code was helpful to us. The entire frontend and server is available as well as a skeleton for a react-native app. We've even included all the scripts we used to deploy the product, so you can even take a look at them.
 
+## Project buzzwords
+* Fullstack om.next
+  * Web, Mobile and Server
+* Datomic and Datascript with a unified API
+* Server side rendering
+* Fullstack testing
+* Client and Server code reloading on code change
+
 ## Lessons learned
 
-We've described our experience working with an om.next, datascript and datomic architecture in the github wiki. The pages contain ideas, problems and solutions that we've had to figure out, and we've included links and code example where it made sense to us. Here they are:
+We've described our experience working with an om.next, datascript and datomic architecture in the github wiki. The pages contain ideas, problems and solutions that we've had to figure out, and we've included links and code example where it made sense to us.
 
-### Larger problems and ideas
-* [Remote responses](https://github.com/eponai/sulolive/wiki/Remote-responses)
+We'll start with the more general stuff that might help you in your next project:
+
+* [Handling remote responses](https://github.com/eponai/sulolive/wiki/Remote-responses)
 * [Restricting client queries](https://github.com/eponai/sulolive/wiki/Restricting-client-queries)
 * [Composable datalog queries](https://github.com/eponai/sulolive/wiki/Composable-datalog-queries)
 * [Single point of server calls & git rebase app state](https://github.com/eponai/sulolive/wiki/Single-point-of-server-calls-&-git-rebase-app-state)
-* [Component & om.next shared](https://github.com/eponai/sulolive/wiki/Component-&-om.next-shared)
 * [Datomic queries returning as little as possible](https://github.com/eponai/sulolive/wiki/Datomic-queries---returning-as-little-as-possible)
-
-### Useful om.next lessons
-* [Caching om.next ui props](https://github.com/eponai/sulolive/wiki/Caching-om.next-ui--props)
+* [Component & om.next shared](https://github.com/eponai/sulolive/wiki/Component-&-om.next-shared)
 * [Full stack testing](https://github.com/eponai/sulolive/wiki/Full-stack-testing)
+
+### Om.next tricks
+* [Caching om.next ui props](https://github.com/eponai/sulolive/wiki/Caching-om.next-ui--props)
 * [Parser middleware](https://github.com/eponai/sulolive/wiki/Parser-middleware)
 * [om.next dedpue parser](https://github.com/eponai/sulolive/wiki/om.next-dedpue-parser)
 
