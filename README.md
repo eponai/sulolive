@@ -27,16 +27,35 @@ The demo includes the full web application for both visitors and logged in users
 
 When learning Clojure, it was useful to look at CircleCI's open sourced frontend, just to see how a real project can be structured, which problems they need to solve and how they compose libraries as well as hacks to make things work. As our startup isn't running anymore, we hope that our code can be helpful to someone - just as CircleCI's code was helpful to us. The entire frontend and server is available as well as a skeleton for a react-native app. We've even included all the scripts we used to deploy the product, so you can even take a look at them.
 
-**What more should we put in the rationale?**
+## Lessons learned
 
-Om.next alpha-1 came out a few weeks after we started building this app and we adopted it right away. Having client queries affected our whole architecture and it meant that we had to solve problems we’d never encountered before. We also embraced having the same database api on the client and server with datomic and datascript. Hopefully our project can be useful for anyone who wants to see what the code is like in such a project. When creating a startup - especially one that isn’t very successful - we’ve rushed some solutions so everything is not necessarily clean, but it also goes to show that Clojure is a pretty good environment for rushing out code without it getting too messy.
+We've described our experience working with an om.next, datascript and datomic architecture in the github wiki. The pages contain ideas, problems and solutions that we've had to figure out, and we've included links and code example where it made sense to us. Here they are:
 
-We'll highlight some of the problems we've had to solve, some that might be different because of the architecture. More than 2/3 of the code is written in .cljc, to enable us to share most of the code between web, mobile and server.
+### Larger problems and ideas
+* [Remote responses](https://github.com/eponai/sulolive/wiki/Remote-responses)
+* [Restricting client queries](https://github.com/eponai/sulolive/wiki/Restricting-client-queries)
+* [Composable datalog queries](https://github.com/eponai/sulolive/wiki/Composable-datalog-queries)
+* [Single point of server calls & git rebase app state](https://github.com/eponai/sulolive/wiki/Single-point-of-server-calls-&-git-rebase-app-state)
+* [Component & om.next shared](https://github.com/eponai/sulolive/wiki/Component-&-om.next-shared)
+* [Datomic queries returning as little as possible](https://github.com/eponai/sulolive/wiki/Datomic-queries---returning-as-little-as-possible)
+
+### Useful om.next lessons
+* [Caching om.next ui props](https://github.com/eponai/sulolive/wiki/Caching-om.next-ui--props)
+* [Full stack testing](https://github.com/eponai/sulolive/wiki/Full-stack-testing)
+* [Parser middleware](https://github.com/eponai/sulolive/wiki/Parser-middleware)
+* [om.next dedpue parser](https://github.com/eponai/sulolive/wiki/om.next-dedpue-parser)
+
+### Random stuff
+* [Datascript string search](https://github.com/eponai/sulolive/wiki/Datascript-string-search)
+* [Datomic database functions used from normal code](https://github.com/eponai/sulolive/wiki/Datomic-database-functions-used-from-normal-code)
+* [Pagination](https://github.com/eponai/sulolive/wiki/Pagination)
+* [SEO](https://github.com/eponai/sulolive/wiki/SEO)
+* [Optimizing Server side rendering](https://github.com/eponai/sulolive/wiki/Optimizing-Server-side-rendering)
 
 ## Installation
 
-* Clone this project ```git clone git@github.com:eponai/sulo.git```
-* Navigate to the cloned sulo/ folder ```cd sulo```
+* Clone this project ```git clone git@github.com:eponai/sulolive.git```
+* Navigate to the cloned sulolive/ folder ```cd sulolive```
 
 ## Usage
 ### Server
@@ -47,21 +66,4 @@ We'll highlight some of the problems we've had to solve, some that might be diff
 #### Web
 * Start web client repl: ```rlwrap lein figwheel-web```
 * Open Browser and navigate to: ```localhost:3000```
-
-## Options
-
-FIXME: listing of options this app accepts.
-
-## Examples
-
-...
-
-### Bugs
-
-...
-
-### Any Other Sections
-### That You Think
-### Might be Useful
-
 
