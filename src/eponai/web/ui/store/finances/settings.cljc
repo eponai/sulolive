@@ -209,7 +209,7 @@
   static om/IQuery
   (query [_]
     [:query/messages
-     :query/stripe-country-spec
+     {:query/stripe-country-spec [:supported-bank-account-currencies]}
      {:query/stripe-account [:stripe/id
                              :stripe/external-accounts
                              :stripe/default-currency

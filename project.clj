@@ -80,6 +80,7 @@
   :dependencies [
                  [org.clojure/clojure "1.9.0-alpha17"]
                  [org.clojars.petterik/om "1.0.0-alpha49-SNAPSHOT-1"]
+                 [petterik/lajt "0.1.0-SNAPSHOT"]
                  ;;[org.omcljs/om "1.0.0-alpha46"]
                  [io.netty/netty-all "4.1.11.Final"]
                  [aleph "0.4.3" :exclusions [io.netty/netty-all]]

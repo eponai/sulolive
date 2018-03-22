@@ -18,6 +18,13 @@
     [eponai.client.chat :as client.chat]
     [eponai.common.browse :as browse]))
 
+(defn one [m]
+  (assoc m :find '[?e .]))
+
+(defn all [m]
+  (assoc m :find '[[?e ...]]))
+
+(defmulti lajt-read (fn [k] k))
 
 
 ;; ################ Local reads  ####################
@@ -26,23 +33,41 @@
   [{:keys [db query target]} _ _]
   (when (nil? target)
     {:value (db/pull-one-with db query {:where '[[?e :ui/singleton :ui.singleton/state]]})}))
+(defmethod lajt-read :query/ui-state
+  [_]
+  {:query '{:find  [?e .]
+            :where [[?e :ui/singleton :ui.singleton/state]]}})
 
 (defmethod client-read :query/loading-bar
   [{:keys [db query target]} _ _]
   (when-not target
     {:value (do (debug "Query/loading bar: " query) (db/pull-one-with db query {:where '[[?e :ui/singleton :ui.singleton/loading-bar]]}))}))
+(defmethod lajt-read :query/loading-bar
+  [_]
+  {:query '{:find [?e .]
+            :where [[?e :ui/singleton :ui.singleton/loading-bar]]}
+   :before (fn [{:keys [query]}]
+             (debug "Query/loading bar: " query))})
 
 (defmethod client-read :query/login-modal
   [{:keys [db query target]} _ _]
   (when-not target
     {:value (db/pull-one-with db query {:where '[[?e :ui/singleton :ui.singleton/login-modal]]})}))
+(defmethod lajt-read :query/login-modal
+  [_]
+  {:query '{:find  [?e .]
+            :where [[?e :ui/singleton :ui.singleton/login-modal]]}})
 
 (defmethod client-read :query/notifications
   [{:keys [db query target]} _ _]
   (when-not target
     {:value (db/pull-all-with db query {:where '[[?n :ui/singleton :ui.singleton/notify]
                                                  [?n :ui.singleton.notify/notifications ?e]]})}))
-
+(defmethod lajt-read :query/login-modal
+  [_]
+  {:query '{:find  [[?e ...]]
+            :where [[?n :ui/singleton :ui.singleton/notify]
+                    [?n :ui.singleton.notify/notifications ?e]]}})
 
 ;; ################ Remote reads ####################
 ;; Remote reads goes here. We share these reads
@@ -58,22 +83,26 @@
   [{:keys [db query target]} _ {:keys [states]}]
   (if target
     {:remote true}
-    {:value (if (some? states)
-              (db/pull-all-with db query {:where   '[
-                                                     [?st :status/type :status.type/open]
-                                                     [?e :store/status ?st]
-                                                     [?s :stream/state ?states]
-                                                     [?s :stream/store ?e]]
-                                          :symbols {'[?states ...] states}})
-              (db/pull-all-with db query {:where   '[
-                                                     [?st :status/type :status.type/open]
-                                                     [?e :store/status ?st]]}))}))
+    {:value (db/pull-all-with db query {:where '[
+                                                 [?st :status/type :status.type/open]
+                                                 [?e :store/status ?st]]})}))
+(defmethod lajt-read :query/stores
+  [_]
+  {:remote true
+   :query  '{:find  [[?e ...]]
+             :where [[?st :status/type :status.type/open]
+                     [?e :store/status ?st]]}})
 
 (defmethod client-read :query/store-has-streamed
   [{:keys [db query target]} _ {:keys [states]}]
   (if target
     {:remote true}
     {:value (db/pull db query [:ui/singleton :ui.singleton/state])}))
+(defmethod lajt-read :query/store-has-streamed
+  [_]
+  {:remote true
+   :lookup-ref [:ui/singleton :ui.singleton/state]})
+
 
 (defmethod client-read :query/streams
   [{:keys [db query target]} _ _]
@@ -84,7 +113,16 @@
                                                    [?s :store/status ?st]
                                                    [?e :stream/store ?s]
                                                    [?e :stream/state :stream.state/live]]})}))
+(defmethod lajt-read :query/streams
+  [_]
+  {:remote true
+   :query  '{:find  [[?e ...]]
+             :where [[?st :status/type :status.type/open]
+                     [?s :store/status ?st]
+                     [?e :stream/store ?s]
+                     [?e :stream/state :stream.state/live]]}})
 
+;; Deprecated
 (defmethod client-read :query/browse-items
   [{:keys [db target query route-params query-params]} _ _]
   (if target
@@ -98,6 +136,23 @@
                                            :else
                                            (products/find-all))))}))
 
+;; This could also be a union.
+;; Since the query is the same for all of these, one could write a union like this:
+'({:or/browse-items {:a [:a-single-read]
+                     :b [:or-this-read]}}
+   {:query [:a :b :c]})
+;; Not great.
+;; How could we do it in the read-map?
+;; Maybe - since we either way need to check if the params are the same - make
+;; it possible for the query to be a function that returns a query.
+;; We could check that it's the same query (or a new query) when we're looking at the cache.
+;; More complexity though.
+;; hmm.
+;; Is it weird for the UI component to describe the different states of the UI?
+;; Maybe not?
+;; Maybe this union query is better?
+
+
 ;; ----- Featured
 
 (defn pull-featured [db query entity-query]
@@ -109,12 +164,25 @@
        (map #(nth % 0))
        (db/pull-many db query)))
 
+(defn query-featured [featured-key where-clauses]
+  {:query '{:find [[?e ...]]
+            :where where-clauses}
+   :sort {:key-fn featured-key
+          :order :decending}})
+
 (defmethod client-read :query/top-streams
   [{:keys [db query]} _ _]
   {:remote true
-   :value (pull-featured db query {:find  '[?e ?featured]
-                            :where '[[?e :stream/featured ?featured]
-                                     [?e :stream/store ?s]]})})
+   :value  (pull-featured db query {:find  '[?e ?featured]
+                                    :where '[[?e :stream/featured ?featured]
+                                             [?e :stream/store ?s]]})})
+(defmethod lajt-read :query/top-streams
+  [_]
+  (merge
+    {:remote true}
+    (query-featured :stream/featured
+                    '[[?e :stream/featured _]
+                      [?e :stream/store ?s]])))
 
 (defmethod client-read :query/featured-streams
   [{:keys [db query]} _ _]
@@ -122,6 +190,13 @@
    :value  (pull-featured db query {:find    '[?e ?featured]
                                     :where   '[[?e :stream/featured ?featured]
                                                [?e :stream/store ?s]]})})
+(defmethod lajt-read :query/featured-streams
+  [_]
+  (merge
+    {:remote true}
+    (query-featured :stream/featured
+                    '[[?e :stream/featured _]
+                      [?e :stream/store ?s]])))
 
 (defmethod client-read :query/featured-items
   [{:keys [db query]} _ _]
@@ -130,12 +205,32 @@
                                     :where   '[
                                                [?s :store/items ?e]
                                                [?e :store.item/featured ?featured]]})})
+
+(defmethod lajt-read :query/featured-items
+  [_]
+  (merge
+    {:remote true}
+    (query-featured :store.item/featured
+                    '[[_ :store/items ?e]
+                      [?e :store.item/featured _]])))
+
+(defn featured-category [category-map]
+  (query-featured :store.item/featured
+                  (-> (products/find-with-category-names category-map)
+                      (db/merge-query {:where '[[?e :store.item/featured _]]})
+                      (:where))))
+
 (defmethod client-read :query/featured-women
   [{:keys [db query]} _ _]
   {:remote true
    :value  (pull-featured db query (-> (products/find-with-category-names {:sub-category "women"})
                                        (db/merge-query {:find '[?e ?featured]
                                                         :where '[[?e :store.item/featured ?featured]]})))})
+(defmethod lajt-read :query/featured-women
+  [_]
+  (merge
+    {:remote true}
+    (featured-category {:sub-category "women"})))
 
 (defmethod client-read :query/featured-men
   [{:keys [db query]} _ _]
@@ -143,6 +238,12 @@
    :value  (pull-featured db query (-> (products/find-with-category-names {:sub-category "men"})
                                        (db/merge-query {:find '[?e ?featured]
                                                         :where '[[?e :store.item/featured ?featured]]})))})
+(defmethod lajt-read :query/featured-men
+  [_]
+  (merge
+    {:remote true}
+    (featured-category {:sub-category "men"})))
+
 
 (defmethod client-read :query/featured-home
   [{:keys [db query]} _ _]
@@ -150,12 +251,23 @@
    :value  (pull-featured db query (-> (products/find-with-category-names {:top-category "home"})
                                        (db/merge-query {:find '[?e ?featured]
                                                         :where '[[?e :store.item/featured ?featured]]})))})
+(defmethod lajt-read :query/featured-home
+  [_]
+  (merge
+    {:remote true}
+    (featured-category {:top-category "home"})))
+
 (defmethod client-read :query/featured-art
   [{:keys [db query]} _ _]
   {:remote true
    :value  (pull-featured db query (-> (products/find-with-category-names {:top-category "art"})
                                        (db/merge-query {:find '[?e ?featured]
                                                         :where '[[?e :store.item/featured ?featured]]})))})
+(defmethod lajt-read :query/featured-art
+  [_]
+  (merge
+    {:remote true}
+    (featured-category {:top-category "art"})))
 
 (defmethod client-read :query/featured-stores
   [{:keys [db query]} _ _]
@@ -165,6 +277,12 @@
    :value  (pull-featured db query {:find    '[?e ?featured]
                                     :where   '[[?e :store/featured ?featured]]})})
 
+(defmethod lajt-read :query/featured-streams
+  [_]
+  (merge
+    {:remote true}
+    (query-featured :store/featured '[[?e :store/featured _]])))
+
 ;################
 
 (defmethod client-read :query/store
@@ -173,6 +291,14 @@
     (if target
       {:remote true}
       {:value (db/pull db query store-id)})))
+(defmethod lajt-read :query/store
+  [_]
+  {:remote true
+   :query '{:find [?e .]}
+   ;; What to do when the :store-id doesn't exist?
+   ;; In this case the route param is optional. Well.. we shouldn't
+   ;; execute the read if it doesn't exist.
+   :params {'?e [:route-params :store-id]}})
 
 (defmethod client-read :query/store-vods
   [{:keys [db query target route-params] :as env} _ _]
@@ -182,6 +308,19 @@
       {:value (->> (db/pull-all-with db query {:where   '[[?e :vod/store ?store-id]]
                                                :symbols {'?store-id store-id}})
                    (sort-by :vod/timestamp #(compare %2 %1)))})))
+(defmethod lajt-read :query/store-vods
+  [_]
+  {:remote true
+   :query  '{:find  [[?e ...]]
+             :where [[?e :vod/store ?store-id]]}
+   :params {'?store-id [:route-params :store-id]}
+   :sort   {:order :decending
+            ;; TODO: We want to sort ?e by this key.
+            ;; We're depending on that it exist, so we should
+            ;; include it in the remote pull-pattern.
+            ;; We could include it in the where clauses, but it
+            ;; would just make query slower.
+            :key-fn :vod/timestamp}})
 
 (defmethod client-read :query/store-items
   [{:keys [db query target route-params]} _ _]
@@ -200,6 +339,25 @@
                                                {:where   '[[?s :store/items ?e]]
                                                 :symbols {'?s store-id}})))}))))
 
+(defmethod lajt-read :query/store-items
+  [_]
+  ;; TODO lajt: Support functions that return any kind of read-map?
+  ;; It'd be nice to get as many use cases into the spec as possible.
+  (fn [env]
+    (merge-with merge
+                {:remote true
+                 :query  {:find '[[?e ...]]}}
+                (if (seq (get-in env [:route-params :navigation]))
+                  {:query  '{:where [[?s :store/items ?e]
+                                     [?e :store.item/section ?n]
+                                     [?n :store.section/path ?p]
+                                     [?e :store.item/name _]]}
+                   :params {'?s [:route-params :store-id]
+                            '?p [:route-params :navigation]}}
+                  {:query  '{:where [[?s :store/items ?e]
+                                     [?e :store.item/name _]]}
+                   :params {'?s [:route-params :store-id]}}))))
+
 (defmethod client-read :query/store-item-count
   [{:keys [db target route-params] :as env} _ _]
   (when-let [store-id (:store-id route-params)]
@@ -209,6 +367,15 @@
       {:value (db/find-with db {:find    '[(count ?e) .]
                                 :where   '[[?store :store/items ?e]]
                                 :symbols {'?store store-id}})})))
+(defmethod lajt-read :query/store-item-count
+  [_]
+  {:remote     true
+   :depends-on [:query/store-items]
+   ;; TODO lajt: Needs to support arbitrary function calls in find-pattern.
+   :query {:find '[(count ?e) .]}
+   :params {'[?e ...] [:depends-on :query/store-items]}})
+
+(.indexOf [1 2 3] 2)
 
 (defmethod client-read :query/orders
   [{:keys [db query target route-params]} _ _]
@@ -220,6 +387,26 @@
               (when-let [user-id (client.auth/current-auth db)]
                 (db/pull-all-with db query {:where   '[[?e :order/user ?u]]
                                             :symbols {'?u user-id}})))}))
+;; Maybe this ^^ should be
+;; Same pull pattern though.. hmm..
+{:union/orders {:store {:query/store-orders []}
+                :user  {:query/user-orders []}}}
+;; For now we're going with the value as a function:
+(defmethod lajt-read :query/orders
+  [_]
+  (fn [env]
+    (when (and (not (get-in env [:route-params :store-id]))
+               (nil? (get-in env [:auth :user-id])))
+      (warn [:auth :user-id] " was not in env for " :query/orders))
+    (merge-with merge
+                {:remote true
+                 :query  '{:find [[?e ...]]}
+                 (if (get-in env [:route-params :store-id])
+                   {:query  '{:where [[?e :order/store ?s]]}
+                    :params {'?s [:route-params :store-id]}}
+                   {:query  '{:where [[?e :order/user ?u]]}
+                    ;; Asserts that the :user-id has been put in the env.
+                    :params {'?s [:auth :user-id]}})})))
 
 (defmethod client-read :query/inventory
   [{:keys [db query target route-params]} _ _]
@@ -228,6 +415,12 @@
       {:remote true}
       {:value (db/pull-all-with db query {:where   '[[?store :store/items ?e]]
                                           :symbols {'?store store-id}})})))
+(defmethod lajt-read :query/inventory
+  [_]
+  {:remote true
+   :query '{:find [[?e ...]]
+            :where [[?store :store/items ?e]]}
+   :params {'?store [:route-params :store-id]}})
 
 (defmethod client-read :query/order
   [{:keys [db query target route-params]} _ _]
@@ -235,6 +428,11 @@
     (if target
       {:remote true}
       {:value (db/pull db query order-id)})))
+(defmethod lajt-read :query/order
+  [_]
+  {:remote true
+   :query '{:find [?e .]}
+   :params {'?e [:route-params :order-id]}})
 
 (defmethod client-read :query/order-payment
   [{:keys [db query target route-params]} _ _]
@@ -243,6 +441,18 @@
       {:remote true}
       {:value (db/pull-one-with db query {:where   '[[?o :order/charge ?e]]
                                           :symbols {'?o order-id}})})))
+(defmethod lajt-read :query/order-payment
+  [_]
+  {:remote true
+   :query '{:find [?e .]
+            :where [[?o :order/charge ?e]]}
+   :params {'?o [:route-params :order-id]}})
+
+(def store-stripe-map
+  {:remote true
+   :query '{:find [?e .]
+            :where [[?s :store/stripe ?e]]}
+   :params {'?s [:route-params :store-id]}})
 
 (defmethod client-read :query/stripe-account
   [{:keys [route-params target db query]} _ _]
@@ -251,6 +461,9 @@
       {:remote true}
       {:value (db/pull-one-with db query {:where   '[[?s :store/stripe ?e]]
                                           :symbols {'?s store-id}})})))
+(defmethod lajt-read :query/stripe-account
+  [_]
+  store-stripe-map)
 
 (defmethod client-read :query/stripe-balance
   [{:keys [route-params target db query]} _ _]
@@ -259,6 +472,9 @@
       {:remote true}
       {:value (db/pull-one-with db query {:where   '[[?s :store/stripe ?e]]
                                           :symbols {'?s store-id}})})))
+(defmethod lajt-read :query/stripe-balance
+  [_]
+  store-stripe-map)
 
 (defmethod client-read :query/stripe-payouts
   [{:keys [route-params target db query]} _ _]
@@ -268,6 +484,10 @@
       {:value (db/pull-one-with db query {:where   '[[?s :store/stripe ?e]]
                                           :symbols {'?s store-id}})})))
 
+(defmethod lajt-read :query/stripe-payouts
+  [_]
+  store-stripe-map)
+
 (defmethod client-read :query/stripe-customer
   [{:keys [target db query]} _ _]
   (if target
@@ -276,17 +496,38 @@
               (db/pull-one-with db query {:where   '[[?u :user/stripe ?e]]
                                           :symbols {'?u user-id}}))}))
 
+(defmethod lajt-read :query/stripe-customer
+  [_]
+  {:remote true
+   :query '{:find [?e .]
+            :where [[?u :user/stripe ?e]]}
+   ;; TODO lajt: Again, using the :auth key.
+   ;; We can warn whenever a param does not exist, which key it is and stuff.
+   :params {'?u [:auth :user-id]}})
+
 (defmethod client-read :query/stripe-country-spec
   [{:keys [route-params target db]} _ _]
   (if target
     {:remote true}
     {:value (db/lookup-entity db (db/one-with db {:where '[[?e :country-spec/id]]}))}))
+(defmethod lajt-read :query/stripe-country-spec
+  [_]
+  ;; Calls remote without the pull pattern.
+  ;; TODO lajt: Must be able to return queries on the :remote key.
+  {:remote [:query/stripe-country-spec]
+   :query  '{:find  [?e .]
+             :where [[?e :country-spec/id]]}})
 
 (defmethod client-read :query/stripe
   [{:keys [db query target route-params]} _ _]
   (if target
     {:remote true}
     {:value (db/pull-one-with db query {:where '[[?e :stripe/id]]})}))
+(defmethod lajt-read :query/stripe
+  [_]
+  {:remote true
+   :query  '{:find  [?e .]
+             :where [[?e :stripe/id]]}})
 
 (defmethod client-read :query/cart
   [{:keys [db query target ast]} _ _]
@@ -295,11 +536,25 @@
     (let [user-id (client.auth/current-auth db)
           [_ cart] (client.cart/find-user-cart db user-id)]
       {:value (db/pull db query cart)})))
+(defmethod lajt-read :query/cart
+  [_]
+  ;; It seems like we want different queries depending on existance of params.
+  ;; TODO lajt: Implement these :base+case maps where the base is merged
+  ;; with the matched :case.
+  {:base {:remote true
+          :query  '{:find  [?e .]
+                    :where [[?user :user/cart ?e]]}}
+   ;; The keys of :case are either functions or
+   ;; these colls of <param-like> map vals.
+   :case {[[:route-params :user-id]] {:params {'?user [:route-params]}}}})
 
 (defmethod client-read :query/skus
   [{:keys [target]} _ _]
   (when target
     {:remote true}))
+(defmethod lajt-read :query/skus
+  [_]
+  {:remote true})
 ;(common.read/compute-cart-price cart)
 
 (defmethod client-read :query/checkout
@@ -314,6 +569,17 @@
                                                                                 [?s :store/status ?st]
                                                                                 [?st :status/type :status.type/open]]
                                                                      :symbols {'?s store-id}}))})))
+(defmethod lajt-read :query/checkout
+  [_]
+  {:remote true
+   :query  '{:find  [[?e ...]]
+             :where [[?u :user/cart ?c]
+                     [?c :user.cart/items ?e]
+                     [?i :store.item/skus ?e]
+                     [?s :store/items ?i]
+                     [?s :store/status ?st]
+                     [?st :status/type :status.type/open]]}
+   :params {'?s [:route-params :store-id]}})
 
 (defmethod client-read :query/taxes
   [{:keys [db query route-params target]} _ {:keys [destination] :as p}]
@@ -323,6 +589,12 @@
       {:remote (when destination true)}
       {:value (db/pull-one-with db query {:where   '[[?e :taxes/id ?s]]
                                           :symbols {'?s store-id}})})))
+(defmethod lajt-read :query/taxes
+  [_]
+  {:remote #(some? (get-in % [:params :destination]))
+   :query '{:find [?e .]
+            :where [[?e :taxes/id ?s]]}
+   :params {'?s [:route-params :store-id]}})
 
 (defmethod client-read :query/owned-store
   [{:keys [db target query]} _ _]
@@ -332,6 +604,14 @@
       {:value (db/pull-one-with db query {:where   '[[?owners :store.owner/user ?user]
                                                      [?e :store/owners ?owners]]
                                           :symbols {'?user user-id}})})))
+(defmethod lajt-read :query/owned-store
+  [_]
+  {:remote true
+   :query '{:find [?e .]
+            :where [[?owners :store.owner/user ?user]
+                    [?e :store/owners ?owners]]}
+   :params {'?user [:auth :user-id]}})
+
 
 (defn- add-all-hrefs [category params->route-handler param-order]
   (letfn [(with-hrefs [category parent-names]
