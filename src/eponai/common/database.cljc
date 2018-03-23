@@ -495,17 +495,21 @@
 
 ;; Helper fn
 
+(defn singleton-lookup-ref [singleton-key]
+  (let [singleton-key-ns (namespace singleton-key)
+        last-dot (str/last-index-of singleton-key-ns \.)
+        singleton (keyword (subs singleton-key-ns 0 last-dot)
+                           (subs singleton-key-ns (inc last-dot) (count singleton-key-ns)))]
+    [:ui/singleton singleton]))
+
 (defn singleton-value
   "Given a :ui.singleton.<singleton>/<key>, returns the value by looking up the
   singleton by naming convention."
   [db singleton-key]
-  (let [singleton-key-ns (namespace singleton-key)
-        last-dot (str/last-index-of singleton-key-ns \.)
-        singleton (keyword (subs singleton-key-ns 0 last-dot)
-                           (subs singleton-key-ns (inc last-dot) (count singleton-key-ns)))
-        singleton-entity (lookup-entity db [:ui/singleton singleton])]
+  (let [ref (singleton-lookup-ref singleton-key)
+        singleton-entity (lookup-entity db ref)]
     (when (nil? singleton-entity)
-      (warn "Singleton was nil for singleton-key: " singleton-key " singleton: " singleton))
+      (warn "Singleton was nil for singleton lookup-ref: " ref))
     (get singleton-entity singleton-key)))
 
 (defn to-db

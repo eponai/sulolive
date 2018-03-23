@@ -400,13 +400,13 @@
       (warn [:auth :user-id] " was not in env for " :query/orders))
     (merge-with merge
                 {:remote true
-                 :query  '{:find [[?e ...]]}
-                 (if (get-in env [:route-params :store-id])
-                   {:query  '{:where [[?e :order/store ?s]]}
-                    :params {'?s [:route-params :store-id]}}
-                   {:query  '{:where [[?e :order/user ?u]]}
-                    ;; Asserts that the :user-id has been put in the env.
-                    :params {'?s [:auth :user-id]}})})))
+                 :query  '{:find [[?e ...]]}}
+                (if (get-in env [:route-params :store-id])
+                  {:query  '{:where [[?e :order/store ?s]]}
+                   :params {'?s [:route-params :store-id]}}
+                  {:query  '{:where [[?e :order/user ?u]]}
+                   ;; Asserts that the :user-id has been put in the env.
+                   :params {'?s [:auth :user-id]}}))))
 
 (defmethod client-read :query/inventory
   [{:keys [db query target route-params]} _ _]
@@ -666,6 +666,34 @@
         #_(assert (every? keyword? query-without-children))
         (assoc-gender-hrefs genders)))))
 
+(defmethod lajt-read :query.navigation/genders
+  [_]
+  {:query (db/merge-query
+            (products/category-names-query {:sub-category ["women" "men" "unisex-kids"]})
+            '{:find  [?sub-name ?parent ?sub-sub]
+              :where [[?parent :category/children ?sub]
+                      [?parent :category/path ?top-name]
+                      [?sub :category/children ?sub-sub]]})
+   :after (fn [{:keys            [result query db]
+                ::lajt-read/keys [db-fns]}]
+            (let [query-wo-kids (into [:db/id]
+                                      (parser.util/remove-query-key :category/children)
+                                      query)]
+              (->> result
+                   (group-by (juxt first second))
+                   (map (fn [[[sub-name parent] tripples]]
+                          (let [sub-subs (map #(nth 2 %) tripples)
+                                parent ((:pull db-fns) db query-wo-kids parent)]
+                            [sub-name (assoc parent :category/children
+                                                    ((:pull-many db-fns) db query-wo-kids sub-subs))])))
+                   (group-by first)
+                   (map (fn [[sub-name results]]
+                          (let [parents (map second results)]
+                            {:category/name sub-name
+                             :category/label (str/capitalize sub-name)
+                             :category/children parents})))
+                   (map assoc-gender-hrefs))))})
+
 (defn navigate-category [db query category-name]
   (let [categories (db/pull-one-with db (into [{:category/children '...}]
                                               (parser.util/remove-query-key :category/children)
@@ -715,8 +743,44 @@
   [{:keys [db target query route-params]} _ _]
   (if target
     {:remote true}
-    {:value (nav-categories db query)
-     }))
+    {:value (doto (nav-categories db query)
+              (#(debug "query/NAVIGATION: " %)))}))
+
+(defmethod lajt-read :query.navigation/categories
+  [_]
+  {:query (db/merge-query
+            '{:find [?top]}
+            (products/category-names-query {:top-category ["home" "art"]}))
+   ;; TODO lajt: Introduce :after
+   ;; A function that's called after pull on the result.
+   ;; Can also be a vector as with route-params and other stuff.
+   ;; Unsure what to do with caching here.
+   ;; ... actually not sure how to do this query.
+   ;; So much manual stuff to them.
+   ;; Wait.. maybe it's just a concatenation of this query and the genders read.
+   ;; How can one concatenate (or do stuff with) multiple reads?
+   :after [:result (partial mapv assoc-category-hrefs)]})
+
+(defmethod lajt-read :query/navigation
+  [_]
+  {:remote     true
+   ;; TODO lajt: :depends-on can be a function
+   ;; TODO lajt: :depends-on can pass params and pull-patterns/query.
+   :depends-on (fn [{:keys [query]}]
+                 [{:query.navigation/genders query}
+                  {:query.navigation/categories query}])
+   ;; Should this be a thing?
+   ;; What about caching?
+   ;; TODO lajt: Introduce :custom ?
+   ;; What's are the rules of :custom?
+   ;; Spec is sooo needed for this stuff. So many options.
+   :custom     (fn [env]
+                 (vec
+                   (concat
+                     (assoc-category-hrefs
+                       (get-in env [:depends-on :query.navigation/genders]))
+                     (assoc-category-hrefs
+                       (get-in env [:depends-on :query.navigation/categories])))))})
 
 (defmethod client-read :query/categories
   [{:keys [db target query route-params]} _ _]
@@ -725,12 +789,26 @@
     {:value (db/pull-all-with db query {:where '[[?e :category/path _]
                                                  [(missing? $ ?e :category/_children)]]})}))
 
+(defmethod lajt-read :query/categories
+  [_]
+  {:remote true
+   :query '{:find [[?e ...]]
+            :where [[?e :category/path _]
+                    ;; TODO lajt: Must be able to index where clauses
+                    ;; with (at least some?) functions.
+                    [(missing? $ ?e :category/_children)]]}})
+
 (defmethod client-read :query/item
   [{:keys [db query target route-params]} _ _]
   (when-let [product-id (:product-id route-params)]
     (if target
       {:remote true}
       {:value (db/pull db query product-id)})))
+(defmethod lajt-read :query/item
+  [_]
+  {:remote true
+   :query '{:find [?e .]}
+   :params {'?e [:route-params :product-id]}})
 
 (defmethod client-read :query/auth
   [{:keys [target db query]} _ _]
@@ -740,18 +818,31 @@
     {:value (let [query (or query [:db/id])
                   user (client.auth/current-auth db)]
               (db/pull db query user))}))
+(defmethod lajt-read :query/auth
+  [_]
+  {:remote true
+   :query '{:find [?e .]}
+   :params {'?e [:auth :user-id]}})
 
 (defmethod client-read :query/auth0-info
   [{:keys [target db query]} _ _]
   (if target
     {:remote true}
     {:value (db/singleton-value db :ui.singleton.auth/auth0)}))
+(defmethod lajt-read :query/auth0-info
+  [_]
+  {:remote true
+   :lookup-ref (db/singleton-lookup-ref :ui.singleton.auth/auth0)})
 
 (defmethod client-read :query/firebase
   [{:keys [target db]} _ _]
   (if target
     {:remote true}
     {:value (db/singleton-value db :ui.singleton.firebase/token)}))
+(defmethod lajt-read :query/firebase
+  [_]
+  {:remote true
+   :lookup-ref (db/singleton-lookup-ref :ui.singleton.firebase/token)})
 
 (defmethod client-read :query/stream
   [{:keys [db query target route-params]} _ _]

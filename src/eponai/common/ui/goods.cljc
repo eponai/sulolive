@@ -121,7 +121,8 @@
   (query [_]
     [{:query/browse-products-2 [{:browse-result/items (om/get-query ci/ProductItem)}
                                 :browse-result/meta]}
-     {:query/navigation [:db/id :category/name :category/label :category/path :category/route-map]}
+     {:query/navigation [:db/id :category/name :category/label :category/path :category/route-map
+                         {:category/children '...}]}
      {:proxy/product-filters (om/get-query pf/ProductFilters)}
      :query/current-route])
   Object
