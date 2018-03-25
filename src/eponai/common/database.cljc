@@ -502,6 +502,12 @@
                            (subs singleton-key-ns (inc last-dot) (count singleton-key-ns)))]
     [:ui/singleton singleton]))
 
+(defn singleton-value-query [singleton-key]
+  (let [ref (singleton-lookup-ref singleton-key)]
+    {:find '[?v .]
+     :where [(vec (cons '?e ref))
+             ['?e singleton-key '?v]]}))
+
 (defn singleton-value
   "Given a :ui.singleton.<singleton>/<key>, returns the value by looking up the
   singleton by naming convention."

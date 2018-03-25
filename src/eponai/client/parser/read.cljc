@@ -832,7 +832,7 @@
 (defmethod lajt-read :query/auth0-info
   [_]
   {:remote true
-   :lookup-ref (db/singleton-lookup-ref :ui.singleton.auth/auth0)})
+   :query  (db/singleton-value-query :ui.singleton.auth/auth0)})
 
 (defmethod client-read :query/firebase
   [{:keys [target db]} _ _]
@@ -842,7 +842,7 @@
 (defmethod lajt-read :query/firebase
   [_]
   {:remote true
-   :lookup-ref (db/singleton-lookup-ref :ui.singleton.firebase/token)})
+   :query  (db/singleton-value-query :ui.singleton.firebase/token)})
 
 (defmethod client-read :query/stream
   [{:keys [db query target route-params]} _ _]
@@ -851,6 +851,11 @@
       {:remote true}
       {:value (db/pull-one-with db query {:where   '[[?e :stream/store ?store-id]]
                                           :symbols {'?store-id store-id}})})))
+(defmethod lajt-read :query/stream
+  [_]
+  {:remote true
+   :query {:where '[[?e :stream/store ?store-id]]}
+   :params {'?store-id [:route-params :store-id]}})
 
 (defmethod client-read :query/stream-config
   [{:keys [db query target]} k _]
@@ -858,16 +863,37 @@
     {:remote true}
     {:value (db/pull-one-with db query
                               {:where '[[?e :ui/singleton :ui.singleton/stream-config]]})}))
+(defmethod lajt-read :query/stream-config
+  [_]
+  {:remote true
+   :lookup-ref (db/singleton-lookup-ref :ui.singleton/stream-config)})
 
+(defn current-route [x]
+  (let [db (db/to-db x)]
+    (-> db
+        (db/entity [:ui/singleton :ui.singleton/routes])
+        (->> (into {}))
+        (clojure.set/rename-keys {:ui.singleton.routes/current-route :route
+                                  :ui.singleton.routes/route-params  :route-params
+                                  :ui.singleton.routes/query-params  :query-params}))))
 (defmethod client-read :query/current-route
   [{:keys [db]} _ _]
   {:value (client.routes/current-route db)})
+(defmethod lajt-read :query/current-route
+  [_]
+  {:query '{:find  [[?route ?params ?query]]
+            :where [[?e :ui/singleton :ui.singleton/routes]
+                    [?e :ui.singleton.routes/current-route ?route]
+                    [?e :ui.singleton.routes/route-params ?params]
+                    [?e :ui.singleton.routes/query-params ?query]]}
+   :after [:result (partial zipmap [:route :route-params :query-params])]})
 
 (defmethod client-read :routing/app-root
   [{:keys [db] :as env} k p]
   (let [current-route (client.routes/current-route db)]
     (debug "Reading app-root: " [k :route current-route])
     (parser.util/read-union env k p (router/normalize-route (:route current-route)))))
+;; No need to write lajt-read for, since it's a union.
 
 (defmethod client-read :routing/store-dashboard
   [{:keys [db] :as env} k p]
@@ -879,69 +905,112 @@
                         (keyword ns (first path))))]
     (debug "Reading routing/store-dashboard: " [k :route current-route (parse-route (:route current-route))])
     (parser.util/read-union env k p (parse-route (:route current-route)))))
+;; No need to write lajt-read for, since it's a union.
 
 (defmethod client-read :query/messages
   [{:keys [db target]} _ _]
   (when (nil? target)
+    ;; TODO lajt: Make the implementation based on protocols.
+    ;; It should be able for an implementation to take advantage
+    ;; of the optimizations done in lajt.
+    ;; Especially in this case where the implementation of get-messages
+    ;; here is done with datascript queries.
     {:value (parser/get-messages db)}))
+(defmethod lajt-read :query/messages
+  [_]
+  ;; TODO lajt: Make it possible to only include an :after (or :custom, or :only)
+  ;; key to make a non-cachable custom read?
+  ;; How would one indicate that this read should be re-read?
+  ;; hmm.. Always re-read it?
+  {:after [#(parser/get-messages (:db %))]})
 
+(defn read-chat [db query store-id]
+  (when-let [chat-db (client.chat/get-chat-db db)]
+    (let [{:keys [sulo-db-tx chat-db-tx]}
+          (client.chat/read-chat chat-db
+                                 db
+                                 query
+                                 {:db/id store-id}
+                                 nil)
+          _ (when (seq sulo-db-tx)
+              (assert (every? #(contains? % :db/id) sulo-db-tx)
+                      (str "sulo-db-tx (users) did not have :db/id's in them. Was: " sulo-db-tx)))
+          users-by-id (into {} (map (juxt :db/id identity)) sulo-db-tx)]
+      ;; This would be a perfect time for specter
+      ;;  (comp (mapcat :chat/messages)
+      ;; (map :chat.message/user)
+      ;; (map :db/id))
+      (cond-> chat-db-tx
+              (contains? chat-db-tx :chat/messages)
+              (update :chat/messages
+                      (fn [messages]
+                        (into []
+                              (map (fn [message]
+                                     (update message :chat.message/user
+                                             (fn [{:keys [db/id]}]
+                                               (assoc (get users-by-id id) :db/id id)))))
+                              messages)))))))
+
+;; TODO lajt: here's another case where it would be useful
+;; to have it be protocol based.
 (defmethod client-read :query/chat
   [{:keys [target db route-params query]} _ _]
   (when-let [store-id (:store-id route-params)]
     (if (some? target)
       {:remote/chat true}
-      {:value (when-let [chat-db (client.chat/get-chat-db db)]
-                (let [{:keys [sulo-db-tx chat-db-tx]}
-                      (client.chat/read-chat chat-db
-                                             db
-                                             query
-                                             {:db/id store-id}
-                                             nil)
-                      _ (when (seq sulo-db-tx)
-                          (assert (every? #(contains? % :db/id) sulo-db-tx)
-                                  (str "sulo-db-tx (users) did not have :db/id's in them. Was: " sulo-db-tx)))
-                      users-by-id (into {} (map (juxt :db/id identity)) sulo-db-tx)]
-                  ;; This would be a perfect time for specter
-                  ;;  (comp (mapcat :chat/messages)
-                  ;; (map :chat.message/user)
-                  ;; (map :db/id))
-                  (cond-> chat-db-tx
-                          (contains? chat-db-tx :chat/messages)
-                          (update :chat/messages
-                                  (fn [messages]
-                                    (into []
-                                          (map (fn [message]
-                                                 (update message :chat.message/user
-                                                         (fn [{:keys [db/id]}]
-                                                           (assoc (get users-by-id id) :db/id id)))))
-                                          messages))))))})))
+      {:value })))
+(defmethod lajt-read :query/chat
+  [_]
+  {:remote/chat true
+   ;; TODO lajt: How is this cached?
+   ;; How can it be re-written to be cached?
+   :after [#(read-chat (:db %) (:query %) (:store-id (:route-params %)))]})
 
 (defmethod client-read :datascript/schema
   [{:keys [target]} _ _]
   (when target
     {:remote true}))
+(defmethod lajt-read :datascript/schema
+  [_]
+  {:remote true})
 
 (defmethod client-read :query/countries
   [{:keys [target query db]} _ _]
   (if target
     {:remote true}
     {:value (db/pull-all-with db query {:where '[[?e :country/code _]]})}))
+(defmethod lajt-read :query/countries
+  [_]
+  {:remote true
+   :query '{:find [[?e ...]]
+            :where [[?e :country/code _]]}})
 
 (defmethod client-read :query/product-search
   [{:keys [target]} _ _]
   (when target
     {:remote true}))
+(defmethod lajt-read :query/product-search
+  [_]
+  {:remote true})
 
 (defmethod client-read :query/client-env
   [{:keys [target]} _ _]
   (when target
     {:remote true}))
+(defmethod lajt-read :query/client-env
+  [_]
+  {:remote true})
 
 (defmethod client-read :query/sulo-localities
   [{:keys [target db query]} _ _]
   (if target
     {:remote true}
     {:value (db/pull-all-with db query {:where '[[?e :sulo-locality/title _]]})}))
+(defmethod lajt-read :query/sulo-localities
+  [_]
+  {:remote true
+   :query '{:find [[?e ...]]
+            :where [[?e :sulo-locality/title _]]}})
 
 (defn extract-items-query [query]
   (if-some [q (first (sequence (comp (filter map?)
@@ -984,6 +1053,12 @@
                                                  :db/id                           (:db/id browse-result)}
                                                 browse-result)
                      :browse-result/items pulled}}))))))
+(defmethod lajt-read :query/browse-products-2
+  [_]
+  ;; TODO: YOU'RE HERE.
+  ;; Figrue out if we can do this in plain lajt.
+  ;; Or, skip this for now.
+  )
 
 (defmethod client-read :query/browse-product-items
   [{:keys [target]} _ _]
