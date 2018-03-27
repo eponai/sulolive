@@ -1055,9 +1055,11 @@
                      :browse-result/items pulled}}))))))
 (defmethod lajt-read :query/browse-products-2
   [_]
-  ;; TODO: YOU'RE HERE.
+  ;; TODO:
   ;; Figrue out if we can do this in plain lajt.
   ;; Or, skip this for now.
+  {:remote true
+   :after [#(client-read % :query/browse-products-2 {})]}
   )
 
 (defmethod client-read :query/browse-product-items
@@ -1065,6 +1067,21 @@
   ;; Only for fetching product items, nothing else.
   (when target
     {:remote true}))
+(defmethod lajt-read :query/browse-product-items
+  [_]
+  {:remote true})
+
+(defmethod client-read :query/notifications
+  [{:keys [target db]} _ _]
+  (when (nil? target)
+    {:value (some->> (client.auth/current-auth db)
+                     (db/entity db)
+                     (:user/notifications))}))
+(defmethod lajt-read :query/notifications
+  [_]
+  {:query  '{:find  [?e .]
+             :where [[?user :user/notifications ?e]]}
+   :params {'?user [:auth :user-id]}})
 
 (defmethod client-read :query/notification-count
   [{:keys [target db]} _ _]
@@ -1073,13 +1090,14 @@
                      (db/entity db)
                      (:user/chat-notifications)
                      (count))}))
-
-(defmethod client-read :query/notifications
-  [{:keys [target db]} _ _]
-  (when (nil? target)
-    {:value (some->> (client.auth/current-auth db)
-                     (db/entity db)
-                     (:user/notifications))}))
+(defmethod lajt-read :query/notification-count
+  [_]
+  ;; TODO lajt:
+  ;; Make these counting (or custom reduce that depends on something
+  ;; else) easier to do?
+  {:depends-on [:query/notifications]
+   :query '{:find [(count ?e) .]}
+   :params {'?e [:depends-on :query/notifications]}})
 
 (defmethod client-read :query/featured-vods
   [{:keys [target db query]} _ _]
@@ -1090,3 +1108,8 @@
                  (sort-by :vod/featured #(compare %2 %1))
                  (map :db/id)
                  (db/pull-many db query))}))
+(defmethod lajt-read :query/featured-vods
+  [_]
+  (merge-with merge
+              {:remote true}
+              (query-featured :vod/featured '[[?e :vod/featured]])))
