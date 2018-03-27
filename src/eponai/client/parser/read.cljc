@@ -100,6 +100,7 @@
     {:value (db/pull db query [:ui/singleton :ui.singleton/state])}))
 (defmethod lajt-read :query/store-has-streamed
   [_]
+  ;; TODO lajt: implement lookup-ref
   {:remote true
    :lookup-ref [:ui/singleton :ui.singleton/state]})
 
@@ -343,20 +344,19 @@
   [_]
   ;; TODO lajt: Support functions that return any kind of read-map?
   ;; It'd be nice to get as many use cases into the spec as possible.
-  (fn [env]
-    (merge-with merge
-                {:remote true
-                 :query  {:find '[[?e ...]]}}
-                (if (seq (get-in env [:route-params :navigation]))
-                  {:query  '{:where [[?s :store/items ?e]
-                                     [?e :store.item/section ?n]
-                                     [?n :store.section/path ?p]
-                                     [?e :store.item/name _]]}
-                   :params {'?s [:route-params :store-id]
-                            '?p [:route-params :navigation]}}
-                  {:query  '{:where [[?s :store/items ?e]
-                                     [?e :store.item/name _]]}
-                   :params {'?s [:route-params :store-id]}}))))
+  {:base {:remote true
+          :query  {:find '[[?e ...]]}
+          :params {'?s [:route-params :store-id]}}
+   :case {[[:route-params :navigation seq]]
+          {:query  '{:where [[?s :store/items ?e]
+                             [?e :store.item/section ?n]
+                             [?n :store.section/path ?p]
+                             [?e :store.item/name _]]}
+           :params {'?p [:route-params :navigation]}}
+
+          [[(constantly true)]]
+          {:query '{:where [[?s :store/items ?e]
+                            [?e :store.item/name _]]}}}})
 
 (defmethod client-read :query/store-item-count
   [{:keys [db target route-params] :as env} _ _]
