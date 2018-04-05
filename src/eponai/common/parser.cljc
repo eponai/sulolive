@@ -12,6 +12,9 @@
             [eponai.common.database :as db]
             [eponai.common.format.date :as date]
             [clojure.data :as diff]
+            [lajt.read]
+            [lajt.parser :as lajt]
+            [lajt.read.datascript :as lajt.db]
             [datascript.core :as datascript]
     #?(:cljs [pushy.core :as pushy])
     #?(:clj
@@ -26,6 +29,8 @@
             [eponai.common.format :as f])
   #?(:clj
      (:import (clojure.lang ExceptionInfo))))
+
+(defmulti lajt-read (fn [k] k))
 
 (defmulti client-read om/dispatch)
 (defmulti client-mutate om/dispatch)
@@ -744,7 +749,10 @@
   (fn [env k p]
     (read (assoc env :txs-by-project txs-by-project) k p)))
 
-(defn- make-parser [{:keys [read mutate] :as state} parser-mw read-mw mutate-mw]
+(defn- make-parser [{:keys [read mutate ->parser parser-state]
+                     :or {->parser om/parser}
+                     :as state}
+                    parser-mw read-mw mutate-mw]
   (let [read (-> read
                  with-remote-guard
                  with-local-read-guard
@@ -754,9 +762,11 @@
                    with-remote-guard
                    mutate-with-error-logging
                    (mutate-mw state))]
-    (-> (om/parser {:read        read
+    (-> (->parser (merge
+                    {:read        read
                     :mutate      mutate
-                    :elide-paths (:elide-paths state)})
+                    :elide-paths (:elide-paths state)}
+                    parser-state))
         (parser-mw (assoc state ::read read)))))
 
 (defn client-parser-state [& [custom-state]]
@@ -815,7 +825,7 @@
         (dissoc ::route-params-nil-target
                 ::route-params-some-target))))
 
-(declare dedupe-parser)
+(declare dedupe-parser lajto-dedupe-parser)
 
 (defn db-state-parser [parser state]
   (fn self
@@ -823,7 +833,8 @@
      (self env query nil))
     ([env query target]
      (parser (into env (-> (client-db-state (assoc env :target target) state)
-                           (assoc ::server? false)))
+                           (assoc ::server? false)
+                           (assoc ::read (::read state))))
              query target))))
 
 (defn client-parser
@@ -833,7 +844,8 @@
    (make-parser state
                 (fn [parser state]
                   (-> parser
-                      (cond-> (not (::skip-dedupe state)) (dedupe-parser (::read state)))
+                      (lajto-dedupe-parser)
+                      #_(cond-> (not (::skip-dedupe state)) (dedupe-parser (::read state)))
                       (db-state-parser state)))
                 (fn [read {:keys [txs-by-project]}]
                   (-> read
@@ -1040,7 +1052,74 @@
                                                     (f/remove-nil-keys)))))
                   (cond->> mutate-ret
                            (seq reads)
-                           (merge (-> (deduped-result-parser env query target)
-                                      (om.parser/path-meta (if (contains? env :path) (:path env) [])
-                                                           query)))))]
+                           (merge (om.parser/path-meta (deduped-result-parser env query target)
+                                                       (if (contains? env :path) (:path env) [])
+                                                       query))))]
         (not-empty ret)))))
+
+(def lajt-conf
+  (let [om->lajt-read (-> lajt-read
+                          (lajt.read/->read-fn (lajt.db/db-fns))
+                          #_(lajt.read/om-next-value-wrapper))
+        lajt-read (fn [env k p]
+                    (if (contains? (methods lajt-read) k)
+                      (om->lajt-read env k p)
+                      (do
+                        (warn "lajt read not implemented for " k)
+                        (let [ret (client-read env k p)]
+                          (if-some [t (:target env)]
+                            (get ret t)
+                            (:value ret))))))
+        lajt-mutate (fn [env k p]
+                      (let [ret (client-mutate env k p)]
+                        (debug "LAJT mutate " k " returned: " ret)
+                        (if-some [t (:target env)]
+                          (get ret t)
+                          (when-some [a (:action ret)]
+                            (debug "LAJT executing action: " a)
+                            (a)
+                            nil))))]
+    {:read            lajt-read
+     :mutate          lajt-mutate
+     :join-namespace  "proxy"
+     :union-namespace "routing"
+     :union-selector  (fn [env k p]
+                        ;; Dispatch to read
+                        (debug "Calling read: " (:read env) " with k: " k)
+                        (let [ret ((:read env) (dissoc env :query) k p)]
+                          (debug "Called k: " k " returned: " ret)
+                          (if (map? ret)
+                            (do (debug "k: " k " return map!")
+                                (:value ret))
+                            ret)))}))
+
+(defn lajto-dedupe-parser [parser]
+  (fn [env query & [target]]
+    (let [env (assoc env :debug true :parser parser)
+          dq (lajt/dedupe-query (assoc lajt-conf :read (::read env))
+                                (assoc env :debug false)
+                                query)]
+      (parser env dq target))))
+
+(defn lajt-parser []
+  (client-parser
+    (client-parser-state
+      {::skip-dedupe true
+       :read         (:read lajt-conf)
+       :mutate       (:mutate lajt-conf)
+       :->parser     lajt/parser
+       :parser-state lajt-conf})))
+
+(defn multi-parser [test-fn & parsers]
+  (fn [env query & [target]]
+    (let [mutates (vec (filter mutation? query))
+          mutate-ret (when (seq mutates)
+                       ((first parsers) env mutates target))
+          reads (vec (remove mutation? query))
+          reads-ret (->> parsers
+                         (map #(% env reads target))
+                         (map-indexed vector)
+                         vec)]
+      (test-fn reads-ret)
+      (into (or mutate-ret (if (some? target) [] {}))
+            (second (first reads-ret))))))

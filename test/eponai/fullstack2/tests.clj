@@ -95,8 +95,12 @@
         conn (client.utils/create-conn)
         cookie-store (cookies/cookie-store)
         remote-config (remote-config-with-server-url conn system cookie-store)
+        parser (parser/multi-parser #(is (= [nil nil]
+                                            (butlast (apply diff/diff (map second %)))))
+                                    (parser/client-parser)
+                                    (parser/lajt-parser))
         reconciler (reconciler/create {:conn         conn
-                                       :parser       (parser/client-parser)
+                                       :parser       parser
                                        :send-fn      (backend/send! reconciler-atom remote-config
                                                                     {:did-merge-fn (fn [reconciler]
                                                                                      (go (>! merge-chan reconciler)))})
@@ -293,6 +297,11 @@
 (test/deftest full-stack-tests
   ;; Runs the test multiple times to make sure things are working
   ;; after setup and tear down.
+  (let [lock *out*]
+    (timbre/swap-config! update :output-fn (fn [f]
+                                             (fn [& args]
+                                               (locking lock
+                                                 (apply f args))))))
   (run-tests [test-store-login-2
               test-dedupe-parser-returns-super-set-of-original-parser
               ]))

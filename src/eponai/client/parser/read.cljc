@@ -1,8 +1,9 @@
 (ns eponai.client.parser.read
   (:require
     [clojure.string :as str]
+    [clojure.set :as set]
     [om.next.impl.parser :as om.parser]
-    [eponai.common.parser :as parser :refer [client-read]]
+    [eponai.common.parser :as parser :refer [client-read lajt-read]]
     [eponai.common.parser.util :as parser.util]
     [eponai.common.database :as db]
     [eponai.common.parser.read :as common.read]
@@ -23,9 +24,6 @@
 
 (defn all [m]
   (assoc m :find '[[?e ...]]))
-
-(defmulti lajt-read (fn [k] k))
-
 
 ;; ################ Local reads  ####################
 ;; Generic, client only local reads goes here.
@@ -166,7 +164,7 @@
        (db/pull-many db query)))
 
 (defn query-featured [featured-key where-clauses]
-  {:query '{:find [[?e ...]]
+  {:query {:find '[[?e ...]]
             :where where-clauses}
    :sort {:key-fn featured-key
           :order :decending}})
@@ -278,7 +276,7 @@
    :value  (pull-featured db query {:find    '[?e ?featured]
                                     :where   '[[?e :store/featured ?featured]]})})
 
-(defmethod lajt-read :query/featured-streams
+(defmethod lajt-read :query/featured-stores
   [_]
   (merge
     {:remote true}
@@ -347,16 +345,16 @@
   {:base {:remote true
           :query  {:find '[[?e ...]]}
           :params {'?s [:route-params :store-id]}}
-   :case {[[:route-params :navigation seq]]
-          {:query  '{:where [[?s :store/items ?e]
-                             [?e :store.item/section ?n]
-                             [?n :store.section/path ?p]
-                             [?e :store.item/name _]]}
-           :params {'?p [:route-params :navigation]}}
+   :case [{[[:route-params :navigation seq]]
+           {:query  '{:where [[?s :store/items ?e]
+                              [?e :store.item/section ?n]
+                              [?n :store.section/path ?p]
+                              [?e :store.item/name _]]}
+            :params {'?p [:route-params :navigation]}}}
 
-          [[(constantly true)]]
-          {:query '{:where [[?s :store/items ?e]
-                            [?e :store.item/name _]]}}}})
+          {(constantly true)
+           {:query '{:where [[?s :store/items ?e]
+                             [?e :store.item/name _]]}}}]})
 
 (defmethod client-read :query/store-item-count
   [{:keys [db target route-params] :as env} _ _]
@@ -546,7 +544,8 @@
                     :where [[?user :user/cart ?e]]}}
    ;; The keys of :case are either functions or
    ;; these colls of <param-like> map vals.
-   :case {[[:route-params :user-id]] {:params {'?user [:route-params]}}}})
+   :case [{[[:route-params :user-id]]
+           {:params {'?user [:route-params]}}}]})
 
 (defmethod client-read :query/skus
   [{:keys [target]} _ _]
@@ -674,8 +673,7 @@
               :where [[?parent :category/children ?sub]
                       [?parent :category/path ?top-name]
                       [?sub :category/children ?sub-sub]]})
-   :after (fn [{:keys            [result query db]
-                ::lajt-read/keys [db-fns]}]
+   :after (fn [{:keys [result query db db-fns]}]
             (let [query-wo-kids (into [:db/id]
                                       (parser.util/remove-query-key :category/children)
                                       query)]
@@ -688,9 +686,11 @@
                                                     ((:pull-many db-fns) db query-wo-kids sub-subs))])))
                    (group-by first)
                    (map (fn [[sub-name results]]
+                          (prn "sub-name: " sub-name)
+                          (prn "results: " results)
                           (let [parents (map second results)]
-                            {:category/name sub-name
-                             :category/label (str/capitalize sub-name)
+                            {:category/name     sub-name
+                             :category/label    (str/capitalize sub-name)
                              :category/children parents})))
                    (map assoc-gender-hrefs))))})
 
@@ -749,7 +749,7 @@
 (defmethod lajt-read :query.navigation/categories
   [_]
   {:query (db/merge-query
-            '{:find [?top]}
+            '{:find [[?top ...]]}
             (products/category-names-query {:top-category ["home" "art"]}))
    ;; TODO lajt: Introduce :after
    ;; A function that's called after pull on the result.
@@ -766,7 +766,7 @@
   {:remote     true
    ;; TODO lajt: :depends-on can be a function
    ;; TODO lajt: :depends-on can pass params and pull-patterns/query.
-   :depends-on (fn [{:keys [query]}]
+   #_#_ :depends-on (fn [{:keys [query]}]
                  [{:query.navigation/genders query}
                   {:query.navigation/categories query}])
    ;; Should this be a thing?
@@ -775,12 +775,11 @@
    ;; What's are the rules of :custom?
    ;; Spec is sooo needed for this stuff. So many options.
    :custom     (fn [env]
-                 (vec
+                 (nav-categories (:db env) (:query env))
+                 #_(vec
                    (concat
-                     (assoc-category-hrefs
-                       (get-in env [:depends-on :query.navigation/genders]))
-                     (assoc-category-hrefs
-                       (get-in env [:depends-on :query.navigation/categories])))))})
+                     (get-in env [:depends-on :query.navigation/genders])
+                     (get-in env [:depends-on :query.navigation/categories]))))})
 
 (defmethod client-read :query/categories
   [{:keys [db target query route-params]} _ _]
@@ -881,19 +880,43 @@
   {:value (client.routes/current-route db)})
 (defmethod lajt-read :query/current-route
   [_]
-  {:query '{:find  [[?route ?params ?query]]
-            :where [[?e :ui/singleton :ui.singleton/routes]
-                    [?e :ui.singleton.routes/current-route ?route]
-                    [?e :ui.singleton.routes/route-params ?params]
-                    [?e :ui.singleton.routes/query-params ?query]]}
-   :after [:result (partial zipmap [:route :route-params :query-params])]})
+  {:query '{:find  [(pull ?e [:ui.singleton.routes/current-route
+                              :ui.singleton.routes/route-params
+                              :ui.singleton.routes/query-params]) .]
+            :where [[?e :ui/singleton :ui.singleton/routes]]}
+   :after [:result #(clojure.set/rename-keys % {:ui.singleton.routes/current-route :route
+                                                :ui.singleton.routes/route-params  :route-params
+                                                :ui.singleton.routes/query-params  :query-params})]})
 
 (defmethod client-read :routing/app-root
   [{:keys [db] :as env} k p]
   (let [current-route (client.routes/current-route db)]
     (debug "Reading app-root: " [k :route current-route])
-    (parser.util/read-union env k p (router/normalize-route (:route current-route)))))
-;; No need to write lajt-read for, since it's a union.
+    (if (:lajt.parser/calling-union-selector env)
+      {:value (router/normalize-route (:route current-route))}
+      (parser.util/read-union env k p (router/normalize-route (:route current-route))))))
+;; lajt-reads for routing/union keys return the key to
+;; select.
+(defmethod lajt-read :routing/app-root
+  [_]
+  {:depends-on [:query/current-route]
+   ;; TODO: YOU ARE HERE!
+   ;; this one and routing/store-dashboard is doing :custom
+   ;; stuff where the current-route is nil.
+
+   ;; Keep doing
+   ;; (start-reloading)
+   ;; (require '[eponai.fullstack2.tests])
+   ;; (clojure.test/run-tests 'eponai.fullstack2.tests)
+
+   ;; Check the output and go from there...
+   :custom     (fn [env]
+                 (debug "depends-on: " (:depends-on env))
+                 (debug "results: " (:results env))
+                 (let [current-route (get-in env [:depends-on :query/current-route])]
+                   (debug "CUSTOM routing/app-root current-route: " current-route)
+                   (debug "CUSTOM returning: " (router/normalize-route (:route current-route)))
+                   (router/normalize-route (:route current-route))))})
 
 (defmethod client-read :routing/store-dashboard
   [{:keys [db] :as env} k p]
@@ -904,8 +927,23 @@
                             path (clojure.string/split subroute #"#")]
                         (keyword ns (first path))))]
     (debug "Reading routing/store-dashboard: " [k :route current-route (parse-route (:route current-route))])
-    (parser.util/read-union env k p (parse-route (:route current-route)))))
-;; No need to write lajt-read for, since it's a union.
+    (if (:lajt.parser/calling-union-selector env)
+      {:value (parse-route (:route current-route))}
+      (parser.util/read-union env k p (parse-route (:route current-route))))))
+;; lajt-reads for routing should return the key to dispatch on.
+(defmethod lajt-read :routing/store-dashboard
+  [_]
+  {:depends-on [:query/current-route]
+   :custom     (fn [env]
+                 (let [current-route (get-in env [:depends-on :query/current-route])
+                       parse-route (fn [route]
+                                     (let [ns (namespace route)
+                                           subroute (name route)
+                                           path (clojure.string/split subroute #"#")]
+                                       (keyword ns (first path))))]
+                   (debug "CUSTOM routing/app-root current-route: " current-route)
+                   (debug "CUSTOM returning: " (parse-route (:route current-route)))
+                   (parse-route (:route current-route))))})
 
 (defmethod client-read :query/messages
   [{:keys [db target]} _ _]
@@ -922,7 +960,8 @@
   ;; key to make a non-cachable custom read?
   ;; How would one indicate that this read should be re-read?
   ;; hmm.. Always re-read it?
-  {:after [#(parser/get-messages (:db %))]})
+  {:custom (fn [env]
+             (parser/get-messages (:db env)))})
 
 (defn read-chat [db query store-id]
   (when-let [chat-db (client.chat/get-chat-db db)]
@@ -958,13 +997,14 @@
   (when-let [store-id (:store-id route-params)]
     (if (some? target)
       {:remote/chat true}
-      {:value })))
+      {:value (read-chat db query store-id)})))
 (defmethod lajt-read :query/chat
   [_]
   {:remote/chat true
    ;; TODO lajt: How is this cached?
    ;; How can it be re-written to be cached?
-   :after [#(read-chat (:db %) (:query %) (:store-id (:route-params %)))]})
+   :custom      #(when-let [store-id (:store-id (:route-params %))]
+                   (read-chat (:db %) (:query %) store-id))})
 
 (defmethod client-read :datascript/schema
   [{:keys [target]} _ _]
@@ -972,7 +1012,8 @@
     {:remote true}))
 (defmethod lajt-read :datascript/schema
   [_]
-  {:remote true})
+  {:remote true
+   :no-op true})
 
 (defmethod client-read :query/countries
   [{:keys [target query db]} _ _]
