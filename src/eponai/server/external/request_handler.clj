@@ -27,7 +27,7 @@
         (deferred/success! deferred-response response)))))
 
 ;; Leaving this here because it's hard to say where it should go?
-(defrecord RequestHandler [in-production? cljs-build-id disable-ssl disable-anti-forgery]
+(defrecord RequestHandler [in-production? cljs-build-id disable-ssl disable-anti-forgery test-env?]
   c/Lifecycle
   (start [this]
     (if (::started? this)
@@ -74,7 +74,8 @@
                         m/wrap-trace-request
                         (cond-> (and in-production? (not disable-ssl))
                                 m/wrap-ssl)
-                        (m/wrap-error in-production? logger))
+                        (cond-> (not test-env?)
+                                (m/wrap-error in-production? logger)))
             ;; Wraps handler in an atom in development, so we can swap implementation
             ;; at runtime/reload-time.
             handler-atom (atom handler)

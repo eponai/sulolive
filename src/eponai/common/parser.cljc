@@ -801,8 +801,8 @@
                            :raw-route-params         route-params
 
                            :query-params             query-params
-                           :auth                     (when-let [email (client.auth/authed-email db)]
-                                                       {:email email})
+                           :auth                     {:email (client.auth/authed-email db)
+                                                      :user-id (client.auth/current-auth db)}
                            ::auth-responder          (reify
                                                        auth/IAuthResponder
                                                        (-redirect [this path]
@@ -844,7 +844,7 @@
    (make-parser state
                 (fn [parser state]
                   (-> parser
-                      (lajto-dedupe-parser)
+                      (cond-> (not (::skip-lajto state)) (lajto-dedupe-parser))
                       #_(cond-> (not (::skip-dedupe state)) (dedupe-parser (::read state)))
                       (db-state-parser state)))
                 (fn [read {:keys [txs-by-project]}]
@@ -1004,6 +1004,18 @@
                             by-key)]
     deduped-query))
 
+(defn read-with-state [env mutate-ret remote-query]
+  (cond-> (vec mutate-ret)
+          (seq remote-query)
+          ;; We wrap all reads with state that the reads depend on.
+          ;; This is only used for client-parsers (they are the ones getting :target).
+          (conj (list {:read/with-state remote-query}
+                      (-> (select-keys env [:route :raw-route-params :query-params])
+                          ;; Using the raw route-params when sending to server
+                          ;; so the server gets a chance to normalize them.
+                          (set/rename-keys {:raw-route-params :route-params})
+                          (f/remove-nil-keys))))))
+
 (defn dedupe-parser [parser parser-read]
   (let [dedupe-cache (atom {})]
     (fn [env query & [target]]
@@ -1040,16 +1052,7 @@
                                                          [(key-params->dedupe-key k p) k])]
                                       {:value v})))})
             ret (if (some? target)
-                  (cond-> mutate-ret
-                          (seq deduped-parse)
-                          ;; We wrap all reads with state that the reads depend on.
-                          ;; This is only used for client-parsers (they are the ones getting :target).
-                          ((fnil conj []) (list {:read/with-state deduped-parse}
-                                                (-> (select-keys env [:route :raw-route-params :query-params])
-                                                    ;; Using the raw route-params when sending to server
-                                                    ;; so the server gets a chance to normalize them.
-                                                    (set/rename-keys {:raw-route-params :route-params})
-                                                    (f/remove-nil-keys)))))
+                  (read-with-state env mutate-ret deduped-parse)
                   (cond->> mutate-ret
                            (seq reads)
                            (merge (om.parser/path-meta (deduped-result-parser env query target)
@@ -1091,11 +1094,20 @@
                      (assoc env :debug false)
                      query))
 
+(defn ensure-read-with-state-parser-return [parser-return env]
+  (let [query parser-return
+        [mutations reads] (split-with mutation? query)]
+    (read-with-state env (vec mutations) (vec reads))))
+
 (defn lajto-dedupe-parser [parser]
   (fn [env query & [target]]
-    (let [env (assoc env :parser parser :om.next.parser.impl/expr->ast om.next.impl.parser/expr->ast)
-          dq (dedupe-query env query)]
-      (parser env dq target))))
+    (let [env (assoc env :parser parser
+                         :om.next.parser.impl/expr->ast om.next.impl.parser/expr->ast)
+          dq (dedupe-query env query)
+          ret (parser env dq target)]
+      (cond-> ret
+              (some? target)
+              (ensure-read-with-state-parser-return env)))))
 
 (defn lajt-parser []
   (client-parser
@@ -1108,10 +1120,7 @@
 
 (defn multi-parser [test-fn & parsers]
   (fn self [env query & [target]]
-    (let [mutates (vec (filter mutation? query))
-          mutate-ret (when (seq mutates)
-                       ((first parsers) env mutates target))
-          reads (vec (remove mutation? query))
+    (let [reads (vec (remove mutation? query))
           reads-ret (mapv #(% env reads target) parsers)]
       (test-fn (not-empty (cond-> reads-ret (:target env) set))
                #(mapv (fn [parser]
@@ -1120,5 +1129,4 @@
                                   (:target env)
                                   set)))
                       parsers))
-      (into (or mutate-ret (if (some? target) [] {}))
-            (first reads-ret)))))
+      ((first parsers) env query target))))

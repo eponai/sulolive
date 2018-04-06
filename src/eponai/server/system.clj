@@ -168,7 +168,8 @@
                {:disable-ssl          (::disable-ssl config)
                 :disable-anti-forgery (::disable-anti-forgery config)
                 :in-production?       in-prod?
-                :cljs-build-id        (:cljs-build-id env "dev")})
+                :cljs-build-id        (:cljs-build-id env "dev")
+                :test-env?            (::is-test-env? env)})
              (vec (keys (dissoc system :system/aleph))))))
 
 (defn real-system [{:keys [in-aws?] :as config}]

@@ -325,6 +325,7 @@
 (defmethod client-read :query/store-items
   [{:keys [db query target route-params]} _ _]
   (let [{:keys [store-id navigation]} route-params]
+    (debug "QUERY STORE ITEMS ROUTE PARAMS: " route-params)
     (when (some? store-id)
       (if target
         {:remote true}
@@ -343,7 +344,7 @@
   [_]
   ;; TODO lajt: Support functions that return any kind of read-map?
   ;; It'd be nice to get as many use cases into the spec as possible.
-  {:base {:remote true
+  {:base {:remote (comp some? :store-id :route-params)
           :query  {:find '[[?e ...]]}
           :params {'?s [:route-params :store-id]}}
    :case [{[[:route-params :navigation seq]]
@@ -361,18 +362,17 @@
   [{:keys [db target route-params] :as env} _ _]
   (when-let [store-id (:store-id route-params)]
     (if target
-      {:remote (om.parser/expr->ast (list {:read/with-state [{:query/store [{:store/items [:store.item/name]}]}]}
-                                          {:route-params {:store-id (:store-id (:raw-route-params env))}}))}
+      {:remote (om.parser/expr->ast {:query/store [{:store/items [:db/id :store.item/name]}]})}
       {:value (db/find-with db {:find    '[(count ?e) .]
                                 :where   '[[?store :store/items ?e]]
                                 :symbols {'?store store-id}})})))
 (defmethod lajt-read :query/store-item-count
   [_]
-  {:remote     true
-   :depends-on [:query/store-items]
+  {:remote     false
+   :depends-on [{:query/store [{:store/items [:db/id :store.item/name]}]}]
    ;; TODO lajt: Needs to support arbitrary function calls in find-pattern.
-   :query {:find '[(count ?e) .]}
-   :params {'[?e ...] [:depends-on :query/store-items]}})
+   :query      {:find '[(count ?e) .]}
+   :params     {'[?e ...] [:depends-on :query/store :store/items (partial map :db/id)]}})
 
 (.indexOf [1 2 3] 2)
 
@@ -425,7 +425,7 @@
       {:value (db/pull db query order-id)})))
 (defmethod lajt-read :query/order
   [_]
-  {:remote true
+  {:remote [:route-params :order-id some?]
    :query '{:find [?e .]}
    :params {'?e [:route-params :order-id]}})
 
@@ -438,7 +438,7 @@
                                           :symbols {'?o order-id}})})))
 (defmethod lajt-read :query/order-payment
   [_]
-  {:remote true
+  {:remote [:route-params :order-id some?]
    :query '{:find [?e .]
             :where [[?o :order/charge ?e]]}
    :params {'?o [:route-params :order-id]}})
@@ -448,6 +448,7 @@
    :query '{:find [?e .]
             :where [[?s :store/stripe ?e]]}
    :params {'?s [:route-params :store-id]}})
+
 
 (defmethod client-read :query/stripe-account
   [{:keys [route-params target db query]} _ _]
@@ -509,7 +510,7 @@
   [_]
   ;; Calls remote without the pull pattern.
   ;; TODO lajt: Must be able to return queries on the :remote key.
-  {:remote [:query/stripe-country-spec]
+  {:remote (constantly [:query/stripe-country-spec])
    :query  '{:find  [?e .]
              :where [[?e :country-spec/id]]}})
 
