@@ -87,7 +87,8 @@
         (->> (into {}))
         (set/rename-keys {:ui.singleton.routes/current-route :route
                           :ui.singleton.routes/route-params  :route-params
-                          :ui.singleton.routes/query-params  :query-params}))))
+                          :ui.singleton.routes/query-params  :query-params})
+        (dissoc :ui/singleton))))
 
 (defn merge-route
   "Merges the current route with a route map, containing :route, :route-params, :query-params

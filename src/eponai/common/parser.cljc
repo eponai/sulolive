@@ -1113,8 +1113,12 @@
                        ((first parsers) env mutates target))
           reads (vec (remove mutation? query))
           reads-ret (mapv #(% env reads target) parsers)]
-      (test-fn reads-ret
-               #(mapv (fn [parser] (parser (assoc env :debug true) reads target))
+      (test-fn (not-empty (cond-> reads-ret (:target env) set))
+               #(mapv (fn [parser]
+                        (not-empty
+                          (cond-> (parser (assoc env :debug true) reads target)
+                                  (:target env)
+                                  set)))
                       parsers))
       (into (or mutate-ret (if (some? target) [] {}))
             (first reads-ret)))))

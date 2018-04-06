@@ -62,7 +62,7 @@
   (when-not target
     {:value (db/pull-all-with db query {:where '[[?n :ui/singleton :ui.singleton/notify]
                                                  [?n :ui.singleton.notify/notifications ?e]]})}))
-(defmethod lajt-read :query/login-modal
+(defmethod lajt-read :query/notifications
   [_]
   {:query '{:find  [[?e ...]]
             :where [[?n :ui/singleton :ui.singleton/notify]
@@ -740,8 +740,7 @@
   [{:keys [db target query route-params]} _ _]
   (if target
     {:remote true}
-    {:value (doto (nav-categories db query)
-              (#(debug "query/NAVIGATION: " %)))}))
+    {:value (nav-categories db query)}))
 
 (defmethod lajt-read :query.navigation/categories
   [_]
