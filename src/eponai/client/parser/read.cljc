@@ -39,7 +39,8 @@
 (defmethod client-read :query/loading-bar
   [{:keys [db query target]} _ _]
   (when-not target
-    {:value (do (debug "Query/loading bar: " query) (db/pull-one-with db query {:where '[[?e :ui/singleton :ui.singleton/loading-bar]]}))}))
+    {:value (do (debug "Query/loading bar: " query)
+                (db/pull-one-with db query {:where '[[?e :ui/singleton :ui.singleton/loading-bar]]}))}))
 (defmethod lajt-read :query/loading-bar
   [_]
   {:query '{:find [?e .]
@@ -392,19 +393,15 @@
 ;; For now we're going with the value as a function:
 (defmethod lajt-read :query/orders
   [_]
-  (fn [env]
-    (when (and (not (get-in env [:route-params :store-id]))
-               (nil? (get-in env [:auth :user-id])))
-      (warn [:auth :user-id] " was not in env for " :query/orders))
-    (merge-with merge
-                {:remote true
-                 :query  '{:find [[?e ...]]}}
-                (if (get-in env [:route-params :store-id])
-                  {:query  '{:where [[?e :order/store ?s]]}
-                   :params {'?s [:route-params :store-id]}}
-                  {:query  '{:where [[?e :order/user ?u]]}
-                   ;; Asserts that the :user-id has been put in the env.
-                   :params {'?s [:auth :user-id]}}))))
+  {:base {:remote true
+          :query  '{:find [[?e ...]]}}
+   :case [{[[:route-params :store-id]]
+           {:query  '{:where [[?e :order/store ?s]]}
+            :params {'?s [:route-params :store-id]}}}
+          {[[:auth :user-id]]
+           {:query  '{:where [[?e :order/user ?u]]}
+            ;; Asserts that the :user-id has been put in the env.
+            :params {'?s [:auth :user-id]}}}]})
 
 (defmethod client-read :query/inventory
   [{:keys [db query target route-params]} _ _]
@@ -545,7 +542,7 @@
    ;; The keys of :case are either functions or
    ;; these colls of <param-like> map vals.
    :case [{[[:route-params :user-id]]
-           {:params {'?user [:route-params]}}}]})
+           {:params {'?user [:route-params :user-id]}}}]})
 
 (defmethod client-read :query/skus
   [{:keys [target]} _ _]

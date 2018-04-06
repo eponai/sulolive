@@ -1060,27 +1060,20 @@
 (def lajt-conf
   (let [om->lajt-read (-> lajt-read
                           (lajt.read/->read-fn (lajt.db/db-fns))
-                          #_(lajt.read/om-next-value-wrapper))
+                          (lajt.read/om-next-value-wrapper))
         lajt-read (fn [env k p]
                     (if (contains? (methods lajt-read) k)
                       (om->lajt-read env k p)
                       (do
                         (warn "lajt read not implemented for " k)
-                        (let [ret (client-read env k p)]
-                          (if-some [t (:target env)]
-                            (get ret t)
-                            (:value ret))))))
+                        (client-read env k p))))
         lajt-mutate (fn [env k p]
                       (let [ret (client-mutate env k p)]
                         (debug "LAJT mutate " k " returned: " ret)
-                        (if-some [t (:target env)]
-                          (get ret t)
-                          (when-some [a (:action ret)]
-                            (debug "LAJT executing action: " a)
-                            (a)
-                            nil))))]
+                        ret))]
     {:read            lajt-read
      :mutate          lajt-mutate
+     :om-next?        true
      :join-namespace  "proxy"
      :union-namespace "routing"
      :union-selector  (fn [env k p]
@@ -1093,12 +1086,15 @@
                                 (:value ret))
                             ret)))}))
 
+(defn- dedupe-query [env query]
+  (lajt/dedupe-query (assoc lajt-conf :read (::read env))
+                     (assoc env :debug false)
+                     query))
+
 (defn lajto-dedupe-parser [parser]
   (fn [env query & [target]]
-    (let [env (assoc env :debug true :parser parser)
-          dq (lajt/dedupe-query (assoc lajt-conf :read (::read env))
-                                (assoc env :debug false)
-                                query)]
+    (let [env (assoc env :parser parser :om.next.parser.impl/expr->ast om.next.impl.parser/expr->ast)
+          dq (dedupe-query env query)]
       (parser env dq target))))
 
 (defn lajt-parser []
@@ -1108,18 +1104,17 @@
        :read         (:read lajt-conf)
        :mutate       (:mutate lajt-conf)
        :->parser     lajt/parser
-       :parser-state lajt-conf})))
+       :parser-state (dissoc lajt-conf :read :mutate)})))
 
 (defn multi-parser [test-fn & parsers]
-  (fn [env query & [target]]
+  (fn self [env query & [target]]
     (let [mutates (vec (filter mutation? query))
           mutate-ret (when (seq mutates)
                        ((first parsers) env mutates target))
           reads (vec (remove mutation? query))
-          reads-ret (->> parsers
-                         (map #(% env reads target))
-                         (map-indexed vector)
-                         vec)]
-      (test-fn reads-ret)
+          reads-ret (mapv #(% env reads target) parsers)]
+      (test-fn reads-ret
+               #(mapv (fn [parser] (parser (assoc env :debug true) reads target))
+                      parsers))
       (into (or mutate-ret (if (some? target) [] {}))
-            (second (first reads-ret))))))
+            (first reads-ret)))))

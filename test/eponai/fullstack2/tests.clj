@@ -95,8 +95,10 @@
         conn (client.utils/create-conn)
         cookie-store (cookies/cookie-store)
         remote-config (remote-config-with-server-url conn system cookie-store)
-        parser (parser/multi-parser #(is (= [nil nil]
-                                            (butlast (apply diff/diff (map second %)))))
+        parser (parser/multi-parser (fn [ret re-run-fn]
+                                      (when (not= [nil nil] (butlast (apply diff/diff ret)))
+                                        (is (= [nil nil]
+                                               (butlast (apply diff/diff (re-run-fn)))))))
                                     (parser/client-parser)
                                     (parser/lajt-parser))
         reconciler (reconciler/create {:conn         conn
