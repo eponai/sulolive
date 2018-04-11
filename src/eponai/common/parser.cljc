@@ -1073,22 +1073,27 @@
         lajt-mutate (fn [env k p]
                       (let [ret (client-mutate env k p)]
                         (debug "LAJT mutate " k " returned: " ret)
-                        ret))]
-    {:read                     lajt-read
-     :mutate                   lajt-mutate
-     :read-plugins             [lajt.parser/unwrap-om-next-read-plugin]
-     :mutate-plugins           [lajt.parser/unwrap-om-next-mutate-plugin]
-     :join-namespace           "proxy"
-     :union-namespace          "routing"
-     :union-selector           (fn [env k p]
-                                 ;; Dispatch to read
-                                 (debug "Calling read: " (:read env) " with k: " k)
-                                 (let [ret ((:read env) (dissoc env :query) k p)]
-                                   (debug "Called k: " k " returned: " ret)
-                                   (if (map? ret)
-                                     (do (debug "k: " k " return map!")
-                                         (:value ret))
-                                     ret)))}))
+                        ret))
+        to-query (fn [k query params]
+                   (cond-> k
+                           (some? query)
+                           (hash-map query)
+                           (some? params)
+                           (list params)))]
+    {:read            lajt-read
+     :mutate          lajt-mutate
+     :read-plugins    [lajt.parser/unwrap-om-next-read-plugin]
+     :mutate-plugins  [lajt.parser/unwrap-om-next-mutate-plugin]
+     :join-namespace  "proxy"
+     :union-namespace "routing"
+     :union-selector  (fn [env k p]
+                        ;; Dispatch to client-read
+                        (let [_ (debug "Calling read: " (:read env) " with k: " k)
+                              ret (client-read (assoc env ::calling-union-selector true) k p)]
+                          (debug "UNION SELECTOR RETURNED: " ret)
+                          (if (map? ret)
+                            (:value ret)
+                            ret)))}))
 
 (defn- dedupe-query [env query]
   (lajt/dedupe-query (assoc lajt-conf :read (::read env))

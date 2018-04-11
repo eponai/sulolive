@@ -889,7 +889,7 @@
   [{:keys [db] :as env} k p]
   (let [current-route (client.routes/current-route db)]
     (debug "Reading app-root: " [k :route current-route])
-    (if (:lajt.parser/calling-union-selector env)
+    (if (::parser/calling-union-selector env)
       {:value (router/normalize-route (:route current-route))}
       (parser.util/read-union env k p (router/normalize-route (:route current-route))))))
 ;; lajt-reads for routing/union keys return the key to
@@ -924,7 +924,7 @@
                             path (clojure.string/split subroute #"#")]
                         (keyword ns (first path))))]
     (debug "Reading routing/store-dashboard: " [k :route current-route (parse-route (:route current-route))])
-    (if (:lajt.parser/calling-union-selector env)
+    (if (::parser/calling-union-selector env)
       {:value (parse-route (:route current-route))}
       (parser.util/read-union env k p (parse-route (:route current-route))))))
 ;; lajt-reads for routing should return the key to dispatch on.
