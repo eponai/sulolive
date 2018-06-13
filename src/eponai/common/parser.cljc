@@ -1080,25 +1080,21 @@
                            (hash-map query)
                            (some? params)
                            (list params)))]
-    {:read            lajt-read
-     :mutate          lajt-mutate
-     :read-plugins    [lajt.parser/unwrap-om-next-read-plugin]
-     :mutate-plugins  [lajt.parser/unwrap-om-next-mutate-plugin]
-     :join-namespace  "proxy"
-     :union-namespace "routing"
-     :union-selector  (fn [env k p]
-                        ;; Dispatch to client-read
-                        (let [_ (debug "Calling read: " (:read env) " with k: " k)
-                              ret (client-read (assoc env ::calling-union-selector true) k p)]
-                          (debug "UNION SELECTOR RETURNED: " ret)
-                          (if (map? ret)
-                            (:value ret)
-                            ret)))}))
+    {:read             lajt-read
+     :mutate           lajt-mutate
+     :read-plugins     [lajt.parser/unwrap-om-next-read-plugin]
+     :mutate-plugins   [lajt.parser/unwrap-om-next-mutate-plugin]
+     :join-namespaces  "proxy"
+     :union-namespaces "routing"
+     :union-selector   (fn [env k p]
+                         ;; Dispatch to client-read
+                         (let [ret (client-read (assoc env ::calling-union-selector true) k p)]
+                           (if (map? ret)
+                             (:value ret)
+                             ret)))}))
 
 (defn- dedupe-query [env query]
-  (lajt/dedupe-query (assoc lajt-conf :read (::read env))
-                     (assoc env :debug false)
-                     query))
+  (lajt/dedupe-query lajt-conf (assoc env :debug false) query))
 
 (defn ensure-read-with-state-parser-return [parser-return env]
   (let [query parser-return

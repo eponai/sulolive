@@ -1,4 +1,4 @@
-(ns eponai.client.parser.read
+sxx(ns eponai.client.parser.read
   (:require
     [clojure.string :as str]
     [clojure.set :as set]
@@ -671,7 +671,7 @@
               :where [[?parent :category/children ?sub]
                       [?parent :category/path ?top-name]
                       [?sub :category/children ?sub-sub]]})
-   :after (fn [{:keys [result query db db-fns]}]
+   :lastly (fn [{:keys [result query db db-fns]}]
             (let [query-wo-kids (into [:db/id]
                                       (parser.util/remove-query-key :category/children)
                                       query)]
@@ -748,7 +748,7 @@
   {:query (db/merge-query
             '{:find [[?top ...]]}
             (products/category-names-query {:top-category ["home" "art"]}))
-   ;; TODO lajt: Introduce :after
+   ;; TODO lajt: Introduce :lastly
    ;; A function that's called after pull on the result.
    ;; Can also be a vector as with route-params and other stuff.
    ;; Unsure what to do with caching here.
@@ -756,7 +756,7 @@
    ;; So much manual stuff to them.
    ;; Wait.. maybe it's just a concatenation of this query and the genders read.
    ;; How can one concatenate (or do stuff with) multiple reads?
-   :after [:result (partial mapv assoc-category-hrefs)]})
+   :lastly [:result (partial mapv assoc-category-hrefs)]})
 
 (defmethod lajt-read :query/navigation
   [_]
@@ -881,7 +881,7 @@
                               :ui.singleton.routes/route-params
                               :ui.singleton.routes/query-params]) .]
             :where [[?e :ui/singleton :ui.singleton/routes]]}
-   :after [:result #(clojure.set/rename-keys % {:ui.singleton.routes/current-route :route
+   :lastly [:result #(clojure.set/rename-keys % {:ui.singleton.routes/current-route :route
                                                 :ui.singleton.routes/route-params  :route-params
                                                 :ui.singleton.routes/query-params  :query-params})]})
 
@@ -953,7 +953,7 @@
     {:value (parser/get-messages db)}))
 (defmethod lajt-read :query/messages
   [_]
-  ;; TODO lajt: Make it possible to only include an :after (or :custom, or :only)
+  ;; TODO lajt: Make it possible to only include an :lastly (or :custom, or :only)
   ;; key to make a non-cachable custom read?
   ;; How would one indicate that this read should be re-read?
   ;; hmm.. Always re-read it?
@@ -1097,7 +1097,7 @@
   ;; Figrue out if we can do this in plain lajt.
   ;; Or, skip this for now.
   {:remote true
-   :after [#(client-read % :query/browse-products-2 {})]}
+   :lastly [#(client-read % :query/browse-products-2 {})]}
   )
 
 (defmethod client-read :query/browse-product-items
