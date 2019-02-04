@@ -1,1 +1,1 @@
-web:  java -Xmx450m -cp target/uberjar/budget-0.1.0-SNAPSHOT-standalone.jar eponai.server.core
+web:  java -Xmx300m -Xss512k -XX:CICompilerCount=2 -Ddatomic.objectCacheMax=64m -Ddatomic.memoryIndexMax=64m -Dclojure.compiler.direct-linking=true -cp target/uberjar/budget-0.1.0-SNAPSHOT-standalone.jar eponai.server.core
