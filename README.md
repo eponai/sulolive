@@ -2,9 +2,6 @@
 # Sulolive
 The live marketplace online - A product built to make shopping online more interactive by combining live streaming with small business e-commerce.
 
-```
-Please excuse the mess. We're working here 👷‍♀️
-```
 
 We've made the repository public, but we're still working on this README and the wiki.
 
@@ -12,7 +9,7 @@ CircleCI: [![CircleCI](https://circleci.com/gh/eponai/sulolive/tree/master.svg?s
 
 ## Live demo
 
-http://sulo-demo.us-east-1.elasticbeanstalk.com
+https://sulolive-demo.herokuapp.com
 
 The demo includes the full web application for both visitors and logged in users. We are using an in-memory database, so you are welcome to play around and make any changes you want. 
 
