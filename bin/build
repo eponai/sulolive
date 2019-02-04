@@ -1,0 +1,4 @@
+#!/bin/bash
+
+lein prod-build-web
+lein uberjar
