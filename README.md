@@ -5,8 +5,6 @@ The live marketplace online - A product built to make shopping online more inter
 
 We've made the repository public, but we're still working on this README and the wiki.
 
-CircleCI: [![CircleCI](https://circleci.com/gh/eponai/sulolive/tree/master.svg?style=svg&circle-token=d51f6b92f4dfb834f78b6550371a0588aa39d572)](https://circleci.com/gh/eponai/sulolive/tree/master)
-
 ## Live demo
 
 https://sulolive-demo.herokuapp.com
