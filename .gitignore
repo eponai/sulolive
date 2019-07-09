@@ -8,7 +8,7 @@ resources/private/leafy-firmament-160421.json
 /classes
 *.jar
 *.class
-
+secrets.sh
 # Clojure project defaults
 #
 /.lein-*
