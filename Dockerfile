@@ -1,18 +1,55 @@
 FROM openjdk:8-jdk
 
-ADD target/uberjar/budget-uberjar.jar /srv/production.jar
-ADD resources/public/assets/css /srv/public/assets/css
-ADD resources/public/assets/flags /srv/public/assets/flags
-ADD resources/public/release/js/out/budget.js /srv/public/release/js/out/budget.js
+WORKDIR /app
+COPY project.clj /app/project.clj 
+
+ARG DATOMIC_USERNAME=""
+ARG DATOMIC_PASSWORD=""
+
+ENV DATOMIC_EMAIL=$DATOMIC_USERNAME
+ENV DATOMIC_KEY=$DATOMIC_PASSWORD
+
+RUN curl -O https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein
+RUN chmod u+x lein
+RUN ./lein deps 
+
+RUN apt-get update
+RUN apt-get -y install curl gnupg
+RUN curl -sL https://deb.nodesource.com/setup_8.x  | bash -
+RUN apt-get -y install nodejs
+
+COPY package.json /app/package.json
+COPY bower.json /app/bower.json
+RUN npm install
+RUN npm install -g bower
+RUN bower install --allow-root
+
+# COPY . .
+# RUN ./lein uberjar
+# RUN ./lein prod-build-web
 
 EXPOSE 8080
 
-WORKDIR "/srv"
+COPY sulo-style /app/sulo-style
+WORKDIR /app/sulo-style
+RUN npm install
+RUN bower install --allow-root
 
-RUN jar cf assets.jar \
-    public/assets/css \
-    public/assets/flags \
-    public/release/js/out/budget.js
+WORKDIR /app
+COPY . .
 
-CMD exec java $JAVA_OPTS -server -Dclojure.compiler.direct-linking=true -cp production.jar:assets.jar eponai.server.core
+RUN ./lein uberjar
+RUN ./lein prod-build-web
+
+#RUN sh /app/scripts/compile-css.sh
+
+
+#RUN jar cf assets.jar \
+#    public/assets/css \
+#    public/assets/flags \
+#    public/release/js/out/budget.js
+
+RUN mv /app/target/uberjar/budget-*-standalone.jar /app/target/uberjar/budget-uberjar.jar
+
+CMD exec java -Xmx300m -Xss512k -server -Dclojure.compiler.direct-linking=true -cp target/uberjar/budget-uberjar.jar eponai.server.core
 
