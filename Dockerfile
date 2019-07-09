@@ -3,11 +3,11 @@ FROM openjdk:8-jdk
 WORKDIR /app
 COPY project.clj /app/project.clj 
 
-ARG DATOMIC_USERNAME=""
-ARG DATOMIC_PASSWORD=""
+#ARG DATOMIC_USERNAME=""
+#ARG DATOMIC_PASSWORD=""
 
-ENV DATOMIC_EMAIL=$DATOMIC_USERNAME
-ENV DATOMIC_KEY=$DATOMIC_PASSWORD
+#ENV DATOMIC_EMAIL=$DATOMIC_USERNAME
+#ENV DATOMIC_KEY=$DATOMIC_PASSWORD
 
 RUN curl -O https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein
 RUN chmod u+x lein
